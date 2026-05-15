@@ -50,6 +50,15 @@ export const useEvents = () => {
     }
   };
 
+  const bulkAddRehearsals = async (performance: Event, config: any) => {
+    try {
+      await eventService.bulkCreateRehearsals(performance, config);
+      await fetchEvents();
+    } catch (err: any) {
+      throw new Error(err.message || 'Failed to bulk create rehearsals');
+    }
+  };
+
   return {
     events,
     performances: events.filter(e => e.type === 'Performance'),
@@ -58,6 +67,7 @@ export const useEvents = () => {
     addEvent,
     editEvent,
     removeEvent,
+    bulkAddRehearsals,
     refresh: fetchEvents,
   };
 };
