@@ -20,7 +20,7 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
 3.  **Events:**
     *   Fields: `Date`, `Location`, `Type` (Performance, Rehearsal), `Details`, `ParentPerformanceID` (Nullable; used by Rehearsals to link to their main Performance).
 4.  **EventRosters:** Junction collection linking a `Profile` to an `Event`.
-    *   Fields: `RSVP` (Yes/No/Pending), `Attendance` (Present/Absent/Pending), `SeatID` (String/Nullable).
+    *   Fields: `RSVP` (Yes/No/Pending), `Attendance` (Present/Absent/Pending), `SeatID` (String/Nullable), `folderNumber` (String/Nullable), `folderReturned` (Bool).
 5.  **Auditions:**
     *   Fields: `Name`, `Contact`, `Time Slot`, `Status`.
 
@@ -36,8 +36,9 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
     *   Filter the global roster to view only singers who have RSVP'd "Yes" for a specific event.
 *   **Attendance Tracking (All Events):**
     *   A simple, mobile-optimized list view for day-of check-ins.
-    *   **Crucial Logic:** The check-in list *only* displays singers who have RSVP'd "Yes" for that specific event.
-    *   Provides a visual warning flag on the Performance roster for any singer who has missed 'n' connected Rehearsals. Final enforcement decisions remain manual for the director.
+    *   **Crucial Logic:** The check-in list displays all active singers.
+    *   Provides a visual warning flag on the Performance roster for any singer who has missed 'n' connected Rehearsals.
+    *   **Folder Tracking:** Allows assigning a Folder Number during rehearsals. This number persists across all rehearsals and the final performance in the same concert cycle (shared via the parent performance's roster entry). Includes a "Returned" toggle for the final hand-off.
 *   **Seating Chart (Performances Only):**
     *   A grid-based interface.
     *   **Creation/Editing (Desktop Optimized):** Automatically calculates suggested row sizes based on the total number of RSVP'd "Yes" singers and a user-defined seats-per-row capacity. Admins manually assign singers to grid slots. This complex drag/assign interface is optimized for desktop/tablets.
