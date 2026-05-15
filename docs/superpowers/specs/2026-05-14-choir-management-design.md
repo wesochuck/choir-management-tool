@@ -18,11 +18,15 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
 2.  **Profiles:** Linked 1:1 with Users.
     *   Fields: `Name`, `Phone`, `Voice Part` (S1, S2, A1, A2, T1, T2, B1, B2), `Global Status` (Active/Inactive), `Notes`.
 3.  **Events:**
-    *   Fields: `Date`, `Location`, `Type` (Performance, Rehearsal), `Details`, `ParentPerformanceID` (Nullable; used by Rehearsals to link to their main Performance).
+    *   Fields: `title` (Text/Optional), `date` (Date), `location` (Text), `type` (Performance, Rehearsal), `details` (Text), `ParentPerformanceID` (Relation/Self).
 4.  **EventRosters:** Junction collection linking a `Profile` to an `Event`.
     *   Fields: `RSVP` (Yes/No/Pending), `Attendance` (Present/Absent/Pending), `SeatID` (String/Nullable), `folderNumber` (String/Nullable), `folderReturned` (Bool).
 5.  **Auditions:**
     *   Fields: `Name`, `Contact`, `Time Slot`, `Status`.
+6.  **Venues:**
+    *   Fields: `name` (Text), `rowCounts` (JSON/Array of seat counts per row, e.g. [12, 15, 18]).
+7.  **SeatingCharts:**
+    *   Fields: `performance` (Relation to Events), `venue` (Relation to Venues), `layoutOverride` (JSON/Nullable), `assignments` (JSON: Map of SeatIndex to ProfileID).
 
 ## Feature Specifications
 
@@ -32,18 +36,23 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
     *   Update global status (Active vs. Inactive) and manage private notes.
 *   **Event Management:**
     *   Create and manage events (Performances and Rehearsals). Rehearsals are explicitly linked to a parent Performance.
+    *   **Bulk Creation:** Admins can quickly generate a sequence of rehearsals leading up to a performance. Parameters include the performance date, the target weekday for rehearsals, and the total count. Includes configurable location and time.
 *   **Event-Specific Roster:**
     *   Filter the global roster to view only singers who have RSVP'd "Yes" for a specific event.
 *   **Attendance Tracking (All Events):**
     *   A simple, mobile-optimized list view for day-of check-ins.
     *   **Crucial Logic:** The check-in list displays all active singers.
     *   Provides a visual warning flag on the Performance roster for any singer who has missed 'n' connected Rehearsals.
-    *   **Folder Tracking:** Allows assigning a Folder Number during rehearsals. This number persists across all rehearsals and the final performance in the same concert cycle (shared via the parent performance's roster entry). Includes a "Returned" toggle for the final hand-off.
+    *   **Folder Tracking:** Allows assigning a Folder Number during rehearsals. This number persists across all rehearsals and the final performance in the same concert cycle. Includes a "Returned" toggle for the final hand-off.
 *   **Seating Chart (Performances Only):**
-    *   A grid-based interface.
-    *   **Creation/Editing (Desktop Optimized):** Automatically calculates suggested row sizes based on the total number of RSVP'd "Yes" singers and a user-defined seats-per-row capacity. Admins manually assign singers to grid slots. This complex drag/assign interface is optimized for desktop/tablets.
-    *   **Viewing (Mobile Responsive):** The generated seating chart is rendered in a read-only, mobile-friendly format so singers and directors can view it easily on their phones on the day of the performance.
-    *   **Printing:** The chart view includes a print stylesheet (or PDF export) designed to format perfectly onto standard 8.5" x 11" letter paper for physical distribution at the venue.
+    *   A grid-based interface tied to a **Performance** and a **Venue**.
+    *   **Singer Pool:** Automatically includes all singers with global status `Active (Current)`.
+    *   **Creation/Editing (Desktop Optimized):**
+        *   **Vertical Wedge Auto-Paint:** Dynamically allocates blocks of seats for each voice part (S, A, T, B) spanning from front to back rows based on current active counts.
+        *   **Manual Assignment:** Admin clicks a sectional seat and picks a singer of that voice part from the active roster.
+        *   Allows overriding the venue's default row/seat counts for a specific performance.
+    *   **Viewing (Mobile Responsive):** A simplified, high-contrast grid view for mobile users.
+    *   **Printing:** A dedicated, high-legibility print layout (Row Number + Names) optimized for standard 8.5" x 11" letter paper.
 *   **Communications:**
     *   Send email reminders for events and auditions.
     *   Architecture designed to easily accommodate Twilio SMS integration in the future.
