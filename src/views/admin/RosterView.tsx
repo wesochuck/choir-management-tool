@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
+import { RosterSummary } from '../../components/admin/RosterSummary';
 import type { Profile } from '../../services/profileService';
 
 export default function RosterView() {
@@ -49,6 +50,8 @@ export default function RosterView() {
           + Add Singer
         </button>
       </div>
+
+      <RosterSummary profiles={profiles} />
 
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <select 
