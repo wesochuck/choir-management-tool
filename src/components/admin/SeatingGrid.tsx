@@ -74,13 +74,31 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   >
                     <option value="">-- Assign --</option>
                     <option value="">(Empty)</option>
-                    {activeProfiles
-                      .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
-                      .filter(p => !suggestion || p.voicePart[0] === suggestion)
-                      .map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))
-                    }
+                    
+                    {/* Suggested Section first */}
+                    {suggestion && (
+                      <optgroup label={`Recommended (${suggestion})`}>
+                        {activeProfiles
+                          .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
+                          .filter(p => p.voicePart[0] === suggestion)
+                          .map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))
+                        }
+                      </optgroup>
+                    )}
+
+                    {/* Other Sections */}
+                    <optgroup label="Other Sections">
+                      {activeProfiles
+                        .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
+                        .filter(p => p.voicePart[0] !== suggestion)
+                        .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
+                        .map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.voicePart})</option>
+                        ))
+                      }
+                    </optgroup>
                   </select>
                 )}
                 
