@@ -12,6 +12,7 @@ export default function AdminDashboardView() {
         <Link to="/" style={{ fontWeight: 'bold' }}>Dashboard</Link>
         <Link to="/admin/roster">Manage Roster</Link>
         <Link to="/admin/events">Manage Events</Link>
+        <Link to="/admin/venues">Manage Venues</Link>
         <button 
           onClick={handleLogout}
           style={{ marginLeft: 'auto', padding: '6px 12px', cursor: 'pointer' }}
@@ -52,6 +53,19 @@ export default function AdminDashboardView() {
         }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
           <strong>Manage Events</strong>
+        </Link>
+
+        <Link to="/admin/venues" style={{ 
+          padding: '24px', 
+          backgroundColor: 'white', 
+          borderRadius: '12px', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+          textDecoration: 'none',
+          color: '#2d3748',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🏛️</div>
+          <strong>Manage Venues</strong>
         </Link>
 
         <Link to="/admin/attendance" style={{ 
