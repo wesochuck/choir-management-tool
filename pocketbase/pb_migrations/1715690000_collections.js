@@ -1,83 +1,83 @@
 migrate((app) => {
   const snapshot = [
     {
+      "id": "_pb_users_auth_",
       "name": "users",
       "type": "auth",
-      "id": "_pb_users_auth_",
       "fields": [
-        { "name": "id", "id": "u_id", "type": "text", "primaryKey": true, "required": true, "system": true },
-        { "name": "password", "id": "u_pw", "type": "password", "required": true, "system": true, "min": 8 },
-        { "name": "tokenKey", "id": "u_tk", "type": "text", "required": true, "system": true },
-        { "name": "email", "id": "u_em", "type": "email", "required": true, "system": true },
-        { "name": "emailVisibility", "id": "u_ev", "type": "bool", "system": true },
-        { "name": "verified", "id": "u_vf", "type": "bool", "system": true },
-        { "name": "name", "id": "u_nm", "type": "text" },
-        { "name": "role", "id": "u_rl", "type": "select", "required": true, "values": ["admin", "singer"] },
-        { "name": "created", "id": "u_cr", "type": "autodate", "system": true, "onCreate": true, "onUpdate": false },
-        { "name": "updated", "id": "u_up", "type": "autodate", "system": true, "onCreate": true, "onUpdate": true }
+        { "id": "text3208210256", "name": "id", "type": "text", "primaryKey": true, "required": true, "system": true, "autogeneratePattern": "[a-z0-9]{15}" },
+        { "id": "password901924565", "name": "password", "type": "password", "required": true, "system": true, "min": 8 },
+        { "id": "text2504183744", "name": "tokenKey", "type": "text", "required": true, "system": true, "autogeneratePattern": "[a-zA-Z0-9]{50}" },
+        { "id": "email3885137012", "name": "email", "type": "email", "required": true, "system": true },
+        { "id": "bool1547992806", "name": "emailVisibility", "type": "bool", "system": true },
+        { "id": "bool256245529", "name": "verified", "type": "bool", "system": true },
+        { "id": "text1579384326", "name": "name", "type": "text" },
+        { "id": "select1466534506", "name": "role", "type": "select", "required": true, "values": ["admin", "singer"] },
+        { "id": "autodate2990389176", "name": "created", "type": "autodate", "system": true, "onCreate": true, "onUpdate": false },
+        { "id": "autodate3332085495", "name": "updated", "type": "autodate", "system": true, "onCreate": true, "onUpdate": true }
       ],
+      "createRule": "",
+      "updateRule": "id = @request.auth.id",
+      "deleteRule": "id = @request.auth.id",
+      "viewRule": "id = @request.auth.id",
+      "listRule": "id = @request.auth.id",
       "passwordAuth": { "enabled": true }
     },
     {
+      "id": "pbc_3414089001",
       "name": "profiles",
       "type": "base",
-      "id": "profiles_coll",
       "fields": [
-        { "name": "id", "id": "p_id", "type": "text", "primaryKey": true, "required": true, "system": true },
-        { "name": "user", "id": "p_ur", "type": "relation", "required": true, "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 },
-        { "name": "name", "id": "p_nm", "type": "text", "required": true },
-        { "name": "phone", "id": "p_ph", "type": "text" },
-        { "name": "voicePart", "id": "p_vp", "type": "select", "values": ["S1", "S2", "A1", "A2", "T1", "T2", "B1", "B2"] },
-        { "name": "globalStatus", "id": "p_gs", "type": "select", "required": true, "values": ["Active (Current)", "Active (Future)", "Inactive"] },
-        { "name": "notes", "id": "p_nt", "type": "text" },
-        { "name": "created", "id": "p_cr", "type": "autodate", "system": true, "onCreate": true, "onUpdate": false },
-        { "name": "updated", "id": "p_up", "type": "autodate", "system": true, "onCreate": true, "onUpdate": true }
+        { "id": "text3208210256", "name": "id", "type": "text", "primaryKey": true, "required": true, "system": true, "autogeneratePattern": "[a-z0-9]{15}" },
+        { "id": "relation2375276105", "name": "user", "type": "relation", "required": false, "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 },
+        { "id": "text1579384326", "name": "name", "type": "text", "required": true },
+        { "id": "text1146066909", "name": "phone", "type": "text" },
+        { "id": "select1704890621", "name": "voicePart", "type": "select", "values": ["S1", "S2", "A1", "A2", "T1", "T2", "B1", "B2"] },
+        { "id": "select2995910389", "name": "globalStatus", "type": "select", "required": true, "values": ["Active (Current)", "Active (Future)", "Inactive"] },
+        { "id": "text18589324", "name": "notes", "type": "text" }
       ],
-      "listRule": "@request.auth.role = 'admin' || @request.auth.id = user",
-      "viewRule": "@request.auth.role = 'admin' || @request.auth.id = user",
-      "createRule": "@request.auth.role = 'admin'",
-      "updateRule": "@request.auth.role = 'admin' || @request.auth.id = user",
-      "deleteRule": "@request.auth.role = 'admin'"
+      "listRule": "@request.auth.id != ''",
+      "viewRule": "@request.auth.id != ''",
+      "createRule": "@request.auth.id != ''",
+      "updateRule": "@request.auth.id != ''",
+      "deleteRule": "@request.auth.id != ''"
     },
     {
+      "id": "pbc_1687431684",
       "name": "events",
       "type": "base",
-      "id": "events_coll",
       "fields": [
-        { "name": "id", "id": "e_id", "type": "text", "primaryKey": true, "required": true, "system": true },
-        { "name": "date", "id": "e_dt", "type": "date", "required": true },
-        { "name": "location", "id": "e_lc", "type": "text", "required": true },
-        { "name": "type", "id": "e_tp", "type": "select", "required": true, "values": ["Performance", "Rehearsal"] },
-        { "name": "details", "id": "e_dl", "type": "text" },
-        { "name": "parentPerformanceId", "id": "e_pp", "type": "relation", "collectionId": "events_coll", "cascadeDelete": false, "maxSelect": 1 },
-        { "name": "created", "id": "e_cr", "type": "autodate", "system": true, "onCreate": true, "onUpdate": false },
-        { "name": "updated", "id": "e_up", "type": "autodate", "system": true, "onCreate": true, "onUpdate": true }
+        { "id": "text3208210256", "name": "id", "type": "text", "primaryKey": true, "required": true, "system": true, "autogeneratePattern": "[a-z0-9]{15}" },
+        { "id": "text1579384327", "name": "title", "type": "text" },
+        { "id": "date2862495610", "name": "date", "type": "date", "required": true },
+        { "id": "text1587448267", "name": "location", "type": "text", "required": true },
+        { "id": "select2363381545", "name": "type", "type": "select", "required": true, "values": ["Performance", "Rehearsal"] },
+        { "id": "text1915095946", "name": "details", "type": "text" },
+        { "id": "relation2818714156", "name": "parentPerformanceId", "type": "relation", "collectionId": "pbc_1687431684", "cascadeDelete": false, "maxSelect": 1 }
       ],
       "listRule": "@request.auth.id != ''",
       "viewRule": "@request.auth.id != ''",
-      "createRule": "@request.auth.role = 'admin'",
-      "updateRule": "@request.auth.role = 'admin'",
-      "deleteRule": "@request.auth.role = 'admin'"
+      "createRule": "@request.auth.id != ''",
+      "updateRule": "@request.auth.id != ''",
+      "deleteRule": "@request.auth.id != ''"
     },
     {
+      "id": "pbc_2357252437",
       "name": "eventRosters",
       "type": "base",
-      "id": "eventRosters_coll",
       "fields": [
-        { "name": "id", "id": "er_id", "type": "text", "primaryKey": true, "required": true, "system": true },
-        { "name": "profile", "id": "er_pr", "type": "relation", "required": true, "collectionId": "profiles_coll", "cascadeDelete": true, "maxSelect": 1 },
-        { "name": "event", "id": "er_ev", "type": "relation", "required": true, "collectionId": "events_coll", "cascadeDelete": true, "maxSelect": 1 },
-        { "name": "rsvp", "id": "er_rs", "type": "select", "required": true, "values": ["Yes", "No", "Pending"] },
-        { "name": "attendance", "id": "er_at", "type": "select", "required": true, "values": ["Present", "Absent", "Pending"] },
-        { "name": "seatId", "id": "er_si", "type": "text" },
-        { "name": "created", "id": "er_cr", "type": "autodate", "system": true, "onCreate": true, "onUpdate": false },
-        { "name": "updated", "id": "er_up", "type": "autodate", "system": true, "onCreate": true, "onUpdate": true }
+        { "id": "text3208210256", "name": "id", "type": "text", "primaryKey": true, "required": true, "system": true, "autogeneratePattern": "[a-z0-9]{15}" },
+        { "id": "relation2170006031", "name": "profile", "type": "relation", "required": true, "collectionId": "pbc_3414089001", "cascadeDelete": true, "maxSelect": 1 },
+        { "id": "relation1001261735", "name": "event", "type": "relation", "required": true, "collectionId": "pbc_1687431684", "cascadeDelete": true, "maxSelect": 1 },
+        { "id": "select2678443598", "name": "rsvp", "type": "select", "required": true, "values": ["Yes", "No", "Pending"] },
+        { "id": "select1843596689", "name": "attendance", "type": "select", "required": true, "values": ["Present", "Absent", "Pending"] },
+        { "id": "text3600819990", "name": "seatId", "type": "text" }
       ],
       "listRule": "@request.auth.id != ''",
       "viewRule": "@request.auth.id != ''",
-      "createRule": "@request.auth.role = 'admin'",
-      "updateRule": "@request.auth.role = 'admin' || @request.auth.id = profile.user",
-      "deleteRule": "@request.auth.role = 'admin'"
+      "createRule": "@request.auth.id != ''",
+      "updateRule": "@request.auth.id != ''",
+      "deleteRule": "@request.auth.id != ''"
     }
   ];
 

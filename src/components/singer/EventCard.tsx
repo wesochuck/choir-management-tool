@@ -38,6 +38,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', o
       </div>
 
       <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>{new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</h3>
+      {event.title && <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#2d3748', margin: '8px 0' }}>{event.title}</div>}
       <div style={{ color: '#4a5568', fontWeight: '500', marginBottom: '4px' }}>{event.location}</div>
       {event.details && <div style={{ fontSize: '14px', color: '#718096', marginBottom: '16px' }}>{event.details}</div>}
 

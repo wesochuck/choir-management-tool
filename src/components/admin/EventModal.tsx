@@ -12,6 +12,7 @@ interface EventModalProps {
 
 export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData, performances }) => {
   const [formData, setFormData] = useState<Partial<Event>>({
+    title: '',
     date: new Date().toISOString().slice(0, 16),
     location: '',
     type: 'Rehearsal',
@@ -27,6 +28,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       setFormData({ ...initialData, date: formattedDate });
     } else {
       setFormData({
+        title: '',
         date: new Date().toISOString().slice(0, 16),
         location: '',
         type: 'Rehearsal',
@@ -60,6 +62,16 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
         <h2>{initialData ? 'Edit Event' : 'Schedule Event'}</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px' }}>Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
+            <input 
+              value={formData.title} 
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+              placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+            />
+          </div>
+
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', marginBottom: '4px' }}>Type</label>
@@ -105,7 +117,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
               >
                 <option value="">None</option>
                 {performances.filter(p => p.id !== initialData?.id).map(p => (
-                  <option key={p.id} value={p.id}>{new Date(p.date).toLocaleDateString()} - {p.location}</option>
+                  <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.location}</option>
                 ))}
               </select>
             </div>
@@ -136,7 +148,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
               disabled={isSubmitting}
               style={{ padding: '8px 16px', borderRadius: '4px', backgroundColor: '#3182ce', color: 'white', border: 'none' }}
             >
-              {isSubmitting ? 'Save Event' : 'Save Event'}
+              {isSubmitting ? 'Saving...' : 'Save Event'}
             </button>
           </div>
         </form>

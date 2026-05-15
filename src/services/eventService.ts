@@ -2,6 +2,7 @@ import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 
 export interface Event extends RecordModel {
+  title: string;
   date: string;
   location: string;
   type: 'Performance' | 'Rehearsal';

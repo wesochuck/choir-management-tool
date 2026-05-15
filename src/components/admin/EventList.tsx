@@ -32,7 +32,8 @@ export const EventList: React.FC<EventListProps> = ({ events, onEdit }) => {
               </span>
               <span style={{ fontWeight: '600' }}>{new Date(e.date).toLocaleDateString()}</span>
             </div>
-            <div style={{ marginTop: '4px', fontSize: '14px', color: '#4a5568' }}>
+            {e.title && <div style={{ marginTop: '8px', fontSize: '18px', fontWeight: 'bold', color: '#2d3748' }}>{e.title}</div>}
+            <div style={{ marginTop: e.title ? '4px' : '8px', fontSize: '14px', color: '#4a5568' }}>
               <strong>{e.location}</strong>
             </div>
             {e.details && <div style={{ fontSize: '12px', color: '#718096', marginTop: '2px' }}>{e.details}</div>}

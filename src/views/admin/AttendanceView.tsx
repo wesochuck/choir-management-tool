@@ -23,14 +23,15 @@ export default function AttendanceView() {
         >
           <option value="">-- Choose an Event --</option>
           {events.map(e => (
-            <option key={e.id} value={e.id}>{new Date(e.date).toLocaleDateString()} - {e.location} ({e.type})</option>
+            <option key={e.id} value={e.id}>{new Date(e.date).toLocaleDateString()} - {e.title || e.location} ({e.type})</option>
           ))}
         </select>
       </div>
 
       {selectedEvent && (
         <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>{selectedEvent.type} at {selectedEvent.location}</h2>
+          {selectedEvent.title && <h1 style={{ fontSize: '24px', marginBottom: '4px' }}>{selectedEvent.title}</h1>}
+          <h2 style={{ fontSize: '18px', color: '#4a5568', marginBottom: '4px' }}>{selectedEvent.type} at {selectedEvent.location}</h2>
           <p style={{ color: '#718096' }}>{new Date(selectedEvent.date).toLocaleString()}</p>
         </div>
       )}
