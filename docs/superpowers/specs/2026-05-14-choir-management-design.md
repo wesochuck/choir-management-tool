@@ -42,6 +42,7 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
     *   A grid-based interface.
     *   **Creation/Editing (Desktop Optimized):** Automatically calculates suggested row sizes based on the total number of RSVP'd "Yes" singers and a user-defined seats-per-row capacity. Admins manually assign singers to grid slots. This complex drag/assign interface is optimized for desktop/tablets.
     *   **Viewing (Mobile Responsive):** The generated seating chart is rendered in a read-only, mobile-friendly format so singers and directors can view it easily on their phones on the day of the performance.
+    *   **Printing:** The chart view includes a print stylesheet (or PDF export) designed to format perfectly onto standard 8.5" x 11" letter paper for physical distribution at the venue.
 *   **Communications:**
     *   Send email reminders for events and auditions.
     *   Architecture designed to easily accommodate Twilio SMS integration in the future.
