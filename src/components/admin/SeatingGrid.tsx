@@ -114,6 +114,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
       <style>{`
         @media print {
+            @page { size: landscape; }
             body * { visibility: hidden; }
             .print-only, .print-only * { visibility: visible; }
             .print-only { 
