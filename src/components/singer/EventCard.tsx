@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
 
@@ -83,6 +84,26 @@ export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', o
           {rsvp === 'No' ? '✗ Declining' : 'Decline'}
         </button>
       </div>
+
+      {event.type === 'Performance' && (
+        <Link 
+          to={`/seating/${event.id}`}
+          style={{ 
+            display: 'block',
+            marginTop: '12px',
+            textAlign: 'center',
+            padding: '12px',
+            backgroundColor: '#edf2f7',
+            borderRadius: '8px',
+            color: '#2d3748',
+            textDecoration: 'none',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}
+        >
+          🪑 Find My Seat
+        </Link>
+      )}
     </div>
   );
 };
