@@ -17,6 +17,13 @@ export const profileService = {
     });
   },
 
+  async getActiveProfiles() {
+    return await pb.collection('profiles').getFullList<Profile>({
+      filter: 'globalStatus ~ "Active"',
+      sort: 'name',
+    });
+  },
+
   async getMyProfile() {
     return await pb.collection('profiles').getFirstListItem<Profile>(
       `user = "${pb.authStore.model?.id}"`

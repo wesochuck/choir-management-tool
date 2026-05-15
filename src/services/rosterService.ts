@@ -48,5 +48,24 @@ export const rosterService = {
   
   async updateAttendance(rosterId: string, attendance: 'Present' | 'Absent' | 'Pending') {
     return await pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance });
+  },
+
+  async upsertAttendance(eventId: string, profileId: string, attendance: 'Present' | 'Absent' | 'Pending') {
+    try {
+      const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
+        `event = "${eventId}" && profile = "${profileId}"`
+      );
+      return await pb.collection('eventRosters').update<EventRoster>(existing.id, { attendance });
+    } catch (err: any) {
+      if (err.status === 404) {
+        return await pb.collection('eventRosters').create<EventRoster>({
+          event: eventId,
+          profile: profileId,
+          rsvp: 'Pending',
+          attendance,
+        });
+      }
+      throw err;
+    }
   }
 };
