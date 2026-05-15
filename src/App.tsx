@@ -1,50 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { pb } from './lib/pocketbase';
 import LoginView from './views/LoginView';
 import RosterView from './views/admin/RosterView';
 import EventsView from './views/admin/EventsView';
-
-function Dashboard() {
-  const { user } = useAuth();
-  // Superusers don't have a 'role' field in the record, but we treat them as 'admin'
-  const displayRole = user?.role || (user?.collectionName === '_superusers' ? 'admin' : 'unknown');
-  const isAdmin = displayRole === 'admin';
-  
-  const handleLogout = () => {
-    pb.authStore.clear();
-  };
-
-  return (
-    <div style={{ padding: '20px' }}>
-      <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <Link to="/" style={{ fontWeight: 'bold' }}>Dashboard</Link>
-        {isAdmin && (
-          <>
-            <Link to="/admin/roster">Manage Roster</Link>
-            <Link to="/admin/events">Manage Events</Link>
-          </>
-        )}
-        <button 
-          onClick={handleLogout}
-          style={{ marginLeft: 'auto', padding: '6px 12px', cursor: 'pointer' }}
-        >
-          Logout
-        </button>
-      </nav>
-      <h1>Dashboard</h1>
-      <p>Welcome, {user?.email} (Role: {displayRole})!</p>
-      <div style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3>Upcoming Tasks</h3>
-        <ul>
-          <li>Create Events</li>
-          <li>Set Seating Charts</li>
-          <li>Take Attendance</li>
-        </ul>
-      </div>
-    </div>
-  );
-}
+import AdminDashboardView from './views/admin/AdminDashboardView';
+import SingerDashboardView from './views/singer/DashboardView';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
@@ -65,6 +25,17 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   return <>{children}</>;
 }
 
+function MainDashboard() {
+  const { user } = useAuth();
+  const role = user?.role || (user?.collectionName === '_superusers' ? 'admin' : 'singer');
+
+  if (role === 'admin') {
+    return <AdminDashboardView />;
+  }
+
+  return <SingerDashboardView />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -74,7 +45,7 @@ export default function App() {
           path="/" 
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <MainDashboard />
             </ProtectedRoute>
           } 
         />

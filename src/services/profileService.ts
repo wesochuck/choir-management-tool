@@ -17,6 +17,12 @@ export const profileService = {
     });
   },
 
+  async getMyProfile() {
+    return await pb.collection('profiles').getFirstListItem<Profile>(
+      `user = "${pb.authStore.model?.id}"`
+    );
+  },
+
   async createProfile(data: Partial<Profile>) {
     return await pb.collection('profiles').create<Profile>(data);
   },
