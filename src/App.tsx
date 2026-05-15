@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext';
 import { pb } from './lib/pocketbase';
 import LoginView from './views/LoginView';
 import RosterView from './views/admin/RosterView';
+import EventsView from './views/admin/EventsView';
 
 function Dashboard() {
   const { user } = useAuth();
@@ -18,7 +19,12 @@ function Dashboard() {
     <div style={{ padding: '20px' }}>
       <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center' }}>
         <Link to="/" style={{ fontWeight: 'bold' }}>Dashboard</Link>
-        {isAdmin && <Link to="/admin/roster">Manage Roster</Link>}
+        {isAdmin && (
+          <>
+            <Link to="/admin/roster">Manage Roster</Link>
+            <Link to="/admin/events">Manage Events</Link>
+          </>
+        )}
         <button 
           onClick={handleLogout}
           style={{ marginLeft: 'auto', padding: '6px 12px', cursor: 'pointer' }}
@@ -81,6 +87,19 @@ export default function App() {
                    <Link to="/">← Back to Dashboard</Link>
                 </header>
                 <RosterView />
+              </div>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/events" 
+          element={
+            <ProtectedRoute adminOnly>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <header style={{ padding: '10px 24px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '20px' }}>
+                   <Link to="/">← Back to Dashboard</Link>
+                </header>
+                <EventsView />
               </div>
             </ProtectedRoute>
           } 
