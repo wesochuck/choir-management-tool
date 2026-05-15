@@ -36,11 +36,11 @@ migrate((app) => {
         { "id": "select2995910389", "name": "globalStatus", "type": "select", "required": true, "values": ["Active (Current)", "Active (Future)", "Inactive"] },
         { "id": "text18589324", "name": "notes", "type": "text" }
       ],
-      "listRule": "@request.auth.id != ''",
-      "viewRule": "@request.auth.id != ''",
-      "createRule": "@request.auth.id != ''",
-      "updateRule": "@request.auth.id != ''",
-      "deleteRule": "@request.auth.id != ''"
+      "listRule": "@request.auth.id != \"\"",
+      "viewRule": "@request.auth.id != \"\"",
+      "createRule": "@request.auth.id != \"\"",
+      "updateRule": "@request.auth.id != \"\"",
+      "deleteRule": "@request.auth.id != \"\""
     },
     {
       "id": "pbc_1687431684",
@@ -55,11 +55,11 @@ migrate((app) => {
         { "id": "text1915095946", "name": "details", "type": "text" },
         { "id": "relation2818714156", "name": "parentPerformanceId", "type": "relation", "collectionId": "pbc_1687431684", "cascadeDelete": false, "maxSelect": 1 }
       ],
-      "listRule": "@request.auth.id != ''",
-      "viewRule": "@request.auth.id != ''",
-      "createRule": "@request.auth.id != ''",
-      "updateRule": "@request.auth.id != ''",
-      "deleteRule": "@request.auth.id != ''"
+      "listRule": "@request.auth.id != \"\"",
+      "viewRule": "@request.auth.id != \"\"",
+      "createRule": "@request.auth.id != \"\"",
+      "updateRule": "@request.auth.id != \"\"",
+      "deleteRule": "@request.auth.id != \"\""
     },
     {
       "id": "pbc_2357252437",
@@ -73,11 +73,11 @@ migrate((app) => {
         { "id": "select1843596689", "name": "attendance", "type": "select", "required": true, "values": ["Present", "Absent", "Pending"] },
         { "id": "text3600819990", "name": "seatId", "type": "text" }
       ],
-      "listRule": "@request.auth.id != ''",
-      "viewRule": "@request.auth.id != ''",
-      "createRule": "@request.auth.id != ''",
-      "updateRule": "@request.auth.id != ''",
-      "deleteRule": "@request.auth.id != ''"
+      "listRule": "@request.auth.id != \"\"",
+      "viewRule": "@request.auth.id != \"\"",
+      "createRule": "@request.auth.id != \"\"",
+      "updateRule": "@request.auth.id != \"\"",
+      "deleteRule": "@request.auth.id != \"\""
     }
   ];
 

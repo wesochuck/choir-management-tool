@@ -19,7 +19,7 @@ export const profileService = {
 
   async getActiveProfiles() {
     return await pb.collection('profiles').getFullList<Profile>({
-      filter: 'globalStatus ~ "Active"',
+      filter: 'globalStatus != "Inactive"',
       sort: 'name',
     });
   },

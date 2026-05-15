@@ -6,7 +6,7 @@ import { CheckInList } from '../../components/admin/CheckInList';
 export default function AttendanceView() {
   const { events } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState('');
-  const { items, isLoading, error, toggleAttendance } = useAttendance(selectedEventId);
+  const { items, isLoading, error, toggleAttendance, updateFolder } = useAttendance(selectedEventId);
 
   const selectedEvent = events.find(e => e.id === selectedEventId);
 
@@ -51,7 +51,7 @@ export default function AttendanceView() {
       ) : error ? (
         <div style={{ padding: '20px', color: 'red' }}>{error}</div>
       ) : selectedEventId ? (
-        <CheckInList items={items} onToggle={toggleAttendance} />
+        <CheckInList items={items} onToggle={toggleAttendance} onUpdateFolder={updateFolder} />
       ) : (
         <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'white', borderRadius: '12px', color: '#718096' }}>
           Please select an event above to start check-in.

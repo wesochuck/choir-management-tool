@@ -7,6 +7,8 @@ export interface EventRoster extends RecordModel {
   rsvp: 'Yes' | 'No' | 'Pending';
   attendance: 'Present' | 'Absent' | 'Pending';
   seatId: string;
+  folderNumber: string;
+  folderReturned: boolean;
 }
 
 export const rosterService = {
@@ -33,6 +35,7 @@ export const rosterService = {
           profile: profileId,
           rsvp,
           attendance: 'Pending',
+          folderReturned: false,
         });
       }
       throw err;
@@ -63,9 +66,14 @@ export const rosterService = {
           profile: profileId,
           rsvp: 'Pending',
           attendance,
+          folderReturned: false,
         });
       }
       throw err;
     }
+  },
+
+  async updateFolder(rosterId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
+    return await pb.collection('eventRosters').update<EventRoster>(rosterId, data);
   }
 };
