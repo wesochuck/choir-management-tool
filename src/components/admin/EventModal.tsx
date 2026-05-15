@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Event } from '../../services/eventService';
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<Event>) => Promise<void>;
+  onSave: (data: Partial<Event>, bulkConfig?: any) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   initialData?: Event | null;
   performances: Event[];
@@ -19,13 +19,21 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
     details: '',
     parentPerformanceId: '',
   });
+
+  // Bulk Rehearsal Config
+  const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
+  const [bulkCount, setBulkCount] = useState(8);
+  const [bulkDay, setBulkDay] = useState(2); // Tuesday
+  const [bulkTime, setBulkTime] = useState('19:00');
+  const [bulkLocation, setBulkLocation] = useState('');
+
   const [isSubmitting, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      // PocketBase dates are strings, but datetime-local needs YYYY-MM-DDTHH:mm
       const formattedDate = new Date(initialData.date).toISOString().slice(0, 16);
       setFormData({ ...initialData, date: formattedDate });
+      setShouldBulkAdd(false);
     } else {
       setFormData({
         title: '',
@@ -35,8 +43,34 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
         details: '',
         parentPerformanceId: '',
       });
+      setBulkLocation('');
+      setShouldBulkAdd(false);
     }
   }, [initialData, isOpen]);
+
+  // Sync bulk location with event location if not touched
+  useEffect(() => {
+    if (!bulkLocation) {
+        setBulkLocation(formData.location || '');
+    }
+  }, [formData.location]);
+
+  const startDate = useMemo(() => {
+    if (!formData.date) return null;
+    let current = new Date(formData.date);
+    current.setHours(parseInt(bulkTime.split(':')[0]), parseInt(bulkTime.split(':')[1]), 0, 0);
+
+    if (current.getDay() === bulkDay) {
+       current.setDate(current.getDate() - 7);
+    } else {
+      while (current.getDay() !== bulkDay) {
+        current.setDate(current.getDate() - 1);
+      }
+    }
+    // Move back the remaining weeks
+    current.setDate(current.getDate() - (7 * (bulkCount - 1)));
+    return current;
+  }, [formData.date, bulkCount, bulkDay, bulkTime]);
 
   if (!isOpen) return null;
 
@@ -44,7 +78,11 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onSave(formData);
+      const bulkConfig = shouldBulkAdd && formData.type === 'Performance' 
+        ? { count: bulkCount, dayOfWeek: bulkDay, time: bulkTime, location: bulkLocation }
+        : undefined;
+
+      await onSave(formData, bulkConfig);
       onClose();
     } catch (err) {
       alert('Error saving event');
@@ -59,11 +97,16 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 1000
     }}>
-      <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
+      <div style={{ 
+          backgroundColor: 'white', padding: '24px', borderRadius: '8px', 
+          width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' 
+      }}>
         <h2>{initialData ? 'Edit Event' : 'Schedule Event'}</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '4px' }}>Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+                Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}
+            </label>
             <input 
               value={formData.title} 
               onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
@@ -74,7 +117,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
 
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px' }}>Type</label>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Type</label>
               <select 
                 value={formData.type} 
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as any, parentPerformanceId: e.target.value === 'Performance' ? '' : formData.parentPerformanceId })}
@@ -85,7 +128,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px' }}>Date & Time</label>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Date & Time</label>
               <input 
                 type="datetime-local"
                 value={formData.date} 
@@ -97,7 +140,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '4px' }}>Location</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Location</label>
             <input 
               value={formData.location} 
               onChange={(e) => setFormData({ ...formData, location: e.target.value })} 
@@ -107,9 +150,68 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
             />
           </div>
 
+          {formData.type === 'Performance' && !initialData && (
+              <div style={{ backgroundColor: '#f7fafc', padding: '16px', borderRadius: '8px', border: '1px dashed #cbd5e0' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={shouldBulkAdd} 
+                        onChange={(e) => setShouldBulkAdd(e.target.checked)}
+                        style={{ width: '18px', height: '18px' }}
+                      />
+                      Auto-generate weekly rehearsals?
+                  </label>
+
+                  {shouldBulkAdd && (
+                      <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                              <div style={{ flex: 1 }}>
+                                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '2px' }}>Count</label>
+                                  <input 
+                                    type="number" min="1" max="20"
+                                    value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
+                                    style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+                                  />
+                              </div>
+                              <div style={{ flex: 2 }}>
+                                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '2px' }}>Day</label>
+                                  <select 
+                                    value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
+                                    style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+                                  >
+                                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                                          <option key={d} value={i}>{d}</option>
+                                      ))}
+                                  </select>
+                              </div>
+                              <div style={{ flex: 2 }}>
+                                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '2px' }}>Time</label>
+                                  <input 
+                                    type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
+                                    style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+                                  />
+                              </div>
+                          </div>
+                          <div>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '2px' }}>Rehearsal Location</label>
+                              <input 
+                                value={bulkLocation} onChange={(e) => setBulkLocation(e.target.value)}
+                                style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+                              />
+                          </div>
+                          {startDate && (
+                              <div style={{ fontSize: '12px', color: '#2c5282', backgroundColor: '#ebf8ff', padding: '8px', borderRadius: '4px' }}>
+                                  📅 First rehearsal will be on <strong>{startDate.toLocaleDateString()}</strong>
+                              </div>
+                          )}
+                      </div>
+                  )}
+              </div>
+          )}
+
           {formData.type === 'Rehearsal' && (
             <div>
-              <label style={{ display: 'block', marginBottom: '4px' }}>Linked Performance (Parent)</label>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Linked Performance (Parent)</label>
               <select 
                 value={formData.parentPerformanceId} 
                 onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
@@ -124,7 +226,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
           )}
 
           <div>
-            <label style={{ display: 'block', marginBottom: '4px' }}>Details/Notes</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Details/Notes</label>
             <textarea 
               value={formData.details} 
               onChange={(e) => setFormData({ ...formData, details: e.target.value })} 

@@ -26,11 +26,14 @@ export default function EventsView() {
     setIsBulkModalOpen(true);
   };
 
-  const handleSave = async (data: Partial<Event>) => {
+  const handleSave = async (data: Partial<Event>, bulkConfig?: any) => {
     if (editingEvent) {
       await editEvent(editingEvent.id, data);
     } else {
-      await addEvent(data);
+      const newEvent = await addEvent(data);
+      if (bulkConfig && newEvent) {
+        await bulkAddRehearsals(newEvent, bulkConfig);
+      }
     }
   };
 

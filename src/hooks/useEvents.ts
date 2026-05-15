@@ -25,8 +25,9 @@ export const useEvents = () => {
 
   const addEvent = async (data: Partial<Event>) => {
     try {
-      await eventService.createEvent(data);
+      const record = await eventService.createEvent(data);
       await fetchEvents();
+      return record;
     } catch (err: any) {
       throw new Error(err.message || 'Failed to add event');
     }
