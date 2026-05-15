@@ -54,16 +54,18 @@ export default function AdminDashboardView() {
           <strong>Manage Events</strong>
         </Link>
 
-        <div style={{ 
+        <Link to="/admin/attendance" style={{ 
           padding: '24px', 
-          backgroundColor: '#edf2f7', 
+          backgroundColor: 'white', 
           borderRadius: '12px', 
-          color: '#718096',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+          textDecoration: 'none',
+          color: '#2d3748',
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>📊</div>
-          <strong>Attendance (TBD)</strong>
-        </div>
+          <strong>Take Attendance</strong>
+        </Link>
       </div>
     </div>
   );
