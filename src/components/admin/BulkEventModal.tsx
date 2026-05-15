@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Event } from '../../services/eventService';
 
 interface BulkEventModalProps {
@@ -14,7 +14,28 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
   const [count, setCount] = useState(8);
   const [dayOfWeek, setDayOfWeek] = useState(2); // Tuesday default
   const [time, setTime] = useState('19:00');
+  const [location, setLocation] = useState('');
   const [isSubmitting, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialPerformance) {
+        setSelectedPerformanceId(initialPerformance.id);
+        setLocation(initialPerformance.location || '');
+      } else {
+        setSelectedPerformanceId('');
+        setLocation('');
+      }
+    }
+  }, [isOpen, initialPerformance]);
+
+  const handlePerformanceChange = (id: string) => {
+    setSelectedPerformanceId(id);
+    const p = performances.find(perf => perf.id === id);
+    if (p) {
+      setLocation(p.location || '');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -25,7 +46,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
 
     setIsLoading(true);
     try {
-      await onSave(performance, { count, dayOfWeek, time });
+      await onSave(performance, { count, dayOfWeek, time, location });
       onClose();
     } catch (err) {
       alert("Error generating rehearsals");
@@ -51,7 +72,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
             <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Target Performance</label>
             <select 
               value={selectedPerformanceId} 
-              onChange={(e) => setSelectedPerformanceId(e.target.value)}
+              onChange={(e) => handlePerformanceChange(e.target.value)}
               required
               style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
             >
@@ -60,6 +81,17 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
                 <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} ({p.location})</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Rehearsal Location</label>
+            <input 
+              value={location} 
+              onChange={(e) => setLocation(e.target.value)} 
+              required
+              placeholder="e.g. Rehearsal Hall"
+              style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>

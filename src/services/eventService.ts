@@ -39,8 +39,8 @@ export const eventService = {
     return await pb.collection('events').delete(id);
   },
 
-  async bulkCreateRehearsals(parentPerformance: Event, config: { count: number, dayOfWeek: number, time: string }) {
-    const { count, dayOfWeek, time } = config;
+  async bulkCreateRehearsals(parentPerformance: Event, config: { count: number, dayOfWeek: number, time: string, location: string }) {
+    const { count, dayOfWeek, time, location } = config;
     const performanceDate = new Date(parentPerformance.date);
     const rehearsals = [];
 
@@ -62,7 +62,7 @@ export const eventService = {
       rehearsals.push({
         title: `Rehearsal ${count - i}`,
         date: current.toISOString(),
-        location: parentPerformance.location,
+        location: location || parentPerformance.location,
         type: 'Rehearsal',
         parentPerformanceId: parentPerformance.id,
         details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`
