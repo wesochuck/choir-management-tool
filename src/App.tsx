@@ -5,6 +5,8 @@ import LoginView from './views/LoginView';
 
 function Dashboard() {
   const { user } = useAuth();
+  // Superusers don't have a 'role' field in the record, but we treat them as 'admin'
+  const displayRole = user?.role || (user?.collectionName === '_superusers' ? 'admin' : 'unknown');
   
   const handleLogout = () => {
     pb.authStore.clear();
@@ -13,7 +15,7 @@ function Dashboard() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Dashboard</h1>
-      <p>Welcome, {user?.email}!</p>
+      <p>Welcome, {user?.email} (Role: {displayRole})!</p>
       <button 
         onClick={handleLogout}
         style={{ padding: '8px 16px', cursor: 'pointer' }}

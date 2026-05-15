@@ -15,10 +15,17 @@ export default function LoginView() {
     setIsLoading(true);
 
     try {
+      // First try regular user login
       await pb.collection('users').authWithPassword(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      try {
+        // If regular user fails, try superuser login
+        await pb.collection('_superusers').authWithPassword(email, password);
+        navigate('/');
+      } catch (superErr: any) {
+        setError(err.message || 'Failed to login');
+      }
     } finally {
       setIsLoading(false);
     }
