@@ -34,7 +34,14 @@ export const EventList: React.FC<EventListProps> = ({ events, onEdit }) => {
             </div>
             {e.title && <div style={{ marginTop: '8px', fontSize: '18px', fontWeight: 'bold', color: '#2d3748' }}>{e.title}</div>}
             <div style={{ marginTop: e.title ? '4px' : '8px', fontSize: '14px', color: '#4a5568' }}>
-              <strong>{e.location}</strong>
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#3182ce', textDecoration: 'none' }}
+              >
+                <strong>📍 {e.location}</strong>
+              </a>
             </div>
             {e.details && <div style={{ fontSize: '12px', color: '#718096', marginTop: '2px' }}>{e.details}</div>}
           </div>

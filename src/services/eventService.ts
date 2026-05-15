@@ -19,11 +19,20 @@ export const eventService = {
   },
 
   async createEvent(data: Partial<Event>) {
-    return await pb.collection('events').create<Event>(data);
+    // Ensure date is in a format PocketBase likes (ISO string)
+    const payload = { ...data };
+    if (payload.date) {
+      payload.date = new Date(payload.date).toISOString();
+    }
+    return await pb.collection('events').create<Event>(payload);
   },
 
   async updateEvent(id: string, data: Partial<Event>) {
-    return await pb.collection('events').update<Event>(id, data);
+    const payload = { ...data };
+    if (payload.date) {
+      payload.date = new Date(payload.date).toISOString();
+    }
+    return await pb.collection('events').update<Event>(id, payload);
   },
 
   async deleteEvent(id: string) {

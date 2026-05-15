@@ -31,7 +31,17 @@ export default function AttendanceView() {
       {selectedEvent && (
         <div style={{ marginBottom: '20px' }}>
           {selectedEvent.title && <h1 style={{ fontSize: '24px', marginBottom: '4px' }}>{selectedEvent.title}</h1>}
-          <h2 style={{ fontSize: '18px', color: '#4a5568', marginBottom: '4px' }}>{selectedEvent.type} at {selectedEvent.location}</h2>
+          <h2 style={{ fontSize: '18px', color: '#4a5568', marginBottom: '4px' }}>
+            {selectedEvent.type} at {' '}
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location)}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ color: '#3182ce', textDecoration: 'none' }}
+            >
+              📍 {selectedEvent.location}
+            </a>
+          </h2>
           <p style={{ color: '#718096' }}>{new Date(selectedEvent.date).toLocaleString()}</p>
         </div>
       )}

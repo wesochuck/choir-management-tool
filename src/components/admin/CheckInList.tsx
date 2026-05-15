@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { EventRoster } from '../../services/rosterService';
 
 interface CheckInListProps {
@@ -7,9 +7,25 @@ interface CheckInListProps {
 }
 
 export const CheckInList: React.FC<CheckInListProps> = ({ rosters, onToggle }) => {
+  const sortedRosters = useMemo(() => {
+    return [...rosters].sort((a, b) => {
+      // Sort by attendance status: Pending first, Absent second, Present last
+      const order = { 'Pending': 0, 'Absent': 1, 'Present': 2 };
+      const aVal = order[a.attendance] ?? 0;
+      const bVal = order[b.attendance] ?? 0;
+
+      if (aVal !== bVal) return aVal - bVal;
+
+      // Secondary sort: Name (if available in expand)
+      const aName = (a.expand as any)?.profile?.name || '';
+      const bName = (b.expand as any)?.profile?.name || '';
+      return aName.localeCompare(bName);
+    });
+  }, [rosters]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {rosters.map((r) => {
+      {sortedRosters.map((r) => {
         const profile = (r.expand as any)?.profile;
         const isPresent = r.attendance === 'Present';
         const isAbsent = r.attendance === 'Absent';
