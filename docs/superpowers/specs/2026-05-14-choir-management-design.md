@@ -40,8 +40,8 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
     *   Provides a visual warning flag on the Performance roster for any singer who has missed 'n' connected Rehearsals. Final enforcement decisions remain manual for the director.
 *   **Seating Chart (Performances Only):**
     *   A grid-based interface.
-    *   Automatically calculates suggested row sizes based on the total number of RSVP'd "Yes" singers and a user-defined seats-per-row capacity.
-    *   Admins manually assign singers to grid slots.
+    *   **Creation/Editing (Desktop Optimized):** Automatically calculates suggested row sizes based on the total number of RSVP'd "Yes" singers and a user-defined seats-per-row capacity. Admins manually assign singers to grid slots. This complex drag/assign interface is optimized for desktop/tablets.
+    *   **Viewing (Mobile Responsive):** The generated seating chart is rendered in a read-only, mobile-friendly format so singers and directors can view it easily on their phones on the day of the performance.
 *   **Communications:**
     *   Send email reminders for events and auditions.
     *   Architecture designed to easily accommodate Twilio SMS integration in the future.
