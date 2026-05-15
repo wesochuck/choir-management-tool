@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { useAttendance } from '../../hooks/useAttendance';
 import { CheckInList } from '../../components/admin/CheckInList';
@@ -6,6 +6,25 @@ import { CheckInList } from '../../components/admin/CheckInList';
 export default function AttendanceView() {
   const { events } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState('');
+  
+  // Sort events chronologically and determine the default (closest to today)
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [events]);
+
+  useEffect(() => {
+    if (sortedEvents.length > 0 && !selectedEventId) {
+      const today = new Date().getTime();
+      // Find the event with the smallest difference from today
+      const closest = sortedEvents.reduce((prev, curr) => {
+        const prevDiff = Math.abs(new Date(prev.date).getTime() - today);
+        const currDiff = Math.abs(new Date(curr.date).getTime() - today);
+        return currDiff < prevDiff ? curr : prev;
+      });
+      setSelectedEventId(closest.id);
+    }
+  }, [sortedEvents, selectedEventId]);
+
   const { items, isLoading, error, toggleAttendance, updateFolder } = useAttendance(selectedEventId);
 
   const selectedEvent = events.find(e => e.id === selectedEventId);
@@ -22,7 +41,7 @@ export default function AttendanceView() {
           style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e0', fontSize: '16px' }}
         >
           <option value="">-- Choose an Event --</option>
-          {events.map(e => (
+          {sortedEvents.map(e => (
             <option key={e.id} value={e.id}>{new Date(e.date).toLocaleDateString()} - {e.title || e.location} ({e.type})</option>
           ))}
         </select>
