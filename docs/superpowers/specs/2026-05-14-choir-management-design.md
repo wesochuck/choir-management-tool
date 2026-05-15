@@ -18,7 +18,7 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
 2.  **Profiles:** Linked 1:1 with Users.
     *   Fields: `Name`, `Phone`, `Voice Part` (S1, S2, A1, A2, T1, T2, B1, B2), `Global Status` (Active/Inactive), `Notes`.
 3.  **Events:**
-    *   Fields: `Date`, `Location`, `Type` (Performance, Rehearsal), `Details`.
+    *   Fields: `Date`, `Location`, `Type` (Performance, Rehearsal), `Details`, `ParentPerformanceID` (Nullable; used by Rehearsals to link to their main Performance).
 4.  **EventRosters:** Junction collection linking a `Profile` to an `Event`.
     *   Fields: `RSVP` (Yes/No/Pending), `Attendance` (Present/Absent/Pending), `SeatID` (String/Nullable).
 5.  **Auditions:**
@@ -31,13 +31,13 @@ A web-based application to help manage a non-profit choir. The tool facilitates 
     *   View and manage all singers.
     *   Update global status (Active vs. Inactive) and manage private notes.
 *   **Event Management:**
-    *   Create and manage events (Performances and Rehearsals).
+    *   Create and manage events (Performances and Rehearsals). Rehearsals are explicitly linked to a parent Performance.
 *   **Event-Specific Roster:**
     *   Filter the global roster to view only singers who have RSVP'd "Yes" for a specific event.
 *   **Attendance Tracking (All Events):**
     *   A simple, mobile-optimized list view for day-of check-ins.
     *   **Crucial Logic:** The check-in list *only* displays singers who have RSVP'd "Yes" for that specific event.
-    *   Allows admins to track missed rehearsals to enforce performance eligibility.
+    *   Provides a visual warning flag on the Performance roster for any singer who has missed 'n' connected Rehearsals. Final enforcement decisions remain manual for the director.
 *   **Seating Chart (Performances Only):**
     *   A grid-based interface.
     *   Automatically calculates suggested row sizes based on the total number of RSVP'd "Yes" singers and a user-defined seats-per-row capacity.
