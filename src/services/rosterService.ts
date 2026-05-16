@@ -49,7 +49,7 @@ export const rosterService = {
   async getEventRoster(eventId: string) {
     return await pb.collection('eventRosters').getFullList<EventRoster>({
       filter: `event = "${eventId}"`,
-      expand: 'profile',
+      expand: 'profile,profile.user',
     });
   },
   
@@ -79,5 +79,26 @@ export const rosterService = {
 
   async updateFolder(rosterId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
     return await pb.collection('eventRosters').update<EventRoster>(rosterId, data);
+  },
+
+  async upsertFolder(eventId: string, profileId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
+    try {
+      const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
+        `event = "${eventId}" && profile = "${profileId}"`
+      );
+      return await pb.collection('eventRosters').update<EventRoster>(existing.id, data);
+    } catch (err: any) {
+      if (err.status === 404) {
+        return await pb.collection('eventRosters').create<EventRoster>({
+          event: eventId,
+          profile: profileId,
+          rsvp: 'Pending',
+          attendance: 'Pending',
+          folderNumber: data.folderNumber || '',
+          folderReturned: data.folderReturned || false,
+        });
+      }
+      throw err;
+    }
   }
 };

@@ -218,7 +218,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
     try {
       const [existingChart, profiles] = await Promise.all([
-        seatingService.getChartForPerformance(performanceId),
+        seatingService.getChartForPerformance(performanceId, venueId || null),
         profileService.getActiveProfiles(), // Filtered for Active (Current/Future)
       ]);
 
