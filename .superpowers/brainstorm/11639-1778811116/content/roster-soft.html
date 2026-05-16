@@ -1,0 +1,59 @@
+<h2>Roster Management Mockup v4 - Soft Theme</h2>
+<p class="subtitle">Introducing a "Soft" mode to reduce visual strain</p>
+
+<div class="mockup">
+  <div class="mockup-header">Soft Mode (Subtle Gray/Blue)</div>
+  <div class="mockup-body" style="background: #f0f4f8; color: #2d3748; padding: 20px;">
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-size: 11px; font-weight: 700; margin-bottom: 4px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.05em;">Voice Part</label>
+        <select style="background: white; color: #2d3748; border: 1px solid #cbd5e0; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+          <option>All Voice Parts</option>
+          <option>S1</option>
+          <option>S2</option>
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-size: 11px; font-weight: 700; margin-bottom: 4px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.05em;">Status</label>
+        <select style="background: white; color: #2d3748; border: 1px solid #cbd5e0; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+          <option>All Statuses</option>
+          <option>Active (Current)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #edf2f7; border-bottom: 1px solid #e2e8f0; text-align: left;">
+            <th style="padding: 12px 16px; font-size: 12px; font-weight: 700; color: #4a5568;">NAME</th>
+            <th style="padding: 12px 16px; font-size: 12px; font-weight: 700; color: #4a5568;">VOICE</th>
+            <th style="padding: 12px 16px; font-size: 12px; font-weight: 700; color: #4a5568;">STATUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #edf2f7;">
+            <td style="padding: 12px 16px; font-weight: 500;">Jane Doe</td>
+            <td style="padding: 12px 16px;"><strong style="color: #3182ce;">S1</strong></td>
+            <td style="padding: 12px 16px;"><span style="background: #c6f6d5; color: #22543d; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">Active (Current)</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; font-weight: 500;">John Smith</td>
+            <td style="padding: 12px 16px;"><strong style="color: #3182ce;">B2</strong></td>
+            <td style="padding: 12px 16px;"><span style="background: #fed7d7; color: #822727; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">Inactive</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="soft" onclick="toggleSelect(this)">
+    <div class="letter">S</div>
+    <div class="content">
+      <h3>Soft Theme</h3>
+      <p>Uses <code>#f0f4f8</code> background and <code>#edf2f7</code> headers to reduce contrast glare while maintaining legibility.</p>
+    </div>
+  </div>
+</div>

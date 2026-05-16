@@ -8,6 +8,8 @@ interface RosterSummaryProps {
 const VOICE_PARTS = ['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'] as const;
 const SECTIONS = ['S', 'A', 'T', 'B'] as const;
 
+import { AppCard } from '../common/AppCard';
+
 export const RosterSummary: React.FC<RosterSummaryProps> = ({ profiles }) => {
   const { partCounts, sectionCounts } = useMemo(() => {
     const pc: Record<string, number> = {};
@@ -32,48 +34,34 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({ profiles }) => {
   const total = profiles.length;
 
   return (
-    <div style={{ 
-      backgroundColor: 'white', 
-      padding: '20px', 
-      borderRadius: '12px', 
-      boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-      marginBottom: '24px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3 style={{ margin: 0, color: '#2d3748' }}>Voice Part Balance</h3>
-        <span style={{ 
-          backgroundColor: '#3182ce', 
-          color: 'white', 
-          padding: '6px 14px', 
-          borderRadius: '20px', 
-          fontSize: '14px', 
-          fontWeight: 'bold' 
-        }}>
+    <AppCard 
+      title="Voice Part Balance"
+      actions={
+        <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
           Total: {total} Singers
         </span>
-      </div>
-      
+      }
+    >
       {/* Section Subtotals */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '12px',
-        marginBottom: '24px',
-        paddingBottom: '20px',
-        borderBottom: '1px solid #edf2f7'
+        gap: 'var(--space-md)',
+        paddingBottom: 'var(--space-lg)',
+        borderBottom: '1px solid var(--border)'
       }}>
         {SECTIONS.map(sec => (
-          <div key={sec} style={{ 
+          <div key={sec} className="flex-col" style={{ 
             textAlign: 'center', 
-            padding: '12px', 
-            borderRadius: '10px', 
-            backgroundColor: '#ebf8ff',
-            border: '1px solid #bee3f8'
+            padding: 'var(--space-md)', 
+            borderRadius: 'var(--radius-md)', 
+            backgroundColor: 'var(--primary-light)',
+            gap: 'var(--space-xs)'
           }}>
-            <div style={{ fontSize: '14px', color: '#2c5282', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
             </div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2a4365' }}>{sectionCounts[sec]}</div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
           </div>
         ))}
       </div>
@@ -82,21 +70,22 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({ profiles }) => {
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
-        gap: '12px' 
+        gap: 'var(--space-sm)' 
       }}>
         {VOICE_PARTS.map(part => (
-          <div key={part} style={{ 
+          <div key={part} className="flex-col" style={{ 
             textAlign: 'center', 
-            padding: '10px 8px', 
-            borderRadius: '8px', 
-            backgroundColor: '#f7fafc',
-            border: '1px solid #edf2f7'
+            padding: 'var(--space-sm)', 
+            borderRadius: 'var(--radius-sm)', 
+            backgroundColor: 'var(--bg)',
+            border: '1px solid var(--border)',
+            gap: '2px'
           }}>
-            <div style={{ fontSize: '12px', color: '#718096', fontWeight: 'bold', marginBottom: '2px' }}>{part}</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#2d3748' }}>{partCounts[part]}</div>
+            <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{part}</div>
+            <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[part]}</div>
           </div>
         ))}
       </div>
-    </div>
+    </AppCard>
   );
 };

@@ -1,99 +1,41 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { pb } from '../../lib/pocketbase';
+import { PageLayout } from '../../components/common/PageLayout';
 
 export default function AdminDashboardView() {
   const { user } = useAuth();
   const handleLogout = () => pb.authStore.clear();
 
   return (
-    <div style={{ padding: '20px' }}>
-      <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <Link to="/" style={{ fontWeight: 'bold' }}>Dashboard</Link>
-        <Link to="/admin/roster">Manage Roster</Link>
-        <Link to="/admin/events">Manage Events</Link>
-        <Link to="/admin/venues">Manage Venues</Link>
-        <button 
-          onClick={handleLogout}
-          style={{ marginLeft: 'auto', padding: '6px 12px', cursor: 'pointer' }}
-        >
-          Logout
-        </button>
-      </nav>
-      <h1>Admin Dashboard</h1>
-      <p>Welcome, {user?.email}!</p>
-      
+    <PageLayout 
+      title="Choir Admin" 
+      subtitle={`Welcome back, ${user?.email}`}
+      actions={<button onClick={handleLogout} className="btn btn-ghost">Logout</button>}
+    >
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '20px', 
-        marginTop: '24px' 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: 'var(--space-lg)',
+        padding: 'var(--space-xl) 0'
       }}>
-        <Link to="/admin/roster" style={{ 
-          padding: '24px', 
-          backgroundColor: 'white', 
-          borderRadius: '12px', 
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-          textDecoration: 'none',
-          color: '#2d3748',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>👥</div>
-          <strong>Manage Roster</strong>
-        </Link>
-        
-        <Link to="/admin/events" style={{ 
-          padding: '24px', 
-          backgroundColor: 'white', 
-          borderRadius: '12px', 
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-          textDecoration: 'none',
-          color: '#2d3748',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
-          <strong>Manage Events</strong>
-        </Link>
-
-        <Link to="/admin/seating" style={{ 
-          padding: '24px', 
-          backgroundColor: 'white', 
-          borderRadius: '12px', 
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-          textDecoration: 'none',
-          color: '#2d3748',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🪑</div>
-          <strong>Seating Charts</strong>
-        </Link>
-
-        <Link to="/admin/venues" style={{ 
-          padding: '24px', 
-          backgroundColor: 'white', 
-          borderRadius: '12px', 
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-          textDecoration: 'none',
-          color: '#2d3748',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🏛️</div>
-          <strong>Manage Venues</strong>
-        </Link>
-
-        <Link to="/admin/attendance" style={{ 
-          padding: '24px', 
-          backgroundColor: 'white', 
-          borderRadius: '12px', 
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-          textDecoration: 'none',
-          color: '#2d3748',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>📊</div>
-          <strong>Take Attendance</strong>
-        </Link>
+        {[
+          { to: '/admin/roster', icon: '👥', label: 'Manage Roster', desc: 'Add singers and track status' },
+          { to: '/admin/events', icon: '📅', label: 'Manage Events', desc: 'Schedule performances and rehearsals' },
+          { to: '/admin/seating', icon: '🪑', label: 'Seating Charts', desc: 'Design layouts and assign seats' },
+          { to: '/admin/venues', icon: '🏛️', label: 'Manage Venues', desc: 'Configure venue capacities' },
+          { to: '/admin/attendance', icon: '📊', label: 'Take Attendance', desc: 'Track check-ins for events' },
+          { to: '/admin/auditions', icon: '🎵', label: 'Auditions', desc: 'Review public audition requests' },
+          { to: '/admin/communications', icon: '✉️', label: 'Communications', desc: 'Send announcements and review history' },
+          { to: '/admin/settings', icon: '⚙️', label: 'Settings', desc: 'Configure auditions, email, and texts' }
+        ].map((item) => (
+          <Link key={item.to} to={item.to} className="card flex-col" style={{ textDecoration: 'none', alignItems: 'flex-start' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>{item.icon}</div>
+            <h3 style={{ margin: 0 }}>{item.label}</h3>
+            <p className="text-muted" style={{ margin: 0 }}>{item.desc}</p>
+          </Link>
+        ))}
       </div>
-    </div>
+    </PageLayout>
   );
 }

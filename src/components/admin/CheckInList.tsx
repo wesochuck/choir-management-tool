@@ -5,9 +5,12 @@ interface CheckInListProps {
   items: AttendanceItem[];
   onToggle: (profileId: string, current: string) => Promise<void>;
   onUpdateFolder: (profileId: string, folderNumber: string, folderReturned: boolean) => Promise<void>;
+  onEdit: (profileId: string) => void;
 }
 
-export const CheckInList: React.FC<CheckInListProps> = ({ items, onToggle, onUpdateFolder }) => {
+import { AppCard } from '../common/AppCard';
+
+export const CheckInList: React.FC<CheckInListProps> = ({ items, onToggle, onUpdateFolder, onEdit }) => {
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
       const order = { 'Pending': 0, 'Absent': 1, 'Present': 2 };
@@ -19,59 +22,48 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onToggle, onUpd
   }, [items]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
       {sortedItems.map((item) => {
         const isPresent = item.attendance === 'Present';
         const isAbsent = item.attendance === 'Absent';
         
         return (
-          <div key={item.id} style={{ 
-            backgroundColor: 'white', 
-            padding: '16px', 
-            borderRadius: '12px', 
-            display: 'flex', 
-            flexDirection: 'column',
-            gap: '12px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-            opacity: isPresent ? 0.7 : 1,
-            border: item.rsvp === 'Yes' ? '2px solid #e6fffa' : 'none'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '18px' }}>{item.name}</div>
+          <AppCard 
+            key={item.id} 
+            className="flex-col" 
+            style={{ 
+              opacity: isPresent ? 0.7 : 1,
+              border: item.rsvp === 'Yes' ? '2px solid var(--primary-light)' : '1px solid var(--border)'
+            }}
+          >
+            <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: 'var(--space-md)' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1 }}>
+                <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                  <div className="text-headline" style={{ fontSize: '1.25rem' }}>{item.name}</div>
                   {item.rsvp === 'Yes' && (
-                    <span style={{ fontSize: '10px', backgroundColor: '#38a169', color: 'white', padding: '1px 6px', borderRadius: '10px' }}>RSVP</span>
+                    <span className="badge badge-rehearsal">RSVP</span>
                   )}
                 </div>
-                <div style={{ fontSize: '14px', color: '#718096' }}>{item.voicePart}</div>
+                <div className="text-muted text-label">{item.voicePart}</div>
               </div>
               
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
                 <button 
-                  onClick={() => onToggle(item.profileId, isPresent ? 'Present' : 'Pending')}
-                  style={{ 
-                    padding: '12px 16px', 
-                    borderRadius: '8px', 
-                    border: 'none',
-                    backgroundColor: isPresent ? '#48bb78' : '#edf2f7',
-                    color: isPresent ? 'white' : '#4a5568',
-                    fontWeight: 'bold',
-                    minWidth: '90px'
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggle(item.profileId, isPresent ? 'Present' : 'Pending');
                   }}
+                  className={`btn ${isPresent ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{ minWidth: '100px' }}
                 >
                   {isPresent ? 'Present' : 'Mark'}
                 </button>
                 <button 
-                  onClick={() => onToggle(item.profileId, isAbsent ? 'Absent' : 'Pending')}
-                  style={{ 
-                    padding: '12px 16px', 
-                    borderRadius: '8px', 
-                    border: 'none',
-                    backgroundColor: isAbsent ? '#e53e3e' : '#edf2f7',
-                    color: isAbsent ? 'white' : '#4a5568',
-                    fontWeight: 'bold'
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggle(item.profileId, isAbsent ? 'Absent' : 'Pending');
                   }}
+                  className={`btn ${isAbsent ? 'btn-danger' : 'btn-ghost'}`}
                 >
                   {isAbsent ? 'Absent' : '✗'}
                 </button>
@@ -79,41 +71,55 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onToggle, onUpd
             </div>
 
             {/* Folder Tracking UI */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px', 
-              paddingTop: '12px', 
-              borderTop: '1px solid #f7fafc' 
+            <div className="flex-responsive" style={{ 
+              justifyContent: 'space-between',
+              paddingTop: 'var(--space-md)', 
+              borderTop: '1px solid var(--border)',
+              gap: 'var(--space-md)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#718096' }}>FOLDER #</span>
+              <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                <span className="text-xs" style={{ fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Folder #</span>
                 <input 
                   type="text"
                   value={item.folderNumber}
+                  onClick={(event) => event.stopPropagation()}
                   onChange={(e) => onUpdateFolder(item.profileId, e.target.value, item.folderReturned)}
                   placeholder="--"
-                  style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e0', textAlign: 'center' }}
+                  className="card"
+                  style={{ width: '60px', padding: '0 6px', textAlign: 'center', height: '36px' }}
                 />
               </div>
               
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginLeft: 'auto' }}>
+              <label
+                className="flex-row"
+                onClick={(event) => event.stopPropagation()}
+                style={{ gap: 'var(--space-sm)', cursor: 'pointer' }}
+              >
                 <input 
                   type="checkbox"
                   checked={item.folderReturned}
                   onChange={(e) => onUpdateFolder(item.profileId, item.folderNumber, e.target.checked)}
-                  style={{ width: '18px', height: '18px' }}
+                  style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }}
                 />
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: item.folderReturned ? '#38a169' : '#718096' }}>
+                <span className="text-xs" style={{ fontWeight: 700, color: item.folderReturned ? 'var(--primary)' : 'var(--text-muted)' }}>
                   {item.folderReturned ? 'RETURNED' : 'NOT RETURNED'}
                 </span>
               </label>
+              <button
+                type="button"
+                onClick={() => onEdit(item.profileId)}
+                className="btn btn-ghost btn-sm expanded-hit-area"
+              >
+                Edit Profile
+              </button>
             </div>
-          </div>
+          </AppCard>
         );
       })}
       {items.length === 0 && (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#a0aec0' }}>No active singers found in the roster.</div>
+        <AppCard style={{ textAlign: 'center' }}>
+          <p className="text-muted text-sm">No active singers found in the roster.</p>
+        </AppCard>
       )}
     </div>
   );

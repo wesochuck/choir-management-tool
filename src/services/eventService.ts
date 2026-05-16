@@ -41,37 +41,55 @@ export const eventService = {
 
   async bulkCreateRehearsals(parentPerformance: Event, config: { count: number, dayOfWeek: number, time: string, location: string }) {
     const { count, dayOfWeek, time, location } = config;
+    if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+      throw new Error("Invalid day of week selected.");
+    }
+
     const performanceDate = new Date(parentPerformance.date);
+    if (isNaN(performanceDate.getTime())) {
+      throw new Error("Invalid performance date.");
+    }
+
+    const [hours, minutes] = time.split(':').map(n => parseInt(n));
     const rehearsals = [];
 
-    // Find the nearest previous day of week
-    let current = new Date(performanceDate);
-    current.setHours(parseInt(time.split(':')[0]), parseInt(time.split(':')[1]), 0, 0);
+    // Start from the performance date at the rehearsal time
+    const current = new Date(performanceDate);
+    current.setHours(hours || 19, minutes || 0, 0, 0);
 
-    // If performance is on the same day of week, start from one week prior
+    // Roll back to the first rehearsal date
+    // If performance is on the same day, first rehearsal is 1 week before
     if (current.getDay() === dayOfWeek) {
-       current.setDate(current.getDate() - 7);
+      current.setDate(current.getDate() - 7);
     } else {
-      // Roll back to the target weekday
-      while (current.getDay() !== dayOfWeek) {
+      let safety = 0;
+      while (current.getDay() !== dayOfWeek && safety < 7) {
         current.setDate(current.getDate() - 1);
+        safety++;
       }
     }
 
     for (let i = 0; i < count; i++) {
+      const rehearsalDate = new Date(current);
       rehearsals.push({
         title: `Rehearsal ${count - i}`,
-        date: current.toISOString(),
+        date: rehearsalDate.toISOString(),
         location: location || parentPerformance.location,
-        type: 'Rehearsal',
+        type: 'Rehearsal' as const,
         parentPerformanceId: parentPerformance.id,
         details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`
       });
-      // Move back one week
+      // Move back one week for the previous rehearsal
       current.setDate(current.getDate() - 7);
     }
 
-    // Create them all
-    return await Promise.all(rehearsals.map(r => pb.collection('events').create<Event>(r)));
+    // Create them sequentially or in small batches to avoid hitting rate limits or overwhelming the server
+    // For 20 events, Promise.all is usually fine, but let's be safe.
+    const results = [];
+    for (const r of rehearsals.reverse()) { // Reverse so titles align with dates (oldest first)
+       const res = await pb.collection('events').create<Event>(r);
+       results.push(res);
+    }
+    return results;
   }
 };

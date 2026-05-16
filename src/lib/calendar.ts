@@ -1,24 +1,35 @@
-import { type Event } from '../services/eventService';
+interface CalendarEvent {
+  id: string;
+  title?: string;
+  type: string;
+  date: string;
+  location: string;
+  details?: string;
+}
 
 export const calendarUtils = {
-  generateICS(event: Event) {
+  createICS(event: CalendarEvent, durationHours = 2) {
     const start = new Date(event.date);
-    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // Assume 2 hours
+    const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
 
     const format = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const icsContent = [
+    return [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'BEGIN:VEVENT',
       `DTSTART:${format(start)}`,
       `DTEND:${format(end)}`,
-      `SUMMARY:${event.type}: Choir Performance/Rehearsal`,
+      `SUMMARY:${event.title || event.type}`,
       `LOCATION:${event.location}`,
       `DESCRIPTION:${event.details}`,
       'END:VEVENT',
       'END:VCALENDAR'
     ].join('\r\n');
+  },
+
+  generateICS(event: CalendarEvent) {
+    const icsContent = calendarUtils.createICS(event);
 
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');

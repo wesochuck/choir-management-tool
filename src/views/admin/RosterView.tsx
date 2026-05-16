@@ -3,10 +3,10 @@ import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { RosterSummary } from '../../components/admin/RosterSummary';
-import type { Profile } from '../../services/profileService';
+import type { Profile, ProfileInput } from '../../services/profileService';
 
 export default function RosterView() {
-  const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile } = useProfiles();
+  const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile } = useProfiles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
@@ -20,7 +20,7 @@ export default function RosterView() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (data: Partial<Profile>) => {
+  const handleSave = async (data: ProfileInput) => {
     if (editingProfile) {
       await editProfile(editingProfile.id, data);
     } else {
@@ -28,36 +28,28 @@ export default function RosterView() {
     }
   };
 
+  const handleDelete = async (profile: Profile) => {
+    await removeProfile(profile.id);
+  };
+
   if (isLoading && profiles.length === 0) return <div style={{ padding: '20px' }}>Loading roster...</div>;
   if (error) return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f0f4f8', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1>Global Roster</h1>
-        <button 
-          onClick={handleAdd}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: '#3182ce', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '6px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          + Add Singer
-        </button>
+    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 className="text-display" style={{ margin: 0 }}>Global Roster</h1>
+        <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>
       </div>
 
       <RosterSummary profiles={profiles} />
 
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+      <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
         <select 
           value={filters.voicePart} 
           onChange={(e) => setFilter('voicePart', e.target.value)}
-          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+          className="card"
+          style={{ padding: '0 12px', height: '44px', width: '200px' }}
         >
           <option value="">All Voice Parts</option>
           {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map(v => <option key={v} value={v}>{v}</option>)}
@@ -65,7 +57,8 @@ export default function RosterView() {
         <select 
           value={filters.status} 
           onChange={(e) => setFilter('status', e.target.value)}
-          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+          className="card"
+          style={{ padding: '0 12px', height: '44px', width: '200px' }}
         >
           <option value="">All Statuses</option>
           <option value="Active (Current)">Active (Current)</option>
@@ -80,6 +73,7 @@ export default function RosterView() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onSave={handleSave} 
+        onDelete={handleDelete}
         initialData={editingProfile} 
       />
     </div>

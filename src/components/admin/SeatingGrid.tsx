@@ -12,10 +12,10 @@ interface SeatingGridProps {
 }
 
 const SECTION_COLORS: Record<string, { bg: string, text: string }> = {
-  'S': { bg: '#fed7d7', text: '#9b2c2c' }, // Red-ish
-  'A': { bg: '#ebf8ff', text: '#2c5282' }, // Blue-ish
-  'T': { bg: '#feebc8', text: '#9c4221' }, // Orange-ish
-  'B': { bg: '#e6fffa', text: '#2c7a7b' }, // Green-ish
+  'S': { bg: 'var(--color-performance-bg)', text: 'var(--color-performance-text)' },
+  'A': { bg: 'var(--primary-light)', text: 'var(--primary-deep)' }, 
+  'T': { bg: '#fef3c7', text: '#92400e' }, 
+  'B': { bg: '#e0f2fe', text: '#075985' }, 
 };
 
 export const SeatingGrid: React.FC<SeatingGridProps> = ({ 
@@ -29,11 +29,44 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
   const assignedProfileIds = new Set(Object.values(assignments));
 
+  // Compact Mode Detection
+  const maxSeats = Math.max(...rowCounts, 0);
+  const isCompact = maxSeats > 12;
+  const seatSize = isCompact ? 50 : 84;
+  const gridGap = isCompact ? 4 : 12;
+  const fontSize = isCompact ? 'var(--font-size-xs)' : 'var(--font-size-sm)';
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const handleDragStart = (e: React.DragEvent, profileId: string, sourceSeatKey?: string) => {
+    e.dataTransfer.setData('profileId', profileId);
+    if (sourceSeatKey) {
+      e.dataTransfer.setData('sourceSeatKey', sourceSeatKey);
+    }
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetSeatKey: string) => {
+    e.preventDefault();
+    const profileId = e.dataTransfer.getData('profileId');
+    if (!profileId) return;
+    await onAssign(targetSeatKey, profileId);
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', padding: '20px' }}>
+    <div className="flex-col grid-print" style={{ gap: 'var(--space-lg)', alignItems: 'center', width: '100%', overflowX: 'auto', padding: 'var(--space-md)' }}>
       {rowCounts.map((seatCount, rowIndex) => (
-        <div key={rowIndex} style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-          <div style={{ width: '60px', display: 'flex', alignItems: 'center', color: '#718096', fontWeight: 'bold' }}>
+        <div key={rowIndex} className="row-print" style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          alignItems: 'center',
+          gap: `${gridGap}px`, 
+          justifyContent: 'center', 
+          minWidth: 'max-content' 
+        }}>
+          <div className="text-xs text-muted" style={{ width: isCompact ? '50px' : '72px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
             Row {rowIndex + 1}
           </div>
           {Array.from({ length: seatCount }).map((_, seatIndex) => {
@@ -41,26 +74,42 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const suggestion = suggestions[seatKey];
             const profileId = assignments[seatKey];
             const assignedProfile = profileId ? profileMap[profileId] : null;
-            const colors = suggestion ? SECTION_COLORS[suggestion] : { bg: '#edf2f7', text: '#4a5568' };
+            const colors = suggestion ? SECTION_COLORS[suggestion] : { bg: 'var(--bg)', text: 'var(--text-muted)' };
+
+            // Wedge Outline Logic
+            const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
+            const rightSuggestion = seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
+            
+            const hasLeftBorder = suggestion !== leftSuggestion;
+            const hasRightBorder = suggestion !== rightSuggestion;
 
             return (
               <div 
                 key={seatKey} 
+                onDragOver={(e) => !isReadOnly && e.preventDefault()}
+                onDrop={(e) => !isReadOnly && handleDrop(e, seatKey)}
+                draggable={!isReadOnly && !!assignedProfile}
+                onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
+                title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
+                className="flex-col"
                 style={{ 
-                  width: '80px', 
-                  height: '80px', 
+                  width: `${seatSize}px`, 
+                  height: `${seatSize}px`, 
                   backgroundColor: colors.bg,
-                  border: `2px solid ${profileId ? colors.text : 'transparent'}`,
-                  borderRadius: '8px',
-                  display: 'flex',
-                  flexDirection: 'column',
+                  borderTop: `1px solid ${profileId ? colors.text : 'var(--border)'}`,
+                  borderBottom: `1px solid ${profileId ? colors.text : 'var(--border)'}`,
+                  borderLeft: hasLeftBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : 'var(--border)'}`,
+                  borderRight: hasRightBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : 'var(--border)'}`,
+                  borderRadius: 'var(--radius-md)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
-                  fontSize: '11px',
+                  fontSize: fontSize,
                   position: 'relative',
-                  cursor: isReadOnly ? 'default' : 'pointer',
-                  boxShadow: profileId ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+                  cursor: isReadOnly ? 'default' : (assignedProfile ? 'grab' : 'pointer'),
+                  boxShadow: profileId ? 'var(--shadow-sm)' : 'none',
+                  flexShrink: 0,
+                  gap: 0
                 }}
               >
                 {!isReadOnly && (
@@ -75,20 +124,18 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <option value="">-- Assign --</option>
                     <option value="">(Empty)</option>
                     
-                    {/* Suggested Section first */}
                     {suggestion && (
                       <optgroup label={`Recommended (${suggestion})`}>
                         {activeProfiles
                           .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                           .filter(p => p.voicePart[0] === suggestion)
                           .map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                            <option key={p.id} value={p.id}>{p.name} ({p.voicePart})</option>
                           ))
                         }
                       </optgroup>
                     )}
 
-                    {/* Other Sections */}
                     <optgroup label="Other Sections">
                       {activeProfiles
                         .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
@@ -102,49 +149,26 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   </select>
                 )}
                 
-                <div style={{ fontWeight: 'bold', color: colors.text }}>{suggestion} {seatIndex + 1}</div>
+                <div className="text-xs" style={{ fontWeight: 700, color: colors.text, opacity: 0.6 }}>
+                  {suggestion}{seatIndex + 1}
+                </div>
                 {assignedProfile ? (
-                  <div style={{ marginTop: '4px', fontWeight: '800', lineHeight: '1.1' }}>
-                    {assignedProfile.name.split(' ').pop()}
+                  <div className="flex-col" style={{ gap: 0, alignItems: 'center' }}>
+                    <div style={{ fontWeight: 800, fontSize: isCompact ? 'var(--font-size-xs)' : 'var(--font-size-label)', color: colors.text, lineHeight: 1.1 }}>
+                      {isCompact ? getInitials(assignedProfile.name) : assignedProfile.name.split(' ').pop()}
+                    </div>
+                    <div className="text-xs" style={{ fontWeight: 600, color: colors.text, opacity: 0.8 }}>
+                      {assignedProfile.voicePart}
+                    </div>
                   </div>
                 ) : (
-                  <div style={{ color: '#a0aec0', fontSize: '10px' }}>Empty</div>
+                  <div className="text-muted text-xs" style={{ opacity: 0.5 }}>{isCompact ? '—' : 'Empty'}</div>
                 )}
               </div>
             );
           })}
         </div>
       ))}
-
-      {/* High-Legibility Print Version (Hidden on screen) */}
-      <div className="print-only" style={{ display: 'none', width: '100%' }}>
-         {rowCounts.map((seatCount, rowIndex) => (
-             <div key={rowIndex} style={{ marginBottom: '10px', fontSize: '16px' }}>
-                <strong>Row {rowIndex + 1}:</strong> {' '}
-                {Array.from({ length: seatCount }).map((_, seatIndex) => {
-                    const profileId = assignments[`${rowIndex}-${seatIndex}`];
-                    const profile = profileId ? profileMap[profileId] : null;
-                    return profile ? `${profile.name}${seatIndex < seatCount - 1 ? ', ' : ''}` : `[Empty]${seatIndex < seatCount - 1 ? ', ' : ''}`;
-                })}
-             </div>
-         ))}
-      </div>
-
-      <style>{`
-        @media print {
-            @page { size: landscape; }
-            body * { visibility: hidden; }
-            .print-only, .print-only * { visibility: visible; }
-            .print-only { 
-                display: block !important; 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                padding: 40px;
-                color: black;
-            }
-        }
-      `}</style>
     </div>
   );
 };

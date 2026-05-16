@@ -1,68 +1,90 @@
-# Phase 2: Seating Chart Save Improvements (Cycle 4) - SPEC
+# Phase 2: Seating Chart Save Improvements (Cycle 5) - SPEC
 
-This document specifies the robust state machine for the seating chart save logic in `useSeatingChart`, addressing race conditions and network instability.
+This document specifies the final refinements to the `useSeatingChart` hook and `SeatingView` to handle multi-performance context switching, race conditions, and robust retry logic.
 
 ## 1. Requirement Traceability
-- **GOAL:** Ensure data integrity during rapid edits and handle network race conditions gracefully.
-- **D-01 (from Review):** Track edits synchronously at the time of the action, not the request.
-- **D-02 (from Review):** Clear errors at the start of a sync attempt.
-- **D-03 (from Review):** Handle out-of-order responses by ignoring old sequences.
-- **D-04 (from Review):** Only set error state if the failing request was the latest edit.
+- **GOAL:** Ensure zero data loss and absolute data integrity when switching between performances or handling network failures.
+- **CR-01 (Context Switch Race Condition):** Ignore server responses if the user has switched performance/venue during the request.
+- **CR-02 (Data Loss on Switch):** Flush unsaved changes immediately before switching contexts.
+- **WR-01 (Retry Logic):** Allow "Retry" button to trigger `fetchData` if the initial load failed.
+- **WR-02 (Efficiency):** Streamline save payload and state derivations.
+- **WR-03 (Load Merging):** Do not overwrite optimistic local edits with stale data from a late-finishing load.
 
-## 2. State Machine Design
+## 2. Refined State Machine
 
-### 2.1 Variables & Refs
+### 2.1 Context Identification
+Every request must be tagged with a `contextId`: `${performanceId}-${venue.id}`.
+
+### 2.2 Variables & Refs (Extensions to Cycle 4)
 
 | Name | Type | Purpose |
 |------|------|---------|
-| `lastEditIdRef` | `MutableRefObject<number>` | Incremented synchronously on every local edit. |
-| `lastAppliedIdRef` | `MutableRefObject<number>` | Tracks the highest `lastEditId` successfully persisted to the server. |
-| `activeRequestsCount` | `useState<number>` | Number of network requests currently in flight. |
-| `isSyncPending` | `useState<boolean>` | True if a debounce timer is currently running. |
-| `optimisticAssignments`| `useState<Record>` | The local "ground truth" for the UI. |
-| `error` | `useState<string | null>` | Error message from the latest attempted edit. |
+| `isDirtyRef` | `MutableRefObject<boolean>` | Reliable synchronous source for dirty state during cleanup. |
+| `lastEditIdRef` | `MutableRefObject<number>` | Incremented on every edit. |
+| `lastAppliedIdRef` | `MutableRefObject<number>` | Highest edit ID acknowledged by server. |
+| `syncWithServerRef` | `MutableRefObject<Function>` | Stable ref to sync function for use in cleanup effects. |
 
-### 2.2 Derivations
+## 3. Operations (Refined)
 
-- **`isDirty`**: `lastEditIdRef.current > lastAppliedIdRef.current`
-- **`isSaving`**: `isSyncPending || activeRequestsCount > 0`
+### 3.1 Context Switch Sync (CR-02)
+Use a `useEffect` cleanup function or a logic check at the start of `fetchData` / `useEffect([performanceId])` to ensure unsaved changes are flushed.
 
-## 3. Operations
+```typescript
+useEffect(() => {
+  const currentId = performanceId;
+  const currentVenue = venue?.id;
+  
+  return () => {
+    // If the hook is unmounting or performanceId is changing
+    // and we have unsaved changes, trigger a flush.
+    if (isDirtyRef.current) {
+      void syncWithServerRef.current(currentId, currentVenue);
+    }
+  };
+}, [performanceId, venue?.id]);
+```
 
-### 3.1 Local Edit (`assignSinger`, `updateChart`)
-1. Increment `lastEditIdRef.current`.
-2. Update `optimisticAssignments` (and other chart fields) synchronously.
-3. Schedule `syncWithServer` with 1000ms debounce.
-4. Set `isSyncPending(true)`.
+### 3.2 Context-Aware Sync (CR-01)
+`syncWithServer` must accept context parameters or capture them and verify they match current state before applying results.
 
-### 3.2 Syncing (`syncWithServer`)
-1. Clear any existing debounce timer.
-2. Set `isSyncPending(false)`.
-3. Capture `const requestId = lastEditIdRef.current`.
-4. If `requestId === lastAppliedIdRef.current`, return (nothing new to save).
-5. Increment `activeRequestsCount`.
-6. Set `error(null)`.
-7. **Perform API Call** (`seatingService.saveChart`):
-   - **Success**:
-     - If `requestId > lastAppliedIdRef.current`:
-       - `lastAppliedIdRef.current = requestId`.
-       - Update `chart` state with response.
-   - **Failure**:
-     - If `requestId === lastEditIdRef.current`:
-       - `setHasError(err)`.
-   - **Finally**:
-     - Decrement `activeRequestsCount`.
+```typescript
+const syncWithServer = useCallback(async (forcedId?: string, forcedVenue?: string) => {
+  const targetId = forcedId || performanceId;
+  const targetVenue = forcedVenue || venue?.id;
+  const contextId = `${targetId}-${targetVenue}`;
 
-### 3.3 Manual Force Save
-1. If `isDirty`: Trigger `syncWithServer` immediately (bypassing debounce).
-2. If `!isDirty`: Show "Saved!" toast (implementation in component).
+  // ... api call ...
 
-## 4. UI Indicators (SeatingGrid)
+  // Verification before applying response
+  if (contextId !== `${performanceId}-${venue?.id}`) {
+    console.log("Discarding stale response for context:", contextId);
+    return;
+  }
+  // ... apply ...
+}, [performanceId, venue]);
+```
 
-- **Saving**: Display "Saving..." if `isSaving` is true.
-- **Dirty**: Display "Unsaved changes" if `isDirty` is true and `!isSaving`.
-- **Saved**: Display "Saved" if `!isDirty` and `!isSaving` and `!error`.
-- **Error**: Display "Save failed - click to retry" if `error` is present.
+### 3.3 Robust Force Save / Retry (WR-01)
+`forceSave` must handle the case where the view is in an error state due to a failed load.
 
-## 5. Migration Rules
-- Ensure `src/services/seatingService.ts` supports partial updates if needed, or always send the full payload derived from `optimisticAssignments`.
+```typescript
+const forceSave = useCallback(async () => {
+  if (error && !isDirty) {
+    await fetchData(); // Retry load
+  } else if (isDirty || error) {
+    await syncWithServer(); // Retry save
+  }
+}, [error, isDirty, fetchData, syncWithServer]);
+```
+
+### 3.4 Load Merging (WR-03)
+In `fetchData`, if `isDirtyRef.current` is true, merge the server response with `dirtyPayloadRef.current` to ensure optimistic edits aren't lost when a slow load finishes.
+
+## 4. UI Feedback Improvements
+- `isSaving` state should strictly reflect network activity + pending sync.
+- Redundant "✓ All changes saved" indicator in `SeatingView` should be removed in favor of the Button's "Saved!" state or a consolidated status line.
+
+## 5. Verification Plan
+- **Test Case 1 (Context Switch):** Edit Perf A, immediately click Perf B. Observe network: Save for A should fire, then Fetch for B. Result for A must not overwrite B's state.
+- **Test Case 2 (Load Retry):** Disable network, enter Seating View. Observe Error. Enable network, click Retry. Observe successful fetch.
+- **Test Case 3 (Rapid Edits):** Click many seats rapidly. Observe `activeRequestsCount` and sequence tracking correctly identifying the "latest" successful state.

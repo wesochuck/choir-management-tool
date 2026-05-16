@@ -17,3 +17,8 @@ These foundational mandates MUST be followed by all agents working on this codeb
     *   `src/hooks/`: State coordination and business logic.
     *   `src/components/`: Pure presentational "dumb" components.
 *   **Type Safety:** Use shared TypeScript interfaces for all PocketBase records to ensure consistency between the backend schema and frontend state.
+
+## Recurring Failure Prevention (MANDATORY)
+*   **Infrastructure Audit:** Every new agent MUST verify that `src/lib/pocketbase.ts` contains the `afterSend` interceptor for stale token resilience. If missing, implement it immediately before proceeding with any feature work.
+*   **Log Inspection:** On any "Failed to create/update record" error (HTTP 400), the agent MUST inspect `pb_debug.log` and check for `loadAuthToken failure`. Do NOT assume data validation errors until the server-side authentication load is confirmed successful.
+*   **Verification Cycle:** If the agent modifies migrations, they MUST perform a `curl` auth cycle as defined in "PocketBase & Data Integrity" to ensure the schema matches the frontend's expectations.

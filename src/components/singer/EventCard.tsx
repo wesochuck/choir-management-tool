@@ -9,101 +9,71 @@ interface EventCardProps {
   onRSVP: (rsvp: 'Yes' | 'No') => Promise<void>;
 }
 
+import { AppCard } from '../common/AppCard';
+
 export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', onRSVP }) => {
+  const isPerformance = event.type === 'Performance';
+
   return (
-    <div style={{ 
-      backgroundColor: 'white', 
-      padding: '20px', 
-      borderRadius: '12px', 
-      boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-      marginBottom: '16px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-         <span style={{ 
-            fontSize: '12px', 
-            fontWeight: 'bold', 
-            textTransform: 'uppercase',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            backgroundColor: event.type === 'Performance' ? '#fed7d7' : '#ebf8ff',
-            color: event.type === 'Performance' ? '#9b2c2c' : '#2c5282'
-          }}>
-            {event.type}
-          </span>
+    <AppCard noPadding>
+      <div className="flex-col" style={{ padding: 'var(--space-lg)', gap: 'var(--space-md)' }}>
+        <div className="flex-row" style={{ justifyContent: 'space-between', width: '100%' }}>
+           <span className={`badge ${isPerformance ? 'badge-performance' : 'badge-rehearsal'}`}>
+              {event.type}
+            </span>
+            <button 
+              onClick={() => calendarUtils.generateICS(event)}
+              className="btn btn-ghost btn-sm"
+            >
+              📅 Add to Calendar
+            </button>
+        </div>
+
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <h3 className="text-label" style={{ margin: 0, color: 'var(--primary)' }}>
+            {new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </h3>
+          {event.title && <div className="text-headline">{event.title}</div>}
+          <div className="text-label">
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              📍 {event.location}
+            </a>
+          </div>
+          {event.details && <p className="text-muted text-sm">{event.details}</p>}
+        </div>
+
+        <div className="flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
           <button 
-            onClick={() => calendarUtils.generateICS(event)}
-            style={{ fontSize: '12px', background: 'none', border: 'none', color: '#3182ce', cursor: 'pointer' }}
+            onClick={() => onRSVP('Yes')}
+            className={`btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ flex: 1 }}
           >
-            📅 Add to Calendar
+            {rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
           </button>
-      </div>
+          <button 
+            onClick={() => onRSVP('No')}
+            className={`btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+            style={{ flex: 1 }}
+          >
+            {rsvp === 'No' ? '✗ Declining' : 'Decline'}
+          </button>
+        </div>
 
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>{new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</h3>
-      {event.title && <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#2d3748', margin: '8px 0' }}>{event.title}</div>}
-      <div style={{ color: '#4a5568', fontWeight: '500', marginBottom: '4px' }}>
-        <a 
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{ color: '#3182ce', textDecoration: 'none' }}
-        >
-          📍 {event.location}
-        </a>
+        {isPerformance && (
+          <Link 
+            to={`/seating/${event.id}`}
+            className="btn btn-secondary"
+            style={{ width: '100%' }}
+          >
+            🪑 Find My Seat
+          </Link>
+        )}
       </div>
-      {event.details && <div style={{ fontSize: '14px', color: '#718096', marginBottom: '16px' }}>{event.details}</div>}
-
-      <div style={{ display: 'flex', gap: '12px' }}>
-        <button 
-          onClick={() => onRSVP('Yes')}
-          style={{ 
-            flex: 1, 
-            padding: '12px', 
-            borderRadius: '8px', 
-            border: '2px solid #48bb78',
-            backgroundColor: rsvp === 'Yes' ? '#48bb78' : 'white',
-            color: rsvp === 'Yes' ? 'white' : '#2f855a',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          {rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
-        </button>
-        <button 
-          onClick={() => onRSVP('No')}
-          style={{ 
-            flex: 1, 
-            padding: '12px', 
-            borderRadius: '8px', 
-            border: '2px solid #e53e3e',
-            backgroundColor: rsvp === 'No' ? '#e53e3e' : 'white',
-            color: rsvp === 'No' ? 'white' : '#c53030',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          {rsvp === 'No' ? '✗ Declining' : 'Decline'}
-        </button>
-      </div>
-
-      {event.type === 'Performance' && (
-        <Link 
-          to={`/seating/${event.id}`}
-          style={{ 
-            display: 'block',
-            marginTop: '12px',
-            textAlign: 'center',
-            padding: '12px',
-            backgroundColor: '#edf2f7',
-            borderRadius: '8px',
-            color: '#2d3748',
-            textDecoration: 'none',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}
-        >
-          🪑 Find My Seat
-        </Link>
-      )}
-    </div>
+    </AppCard>
   );
 };

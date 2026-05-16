@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useVenues } from '../../hooks/useVenues';
 import type { Venue } from '../../services/venueService';
+import { AppCard } from '../../components/common/AppCard';
+import { useDialog } from '../../contexts/DialogContext';
 
 export default function VenuesView() {
+  const dialog = useDialog();
   const { venues, isLoading, addVenue, editVenue, removeVenue } = useVenues();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -35,83 +38,103 @@ export default function VenuesView() {
         await addVenue({ name, rowCounts });
       }
       resetForm();
-    } catch (err) {
-      alert("Error saving venue");
+    } catch {
+      await dialog.showMessage({
+        title: 'Could Not Save Venue',
+        message: 'Error saving venue',
+        variant: 'danger',
+      });
     }
   };
 
-  if (isLoading && venues.length === 0) return <div style={{ padding: '20px' }}>Loading venues...</div>;
+  const handleDelete = async (venue: Venue) => {
+    const shouldDelete = await dialog.confirm({
+      title: 'Delete Venue',
+      message: `Delete ${venue.name}?`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!shouldDelete) return;
+
+    await removeVenue(venue.id);
+  };
+
+  if (isLoading && venues.length === 0) return <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading venues...</div>;
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f0f4f8', minHeight: '100vh' }}>
-       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1>Venue Templates</h1>
+    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 className="text-display" style={{ margin: 0 }}>Venue Templates</h1>
         {!isAdding && (
-          <button 
-            onClick={() => setIsAdding(true)}
-            style={{ padding: '10px 20px', backgroundColor: '#3182ce', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            + New Venue
-          </button>
+          <button onClick={() => setIsAdding(true)} className="btn btn-primary">+ New Venue</button>
         )}
       </div>
 
       {isAdding && (
-        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
-          <h2>{editingId ? 'Edit Venue' : 'Create New Venue'}</h2>
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Venue Name</label>
+        <AppCard title={editingId ? 'Edit Venue' : 'Create New Venue'}>
+          <form onSubmit={handleSave} className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Venue Name</label>
               <input 
                 value={name} onChange={(e) => setName(e.target.value)} required
                 placeholder="e.g. Main Sanctuary"
-                style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '44px' }}
               />
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Row Capacities (Comma separated)</label>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Row Capacities (Comma separated)</label>
               <input 
                 value={rowCountsStr} onChange={(e) => setRowCountsStr(e.target.value)} required
-                placeholder="e.g. 12, 15, 18, 20 (Row 1 to Back Row)"
-                style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+                placeholder="e.g. 12, 15, 18, 20"
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '44px' }}
               />
-              <p style={{ fontSize: '12px', color: '#718096', marginTop: '4px' }}>Enter the number of seats for each row, starting from the front.</p>
+              <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
             </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={resetForm} style={{ padding: '10px 20px', borderRadius: '4px', border: 'none' }}>Cancel</button>
-              <button type="submit" style={{ padding: '10px 20px', borderRadius: '4px', backgroundColor: '#38a169', color: 'white', border: 'none', fontWeight: 'bold' }}>
-                Save Template
-              </button>
+            <div className="flex-responsive" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)' }}>
+              <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>
+              <button type="submit" className="btn btn-primary">Save Template</button>
             </div>
           </form>
-        </div>
+        </AppCard>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-lg)' }}>
         {venues.map(v => (
-          <div key={v.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-            <h3 style={{ margin: '0 0 8px 0' }}>{v.name}</h3>
-            <div style={{ fontSize: '14px', color: '#4a5568' }}>
-              <strong>Rows:</strong> {v.rowCounts.length}
+          <AppCard key={v.id} title={v.name}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <div className="text-body">
+                <span className="text-muted">Rows:</span> {v.rowCounts.length}
+              </div>
+              <div className="text-body">
+                <span className="text-muted">Total Seats:</span> {v.rowCounts.reduce((a, b) => a + b, 0)}
+              </div>
+              <div className="text-muted text-xs">
+                Layout: {v.rowCounts.join(' | ')}
+              </div>
             </div>
-            <div style={{ fontSize: '14px', color: '#4a5568', marginTop: '4px' }}>
-              <strong>Total Seats:</strong> {v.rowCounts.reduce((a, b) => a + b, 0)}
+            <div className="flex-responsive" style={{ gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
+              <button onClick={() => handleEdit(v)} className="btn btn-ghost expanded-hit-area" style={{ flex: 1 }}>Edit</button>
+              <button 
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleDelete(v);
+                }}
+                className="btn btn-danger" 
+                style={{ flex: 1 }}
+              >
+                Delete
+              </button>
             </div>
-            <div style={{ marginTop: '12px', fontSize: '12px', color: '#718096' }}>
-              Layout: {v.rowCounts.join(' | ')}
-            </div>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button onClick={() => handleEdit(v)} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e0', cursor: 'pointer' }}>Edit</button>
-              <button onClick={() => { if(confirm('Delete venue?')) removeVenue(v.id) }} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #fed7d7', color: '#c53030', cursor: 'pointer' }}>Delete</button>
-            </div>
-          </div>
+          </AppCard>
         ))}
       </div>
 
       {venues.length === 0 && !isAdding && (
-        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'white', borderRadius: '12px', color: '#718096' }}>
-          No venue templates created yet.
-        </div>
+        <AppCard style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+          <p className="text-muted">No venue templates created yet.</p>
+        </AppCard>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { profileService, type Profile } from '../services/profileService';
+import { profileService, type Profile, type ProfileInput } from '../services/profileService';
 
 export const useProfiles = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -32,7 +32,7 @@ export const useProfiles = () => {
     });
   }, [profiles, filters]);
 
-  const addProfile = async (data: Partial<Profile>) => {
+  const addProfile = async (data: ProfileInput) => {
     try {
       await profileService.createProfile(data);
       await fetchProfiles();
@@ -41,12 +41,21 @@ export const useProfiles = () => {
     }
   };
 
-  const editProfile = async (id: string, data: Partial<Profile>) => {
+  const editProfile = async (id: string, data: ProfileInput) => {
     try {
       await profileService.updateProfile(id, data);
       await fetchProfiles();
     } catch (err: any) {
       throw new Error(err.message || 'Failed to update profile');
+    }
+  };
+
+  const removeProfile = async (id: string) => {
+    try {
+      await profileService.deleteProfile(id);
+      await fetchProfiles();
+    } catch (err: any) {
+      throw new Error(err.message || 'Failed to delete profile');
     }
   };
 
@@ -62,6 +71,7 @@ export const useProfiles = () => {
     setFilter,
     addProfile,
     editProfile,
+    removeProfile,
     refresh: fetchProfiles,
   };
 };

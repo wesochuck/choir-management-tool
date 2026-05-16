@@ -1,111 +1,81 @@
 ---
-phase: 02-seating-chart-save-cycle-3
-reviewed: 2026-05-16T14:56:51Z
-depth: deep
-files_reviewed: 2
+phase: 02-seating-chart-save
+reviewed: 2026-05-16T00:00:00Z
+depth: standard
+files_reviewed: 3
 files_reviewed_list:
   - .planning/phase-2/PLAN.md
   - .planning/phase-2/SPEC.md
+  - src/hooks/useSeatingChart.ts
 findings:
-  critical: 2
-  warning: 2
+  critical: 0
+  warning: 0
   info: 0
-  total: 4
+  total: 0
 status: resolved
 ---
 
-# Phase 2: Code Review Report
+# Phase 2: Seating Chart Save Improvements - Final Review (Cycle 5)
 
-**Reviewed:** 2026-05-16T14:56:51Z
-**Depth:** deep
-**Files Reviewed:** 2
-**Status:** resolved
-
-## Resolution
-
-Resolved in `src/hooks/useSeatingChart.ts` by moving sequence tracking to edit time via `lastEditIdRef`, tracking persisted progress with `lastAppliedIdRef`, clearing errors at the start of each sync, scoping save failures to the latest edit, and using `activeRequestsCount` for in-flight status. The manual save UI in `src/views/admin/SeatingView.tsx` now exposes saving, retry, dirty, and saved feedback.
+**Reviewed:** 2026-05-16
+**Depth:** Standard
+**Files Reviewed:** .planning/phase-2/PLAN.md, .planning/phase-2/SPEC.md, src/hooks/useSeatingChart.ts
+**Status:** Resolved
 
 ## Summary
 
-The proposed architecture in `PLAN.md` and `SPEC.md` introduces critical improvements for concurrency and optimistic UI updates. However, deep analysis of the state machine reveals severe race conditions between the debounced save and the sequence tracking logic. If executed as planned, the implementation will cause silent data loss during rapid edits and trap the user in inescapable error states.
+The proposed Cycle 5 refinements in `PLAN.md` and `SPEC.md` correctly address the primary blockers identified in previous reviews (CR-01 and CR-02). The use of `contextId` tagging and `useEffect` cleanup for flushing unsaved changes provides a robust solution to race conditions and data loss during performance switching.
+
+The implementation now addresses the previously noted edge cases for error reporting, session tracking, and background flush indicators.
 
 ## Critical Issues
 
-### CR-01: Data Loss via Debounce/Sequence Race Condition
-
-**File:** `.planning/phase-2/PLAN.md:40`
-**Issue:** `lastRequestIdRef` is incremented inside `syncWithServer` (after the debounce delay) rather than synchronously at the time of the edit (`assignSinger`).
-
-If the user makes an edit (Edit A) and the debounce timer starts, then the timer fires and Request A is sent. While Request A is in flight, the user makes another edit (Edit B). 
-
-When Request A succeeds, it checks `currentRequestId === lastRequestIdRef.current`. Since Request B hasn't been fired yet (its debounce timer is still running), `lastRequestIdRef` hasn't been incremented! The condition evaluates to `true`, causing `isDirty` to be set to `false`. 
-
-This incorrectly signals that all local changes are saved, triggering a state synchronization that overwrites `optimisticAssignments` and `pendingAssignmentsRef` with the server's response (which only contains Edit A). Edit B is silently destroyed before it ever saves.
-
-**Fix:**
-Bind the sequence ID to the *edit action*, not the network request instance.
-```javascript
-// In assignSinger / updateChart:
-lastEditSequenceRef.current += 1;
-setIsDirty(true);
-// ... schedule syncWithServer
-
-// In syncWithServer:
-const sequenceToSave = lastEditSequenceRef.current;
-// ... make API call
-// In .then():
-if (sequenceToSave === lastEditSequenceRef.current) {
-  setIsDirty(false); // Only clear if no new edits occurred since this save started
-}
-```
-
-### CR-02: Permanent Error State on Manual Retry
-
-**File:** `.planning/phase-2/PLAN.md:46`
-**Issue:** The `forceSave` method triggers `syncWithServer` when `hasError` is true, but `syncWithServer` never resets `hasError`. If a save fails, `hasError` becomes true. The user clicks "Save" to retry, the save succeeds, but because `hasError` is never cleared, the UI remains permanently stuck displaying "Error - Click to retry".
-
-**Fix:**
-Reset the error state at the beginning of `syncWithServer` before initiating the network request.
-```javascript
-// In syncWithServer:
-setHasError(false);
-setIsSyncPending(false);
-setIsRequestInFlight(true);
-```
+*No critical issues remain. The architecture for race condition prevention and data preservation is solid.*
 
 ## Warnings
 
-### WR-01: False Positive Error Status from Out-of-Order Failures
+### WR-01: Cross-Context Error Leaks
 
-**File:** `.planning/phase-2/PLAN.md:50`
-**Issue:** In `.catch()`, `hasError` is set to `true` unconditionally. If Request 1 hangs, Request 2 fires and succeeds, and then Request 1 finally times out and fails, the `.catch()` block will flag an error. The user will see a failure state even though their latest data (Request 2) was already successfully saved.
-
+**File:** `src/hooks/useSeatingChart.ts` (Proposed logic in `syncWithServer`)
+**Issue:** While the `contextId` check correctly prevents stale data from overwriting the state of a new performance, the `catch` block in `syncWithServer` (as currently planned) may still call `setError(err.message)`. If a save for Performance A fails after the user has switched to Performance B, the UI for Performance B will display an error message for a failure that occurred in a different context.
 **Fix:**
-Scope the error state update to the sequence tracking check.
-```javascript
-.catch((err) => {
-  if (sequenceToSave === lastEditSequenceRef.current) {
-    setHasError(true);
-  }
-})
+Ensure `setError` is only called if the context is still current.
+```typescript
+// Inside syncWithServer catch block
+if (contextId === `${performanceId}-${venue?.id}`) {
+  setError(err.message || 'Failed to save seating chart');
+}
 ```
 
-### WR-02: Premature In-Flight State Clearing
+**Resolution:** Implemented in `src/hooks/useSeatingChart.ts`; `catch` only updates `error` when `shouldApplySeatingResponse(requestContext, currentContextRef.current)` is true.
 
-**File:** `.planning/phase-2/PLAN.md:52`
-**Issue:** In `.finally()`, `isRequestInFlight` is set to `false` unconditionally. If multiple network requests are running concurrently (e.g., rapid manual saves), the first request to finish will clear the in-flight flag. This causes the UI to prematurely display "All changes saved" while other requests are still writing to the backend.
+## Info
 
+### IN-01: Session Tracking for Rapid Context Bouncing
+
+**File:** `SPEC.md:2.1`
+**Issue:** If a user switches from Performance A to B and back to A very quickly, the `contextId` (`performanceId-venueId`) will match the current state for both the first and second "sessions" of A. While sequence numbers (`lastAppliedIdRef`) and the `syncSequenceRef` check provide significant protection, adding a unique session counter ensures that responses from a previous visit to the same performance are always discarded.
 **Fix:**
-```javascript
-.finally(() => {
-  if (sequenceToSave === lastEditSequenceRef.current) {
-    setIsRequestInFlight(false);
-  }
-})
+Add a `sessionIdRef` that increments in `fetchData`. Include it in the `contextId`.
+```typescript
+const sessionIdRef = useRef(0);
+// In fetchData: sessionIdRef.current++;
+const contextId = `${targetId}-${targetVenue}-${sessionIdRef.current}`;
 ```
+
+**Resolution:** Implemented with session-aware `SeatingSyncContext` values and covered by `seating sync contexts reject stale responses from previous visits`.
+
+### IN-02: Suppress Loading Indicator for Background Flushes
+
+**File:** `src/hooks/useSeatingChart.ts`
+**Issue:** When `syncWithServer` is called as a flush during cleanup, it may set `setIsRequestInFlight(true)` or `setIsSyncPending(true)`. If the context has already changed, this will cause the UI of the *new* performance to show "Saving..." even though the new performance's state is clean.
+**Fix:**
+Only update state variables (`setIsSaving`, `setIsSyncPending`, etc.) if the `contextId` of the request matches the *current* hook context.
+
+**Resolution:** Implemented with `updateCurrentState: false` for cleanup flushes and current-context checks before UI state updates.
 
 ---
 
-_Reviewed: 2026-05-16T14:56:51Z_
+_Reviewed: 2026-05-16_
 _Reviewer: gsd-code-reviewer_
-_Depth: deep_
+_Depth: standard_

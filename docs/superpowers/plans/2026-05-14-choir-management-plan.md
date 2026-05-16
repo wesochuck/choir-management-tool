@@ -1,12 +1,14 @@
 # Choir Management Tool Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build a mobile-first Choir Management tool allowing admins to manage rosters, events, attendance, and seating charts, while allowing singers to RSVP and view schedules.
 
 **Architecture:** PocketBase provides the SQLite database, Auth, and REST API. The frontend is a React (TypeScript) SPA built with Vite, emphasizing responsive design with Vanilla CSS.
 
 **Tech Stack:** PocketBase, React, TypeScript, Vite, React Router, PocketBase JS SDK.
+
+**Status:** Completed in the current worktree. Verification evidence: `npm run build`, `npm run lint`, `npm test`, PocketBase migrations through `1715690008_auditions_finish_repair.js`, API smoke testing against a migrated temporary PocketBase instance, and mobile Chrome layout metrics for `/login` and `/auditions`.
 
 ---
 
@@ -20,7 +22,7 @@
 - Create: `src/App.tsx`
 - Create: `pocketbase/` (directory for the backend binary)
 
-- [ ] **Step 1: Initialize Vite React-TS project**
+- [x] **Step 1: Initialize Vite React-TS project**
 
 ```bash
 npm create vite@latest frontend -- --template react-ts
@@ -31,7 +33,7 @@ npm install
 npm install pocketbase react-router-dom
 ```
 
-- [ ] **Step 2: Setup basic App shell**
+- [x] **Step 2: Setup basic App shell**
 
 Modify `src/App.tsx`:
 ```tsx
@@ -46,12 +48,12 @@ export default function App() {
 }
 ```
 
-- [ ] **Step 3: Verify Frontend runs**
+- [x] **Step 3: Verify Frontend runs**
 
 Run: `npm run build`
 Expected: Successful build without TypeScript errors.
 
-- [ ] **Step 4: Download and init PocketBase (macOS)**
+- [x] **Step 4: Download and init PocketBase (macOS)**
 
 ```bash
 mkdir pocketbase
@@ -66,7 +68,7 @@ kill %1
 ```
 Expected: `curl` returns a 200 health check response.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .
@@ -80,7 +82,7 @@ PocketBase uses JS/Go migrations to define schemas programmatically. We will cre
 **Files:**
 - Create: `pocketbase/pb_migrations/1715690000_collections.js`
 
-- [ ] **Step 1: Write the migration file**
+- [x] **Step 1: Write the migration file**
 
 Create `pocketbase/pb_migrations/1715690000_collections.js`:
 ```javascript
@@ -168,7 +170,7 @@ migrate((db) => {
 });
 ```
 
-- [ ] **Step 2: Apply Migrations**
+- [x] **Step 2: Apply Migrations**
 
 ```bash
 cd pocketbase
@@ -176,7 +178,7 @@ cd pocketbase
 ```
 Expected: `Successfully applied 1 migration.`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add pocketbase/pb_migrations/1715690000_collections.js
@@ -190,7 +192,7 @@ git commit -m "feat: initialize pocketbase schema migrations"
 - Create: `src/contexts/AuthContext.tsx`
 - Modify: `src/main.tsx`
 
-- [ ] **Step 1: Write PocketBase client instance**
+- [x] **Step 1: Write PocketBase client instance**
 
 Create `src/lib/pocketbase.ts`:
 ```typescript
@@ -200,7 +202,7 @@ import PocketBase from 'pocketbase';
 export const pb = new PocketBase(import.meta.env.VITE_PB_URL || 'http://127.0.0.1:8090');
 ```
 
-- [ ] **Step 2: Create AuthContext**
+- [x] **Step 2: Create AuthContext**
 
 Create `src/contexts/AuthContext.tsx`:
 ```tsx
@@ -240,7 +242,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => useContext(AuthContext);
 ```
 
-- [ ] **Step 3: Wrap app in AuthProvider**
+- [x] **Step 3: Wrap app in AuthProvider**
 
 Modify `src/main.tsx`:
 ```tsx
@@ -258,12 +260,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 ```
 
-- [ ] **Step 4: Verify Compilation**
+- [x] **Step 4: Verify Compilation**
 
 Run: `npm run build`
 Expected: Successful build.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/ src/contexts/ src/main.tsx
@@ -276,7 +278,7 @@ git commit -m "feat: setup pocketbase client and auth context"
 - Create: `src/views/LoginView.tsx`
 - Modify: `src/App.tsx`
 
-- [ ] **Step 1: Create Login Component**
+- [x] **Step 1: Create Login Component**
 
 Create `src/views/LoginView.tsx`:
 ```tsx
@@ -325,7 +327,7 @@ export default function LoginView() {
 }
 ```
 
-- [ ] **Step 2: Setup React Router in App.tsx**
+- [x] **Step 2: Setup React Router in App.tsx**
 
 Modify `src/App.tsx`:
 ```tsx
@@ -362,16 +364,102 @@ export default function App() {
 ```
 *(Also add `import { pb } from './lib/pocketbase';` to App.tsx)*
 
-- [ ] **Step 3: Verify Types**
+- [x] **Step 3: Verify Types**
 
 Run: `npm run build`
 Expected: Successful build.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/views/ src/App.tsx
 git commit -m "feat: add login view and basic routing"
 ```
 
-*(Note: Further phases for Roster Management, Event Creation, Attendance Checking, and Seating Charts will be built using a similar component-driven approach communicating directly with the `pb.collection()` APIs).*
+### Task 5: Global Roster Management (Admin)
+
+**Files:**
+- Create: `src/views/admin/RosterView.tsx`
+- Create: `src/components/admin/SingerModal.tsx`
+- Modify: `src/App.tsx`
+
+- [x] **Step 1: Create Roster View**
+A table listing all singers from the `profiles` collection. Include filters for Voice Part and Global Status.
+
+- [x] **Step 2: Create Singer Modal**
+A modal to add/edit a singer's profile (Name, Phone, Voice Part, Global Status, Notes).
+
+- [x] **Step 3: Integrate with App.tsx**
+Add a route for `/admin/roster` protected by admin check.
+
+- [x] **Step 4: Verify CRUD**
+Manually verify adding, editing, and filtering singers.
+
+- [x] **Step 5: Commit**
+`git add src/views/admin src/components/admin src/App.tsx && git commit -m "feat: add global roster management"`
+
+### Task 6: Event Management (Admin)
+
+**Files:**
+- Create: `src/views/admin/EventsView.tsx`
+- Create: `src/components/admin/EventModal.tsx`
+- Modify: `src/App.tsx`
+
+- [x] **Step 1: Create Events View**
+List all events from the `events` collection. Distinguish between Performances and Rehearsals.
+
+- [x] **Step 2: Create Event Modal**
+Modal to create/edit events. Include a dropdown to select a `ParentPerformanceID` for rehearsals.
+
+- [x] **Step 3: Integrate with App.tsx**
+Add a route for `/admin/events` protected by admin check.
+
+- [x] **Step 4: Verify CRUD**
+Manually verify creating a performance and then a rehearsal linked to it.
+
+- [x] **Step 5: Commit**
+`git add src/views/admin src/components/admin src/App.tsx && git commit -m "feat: add event management"`
+
+### Task 7: Singer Dashboard & RSVP
+
+**Files:**
+- Create: `src/views/singer/DashboardView.tsx`
+- Create: `src/components/singer/EventCard.tsx`
+- Create: `src/lib/calendar.ts`
+- Modify: `src/App.tsx`
+
+- [x] **Step 1: Create Singer Dashboard**
+Fetch events where the singer is invited (or all upcoming events if that's the policy).
+
+- [x] **Step 2: Implement RSVP Toggle**
+Update the `eventRosters` entry for the user when they click Yes/No. Create the entry if it doesn't exist.
+
+- [x] **Step 3: Implement ICS Generation**
+A utility in `src/lib/calendar.ts` to generate a `.ics` file for an event.
+
+- [x] **Step 4: Verify flow**
+Log in as a singer and verify RSVPing and downloading the calendar file.
+
+- [x] **Step 5: Commit**
+`git add src/views/singer src/components/singer src/lib/calendar.ts src/App.tsx && git commit -m "feat: add singer dashboard and RSVP flow"`
+
+### Task 8: Attendance Check-in (Mobile)
+
+**Files:**
+- Create: `src/views/admin/AttendanceView.tsx`
+- Modify: `src/App.tsx`
+
+- [x] **Step 1: Create Attendance View**
+A view where an admin selects an event.
+
+- [x] **Step 2: Implement Check-in List**
+Display only singers who RSVP'd "Yes" for that event. Large tap targets to toggle "Present/Absent".
+
+- [x] **Step 3: Implement Missed Rehearsal Warning**
+In the attendance list for a Performance, show a warning icon next to singers who missed 'n' rehearsals belonging to that performance.
+
+- [x] **Step 4: Verify Check-in**
+Verify attendance state updates in PocketBase when toggled.
+
+- [x] **Step 5: Commit**
+`git add src/views/admin/AttendanceView.tsx src/App.tsx && git commit -m "feat: add mobile-friendly attendance check-in"`

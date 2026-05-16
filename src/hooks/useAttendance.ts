@@ -91,8 +91,7 @@ export const useAttendance = (eventId: string) => {
     if (!event) return;
     const targetEventId = event.type === 'Performance' ? event.id : event.parentPerformanceId;
     if (!targetEventId) {
-       alert("Assign a Parent Performance to this rehearsal to track folders across the cycle.");
-       return;
+       throw new Error("Assign a Parent Performance to this rehearsal to track folders across the cycle.");
     }
 
     try {

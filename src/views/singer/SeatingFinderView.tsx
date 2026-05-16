@@ -1,94 +1,99 @@
 import { useState } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { PageLayout } from '../../components/common/PageLayout';
+import { AppCard } from '../../components/common/AppCard';
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
-  const { events } = useMyEvents();
+  const { events, isLoading: eventsLoading } = useMyEvents();
   const [searchTerm, setSearchTerm] = useState('');
 
   const event = events.find(e => e.id === eventId);
-  const { 
-    chart, activeProfiles, rowCounts, isLoading 
-  } = useSeatingChart(eventId || '', null);
+  const { chart, rowCounts, activeProfiles, isLoading: chartLoading } = useSeatingChart(eventId || '', null);
 
-  if (!event) return <div style={{ padding: '20px' }}>Event not found.</div>;
+  const isLoading = eventsLoading || chartLoading;
+
+  if (!event) return <div className="container" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Event not found.</div>;
 
   const mySeat = activeProfiles.find(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  // Find where this profile is assigned
-  let seatLocation = null;
-  if (chart?.assignments) {
-    for (const [key, profileId] of Object.entries(chart.assignments)) {
-      if (profileId === mySeat?.id) {
-        const [row, index] = key.split('-');
-        seatLocation = { row: parseInt(row) + 1, seat: parseInt(index) + 1 };
-        break;
-      }
-    }
-  }
+  
+  const seatLocation = mySeat ? Object.entries(chart?.assignments || {}).find(([, id]) => id === mySeat.id) : null;
+  const [row, seat] = seatLocation ? seatLocation[0].split('-').map(Number) : [null, null];
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f0f4f8', minHeight: '100vh' }}>
-      <header style={{ marginBottom: '24px' }}>
-        <Link to="/" style={{ textDecoration: 'none', color: '#3182ce', fontWeight: 'bold' }}>← Back to Dashboard</Link>
-        <h1 style={{ marginTop: '16px' }}>Find Your Seat</h1>
-        <div style={{ fontSize: '18px', color: '#4a5568' }}>{event.title || event.location}</div>
-      </header>
+    <PageLayout 
+      title="Find Your Seat" 
+      subtitle={event.title || event.location}
+      backTo="/"
+      maxWidth="800px"
+    >
+      <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+        <AppCard>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Search Your Name</label>
+            <input 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Type your name..."
+              className="card"
+              style={{ width: '100%', padding: '0 16px', height: '48px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}
+            />
+          </div>
 
-      <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Search Your Name</label>
-        <input 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Type your name..."
-          style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '16px' }}
-        />
+          {searchTerm && row !== null ? (
+            <div className="flex-col" style={{ 
+              marginTop: 'var(--space-lg)', 
+              textAlign: 'center', 
+              padding: 'var(--space-xl)', 
+              backgroundColor: 'var(--primary-light)', 
+              borderRadius: 'var(--radius-lg)', 
+              border: '2px solid var(--primary)',
+              gap: 'var(--space-sm)'
+            }}>
+              <div style={{ fontSize: '0.875rem', color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Assignment</div>
+              <div style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--primary-deep)', margin: 'var(--space-sm) 0', lineHeight: 1 }}>
+                 Row {row + 1}
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
+                 Seat {seat! + 1}
+              </div>
+            </div>
+          ) : searchTerm ? (
+            <div style={{ marginTop: 'var(--space-lg)', textAlign: 'center' }}>
+              <p className="text-muted">No assignment found for "{searchTerm}" yet. Check with your director!</p>
+            </div>
+          ) : (
+            <div style={{ marginTop: 'var(--space-lg)', textAlign: 'center' }}>
+              <p className="text-muted">Enter your name above to see your assigned seat.</p>
+            </div>
+          )}
+        </AppCard>
 
-        {searchTerm && seatLocation ? (
-          <div style={{ marginTop: '32px', textAlign: 'center', padding: '40px', backgroundColor: '#e6fffa', borderRadius: '16px', border: '2px solid #38a169' }}>
-            <div style={{ fontSize: '14px', color: '#2c7a7b', fontWeight: 'bold', textTransform: 'uppercase' }}>Your Assignment</div>
-            <div style={{ fontSize: '48px', fontWeight: '900', color: '#234e52', margin: '12px 0' }}>
-               Row {seatLocation.row}
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#285e61' }}>
-               Seat {seatLocation.seat}
-            </div>
-          </div>
-        ) : searchTerm ? (
-          <div style={{ marginTop: '32px', textAlign: 'center', color: '#718096' }}>
-            No assignment found for "{searchTerm}" yet. Check with your director!
-          </div>
-        ) : (
-          <div style={{ marginTop: '32px', textAlign: 'center', color: '#a0aec0' }}>
-            Enter your name above to see your assigned seat.
-          </div>
-        )}
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+           <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Full Stage View</h3>
+           {isLoading ? (
+              <div style={{ textAlign: 'center' }} className="text-muted">Loading grid...</div>
+           ) : (
+              <div className="flex-col" style={{ gap: '4px' }}>
+                  {rowCounts.map((count, rIdx) => (
+                      <div key={rIdx} className="flex-row" style={{ gap: '4px', justifyContent: 'center' }}>
+                          {Array.from({ length: count }).map((_, sIdx) => {
+                              const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === mySeat?.id && !!searchTerm;
+                              return (
+                                  <div key={sIdx} style={{ 
+                                      width: '12px', height: '12px', borderRadius: '2px',
+                                      backgroundColor: isMySeat ? 'var(--primary)' : 'var(--border)' 
+                                  }} />
+                              );
+                          })}
+                      </div>
+                  ))}
+              </div>
+           )}
+        </div>
       </div>
-
-      <div style={{ marginTop: '40px' }}>
-         <h3 style={{ fontSize: '14px', color: '#718096', textAlign: 'center', marginBottom: '16px' }}>FULL STAGE VIEW</h3>
-         {isLoading ? (
-            <div style={{ textAlign: 'center' }}>Loading grid...</div>
-         ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {rowCounts.map((count, rIdx) => (
-                    <div key={rIdx} style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                        {Array.from({ length: count }).map((_, sIdx) => {
-                            const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === mySeat?.id && !!searchTerm;
-                            return (
-                                <div key={sIdx} style={{ 
-                                    width: '12px', height: '12px', borderRadius: '2px',
-                                    backgroundColor: isMySeat ? '#38a169' : '#e2e8f0' 
-                                }} />
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-         )}
-      </div>
-    </div>
+    </PageLayout>
   );
 }

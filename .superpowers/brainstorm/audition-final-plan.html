@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audition Module - Final Design</title>
+    <style>
+        :root {
+            --primary: #4a7c59;
+            --primary-light: #e9f0eb;
+            --neutral-bg: #fcfcfc;
+            --neutral-surface: #ffffff;
+            --neutral-text: #2c3e50;
+            --neutral-muted: #64748b;
+            --neutral-border: #e2e8f0;
+            --color-danger: #fee2e2;
+            --color-danger-text: #991b1b;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--neutral-bg);
+            color: var(--neutral-text);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        .spec-container {
+            background: var(--neutral-surface);
+            border-radius: 12px;
+            border: 1px solid var(--neutral-border);
+            padding: 32px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 { color: var(--primary); }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .mockup {
+            border: 1px solid var(--neutral-border);
+            border-radius: 8px;
+            padding: 16px;
+            background: #f8fafc;
+        }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--neutral-border);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="spec-container">
+        <h1>Audition Module - Finishing Plan</h1>
+        
+        <section>
+            <h2>1. Public Form Improvements</h2>
+            <p>Gathering more data upfront reduces follow-up time.</p>
+            <div class="mockup">
+                <h3>Public Request Form</h3>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input value="Jane Doe" disabled>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Voice Part</label>
+                        <select disabled><option>Soprano 1</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Time Slot</label>
+                        <select disabled><option>Sat, May 23 @ 10am</option></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Experience / Musical Background</label>
+                    <textarea disabled>Sang in college choir for 3 years...</textarea>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;">Submit Request</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>2. Admin Management & Conversion</h2>
+            <p>Bridging the gap between "Auditionee" and "Choir Member".</p>
+            <div class="mockup">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Jane Doe <span class="tag">Scheduled</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">Convert to Singer</button>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--neutral-muted); margin-bottom: 12px;">
+                    Part: Soprano 1 | Exp: 3 years college choir
+                </div>
+                <div class="form-group">
+                    <label>Internal Audition Notes</label>
+                    <textarea placeholder="Great range, sight-reading is A-..." style="min-height: 80px;"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>3. Technical Foundation</h2>
+            <ul>
+                <li><strong>Fix:</strong> Add missing <code>created</code>/<code>updated</code> fields to migrations.</li>
+                <li><strong>Service:</strong> New <code>convertAuditionToSinger(id)</code> method.</li>
+                <li><strong>Flow:</strong> Automatically creates Profile, User Account (admin role: singer), and sets Audition to "Closed".</li>
+            </ul>
+        </section>
+    </div>
+</body>
+</html>

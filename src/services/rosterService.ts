@@ -1,5 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
+import type { Profile } from './profileService';
 
 export interface EventRoster extends RecordModel {
   profile: string;
@@ -9,6 +10,9 @@ export interface EventRoster extends RecordModel {
   seatId: string;
   folderNumber: string;
   folderReturned: boolean;
+  expand?: {
+    profile?: Profile;
+  };
 }
 
 export const rosterService = {

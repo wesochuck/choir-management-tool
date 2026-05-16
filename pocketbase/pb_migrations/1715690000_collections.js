@@ -16,11 +16,11 @@ migrate((app) => {
         { "id": "autodate2990389176", "name": "created", "type": "autodate", "system": true, "onCreate": true, "onUpdate": false },
         { "id": "autodate3332085495", "name": "updated", "type": "autodate", "system": true, "onCreate": true, "onUpdate": true }
       ],
-      "createRule": "",
-      "updateRule": "id = @request.auth.id",
-      "deleteRule": "id = @request.auth.id",
-      "viewRule": "id = @request.auth.id",
-      "listRule": "id = @request.auth.id",
+      "createRule": "@request.auth.role = \"admin\"",
+      "updateRule": "@request.auth.role = \"admin\" || id = @request.auth.id",
+      "deleteRule": "@request.auth.role = \"admin\"",
+      "viewRule": "@request.auth.role = \"admin\" || id = @request.auth.id",
+      "listRule": "@request.auth.role = \"admin\" || id = @request.auth.id",
       "passwordAuth": { "enabled": true }
     },
     {
@@ -36,11 +36,11 @@ migrate((app) => {
         { "id": "select2995910389", "name": "globalStatus", "type": "select", "required": true, "values": ["Active (Current)", "Active (Future)", "Inactive"] },
         { "id": "text18589324", "name": "notes", "type": "text" }
       ],
-      "listRule": "@request.auth.id != \"\"",
-      "viewRule": "@request.auth.id != \"\"",
-      "createRule": "@request.auth.id != \"\"",
-      "updateRule": "@request.auth.id != \"\"",
-      "deleteRule": "@request.auth.id != \"\""
+      "listRule": "@request.auth.role = \"admin\" || user = @request.auth.id",
+      "viewRule": "@request.auth.role = \"admin\" || user = @request.auth.id",
+      "createRule": "@request.auth.role = \"admin\"",
+      "updateRule": "@request.auth.role = \"admin\" || user = @request.auth.id",
+      "deleteRule": "@request.auth.role = \"admin\""
     },
     {
       "id": "pbc_1687431684",
@@ -57,9 +57,9 @@ migrate((app) => {
       ],
       "listRule": "@request.auth.id != \"\"",
       "viewRule": "@request.auth.id != \"\"",
-      "createRule": "@request.auth.id != \"\"",
-      "updateRule": "@request.auth.id != \"\"",
-      "deleteRule": "@request.auth.id != \"\""
+      "createRule": "@request.auth.role = \"admin\"",
+      "updateRule": "@request.auth.role = \"admin\"",
+      "deleteRule": "@request.auth.role = \"admin\""
     },
     {
       "id": "pbc_2357252437",
@@ -75,9 +75,9 @@ migrate((app) => {
       ],
       "listRule": "@request.auth.id != \"\"",
       "viewRule": "@request.auth.id != \"\"",
-      "createRule": "@request.auth.id != \"\"",
-      "updateRule": "@request.auth.id != \"\"",
-      "deleteRule": "@request.auth.id != \"\""
+      "createRule": "@request.auth.role = \"admin\" || profile.user = @request.auth.id",
+      "updateRule": "@request.auth.role = \"admin\" || profile.user = @request.auth.id",
+      "deleteRule": "@request.auth.role = \"admin\""
     }
   ];
 

@@ -4,58 +4,88 @@ import type { Event } from '../../services/eventService';
 interface EventListProps {
   events: Event[];
   onEdit: (event: Event) => void;
+  onEmailReminder: (event: Event) => void;
+  onTextReminder: (event: Event) => void;
+  onViewRoster: (event: Event) => void;
 }
+import { AppCard } from '../common/AppCard';
 
-export const EventList: React.FC<EventListProps> = ({ events, onEdit }) => {
+export const EventList: React.FC<EventListProps> = ({ events, onEdit, onEmailReminder, onTextReminder, onViewRoster }) => {
   return (
-    <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+    <AppCard noPadding>
       {events.map((e) => (
-        <div key={e.id} style={{ 
-          padding: '16px', 
-          borderBottom: '1px solid #f0f4f8', 
-          display: 'flex', 
+        <div key={e.id} className="flex-responsive relative-row" style={{ 
+          padding: 'var(--space-lg)', 
+          borderBottom: '1px solid var(--border)', 
           justifyContent: 'space-between', 
-          alignItems: 'center' 
+          width: '100%',
+          gap: 'var(--space-md)'
         }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ 
-                fontSize: '11px', 
-                fontWeight: 'bold', 
-                textTransform: 'uppercase',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                backgroundColor: e.type === 'Performance' ? '#fed7d7' : '#ebf8ff',
-                color: e.type === 'Performance' ? '#9b2c2c' : '#2c5282'
-              }}>
+          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+              <span className={`badge ${e.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
                 {e.type}
               </span>
-              <span style={{ fontWeight: '600' }}>{new Date(e.date).toLocaleDateString()}</span>
+              <span className="text-label" style={{ color: 'var(--primary)' }}>
+                {new Date(e.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
             </div>
-            {e.title && <div style={{ marginTop: '8px', fontSize: '18px', fontWeight: 'bold', color: '#2d3748' }}>{e.title}</div>}
-            <div style={{ marginTop: e.title ? '4px' : '8px', fontSize: '14px', color: '#4a5568' }}>
+            {e.title && <div className="text-headline">{e.title}</div>}
+            <div className="text-label">
               <a 
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                style={{ color: '#3182ce', textDecoration: 'none' }}
+                onClick={(event) => event.stopPropagation()}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                <strong>📍 {e.location}</strong>
+                📍 <strong>{e.location}</strong>
               </a>
             </div>
-            {e.details && <div style={{ fontSize: '12px', color: '#718096', marginTop: '2px' }}>{e.details}</div>}
+            {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <button 
-            onClick={() => onEdit(e)}
-            style={{ padding: '6px 12px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #cbd5e0' }}
-          >
-            Edit
-          </button>
+          <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                onViewRoster(e);
+              }}
+              className="btn btn-ghost btn-sm"
+            >
+              RSVP List
+            </button>
+            <button 
+              onClick={(event) => {
+                event.stopPropagation();
+                onEmailReminder(e);
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              Email Reminder
+            </button>
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                onTextReminder(e);
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              Text Reminder
+            </button>
+            <button 
+              onClick={() => onEdit(e)}
+              className="btn btn-ghost btn-sm expanded-hit-area"
+            >
+              Edit
+            </button>
+          </div>
         </div>
       ))}
       {events.length === 0 && (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#a0aec0' }}>No events scheduled.</div>
+        <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+          <p className="text-muted text-sm">No events scheduled.</p>
+        </div>
       )}
-    </div>
+    </AppCard>
   );
 };

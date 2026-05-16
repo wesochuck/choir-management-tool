@@ -1,30 +1,30 @@
 import React, { useState } from 'react';
 import { pb } from '../lib/pocketbase';
 import { useNavigate } from 'react-router-dom';
+import { AppCard } from '../components/common/AppCard';
 
 export default function LoginView() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
-
+    setError('');
+    
     try {
-      // First try regular user login
       await pb.collection('users').authWithPassword(email, password);
       navigate('/');
-    } catch (err: any) {
+    } catch {
       try {
         // If regular user fails, try superuser login
         await pb.collection('_superusers').authWithPassword(email, password);
         navigate('/');
-      } catch (superErr: any) {
-        setError(err.message || 'Failed to login');
+      } catch {
+        setError('Invalid email or password');
       }
     } finally {
       setIsLoading(false);
@@ -32,40 +32,45 @@ export default function LoginView() {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '40px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: isLoading ? 'not-allowed' : 'pointer' }}
-        >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
+    <div className="flex-col" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', padding: 'var(--space-md)', backgroundColor: 'var(--bg)' }}>
+      <AppCard style={{ width: '100%', maxWidth: 'min(400px, calc(100vw - 32px))' }}>
+        <h1 className="text-display" style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>Login</h1>
+        <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="card"
+              style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+            />
+          </div>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="card"
+              style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+            />
+          </div>
+          {error && <p className="text-xs" style={{ color: 'var(--color-danger-text)' }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: 'var(--space-md)' }}
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      </AppCard>
     </div>
   );
 }
