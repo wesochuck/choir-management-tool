@@ -1,52 +1,68 @@
-# Design Specification: Seating Chart Save Improvements
+# Phase 2: Seating Chart Save Improvements (Cycle 4) - SPEC
 
-## 1. Overview
-This specification details the improvements to the seating chart saving experience. While the system currently auto-saves every change, users need visual confirmation that their work is safe and an explicit "Save" button for peace of mind. To prevent race conditions and data loss during rapid edits, a debounced, optimistic saving strategy is required.
+This document specifies the robust state machine for the seating chart save logic in `useSeatingChart`, addressing race conditions and network instability.
 
-## 2. Visual Design
+## 1. Requirement Traceability
+- **GOAL:** Ensure data integrity during rapid edits and handle network race conditions gracefully.
+- **D-01 (from Review):** Track edits synchronously at the time of the action, not the request.
+- **D-02 (from Review):** Clear errors at the start of a sync attempt.
+- **D-03 (from Review):** Handle out-of-order responses by ignoring old sequences.
+- **D-04 (from Review):** Only set error state if the failing request was the latest edit.
 
-### 2.1 Status Indicator
-- **Location**: In the SeatingView toolbar, near the "Copy Layout From" or "Print Layout" button.
-- **States**:
-  - **Saved**: "All changes saved" with a green checkmark icon (Sage Green #4a7c59).
-  - **Saving**: "Saving..." with a subtle pulsing animation or neutral color (Neutral Muted #64748b).
-  - **Error**: "Failed to save" in red text with an alert icon.
-- **Typography**: Label style (500 weight, 0.875rem).
-- **Flicker Prevention**: The "All changes saved" status should only be displayed when the system is truly idle (no pending syncs and no active network requests).
+## 2. State Machine Design
 
-### 2.2 Explicit Save Button
-- **Style**: Secondary button (Sage Mist #e9f0eb background, Sage Green #4a7c59 text).
-- **Label**: "💾 Save"
-- **Behavior**:
-  - **Smart Sync**: If `isSaving` is false and no changes are pending, clicking "Save" should provide visual "Saved!" feedback without performing a network request.
-  - **Forced Sync**: If changes are pending in the debounce timer, clicking "Save" should immediately trigger the sync.
-  - **Feedback**: Provide temporary "Saved!" toast-like feedback on the button itself (e.g., label changes briefly to "Saved!").
+### 2.1 Variables & Refs
 
-### 2.3 Auto-save Messaging
-- **Text**: "Your changes are saved automatically."
-- **Style**: Neutral Muted (#64748b), small font size (0.75rem or var(--font-size-xs)).
-- **Location**: Directly below or next to the Save button.
+| Name | Type | Purpose |
+|------|------|---------|
+| `lastEditIdRef` | `MutableRefObject<number>` | Incremented synchronously on every local edit. |
+| `lastAppliedIdRef` | `MutableRefObject<number>` | Tracks the highest `lastEditId` successfully persisted to the server. |
+| `activeRequestsCount` | `useState<number>` | Number of network requests currently in flight. |
+| `isSyncPending` | `useState<boolean>` | True if a debounce timer is currently running. |
+| `optimisticAssignments`| `useState<Record>` | The local "ground truth" for the UI. |
+| `error` | `useState<string | null>` | Error message from the latest attempted edit. |
 
-## 3. Technical Requirements
+### 2.2 Derivations
 
-### 3.1 Hook Enhancements (`useSeatingChart.ts`)
-- **Optimistic State**: Introduce `optimisticAssignments` state (or similar) to track the current UI state of the chart.
-- **Debounced Sync**:
-  - Implement a `syncWithServer` function that sends the `optimisticAssignments` to PocketBase.
-  - Debounce this function by ~500-1000ms.
-- **`isSaving` logic**:
-  - `isSaving` = `isSyncingWithServer` (active request) OR `isSyncPending` (timer running).
-- **Methods**:
-  - `assignSinger`: Updates `optimisticAssignments` immediately and triggers/resets the debounce timer.
-  - `updateChart`: Updates `optimisticAssignments` and triggers/resets the debounce timer.
-  - `forceSave`: Immediately cancels the debounce timer and calls `syncWithServer` if changes are pending.
+- **`isDirty`**: `lastEditIdRef.current > lastAppliedIdRef.current`
+- **`isSaving`**: `isSyncPending || activeRequestsCount > 0`
 
-### 3.2 View Implementation (`SeatingView.tsx`)
-- Implement a `SavingIndicator` component (internal or sub-component).
-- Update the toolbar layout to accommodate the new elements.
-- The Save button should display "Saved!" temporarily after a successful manual or automatic save if it was the last action.
+## 3. Operations
 
-## 4. User Experience (UX)
-- **Immediate Feedback**: The "Saving..." state should appear immediately when a change is initiated.
-- **Data Integrity**: Local edits are never overwritten by stale server responses during rapid fire edits.
-- **Error Recovery**: If a save fails, the error state should persist until a successful retry is performed.
+### 3.1 Local Edit (`assignSinger`, `updateChart`)
+1. Increment `lastEditIdRef.current`.
+2. Update `optimisticAssignments` (and other chart fields) synchronously.
+3. Schedule `syncWithServer` with 1000ms debounce.
+4. Set `isSyncPending(true)`.
+
+### 3.2 Syncing (`syncWithServer`)
+1. Clear any existing debounce timer.
+2. Set `isSyncPending(false)`.
+3. Capture `const requestId = lastEditIdRef.current`.
+4. If `requestId === lastAppliedIdRef.current`, return (nothing new to save).
+5. Increment `activeRequestsCount`.
+6. Set `error(null)`.
+7. **Perform API Call** (`seatingService.saveChart`):
+   - **Success**:
+     - If `requestId > lastAppliedIdRef.current`:
+       - `lastAppliedIdRef.current = requestId`.
+       - Update `chart` state with response.
+   - **Failure**:
+     - If `requestId === lastEditIdRef.current`:
+       - `setHasError(err)`.
+   - **Finally**:
+     - Decrement `activeRequestsCount`.
+
+### 3.3 Manual Force Save
+1. If `isDirty`: Trigger `syncWithServer` immediately (bypassing debounce).
+2. If `!isDirty`: Show "Saved!" toast (implementation in component).
+
+## 4. UI Indicators (SeatingGrid)
+
+- **Saving**: Display "Saving..." if `isSaving` is true.
+- **Dirty**: Display "Unsaved changes" if `isDirty` is true and `!isSaving`.
+- **Saved**: Display "Saved" if `!isDirty` and `!isSaving` and `!error`.
+- **Error**: Display "Save failed - click to retry" if `error` is present.
+
+## 5. Migration Rules
+- Ensure `src/services/seatingService.ts` supports partial updates if needed, or always send the full payload derived from `optimisticAssignments`.
