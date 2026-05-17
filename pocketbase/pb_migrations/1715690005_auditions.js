@@ -17,7 +17,7 @@ migrate((app) => {
     ],
     "listRule": "@request.auth.role = \"admin\"",
     "viewRule": "@request.auth.role = \"admin\"",
-    "createRule": "@request.auth.id = \"\" || @request.auth.id != \"\"",
+    "createRule": "@request.auth.id != \"\"",
     "updateRule": "@request.auth.role = \"admin\"",
     "deleteRule": "@request.auth.role = \"admin\""
   });
