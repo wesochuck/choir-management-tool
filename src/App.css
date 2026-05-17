@@ -43,11 +43,13 @@
   transform: scale(0.998);
 }
 
+.relative-row.clickable-row:hover,
 tr.relative-row:hover {
   background-color: var(--primary-light) !important;
   cursor: pointer;
 }
 
+.relative-row.clickable-row:active,
 tr.relative-row:active {
   background-color: #d1dfd6 !important;
   transform: scale(0.998);

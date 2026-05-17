@@ -61,7 +61,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
       if (!data.profileId) return;
       await onAssign(targetSeatKey, data.profileId, data.fromSeatKey);
-    } catch (err) {
+    } catch {
       const profileId = e.dataTransfer.getData('profileId');
       if (profileId) {
         const sourceSeatKey = e.dataTransfer.getData('sourceSeatKey');

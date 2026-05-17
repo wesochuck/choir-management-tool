@@ -12,16 +12,22 @@ import { AppCard } from '../common/AppCard';
 
 export const EventList: React.FC<EventListProps> = ({ events, onEdit, onEmailReminder, onTextReminder, onViewRoster }) => {
   return (
-    <AppCard noPadding>
+    <AppCard noPadding style={{ gap: 0 }}>
       {events.map((e) => (
-        <div key={e.id} className="flex-responsive relative-row" style={{ 
-          padding: 'var(--space-lg)', 
-          borderBottom: '1px solid var(--border)', 
-          justifyContent: 'space-between', 
-          width: '100%',
-          gap: 'var(--space-md)'
-        }}>
-          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+        <div 
+          key={e.id} 
+          className="flex-responsive relative-row clickable-row" 
+          onClick={() => onEdit(e)}
+          style={{ 
+            padding: 'var(--space-md) var(--space-lg)', 
+            borderBottom: '1px solid var(--border)', 
+            justifyContent: 'space-between', 
+            width: '100%',
+            gap: 'var(--space-md)',
+            cursor: 'pointer'
+          }}
+        >
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
             <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
               <span className={`badge ${e.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
                 {e.type}
@@ -73,8 +79,11 @@ export const EventList: React.FC<EventListProps> = ({ events, onEdit, onEmailRem
               Text Reminder
             </button>
             <button 
-              onClick={() => onEdit(e)}
-              className="btn btn-ghost btn-sm expanded-hit-area"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit(e);
+              }}
+              className="btn btn-ghost btn-sm"
             >
               Edit
             </button>
