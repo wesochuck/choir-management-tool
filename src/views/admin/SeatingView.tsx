@@ -307,6 +307,18 @@ export default function SeatingView() {
               <div className="flex-col" style={{ alignItems: 'center', padding: 'var(--space-xl)' }}>
                 <p className="text-muted">Loading seating data...</p>
               </div>
+            ) : selectedVenue?.isOpenSeating ? (
+              <div className="flex-col" style={{ alignItems: 'center', padding: 'var(--space-xl)', textAlign: 'center' }}>
+                <h3 className="text-headline">Open Seating</h3>
+                <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
+                {selectedVenue.address && (
+                  <p style={{ marginTop: 'var(--space-md)' }}>
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+                      📍 View Map
+                    </a>
+                  </p>
+                )}
+              </div>
             ) : (
               <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
                 <div className="no-print" style={{ 
@@ -332,63 +344,65 @@ export default function SeatingView() {
             )}
           </AppCard>
 
-          <AppCard className="no-print" style={{ 
-            width: '320px', 
-            position: 'sticky', 
-            top: 'var(--space-lg)',
-            height: 'calc(100vh - 140px)',
-            display: 'flex',
-            flexDirection: 'column',
-            boxSizing: 'border-box',
-            border: '2px dashed var(--border)'
-          }}>
-            <div 
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                try {
-                  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                  if (data.fromSeatKey) {
-                    assignSinger(data.fromSeatKey, '');
+          {!selectedVenue?.isOpenSeating && (
+            <AppCard className="no-print" style={{ 
+              width: '320px', 
+              position: 'sticky', 
+              top: 'var(--space-lg)',
+              height: 'calc(100vh - 140px)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              border: '2px dashed var(--border)'
+            }}>
+              <div 
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (data.fromSeatKey) {
+                      assignSinger(data.fromSeatKey, '');
+                    }
+                  } catch (err) {
+                    console.error('Failed to parse sidebar drop data', err);
                   }
-                } catch (err) {
-                  console.error('Failed to parse sidebar drop data', err);
-                }
-              }}
-              style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}
-            >
-              <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
-              <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
-                {activeProfiles
-                  .filter(p => !Object.values(optimisticAssignments).includes(p.id))
-                  .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
-                  .map(p => (
-                    <div 
-                      key={p.id}
-                      draggable
-                      onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                      className="flex-row"
-                      style={{ 
-                        padding: 'var(--space-sm) var(--space-md)', 
-                        backgroundColor: 'var(--bg)', 
-                        border: '1px solid var(--border)', 
-                        borderRadius: 'var(--radius-md)', 
-                        cursor: 'grab',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
-                      <span className="badge badge-rehearsal">{p.voicePart}</span>
+                }}
+                style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}
+              >
+                <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
+                <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
+                  {activeProfiles
+                    .filter(p => !Object.values(optimisticAssignments).includes(p.id))
+                    .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
+                    .map(p => (
+                      <div 
+                        key={p.id}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
+                        className="flex-row"
+                        style={{ 
+                          padding: 'var(--space-sm) var(--space-md)', 
+                          backgroundColor: 'var(--bg)', 
+                          border: '1px solid var(--border)', 
+                          borderRadius: 'var(--radius-md)', 
+                          cursor: 'grab',
+                          justifyContent: 'space-between'
+                        }}
+                      >
+                        <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
+                        <span className="badge badge-rehearsal">{p.voicePart}</span>
+                      </div>
+                    ))}
+                  {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
+                    <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                      <p className="text-muted text-sm">All singers assigned!</p>
                     </div>
-                  ))}
-                {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
-                  <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-                    <p className="text-muted text-sm">All singers assigned!</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </AppCard>
+            </AppCard>
+          )}
         </div>
       ) : (
         <AppCard style={{ padding: '80px', textAlign: 'center' }}>
