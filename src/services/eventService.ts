@@ -31,6 +31,9 @@ export const eventService = {
     if (payload.date) {
       payload.date = new Date(payload.date).toISOString();
     }
+    if (payload.parentPerformanceId === '') {
+      payload.parentPerformanceId = null as any;
+    }
     return await pb.collection('events').create<Event>(payload);
   },
 
@@ -38,6 +41,9 @@ export const eventService = {
     const payload = { ...data };
     if (payload.date) {
       payload.date = new Date(payload.date).toISOString();
+    }
+    if (payload.parentPerformanceId === '') {
+      payload.parentPerformanceId = null as any;
     }
     return await pb.collection('events').update<Event>(id, payload);
   },

@@ -77,10 +77,30 @@ export const useAttendance = (eventId: string) => {
   }, [fetchAttendance]);
 
   const setAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
+    const originalItem = items.find(item => item.profileId === profileId);
+    if (!originalItem) return;
+
+    // Optimistically update local state immediately
+    setItems(prev => prev.map(item => 
+      item.profileId === profileId 
+        ? { ...item, attendance: next } 
+        : item
+    ));
+
     try {
       const updated = await rosterService.upsertAttendance(eventId, profileId, next);
-      setItems(prev => prev.map(item => item.profileId === profileId ? { ...item, id: updated.id, rosterId: updated.id, attendance: updated.attendance } : item));
+      setItems(prev => prev.map(item => 
+        item.profileId === profileId 
+          ? { ...item, id: updated.id, rosterId: updated.id, attendance: updated.attendance } 
+          : item
+      ));
     } catch (err: any) {
+      // Revert to original state on failure
+      setItems(prev => prev.map(item => 
+        item.profileId === profileId 
+          ? { ...item, attendance: originalItem.attendance } 
+          : item
+      ));
       throw new Error(err.message || 'Failed to update attendance');
     }
   };
@@ -92,10 +112,30 @@ export const useAttendance = (eventId: string) => {
        throw new Error("Assign a Parent Performance to this rehearsal to track folders across the cycle.");
     }
 
+    const originalItem = items.find(item => item.profileId === profileId);
+    if (!originalItem) return;
+
+    // Optimistically update local state immediately
+    setItems(prev => prev.map(item => 
+      item.profileId === profileId 
+        ? { ...item, folderNumber, folderReturned } 
+        : item
+    ));
+
     try {
       const updated = await rosterService.upsertFolder(targetEventId, profileId, { folderNumber, folderReturned });
-      setItems(prev => prev.map(item => item.profileId === profileId ? { ...item, folderNumber: updated.folderNumber, folderReturned: updated.folderReturned } : item));
+      setItems(prev => prev.map(item => 
+        item.profileId === profileId 
+          ? { ...item, folderNumber: updated.folderNumber, folderReturned: updated.folderReturned } 
+          : item
+      ));
     } catch (err: any) {
+      // Revert to original state on failure
+      setItems(prev => prev.map(item => 
+        item.profileId === profileId 
+          ? { ...item, folderNumber: originalItem.folderNumber, folderReturned: originalItem.folderReturned } 
+          : item
+      ));
       throw new Error(err.message || 'Failed to update folder');
     }
   };

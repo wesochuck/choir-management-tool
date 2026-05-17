@@ -116,7 +116,7 @@ export const profileService = {
       }
     }
 
-    return await pb.collection('profiles').update<Profile>(id, { ...profile, user: userId });
+    return await pb.collection('profiles').update<Profile>(id, { ...profile, user: userId || null });
   },
 
   async deleteProfile(id: string) {
