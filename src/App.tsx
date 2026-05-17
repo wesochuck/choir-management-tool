@@ -67,7 +67,7 @@ export default function App() {
         
         <Route path="/admin/seating" element={
           <ProtectedRoute adminOnly>
-            <PageLayout title="Seating Charts" backTo="/">
+            <PageLayout title="Seating Charts" backTo="/" maxWidth="1400px">
               <SeatingView />
             </PageLayout>
           </ProtectedRoute>

@@ -219,7 +219,9 @@ export default function SeatingView() {
               padding: 'var(--space-lg)', 
               backgroundColor: 'var(--primary-light)', 
               borderRadius: 'var(--radius-lg)',
-              gap: 'var(--space-lg)'
+              gap: 'var(--space-lg)',
+              flexWrap: 'wrap',
+              alignItems: 'center'
             }}>
                <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
                   <button onClick={handleClear} className="btn btn-ghost" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
