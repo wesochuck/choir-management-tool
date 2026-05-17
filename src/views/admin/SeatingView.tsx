@@ -321,37 +321,54 @@ export default function SeatingView() {
             height: 'calc(100vh - 140px)',
             display: 'flex',
             flexDirection: 'column',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            border: '2px dashed var(--border)'
           }}>
-            <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
-            <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
-              {activeProfiles
-                .filter(p => !Object.values(optimisticAssignments).includes(p.id))
-                .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
-                .map(p => (
-                  <div 
-                    key={p.id}
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                    className="flex-row"
-                    style={{ 
-                      padding: 'var(--space-sm) var(--space-md)', 
-                      backgroundColor: 'var(--bg)', 
-                      border: '1px solid var(--border)', 
-                      borderRadius: 'var(--radius-md)', 
-                      cursor: 'grab',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
-                    <span className="badge badge-rehearsal">{p.voicePart}</span>
+            <div 
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                try {
+                  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                  if (data.fromSeatKey) {
+                    assignSinger(data.fromSeatKey, '');
+                  }
+                } catch (err) {
+                  console.error('Failed to parse sidebar drop data', err);
+                }
+              }}
+              style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}
+            >
+              <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
+              <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
+                {activeProfiles
+                  .filter(p => !Object.values(optimisticAssignments).includes(p.id))
+                  .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
+                  .map(p => (
+                    <div 
+                      key={p.id}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
+                      className="flex-row"
+                      style={{ 
+                        padding: 'var(--space-sm) var(--space-md)', 
+                        backgroundColor: 'var(--bg)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: 'var(--radius-md)', 
+                        cursor: 'grab',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
+                      <span className="badge badge-rehearsal">{p.voicePart}</span>
+                    </div>
+                  ))}
+                {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
+                  <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                    <p className="text-muted text-sm">All singers assigned!</p>
                   </div>
-                ))}
-              {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
-                <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-                  <p className="text-muted text-sm">All singers assigned!</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </AppCard>
         </div>
