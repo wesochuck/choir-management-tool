@@ -7,7 +7,7 @@ interface SeatingGridProps {
   assignments: Record<string, string>;
   suggestions: Record<string, VoicePart>;
   activeProfiles: Profile[];
-  onAssign: (seatKey: string, profileId: string) => Promise<void>;
+  onAssign: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   isReadOnly?: boolean;
 }
 
@@ -40,19 +40,33 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  const [activeDragOver, setActiveDragOver] = React.useState<string | null>(null);
+
+  const getIsNeighbor = (hoveredKey: string | null, targetKey: string) => {
+    if (!hoveredKey) return false;
+    const [r1, s1] = hoveredKey.split('-').map(Number);
+    const [r2, s2] = targetKey.split('-').map(Number);
+    return r1 === r2 && Math.abs(s1 - s2) === 1;
+  };
+
   const handleDragStart = (e: React.DragEvent, profileId: string, sourceSeatKey?: string) => {
-    e.dataTransfer.setData('profileId', profileId);
-    if (sourceSeatKey) {
-      e.dataTransfer.setData('sourceSeatKey', sourceSeatKey);
-    }
+    e.dataTransfer.setData('text/plain', JSON.stringify({ profileId, fromSeatKey: sourceSeatKey }));
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDrop = async (e: React.DragEvent, targetSeatKey: string) => {
     e.preventDefault();
-    const profileId = e.dataTransfer.getData('profileId');
-    if (!profileId) return;
-    await onAssign(targetSeatKey, profileId);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      if (!data.profileId) return;
+      await onAssign(targetSeatKey, data.profileId, data.fromSeatKey);
+    } catch (err) {
+      const profileId = e.dataTransfer.getData('profileId');
+      if (profileId) {
+        const sourceSeatKey = e.dataTransfer.getData('sourceSeatKey');
+        await onAssign(targetSeatKey, profileId, sourceSeatKey || undefined);
+      }
+    }
   };
 
   return (
@@ -83,23 +97,43 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const hasLeftBorder = suggestion !== leftSuggestion;
             const hasRightBorder = suggestion !== rightSuggestion;
 
+            const isHovered = seatKey === activeDragOver;
+            const isNeighbor = getIsNeighbor(activeDragOver, seatKey);
+            
+            const scale = isHovered ? 1.45 : (isNeighbor ? 1.22 : 1.0);
+            const translateY = isHovered ? -8 : (isNeighbor ? -4 : 0);
+            const zIndex = isHovered ? 10 : (isNeighbor ? 5 : 1);
+            const boxShadow = isHovered ? 'var(--shadow-lg)' : (isNeighbor ? 'var(--shadow-sm)' : 'none');
+
             return (
               <div 
                 key={seatKey} 
-                onDragOver={(e) => !isReadOnly && e.preventDefault()}
-                onDrop={(e) => !isReadOnly && handleDrop(e, seatKey)}
+                onDragOver={(e) => {
+                  if (!isReadOnly) {
+                    e.preventDefault();
+                  }
+                }}
+                onDragEnter={() => !isReadOnly && setActiveDragOver(seatKey)}
+                onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
+                onDrop={(e) => {
+                  if (!isReadOnly) {
+                    e.preventDefault();
+                    setActiveDragOver(null);
+                    handleDrop(e, seatKey);
+                  }
+                }}
                 draggable={!isReadOnly && !!assignedProfile}
                 onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                 title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
-                className="flex-col"
+                className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'}`}
                 style={{ 
                   width: `${seatSize}px`, 
                   height: `${seatSize}px`, 
-                  backgroundColor: colors.bg,
-                  borderTop: `1px solid ${profileId ? colors.text : 'var(--border)'}`,
-                  borderBottom: `1px solid ${profileId ? colors.text : 'var(--border)'}`,
-                  borderLeft: hasLeftBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : 'var(--border)'}`,
-                  borderRight: hasRightBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : 'var(--border)'}`,
+                  backgroundColor: profileId ? colors.bg : 'var(--surface)',
+                  borderTop: `1px solid ${profileId ? colors.text : colors.bg}`,
+                  borderBottom: `1px solid ${profileId ? colors.text : colors.bg}`,
+                  borderLeft: hasLeftBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : colors.bg}`,
+                  borderRight: hasRightBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : colors.bg}`,
                   borderRadius: 'var(--radius-md)',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -107,9 +141,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   fontSize: fontSize,
                   position: 'relative',
                   cursor: isReadOnly ? 'default' : (assignedProfile ? 'grab' : 'pointer'),
-                  boxShadow: profileId ? 'var(--shadow-sm)' : 'none',
+                  boxShadow: boxShadow,
                   flexShrink: 0,
-                  gap: 0
+                  gap: 0,
+                  transform: `scale(${scale}) translateY(${translateY}px)`,
+                  zIndex: zIndex,
+                  transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s'
                 }}
               >
                 {!isReadOnly && (
@@ -149,7 +186,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   </select>
                 )}
                 
-                <div className="text-xs" style={{ fontWeight: 700, color: colors.text, opacity: 0.6 }}>
+                <div className="text-xs" style={{ fontWeight: 700, color: colors.text }}>
                   {suggestion}{seatIndex + 1}
                 </div>
                 {assignedProfile ? (
@@ -157,12 +194,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <div style={{ fontWeight: 800, fontSize: isCompact ? 'var(--font-size-xs)' : 'var(--font-size-label)', color: colors.text, lineHeight: 1.1 }}>
                       {isCompact ? getInitials(assignedProfile.name) : assignedProfile.name.split(' ').pop()}
                     </div>
-                    <div className="text-xs" style={{ fontWeight: 600, color: colors.text, opacity: 0.8 }}>
+                    <div className="text-xs" style={{ fontWeight: 700, color: colors.text }}>
                       {assignedProfile.voicePart}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted text-xs" style={{ opacity: 0.5 }}>{isCompact ? '—' : 'Empty'}</div>
+                  <div className="text-xs" style={{ fontWeight: 600, color: 'var(--text)' }}>{isCompact ? '—' : 'Empty'}</div>
                 )}
               </div>
             );
