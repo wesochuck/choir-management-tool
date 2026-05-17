@@ -224,7 +224,7 @@ export default function CommunicationView() {
                 <select className="card" value={filters.eventId} onChange={(event) => updateFilter('eventId', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
                   <option value="">All Events</option>
                   {events.map((event) => (
-                    <option key={event.id} value={event.id}>{event.title || event.location}</option>
+                    <option key={event.id} value={event.id}>{event.title || event.expand?.venue?.name || ''}</option>
                   ))}
                 </select>
               </div>

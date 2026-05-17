@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Event } from '../../services/eventService';
+import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { formatPocketBaseError } from '../../lib/pocketbase';
@@ -11,26 +12,43 @@ interface EventModalProps {
   onDelete?: (id: string) => Promise<void>;
   initialData?: Event | null;
   performances: Event[];
+  venues: Venue[];
+  onAddVenue: (data: Partial<Venue>) => Promise<Venue>;
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData, performances }) => {
+export const EventModal: React.FC<EventModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  onDelete, 
+  initialData, 
+  performances,
+  venues,
+  onAddVenue
+}) => {
   const dialog = useDialog();
   const [formData, setFormData] = useState<Partial<Event>>({
     title: '',
     date: new Date().toISOString().slice(0, 16),
-    location: '',
     type: 'Rehearsal',
     details: '',
     parentPerformanceId: '',
+    venue: '',
   });
 
   const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
   const [bulkCount, setBulkCount] = useState(8);
   const [bulkDay, setBulkDay] = useState(2); // Tuesday
   const [bulkTime, setBulkTime] = useState('19:00');
-  const [bulkLocation, setBulkLocation] = useState('');
+  const [bulkVenue, setBulkVenue] = useState('');
 
   const [isSubmitting, setIsLoading] = useState(false);
+
+  // Inline Quick-Add Venue States
+  const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
+  const [newVenueName, setNewVenueName] = useState('');
+  const [newVenueRows, setNewVenueRows] = useState('');
+  const [isSavingVenue, setIsSavingVenue] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -41,21 +59,29 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       setFormData({
         title: '',
         date: new Date().toISOString().slice(0, 16),
-        location: '',
         type: 'Rehearsal',
         details: '',
         parentPerformanceId: '',
+        venue: '',
       });
-      setBulkLocation('');
+      setBulkVenue('');
       setShouldBulkAdd(false);
     }
   }, [initialData, isOpen]);
 
   useEffect(() => {
-    if (!bulkLocation) {
-        setBulkLocation(formData.location || '');
+    if (!isOpen) {
+      setIsAddingNewVenue(false);
+      setNewVenueName('');
+      setNewVenueRows('');
     }
-  }, [formData.location, bulkLocation]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!bulkVenue && formData.venue) {
+        setBulkVenue(formData.venue);
+    }
+  }, [formData.venue, bulkVenue]);
 
   const startDate = useMemo(() => {
     if (!formData.date) return null;
@@ -73,12 +99,49 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
     return current;
   }, [formData.date, bulkCount, bulkDay, bulkTime]);
 
+  const handleCreateVenueInline = async () => {
+    if (!newVenueName.trim() || !newVenueRows.trim()) return;
+    const rowCounts = newVenueRows
+      .split(',')
+      .map(s => parseInt(s.trim()))
+      .filter(n => !isNaN(n));
+      
+    if (rowCounts.length === 0) {
+      await dialog.showMessage({
+        title: 'Invalid Capacities',
+        message: 'Please enter valid row capacities separated by commas (e.g. 10, 12, 14).',
+        variant: 'danger',
+      });
+      return;
+    }
+
+    setIsSavingVenue(true);
+    try {
+      const created = await onAddVenue({ name: newVenueName.trim(), rowCounts });
+      setFormData(prev => ({
+        ...prev,
+        venue: created.id,
+      }));
+      setIsAddingNewVenue(false);
+      setNewVenueName('');
+      setNewVenueRows('');
+    } catch (err: any) {
+      await dialog.showMessage({
+        title: 'Could Not Add Venue',
+        message: err.message || 'Error saving inline venue',
+        variant: 'danger',
+      });
+    } finally {
+      setIsSavingVenue(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       const bulkConfig = shouldBulkAdd && formData.type === 'Performance' 
-        ? { count: bulkCount, dayOfWeek: bulkDay, time: bulkTime, location: bulkLocation }
+        ? { count: bulkCount, dayOfWeek: bulkDay, time: bulkTime, venue: bulkVenue }
         : undefined;
 
       await onSave(formData, bulkConfig);
@@ -176,16 +239,87 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
         </div>
         
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Location</label>
-          <input 
-            value={formData.location} 
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })} 
+          <label className="text-label">Venue</label>
+          <select
+            value={formData.venue || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === 'new') {
+                setIsAddingNewVenue(true);
+              } else {
+                setFormData({ 
+                  ...formData, 
+                  venue: val
+                });
+              }
+            }}
             required
-            placeholder="e.g. Main Sanctuary"
             className="card"
             style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-          />
+          >
+            <option value="">-- Select Venue --</option>
+            {venues.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+            <option value="new" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>+ Add New Venue...</option>
+          </select>
         </div>
+
+        {isAddingNewVenue && (
+          <div className="flex-col" style={{ 
+            gap: 'var(--space-md)', 
+            backgroundColor: 'rgba(107, 70, 193, 0.05)', 
+            padding: 'var(--space-md)', 
+            borderRadius: 'var(--radius-md)', 
+            border: '1px dashed var(--primary)',
+            marginTop: '-4px'
+          }}>
+            <div style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.9rem' }}>✨ Create New Venue Template Inline</div>
+            
+            <div className="flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
+              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Venue Name</label>
+                <input 
+                  value={newVenueName} 
+                  onChange={(e) => setNewVenueName(e.target.value)}
+                  placeholder="e.g. Grace Hall"
+                  className="card"
+                  style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                />
+              </div>
+              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Row Capacities (e.g. 10, 12, 14)</label>
+                <input 
+                  value={newVenueRows} 
+                  onChange={(e) => setNewVenueRows(e.target.value)}
+                  placeholder="e.g. 8, 10, 12"
+                  className="card"
+                  style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                />
+              </div>
+            </div>
+
+            <div className="flex-row" style={{ gap: 'var(--space-sm)', justifyContent: 'flex-end', width: '100%' }}>
+              <button 
+                type="button" 
+                onClick={() => setIsAddingNewVenue(false)}
+                className="btn btn-ghost btn-sm"
+                style={{ height: '28px', padding: '0 12px', fontSize: '0.8rem' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={handleCreateVenueInline}
+                disabled={isSavingVenue || !newVenueName.trim() || !newVenueRows.trim()}
+                className="btn btn-primary btn-sm"
+                style={{ height: '28px', padding: '0 12px', fontSize: '0.8rem' }}
+              >
+                {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {formData.type === 'Performance' && !initialData && (
             <div className="flex-col" style={{ backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border)', gap: 'var(--space-md)' }}>
@@ -233,12 +367,18 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
                             </div>
                         </div>
                         <div className="flex-col" style={{ gap: '2px' }}>
-                            <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Rehearsal Location</label>
-                            <input 
-                              value={bulkLocation} onChange={(e) => setBulkLocation(e.target.value)}
+                            <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Rehearsal Venue</label>
+                            <select 
+                              value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
+                              required
                               className="card"
                               style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
-                            />
+                            >
+                                <option value="">-- Select Rehearsal Venue --</option>
+                                {venues.map(v => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                ))}
+                            </select>
                         </div>
                         {startDate && (
                             <div className="badge badge-rehearsal" style={{ padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)', textAlign: 'center', textTransform: 'none' }}>
@@ -261,7 +401,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
             >
               <option value="">None</option>
               {performances.filter(p => p.id !== initialData?.id).map(p => (
-                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.location}</option>
+                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.expand?.venue?.name || ''}</option>
               ))}
             </select>
           </div>

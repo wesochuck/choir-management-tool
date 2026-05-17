@@ -25,8 +25,9 @@ export const useVenues = () => {
 
   const addVenue = async (data: Partial<Venue>) => {
     try {
-      await venueService.createVenue(data);
+      const record = await venueService.createVenue(data);
       await fetchVenues();
+      return record;
     } catch (err: any) {
       throw new Error(err.message || 'Failed to add venue');
     }

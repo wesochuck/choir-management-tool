@@ -1,4 +1,4 @@
-wimport { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginView from './views/LoginView';
 import RosterView from './views/admin/RosterView';

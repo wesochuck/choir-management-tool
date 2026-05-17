@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useEvents } from '../../hooks/useEvents';
+import { useVenues } from '../../hooks/useVenues';
 import { EventList } from '../../components/admin/EventList';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
@@ -17,6 +18,7 @@ import {
 export default function EventsView() {
   const dialog = useDialog();
   const { events, performances, isLoading, error, addEvent, editEvent, removeEvent, bulkAddRehearsals } = useEvents();
+  const { venues, addVenue } = useVenues();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -101,7 +103,7 @@ export default function EventsView() {
   const getTemplateValues = (event: Event) => ({
     eventTitle: event.title || event.type,
     eventDate: new Date(event.date).toLocaleString(),
-    eventLocation: event.location,
+    eventLocation: event.expand?.venue?.name || '',
     eventDetails: event.details || '',
   });
 
@@ -139,7 +141,7 @@ export default function EventsView() {
 
       {textEvent && (
         <AppCard
-          title={`Text Reminder: ${textEvent.title || textEvent.location}`}
+          title={`Text Reminder: ${textEvent.title || textEvent.expand?.venue?.name || ''}`}
           actions={<button className="btn btn-ghost btn-sm" onClick={() => setTextEvent(null)}>Close</button>}
         >
           <TextReminderPanel
@@ -152,7 +154,7 @@ export default function EventsView() {
 
       {rosterEvent && (
         <AppCard
-          title={`RSVP List: ${rosterEvent.title || rosterEvent.location}`}
+          title={`RSVP List: ${rosterEvent.title || rosterEvent.expand?.venue?.name || ''}`}
           actions={<button className="btn btn-ghost btn-sm" onClick={() => setRosterEvent(null)}>Close</button>}
         >
           {isRosterLoading ? (
@@ -190,6 +192,8 @@ export default function EventsView() {
         onDelete={removeEvent}
         initialData={editingEvent} 
         performances={performances}
+        venues={venues}
+        onAddVenue={addVenue}
       />
 
       <BulkEventModal 
@@ -197,6 +201,7 @@ export default function EventsView() {
         onClose={() => setIsBulkModalOpen(false)}
         onSave={bulkAddRehearsals}
         performances={performances}
+        venues={venues}
       />
     </div>
   );

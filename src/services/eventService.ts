@@ -1,27 +1,32 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
+import type { Venue } from './venueService';
 
 export interface Event extends RecordModel {
   title: string;
   date: string;
-  location: string;
   type: 'Performance' | 'Rehearsal';
   details: string;
   parentPerformanceId: string;
+  venue?: string;
+  expand?: {
+    venue?: Venue;
+    parentPerformanceId?: Event;
+  };
 }
 
 export interface BulkRehearsalConfig {
   count: number;
   dayOfWeek: number;
   time: string;
-  location: string;
+  venue?: string;
 }
 
 export const eventService = {
   async getEvents() {
     return await pb.collection('events').getFullList<Event>({
       sort: '-date',
-      expand: 'parentPerformanceId',
+      expand: 'parentPerformanceId,venue',
     });
   },
 
@@ -34,6 +39,9 @@ export const eventService = {
     if (payload.parentPerformanceId === '') {
       payload.parentPerformanceId = null as any;
     }
+    if (payload.venue === '') {
+      payload.venue = null as any;
+    }
     return await pb.collection('events').create<Event>(payload);
   },
 
@@ -45,6 +53,9 @@ export const eventService = {
     if (payload.parentPerformanceId === '') {
       payload.parentPerformanceId = null as any;
     }
+    if (payload.venue === '') {
+      payload.venue = null as any;
+    }
     return await pb.collection('events').update<Event>(id, payload);
   },
 
@@ -53,7 +64,7 @@ export const eventService = {
   },
 
   async bulkCreateRehearsals(parentPerformance: Event, config: BulkRehearsalConfig) {
-    const { count, dayOfWeek, time, location } = config;
+    const { count, dayOfWeek, time, venue } = config;
     if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
       throw new Error("Invalid day of week selected.");
     }
@@ -87,9 +98,9 @@ export const eventService = {
       rehearsals.push({
         title: `Rehearsal ${count - i}`,
         date: rehearsalDate.toISOString(),
-        location: location || parentPerformance.location,
         type: 'Rehearsal' as const,
         parentPerformanceId: parentPerformance.id,
+        venue: venue || parentPerformance.venue || null,
         details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`
       });
       // Move back one week for the previous rehearsal

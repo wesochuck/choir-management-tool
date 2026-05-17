@@ -3,7 +3,12 @@ interface CalendarEvent {
   title?: string;
   type: string;
   date: string;
-  location: string;
+  location?: string;
+  expand?: {
+    venue?: {
+      name: string;
+    };
+  };
   details?: string;
 }
 
@@ -30,6 +35,8 @@ export const calendarUtils = {
     const dtstamp = opts?.dtstamp ?? new Date();
     const prodId = opts?.prodId ?? '-//Choir Management Tool//EN';
 
+    const locationName = event.expand?.venue?.name || event.location || '';
+
     return [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -41,7 +48,7 @@ export const calendarUtils = {
       `DTSTART:${fmtUtc(start)}`,
       `DTEND:${fmtUtc(end)}`,
       `SUMMARY:${escapeIcsText(event.title || event.type)}`,
-      `LOCATION:${escapeIcsText(event.location)}`,
+      `LOCATION:${escapeIcsText(locationName)}`,
       `DESCRIPTION:${escapeIcsText(event.details || '')}`,
       'END:VEVENT',
       'END:VCALENDAR',

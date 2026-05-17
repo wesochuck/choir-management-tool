@@ -36,12 +36,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', o
           {event.title && <div className="text-headline">{event.title}</div>}
           <div className="text-label">
             <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`} 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              📍 {event.location}
+              📍 {event.expand?.venue?.name || ''}
             </a>
           </div>
           {event.details && <p className="text-muted text-sm">{event.details}</p>}

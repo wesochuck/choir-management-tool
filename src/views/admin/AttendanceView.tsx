@@ -121,7 +121,7 @@ export default function AttendanceView() {
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
-                <option key={e.id} value={e.id}>{new Date(e.date).toLocaleDateString()} - {e.title || e.location} ({e.type})</option>
+                <option key={e.id} value={e.id}>{new Date(e.date).toLocaleDateString()} - {e.title || e.expand?.venue?.name || ''} ({e.type})</option>
               ))}
             </select>
           </div>
@@ -154,13 +154,13 @@ export default function AttendanceView() {
               {selectedEvent.type}
             </span>
             <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location)}`} 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-label"
               style={{ fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary-deep)' }}
             >
-              📍 {selectedEvent.location}
+              📍 {selectedEvent.expand?.venue?.name || ''}
             </a>
             <span className="text-muted text-sm" style={{ fontWeight: 500 }}>
               📅 {new Date(selectedEvent.date).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}

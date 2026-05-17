@@ -29,8 +29,13 @@ export default function SeatingView() {
   useEffect(() => {
     if (performanceId) {
       seatingService.getAllCharts().then(setAllCharts).catch(console.error);
+      
+      const perf = performances.find(p => p.id === performanceId);
+      if (perf && perf.venue) {
+        setVenueId(perf.venue);
+      }
     }
-  }, [performanceId]);
+  }, [performanceId, performances]);
 
   useEffect(() => {
     if (wasSavingRef.current && !isSaving && !saveError) {
@@ -153,7 +158,7 @@ export default function SeatingView() {
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
-                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.location}</option>
+                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.expand?.venue?.name || ''}</option>
               ))}
             </select>
           </div>

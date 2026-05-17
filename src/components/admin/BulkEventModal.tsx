@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Event } from '../../services/eventService';
+import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 
@@ -8,26 +9,34 @@ interface BulkEventModalProps {
   onClose: () => void;
   onSave: (performance: Event, config: any) => Promise<void>;
   performances: Event[];
+  venues: Venue[];
   initialPerformance?: Event | null;
 }
 
-export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose, onSave, performances, initialPerformance }) => {
+export const BulkEventModal: React.FC<BulkEventModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  performances, 
+  venues, 
+  initialPerformance 
+}) => {
   const dialog = useDialog();
   const [selectedPerformanceId, setSelectedPerformanceId] = useState(initialPerformance?.id || '');
   const [count, setCount] = useState(8);
   const [dayOfWeek, setDayOfWeek] = useState(2); // Tuesday default
   const [time, setTime] = useState('19:00');
-  const [location, setLocation] = useState('');
+  const [venue, setVenue] = useState('');
   const [isSubmitting, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       if (initialPerformance) {
         setSelectedPerformanceId(initialPerformance.id);
-        setLocation(initialPerformance.location || '');
+        setVenue(initialPerformance.venue || '');
       } else {
         setSelectedPerformanceId('');
-        setLocation('');
+        setVenue('');
       }
     }
   }, [isOpen, initialPerformance]);
@@ -36,7 +45,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
     setSelectedPerformanceId(id);
     const p = performances.find(perf => perf.id === id);
     if (p) {
-      setLocation(p.location || '');
+      setVenue(p.venue || '');
     }
   };
 
@@ -51,9 +60,18 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
       return;
     }
 
+    if (!venue) {
+      await dialog.showMessage({
+        title: 'Select Venue',
+        message: 'Please select a rehearsal venue template.',
+        variant: 'danger',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await onSave(performance, { count, dayOfWeek, time, location });
+      await onSave(performance, { count, dayOfWeek, time, venue });
       onClose();
     } catch (err: any) {
       console.error("Bulk generate error:", err);
@@ -103,21 +121,25 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({ isOpen, onClose,
           >
             <option value="">-- Select Performance --</option>
             {performances.map(p => (
-              <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} ({p.location})</option>
+              <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} ({p.expand?.venue?.name || ''})</option>
             ))}
           </select>
         </div>
 
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Rehearsal Location</label>
-          <input 
-            value={location} 
-            onChange={(e) => setLocation(e.target.value)} 
+          <label className="text-label">Rehearsal Venue</label>
+          <select 
+            value={venue} 
+            onChange={(e) => setVenue(e.target.value)} 
             required
-            placeholder="e.g. Rehearsal Hall"
             className="card"
             style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-          />
+          >
+            <option value="">-- Select Rehearsal Venue --</option>
+            {venues.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="flex-row" style={{ gap: 'var(--space-md)' }}>

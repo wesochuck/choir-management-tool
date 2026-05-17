@@ -16,7 +16,11 @@ test('calendarUtils.createICS emits a valid two-hour event', () => {
     title: 'Spring Concert',
     type: 'Performance',
     date: '2026-05-20T23:00:00.000Z',
-    location: 'Main Sanctuary',
+    expand: {
+      venue: {
+        name: 'Main Sanctuary'
+      }
+    },
     details: 'Black folders',
   };
 

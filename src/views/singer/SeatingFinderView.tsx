@@ -16,8 +16,7 @@ export default function SeatingFinderView() {
   }, []);
 
   const event = events.find(e => e.id === eventId);
-  // Default to null venue on singer view for now; ideally the event has a default venue
-  const { chart, rowCounts, isLoading: chartLoading } = useSeatingChart(eventId || '', null);
+  const { chart, rowCounts, isLoading: chartLoading } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
   const isLoading = eventsLoading || chartLoading;
 
@@ -29,7 +28,7 @@ export default function SeatingFinderView() {
   return (
     <PageLayout 
       title="Find Your Seat" 
-      subtitle={event.title || event.location}
+      subtitle={event.title || event.expand?.venue?.name || ''}
       backTo="/"
       maxWidth="800px"
     >
