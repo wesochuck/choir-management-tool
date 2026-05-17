@@ -275,10 +275,15 @@ export default function SeatingView() {
                   <SavingIndicator isSaving={isSaving} error={saveError} />
                   <button
                     onClick={handleManualSave}
-                    className="btn btn-secondary"
-                    style={{ minWidth: '96px' }}
+                    className="btn btn-ghost"
+                    style={{ 
+                      backgroundColor: 'var(--surface)', 
+                      border: '1px solid var(--border)', 
+                      minWidth: '100px',
+                      color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
+                    }}
                   >
-                    {saveError ? (isDirty ? 'Retry Save' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? 'Saved!' : isDirty ? 'Save Now' : 'Save'}
+                    {saveError ? (isDirty ? 'Retry Save' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save Now' : 'Save'}
                   </button>
                 </div>
                 <span className="text-xs text-muted">Your changes are saved automatically.</span>
