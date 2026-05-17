@@ -270,8 +270,7 @@ export default function SeatingView() {
                <button onClick={handlePrint} className="btn btn-primary" style={{ minWidth: '140px' }}>
                   🖨️ Print Layout
                </button>
-               <div className="flex-col" style={{ gap: 'var(--space-xs)', alignItems: 'flex-end' }}>
-                <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                <div className="flex-row" style={{ gap: 'var(--space-sm)', position: 'relative' }}>
                   <SavingIndicator isSaving={isSaving} error={saveError} />
                   <button
                     onClick={handleManualSave}
@@ -285,9 +284,16 @@ export default function SeatingView() {
                   >
                     {saveError ? (isDirty ? 'Retry Save' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save Now' : 'Save'}
                   </button>
+                  <span className="text-muted" style={{ 
+                    position: 'absolute', 
+                    top: 'calc(100% + 4px)', 
+                    right: '4px', 
+                    whiteSpace: 'nowrap',
+                    fontSize: '10px'
+                  }}>
+                    Your changes are saved automatically.
+                  </span>
                 </div>
-                <span className="text-xs text-muted">Your changes are saved automatically.</span>
-               </div>
             </div>
 
             {isLoading ? (
