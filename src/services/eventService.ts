@@ -1,4 +1,4 @@
-import { pb } from '../lib/pocketbase';
+import { pb } from '../lib/pocketbase.ts';
 import type { RecordModel } from 'pocketbase';
 
 export interface Event extends RecordModel {

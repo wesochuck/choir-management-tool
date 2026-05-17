@@ -1,4 +1,4 @@
-import { pb } from '../lib/pocketbase';
+import { pb } from '../lib/pocketbase.ts';
 import type { RecordModel } from 'pocketbase';
 import type { Profile } from './profileService';
 

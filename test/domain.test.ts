@@ -1,6 +1,6 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { calendarUtils } from '../src/lib/calendar.ts';
 import { calculateAutoPaint } from '../src/lib/seatingAlgorithm.ts';
 import { renderCommunicationTemplate } from '../src/lib/messageTemplates.ts';
@@ -18,16 +18,16 @@ test('calendarUtils.createICS emits a valid two-hour event', () => {
     date: '2026-05-20T23:00:00.000Z',
     location: 'Main Sanctuary',
     details: 'Black folders',
-  };
+  } as any;
 
   const ics = calendarUtils.createICS(event);
 
-  assert.match(ics, /^BEGIN:VCALENDAR/);
-  assert.match(ics, /BEGIN:VEVENT/);
-  assert.match(ics, /DTSTART:20260520T230000Z/);
-  assert.match(ics, /DTEND:20260521T010000Z/);
-  assert.match(ics, /SUMMARY:Spring Concert/);
-  assert.match(ics, /LOCATION:Main Sanctuary/);
+  expect(ics).toMatch(/^BEGIN:VCALENDAR/);
+  expect(ics).toMatch(/BEGIN:VEVENT/);
+  expect(ics).toMatch(/DTSTART:20260520T230000Z/);
+  expect(ics).toMatch(/DTEND:20260521T010000Z/);
+  expect(ics).toMatch(/SUMMARY:Spring Concert/);
+  expect(ics).toMatch(/LOCATION:Main Sanctuary/);
 });
 
 test('seating auto-paint fills vertical sections in the configured order', () => {
@@ -37,12 +37,12 @@ test('seating auto-paint fills vertical sections in the configured order', () =>
     ['S', 'A', 'T', 'B'],
   );
 
-  assert.equal(suggestions['0-0'], 'S');
-  assert.equal(suggestions['0-2'], 'A');
-  assert.equal(suggestions['0-4'], 'T');
-  assert.equal(suggestions['0-6'], 'B');
-  assert.equal(suggestions['1-0'], 'S');
-  assert.equal(suggestions['1-6'], 'B');
+  expect(suggestions['0-0']).toBe('S');
+  expect(suggestions['0-2']).toBe('A');
+  expect(suggestions['0-4']).toBe('T');
+  expect(suggestions['0-6']).toBe('B');
+  expect(suggestions['1-0']).toBe('S');
+  expect(suggestions['1-6']).toBe('B');
 });
 
 test('seating auto-paint supports custom section order', () => {
@@ -52,10 +52,7 @@ test('seating auto-paint supports custom section order', () => {
     ['S', 'B', 'T', 'A'],
   );
 
-  assert.deepEqual(
-    ['0-0', '0-1', '0-2', '0-3'].map((seat) => suggestions[seat]),
-    ['S', 'B', 'T', 'A'],
-  );
+  expect(['0-0', '0-1', '0-2', '0-3'].map((seat) => suggestions[seat])).toEqual(['S', 'B', 'T', 'A']);
 });
 
 const contrastRatio = (foreground: string, background: string) => {
@@ -74,16 +71,16 @@ const contrastRatio = (foreground: string, background: string) => {
 };
 
 test('core color pairs meet WCAG AA contrast for normal text', () => {
-  assert.ok(contrastRatio('#2c3e50', '#ffffff') >= 4.5, 'body text on white');
-  assert.ok(contrastRatio('#64748b', '#ffffff') >= 4.5, 'muted text on white');
-  assert.ok(contrastRatio('#ffffff', '#4a7c59') >= 4.5, 'primary button text');
-  assert.ok(contrastRatio('#345940', '#e9f0eb') >= 4.5, 'secondary button text');
-  assert.ok(contrastRatio('#991b1b', '#fee2e2') >= 4.5, 'danger text');
+  expect(contrastRatio('#2c3e50', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio('#64748b', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio('#ffffff', '#4a7c59')).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio('#345940', '#e9f0eb')).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio('#991b1b', '#fee2e2')).toBeGreaterThanOrEqual(4.5);
 });
 
 test('button system keeps accessible minimum touch target height', () => {
-  const css = readFileSync(new URL('../src/App.css', import.meta.url), 'utf8');
-  assert.match(css, /\.btn\s*\{[\s\S]*height:\s*44px;/);
+  const css = readFileSync(resolve(__dirname, '../src/App.css'), 'utf8');
+  expect(css).toMatch(/\.btn\s*\{[\s\S]*height:\s*44px;/);
 });
 
 test('communication templates replace event placeholders', () => {
@@ -97,16 +94,16 @@ test('communication templates replace event placeholders', () => {
     },
   );
 
-  assert.equal(rendered, 'Reminder: Spring Concert at Main Hall on May 23, 7:00 PM. Black folders');
+  expect(rendered).toBe('Reminder: Spring Concert at Main Hall on May 23, 7:00 PM. Black folders');
 });
 
 test('seating sync contexts reject stale responses from previous visits', () => {
   const originalVisit = { performanceId: 'perf_a', venueId: 'venue_1', sessionId: 1 };
   const laterVisit = { performanceId: 'perf_a', venueId: 'venue_1', sessionId: 2 };
 
-  assert.notEqual(seatingContextId(originalVisit), seatingContextId(laterVisit));
-  assert.equal(shouldApplySeatingResponse(originalVisit, laterVisit), false);
-  assert.equal(shouldApplySeatingResponse(laterVisit, laterVisit), true);
+  expect(seatingContextId(originalVisit)).not.toBe(seatingContextId(laterVisit));
+  expect(shouldApplySeatingResponse(originalVisit, laterVisit)).toBe(false);
+  expect(shouldApplySeatingResponse(laterVisit, laterVisit)).toBe(true);
 });
 
 test('seating sync merge preserves optimistic edits over late load data', () => {
@@ -132,8 +129,8 @@ test('seating sync merge preserves optimistic edits over late load data', () => 
     'venue_1',
   );
 
-  assert.equal(merged.sectionOrder, 'S,B,T,A');
-  assert.deepEqual(merged.assignments, {
+  expect(merged.sectionOrder).toBe('S,B,T,A');
+  expect(merged.assignments).toEqual({
     '0-1': 'local_singer',
     '0-2': 'another_local_singer',
   });

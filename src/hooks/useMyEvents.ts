@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { eventService, type Event } from '../services/eventService';
-import { rosterService, type EventRoster } from '../services/rosterService';
-import { profileService, type Profile } from '../services/profileService';
+import { eventService, type Event } from '../services/eventService.ts';
+import { rosterService, type EventRoster } from '../services/rosterService.ts';
+import { profileService, type Profile } from '../services/profileService.ts';
 
 export const useMyEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
