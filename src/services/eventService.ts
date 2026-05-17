@@ -83,13 +83,12 @@ export const eventService = {
       current.setDate(current.getDate() - 7);
     }
 
-    // Create them sequentially or in small batches to avoid hitting rate limits or overwhelming the server
-    // For 20 events, Promise.all is usually fine, but let's be safe.
-    const results = [];
-    for (const r of rehearsals.reverse()) { // Reverse so titles align with dates (oldest first)
-       const res = await pb.collection('events').create<Event>(r);
-       results.push(res);
-    }
-    return results;
+    // Use Promise.all to avoid N+1 query issue.
+    // For large numbers of rehearsals, this parallelizes the network requests.
+    const createPromises = rehearsals.reverse().map(r =>
+      pb.collection('events').create<Event>(r)
+    );
+
+    return await Promise.all(createPromises);
   }
 };
