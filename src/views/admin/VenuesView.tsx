@@ -13,12 +13,14 @@ export default function VenuesView() {
   const [name, setName] = useState('');
   const [rowCountsStr, setRowCountsStr] = useState('');
   const [address, setAddress] = useState('');
+  const [isOpenSeating, setIsOpenSeating] = useState(false);
 
   const handleEdit = (v: Venue) => {
     setEditingId(v.id);
     setName(v.name);
-    setRowCountsStr(v.rowCounts.join(', '));
+    setRowCountsStr(v.rowCounts ? v.rowCounts.join(', ') : '');
     setAddress(v.address || '');
+    setIsOpenSeating(v.isOpenSeating || false);
     setIsAdding(true);
   };
 
@@ -26,19 +28,20 @@ export default function VenuesView() {
     setName('');
     setRowCountsStr('');
     setAddress('');
+    setIsOpenSeating(false);
     setEditingId(null);
     setIsAdding(false);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const rowCounts = rowCountsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+    const rowCounts = isOpenSeating ? [] : rowCountsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
     
     try {
       if (editingId) {
-        await editVenue(editingId, { name, rowCounts, address: address.trim() || undefined });
+        await editVenue(editingId, { name, rowCounts, address, isOpenSeating });
       } else {
-        await addVenue({ name, rowCounts, address: address.trim() || undefined });
+        await addVenue({ name, rowCounts, address, isOpenSeating });
       }
       resetForm();
     } catch {
@@ -86,24 +89,34 @@ export default function VenuesView() {
               />
             </div>
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Row Capacities (Comma separated)</label>
-              <input 
-                value={rowCountsStr} onChange={(e) => setRowCountsStr(e.target.value)} required
-                placeholder="e.g. 12, 15, 18, 20"
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px' }}
-              />
-              <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
-            </div>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Venue Address (Optional, for Google Maps)</label>
+              <label className="text-label">Address</label>
               <input 
                 value={address} onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g. 123 Main St, Anytown, ST 12345"
+                placeholder="e.g. 123 Main St, City, State"
                 className="card"
                 style={{ width: '100%', padding: '0 12px', height: '44px' }}
               />
             </div>
+            <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
+              <input 
+                type="checkbox"
+                id="isOpenSeating"
+                checked={isOpenSeating} onChange={(e) => setIsOpenSeating(e.target.checked)}
+              />
+              <label htmlFor="isOpenSeating" className="text-label" style={{ margin: 0 }}>Open Seating (No assigned seats)</label>
+            </div>
+            {!isOpenSeating && (
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Row Capacities (Comma separated)</label>
+                <input 
+                  value={rowCountsStr} onChange={(e) => setRowCountsStr(e.target.value)} required
+                  placeholder="e.g. 12, 15, 18, 20"
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px' }}
+                />
+                <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
+              </div>
+            )}
             <div className="flex-responsive" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)' }}>
               <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>
               <button type="submit" className="btn btn-primary">Save Template</button>
@@ -116,19 +129,30 @@ export default function VenuesView() {
         {venues.map(v => (
           <AppCard key={v.id} title={v.name}>
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <div className="text-body">
-                <span className="text-muted">Rows:</span> {v.rowCounts.length}
-              </div>
-              <div className="text-body">
-                <span className="text-muted">Total Seats:</span> {v.rowCounts.reduce((a, b) => a + b, 0)}
-              </div>
-              <div className="text-muted text-xs" style={{ marginBottom: 'var(--space-xs)' }}>
-                Layout: {v.rowCounts.join(' | ')}
-              </div>
               {v.address && (
-                <div className="text-body" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span className="text-muted">📍</span> {v.address}
+                <div className="text-body">
+                  <span className="text-muted">Address:</span>{' '}
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.address)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                    {v.address}
+                  </a>
                 </div>
+              )}
+              {v.isOpenSeating ? (
+                <div className="text-body" style={{ color: 'var(--primary)' }}>
+                  <strong>Open Seating</strong>
+                </div>
+              ) : (
+                <>
+                  <div className="text-body">
+                    <span className="text-muted">Rows:</span> {v.rowCounts?.length || 0}
+                  </div>
+                  <div className="text-body">
+                    <span className="text-muted">Total Seats:</span> {v.rowCounts?.reduce((a, b) => a + b, 0) || 0}
+                  </div>
+                  <div className="text-muted text-xs">
+                    Layout: {v.rowCounts?.join(' | ') || 'None'}
+                  </div>
+                </>
               )}
             </div>
             <div className="flex-responsive" style={{ gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
