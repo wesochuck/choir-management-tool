@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { eventService, type Event } from '../services/eventService';
+import { eventService, type Event, type BulkRehearsalConfig } from '../services/eventService';
 
 export const useEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -12,8 +12,8 @@ export const useEvents = () => {
       const data = await eventService.getEvents();
       setEvents(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch events');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch events');
     } finally {
       setIsLoading(false);
     }
@@ -28,8 +28,8 @@ export const useEvents = () => {
       const record = await eventService.createEvent(data);
       await fetchEvents();
       return record;
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to add event');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to add event');
     }
   };
 
@@ -37,8 +37,8 @@ export const useEvents = () => {
     try {
       await eventService.updateEvent(id, data);
       await fetchEvents();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update event');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update event');
     }
   };
 
@@ -46,17 +46,17 @@ export const useEvents = () => {
     try {
       await eventService.deleteEvent(id);
       await fetchEvents();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to delete event');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to delete event');
     }
   };
 
-  const bulkAddRehearsals = async (performance: Event, config: any) => {
+  const bulkAddRehearsals = async (performance: Event, config: BulkRehearsalConfig) => {
     try {
       await eventService.bulkCreateRehearsals(performance, config);
       await fetchEvents();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to bulk create rehearsals');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to bulk create rehearsals');
     }
   };
 

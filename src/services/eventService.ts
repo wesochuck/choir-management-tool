@@ -10,6 +10,13 @@ export interface Event extends RecordModel {
   parentPerformanceId: string;
 }
 
+export interface BulkRehearsalConfig {
+  count: number;
+  dayOfWeek: number;
+  time: string;
+  location: string;
+}
+
 export const eventService = {
   async getEvents() {
     return await pb.collection('events').getFullList<Event>({
@@ -39,7 +46,7 @@ export const eventService = {
     return await pb.collection('events').delete(id);
   },
 
-  async bulkCreateRehearsals(parentPerformance: Event, config: { count: number, dayOfWeek: number, time: string, location: string }) {
+  async bulkCreateRehearsals(parentPerformance: Event, config: BulkRehearsalConfig) {
     const { count, dayOfWeek, time, location } = config;
     if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
       throw new Error("Invalid day of week selected.");
