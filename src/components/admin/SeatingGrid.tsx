@@ -41,6 +41,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   };
 
   const [activeDragOver, setActiveDragOver] = React.useState<string | null>(null);
+  const [hoveredSeat, setHoveredSeat] = React.useState<string | null>(null);
 
   const getIsNeighbor = (hoveredKey: string | null, targetKey: string) => {
     if (!hoveredKey) return false;
@@ -97,8 +98,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const hasLeftBorder = suggestion !== leftSuggestion;
             const hasRightBorder = suggestion !== rightSuggestion;
 
-            const isHovered = seatKey === activeDragOver;
-            const isNeighbor = getIsNeighbor(activeDragOver, seatKey);
+            const activeHoverOrDrag = hoveredSeat || activeDragOver;
+            const isHovered = seatKey === activeHoverOrDrag;
+            const isNeighbor = getIsNeighbor(activeHoverOrDrag, seatKey);
             
             const scale = isHovered ? 1.45 : (isNeighbor ? 1.22 : 1.0);
             const translateY = isHovered ? -8 : (isNeighbor ? -4 : 0);
@@ -115,10 +117,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 }}
                 onDragEnter={() => !isReadOnly && setActiveDragOver(seatKey)}
                 onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
+                onMouseEnter={() => !isReadOnly && setHoveredSeat(seatKey)}
+                onMouseLeave={() => !isReadOnly && setHoveredSeat(null)}
                 onDrop={(e) => {
                   if (!isReadOnly) {
                     e.preventDefault();
                     setActiveDragOver(null);
+                    setHoveredSeat(null);
                     handleDrop(e, seatKey);
                   }
                 }}
