@@ -318,37 +318,57 @@ export default function SeatingView() {
             width: '320px', 
             position: 'sticky', 
             top: 'var(--space-lg)',
-            maxHeight: 'calc(100vh - 48px)'
+            height: 'calc(100vh - 140px)',
+            display: 'flex',
+            flexDirection: 'column',
+            boxSizing: 'border-box',
+            border: '2px dashed var(--border)'
           }}>
-            <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
-            <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px' }}>
-              {activeProfiles
-                .filter(p => !Object.values(optimisticAssignments).includes(p.id))
-                .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
-                .map(p => (
-                  <div 
-                    key={p.id}
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData('profileId', p.id)}
-                    className="flex-row"
-                    style={{ 
-                      padding: 'var(--space-sm) var(--space-md)', 
-                      backgroundColor: 'var(--bg)', 
-                      border: '1px solid var(--border)', 
-                      borderRadius: 'var(--radius-md)', 
-                      cursor: 'grab',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
-                    <span className="badge badge-rehearsal">{p.voicePart}</span>
+            <div 
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                try {
+                  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                  if (data.fromSeatKey) {
+                    assignSinger(data.fromSeatKey, '');
+                  }
+                } catch (err) {
+                  console.error('Failed to parse sidebar drop data', err);
+                }
+              }}
+              style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}
+            >
+              <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
+              <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
+                {activeProfiles
+                  .filter(p => !Object.values(optimisticAssignments).includes(p.id))
+                  .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
+                  .map(p => (
+                    <div 
+                      key={p.id}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
+                      className="flex-row"
+                      style={{ 
+                        padding: 'var(--space-sm) var(--space-md)', 
+                        backgroundColor: 'var(--bg)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: 'var(--radius-md)', 
+                        cursor: 'grab',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
+                      <span className="badge badge-rehearsal">{p.voicePart}</span>
+                    </div>
+                  ))}
+                {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
+                  <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                    <p className="text-muted text-sm">All singers assigned!</p>
                   </div>
-                ))}
-              {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
-                <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-                  <p className="text-muted text-sm">All singers assigned!</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </AppCard>
         </div>
@@ -375,37 +395,35 @@ function SavingIndicator({ isSaving, error }: { isSaving: boolean; error: string
 
 function SeatingTextList({ rows }: { rows: any[][] }) {
   return (
-    <div className="seating-text-list flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-md)' }}>
+    <div className="seating-text-list flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
       {rows.map((row, i) => {
         const isBack = i === 0;
         const isFront = i === rows.length - 1;
         const label = `Row ${i + 1}${isBack ? ' (Back)' : isFront ? ' (Front)' : ''}`;
 
+        const assignedSingers = row.filter(p => !!p);
+        const namesString = assignedSingers.length > 0 
+          ? assignedSingers.map(p => `${getLastName(p.name)} (${p.voicePart})`).join(', ')
+          : 'No singers assigned';
+
         return (
-          <div key={i} className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+          <div key={i} className="flex-col" style={{ gap: 'var(--space-xs)' }}>
             <h3 className="text-label" style={{ 
               borderBottom: '2px solid var(--primary)', 
               paddingBottom: '4px',
-              color: 'var(--primary-deep)'
+              color: 'var(--primary-deep)',
+              margin: 0
             }}>
               {label}
             </h3>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-              gap: 'var(--space-md)'
+            <div className="text-sm" style={{ 
+              padding: 'var(--space-sm)',
+              backgroundColor: 'var(--bg)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)',
+              lineHeight: 1.5
             }}>
-              {row.map((p, j) => (
-                <div key={j} className="text-sm" style={{ 
-                  padding: 'var(--space-xs) var(--space-sm)',
-                  backgroundColor: 'var(--bg)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border)'
-                }}>
-                  <span style={{ fontWeight: 700, marginRight: '4px' }}>{j + 1}.</span>
-                  {p ? getLastName(p.name) : <span className="text-muted">—</span>}
-                </div>
-              ))}
+              {namesString}
             </div>
           </div>
         );

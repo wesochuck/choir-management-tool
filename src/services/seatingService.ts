@@ -13,10 +13,13 @@ export interface SeatingChart extends RecordModel {
 }
 
 export const seatingService = {
-  async getChartForPerformance(performanceId: string) {
+  async getChartForPerformance(performanceId: string, venueId: string | null) {
     try {
+      const filterStr = venueId
+        ? `performance = "${performanceId}" && venue = "${venueId}"`
+        : `performance = "${performanceId}"`;
       return await pb.collection('pbc_seating_001').getFirstListItem<SeatingChart>(
-        `performance = "${performanceId}"`,
+        filterStr,
         { expand: 'venue' }
       );
     } catch (err: any) {

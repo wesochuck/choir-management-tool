@@ -7,24 +7,45 @@ interface CalendarEvent {
   details?: string;
 }
 
+const escapeIcsText = (value = '') =>
+  value
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
+
+const fmtUtc = (date: Date) =>
+  date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+
 export const calendarUtils = {
-  createICS(event: CalendarEvent, durationHours = 2) {
+  createICS(
+    event: CalendarEvent,
+    opts?: { durationHours?: number; prodId?: string; uid?: string; dtstamp?: Date }
+  ) {
+    const durationHours = opts?.durationHours ?? 2;
     const start = new Date(event.date);
     const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
 
-    const format = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const uid = opts?.uid ?? `event-${event.id}@choir-management-tool`;
+    const dtstamp = opts?.dtstamp ?? new Date();
+    const prodId = opts?.prodId ?? '-//Choir Management Tool//EN';
 
     return [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
+      `PRODID:${prodId}`,
+      'CALSCALE:GREGORIAN',
       'BEGIN:VEVENT',
-      `DTSTART:${format(start)}`,
-      `DTEND:${format(end)}`,
-      `SUMMARY:${event.title || event.type}`,
-      `LOCATION:${event.location}`,
-      `DESCRIPTION:${event.details}`,
+      `UID:${uid}`,
+      `DTSTAMP:${fmtUtc(dtstamp)}`,
+      `DTSTART:${fmtUtc(start)}`,
+      `DTEND:${fmtUtc(end)}`,
+      `SUMMARY:${escapeIcsText(event.title || event.type)}`,
+      `LOCATION:${escapeIcsText(event.location)}`,
+      `DESCRIPTION:${escapeIcsText(event.details || '')}`,
       'END:VEVENT',
-      'END:VCALENDAR'
+      'END:VCALENDAR',
+      ''
     ].join('\r\n');
   },
 

@@ -218,7 +218,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
     try {
       const [existingChart, profiles] = await Promise.all([
-        seatingService.getChartForPerformance(performanceId),
+        seatingService.getChartForPerformance(performanceId, venueId || null),
         profileService.getActiveProfiles(), // Filtered for Active (Current/Future)
       ]);
 
@@ -321,21 +321,27 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     return nextChart;
   }, [performanceId, scheduleSync, venue, venueId]);
 
-  const assignSinger = async (seatKey: string, profileId: string) => {
+  const assignSinger = async (seatKey: string, profileId: string, fromSeatKey?: string) => {
     if (!venue || !performanceId) return;
     
     const newAssignments = { ...optimisticAssignmentsRef.current };
     
-    // If we're assigning a singer, remove them from any other seat they might be in
     if (profileId) {
-      Object.keys(newAssignments).forEach(key => {
-        if (newAssignments[key] === profileId) {
-          delete newAssignments[key];
-        }
-      });
+      // If target seat is already occupied by a different singer and we dragged from another seat:
+      if (fromSeatKey && newAssignments[seatKey] && newAssignments[seatKey] !== profileId) {
+        const occupantId = newAssignments[seatKey];
+        newAssignments[fromSeatKey] = occupantId; // Move occupant to the source seat (Swap!)
+      } else {
+        // Normal duplicate prevention (remove singer from any other seat)
+        Object.keys(newAssignments).forEach(key => {
+          if (newAssignments[key] === profileId) {
+            delete newAssignments[key];
+          }
+        });
+      }
       newAssignments[seatKey] = profileId;
     } else {
-      // If profileId is empty, just remove the assignment for this seat
+      // Unassign target seat
       delete newAssignments[seatKey];
     }
 

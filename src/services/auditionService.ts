@@ -41,10 +41,11 @@ export const auditionService = {
   async convertAuditionToSinger(id: string) {
     const audition = await pb.collection('auditions').getOne<Audition>(id);
     const email = isEmailContact(audition.contact) ? audition.contact.trim() : undefined;
+    const phone = !email && audition.contact && /[\d+]/.test(audition.contact) ? audition.contact.trim() : undefined;
 
     await profileService.createProfile({
       name: audition.name,
-      phone: audition.contact,
+      phone: phone || '',
       voicePart: audition.voicePart || 'S1',
       globalStatus: 'Active (Future)',
       notes: [
@@ -52,7 +53,6 @@ export const auditionService = {
         audition.notes ? `Audition notes: ${audition.notes}` : '',
       ].filter(Boolean).join('\n\n'),
       email,
-      password: email ? `Audition-${audition.id}` : undefined,
     });
 
     return await pb.collection('auditions').update<Audition>(id, { status: 'Closed' });

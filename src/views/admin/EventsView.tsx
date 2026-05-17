@@ -4,7 +4,6 @@ import { EventList } from '../../components/admin/EventList';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
 import type { Event } from '../../services/eventService';
-import { profileService } from '../../services/profileService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
@@ -78,16 +77,16 @@ export default function EventsView() {
   };
 
   const handleEmailReminder = async (event: Event) => {
-    const profiles = await profileService.getProfiles();
-    const emails = profiles
-      .filter((profile) => profile.globalStatus !== 'Inactive')
-      .map((profile) => profile.expand?.user?.email)
+    const roster = await rosterService.getEventRoster(event.id);
+    const emails = roster
+      .filter((item) => item.expand?.profile?.globalStatus !== 'Inactive' && item.rsvp !== 'No')
+      .map((item) => item.expand?.profile?.expand?.user?.email)
       .filter((email): email is string => Boolean(email));
 
     if (emails.length === 0) {
       await dialog.showMessage({
         title: 'No Email Addresses',
-        message: 'No active singer login emails were found.',
+        message: 'No active event RSVP emails were found.',
       });
       return;
     }
@@ -106,9 +105,11 @@ export default function EventsView() {
     eventDetails: event.details || '',
   });
 
-  const activeProfilesForText = async () => {
-    const profiles = await profileService.getProfiles();
-    return profiles.filter((profile) => profile.globalStatus !== 'Inactive' && profile.phone);
+  const activeProfilesForText = async (eventId: string) => {
+    const roster = await rosterService.getEventRoster(eventId);
+    return roster
+      .map((item) => item.expand?.profile)
+      .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile && profile.globalStatus !== 'Inactive' && profile.phone));
   };
 
   if (isLoading && events.length === 0) return <div style={{ padding: '20px' }}>Loading events...</div>;
@@ -144,7 +145,7 @@ export default function EventsView() {
           <TextReminderPanel
             event={textEvent}
             message={renderCommunicationTemplate(communicationSettings.smsBody, getTemplateValues(textEvent))}
-            loadProfiles={activeProfilesForText}
+            loadProfiles={() => activeProfilesForText(textEvent.id)}
           />
         </AppCard>
       )}

@@ -3,14 +3,14 @@ import type { AttendanceItem } from '../../hooks/useAttendance';
 
 interface CheckInListProps {
   items: AttendanceItem[];
-  onToggle: (profileId: string, current: string) => Promise<void>;
+  onSetAttendance: (profileId: string, next: 'Present' | 'Absent' | 'Pending') => Promise<void>;
   onUpdateFolder: (profileId: string, folderNumber: string, folderReturned: boolean) => Promise<void>;
   onEdit: (profileId: string) => void;
 }
 
 import { AppCard } from '../common/AppCard';
 
-export const CheckInList: React.FC<CheckInListProps> = ({ items, onToggle, onUpdateFolder, onEdit }) => {
+export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance, onUpdateFolder, onEdit }) => {
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
       const order = { 'Pending': 0, 'Absent': 1, 'Present': 2 };
@@ -51,21 +51,30 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onToggle, onUpd
                 <button 
                   onClick={(event) => {
                     event.stopPropagation();
-                    onToggle(item.profileId, isPresent ? 'Present' : 'Pending');
+                    onSetAttendance(item.profileId, 'Present');
                   }}
                   className={`btn ${isPresent ? 'btn-primary' : 'btn-ghost'}`}
                   style={{ minWidth: '100px' }}
                 >
-                  {isPresent ? 'Present' : 'Mark'}
+                  Present
                 </button>
                 <button 
                   onClick={(event) => {
                     event.stopPropagation();
-                    onToggle(item.profileId, isAbsent ? 'Absent' : 'Pending');
+                    onSetAttendance(item.profileId, 'Absent');
                   }}
                   className={`btn ${isAbsent ? 'btn-danger' : 'btn-ghost'}`}
                 >
-                  {isAbsent ? 'Absent' : '✗'}
+                  Absent
+                </button>
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSetAttendance(item.profileId, 'Pending');
+                  }}
+                  className="btn btn-ghost"
+                >
+                  Reset
                 </button>
               </div>
             </div>

@@ -43,6 +43,16 @@
   transform: scale(0.998);
 }
 
+tr.relative-row:hover {
+  background-color: var(--primary-light) !important;
+  cursor: pointer;
+}
+
+tr.relative-row:active {
+  background-color: #d1dfd6 !important;
+  transform: scale(0.998);
+}
+
 .expanded-hit-area::after {
   content: "";
   position: absolute;
@@ -205,34 +215,58 @@
   font-size: 0.875rem;
 }
 
+/* Seating View Mode Toggle (Screen and Print) */
+[data-print-mode="text"] .grid-print {
+  display: none !important;
+}
+[data-print-mode="visual"] .seating-text-list {
+  display: none !important;
+}
+
 /* Print Styles */
 @media print {
   .no-print { display: none !important; }
   .container { padding: 0 !important; max-width: none !important; }
-  
-  [data-print-mode="text"] .grid-print { display: none !important; }
-  [data-print-mode="visual"] .seating-text-list { display: none !important; }
 
+  /* Seating Text List Print Styles */
   .seating-text-list h3 {
     border-bottom: 2px solid black !important;
     color: black !important;
   }
-
-  .seating-text-list div[style*="background-color: var(--bg)"] {
+  .seating-text-list .text-sm {
     background-color: white !important;
-    border: 1px solid #eee !important;
+    border: 1px solid #ddd !important;
+    color: black !important;
     page-break-inside: avoid;
   }
 
-  .grid-print { gap: 4px !important; padding: 0 !important; }
-  .row-print { gap: 4px !important; }
-  [title*="Empty Seat"] { display: none !important; }
-  [title*="("] { 
-      border: 1px solid black !important; 
-      position: relative; 
-      width: 100% !important;
-      color: black !important;
-      background: white !important;
+  /* Seating Visual Grid Print Styles */
+  .grid-print { 
+    gap: 4px !important; 
+    padding: 0 !important; 
+    page-break-inside: avoid !important;
+  }
+  .row-print { 
+    gap: 4px !important; 
+  }
+  .seat-cell {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: economy !important;
+    print-color-adjust: economy !important;
+  }
+  .seat-assigned {
+    border: 1px solid #000000 !important;
+  }
+  .seat-assigned div {
+    color: #000000 !important;
+  }
+  .seat-empty {
+    border: 1px dashed #cccccc !important;
+    background-color: #fafafa !important;
+    opacity: 0.6;
   }
 }
 @media (max-width: 640px) {

@@ -362,31 +362,10 @@ export default function CommunicationView() {
 
       {tab === 'settings' && (
         <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-          <AppCard title="SMTP">
-            <SettingsGrid>
-              <Field label="Host" value={config.smtp.host} onChange={(value) => setConfig({ ...config, smtp: { ...config.smtp, host: value } })} />
-              <Field label="Port" value={String(config.smtp.port)} onChange={(value) => setConfig({ ...config, smtp: { ...config.smtp, port: parseInt(value) || 587 } })} />
-              <Field label="User" value={config.smtp.user} onChange={(value) => setConfig({ ...config, smtp: { ...config.smtp, user: value } })} />
-              <Field label="Password" type="password" value={config.smtp.pass} onChange={(value) => setConfig({ ...config, smtp: { ...config.smtp, pass: value } })} />
-              <Field label="From" value={config.smtp.from} onChange={(value) => setConfig({ ...config, smtp: { ...config.smtp, from: value } })} />
-            </SettingsGrid>
-          </AppCard>
-
-          <AppCard title="Twilio">
-            <label className="flex-row" style={{ alignSelf: 'flex-start' }}>
-              <input
-                type="checkbox"
-                checked={config.twilio.enabled}
-                onChange={(event) => setConfig({ ...config, twilio: { ...config.twilio, enabled: event.target.checked } })}
-                style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }}
-              />
-              <span className="text-label">Enabled</span>
-            </label>
-            <SettingsGrid>
-              <Field label="Account SID" value={config.twilio.sid} onChange={(value) => setConfig({ ...config, twilio: { ...config.twilio, sid: value } })} />
-              <Field label="Auth Token" type="password" value={config.twilio.token} onChange={(value) => setConfig({ ...config, twilio: { ...config.twilio, token: value } })} />
-              <Field label="From" value={config.twilio.from} onChange={(value) => setConfig({ ...config, twilio: { ...config.twilio, from: value } })} />
-            </SettingsGrid>
+          <AppCard title="Delivery Mechanisms">
+            <div className="text-muted text-sm">
+              Note: Automated SMS and email delivery are handled securely on the server side via PocketBase integrations. Communication config credentials should be configured using PocketBase environments or secure hooks directly on the server. We intentionally use client-side mailto: and sms: links here so the browser doesn't have to hold delivery secrets.
+            </div>
           </AppCard>
 
           <AppCard title="Templates">

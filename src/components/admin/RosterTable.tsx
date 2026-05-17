@@ -24,7 +24,12 @@ export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit }) =>
         </thead>
         <tbody>
           {profiles.map((p) => (
-            <tr key={p.id} className="relative-row" style={{ borderBottom: '1px solid var(--border)' }}>
+            <tr 
+              key={p.id} 
+              className="relative-row" 
+              onClick={() => onEdit(p)}
+              style={{ borderBottom: '1px solid var(--border)' }}
+            >
               <td style={{ padding: 'var(--space-md)', fontWeight: 500 }}>{p.name}</td>
               <td className="text-muted text-sm" style={{ padding: 'var(--space-md)' }}>
                 {p.expand?.user?.email || 'No login'}
@@ -40,8 +45,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit }) =>
               <td className="text-muted text-sm" style={{ padding: 'var(--space-md)' }}>{p.phone}</td>
               <td style={{ padding: 'var(--space-md)' }}>
                 <button 
-                  onClick={() => onEdit(p)}
-                  className="btn btn-ghost btn-sm expanded-hit-area"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(p);
+                  }}
+                  className="btn btn-ghost btn-sm"
                 >
                   Edit
                 </button>
