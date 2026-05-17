@@ -48,6 +48,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
   const [newVenueName, setNewVenueName] = useState('');
   const [newVenueRows, setNewVenueRows] = useState('');
+  const [newVenueAddress, setNewVenueAddress] = useState('');
   const [isSavingVenue, setIsSavingVenue] = useState(false);
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       setIsAddingNewVenue(false);
       setNewVenueName('');
       setNewVenueRows('');
+      setNewVenueAddress('');
     }
   }, [isOpen]);
 
@@ -117,7 +119,11 @@ export const EventModal: React.FC<EventModalProps> = ({
 
     setIsSavingVenue(true);
     try {
-      const created = await onAddVenue({ name: newVenueName.trim(), rowCounts });
+      const created = await onAddVenue({ 
+        name: newVenueName.trim(), 
+        rowCounts,
+        address: newVenueAddress.trim() || undefined
+      });
       setFormData(prev => ({
         ...prev,
         venue: created.id,
@@ -125,6 +131,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       setIsAddingNewVenue(false);
       setNewVenueName('');
       setNewVenueRows('');
+      setNewVenueAddress('');
     } catch (err: any) {
       await dialog.showMessage({
         title: 'Could Not Add Venue',
@@ -297,6 +304,17 @@ export const EventModal: React.FC<EventModalProps> = ({
                   style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
                 />
               </div>
+            </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
+              <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Venue Address (Optional, for Google Maps)</label>
+              <input 
+                value={newVenueAddress} 
+                onChange={(e) => setNewVenueAddress(e.target.value)}
+                placeholder="e.g. 123 Main St, Anytown, ST 12345"
+                className="card"
+                style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+              />
             </div>
 
             <div className="flex-row" style={{ gap: 'var(--space-sm)', justifyContent: 'flex-end', width: '100%' }}>

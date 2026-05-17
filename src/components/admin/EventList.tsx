@@ -39,7 +39,7 @@ export const EventList: React.FC<EventListProps> = ({ events, onEdit, onEmailRem
             {e.title && <div className="text-headline">{e.title}</div>}
             <div className="text-label">
               <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.expand?.venue?.name || '')}`} 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.expand?.venue?.address || e.expand?.venue?.name || '')}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 onClick={(event) => event.stopPropagation()}

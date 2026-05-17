@@ -12,17 +12,20 @@ export default function VenuesView() {
   
   const [name, setName] = useState('');
   const [rowCountsStr, setRowCountsStr] = useState('');
+  const [address, setAddress] = useState('');
 
   const handleEdit = (v: Venue) => {
     setEditingId(v.id);
     setName(v.name);
     setRowCountsStr(v.rowCounts.join(', '));
+    setAddress(v.address || '');
     setIsAdding(true);
   };
 
   const resetForm = () => {
     setName('');
     setRowCountsStr('');
+    setAddress('');
     setEditingId(null);
     setIsAdding(false);
   };
@@ -33,9 +36,9 @@ export default function VenuesView() {
     
     try {
       if (editingId) {
-        await editVenue(editingId, { name, rowCounts });
+        await editVenue(editingId, { name, rowCounts, address: address.trim() || undefined });
       } else {
-        await addVenue({ name, rowCounts });
+        await addVenue({ name, rowCounts, address: address.trim() || undefined });
       }
       resetForm();
     } catch {
@@ -92,6 +95,15 @@ export default function VenuesView() {
               />
               <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
             </div>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Venue Address (Optional, for Google Maps)</label>
+              <input 
+                value={address} onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. 123 Main St, Anytown, ST 12345"
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '44px' }}
+              />
+            </div>
             <div className="flex-responsive" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)' }}>
               <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>
               <button type="submit" className="btn btn-primary">Save Template</button>
@@ -110,9 +122,14 @@ export default function VenuesView() {
               <div className="text-body">
                 <span className="text-muted">Total Seats:</span> {v.rowCounts.reduce((a, b) => a + b, 0)}
               </div>
-              <div className="text-muted text-xs">
+              <div className="text-muted text-xs" style={{ marginBottom: 'var(--space-xs)' }}>
                 Layout: {v.rowCounts.join(' | ')}
               </div>
+              {v.address && (
+                <div className="text-body" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span className="text-muted">📍</span> {v.address}
+                </div>
+              )}
             </div>
             <div className="flex-responsive" style={{ gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
               <button onClick={() => handleEdit(v)} className="btn btn-ghost expanded-hit-area" style={{ flex: 1 }}>Edit</button>

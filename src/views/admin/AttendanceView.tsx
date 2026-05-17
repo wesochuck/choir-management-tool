@@ -154,7 +154,7 @@ export default function AttendanceView() {
               {selectedEvent.type}
             </span>
             <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.name || '')}`} 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-label"

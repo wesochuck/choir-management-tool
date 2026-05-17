@@ -18,7 +18,8 @@ test('calendarUtils.createICS emits a valid two-hour event', () => {
     date: '2026-05-20T23:00:00.000Z',
     expand: {
       venue: {
-        name: 'Main Sanctuary'
+        name: 'Main Sanctuary',
+        address: '123 Main St'
       }
     },
     details: 'Black folders',
@@ -31,7 +32,7 @@ test('calendarUtils.createICS emits a valid two-hour event', () => {
   assert.match(ics, /DTSTART:20260520T230000Z/);
   assert.match(ics, /DTEND:20260521T010000Z/);
   assert.match(ics, /SUMMARY:Spring Concert/);
-  assert.match(ics, /LOCATION:Main Sanctuary/);
+  assert.match(ics, /LOCATION:Main Sanctuary\\, 123 Main St/);
 });
 
 test('seating auto-paint fills vertical sections in the configured order', () => {

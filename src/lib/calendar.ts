@@ -7,6 +7,7 @@ interface CalendarEvent {
   expand?: {
     venue?: {
       name: string;
+      address?: string;
     };
   };
   details?: string;
@@ -35,7 +36,10 @@ export const calendarUtils = {
     const dtstamp = opts?.dtstamp ?? new Date();
     const prodId = opts?.prodId ?? '-//Choir Management Tool//EN';
 
-    const locationName = event.expand?.venue?.name || event.location || '';
+    const venueObj = event.expand?.venue;
+    const locationName = venueObj 
+      ? (venueObj.address ? `${venueObj.name}, ${venueObj.address}` : venueObj.name) 
+      : (event.location || '');
 
     return [
       'BEGIN:VCALENDAR',

@@ -4,6 +4,8 @@ import type { RecordModel } from 'pocketbase';
 export interface Venue extends RecordModel {
   name: string;
   rowCounts: number[];
+  address?: string;
+  isOpenSeating?: boolean;
 }
 
 export const venueService = {
