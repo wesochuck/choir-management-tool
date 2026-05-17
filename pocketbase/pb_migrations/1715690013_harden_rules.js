@@ -5,8 +5,8 @@ migrate((app) => {
     '||',
     '(',
     'id = @request.auth.id',
-    '&& @request.data.role:isset = false',
-    '&& @request.data.verified:isset = false',
+    '&& @request.body.role:isset = false',
+    '&& @request.body.verified:isset = false',
     ')'
   ].join(' ');
   app.save(users);
@@ -17,16 +17,16 @@ migrate((app) => {
     '||',
     '(',
     'user = @request.auth.id',
-    '&& @request.data.globalStatus:isset = false',
-    '&& @request.data.voicePart:isset = false',
-    '&& @request.data.notes:isset = false',
+    '&& @request.body.globalStatus:isset = false',
+    '&& @request.body.voicePart:isset = false',
+    '&& @request.body.notes:isset = false',
     ')'
   ].join(' ');
   app.save(profiles);
 
   const eventRosters = app.findCollectionByNameOrId("eventRosters");
-  eventRosters.createRule = '@request.auth.role = "admin" || (profile.user = @request.auth.id && @request.data.attendance:isset = false && @request.data.folderNumber:isset = false && @request.data.folderReturned:isset = false)';
-  eventRosters.updateRule = '@request.auth.role = "admin" || (profile.user = @request.auth.id && @request.data.attendance:isset = false && @request.data.folderNumber:isset = false && @request.data.folderReturned:isset = false)';
+  eventRosters.createRule = '@request.auth.role = "admin" || (profile.user = @request.auth.id && @request.body.attendance:isset = false && @request.body.folderNumber:isset = false && @request.body.folderReturned:isset = false)';
+  eventRosters.updateRule = '@request.auth.role = "admin" || (profile.user = @request.auth.id && @request.body.attendance:isset = false && @request.body.folderNumber:isset = false && @request.body.folderReturned:isset = false)';
   app.save(eventRosters);
 
   const venues = app.findCollectionByNameOrId("pbc_venues_001") || app.findCollectionByNameOrId("venues");

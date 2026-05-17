@@ -41,7 +41,7 @@ export const auditionService = {
   async convertAuditionToSinger(id: string) {
     const audition = await pb.collection('auditions').getOne<Audition>(id);
     const email = isEmailContact(audition.contact) ? audition.contact.trim() : undefined;
-    const phone = !email && audition.contact && /[\d\+]/.test(audition.contact) ? audition.contact.trim() : undefined;
+    const phone = !email && audition.contact && /[\d+]/.test(audition.contact) ? audition.contact.trim() : undefined;
 
     await profileService.createProfile({
       name: audition.name,
