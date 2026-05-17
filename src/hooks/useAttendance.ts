@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { pb } from '../lib/pocketbase';
 import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService } from '../services/profileService';
 import { eventService, type Event } from '../services/eventService';
@@ -77,8 +76,7 @@ export const useAttendance = (eventId: string) => {
     fetchAttendance();
   }, [fetchAttendance]);
 
-  const toggleAttendance = async (profileId: string, current: string) => {
-    const next: 'Present' | 'Absent' | 'Pending' = current === 'Present' ? 'Absent' : 'Present';
+  const setAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
     try {
       const updated = await rosterService.upsertAttendance(eventId, profileId, next);
       setItems(prev => prev.map(item => item.profileId === profileId ? { ...item, id: updated.id, rosterId: updated.id, attendance: updated.attendance } : item));
@@ -95,26 +93,7 @@ export const useAttendance = (eventId: string) => {
     }
 
     try {
-      // We need to upsert a roster entry for the TARGET event (the performance)
-      // but for simplicity here we assume we can just use a modified rosterService method
-      // Actually, let's reuse upsertAttendance logic but for folders
-      const existing = await rosterService.getEventRoster(targetEventId).then(rs => rs.find(r => r.profile === profileId));
-      
-      let updated: EventRoster;
-      if (existing) {
-        updated = await rosterService.updateFolder(existing.id, { folderNumber, folderReturned });
-      } else {
-        // Create a new roster entry for the Performance just to hold the folder
-        updated = await pb.collection('eventRosters').create({
-          event: targetEventId,
-          profile: profileId,
-          rsvp: 'Pending',
-          attendance: 'Pending',
-          folderNumber,
-          folderReturned
-        });
-      }
-
+      const updated = await rosterService.upsertFolder(targetEventId, profileId, { folderNumber, folderReturned });
       setItems(prev => prev.map(item => item.profileId === profileId ? { ...item, folderNumber: updated.folderNumber, folderReturned: updated.folderReturned } : item));
     } catch (err: any) {
       throw new Error(err.message || 'Failed to update folder');
@@ -125,7 +104,7 @@ export const useAttendance = (eventId: string) => {
     items,
     isLoading,
     error,
-    toggleAttendance,
+    setAttendance,
     updateFolder,
     refresh: fetchAttendance,
   };

@@ -15,7 +15,7 @@ export default function AttendanceView() {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   
-  const { items, isLoading, error, toggleAttendance, updateFolder } = useAttendance(selectedEventId);
+  const { items, isLoading, error, setAttendance, updateFolder } = useAttendance(selectedEventId);
 
   const selectedEvent = useMemo(() => 
     events.find(e => e.id === selectedEventId), 
@@ -101,7 +101,7 @@ export default function AttendanceView() {
       ) : selectedEventId ? (
         <CheckInList
           items={items}
-          onToggle={toggleAttendance}
+          onSetAttendance={setAttendance}
           onUpdateFolder={handleUpdateFolder}
           onEdit={handleEditProfile}
         />

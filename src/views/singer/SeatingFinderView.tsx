@@ -1,25 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
+import { profileService, type Profile } from '../../services/profileService';
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
   const { events, isLoading: eventsLoading } = useMyEvents();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    profileService.getMyProfile().then(setMyProfile).catch(console.error);
+  }, []);
 
   const event = events.find(e => e.id === eventId);
-  const { chart, rowCounts, activeProfiles, isLoading: chartLoading } = useSeatingChart(eventId || '', null);
+  // Default to null venue on singer view for now; ideally the event has a default venue
+  const { chart, rowCounts, isLoading: chartLoading } = useSeatingChart(eventId || '', null);
 
   const isLoading = eventsLoading || chartLoading;
 
   if (!event) return <div className="container" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Event not found.</div>;
 
-  const mySeat = activeProfiles.find(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  
-  const seatLocation = mySeat ? Object.entries(chart?.assignments || {}).find(([, id]) => id === mySeat.id) : null;
+  const seatLocation = myProfile ? Object.entries(chart?.assignments || {}).find(([, id]) => id === myProfile.id) : null;
   const [row, seat] = seatLocation ? seatLocation[0].split('-').map(Number) : [null, null];
 
   return (
@@ -31,20 +35,8 @@ export default function SeatingFinderView() {
     >
       <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
         <AppCard>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Search Your Name</label>
-            <input 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Type your name..."
-              className="card"
-              style={{ width: '100%', padding: '0 16px', height: '48px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}
-            />
-          </div>
-
-          {searchTerm && row !== null ? (
+          {row !== null ? (
             <div className="flex-col" style={{ 
-              marginTop: 'var(--space-lg)', 
               textAlign: 'center', 
               padding: 'var(--space-xl)', 
               backgroundColor: 'var(--primary-light)', 
@@ -60,13 +52,9 @@ export default function SeatingFinderView() {
                  Seat {seat! + 1}
               </div>
             </div>
-          ) : searchTerm ? (
-            <div style={{ marginTop: 'var(--space-lg)', textAlign: 'center' }}>
-              <p className="text-muted">No assignment found for "{searchTerm}" yet. Check with your director!</p>
-            </div>
           ) : (
-            <div style={{ marginTop: 'var(--space-lg)', textAlign: 'center' }}>
-              <p className="text-muted">Enter your name above to see your assigned seat.</p>
+            <div style={{ textAlign: 'center' }}>
+              <p className="text-muted">No assignment found for your profile yet. Check with your director!</p>
             </div>
           )}
         </AppCard>
@@ -80,7 +68,7 @@ export default function SeatingFinderView() {
                   {rowCounts.map((count, rIdx) => (
                       <div key={rIdx} className="flex-row" style={{ gap: '4px', justifyContent: 'center' }}>
                           {Array.from({ length: count }).map((_, sIdx) => {
-                              const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === mySeat?.id && !!searchTerm;
+                              const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === myProfile?.id;
                               return (
                                   <div key={sIdx} style={{ 
                                       width: '12px', height: '12px', borderRadius: '2px',
