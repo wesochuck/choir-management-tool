@@ -22,19 +22,45 @@ export default function SeatingFinderView() {
 
   if (!event) return <div className="container" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Event not found.</div>;
 
+  const venue = event.expand?.venue;
+  const isOpenSeating = venue?.isOpenSeating;
+  const address = venue?.address;
+
   const seatLocation = myProfile ? Object.entries(chart?.assignments || {}).find(([, id]) => id === myProfile.id) : null;
   const [row, seat] = seatLocation ? seatLocation[0].split('-').map(Number) : [null, null];
 
   return (
     <PageLayout 
       title="Find Your Seat" 
-      subtitle={event.title || event.expand?.venue?.name || ''}
+      subtitle={event.title || venue?.name || ''}
       backTo="/"
       maxWidth="800px"
     >
       <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
         <AppCard>
-          {row !== null ? (
+          {isOpenSeating ? (
+            <div className="flex-col" style={{ 
+              textAlign: 'center', 
+              padding: 'var(--space-xl)', 
+              backgroundColor: 'var(--primary-light)', 
+              borderRadius: 'var(--radius-lg)', 
+              border: '2px solid var(--primary)',
+              gap: 'var(--space-sm)'
+            }}>
+              <div style={{ fontSize: '0.875rem', color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Seating Type</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-deep)', margin: 'var(--space-sm) 0', lineHeight: 1.2 }}>
+                 Open Seating
+              </div>
+              <div className="text-muted">Find a spot with your section when you arrive.</div>
+              {address && (
+                <div style={{ marginTop: 'var(--space-md)' }}>
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                    📍 Open in Google Maps
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : row !== null ? (
             <div className="flex-col" style={{ 
               textAlign: 'center', 
               padding: 'var(--space-xl)', 
@@ -58,28 +84,30 @@ export default function SeatingFinderView() {
           )}
         </AppCard>
 
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-           <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Full Stage View</h3>
-           {isLoading ? (
-              <div style={{ textAlign: 'center' }} className="text-muted">Loading grid...</div>
-           ) : (
-              <div className="flex-col" style={{ gap: '4px' }}>
-                  {rowCounts.map((count, rIdx) => (
-                      <div key={rIdx} className="flex-row" style={{ gap: '4px', justifyContent: 'center' }}>
-                          {Array.from({ length: count }).map((_, sIdx) => {
-                              const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === myProfile?.id;
-                              return (
-                                  <div key={sIdx} style={{ 
-                                      width: '12px', height: '12px', borderRadius: '2px',
-                                      backgroundColor: isMySeat ? 'var(--primary)' : 'var(--border)' 
-                                  }} />
-                              );
-                          })}
-                      </div>
-                  ))}
-              </div>
-           )}
-        </div>
+        {!isOpenSeating && (
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+             <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Full Stage View</h3>
+             {isLoading ? (
+                <div style={{ textAlign: 'center' }} className="text-muted">Loading grid...</div>
+             ) : (
+                <div className="flex-col" style={{ gap: '4px' }}>
+                    {rowCounts.map((count, rIdx) => (
+                        <div key={rIdx} className="flex-row" style={{ gap: '4px', justifyContent: 'center' }}>
+                            {Array.from({ length: count }).map((_, sIdx) => {
+                                const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === myProfile?.id;
+                                return (
+                                    <div key={sIdx} style={{ 
+                                        width: '12px', height: '12px', borderRadius: '2px',
+                                        backgroundColor: isMySeat ? 'var(--primary)' : 'var(--border)' 
+                                    }} />
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+             )}
+          </div>
+        )}
       </div>
     </PageLayout>
   );
