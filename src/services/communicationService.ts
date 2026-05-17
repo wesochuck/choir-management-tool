@@ -7,6 +7,7 @@ import {
   settingsService,
   type CommunicationConfig,
 } from './settingsService';
+import { communicationUtils } from '../lib/communicationUtils';
 import type { RecordModel } from 'pocketbase';
 
 export type { CommunicationConfig } from './settingsService';
@@ -62,8 +63,6 @@ const profileToRecipient = (profile: Profile): CommunicationRecipient => ({
   voicePart: profile.voicePart,
   globalStatus: profile.globalStatus,
 });
-
-const encodeSmsBody = (content: string) => encodeURIComponent(content.slice(0, 1500));
 
 export const communicationService = {
   async getMessages() {
@@ -123,17 +122,8 @@ export const communicationService = {
 
   async sendBulkMessage(data: SendMessageInput): Promise<SendMessageResult> {
     const message = await this.saveMessage(data);
-    const emailRecipients = data.recipients.map((recipient) => recipient.email).filter(Boolean);
-    const phoneRecipients = data.recipients.map((recipient) => recipient.phone.replace(/[^\d+]/g, '')).filter(Boolean);
-
-    const mailtoUrl = emailRecipients.length
-      ? `mailto:?bcc=${encodeURIComponent(emailRecipients.join(','))}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.content)}`
-      : '';
-    const smsUrl = phoneRecipients.length
-      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(data.content)}`
-      : '';
-
-    return { message, mailtoUrl, smsUrl };
+    const urls = communicationUtils.formatCommunicationUrls(data);
+    return { message, ...urls };
   },
 
   defaultConfig: DEFAULT_COMMUNICATION_CONFIG,

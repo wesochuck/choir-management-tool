@@ -9,6 +9,8 @@ import {
   seatingContextId,
   shouldApplySeatingResponse,
 } from '../src/lib/seatingSync.ts';
+import { communicationUtils } from '../src/lib/communicationUtils.ts';
+import type { SendMessageInput } from '../src/services/communicationService.ts';
 
 test('calendarUtils.createICS emits a valid two-hour event', () => {
   const event = {
@@ -137,4 +139,65 @@ test('seating sync merge preserves optimistic edits over late load data', () => 
     '0-1': 'local_singer',
     '0-2': 'another_local_singer',
   });
+});
+
+test('formatCommunicationUrls formats urls from recipients correctly', () => {
+  const input: SendMessageInput = {
+    subject: 'Hello',
+    content: 'World!',
+    type: 'Both',
+    recipients: [
+      { id: '1', name: 'A', email: 'a@example.com', phone: '123-456-7890', voicePart: 'S1', globalStatus: 'Active' },
+      { id: '2', name: 'B', email: 'b@example.com', phone: '(098) 765-4321', voicePart: 'A1', globalStatus: 'Active' },
+      { id: '3', name: 'C', email: '', phone: '+1-555-123-4567', voicePart: 'T1', globalStatus: 'Active' },
+      { id: '4', name: 'D', email: 'd@example.com', phone: '', voicePart: 'B1', globalStatus: 'Active' },
+    ],
+    filters: { eventId: '', rsvp: 'All', voicePart: '', globalStatus: '' }
+  };
+
+  const { mailtoUrl, smsUrl } = communicationUtils.formatCommunicationUrls(input);
+
+  assert.equal(
+    mailtoUrl,
+    'mailto:?bcc=a%40example.com%2Cb%40example.com%2Cd%40example.com&subject=Hello&body=World!'
+  );
+  assert.equal(
+    smsUrl,
+    'sms:1234567890%2C0987654321%2C%2B15551234567?&body=World!'
+  );
+});
+
+test('formatCommunicationUrls handles empty recipients correctly', () => {
+  const input: SendMessageInput = {
+    subject: 'Hello',
+    content: 'World!',
+    type: 'Both',
+    recipients: [],
+    filters: { eventId: '', rsvp: 'All', voicePart: '', globalStatus: '' }
+  };
+
+  const { mailtoUrl, smsUrl } = communicationUtils.formatCommunicationUrls(input);
+
+  assert.equal(mailtoUrl, '');
+  assert.equal(smsUrl, '');
+});
+
+test('formatCommunicationUrls handles long SMS content correctly', () => {
+  const longContent = 'A'.repeat(2000);
+  const input: SendMessageInput = {
+    subject: 'Hello',
+    content: longContent,
+    type: 'SMS',
+    recipients: [
+      { id: '1', name: 'A', email: '', phone: '1234567890', voicePart: 'S1', globalStatus: 'Active' },
+    ],
+    filters: { eventId: '', rsvp: 'All', voicePart: '', globalStatus: '' }
+  };
+
+  const { smsUrl } = communicationUtils.formatCommunicationUrls(input);
+
+  assert.equal(
+    smsUrl,
+    `sms:1234567890?&body=${encodeURIComponent('A'.repeat(1500))}`
+  );
 });
