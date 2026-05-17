@@ -1,20 +1,26 @@
 migrate((app) => {
   const collection = app.findCollectionByNameOrId("pbc_venues_001");
 
-  collection.fields.add(new BoolField({
+  collection.fields.add({
+    "id": "bool_is_open_seating",
     "name": "isOpenSeating",
-    "type": "bool"
-  }));
+    "type": "bool",
+    "system": false,
+    "required": false
+  });
 
-  collection.fields.add(new TextField({
+  collection.fields.add({
+    "id": "text_address",
     "name": "address",
-    "type": "text"
-  }));
+    "type": "text",
+    "system": false,
+    "required": false
+  });
 
-  return app.save(collection);
+  app.save(collection);
 }, (app) => {
   const collection = app.findCollectionByNameOrId("pbc_venues_001");
-  collection.fields.removeByName("isOpenSeating");
-  collection.fields.removeByName("address");
-  return app.save(collection);
+  collection.fields.removeById("bool_is_open_seating");
+  collection.fields.removeById("text_address");
+  app.save(collection);
 });
