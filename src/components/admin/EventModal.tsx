@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event } from '../../services/eventService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
+import { formatPocketBaseError } from '../../lib/pocketbase';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -82,10 +83,10 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
 
       await onSave(formData, bulkConfig);
       onClose();
-    } catch {
+    } catch (err: any) {
       await dialog.showMessage({
         title: 'Could Not Save Event',
-        message: 'Error saving event',
+        message: formatPocketBaseError(err),
         variant: 'danger',
       });
     } finally {

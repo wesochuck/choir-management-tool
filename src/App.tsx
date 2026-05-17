@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+wimport { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginView from './views/LoginView';
 import RosterView from './views/admin/RosterView';
@@ -40,7 +40,7 @@ export default function App() {
         <Route path="/login" element={<LoginView />} />
         <Route path="/auditions" element={<PublicAuditionView />} />
         <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
-        
+
         <Route path="/admin/roster" element={
           <ProtectedRoute adminOnly>
             <PageLayout title="Roster Management" backTo="/">
@@ -48,7 +48,7 @@ export default function App() {
             </PageLayout>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/admin/events" element={
           <ProtectedRoute adminOnly>
             <PageLayout title="Event Management" backTo="/">
@@ -56,7 +56,7 @@ export default function App() {
             </PageLayout>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/admin/venues" element={
           <ProtectedRoute adminOnly>
             <PageLayout title="Venue Templates" backTo="/">
@@ -64,7 +64,7 @@ export default function App() {
             </PageLayout>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/admin/seating" element={
           <ProtectedRoute adminOnly>
             <PageLayout title="Seating Charts" backTo="/" maxWidth="1400px">
@@ -72,7 +72,7 @@ export default function App() {
             </PageLayout>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/admin/attendance" element={
           <ProtectedRoute adminOnly>
             <PageLayout title="Attendance Check-in" backTo="/">

@@ -20,6 +20,10 @@ export interface CommunicationSettings {
   smsBody: string;
 }
 
+export interface AttendanceSettings {
+  defaultSort: 'lastName' | 'voicePart';
+}
+
 export interface CommunicationConfig {
   smtp: {
     host: string;
@@ -58,6 +62,10 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
     '{eventDetails}',
   ].join('\n'),
   smsBody: 'Choir reminder: {eventTitle} on {eventDate} at {eventLocation}.',
+};
+
+export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = {
+  defaultSort: 'lastName',
 };
 
 export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
@@ -123,5 +131,14 @@ export const settingsService = {
 
   async saveCommunicationConfig(value: CommunicationConfig) {
     return await upsertSetting('communications_config', value, false);
+  },
+
+  async getAttendanceSettings() {
+    const setting = await getSetting<AttendanceSettings>('attendance');
+    return setting?.value || DEFAULT_ATTENDANCE_SETTINGS;
+  },
+
+  async saveAttendanceSettings(value: AttendanceSettings) {
+    return await upsertSetting('attendance', value, false);
   },
 };

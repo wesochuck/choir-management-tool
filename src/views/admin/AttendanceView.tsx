@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { useAttendance } from '../../hooks/useAttendance';
 import { useProfiles } from '../../hooks/useProfiles';
@@ -7,6 +7,7 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
 import type { Profile, ProfileInput } from '../../services/profileService';
+import { settingsService } from '../../services/settingsService';
 
 export default function AttendanceView() {
   const dialog = useDialog();
@@ -15,7 +16,23 @@ export default function AttendanceView() {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   
-  const { items, isLoading, error, setAttendance, updateFolder } = useAttendance(selectedEventId);
+  // Filter States
+  const [filterName, setFilterName] = useState('');
+  const [filterVoicePart, setFilterVoicePart] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [sortBy, setSortBy] = useState<'lastName' | 'voicePart'>('lastName');
+
+  useEffect(() => {
+    settingsService.getAttendanceSettings()
+      .then((settings) => {
+        setSortBy(settings.defaultSort);
+      })
+      .catch((err) => {
+        console.error('Failed to load attendance settings', err);
+      });
+  }, []);
+
+  const { items, isLoading, error, setAttendance, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId);
 
   const selectedEvent = useMemo(() => 
     events.find(e => e.id === selectedEventId), 
@@ -26,6 +43,41 @@ export default function AttendanceView() {
     [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     [events]
   );
+
+  // Compute filtered items dynamically
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      // 1. Filter by Name (case-insensitive search)
+      if (filterName.trim()) {
+        const query = filterName.toLowerCase();
+        if (!item.name.toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      // 2. Filter by Voice Part
+      if (filterVoicePart) {
+        if (item.voicePart !== filterVoicePart) {
+          return false;
+        }
+      }
+
+      // 3. Filter by Attendance Status
+      if (filterStatus) {
+        if (item.attendance !== filterStatus) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [items, filterName, filterVoicePart, filterStatus]);
+
+  const handleResetFilters = () => {
+    setFilterName('');
+    setFilterVoicePart('');
+    setFilterStatus('');
+  };
 
   const handleUpdateFolder = async (profileId: string, folderNumber: string, folderReturned: boolean) => {
     try {
@@ -60,7 +112,10 @@ export default function AttendanceView() {
             <label className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Select Event</label>
             <select 
               value={selectedEventId} 
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                setSelectedEventId(e.target.value);
+                handleResetFilters(); // Reset filters when changing active event
+              }}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
             >
@@ -114,6 +169,270 @@ export default function AttendanceView() {
         </div>
       )}
 
+      {selectedEventId && !isLoading && !error && (
+        <div
+          className="flex-responsive"
+          style={{
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 'var(--space-md)',
+            padding: '4px 0'
+          }}
+        >
+          {/* Left Side: Summary info */}
+          <span 
+            style={{ 
+              fontSize: '0.85rem', 
+              fontWeight: 700, 
+              color: 'var(--text-muted)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px' 
+            }}
+          >
+            👥 Roster: {items.length} singers
+          </span>
+
+          {/* Right Side: Bulk actions and Refresh */}
+          <div className="flex-row" style={{ gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Refresh Button */}
+            <button
+              onClick={() => {
+                refresh();
+              }}
+              className="btn btn-ghost btn-sm"
+              title="Refresh Roster"
+              style={{
+                height: '34px',
+                width: '34px',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              🔄
+            </button>
+
+            <span style={{ height: '20px', width: '1px', backgroundColor: 'var(--border)' }}></span>
+
+            {/* Bulk Present */}
+            <button
+              onClick={async () => {
+                const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
+                const confirmed = await dialog.confirm({
+                  title: 'Mark All Present',
+                  message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Present?`,
+                  confirmLabel: 'Mark Present',
+                  confirmVariant: 'primary'
+                });
+                if (confirmed) {
+                  try {
+                    await setAllAttendance('Present', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
+                  } catch (err: any) {
+                    await dialog.showMessage({
+                      title: 'Error updating attendance',
+                      message: err.message || 'Failed to bulk update',
+                      variant: 'danger'
+                    });
+                  }
+                }
+              }}
+              className="btn btn-sm"
+              style={{
+                height: '34px',
+                padding: '0 12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                backgroundColor: 'rgba(74, 117, 89, 0.1)',
+                color: 'var(--primary-deep)',
+                border: '1px solid rgba(74, 117, 89, 0.25)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ✅ Mark All Present
+            </button>
+
+            {/* Bulk Absent */}
+            <button
+              onClick={async () => {
+                const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
+                const confirmed = await dialog.confirm({
+                  title: 'Mark All Absent',
+                  message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Absent?`,
+                  confirmLabel: 'Mark Absent',
+                  confirmVariant: 'danger'
+                });
+                if (confirmed) {
+                  try {
+                    await setAllAttendance('Absent', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
+                  } catch (err: any) {
+                    await dialog.showMessage({
+                      title: 'Error updating attendance',
+                      message: err.message || 'Failed to bulk update',
+                      variant: 'danger'
+                    });
+                  }
+                }
+              }}
+              className="btn btn-sm"
+              style={{
+                height: '34px',
+                padding: '0 12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                color: '#b91c1c',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ❌ Mark All Absent
+            </button>
+
+            {/* Bulk Reset */}
+            <button
+              onClick={async () => {
+                const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
+                const confirmed = await dialog.confirm({
+                  title: 'Reset Attendance',
+                  message: `Are you sure you want to reset all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} to unmarked status?`,
+                  confirmLabel: 'Reset All',
+                  confirmVariant: 'warning'
+                });
+                if (confirmed) {
+                  try {
+                    await setAllAttendance('Pending', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
+                  } catch (err: any) {
+                    await dialog.showMessage({
+                      title: 'Error updating attendance',
+                      message: err.message || 'Failed to bulk update',
+                      variant: 'danger'
+                    });
+                  }
+                }
+              }}
+              className="btn btn-ghost btn-sm"
+              style={{
+                height: '34px',
+                padding: '0 12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                border: '1px dashed var(--border)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ⏳ Reset All
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selectedEventId && !isLoading && !error && (
+        <div 
+          className="card" 
+          style={{ 
+            padding: '16px 20px', 
+            display: 'flex', 
+            flexDirection: 'row', 
+            gap: 'var(--space-md)', 
+            flexWrap: 'wrap', 
+            alignItems: 'center', 
+            border: '1px solid var(--border)', 
+            backgroundColor: 'var(--surface)',
+            borderRadius: 'var(--radius-md)'
+          }}
+        >
+          {/* Name Search */}
+          <div className="flex-col" style={{ flex: '1 1 200px', gap: '6px' }}>
+            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Search by Name</label>
+            <input 
+              type="text"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              placeholder="🔍 Search name..."
+              className="card"
+              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            />
+          </div>
+
+          {/* Voice Part Filter */}
+          <div className="flex-col" style={{ width: '140px', gap: '6px' }}>
+            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Voice Part</label>
+            <select
+              value={filterVoicePart}
+              onChange={(e) => setFilterVoicePart(e.target.value)}
+              className="card"
+              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <option value="">All Parts</option>
+              {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map(part => (
+                <option key={part} value={part}>{part}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Attendance Status Filter */}
+          <div className="flex-col" style={{ width: '160px', gap: '6px' }}>
+            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="card"
+              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <option value="">All Statuses</option>
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+              <option value="Pending">Unmarked</option>
+            </select>
+          </div>
+
+          {/* Sort By Filter */}
+          <div className="flex-col" style={{ width: '180px', gap: '6px' }}>
+            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+              className="card"
+              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <option value="lastName">Last Name</option>
+              <option value="voicePart">Voice Part + Last Name</option>
+            </select>
+          </div>
+
+          {/* Reset Action */}
+          {(filterName || filterVoicePart || filterStatus) && (
+            <button 
+              onClick={handleResetFilters}
+              className="btn btn-ghost"
+              style={{ 
+                height: '40px', 
+                alignSelf: 'flex-end', 
+                fontSize: '0.85rem', 
+                fontWeight: 700, 
+                color: '#ef4444',
+                padding: '0 8px'
+              }}
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <AppCard style={{ textAlign: 'center', padding: '32px' }}>
           <p className="text-muted">Loading attendance data...</p>
@@ -123,12 +442,22 @@ export default function AttendanceView() {
           <p style={{ color: 'var(--color-danger-text)', fontWeight: 600 }}>{error}</p>
         </AppCard>
       ) : selectedEventId ? (
-        <CheckInList
-          items={items}
-          onSetAttendance={setAttendance}
-          onUpdateFolder={handleUpdateFolder}
-          onEdit={handleEditProfile}
-        />
+        filteredItems.length === 0 ? (
+          <AppCard style={{ textAlign: 'center', padding: '48px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
+            <span style={{ fontSize: '2rem' }}>🔍</span>
+            <h3 style={{ marginTop: '12px', marginBottom: '4px', fontWeight: 800, fontSize: '1.25rem' }}>No Matching Singers</h3>
+            <p className="text-muted text-sm" style={{ marginTop: '0', marginBottom: '16px' }}>Try adjusting your search terms, voice parts, or attendance filters.</p>
+            <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
+          </AppCard>
+        ) : (
+          <CheckInList
+            items={filteredItems}
+            onSetAttendance={setAttendance}
+            onUpdateFolder={handleUpdateFolder}
+            onEdit={handleEditProfile}
+            sortBy={sortBy}
+          />
+        )
       ) : (
         <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
           <p className="text-muted" style={{ fontSize: '1rem', margin: 0 }}>Please select an event above to start check-in.</p>

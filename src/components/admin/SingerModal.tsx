@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
+import { formatPocketBaseError } from '../../lib/pocketbase';
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -51,10 +52,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     try {
       await onSave(formData);
       onClose();
-    } catch {
+    } catch (err: any) {
       await dialog.showMessage({
         title: 'Could Not Save Singer',
-        message: 'Error saving profile',
+        message: formatPocketBaseError(err),
       });
     } finally {
       setIsLoading(false);

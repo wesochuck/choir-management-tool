@@ -140,11 +140,58 @@ export const useAttendance = (eventId: string) => {
     }
   };
 
+  const setAllAttendance = async (next: 'Present' | 'Absent' | 'Pending', targetProfileIds?: string[]) => {
+    if (!eventId || items.length === 0) return;
+
+    // If targetProfileIds is provided, we only update those. Otherwise, we update all.
+    const subset = targetProfileIds 
+      ? items.filter(item => targetProfileIds.includes(item.profileId))
+      : items;
+
+    if (subset.length === 0) return;
+
+    const originalItems = [...items];
+
+    // Optimistically update target items locally
+    setItems(prev => prev.map(item => 
+      (!targetProfileIds || targetProfileIds.includes(item.profileId))
+        ? { ...item, attendance: next }
+        : item
+    ));
+
+    try {
+      const updatedRosters = await Promise.all(
+        subset.map(item => rosterService.upsertAttendance(eventId, item.profileId, next))
+      );
+
+      const rosterMap = new Map(updatedRosters.map(r => [r.profile, r]));
+      setItems(prev => prev.map(item => {
+        if (!targetProfileIds || targetProfileIds.includes(item.profileId)) {
+          const r = rosterMap.get(item.profileId);
+          return {
+            ...item,
+            id: r?.id || item.id,
+            rosterId: r?.id || item.rosterId,
+            attendance: next
+          };
+        }
+        return item;
+      }));
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update bulk attendance');
+      // Revert to original state on failure
+      setItems(originalItems);
+      throw new Error(err.message || 'Failed to update bulk attendance');
+    }
+  };
+
   return {
     items,
     isLoading,
     error,
     setAttendance,
+    setAllAttendance,
     updateFolder,
     refresh: fetchAttendance,
   };

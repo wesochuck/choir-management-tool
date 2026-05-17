@@ -1,4 +1,4 @@
-import React, { useEffect, useId } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -13,6 +13,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   isOpen, onClose, title, children, footer, maxWidth = '500px' 
 }) => {
   const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -25,7 +26,21 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    
+    // Auto-focus the first visible focusable element inside the modal
+    const focusTimer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstFocusable = modalRef.current.querySelector<HTMLElement>(
+          'input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
+        );
+        firstFocusable?.focus();
+      }
+    }, 50);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(focusTimer);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -43,6 +58,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
+        ref={modalRef}
         className="card flex-col modal-content" 
         role="dialog"
         aria-modal="true"

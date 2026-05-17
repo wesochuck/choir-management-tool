@@ -3,14 +3,17 @@ import { AppCard } from '../../components/common/AppCard';
 import {
   DEFAULT_AUDITION_SETTINGS,
   DEFAULT_COMMUNICATION_SETTINGS,
+  DEFAULT_ATTENDANCE_SETTINGS,
   settingsService,
   type AuditionSettings,
   type CommunicationSettings,
+  type AttendanceSettings,
 } from '../../services/settingsService';
 
 export default function SettingsView() {
   const [auditionSettings, setAuditionSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
+  const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [slotText, setSlotText] = useState(DEFAULT_AUDITION_SETTINGS.slots.join('\n'));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -18,12 +21,14 @@ export default function SettingsView() {
 
   useEffect(() => {
     const load = async () => {
-      const [auditions, communications] = await Promise.all([
+      const [auditions, communications, attendance] = await Promise.all([
         settingsService.getAuditionSettings(),
         settingsService.getCommunicationSettings(),
+        settingsService.getAttendanceSettings(),
       ]);
       setAuditionSettings(auditions);
       setCommunicationSettings(communications);
+      setAttendanceSettings(attendance);
       setSlotText(auditions.slots.join('\n'));
       setIsLoading(false);
     };
@@ -47,6 +52,7 @@ export default function SettingsView() {
       await Promise.all([
         settingsService.saveAuditionSettings({ ...auditionSettings, slots }),
         settingsService.saveCommunicationSettings(communicationSettings),
+        settingsService.saveAttendanceSettings(attendanceSettings),
       ]);
       setAuditionSettings((current) => ({ ...current, slots }));
       setMessage('Settings saved.');
@@ -136,6 +142,24 @@ export default function SettingsView() {
             className="card"
             style={{ minHeight: '96px', resize: 'vertical' }}
           />
+        </div>
+      </AppCard>
+
+      <AppCard title="Attendance Settings">
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Default Sorting Option</label>
+          <select
+            value={attendanceSettings.defaultSort}
+            onChange={(event) => setAttendanceSettings({ defaultSort: event.target.value as 'lastName' | 'voicePart' })}
+            className="card"
+            style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          >
+            <option value="lastName">Last Name</option>
+            <option value="voicePart">Voice Part + Last Name</option>
+          </select>
+          <p className="text-muted" style={{ margin: 0 }}>
+            Choose the default sorting option used when opening the check-in sheet.
+          </p>
         </div>
       </AppCard>
     </div>
