@@ -4,8 +4,9 @@
  */
 export const getLastName = (fullName: string): string => {
   if (!fullName) return '';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length <= 1) return fullName;
+  const trimmed = fullName.trim();
+  const parts = trimmed.split(/\s+/);
+  if (parts.length <= 1) return trimmed;
 
   const suffixes = new Set(['Jr', 'Sr', 'II', 'III', 'IV', 'V', 'Jr.', 'Sr.']);
   const lastPart = parts[parts.length - 1];
