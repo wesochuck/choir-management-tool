@@ -2,6 +2,14 @@ import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import type { Venue } from './venueService';
 
+export interface SetListItem {
+  id: string; // Used for dnd-kit key
+  title: string;
+  composer?: string;
+  duration?: string;
+  notes?: string;
+}
+
 export interface Event extends RecordModel {
   title: string;
   date: string;
@@ -9,6 +17,8 @@ export interface Event extends RecordModel {
   details: string;
   parentPerformanceId: string;
   venue?: string;
+  isOpenForRSVP?: boolean;
+  setList?: SetListItem[];
   expand?: {
     venue?: Venue;
     parentPerformanceId?: Event;
