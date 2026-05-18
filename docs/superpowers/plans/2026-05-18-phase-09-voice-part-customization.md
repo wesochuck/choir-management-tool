@@ -16,7 +16,7 @@
 - Create: `test/settingsService.test.ts`
 - Modify: `src/services/settingsService.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // test/settingsService.test.ts
@@ -37,12 +37,12 @@ describe('getVoiceParts', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/settingsService.test.ts`
 Expected: FAIL with "getVoiceParts is not a function"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Add to src/services/settingsService.ts
@@ -63,12 +63,12 @@ export async function getVoiceParts(): Promise<VoicePartDef[]> {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/settingsService.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/settingsService.test.ts src/services/settingsService.ts
