@@ -59,9 +59,9 @@ export default function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/admin/set-lists" element={
+        <Route path="/admin/setlists" element={
           <ProtectedRoute adminOnly>
-            <PageLayout title="Set List Management" backTo="/">
+            <PageLayout title="Set Lists" backTo="/">
               <SetListView />
             </PageLayout>
           </ProtectedRoute>
