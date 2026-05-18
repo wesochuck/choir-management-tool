@@ -22,12 +22,14 @@ export default function AdminDashboardView() {
         {[
           { to: '/admin/roster', icon: '👥', label: 'Manage Roster', desc: 'Add singers and track status' },
           { to: '/admin/events', icon: '📅', label: 'Manage Events', desc: 'Schedule performances and rehearsals' },
+          { to: '/admin/set-lists', icon: '📜', label: 'Set Lists', desc: 'Curate and reorder songs for performances' },
           { to: '/admin/seating', icon: '🪑', label: 'Seating Charts', desc: 'Design layouts and assign seats' },
           { to: '/admin/venues', icon: '🏛️', label: 'Manage Venues', desc: 'Configure venue capacities' },
           { to: '/admin/attendance', icon: '📊', label: 'Take Attendance', desc: 'Track check-ins for events' },
+          { to: '/admin/reports', icon: '📈', label: 'Reports & Insights', desc: 'Attendance trends and concert summaries' },
           { to: '/admin/auditions', icon: '🎵', label: 'Auditions', desc: 'Review public audition requests' },
           { to: '/admin/communications', icon: '✉️', label: 'Communications', desc: 'Send announcements and review history' },
-          { to: '/admin/settings', icon: '⚙️', label: 'Settings', desc: 'Configure auditions, email, and texts' }
+          { to: '/admin/settings', icon: '⚙️', label: 'Settings', desc: 'System-wide preferences and defaults' }
         ].map((item) => (
           <Link key={item.to} to={item.to} className="card flex-col" style={{ textDecoration: 'none', alignItems: 'flex-start' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>{item.icon}</div>

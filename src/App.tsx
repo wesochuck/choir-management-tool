@@ -9,6 +9,7 @@ import AttendanceView from './views/admin/AttendanceView';
 import AuditionsView from './views/admin/AuditionsView';
 import SettingsView from './views/admin/SettingsView';
 import CommunicationView from './views/admin/CommunicationView';
+import SetListView from './views/admin/SetListView';
 import ReportsView from './views/admin/ReportsView';
 import AdminDashboardView from './views/admin/AdminDashboardView';
 import SingerDashboardView from './views/singer/DashboardView';
@@ -54,6 +55,14 @@ export default function App() {
           <ProtectedRoute adminOnly>
             <PageLayout title="Event Management" backTo="/">
               <EventsView />
+            </PageLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/set-lists" element={
+          <ProtectedRoute adminOnly>
+            <PageLayout title="Set List Management" backTo="/">
+              <SetListView />
             </PageLayout>
           </ProtectedRoute>
         } />
