@@ -9,6 +9,7 @@ import AttendanceView from './views/admin/AttendanceView';
 import AuditionsView from './views/admin/AuditionsView';
 import SettingsView from './views/admin/SettingsView';
 import CommunicationView from './views/admin/CommunicationView';
+import ReportsView from './views/admin/ReportsView';
 import AdminDashboardView from './views/admin/AdminDashboardView';
 import SingerDashboardView from './views/singer/DashboardView';
 import SeatingFinderView from './views/singer/SeatingFinderView';
@@ -85,6 +86,14 @@ export default function App() {
           <ProtectedRoute adminOnly>
             <PageLayout title="Auditions" backTo="/">
               <AuditionsView />
+            </PageLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/reports" element={
+          <ProtectedRoute adminOnly>
+            <PageLayout title="Reports & Insights" backTo="/">
+              <ReportsView />
             </PageLayout>
           </ProtectedRoute>
         } />
