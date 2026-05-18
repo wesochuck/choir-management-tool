@@ -16,7 +16,7 @@
 - Create: `test/musicPieceUtils.test.ts`
 - Modify: `src/lib/musicPieceUtils.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // test/musicPieceUtils.test.ts
@@ -33,12 +33,12 @@ describe('exportMusicToCSV', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/musicPieceUtils.test.ts`
 Expected: FAIL with "exportMusicToCSV is not exported"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Add to src/lib/musicPieceUtils.ts
@@ -71,7 +71,7 @@ git commit -m "feat: add CSV export for music library"
 - Modify: `test/musicPieceUtils.test.ts`
 - Modify: `src/lib/musicPieceUtils.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // Append to test/musicPieceUtils.test.ts
@@ -91,12 +91,12 @@ describe('findDuplicates', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/musicPieceUtils.test.ts`
 Expected: FAIL with "findDuplicates is not a function"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Add to src/lib/musicPieceUtils.ts
@@ -118,12 +118,12 @@ export function findDuplicates(pieces: any[]): any[] {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/musicPieceUtils.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/musicPieceUtils.test.ts src/lib/musicPieceUtils.ts
