@@ -1,20 +1,12 @@
 migrate((app) => {
   const auditions = app.findCollectionByNameOrId("pbc_auditions_001");
 
-  auditions.fields.add(new Field({
-    "id": "relation1234567890", // Random-ish ID
+  auditions.fields.add(new RelationField({
     "name": "performance",
-    "type": "relation",
     "required": false,
-    "presentable": false,
-    "unique": false,
-    "options": {
-      "collectionId": "pbc_1687431684",
-      "cascadeDelete": false,
-      "minSelect": null,
-      "maxSelect": 1,
-      "displayFields": null
-    }
+    "collectionId": "pbc_1687431684",
+    "cascadeDelete": false,
+    "maxSelect": 1,
   }));
 
   return app.save(auditions);

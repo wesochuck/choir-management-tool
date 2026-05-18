@@ -82,10 +82,10 @@ export default function AttendanceView() {
   const handleUpdateFolder = async (profileId: string, folderNumber: string, folderReturned: boolean) => {
     try {
       await updateFolder(profileId, folderNumber, folderReturned);
-    } catch (err: any) {
+    } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Could Not Update Folder',
-        message: err.message || 'Failed to update folder',
+        message: err instanceof Error ? err.message : 'Failed to update folder',
         variant: 'danger',
       });
     }
@@ -233,10 +233,10 @@ export default function AttendanceView() {
                 if (confirmed) {
                   try {
                     await setAllAttendance('Present', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                  } catch (err: any) {
+                  } catch (err: unknown) {
                     await dialog.showMessage({
                       title: 'Error updating attendance',
-                      message: err.message || 'Failed to bulk update',
+                      message: err instanceof Error ? err.message : 'Failed to bulk update',
                       variant: 'danger'
                     });
                   }
@@ -272,10 +272,10 @@ export default function AttendanceView() {
                 if (confirmed) {
                   try {
                     await setAllAttendance('Absent', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                  } catch (err: any) {
+                  } catch (err: unknown) {
                     await dialog.showMessage({
                       title: 'Error updating attendance',
-                      message: err.message || 'Failed to bulk update',
+                      message: err instanceof Error ? err.message : 'Failed to bulk update',
                       variant: 'danger'
                     });
                   }
@@ -311,10 +311,10 @@ export default function AttendanceView() {
                 if (confirmed) {
                   try {
                     await setAllAttendance('Pending', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                  } catch (err: any) {
+                  } catch (err: unknown) {
                     await dialog.showMessage({
                       title: 'Error updating attendance',
-                      message: err.message || 'Failed to bulk update',
+                      message: err instanceof Error ? err.message : 'Failed to bulk update',
                       variant: 'danger'
                     });
                   }

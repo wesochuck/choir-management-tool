@@ -22,8 +22,8 @@ export const seatingService = {
         filterStr,
         { expand: 'venue' }
       );
-    } catch (err: any) {
-      if (err.status === 404) return null;
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
       throw err;
     }
   },

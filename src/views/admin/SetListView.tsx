@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
+import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { AppCard } from '../../components/common/AppCard';
 import { SortableSetListItem } from '../../components/admin/SortableSetListItem';
 import { useDialog } from '../../contexts/DialogContext';
@@ -13,6 +14,7 @@ export default function SetListView() {
   
   const [selectedEventId, setSelectedEventId] = useState('');
   const [items, setItems] = useState<SetListItem[]>([]);
+  const [library, setLibrary] = useState<MusicPiece[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   
   // Form state
@@ -21,6 +23,7 @@ export default function SetListView() {
   const [composer, setComposer] = useState('');
   const [duration, setDuration] = useState('');
   const [notes, setNotes] = useState('');
+  const [pieceId, setPieceId] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -33,7 +36,12 @@ export default function SetListView() {
     setComposer('');
     setDuration('');
     setNotes('');
+    setPieceId('');
   };
+
+  useEffect(() => {
+    musicLibraryService.getLibrary().then(setLibrary).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (selectedEventId) {
@@ -51,6 +59,20 @@ export default function SetListView() {
     setComposer(item.composer || '');
     setDuration(item.duration || '');
     setNotes(item.notes || '');
+    setPieceId(item.pieceId || '');
+  };
+
+  const handleLibrarySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    setPieceId(selectedId);
+    
+    if (selectedId) {
+        const piece = library.find(p => p.id === selectedId);
+        if (piece) {
+            setTitle(piece.title);
+            if (piece.composer) setComposer(piece.composer);
+        }
+    }
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -59,9 +81,9 @@ export default function SetListView() {
 
     let newItems: SetListItem[];
     if (editingId) {
-      newItems = items.map(i => i.id === editingId ? { id: editingId, title, composer, duration, notes } : i);
+      newItems = items.map(i => i.id === editingId ? { id: editingId, title, composer, duration, notes, pieceId: pieceId || undefined } : i);
     } else {
-      newItems = [...items, { id: crypto.randomUUID(), title, composer, duration, notes }];
+      newItems = [...items, { id: crypto.randomUUID(), title, composer, duration, notes, pieceId: pieceId || undefined }];
     }
     setItems(newItems);
     resetForm();
@@ -178,6 +200,22 @@ export default function SetListView() {
 
           <AppCard title={editingId ? "Edit Item" : "Add Item"} style={{ flex: 1 }}>
             <form onSubmit={handleFormSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              {library.length > 0 && (
+                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                  <label className="text-label text-muted">Link to Music Library</label>
+                  <select 
+                    className="card" 
+                    value={pieceId} 
+                    onChange={handleLibrarySelect}
+                    style={{ padding: '0 8px', height: '40px' }}
+                  >
+                    <option value="">-- Custom (No link) --</option>
+                    {library.map(p => (
+                      <option key={p.id} value={p.id}>{p.title} {p.composer ? `(${p.composer})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Title</label>
                 <input required value={title} onChange={e => setTitle(e.target.value)} className="card" style={{ padding: '8px' }} />

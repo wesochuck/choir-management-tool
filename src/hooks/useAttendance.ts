@@ -65,8 +65,8 @@ export const useAttendance = (eventId: string) => {
 
       setItems(combined);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch attendance');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch attendance');
     } finally {
       setIsLoading(false);
     }
@@ -94,14 +94,14 @@ export const useAttendance = (eventId: string) => {
           ? { ...item, id: updated.id, rosterId: updated.id, attendance: updated.attendance } 
           : item
       ));
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Revert to original state on failure
       setItems(prev => prev.map(item => 
         item.profileId === profileId 
           ? { ...item, attendance: originalItem.attendance } 
           : item
       ));
-      throw new Error(err.message || 'Failed to update attendance');
+      throw new Error(err instanceof Error ? err.message : 'Failed to update attendance');
     }
   };
 
@@ -129,14 +129,14 @@ export const useAttendance = (eventId: string) => {
           ? { ...item, folderNumber: updated.folderNumber, folderReturned: updated.folderReturned } 
           : item
       ));
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Revert to original state on failure
       setItems(prev => prev.map(item => 
         item.profileId === profileId 
           ? { ...item, folderNumber: originalItem.folderNumber, folderReturned: originalItem.folderReturned } 
           : item
       ));
-      throw new Error(err.message || 'Failed to update folder');
+      throw new Error(err instanceof Error ? err.message : 'Failed to update folder');
     }
   };
 
@@ -178,11 +178,12 @@ export const useAttendance = (eventId: string) => {
         return item;
       }));
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update bulk attendance');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update bulk attendance';
+      setError(message);
       // Revert to original state on failure
       setItems(originalItems);
-      throw new Error(err.message || 'Failed to update bulk attendance');
+      throw new Error(message);
     }
   };
 

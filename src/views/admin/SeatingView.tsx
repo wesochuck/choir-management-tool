@@ -7,6 +7,7 @@ import { seatingService, type SeatingChart } from '../../services/seatingService
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { getLastName } from '../../lib/stringUtils';
+import type { Profile } from '../../services/profileService';
 
 export default function SeatingView() {
   const dialog = useDialog();
@@ -53,11 +54,11 @@ export default function SeatingView() {
   const groupedRows = useMemo(() => {
     if (!rowCounts.length) return [];
     
-    const profileMap: Record<string, any> = {};
+    const profileMap: Record<string, Profile> = {};
     activeProfiles.forEach(p => profileMap[p.id] = p);
 
     return rowCounts.map((seatCount, rowIndex) => {
-      const row: any[] = [];
+      const row: (Profile | null)[] = [];
       for (let seatIndex = 0; seatIndex < seatCount; seatIndex++) {
         const profileId = optimisticAssignments[`${rowIndex}-${seatIndex}`];
         row.push(profileId ? profileMap[profileId] : null);
@@ -425,7 +426,7 @@ function SavingIndicator({ isSaving, error }: { isSaving: boolean; error: string
   return null;
 }
 
-function SeatingTextList({ rows }: { rows: any[][] }) {
+function SeatingTextList({ rows }: { rows: (Profile | null)[][] }) {
   return (
     <div className="seating-text-list flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
       {rows.map((row, i) => {
@@ -433,7 +434,7 @@ function SeatingTextList({ rows }: { rows: any[][] }) {
         const isFront = i === rows.length - 1;
         const label = `Row ${i + 1}${isBack ? ' (Back)' : isFront ? ' (Front)' : ''}`;
 
-        const assignedSingers = row.filter(p => !!p);
+        const assignedSingers = row.filter((p): p is Profile => !!p);
         const namesString = assignedSingers.length > 0 
           ? assignedSingers.map(p => `${getLastName(p.name)} (${p.voicePart})`).join(', ')
           : 'No singers assigned';

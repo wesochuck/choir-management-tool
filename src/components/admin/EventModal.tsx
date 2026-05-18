@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Event } from '../../services/eventService';
+import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
@@ -9,7 +9,7 @@ import { settingsService } from '../../services/settingsService';
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<Event>, bulkConfig?: any, openAuditions?: boolean) => Promise<void>;
+  onSave: (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig, openAuditions?: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   initialData?: Event | null;
   performances: Event[];
@@ -148,10 +148,10 @@ export const EventModal: React.FC<EventModalProps> = ({
       setNewVenueName('');
       setNewVenueRows('');
       setNewVenueAddress('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Could Not Add Venue',
-        message: err.message || 'Error saving inline venue',
+        message: err instanceof Error ? err.message : 'Error saving inline venue',
         variant: 'danger',
       });
     } finally {
@@ -163,13 +163,13 @@ export const EventModal: React.FC<EventModalProps> = ({
     e.preventDefault();
     setIsLoading(true);
     try {
-      const bulkConfig = shouldBulkAdd && formData.type === 'Performance' 
+      const bulkConfig: BulkRehearsalConfig | undefined = shouldBulkAdd && formData.type === 'Performance' 
         ? { count: bulkCount, dayOfWeek: bulkDay, time: bulkTime, venue: bulkVenue }
         : undefined;
 
       await onSave(formData, bulkConfig, isOpenAuditions);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Could Not Save Event',
         message: formatPocketBaseError(err),
@@ -240,7 +240,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             <label className="text-label">Type</label>
             <select 
               value={formData.type} 
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as any, parentPerformanceId: e.target.value === 'Performance' ? '' : formData.parentPerformanceId })}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value as 'Performance' | 'Rehearsal', parentPerformanceId: e.target.value === 'Performance' ? '' : formData.parentPerformanceId })}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             >
@@ -260,6 +260,17 @@ export const EventModal: React.FC<EventModalProps> = ({
             />
           </div>
         </div>
+
+        <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+          <input
+            type="checkbox"
+            checked={formData.isOpenForRSVP || false}
+            onChange={(e) => setFormData({ ...formData, isOpenForRSVP: e.target.checked })}
+            style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+          />
+          <span className="text-label">Open for RSVP Links</span>
+        </label>
+
         
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <label className="text-label">Venue</label>

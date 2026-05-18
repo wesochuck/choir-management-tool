@@ -45,7 +45,10 @@ export const SortableSetListItem: React.FC<Props> = ({ item, onEdit, onDelete })
       </div>
       
       <div className="flex-col" style={{ flex: 1, gap: '2px' }}>
-        <div className="text-label" style={{ margin: 0 }}>{item.title}</div>
+        <div className="text-label flex-row" style={{ margin: 0, gap: '6px', alignItems: 'center' }}>
+          {item.title}
+          {item.pieceId && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
+        </div>
         {(item.composer || item.duration) && (
           <div className="text-xs text-muted">
             {item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration}

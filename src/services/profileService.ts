@@ -8,6 +8,10 @@ export interface Profile extends RecordModel {
   voicePart: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2';
   globalStatus: 'Active (Current)' | 'Active (Future)' | 'Inactive';
   notes: string;
+  doNotEmail?: boolean;
+  statusIsManual?: boolean;
+  statusLastChangedAt?: string;
+  statusChangeReason?: string;
   expand?: {
     user?: UserAccount;
   };
@@ -22,6 +26,8 @@ export interface UserAccount extends RecordModel {
 export interface ProfileInput extends Partial<Profile> {
   email?: string;
   password?: string;
+  doNotEmail?: boolean;
+  statusIsManual?: boolean;
 }
 
 const splitProfileInput = (data: ProfileInput) => {

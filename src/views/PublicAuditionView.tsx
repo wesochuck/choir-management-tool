@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
-import { type Event } from '../services/eventService';
-import { pb } from '../lib/pocketbase';
+import { eventService, type Event } from '../services/eventService';
 
 export default function PublicAuditionView() {
   const [settings, setSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
@@ -29,19 +28,11 @@ export default function PublicAuditionView() {
         setTimeSlot(loaded.slots[0] || '');
 
         if (loaded.defaultPerformanceId) {
-          // Fetch target performance
           try {
-            const performance = await pb.collection('events').getOne<Event>(loaded.defaultPerformanceId, {
-              expand: 'venue'
-            });
+            const performance = await eventService.getEventById(loaded.defaultPerformanceId);
             setTargetPerformance(performance);
 
-            // Fetch associated rehearsals
-            const rehearsalList = await pb.collection('events').getFullList<Event>({
-              filter: `parentPerformanceId = "${performance.id}" && type = "Rehearsal"`,
-              sort: 'date',
-              expand: 'venue'
-            });
+            const rehearsalList = await eventService.getRehearsalsForPerformance(performance.id);
             setRehearsals(rehearsalList);
           } catch (e) {
             console.error('Failed to load performance details', e);

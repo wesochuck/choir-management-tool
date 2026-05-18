@@ -12,8 +12,8 @@ export const useVenues = () => {
       const data = await venueService.getVenues();
       setVenues(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch venues');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch venues');
     } finally {
       setIsLoading(false);
     }
@@ -28,8 +28,8 @@ export const useVenues = () => {
       const record = await venueService.createVenue(data);
       await fetchVenues();
       return record;
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to add venue');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to add venue');
     }
   };
 
@@ -37,8 +37,8 @@ export const useVenues = () => {
     try {
       await venueService.updateVenue(id, data);
       await fetchVenues();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update venue');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update venue');
     }
   };
 
@@ -46,8 +46,8 @@ export const useVenues = () => {
     try {
       await venueService.deleteVenue(id);
       await fetchVenues();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to delete venue');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to delete venue');
     }
   };
 

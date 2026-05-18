@@ -148,9 +148,9 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
           setError(null);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (shouldTrackInCurrentUi() && requestId === lastEditIdRef.current) {
-        setError(err.message || 'Failed to save seating chart');
+        setError(err instanceof Error ? err.message : 'Failed to save seating chart');
       }
     } finally {
       if (trackInCurrentUi) {
@@ -244,9 +244,9 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       setActiveProfiles(activeCurrent);
       setError(null);
       loadedContextKeyRef.current = contextKey;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (seatingContextId(currentContextRef.current) === requestContextId) {
-        setError(err.message || 'Failed to fetch seating data');
+        setError(err instanceof Error ? err.message : 'Failed to fetch seating data');
       }
     } finally {
       if (seatingContextId(currentContextRef.current) === requestContextId) {
@@ -353,7 +353,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     return queueChartSave(updates);
   };
 
-  const copyFromPerformance = async (sourceChart: any) => {
+  const copyFromPerformance = async (sourceChart: SeatingChart) => {
     return updateChart({
       assignments: sourceChart.assignments,
       layoutOverride: sourceChart.layoutOverride,

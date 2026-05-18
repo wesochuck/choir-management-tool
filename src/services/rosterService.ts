@@ -32,8 +32,8 @@ export const rosterService = {
         `event = "${eventId}" && profile = "${profileId}"`
       );
       return await pb.collection('eventRosters').update<EventRoster>(existing.id, { rsvp });
-    } catch (err: any) {
-      if (err.status === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
         return await pb.collection('eventRosters').create<EventRoster>({
           event: eventId,
           profile: profileId,
@@ -63,8 +63,8 @@ export const rosterService = {
         `event = "${eventId}" && profile = "${profileId}"`
       );
       return await pb.collection('eventRosters').update<EventRoster>(existing.id, { attendance });
-    } catch (err: any) {
-      if (err.status === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
         return await pb.collection('eventRosters').create<EventRoster>({
           event: eventId,
           profile: profileId,
@@ -87,8 +87,8 @@ export const rosterService = {
         `event = "${eventId}" && profile = "${profileId}"`
       );
       return await pb.collection('eventRosters').update<EventRoster>(existing.id, data);
-    } catch (err: any) {
-      if (err.status === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
         return await pb.collection('eventRosters').create<EventRoster>({
           event: eventId,
           profile: profileId,

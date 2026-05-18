@@ -28,12 +28,21 @@ pb.afterSend = async (response, data) => {
   return data;
 };
 
-export function formatPocketBaseError(err: any): string {
+interface PocketBaseErrorData {
+  [key: string]: {
+    code: string;
+    message: string;
+  };
+}
+
+export function formatPocketBaseError(err: unknown): string {
   if (!err) return 'An unknown error occurred';
   
-  if (err.data && typeof err.data === 'object' && Object.keys(err.data).length > 0) {
-    const details = Object.entries(err.data)
-      .map(([field, info]: [string, any]) => {
+  const error = err as { data?: PocketBaseErrorData; message?: string };
+  
+  if (error.data && typeof error.data === 'object' && Object.keys(error.data).length > 0) {
+    const details = Object.entries(error.data)
+      .map(([field, info]) => {
         const code = info.code;
         const msg = info.message;
         
@@ -73,5 +82,5 @@ export function formatPocketBaseError(err: any): string {
     return details;
   }
   
-  return err.message || 'An error occurred';
+  return (err instanceof Error) ? err.message : 'An error occurred';
 }
