@@ -29,6 +29,42 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
   const [venue, setVenue] = useState('');
   const [isSubmitting, setIsLoading] = useState(false);
 
+  const selectedPerformance = performances.find(p => p.id === selectedPerformanceId);
+
+  const calculateRehearsalRange = (): { first: Date; last: Date } | null => {
+    if (!selectedPerformance || !selectedPerformance.date) return null;
+    const performanceDate = new Date(selectedPerformance.date);
+    if (isNaN(performanceDate.getTime())) return null;
+
+    const [hours, minutes] = (time || '19:00').split(':').map(n => parseInt(n));
+    const current = new Date(performanceDate);
+    current.setHours(isNaN(hours) ? 19 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+
+    // Roll back to the last rehearsal date
+    if (current.getDay() === dayOfWeek) {
+      current.setDate(current.getDate() - 7);
+    } else {
+      let safety = 0;
+      while (current.getDay() !== dayOfWeek && safety < 7) {
+        current.setDate(current.getDate() - 1);
+        safety++;
+      }
+    }
+
+    const last = new Date(current);
+
+    // Now roll back count - 1 weeks to find the first rehearsal
+    const validCount = isNaN(count) ? 1 : count;
+    if (validCount > 1) {
+      current.setDate(current.getDate() - (validCount - 1) * 7);
+    }
+    const first = new Date(current);
+
+    return { first, last };
+  };
+
+  const range = calculateRehearsalRange();
+
   useEffect(() => {
     if (isOpen) {
       if (initialPerformance) {
@@ -184,6 +220,36 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
             <option value={6}>Saturday</option>
           </select>
         </div>
+
+        {range && selectedPerformance && (
+          <div 
+            className="card" 
+            style={{ 
+              backgroundColor: 'var(--primary-light)', 
+              borderColor: 'rgba(74, 124, 89, 0.2)', 
+              padding: '12px var(--space-md)', 
+              borderRadius: 'var(--radius-md)', 
+              boxShadow: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              marginTop: '4px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-deep)', fontWeight: 600, fontSize: '0.875rem' }}>
+              <span style={{ fontSize: '1.1rem' }}>📅</span> Rehearsal Schedule Preview
+            </div>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text)', lineHeight: 1.4 }}>
+              First Rehearsal: <strong style={{ color: 'var(--primary-deep)' }}>{range.first.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            </div>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text)', lineHeight: 1.4 }}>
+              Last Rehearsal: <strong style={{ color: 'var(--primary-deep)' }}>{range.last.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic' }}>
+              Generates {count} weekly rehearsals leading up to the performance on {new Date(selectedPerformance.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}.
+            </div>
+          </div>
+        )}
       </form>
     </BaseModal>
   );
