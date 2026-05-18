@@ -123,4 +123,15 @@ export function validatePieceForLibrary(title: string): boolean {
   return typeof title === 'string' && title.trim().length > 0;
 }
 
+export function exportMusicToCSV(pieces: any[]): string {
+  const header = ['Title', 'Composer', 'Voicing'].join(',');
+  const rows = pieces.map(p => [
+    `"${p.title || ''}"`,
+    `"${p.composer || ''}"`,
+    `"${p.voicing || ''}"`
+  ].join(','));
+  return [header, ...rows].join('\n');
+}
+
+
 
