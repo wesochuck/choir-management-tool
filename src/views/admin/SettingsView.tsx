@@ -1,35 +1,28 @@
 import { useEffect, useState } from 'react';
 import { AppCard } from '../../components/common/AppCard';
 import {
-  DEFAULT_AUDITION_SETTINGS,
   DEFAULT_COMMUNICATION_SETTINGS,
   DEFAULT_ATTENDANCE_SETTINGS,
   settingsService,
-  type AuditionSettings,
   type CommunicationSettings,
   type AttendanceSettings,
 } from '../../services/settingsService';
 
 export default function SettingsView() {
-  const [auditionSettings, setAuditionSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
-  const [slotText, setSlotText] = useState(DEFAULT_AUDITION_SETTINGS.slots.join('\n'));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     const load = async () => {
-      const [auditions, communications, attendance] = await Promise.all([
-        settingsService.getAuditionSettings(),
+      const [communications, attendance] = await Promise.all([
         settingsService.getCommunicationSettings(),
         settingsService.getAttendanceSettings(),
       ]);
-      setAuditionSettings(auditions);
       setCommunicationSettings(communications);
       setAttendanceSettings(attendance);
-      setSlotText(auditions.slots.join('\n'));
       setIsLoading(false);
     };
 
@@ -43,18 +36,11 @@ export default function SettingsView() {
     setIsSaving(true);
     setMessage('');
 
-    const slots = slotText
-      .split('\n')
-      .map((slot) => slot.trim())
-      .filter(Boolean);
-
     try {
       await Promise.all([
-        settingsService.saveAuditionSettings({ ...auditionSettings, slots }),
         settingsService.saveCommunicationSettings(communicationSettings),
         settingsService.saveAttendanceSettings(attendanceSettings),
       ]);
-      setAuditionSettings((current) => ({ ...current, slots }));
       setMessage('Settings saved.');
     } catch {
       setMessage('Settings could not be saved.');
@@ -75,39 +61,6 @@ export default function SettingsView() {
       </div>
 
       {message && <div className="badge badge-rehearsal" style={{ alignSelf: 'flex-start' }}>{message}</div>}
-
-      <AppCard title="Auditions">
-        <label className="flex-row" style={{ gap: 'var(--space-sm)', alignSelf: 'flex-start' }}>
-          <input
-            type="checkbox"
-            checked={auditionSettings.enabled}
-            onChange={(event) => setAuditionSettings({ ...auditionSettings, enabled: event.target.checked })}
-            style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }}
-          />
-          <span className="text-label">Accept public audition requests</span>
-        </label>
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Available Audition Times</label>
-          <textarea
-            value={slotText}
-            onChange={(event) => setSlotText(event.target.value)}
-            className="card"
-            style={{ minHeight: '160px', resize: 'vertical' }}
-          />
-          <p className="text-muted" style={{ margin: 0 }}>Enter one available time per line.</p>
-        </div>
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Confirmation Message</label>
-          <textarea
-            value={auditionSettings.confirmationMessage}
-            onChange={(event) => setAuditionSettings({ ...auditionSettings, confirmationMessage: event.target.value })}
-            className="card"
-            style={{ minHeight: '96px', resize: 'vertical' }}
-          />
-        </div>
-      </AppCard>
 
       <AppCard title="Email and Text Reminders">
         <p className="text-muted" style={{ margin: 0 }}>
