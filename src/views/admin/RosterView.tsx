@@ -4,11 +4,15 @@ import { RosterTable } from '../../components/admin/RosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { RosterSummary } from '../../components/admin/RosterSummary';
 import type { Profile, ProfileInput } from '../../services/profileService';
+import { RosterImportModal } from '../../components/admin/RosterImportModal';
+
 
 export default function RosterView() {
-  const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile } = useProfiles();
+  const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+
 
   const handleEdit = (profile: Profile) => {
     setEditingProfile(profile);
@@ -39,7 +43,10 @@ export default function RosterView() {
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Global Roster</h1>
-        <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>
+        <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">Import CSV</button>
+          <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>
+        </div>
       </div>
 
       <RosterSummary profiles={profiles} />
@@ -75,6 +82,12 @@ export default function RosterView() {
         onSave={handleSave} 
         onDelete={handleDelete}
         initialData={editingProfile} 
+      />
+
+      <RosterImportModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={refresh}
       />
     </div>
   );

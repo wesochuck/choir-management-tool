@@ -8,6 +8,7 @@ import {
   mergeSeatingResponseWithDirtyState,
   seatingContextId,
   shouldApplySeatingResponse,
+  groupSingersBySection,
 } from '../src/lib/seatingSync.ts';
 
 test('calendarUtils.createICS emits a valid two-hour event', () => {
@@ -142,4 +143,26 @@ test('seating sync merge preserves optimistic edits over late load data', () => 
     '0-1': 'local_singer',
     '0-2': 'another_local_singer',
   });
+});
+
+test('groupSingersBySection excludes assigned singers and segments unassigned into lanes', () => {
+  const profiles = [
+    { id: '1', name: 'Alice Smith', voicePart: 'Soprano 1' },
+    { id: '2', name: 'Amanda Jones', voicePart: 'Soprano 2' },
+    { id: '3', name: 'Betty Miller', voicePart: 'Alto 1' },
+    { id: '4', name: 'Thomas Wright', voicePart: 'Tenor 2' },
+    { id: '5', name: 'Bob Johnson', voicePart: 'Bass' },
+    { id: '6', name: 'Soloist Steve', voicePart: 'Soloist' },
+  ];
+  
+  // Exclude '1' (Alice) and '5' (Bob) as they are already assigned
+  const assigned = new Set(['1', '5']);
+  
+  const grouped = groupSingersBySection(profiles, assigned);
+  
+  assert.deepEqual(grouped.S, [{ id: '2', name: 'Amanda Jones', voicePart: 'Soprano 2' }]);
+  assert.deepEqual(grouped.A, [{ id: '3', name: 'Betty Miller', voicePart: 'Alto 1' }]);
+  assert.deepEqual(grouped.T, [{ id: '4', name: 'Thomas Wright', voicePart: 'Tenor 2' }]);
+  assert.deepEqual(grouped.B, []);
+  assert.deepEqual(grouped.Other, [{ id: '6', name: 'Soloist Steve', voicePart: 'Soloist' }]);
 });
