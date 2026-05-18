@@ -133,5 +133,23 @@ export function exportMusicToCSV(pieces: any[]): string {
   return [header, ...rows].join('\n');
 }
 
+export function findDuplicates(pieces: any[]): any[] {
+  const seen = new Map<string, any[]>();
+  for (const piece of pieces) {
+    const key = `${piece.title?.toLowerCase()?.trim() || ''}|${piece.composer?.toLowerCase()?.trim() || ''}`;
+    if (!seen.has(key)) seen.set(key, []);
+    seen.get(key)!.push(piece);
+  }
+  
+  const duplicates: any[] = [];
+  for (const group of seen.values()) {
+    if (group.length > 1) {
+      duplicates.push(...group);
+    }
+  }
+  return duplicates;
+}
+
+
 
 
