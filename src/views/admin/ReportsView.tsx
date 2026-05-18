@@ -70,11 +70,13 @@ export default function ReportsView() {
     library.forEach(piece => {
       const dates: Date[] = [];
 
-      // 1. Add historical dates from the piece itself
-      if (piece.historicalDates) {
-        piece.historicalDates.forEach(dStr => {
-          const d = new Date(dStr);
-          if (!isNaN(d.getTime())) dates.push(d);
+      // 1. Add historical dates from the linked performances
+      if (piece.expand?.performances) {
+        piece.expand.performances.forEach((perf: any) => {
+          if (perf.date) {
+            const d = new Date(perf.date);
+            if (!isNaN(d.getTime())) dates.push(d);
+          }
         });
       }
 

@@ -10,6 +10,7 @@ import {
   shouldApplySeatingResponse,
   groupSingersBySection,
 } from '../src/lib/seatingSync.ts';
+import { findPieceDetails, formatPerformanceHistory, parseMusicLibraryCSV } from '../src/lib/musicPieceUtils.ts';
 
 test('calendarUtils.createICS emits a valid two-hour event', () => {
   const event = {
@@ -166,3 +167,106 @@ test('groupSingersBySection excludes assigned singers and segments unassigned in
   assert.deepEqual(grouped.B, []);
   assert.deepEqual(grouped.Other, [{ id: '6', name: 'Soloist Steve', voicePart: 'Soloist' }]);
 });
+
+test('findPieceDetails matches and returns the piece by id', () => {
+  const library = [
+    { id: 'piece_1', title: 'Messiah', composer: 'Handel' },
+    { id: 'piece_2', title: 'Requiem', composer: 'Mozart' }
+  ] as any[];
+
+  const result = findPieceDetails('piece_2', library);
+  assert.equal(result?.title, 'Requiem');
+  assert.equal(result?.composer, 'Mozart');
+});
+
+test('findPieceDetails returns null if piece id is not in library', () => {
+  const library = [
+    { id: 'piece_1', title: 'Messiah', composer: 'Handel' }
+  ] as any[];
+
+  const result = findPieceDetails('piece_unknown', library);
+  assert.equal(result, null);
+});
+
+test('findPieceDetails handles empty library or undefined parameters', () => {
+  assert.equal(findPieceDetails('some_id', []), null);
+  assert.equal(findPieceDetails('', []), null);
+});
+
+test('formatPerformanceHistory returns formatted performance strings when expand.performances exists', () => {
+  const piece = {
+    id: 'piece_1',
+    title: 'Messiah',
+    composer: 'Handel',
+    expand: {
+      performances: [
+        { id: 'evt_1', title: 'Spring Concert', date: '2026-05-20T23:00:00.000Z', type: 'Performance' },
+        { id: 'evt_2', title: 'Winter Gala', date: '2025-12-15T19:00:00.000Z', type: 'Performance' }
+      ]
+    }
+  } as any;
+
+  const result = formatPerformanceHistory(piece);
+  assert.deepEqual(result, [
+    'Spring Concert (2026-05-20)',
+    'Winter Gala (2025-12-15)'
+  ]);
+});
+
+test('formatPerformanceHistory returns empty array when expand or performances is missing', () => {
+  const pieceBody = { id: 'piece_2', title: 'Requiem' } as any;
+  assert.deepEqual(formatPerformanceHistory(pieceBody), []);
+
+  const pieceEmptyExpand = { id: 'piece_2', title: 'Requiem', expand: {} } as any;
+  assert.deepEqual(formatPerformanceHistory(pieceEmptyExpand), []);
+
+  const pieceEmptyPerformances = { id: 'piece_2', title: 'Requiem', expand: { performances: [] } } as any;
+  assert.deepEqual(formatPerformanceHistory(pieceEmptyPerformances), []);
+});
+
+test('parseMusicLibraryCSV parses CSV with standard fields and optional duration', () => {
+  const csvText = `Title,Composer,Copies,Catalog ID,Duration,Notes
+Messiah,Handel,45,CAT-001,2:45:00,Historic Messiah Notes
+Requiem,Mozart,,CAT-002,50:00,
+Ave Verum,Mozart,30,,,`;
+
+  const results = parseMusicLibraryCSV(csvText);
+
+  assert.equal(results.length, 3);
+
+  // Piece 1: Full fields including duration
+  assert.equal(results[0].title, 'Messiah');
+  assert.equal(results[0].composer, 'Handel');
+  assert.equal(results[0].copies, 45);
+  assert.equal(results[0].catalogId, 'CAT-001');
+  assert.equal(results[0].duration, '2:45:00');
+  assert.equal(results[0].notes, 'Historic Messiah Notes');
+
+  // Piece 2: Optional duration and catalogId, but empty/missing copies
+  assert.equal(results[1].title, 'Requiem');
+  assert.equal(results[1].composer, 'Mozart');
+  assert.equal(results[1].copies, undefined);
+  assert.equal(results[1].catalogId, 'CAT-002');
+  assert.equal(results[1].duration, '50:00');
+  assert.equal(results[1].notes, '');
+
+  // Piece 3: No duration or catalogId
+  assert.equal(results[2].title, 'Ave Verum');
+  assert.equal(results[2].composer, 'Mozart');
+  assert.equal(results[2].copies, 30);
+  assert.equal(results[2].catalogId, '');
+  assert.equal(results[2].duration, undefined);
+  assert.equal(results[2].notes, '');
+});
+
+test('findPieceDetails preserves and returns duration if present', () => {
+  const library = [
+    { id: 'piece_1', title: 'Messiah', composer: 'Handel', duration: '3:30' }
+  ] as any[];
+
+  const result = findPieceDetails('piece_1', library);
+  assert.equal(result?.duration, '3:30');
+});
+
+
+

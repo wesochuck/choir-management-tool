@@ -6,7 +6,8 @@ export interface MusicPiece extends RecordModel {
   composer?: string;
   copies?: number;
   catalogId?: string;
-  historicalDates?: string[];
+  duration?: string;
+  performances?: string[];
   notes?: string;
 }
 
@@ -16,6 +17,7 @@ export const musicLibraryService = {
   async getLibrary() {
     return await pb.collection('musicLibrary').getFullList<MusicPiece>({
       sort: 'title',
+      expand: 'performances',
     });
   },
 

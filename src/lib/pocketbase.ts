@@ -4,6 +4,9 @@ const env = (import.meta as ImportMeta & { env?: Record<string, string | undefin
 
 export const pb = new PocketBase(env?.VITE_PB_URL || 'http://127.0.0.1:8090');
 
+// Disable auto-cancellation globally to prevent aborted requests from React Strict Mode double-mounting
+pb.autoCancellation(false);
+
 pb.authStore.onChange(() => undefined, true);
 
 pb.afterSend = async (response, data) => {
