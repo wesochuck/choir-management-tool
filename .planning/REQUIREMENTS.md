@@ -20,18 +20,18 @@
 
 ## Auditions Refactor (Phase 5)
 
-- **AUDIT-01: Performance Association**
+- [x] **AUDIT-01: Performance Association**
   - Audition requests must be associated with a specific performance event.
   - Schema must include a `performance` relation field on `auditions` collection.
 
-- **AUDIT-02: Settings Integration**
+- [x] **AUDIT-02: Settings Integration**
   - Audition settings (enabled, slots, confirmation message) must be managed within `AuditionsView`.
   - Admin must be able to set a `defaultPerformance` for new audition requests.
 
-- **AUDIT-03: Admin Management**
+- [x] **AUDIT-03: Admin Management**
   - `AuditionsView` must allow filtering audition requests by performance.
   - The associated performance must be visible in the auditions list.
 
-- **AUDIT-04: Public Submission**
+- [x] **AUDIT-04: Public Submission**
   - `PublicAuditionView` must automatically assign the default performance to new requests.
   - If no default is set, the form should handle it gracefully (e.g., show an error or allow selection if multiple are active).

@@ -86,10 +86,10 @@ export default function AuditionsView() {
         message: `${audition.name} has been added to the choir roster and linked to their target performance schedule.`,
       });
       await fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Conversion Failed',
-        message: err.message || 'An error occurred while creating the singer profile.',
+        message: err instanceof Error ? err.message : 'An error occurred while creating the singer profile.',
         variant: 'danger',
       });
     }

@@ -4,7 +4,7 @@ import { useVenues } from '../../hooks/useVenues';
 import { EventList } from '../../components/admin/EventList';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
-import type { Event } from '../../services/eventService';
+import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
@@ -75,7 +75,7 @@ export default function EventsView() {
     setIsBulkModalOpen(true);
   };
 
-  const handleSave = async (data: Partial<Event>, bulkConfig?: any, openAuditions?: boolean) => {
+  const handleSave = async (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig, openAuditions?: boolean) => {
     let savedEvent: Event | undefined;
     if (editingEvent) {
       savedEvent = await editEvent(editingEvent.id, data);

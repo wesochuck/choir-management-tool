@@ -8,6 +8,7 @@ export interface SetListItem {
   composer?: string;
   duration?: string;
   notes?: string;
+  pieceId?: string; // Links to musicLibrary
 }
 
 export interface Event extends RecordModel {
@@ -40,6 +41,20 @@ export const eventService = {
     });
   },
 
+  async getEventById(id: string) {
+    return await pb.collection('events').getOne<Event>(id, {
+      expand: 'parentPerformanceId,venue',
+    });
+  },
+
+  async getRehearsalsForPerformance(performanceId: string) {
+    return await pb.collection('events').getFullList<Event>({
+      filter: `parentPerformanceId = "${performanceId}" && type = "Rehearsal"`,
+      sort: 'date',
+      expand: 'venue',
+    });
+  },
+
   async createEvent(data: Partial<Event>) {
     // Ensure date is in a format PocketBase likes (ISO string)
     const payload = { ...data };
@@ -47,10 +62,10 @@ export const eventService = {
       payload.date = new Date(payload.date).toISOString();
     }
     if (payload.parentPerformanceId === '') {
-      payload.parentPerformanceId = null as any;
+      payload.parentPerformanceId = null as unknown as string;
     }
     if (payload.venue === '') {
-      payload.venue = null as any;
+      payload.venue = null as unknown as string;
     }
     return await pb.collection('events').create<Event>(payload);
   },
@@ -61,10 +76,10 @@ export const eventService = {
       payload.date = new Date(payload.date).toISOString();
     }
     if (payload.parentPerformanceId === '') {
-      payload.parentPerformanceId = null as any;
+      payload.parentPerformanceId = null as unknown as string;
     }
     if (payload.venue === '') {
-      payload.venue = null as any;
+      payload.venue = null as unknown as string;
     }
     return await pb.collection('events').update<Event>(id, payload);
   },

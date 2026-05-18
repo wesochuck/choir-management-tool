@@ -13,8 +13,8 @@ export const useProfiles = () => {
       const data = await profileService.getProfiles();
       setProfiles(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch profiles');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch profiles');
     } finally {
       setIsLoading(false);
     }
@@ -36,8 +36,8 @@ export const useProfiles = () => {
     try {
       await profileService.createProfile(data);
       await fetchProfiles();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to add profile');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to add profile');
     }
   };
 
@@ -45,8 +45,8 @@ export const useProfiles = () => {
     try {
       await profileService.updateProfile(id, data);
       await fetchProfiles();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update profile');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update profile');
     }
   };
 
@@ -54,8 +54,8 @@ export const useProfiles = () => {
     try {
       await profileService.deleteProfile(id);
       await fetchProfiles();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to delete profile');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to delete profile');
     }
   };
 

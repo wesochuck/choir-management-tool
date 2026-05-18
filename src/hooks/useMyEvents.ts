@@ -27,8 +27,8 @@ export const useMyEvents = () => {
       setMyRosters(rosterMap);
       
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch dashboard data');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
     } finally {
       setIsLoading(false);
     }
@@ -43,8 +43,8 @@ export const useMyEvents = () => {
     try {
       const updated = await rosterService.updateRSVP(eventId, myProfile.id, rsvp);
       setMyRosters(prev => ({ ...prev, [eventId]: updated }));
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update RSVP');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update RSVP');
     }
   };
 

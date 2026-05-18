@@ -306,6 +306,9 @@ export default function CommunicationView() {
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Message</label>
                 <textarea className="card" value={content} onChange={(event) => setContent(event.target.value)} style={{ minHeight: '220px', padding: '12px', resize: 'vertical' }} />
+                <p className="text-muted text-xs" style={{ margin: 0 }}>
+                  Hint: Use <code>{'{{RSVP_LINKS}}'}</code> to insert personalized RSVP buttons (requires Event to be selected). Personalized links will be printed to the developer console when sending via Mailto.
+                </p>
               </div>
 
               <div className="flex-row" style={{ justifyContent: 'flex-end' }}>

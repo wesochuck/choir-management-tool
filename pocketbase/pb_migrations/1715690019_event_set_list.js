@@ -1,7 +1,7 @@
 migrate((app) => {
   const events = app.findCollectionByNameOrId("pbc_1687431684");
 
-  events.fields.add(new JsonField({
+  events.fields.add(new JSONField({
     "name": "setList",
     "system": false,
     "required": false

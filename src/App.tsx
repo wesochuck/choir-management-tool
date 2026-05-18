@@ -11,10 +11,12 @@ import SettingsView from './views/admin/SettingsView';
 import CommunicationView from './views/admin/CommunicationView';
 import SetListView from './views/admin/SetListView';
 import ReportsView from './views/admin/ReportsView';
+import MusicLibraryView from './views/admin/MusicLibraryView';
 import AdminDashboardView from './views/admin/AdminDashboardView';
 import SingerDashboardView from './views/singer/DashboardView';
 import SeatingFinderView from './views/singer/SeatingFinderView';
 import PublicAuditionView from './views/PublicAuditionView';
+import PublicRsvpView from './views/PublicRsvpView';
 import { PageLayout } from './components/common/PageLayout';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
@@ -41,6 +43,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginView />} />
         <Route path="/auditions" element={<PublicAuditionView />} />
+        <Route path="/rsvp" element={<PublicRsvpView />} />
         <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
 
         <Route path="/admin/roster" element={
@@ -103,6 +106,14 @@ export default function App() {
           <ProtectedRoute adminOnly>
             <PageLayout title="Reports & Insights" backTo="/">
               <ReportsView />
+            </PageLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/admin/library" element={
+          <ProtectedRoute adminOnly>
+            <PageLayout title="Music Library" backTo="/">
+              <MusicLibraryView />
             </PageLayout>
           </ProtectedRoute>
         } />

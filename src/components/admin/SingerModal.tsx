@@ -22,6 +22,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     voicePart: 'S1',
     globalStatus: 'Active (Current)',
     notes: '',
+    doNotEmail: false,
+    statusIsManual: false,
   });
   const [isSubmitting, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -32,6 +34,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         ...initialData,
         email: initialData.expand?.user?.email || '',
         password: '',
+        doNotEmail: initialData.doNotEmail || false,
+        statusIsManual: initialData.statusIsManual || false,
       });
     } else {
       setFormData({
@@ -42,6 +46,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         voicePart: 'S1',
         globalStatus: 'Active (Current)',
         notes: '',
+        doNotEmail: false,
+        statusIsManual: false,
       });
     }
   }, [initialData, isOpen]);
@@ -52,7 +58,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     try {
       await onSave(formData);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Could Not Save Singer',
         message: formatPocketBaseError(err),
@@ -168,7 +174,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <label className="text-label">Voice Part</label>
             <select 
               value={formData.voicePart} 
-              onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             >
@@ -179,7 +185,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <label className="text-label">Status</label>
             <select 
               value={formData.globalStatus} 
-              onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             >
@@ -189,6 +195,39 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             </select>
           </div>
         </div>
+        
+        <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+            <input
+              type="checkbox"
+              checked={formData.doNotEmail}
+              onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
+              style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+            />
+            <span className="text-label">Do Not Email</span>
+          </label>
+          <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+            <input
+              type="checkbox"
+              checked={formData.statusIsManual}
+              onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
+              style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+            />
+            <span className="text-label">Lock Status (Disable Automation)</span>
+          </label>
+        </div>
+
+        {initialData?.statusLastChangedAt && (
+          <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'var(--bg)', boxShadow: 'none', border: '1px solid var(--border)' }}>
+            <div className="text-xs text-muted" style={{ marginBottom: '4px' }}>
+              <strong>Status Last Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleString()}
+            </div>
+            <div className="text-xs text-muted">
+              <strong>Reason:</strong> {initialData.statusChangeReason || 'Manual update'}
+            </div>
+          </div>
+        )}
+
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <label className="text-label">Notes</label>
           <textarea 

@@ -104,6 +104,39 @@ export const communicationService = {
       .map(profileToRecipient);
   },
 
+  async resolveRsvpPlaceholders(content: string, eventId: string, recipients: CommunicationRecipient[]): Promise<{ previewContent: string; logs: string[] }> {
+    if (!content.includes('{{RSVP_LINKS}}') || !eventId || recipients.length === 0) {
+      return { previewContent: content, logs: [] };
+    }
+
+    const profileIds = recipients.map(r => r.id);
+    const response = await pb.send('/api/generate-rsvp-tokens', {
+      method: 'POST',
+      body: { eventId, profileIds }
+    });
+
+    const tokens = response.tokens;
+    const baseUrl = window.location.origin;
+    const logs: string[] = [];
+
+    let previewLink = '';
+    
+    recipients.forEach(r => {
+      const token = tokens[r.id];
+      if (token) {
+        const yesLink = `${baseUrl}/rsvp?token=${token}&rsvp=Yes`;
+        const noLink = `${baseUrl}/rsvp?token=${token}&rsvp=No`;
+        const text = `Yes: ${yesLink}\nNo: ${noLink}`;
+        logs.push(`RSVP Links for ${r.name}:\n${text}`);
+        
+        if (!previewLink) previewLink = text;
+      }
+    });
+
+    const previewContent = content.replace(/{{RSVP_LINKS}}/g, previewLink || '[RSVP Links will appear here]');
+    return { previewContent, logs };
+  },
+
   async saveMessage(data: SendMessageInput) {
     const currentUser = pb.authStore.model;
     const payload: Partial<MessageRecord> & { sender?: string } = {
@@ -122,15 +155,25 @@ export const communicationService = {
   },
 
   async sendBulkMessage(data: SendMessageInput): Promise<SendMessageResult> {
-    const message = await this.saveMessage(data);
+    let finalContent = data.content;
+    
+    if (data.content.includes('{{RSVP_LINKS}}') && data.filters.eventId) {
+      const resolved = await this.resolveRsvpPlaceholders(data.content, data.filters.eventId, data.recipients);
+      finalContent = resolved.previewContent;
+      console.log('--- RSVP Links Generated ---');
+      resolved.logs.forEach(log => console.log(log));
+      console.log('----------------------------');
+    }
+
+    const message = await this.saveMessage({ ...data, content: finalContent });
     const emailRecipients = data.recipients.map((recipient) => recipient.email).filter(Boolean);
     const phoneRecipients = data.recipients.map((recipient) => recipient.phone.replace(/[^\d+]/g, '')).filter(Boolean);
 
     const mailtoUrl = emailRecipients.length
-      ? `mailto:?bcc=${encodeURIComponent(emailRecipients.join(','))}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.content)}`
+      ? `mailto:?bcc=${encodeURIComponent(emailRecipients.join(','))}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(finalContent)}`
       : '';
     const smsUrl = phoneRecipients.length
-      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(data.content)}`
+      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(finalContent)}`
       : '';
 
     return { message, mailtoUrl, smsUrl };
@@ -145,6 +188,7 @@ export const communicationService = {
   getConfig: () => Promise<CommunicationConfig>;
   saveConfig: (value: CommunicationConfig) => Promise<unknown>;
   resolveRecipients: (filters: CommunicationFilters) => Promise<CommunicationRecipient[]>;
+  resolveRsvpPlaceholders: (content: string, eventId: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   sendBulkMessage: (data: SendMessageInput) => Promise<SendMessageResult>;
   defaultConfig: CommunicationConfig;

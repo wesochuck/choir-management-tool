@@ -7,9 +7,10 @@ interface Props {
   item: SetListItem;
   onEdit: (item: SetListItem) => void;
   onDelete: (id: string) => void;
+  onPieceClick?: (pieceId: string) => void;
 }
 
-export const SortableSetListItem: React.FC<Props> = ({ item, onEdit, onDelete }) => {
+export const SortableSetListItem: React.FC<Props> = ({ item, onEdit, onDelete, onPieceClick }) => {
   const {
     attributes,
     listeners,
@@ -45,7 +46,37 @@ export const SortableSetListItem: React.FC<Props> = ({ item, onEdit, onDelete })
       </div>
       
       <div className="flex-col" style={{ flex: 1, gap: '2px' }}>
-        <div className="text-label" style={{ margin: 0 }}>{item.title}</div>
+        <div className="text-label flex-row" style={{ margin: 0, gap: '6px', alignItems: 'center' }}>
+          {item.pieceId && onPieceClick ? (
+            <button
+              type="button"
+              onClick={() => onPieceClick(item.pieceId!)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                cursor: 'pointer',
+                color: 'var(--primary)',
+                textDecoration: 'underline',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              {item.title}
+              <span title="Linked to Music Library" style={{ fontSize: '0.85rem', textDecoration: 'none', display: 'inline-block' }}>🎼</span>
+            </button>
+          ) : (
+            <>
+              {item.title}
+              {item.pieceId && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
+            </>
+          )}
+        </div>
         {(item.composer || item.duration) && (
           <div className="text-xs text-muted">
             {item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration}

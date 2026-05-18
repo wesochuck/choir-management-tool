@@ -3,10 +3,12 @@ import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { SeatingGrid } from '../../components/admin/SeatingGrid';
+import { groupSingersBySection } from '../../lib/seatingSync';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { getLastName } from '../../lib/stringUtils';
+import type { Profile } from '../../services/profileService';
 
 export default function SeatingView() {
   const dialog = useDialog();
@@ -17,6 +19,31 @@ export default function SeatingView() {
   const [venueId, setVenueId] = useState('');
   const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
+  
+  const [isWideLayout, setIsWideLayout] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [singersListPosition, setSingersListPosition] = useState<'side' | 'bottom' | 'hidden'>('bottom');
+  
+  const workspaceRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!workspaceRef.current) return;
+    if (!document.fullscreenElement) {
+      workspaceRef.current.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const selectedVenue = venues.find(v => v.id === venueId) || null;
   const { 
@@ -53,11 +80,11 @@ export default function SeatingView() {
   const groupedRows = useMemo(() => {
     if (!rowCounts.length) return [];
     
-    const profileMap: Record<string, any> = {};
+    const profileMap: Record<string, Profile> = {};
     activeProfiles.forEach(p => profileMap[p.id] = p);
 
     return rowCounts.map((seatCount, rowIndex) => {
-      const row: any[] = [];
+      const row: (Profile | null)[] = [];
       for (let seatIndex = 0; seatIndex < seatCount; seatIndex++) {
         const profileId = optimisticAssignments[`${rowIndex}-${seatIndex}`];
         row.push(profileId ? profileMap[profileId] : null);
@@ -143,7 +170,16 @@ export default function SeatingView() {
   }, [chart?.sectionOrder]);
 
   return (
-    <div className="flex-col" data-print-mode={printMode} style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+    <div 
+      className={`flex-col ${isWideLayout ? 'seating-chart-wide-active' : ''} ${isFullscreen ? 'seating-fullscreen-active' : ''}`} 
+      ref={workspaceRef}
+      data-print-mode={printMode} 
+      style={{ 
+        gap: 'var(--space-xl)', 
+        padding: isFullscreen ? 'var(--space-xl)' : 'var(--space-xl) 0',
+        backgroundColor: isFullscreen ? 'var(--bg)' : 'transparent'
+      }}
+    >
       <div className="no-print flex-col" style={{ gap: 'var(--space-md)' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Seating Chart Creator</h1>
         
@@ -256,6 +292,67 @@ export default function SeatingView() {
                   Text List
                 </button>
                </div>
+
+               {/* Workspace Options (A1 Style segmented control) */}
+               <div className="flex-row no-print" style={{ gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+                 <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+                   <span className="text-label text-muted" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Layout:</span>
+                   <div className="segmented-control">
+                     <button
+                       type="button"
+                       className={!isWideLayout ? 'active' : ''}
+                       onClick={() => setIsWideLayout(false)}
+                     >
+                       Standard
+                     </button>
+                     <button
+                       type="button"
+                       className={isWideLayout ? 'active' : ''}
+                       onClick={() => setIsWideLayout(true)}
+                     >
+                       ↔️ Wide
+                     </button>
+                   </div>
+                 </div>
+
+                 <button
+                   type="button"
+                   onClick={toggleFullscreen}
+                   className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'}`}
+                   style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)', border: '1px solid var(--border)', height: '38px' }}
+                 >
+                   {isFullscreen ? 'Exit Fullscreen' : '🖥️ Fullscreen'}
+                 </button>
+
+                 {!selectedVenue?.isOpenSeating && (
+                   <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+                     <span className="text-label text-muted" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Singers:</span>
+                     <div className="segmented-control">
+                       <button
+                         type="button"
+                         className={singersListPosition === 'side' ? 'active' : ''}
+                         onClick={() => setSingersListPosition('side')}
+                       >
+                         👥 Side
+                       </button>
+                       <button
+                         type="button"
+                         className={singersListPosition === 'bottom' ? 'active' : ''}
+                         onClick={() => setSingersListPosition('bottom')}
+                       >
+                         📥 Bottom
+                       </button>
+                       <button
+                         type="button"
+                         className={singersListPosition === 'hidden' ? 'active' : ''}
+                         onClick={() => setSingersListPosition('hidden')}
+                       >
+                         ❌ Hide
+                       </button>
+                     </div>
+                   </div>
+                 )}
+               </div>
                
                <div className="flex-responsive" style={{ gap: 'var(--space-md)', flex: 1, justifyContent: 'center' }}>
                   <span className="text-label" style={{ color: 'var(--primary-deep)', whiteSpace: 'nowrap' }}>Copy Layout From:</span>
@@ -323,14 +420,27 @@ export default function SeatingView() {
               <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
                 <div className="no-print" style={{ 
                   padding: 'var(--space-sm)', 
-                  backgroundColor: 'var(--bg)', 
+                  backgroundColor: 'var(--primary-light)', 
                   borderRadius: 'var(--radius-md)', 
                   fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--text-muted)', 
+                  color: 'var(--primary-deep)', 
                   textAlign: 'center',
-                  border: '1px solid var(--border)'
+                  border: '1px solid var(--border)',
+                  boxShadow: 'var(--shadow-sm)'
                 }}>
-                  <strong>Editor Mode:</strong> Drag singers from the sidebar or click a seat to assign.
+                  <strong>Editor Mode:</strong>{' '}
+                  {singersListPosition === 'bottom' ? (
+                    <span>
+                      Drag singers from the <strong>bottom shelf</strong> below or click a seat to assign. 
+                      <span style={{ marginLeft: 'var(--space-sm)', fontWeight: 700, color: 'var(--color-performance-text)' }}>
+                        👇 Scroll down to see unassigned singers!
+                      </span>
+                    </span>
+                  ) : singersListPosition === 'side' ? (
+                    <span>Drag singers from the <strong>right sidebar</strong> or click a seat to assign.</span>
+                  ) : (
+                    <span>Click a seat to assign. (Singers list is currently hidden).</span>
+                  )}
                 </div>
                 <SeatingGrid 
                   rowCounts={rowCounts}
@@ -339,12 +449,22 @@ export default function SeatingView() {
                   activeProfiles={activeProfiles}
                   onAssign={assignSinger}
                 />
+                
+                {/* Bottom Dock horizontal lanes */}
+                {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom') && (
+                  <BottomDock 
+                    activeProfiles={activeProfiles}
+                    assignments={optimisticAssignments}
+                    assignSinger={assignSinger}
+                  />
+                )}
+
                 <SeatingTextList rows={groupedRows} />
               </div>
             )}
           </AppCard>
 
-          {!selectedVenue?.isOpenSeating && (
+          {(!selectedVenue?.isOpenSeating && singersListPosition === 'side') && (
             <AppCard className="no-print" style={{ 
               width: '320px', 
               position: 'sticky', 
@@ -425,7 +545,7 @@ function SavingIndicator({ isSaving, error }: { isSaving: boolean; error: string
   return null;
 }
 
-function SeatingTextList({ rows }: { rows: any[][] }) {
+function SeatingTextList({ rows }: { rows: (Profile | null)[][] }) {
   return (
     <div className="seating-text-list flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
       {rows.map((row, i) => {
@@ -433,7 +553,7 @@ function SeatingTextList({ rows }: { rows: any[][] }) {
         const isFront = i === rows.length - 1;
         const label = `Row ${i + 1}${isBack ? ' (Back)' : isFront ? ' (Front)' : ''}`;
 
-        const assignedSingers = row.filter(p => !!p);
+        const assignedSingers = row.filter((p): p is Profile => !!p);
         const namesString = assignedSingers.length > 0 
           ? assignedSingers.map(p => `${getLastName(p.name)} (${p.voicePart})`).join(', ')
           : 'No singers assigned';
@@ -460,6 +580,138 @@ function SeatingTextList({ rows }: { rows: any[][] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function BottomDock({
+  activeProfiles,
+  assignments,
+  assignSinger
+}: {
+  activeProfiles: Profile[];
+  assignments: Record<string, string>;
+  assignSinger: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
+}) {
+  const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
+  const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds), [activeProfiles, assignedIds]);
+
+  const sections: { key: 'S' | 'A' | 'T' | 'B' | 'Other'; label: string }[] = [
+    { key: 'S', label: 'Sopranos' },
+    { key: 'A', label: 'Altos' },
+    { key: 'T', label: 'Tenors' },
+    { key: 'B', label: 'Basses' },
+    { key: 'Other', label: 'Other' },
+  ];
+
+  return (
+    <div 
+      className="no-print" 
+      style={{ 
+        marginTop: 'var(--space-md)', 
+        border: '1px solid var(--border)', 
+        borderRadius: 'var(--radius-lg)',
+        padding: 'var(--space-md)',
+        backgroundColor: 'var(--primary-light)'
+      }}
+    >
+      <div 
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            if (data.fromSeatKey) {
+              assignSinger(data.fromSeatKey, '');
+            }
+          } catch (err) {
+            console.error('Failed to parse bottom dock drop data', err);
+          }
+        }}
+        className="flex-col"
+        style={{ gap: 'var(--space-md)' }}
+      >
+        <div className="flex-row" style={{ justifyContent: 'space-between' }}>
+          <h3 className="text-headline" style={{ margin: 0, fontSize: '1.05rem', color: 'var(--primary-deep)' }}>📥 Unassigned Singers Shelf</h3>
+          <span className="text-muted" style={{ fontSize: '11px' }}>Drag up to assign, or drop here to clear a seat assignment.</span>
+        </div>
+
+        <div 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(5, 1fr)', 
+            gap: 'var(--space-sm)',
+            minHeight: '140px',
+            maxHeight: '220px'
+          }}
+        >
+          {sections.map(({ key, label }) => {
+            const list = grouped[key];
+            return (
+              <div 
+                key={key} 
+                className="flex-col" 
+                style={{ 
+                  gap: 'var(--space-xs)', 
+                  backgroundColor: 'var(--surface)', 
+                  borderRadius: 'var(--radius-md)', 
+                  border: '1px solid var(--border)', 
+                  padding: 'var(--space-sm)',
+                  height: '100%',
+                  overflow: 'hidden'
+                }}
+              >
+                <div className="flex-row" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '4px' }}>
+                  <span className="text-label" style={{ fontWeight: 700, fontSize: 'var(--font-size-sm)', color: 'var(--text)' }}>
+                    {label}
+                  </span>
+                  <span className="badge badge-rehearsal" style={{ fontSize: '10px', padding: '0 6px' }}>
+                    {list.length}
+                  </span>
+                </div>
+
+                <div className="flex-col" style={{ gap: 'var(--space-xs)', overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
+                  {list.map(p => (
+                    <div 
+                      key={p.id}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
+                      className="flex-row"
+                      style={{ 
+                        padding: '6px var(--space-sm)', 
+                        backgroundColor: 'var(--bg)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: 'var(--radius-md)', 
+                        cursor: 'grab',
+                        justifyContent: 'space-between',
+                        fontSize: '0.8125rem',
+                        alignItems: 'center',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '75px' }} title={p.name}>
+                        {p.name.split(' ').pop()}
+                      </span>
+                      <span className="badge badge-rehearsal" style={{ 
+                        fontSize: '9px', 
+                        padding: '2px 4px',
+                        textTransform: 'uppercase'
+                      }}>
+                        {p.voicePart}
+                      </span>
+                    </div>
+                  ))}
+                  {list.length === 0 && (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+                      <span style={{ fontSize: '10px' }}>Empty</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

@@ -25,13 +25,13 @@ Foundational project scaffolding, auth, roster, events, attendance, and seating 
 
 ### Phase 3: Seating Chart Text-Only Print Mode
 **Goal:** Adds a "Text-only" print mode to the Seating Chart creator for clean, row-based reference.
-**Status:** In Progress
+**Status:** Complete
 **Requirements:** [PRNT-01, PRNT-02, PRNT-03]
 **Plans:** 1 plan
 
 ### Phase 3: RSVP & Status Automation (Cycle 3)
 **Goal:** Securely automate singer status based on RSVP history and enable tokenized "no-login" RSVP links.
-**Status:** Planned
+**Status:** Complete
 **Requirements:** [RSVP-01, RSVP-02, RSVP-03, RSVP-04, RSVP-05, RSVP-06, RSVP-07, RSVP-08, RSVP-09]
 **Plans:** 3 plans
 
@@ -43,7 +43,7 @@ Foundational project scaffolding, auth, roster, events, attendance, and seating 
 
 ### Phase 5: Audition Module Refactor
 **Goal:** Tie audition requests to specific performance events and centralize settings in the Auditions dashboard.
-**Status:** Planned
+**Status:** Complete
 **Requirements:** [AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-04]
 **Plans:** 3 plans
 - [ ] 05-01-PLAN.md — Schema & Service Foundation

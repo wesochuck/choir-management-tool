@@ -281,3 +281,58 @@ tr.relative-row:active {
     align-items: stretch;
   }
 }
+
+/* Workspace segmented controls */
+.segmented-control {
+  display: inline-flex;
+  background-color: var(--primary-light);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  border: 1px solid var(--border);
+  gap: 2px;
+  align-items: center;
+}
+
+.segmented-control button {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  height: 32px;
+  min-height: auto;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segmented-control button:hover {
+  color: var(--primary-deep);
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.segmented-control button.active {
+  background-color: var(--surface);
+  color: var(--primary-deep);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Dynamic Width Breakout for Seating View */
+body:has(.seating-chart-wide-active) .container {
+  max-width: 98% !important;
+  padding-left: var(--space-md) !important;
+  padding-right: var(--space-md) !important;
+}
+
+/* Fullscreen Workspace Override */
+.seating-fullscreen-active {
+  background-color: var(--bg) !important;
+  padding: var(--space-xl) !important;
+  overflow-y: auto !important;
+  height: 100vh !important;
+  width: 100vw !important;
+}

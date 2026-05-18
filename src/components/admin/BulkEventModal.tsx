@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Event } from '../../services/eventService';
+import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
@@ -7,7 +7,7 @@ import { BaseModal } from '../common/BaseModal';
 interface BulkEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (performance: Event, config: any) => Promise<void>;
+  onSave: (performance: Event, config: BulkRehearsalConfig) => Promise<void>;
   performances: Event[];
   venues: Venue[];
   initialPerformance?: Event | null;
@@ -109,11 +109,11 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
     try {
       await onSave(performance, { count, dayOfWeek, time, venue });
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Bulk generate error:", err);
       await dialog.showMessage({
         title: 'Could Not Generate Rehearsals',
-        message: "Error generating rehearsals: " + (err.message || "Unknown error"),
+        message: "Error generating rehearsals: " + (err instanceof Error ? err.message : "Unknown error"),
         variant: 'danger',
       });
     } finally {
