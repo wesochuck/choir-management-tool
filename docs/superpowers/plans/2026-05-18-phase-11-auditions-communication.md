@@ -16,7 +16,7 @@
 - Create: `test/auditionService.test.ts`
 - Modify: `src/services/auditionService.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // test/auditionService.test.ts
@@ -45,12 +45,12 @@ describe('convertAuditionToSinger', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/auditionService.test.ts`
 Expected: FAIL or type error because `convertAuditionToSinger` does not map the correct fields.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Add or modify in src/services/auditionService.ts
@@ -70,12 +70,12 @@ export async function convertAuditionToSinger(audition: any) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/auditionService.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/auditionService.test.ts src/services/auditionService.ts
