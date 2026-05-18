@@ -16,7 +16,7 @@
 - Create: `test/profileService.test.ts`
 - Modify: `src/services/profileService.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // test/profileService.test.ts
@@ -33,12 +33,12 @@ describe('Profile CSV Export', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/profileService.test.ts`
 Expected: FAIL with "exportToCSV is not a function"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Add to src/services/profileService.ts
@@ -55,12 +55,12 @@ export function exportToCSV(profiles: any[]): string {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/profileService.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/profileService.test.ts src/services/profileService.ts
@@ -73,7 +73,7 @@ git commit -m "feat: add CSV export functionality to profileService"
 - Modify: `test/profileService.test.ts`
 - Modify: `src/services/profileService.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // Append to test/profileService.test.ts
@@ -96,12 +96,12 @@ describe('updateProfilePhoto', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/profileService.test.ts`
 Expected: FAIL with "updateProfilePhoto is not a function"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Add to src/services/profileService.ts
@@ -112,12 +112,12 @@ export async function updateProfilePhoto(id: string, formData: FormData) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/profileService.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/profileService.test.ts src/services/profileService.ts
