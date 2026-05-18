@@ -157,3 +157,8 @@ export function exportToCSV(profiles: any[]): string {
   return [header, ...rows].join('\n');
 }
 
+export async function updateProfilePhoto(id: string, formData: FormData) {
+  return await pb.collection('profiles').update<Profile>(id, formData);
+}
+
+
