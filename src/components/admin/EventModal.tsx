@@ -167,7 +167,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         ? { count: bulkCount, dayOfWeek: bulkDay, time: bulkTime, venue: bulkVenue }
         : undefined;
 
-      await onSave(formData, bulkConfig);
+      await onSave(formData, bulkConfig, isOpenAuditions);
       onClose();
     } catch (err: any) {
       await dialog.showMessage({
