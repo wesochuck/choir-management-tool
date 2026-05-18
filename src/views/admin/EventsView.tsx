@@ -12,6 +12,7 @@ import {
   DEFAULT_COMMUNICATION_SETTINGS,
   renderCommunicationTemplate,
   settingsService,
+  type AuditionSettings,
   type CommunicationSettings,
 } from '../../services/settingsService';
 
@@ -27,10 +28,17 @@ export default function EventsView() {
   const [isRosterLoading, setIsRosterLoading] = useState(false);
   const [textEvent, setTextEvent] = useState<Event | null>(null);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
+  const [auditionSettings, setAuditionSettings] = useState<AuditionSettings | null>(null);
 
   useEffect(() => {
-    settingsService.getCommunicationSettings()
-      .then(setCommunicationSettings)
+    Promise.all([
+      settingsService.getCommunicationSettings(),
+      settingsService.getAuditionSettings()
+    ])
+      .then(([comm, aud]) => {
+        setCommunicationSettings(comm);
+        setAuditionSettings(aud);
+      })
       .catch(() => undefined);
   }, []);
 
@@ -81,11 +89,13 @@ export default function EventsView() {
 
     if (openAuditions && savedEvent && savedEvent.type === 'Performance') {
       const currentSettings = await settingsService.getAuditionSettings();
-      await settingsService.saveAuditionSettings({
+      const updatedSettings = {
         ...currentSettings,
         enabled: true,
         defaultPerformanceId: savedEvent.id
-      });
+      };
+      await settingsService.saveAuditionSettings(updatedSettings);
+      setAuditionSettings(updatedSettings);
       await dialog.showMessage({
         title: 'Auditions Opened',
         message: `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
@@ -94,10 +104,12 @@ export default function EventsView() {
         // If they explicitly unchecked it, and it WAS the default, we should probably disable it or unset it
         const currentSettings = await settingsService.getAuditionSettings();
         if (currentSettings.defaultPerformanceId === savedEvent.id && currentSettings.enabled) {
-            await settingsService.saveAuditionSettings({
+            const updatedSettings = {
                 ...currentSettings,
                 enabled: false
-            });
+            };
+            await settingsService.saveAuditionSettings(updatedSettings);
+            setAuditionSettings(updatedSettings);
         }
     }
   };
@@ -157,6 +169,7 @@ export default function EventsView() {
 
       <EventList
         events={events}
+        auditionSettings={auditionSettings}
         onEdit={handleEdit}
         onEmailReminder={handleEmailReminder}
         onTextReminder={setTextEvent}
