@@ -45,6 +45,21 @@ export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', o
             </a>
           </div>
           {event.details && <p className="text-muted text-sm">{event.details}</p>}
+          
+          {event.setList && event.setList.length > 0 && (
+            <div className="flex-col" style={{ marginTop: 'var(--space-sm)', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
+              <div className="text-label" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '4px', marginBottom: '8px' }}>Set List</div>
+              <ol style={{ margin: 0, paddingLeft: 'var(--space-lg)', gap: '4px', display: 'flex', flexDirection: 'column' }}>
+                {event.setList.map(item => (
+                  <li key={item.id} className="text-body text-sm">
+                    <strong>{item.title}</strong>
+                    {(item.composer || item.duration) && <span className="text-muted"> ({item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration})</span>}
+                    {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic' }}>{item.notes}</div>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
 
         <div className="flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
