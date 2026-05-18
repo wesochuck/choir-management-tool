@@ -49,20 +49,7 @@ export const auditionService = {
 
   async convertAuditionToSinger(id: string) {
     const audition = await pb.collection('auditions').getOne<Audition>(id);
-    const email = isEmailContact(audition.contact) ? audition.contact.trim() : undefined;
-    const phone = !email && audition.contact && /[\d+]/.test(audition.contact) ? audition.contact.trim() : undefined;
-
-    const newProfile = await profileService.createProfile({
-      name: audition.name,
-      phone: phone || '',
-      voicePart: audition.voicePart || 'S1',
-      globalStatus: 'Active (Future)',
-      notes: [
-        audition.experience ? `Audition experience: ${audition.experience}` : '',
-        audition.notes ? `Audition notes: ${audition.notes}` : '',
-      ].filter(Boolean).join('\n\n'),
-      email,
-    });
+    const newProfile = await convertAuditionToSinger(audition);
 
     // Automatically link to the performance roster if specified
     if (audition.performance) {
@@ -92,3 +79,23 @@ export const auditionService = {
     return await pb.collection('auditions').update<Audition>(id, { status: 'Closed' });
   },
 };
+
+export async function convertAuditionToSinger(audition: any) {
+  const email = isEmailContact(audition.contact || '') ? audition.contact.trim() : (audition.email || '');
+  const phone = !email && audition.contact && /[\d+]/.test(audition.contact) ? audition.contact.trim() : (audition.phone || '');
+
+  const profileData = {
+    name: audition.name,
+    email: email || '',
+    phone: phone || '',
+    voicePart: audition.voicePart || 'S1',
+    globalStatus: 'Active',
+    notes: [
+      audition.experience ? `Audition experience: ${audition.experience}` : '',
+      audition.notes ? `Audition notes: ${audition.notes}` : '',
+    ].filter(Boolean).join('\n\n'),
+  };
+
+  return await pb.collection('profiles').create(profileData);
+}
+
