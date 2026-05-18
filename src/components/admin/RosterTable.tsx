@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Profile } from '../../services/profileService';
+import { pb } from '../../lib/pocketbase';
 
 interface RosterTableProps {
   profiles: Profile[];
@@ -30,7 +31,35 @@ export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit }) =>
               onClick={() => onEdit(p)}
               style={{ borderBottom: '1px solid var(--border)' }}
             >
-              <td style={{ padding: 'var(--space-md)', fontWeight: 500 }}>{p.name}</td>
+              <td style={{ padding: 'var(--space-md)', fontWeight: 500 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                  {p.photo ? (
+                    <img 
+                      src={pb.files.getUrl(p, p.photo)} 
+                      alt={p.name} 
+                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    <div 
+                      style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        backgroundColor: 'var(--primary-light)', 
+                        color: 'var(--primary-deep)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        fontWeight: 600
+                      }}
+                    >
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span>{p.name}</span>
+                </div>
+              </td>
               <td className="text-muted text-sm" style={{ padding: 'var(--space-md)' }}>
                 {p.expand?.user?.email || 'No login'}
               </td>

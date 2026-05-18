@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useVenues } from '../../hooks/useVenues';
-import type { Venue } from '../../services/venueService';
+import { checkVenueDependencies, type Venue } from '../../services/venueService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -54,6 +54,16 @@ export default function VenuesView() {
   };
 
   const handleDelete = async (venue: Venue) => {
+    const isLinked = await checkVenueDependencies(venue.id);
+    if (isLinked) {
+      await dialog.showMessage({
+        title: 'Delete Prevented',
+        message: 'This venue is currently linked to scheduled events and cannot be deleted.',
+        variant: 'danger',
+      });
+      return;
+    }
+
     const shouldDelete = await dialog.confirm({
       title: 'Delete Venue',
       message: `Delete ${venue.name}?`,

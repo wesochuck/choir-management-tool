@@ -5,7 +5,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { formatPerformanceHistory, parseMusicLibraryCSV } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, parseMusicLibraryCSV, exportMusicToCSV, findDuplicates } from '../../lib/musicPieceUtils';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
@@ -23,6 +23,19 @@ export default function MusicLibraryView() {
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleExportCSV = () => {
+    const csvContent = exportMusicToCSV(pieces);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'music_library_export.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -105,19 +118,15 @@ export default function MusicLibraryView() {
     }
   };
 
-  const duplicateTitles = useMemo(() => {
-    const counts = new Map<string, number>();
-    pieces.forEach(p => {
-        const t = p.title.toLowerCase().trim();
-        counts.set(t, (counts.get(t) || 0) + 1);
-    });
-    return new Set(Array.from(counts.entries()).filter((entry) => entry[1] > 1).map(([title]) => title));
+  const duplicateIds = useMemo(() => {
+    const dups = findDuplicates(pieces);
+    return new Set(dups.map(p => p.id));
   }, [pieces]);
 
   const filteredPieces = useMemo(() => {
     let result = pieces;
     if (showDuplicatesOnly) {
-        result = result.filter(p => duplicateTitles.has(p.title.toLowerCase().trim()));
+        result = result.filter(p => duplicateIds.has(p.id));
     }
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
@@ -129,7 +138,7 @@ export default function MusicLibraryView() {
     }
     // Sort by title
     return result.sort((a, b) => a.title.localeCompare(b.title));
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateTitles]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds]);
 
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
@@ -165,7 +174,6 @@ export default function MusicLibraryView() {
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Music Library</h1>
-        <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
           <input 
             type="file" 
             accept=".csv" 
@@ -173,6 +181,9 @@ export default function MusicLibraryView() {
             onChange={handleFileUpload} 
             style={{ display: 'none' }} 
           />
+          <button className="btn btn-secondary" onClick={handleExportCSV}>
+            Export CSV
+          </button>
           <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
             Import CSV
           </button>
@@ -200,7 +211,7 @@ export default function MusicLibraryView() {
                     onChange={(e) => setShowDuplicatesOnly(e.target.checked)}
                     style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
                 />
-                <span className="text-sm">Highlight Duplicates ({duplicateTitles.size})</span>
+                <span className="text-sm">Filter Duplicates ({duplicateIds.size})</span>
               </label>
 
               {selectedIds.size > 0 && (
@@ -247,7 +258,7 @@ export default function MusicLibraryView() {
                 </tr>
                 ) : (
                 filteredPieces.map(piece => {
-                    const isDuplicate = duplicateTitles.has(piece.title.toLowerCase().trim());
+                    const isDuplicate = duplicateIds.has(piece.id);
                     return (
                         <tr key={piece.id} style={{ backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : undefined }}>
                         <td style={{ textAlign: 'center' }}>

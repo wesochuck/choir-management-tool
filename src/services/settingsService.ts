@@ -164,3 +164,13 @@ export async function getVoiceParts(): Promise<VoicePartDef[]> {
   }
 }
 
+export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<any> {
+  try {
+    const settings = await pb.collection('app_settings').getFirstListItem('');
+    return await pb.collection('app_settings').update(settings.id, { voiceParts });
+  } catch (error) {
+    return await pb.collection('app_settings').create({ voiceParts });
+  }
+}
+
+

@@ -5,6 +5,9 @@ import { SingerModal } from '../../components/admin/SingerModal';
 import { RosterSummary } from '../../components/admin/RosterSummary';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
+import { exportToCSV } from '../../services/profileService';
+import { getVoiceParts } from '../../services/settingsService';
+import { useEffect } from 'react';
 
 
 export default function RosterView() {
@@ -12,6 +15,15 @@ export default function RosterView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+
+  useEffect(() => {
+    getVoiceParts().then(parts => {
+      if (parts && parts.length > 0) {
+        setVoiceParts(parts.map(p => p.label));
+      }
+    });
+  }, []);
 
 
   const handleEdit = (profile: Profile) => {
@@ -36,6 +48,19 @@ export default function RosterView() {
     await removeProfile(profile.id);
   };
 
+  const handleExportCSV = () => {
+    const csvContent = exportToCSV(profiles);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'choir_roster_export.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (isLoading && profiles.length === 0) return <div style={{ padding: '20px' }}>Loading roster...</div>;
   if (error) return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
 
@@ -44,6 +69,7 @@ export default function RosterView() {
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Global Roster</h1>
         <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <button onClick={handleExportCSV} className="btn btn-secondary">Export Roster</button>
           <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">Import CSV</button>
           <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>
         </div>
@@ -59,7 +85,7 @@ export default function RosterView() {
           style={{ padding: '0 12px', height: '44px', width: '200px' }}
         >
           <option value="">All Voice Parts</option>
-          {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map(v => <option key={v} value={v}>{v}</option>)}
+          {voiceParts.map(v => <option key={v} value={v}>{v}</option>)}
         </select>
         <select 
           value={filters.status} 
