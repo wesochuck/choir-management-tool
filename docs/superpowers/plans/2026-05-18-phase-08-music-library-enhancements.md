@@ -53,12 +53,12 @@ export function exportMusicToCSV(pieces: any[]): string {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/musicPieceUtils.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/musicPieceUtils.test.ts src/lib/musicPieceUtils.ts
