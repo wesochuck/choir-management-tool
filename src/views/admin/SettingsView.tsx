@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
 import { AppCard } from '../../components/common/AppCard';
 import {
-  DEFAULT_COMMUNICATION_SETTINGS,
   DEFAULT_ATTENDANCE_SETTINGS,
   settingsService,
-  type CommunicationSettings,
   type AttendanceSettings,
 } from '../../services/settingsService';
 
 export default function SettingsView() {
-  const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -17,11 +14,7 @@ export default function SettingsView() {
 
   useEffect(() => {
     const load = async () => {
-      const [communications, attendance] = await Promise.all([
-        settingsService.getCommunicationSettings(),
-        settingsService.getAttendanceSettings(),
-      ]);
-      setCommunicationSettings(communications);
+      const attendance = await settingsService.getAttendanceSettings();
       setAttendanceSettings(attendance);
       setIsLoading(false);
     };
@@ -37,10 +30,7 @@ export default function SettingsView() {
     setMessage('');
 
     try {
-      await Promise.all([
-        settingsService.saveCommunicationSettings(communicationSettings),
-        settingsService.saveAttendanceSettings(attendanceSettings),
-      ]);
+      await settingsService.saveAttendanceSettings(attendanceSettings);
       setMessage('Settings saved.');
     } catch {
       setMessage('Settings could not be saved.');
@@ -61,42 +51,6 @@ export default function SettingsView() {
       </div>
 
       {message && <div className="badge badge-rehearsal" style={{ alignSelf: 'flex-start' }}>{message}</div>}
-
-      <AppCard title="Email and Text Reminders">
-        <p className="text-muted" style={{ margin: 0 }}>
-          Messages use the device email and text apps. Available placeholders: {'{eventTitle}'}, {'{eventDate}'}, {'{eventLocation}'}, {'{eventDetails}'}.
-        </p>
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Email Subject</label>
-          <input
-            value={communicationSettings.emailSubject}
-            onChange={(event) => setCommunicationSettings({ ...communicationSettings, emailSubject: event.target.value })}
-            className="card"
-            style={{ padding: '0 12px' }}
-          />
-        </div>
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Email Body</label>
-          <textarea
-            value={communicationSettings.emailBody}
-            onChange={(event) => setCommunicationSettings({ ...communicationSettings, emailBody: event.target.value })}
-            className="card"
-            style={{ minHeight: '160px', resize: 'vertical' }}
-          />
-        </div>
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Text Message</label>
-          <textarea
-            value={communicationSettings.smsBody}
-            onChange={(event) => setCommunicationSettings({ ...communicationSettings, smsBody: event.target.value })}
-            className="card"
-            style={{ minHeight: '96px', resize: 'vertical' }}
-          />
-        </div>
-      </AppCard>
 
       <AppCard title="Attendance Settings">
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
