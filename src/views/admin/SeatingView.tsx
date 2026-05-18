@@ -175,48 +175,48 @@ export default function SeatingView() {
       ref={workspaceRef}
       data-print-mode={printMode} 
       style={{ 
-        gap: 'var(--space-xl)', 
-        padding: isFullscreen ? 'var(--space-xl)' : 'var(--space-xl) 0',
+        gap: 'var(--space-md)', 
+        padding: isFullscreen ? 'var(--space-md)' : 'var(--space-sm) 0',
         backgroundColor: isFullscreen ? 'var(--bg)' : 'transparent'
       }}
     >
-      <div className="no-print flex-col" style={{ gap: 'var(--space-md)' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>Seating Chart Creator</h1>
+      <div className="no-print flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-sm)' }}>
+        <h1 className="text-headline" style={{ margin: 0, fontWeight: 700, letterSpacing: '-0.02em', fontSize: '1.5rem', color: 'var(--text)' }}>
+          Seating Chart Creator
+        </h1>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-lg)' }}>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Performance</label>
+        <div className="flex-row" style={{ gap: 'var(--space-sm)', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="flex-row" style={{ gap: '6px' }}>
+            <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance:</span>
             <select 
               value={performanceId} 
               onChange={(e) => setPerformanceId(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)' }}
+              style={{ padding: '0 30px 0 10px', height: '36px', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '220px', minHeight: '36px' }}
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
-                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.expand?.venue?.name || ''}</option>
+                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Venue Layout</label>
+          <div className="flex-row" style={{ gap: '6px' }}>
+            <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
             <select 
               value={venueId} 
               onChange={(e) => setVenueId(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)' }}
+              style={{ padding: '0 30px 0 10px', height: '36px', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '160px', minHeight: '36px' }}
             >
-              <option value="">-- Select Venue Template --</option>
+              <option value="">-- Select Venue --</option>
               {venues.map(v => (
                 <option key={v.id} value={v.id}>{v.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Choir Formation</label>
-            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <div className="flex-row" style={{ gap: '6px' }}>
+            <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formation:</span>
+            <div className="flex-row" style={{ gap: '4px' }}>
               <select 
                 value={
                   (!chart?.sectionOrder || chart?.sectionOrder?.toUpperCase() === 'S,A,T,B') ? 'SATB' : 
@@ -224,25 +224,27 @@ export default function SeatingView() {
                   'Custom'
                 } 
                 onChange={(e) => handlePatternChange(e.target.value)}
-                className="card"
-                style={{ flex: 1, padding: '0 12px', height: '48px', border: '1px solid var(--border)' }}
+                style={{ padding: '0 30px 0 10px', height: '36px', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '150px', minHeight: '36px' }}
               >
                 <option value="SATB">SATB (Standard)</option>
                 <option value="SBTA">SBTA (Wedge Mix)</option>
                 <option value="Custom">Custom...</option>
               </select>
               {(chart?.sectionOrder !== 'S,A,T,B' && chart?.sectionOrder !== 'S,B,T,A') && (
-                <div className="flex-row" style={{ flex: 1.5, gap: 'var(--space-xs)' }}>
+                <div className="flex-row" style={{ gap: '4px' }}>
                   <input 
                     value={localCustomPattern}
                     onChange={(e) => setLocalCustomPattern(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && updateChart({ sectionOrder: localCustomPattern })}
                     onBlur={() => updateChart({ sectionOrder: localCustomPattern })}
                     placeholder="S,B,T,A"
-                    className="card"
-                    style={{ flex: 1, padding: '0 12px', height: '48px', border: '1px solid var(--border)' }}
+                    style={{ padding: '0 8px', height: '36px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', width: '80px', minHeight: '36px' }}
                   />
-                  <button onClick={() => updateChart({ sectionOrder: localCustomPattern })} className="btn btn-primary btn-sm">
+                  <button 
+                    onClick={() => updateChart({ sectionOrder: localCustomPattern })} 
+                    className="btn btn-primary"
+                    style={{ height: '36px', minHeight: '36px', padding: '0 10px', fontSize: '0.75rem' }}
+                  >
                     Apply
                   </button>
                 </div>
@@ -253,23 +255,25 @@ export default function SeatingView() {
       </div>
 
       {performanceId && venueId ? (
-        <div className="flex-responsive" style={{ alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
-          <AppCard className="flex-col" style={{ flex: 1 }}>
+        <div className="flex-responsive" style={{ alignItems: 'flex-start', gap: 'var(--space-md)' }}>
+          <AppCard className="flex-col" style={{ flex: 1, padding: 'var(--space-md)' }}>
             <div className="no-print flex-responsive" style={{ 
               justifyContent: 'space-between', 
-              padding: 'var(--space-lg)', 
+              padding: '6px 12px', 
               backgroundColor: 'var(--primary-light)', 
-              borderRadius: 'var(--radius-lg)',
-              gap: 'var(--space-lg)',
+              borderRadius: 'var(--radius-md)',
+              gap: 'var(--space-sm)',
               flexWrap: 'wrap',
-              alignItems: 'center'
+              alignItems: 'center',
+              boxShadow: 'var(--shadow-sm)',
+              border: '1px solid var(--border)'
             }}>
-               <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-                  <button onClick={handleClear} className="btn btn-ghost" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-                    🧹 Clear People
+               <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+                  <button onClick={handleClear} className="btn btn-sm btn-ghost" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', height: '32px', minHeight: '32px', padding: '0 10px' }}>
+                    🧹 Clear
                   </button>
-                  <button onClick={handleReset} className="btn btn-danger">
-                    💥 Full Reset
+                  <button onClick={handleReset} className="btn btn-sm btn-danger" style={{ height: '32px', minHeight: '32px', padding: '0 10px' }}>
+                    💥 Reset
                   </button>
                </div>
                
@@ -277,31 +281,37 @@ export default function SeatingView() {
                 backgroundColor: 'var(--surface)', 
                 borderRadius: 'var(--radius-md)', 
                 border: '1px solid var(--border)',
-                padding: '4px'
+                padding: '2px',
+                gap: '2px',
+                height: '32px',
+                alignItems: 'center'
                }}>
                 <button 
                   onClick={() => setPrintMode('visual')}
                   className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{ height: '26px', minHeight: '26px', padding: '0 10px', fontSize: '0.75rem' }}
                 >
-                  Visual Grid
+                  Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
                   className={`btn btn-sm ${printMode === 'text' ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{ height: '26px', minHeight: '26px', padding: '0 10px', fontSize: '0.75rem' }}
                 >
-                  Text List
+                  List
                 </button>
                </div>
 
                {/* Workspace Options (A1 Style segmented control) */}
-               <div className="flex-row no-print" style={{ gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+               <div className="flex-row no-print" style={{ gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
                  <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
-                   <span className="text-label text-muted" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Layout:</span>
-                   <div className="segmented-control">
+                   <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Layout:</span>
+                   <div className="segmented-control" style={{ padding: '2px', height: '32px' }}>
                      <button
                        type="button"
                        className={!isWideLayout ? 'active' : ''}
                        onClick={() => setIsWideLayout(false)}
+                       style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
                      >
                        Standard
                      </button>
@@ -309,6 +319,7 @@ export default function SeatingView() {
                        type="button"
                        className={isWideLayout ? 'active' : ''}
                        onClick={() => setIsWideLayout(true)}
+                       style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
                      >
                        ↔️ Wide
                      </button>
@@ -319,19 +330,20 @@ export default function SeatingView() {
                    type="button"
                    onClick={toggleFullscreen}
                    className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'}`}
-                   style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)', border: '1px solid var(--border)', height: '38px' }}
+                   style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)', border: '1px solid var(--border)', height: '32px', minHeight: '32px', padding: '0 10px' }}
                  >
-                   {isFullscreen ? 'Exit Fullscreen' : '🖥️ Fullscreen'}
+                   {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
 
                  {!selectedVenue?.isOpenSeating && (
                    <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
-                     <span className="text-label text-muted" style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Singers:</span>
-                     <div className="segmented-control">
+                     <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Singers:</span>
+                     <div className="segmented-control" style={{ padding: '2px', height: '32px' }}>
                        <button
                          type="button"
                          className={singersListPosition === 'side' ? 'active' : ''}
                          onClick={() => setSingersListPosition('side')}
+                         style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
                        >
                          👥 Side
                        </button>
@@ -339,13 +351,15 @@ export default function SeatingView() {
                          type="button"
                          className={singersListPosition === 'bottom' ? 'active' : ''}
                          onClick={() => setSingersListPosition('bottom')}
+                         style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
                        >
-                         📥 Bottom
+                         📥 Bot
                        </button>
                        <button
                          type="button"
                          className={singersListPosition === 'hidden' ? 'active' : ''}
                          onClick={() => setSingersListPosition('hidden')}
+                         style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
                        >
                          ❌ Hide
                        </button>
@@ -354,15 +368,14 @@ export default function SeatingView() {
                  )}
                </div>
                
-               <div className="flex-responsive" style={{ gap: 'var(--space-md)', flex: 1, justifyContent: 'center' }}>
-                  <span className="text-label" style={{ color: 'var(--primary-deep)', whiteSpace: 'nowrap' }}>Copy Layout From:</span>
+               <div className="flex-row" style={{ gap: 'var(--space-xs)', flex: '1 1 auto', justifyContent: 'center', minWidth: '200px' }}>
+                  <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="card"
-                    style={{ fontSize: '0.875rem', padding: '0 var(--space-md)', height: '44px', minWidth: '200px', flex: 1, maxWidth: '300px' }}
+                    style={{ fontSize: '0.8125rem', padding: '0 30px 0 10px', height: '32px', minHeight: '32px', flex: 1, maxWidth: '200px', border: '1px solid var(--border)' }}
                   >
-                    <option value="">-- Choose Performance --</option>
+                    <option value="">-- Choose --</option>
                     {allCharts
                       .filter(c => c.venue === venueId && c.performance !== performanceId)
                       .map(c => (
@@ -371,31 +384,34 @@ export default function SeatingView() {
                   </select>
                </div>
 
-               <button onClick={handlePrint} className="btn btn-primary" style={{ minWidth: '140px' }}>
-                  🖨️ Print Layout
+               <button onClick={handlePrint} className="btn btn-sm btn-primary" style={{ height: '32px', minHeight: '32px', padding: '0 10px' }}>
+                  🖨️ Print
                </button>
-                <div className="flex-row" style={{ gap: 'var(--space-sm)', position: 'relative' }}>
+                <div className="flex-row" style={{ gap: 'var(--space-xs)', position: 'relative' }}>
                   <SavingIndicator isSaving={isSaving} error={saveError} />
                   <button
                     onClick={handleManualSave}
-                    className="btn btn-ghost"
+                    className="btn btn-sm btn-ghost"
                     style={{ 
                       backgroundColor: 'var(--surface)', 
                       border: '1px solid var(--border)', 
-                      minWidth: '100px',
+                      height: '32px',
+                      minHeight: '32px',
+                      padding: '0 10px',
                       color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
                     }}
                   >
-                    {saveError ? (isDirty ? 'Retry Save' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save Now' : 'Save'}
+                    {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
                   </button>
                   <span className="text-muted" style={{ 
                     position: 'absolute', 
-                    top: 'calc(100% + 4px)', 
+                    top: 'calc(100% + 2px)', 
                     right: '4px', 
                     whiteSpace: 'nowrap',
-                    fontSize: '10px'
+                    fontSize: '9px',
+                    opacity: 0.8
                   }}>
-                    Your changes are saved automatically.
+                    Auto-saved
                   </span>
                 </div>
             </div>
