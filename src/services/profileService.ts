@@ -34,6 +34,11 @@ const splitProfileInput = (data: ProfileInput) => {
   return { email: email?.trim(), password, profile };
 };
 
+const generateRandomPassword = () => {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+
 export const profileService = {
   async getProfiles() {
     return await pb.collection('profiles').getFullList<Profile>({
@@ -56,10 +61,12 @@ export const profileService = {
   },
 
   async createProfile(data: ProfileInput) {
-    const { email, password, profile } = splitProfileInput(data);
+    const { email, password: providedPassword, profile } = splitProfileInput(data);
 
     if (email) {
-      if (!password || password.length < 8) {
+      const password = providedPassword || generateRandomPassword();
+      
+      if (password.length < 8) {
         throw new Error('Singer account passwords must be at least 8 characters.');
       }
 

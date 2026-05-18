@@ -228,7 +228,7 @@ export default function AttendanceView() {
                   title: 'Mark All Present',
                   message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Present?`,
                   confirmLabel: 'Mark Present',
-                  confirmVariant: 'primary'
+                  variant: 'info'
                 });
                 if (confirmed) {
                   try {
@@ -267,7 +267,7 @@ export default function AttendanceView() {
                   title: 'Mark All Absent',
                   message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Absent?`,
                   confirmLabel: 'Mark Absent',
-                  confirmVariant: 'danger'
+                  variant: 'danger'
                 });
                 if (confirmed) {
                   try {
@@ -306,7 +306,7 @@ export default function AttendanceView() {
                   title: 'Reset Attendance',
                   message: `Are you sure you want to reset all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} to unmarked status?`,
                   confirmLabel: 'Reset All',
-                  confirmVariant: 'warning'
+                  variant: 'warning'
                 });
                 if (confirmed) {
                   try {

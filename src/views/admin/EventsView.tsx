@@ -67,14 +67,38 @@ export default function EventsView() {
     setIsBulkModalOpen(true);
   };
 
-  const handleSave = async (data: Partial<Event>, bulkConfig?: any) => {
+  const handleSave = async (data: Partial<Event>, bulkConfig?: any, openAuditions?: boolean) => {
+    let savedEvent: Event | undefined;
     if (editingEvent) {
-      await editEvent(editingEvent.id, data);
+      savedEvent = await editEvent(editingEvent.id, data);
     } else {
       const newEvent = await addEvent(data);
+      savedEvent = newEvent;
       if (bulkConfig && newEvent) {
         await bulkAddRehearsals(newEvent, bulkConfig);
       }
+    }
+
+    if (openAuditions && savedEvent && savedEvent.type === 'Performance') {
+      const currentSettings = await settingsService.getAuditionSettings();
+      await settingsService.saveAuditionSettings({
+        ...currentSettings,
+        enabled: true,
+        defaultPerformanceId: savedEvent.id
+      });
+      await dialog.showMessage({
+        title: 'Auditions Opened',
+        message: `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
+      });
+    } else if (!openAuditions && savedEvent && savedEvent.type === 'Performance') {
+        // If they explicitly unchecked it, and it WAS the default, we should probably disable it or unset it
+        const currentSettings = await settingsService.getAuditionSettings();
+        if (currentSettings.defaultPerformanceId === savedEvent.id && currentSettings.enabled) {
+            await settingsService.saveAuditionSettings({
+                ...currentSettings,
+                enabled: false
+            });
+        }
     }
   };
 

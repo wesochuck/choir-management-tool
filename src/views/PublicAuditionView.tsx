@@ -3,25 +3,58 @@ import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
+import { type Event } from '../services/eventService';
+import { pb } from '../lib/pocketbase';
 
 export default function PublicAuditionView() {
   const [settings, setSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
+  const [targetPerformance, setTargetPerformance] = useState<Event | null>(null);
+  const [rehearsals, setRehearsals] = useState<Event[]>([]);
+  const [isScheduleExpanded, setIsScheduleExpanded] = useState(window.innerWidth > 640);
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [timeSlot, setTimeSlot] = useState(DEFAULT_AUDITION_SETTINGS.slots[0] || '');
   const [voicePart, setVoicePart] = useState('');
   const [experience, setExperience] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    settingsService.getAuditionSettings()
-      .then((loaded) => {
+    const init = async () => {
+      try {
+        const loaded = await settingsService.getAuditionSettings();
         setSettings(loaded);
         setTimeSlot(loaded.slots[0] || '');
-      })
-      .catch(() => undefined);
+
+        if (loaded.defaultPerformanceId) {
+          // Fetch target performance
+          try {
+            const performance = await pb.collection('events').getOne<Event>(loaded.defaultPerformanceId, {
+              expand: 'venue'
+            });
+            setTargetPerformance(performance);
+
+            // Fetch associated rehearsals
+            const rehearsalList = await pb.collection('events').getFullList<Event>({
+              filter: `parentPerformanceId = "${performance.id}" && type = "Rehearsal"`,
+              sort: 'date',
+              expand: 'venue'
+            });
+            setRehearsals(rehearsalList);
+          } catch (e) {
+            console.error('Failed to load performance details', e);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load settings', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    init();
   }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -41,6 +74,7 @@ export default function PublicAuditionView() {
         timeSlot,
         ...(voicePart ? { voicePart: voicePart as Audition['voicePart'] } : {}),
         experience,
+        performance: settings.defaultPerformanceId || undefined,
       });
       setSubmitted(true);
     } catch {
@@ -49,6 +83,16 @@ export default function PublicAuditionView() {
       setIsSubmitting(false);
     }
   };
+
+  const isFormActive = settings.enabled && targetPerformance;
+
+  if (isLoading) {
+    return (
+      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw' }}>
+        <p className="text-muted">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
@@ -61,58 +105,116 @@ export default function PublicAuditionView() {
           </p>
         </div>
 
-        {!settings.enabled ? (
-          <p className="text-body" style={{ margin: 0 }}>
-            Audition requests are closed right now. Please check back later.
-          </p>
+        {!isFormActive ? (
+          <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-xl) 0', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem' }}>📅</div>
+            <p className="text-body" style={{ margin: 0, fontWeight: 500 }}>
+              {settings.enabled 
+                ? "Auditions are not currently scheduled for an upcoming performance."
+                : "Audition requests are closed right now. Please check back later."}
+            </p>
+            <p className="text-muted text-sm">Please check our social media or website for the next audition announcement.</p>
+          </div>
         ) : submitted ? (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
             <div className="badge badge-success" style={{ alignSelf: 'flex-start' }}>Request Sent</div>
             <p className="text-body" style={{ margin: 0 }}>
               {settings.confirmationMessage}
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Name</label>
-              <input className="card" value={name} onChange={(e) => setName(e.target.value)} required style={{ padding: '0 12px' }} />
+          <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+            {/* Concert Details & Schedule */}
+            <div className="card" style={{ padding: 0, overflow: 'hidden', backgroundColor: 'var(--primary-light)' }}>
+              <button 
+                onClick={() => setIsScheduleExpanded(!isScheduleExpanded)}
+                className="flex-row" 
+                style={{ 
+                  width: '100%', 
+                  padding: 'var(--space-md) var(--space-lg)', 
+                  justifyContent: 'space-between',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <div className="flex-col" style={{ gap: 2 }}>
+                  <span className="text-label" style={{ color: 'var(--primary-deep)' }}>CONCERT DETAILS & SCHEDULE</span>
+                  <span className="text-xs text-muted">Please review the commitment for this concert series</span>
+                </div>
+                <span style={{ fontSize: '1.2rem', transform: isScheduleExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+              </button>
+
+              {isScheduleExpanded && (
+                <div style={{ padding: '0 var(--space-lg) var(--space-lg) var(--space-lg)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)' }}>
+                    <div>
+                      <h3 style={{ margin: 0, color: 'var(--primary-deep)' }}>{targetPerformance.title}</h3>
+                      <p className="text-sm" style={{ margin: 0 }}>
+                        Performance: <strong>{new Date(targetPerformance.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                      </p>
+                    </div>
+
+                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                      <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase' }}>Rehearsal Schedule</span>
+                      <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                        {rehearsals.length > 0 ? rehearsals.map((rehearsal) => (
+                          <div key={rehearsal.id} className="flex-responsive" style={{ fontSize: '0.8125rem', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
+                            <span>{new Date(rehearsal.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {new Date(rehearsal.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>
+                            <span className="text-muted">{rehearsal.title}</span>
+                          </div>
+                        )) : (
+                          <p className="text-xs text-muted">Detailed schedule pending.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Email or Phone</label>
-              <input className="card" value={contact} onChange={(e) => setContact(e.target.value)} required style={{ padding: '0 12px' }} />
-            </div>
-            <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                <label className="text-label">Voice Part</label>
-                <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px' }}>
-                  <option value="">Not sure yet</option>
-                  {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map((part) => (
-                    <option key={part} value={part}>{part}</option>
-                  ))}
-                </select>
+
+            <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Name</label>
+                <input className="card" value={name} onChange={(e) => setName(e.target.value)} required style={{ padding: '0 12px' }} />
               </div>
-              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                <label className="text-label">Audition Time</label>
-                <select className="card" value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} required style={{ padding: '0 12px' }}>
-                  {settings.slots.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
-                </select>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Email or Phone</label>
+                <input className="card" value={contact} onChange={(e) => setContact(e.target.value)} required style={{ padding: '0 12px' }} />
               </div>
-            </div>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Experience / Musical Background</label>
-              <textarea
-                className="card"
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                style={{ minHeight: '120px', padding: '12px', resize: 'vertical' }}
-              />
-            </div>
-            {error && <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
-            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Request Audition'}
-            </button>
-          </form>
+              <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+                <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                  <label className="text-label">Voice Part</label>
+                  <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px' }}>
+                    <option value="">Not sure yet</option>
+                    {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map((part) => (
+                      <option key={part} value={part}>{part}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                  <label className="text-label">Audition Time</label>
+                  <select className="card" value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} required style={{ padding: '0 12px' }}>
+                    {(settings.slots || []).map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Experience / Musical Background</label>
+                <textarea
+                  className="card"
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                  style={{ minHeight: '120px', padding: '12px', resize: 'vertical' }}
+                />
+              </div>
+              {error && <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
+              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Request Audition'}
+              </button>
+            </form>
+          </div>
         )}
       </AppCard>
     </div>

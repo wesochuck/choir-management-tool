@@ -18,6 +18,7 @@ Phase 3: Seating Chart Text-Only Print Mode
 - **D-05 (2026-05-16):** Add session-aware seating sync helpers so A -> B -> A context bounces cannot apply stale responses.
 - **D-06 (2026-05-16):** Treat failed initial seating loads as retryable through the manual save toolbar action.
 - **D-07 (2026-05-16):** Consolidate RSVP token generation to the server to prevent HMAC secret leakage.
+- **D-08 (2026-05-17):** Implement reports module with concert-based grouping and 12-hour automated admin summaries.
 
 ## Blockers
 None.

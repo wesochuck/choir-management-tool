@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { BaseModal } from '../components/common/BaseModal';
 
-type DialogVariant = 'info' | 'danger';
+type DialogVariant = 'info' | 'danger' | 'warning';
 
 interface MessageOptions {
   title: string;
@@ -77,7 +77,11 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                 </button>
               )}
               <button
-                className={`btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
+                className={`btn ${
+                  variant === 'danger' ? 'btn-danger' : 
+                  variant === 'warning' ? 'btn-secondary' : 
+                  'btn-primary'
+                }`}
                 onClick={() => closeDialog(true)}
               >
                 {activeDialog.options.confirmLabel || (activeDialog.type === 'confirm' ? 'Confirm' : 'OK')}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import type { Audition } from '../../services/auditionService';
+import { eventService, type Event } from '../../services/eventService';
 
 const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
 
@@ -14,14 +15,23 @@ interface AuditionModalProps {
 export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, onClose, onSave }) => {
   const [status, setStatus] = useState<Audition['status']>('New');
   const [voicePart, setVoicePart] = useState<Audition['voicePart'] | ''>('');
+  const [performance, setPerformance] = useState('');
   const [experience, setExperience] = useState('');
   const [notes, setNotes] = useState('');
+  const [performances, setPerformances] = useState<Event[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    eventService.getEvents().then(events => {
+      setPerformances(events.filter(e => e.type === 'Performance'));
+    });
+  }, []);
 
   useEffect(() => {
     if (!audition) return;
     setStatus(audition.status);
     setVoicePart(audition.voicePart || '');
+    setPerformance(audition.performance || '');
     setExperience(audition.experience || '');
     setNotes(audition.notes || '');
   }, [audition]);
@@ -34,6 +44,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
     try {
       await onSave(audition.id, {
         status,
+        performance: performance || undefined,
         ...(voicePart ? { voicePart } : {}),
         experience,
         notes,
@@ -80,6 +91,21 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
             style={{ height: '44px', padding: '0 12px' }}
           >
             {statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+        </div>
+
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Tied to Performance</label>
+          <select
+            className="card"
+            value={performance}
+            onChange={(event) => setPerformance(event.target.value)}
+            style={{ height: '44px', padding: '0 12px' }}
+          >
+            <option value="">-- No performance assigned --</option>
+            {performances.map(p => (
+              <option key={p.id} value={p.id}>{new Date(p.date).toLocaleDateString()} - {p.title}</option>
+            ))}
           </select>
         </div>
 

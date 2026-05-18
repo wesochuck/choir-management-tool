@@ -4,11 +4,12 @@ import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { formatPocketBaseError } from '../../lib/pocketbase';
+import { settingsService } from '../../services/settingsService';
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<Event>, bulkConfig?: any) => Promise<void>;
+  onSave: (data: Partial<Event>, bulkConfig?: any, openAuditions?: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   initialData?: Event | null;
   performances: Event[];
@@ -37,6 +38,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   });
 
   const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
+  const [isOpenAuditions, setIsOpenAuditions] = useState(false);
   const [bulkCount, setBulkCount] = useState(8);
   const [bulkDay, setBulkDay] = useState(2); // Tuesday
   const [bulkTime, setBulkTime] = useState('19:00');
@@ -100,6 +102,20 @@ export const EventModal: React.FC<EventModalProps> = ({
     current.setDate(current.getDate() - (7 * (bulkCount - 1)));
     return current;
   }, [formData.date, bulkCount, bulkDay, bulkTime]);
+
+  useEffect(() => {
+    if (isOpen && initialData && initialData.type === 'Performance') {
+      settingsService.getAuditionSettings().then(settings => {
+        if (settings.enabled && settings.defaultPerformanceId === initialData.id) {
+          setIsOpenAuditions(true);
+        } else {
+          setIsOpenAuditions(false);
+        }
+      });
+    } else if (isOpen) {
+      setIsOpenAuditions(false);
+    }
+  }, [initialData, isOpen]);
 
   const handleCreateVenueInline = async () => {
     if (!newVenueName.trim() || !newVenueRows.trim()) return;
@@ -336,6 +352,29 @@ export const EventModal: React.FC<EventModalProps> = ({
                 {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
               </button>
             </div>
+          </div>
+        )}
+
+        {formData.type === 'Performance' && (
+          <div className="flex-col" style={{ 
+            backgroundColor: 'rgba(255, 138, 101, 0.05)', 
+            padding: 'var(--space-md)', 
+            borderRadius: 'var(--radius-md)', 
+            border: '1px dashed #ff8a65',
+            gap: 'var(--space-sm)'
+          }}>
+            <label className="flex-row" style={{ gap: 'var(--space-sm)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={isOpenAuditions} 
+                onChange={(e) => setIsOpenAuditions(e.target.checked)}
+                style={{ width: '20px', height: '20px', accentColor: '#ff8a65' }}
+              />
+              <div className="flex-col" style={{ gap: 0 }}>
+                <span className="text-label" style={{ fontWeight: 700, color: '#e64a19' }}>Open Public Auditions?</span>
+                <span className="text-xs text-muted">If checked, this performance will be the target for new audition requests.</span>
+              </div>
+            </label>
           </div>
         )}
 

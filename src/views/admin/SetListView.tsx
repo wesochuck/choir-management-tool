@@ -27,6 +27,14 @@ export default function SetListView() {
     useSensor(KeyboardSensor)
   );
 
+  const resetForm = () => {
+    setEditingId(null);
+    setTitle('');
+    setComposer('');
+    setDuration('');
+    setNotes('');
+  };
+
   useEffect(() => {
     if (selectedEventId) {
       const ev = events.find(e => e.id === selectedEventId);
@@ -36,14 +44,6 @@ export default function SetListView() {
     }
     resetForm();
   }, [selectedEventId, events]);
-
-  const resetForm = () => {
-    setEditingId(null);
-    setTitle('');
-    setComposer('');
-    setDuration('');
-    setNotes('');
-  };
 
   const handleEdit = (item: SetListItem) => {
     setEditingId(item.id);

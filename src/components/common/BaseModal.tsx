@@ -69,9 +69,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
           boxShadow: 'var(--shadow-md)'
         }}
       >
-        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="flex-row" style={{ alignItems: 'center' }}>
           <h2 id={titleId} style={{ margin: 0 }}>{title}</h2>
-          <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close dialog" style={{ padding: '0 8px' }}>Close</button>
         </div>
 
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>

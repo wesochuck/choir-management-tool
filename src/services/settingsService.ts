@@ -12,6 +12,7 @@ export interface AuditionSettings {
   enabled: boolean;
   slots: string[];
   confirmationMessage: string;
+  defaultPerformanceId?: string;
 }
 
 export interface CommunicationSettings {
@@ -49,6 +50,7 @@ export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
     'Saturday, May 30, 11:00 AM',
   ],
   confirmationMessage: 'Thank you. A choir administrator will follow up with details.',
+  defaultPerformanceId: '',
 };
 
 export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
@@ -108,7 +110,12 @@ const upsertSetting = async <T>(key: string, value: T, isPublic: boolean) => {
 export const settingsService = {
   async getAuditionSettings() {
     const setting = await getSetting<AuditionSettings>('auditions');
-    return setting?.value || DEFAULT_AUDITION_SETTINGS;
+    const value = setting?.value;
+    return {
+      ...DEFAULT_AUDITION_SETTINGS,
+      ...value,
+      slots: value?.slots || DEFAULT_AUDITION_SETTINGS.slots,
+    };
   },
 
   async saveAuditionSettings(value: AuditionSettings) {
@@ -117,7 +124,7 @@ export const settingsService = {
 
   async getCommunicationSettings() {
     const setting = await getSetting<CommunicationSettings>('communications');
-    return setting?.value || DEFAULT_COMMUNICATION_SETTINGS;
+    return { ...DEFAULT_COMMUNICATION_SETTINGS, ...setting?.value };
   },
 
   async saveCommunicationSettings(value: CommunicationSettings) {
@@ -126,7 +133,7 @@ export const settingsService = {
 
   async getCommunicationConfig() {
     const setting = await getSetting<CommunicationConfig>('communications_config');
-    return setting?.value || DEFAULT_COMMUNICATION_CONFIG;
+    return { ...DEFAULT_COMMUNICATION_CONFIG, ...setting?.value };
   },
 
   async saveCommunicationConfig(value: CommunicationConfig) {
@@ -135,7 +142,7 @@ export const settingsService = {
 
   async getAttendanceSettings() {
     const setting = await getSetting<AttendanceSettings>('attendance');
-    return setting?.value || DEFAULT_ATTENDANCE_SETTINGS;
+    return { ...DEFAULT_ATTENDANCE_SETTINGS, ...setting?.value };
   },
 
   async saveAttendanceSettings(value: AttendanceSettings) {

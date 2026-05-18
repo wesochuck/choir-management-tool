@@ -35,8 +35,9 @@ export const useEvents = () => {
 
   const editEvent = async (id: string, data: Partial<Event>) => {
     try {
-      await eventService.updateEvent(id, data);
+      const updated = await eventService.updateEvent(id, data);
       await fetchEvents();
+      return updated;
     } catch (err: unknown) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update event');
     }
