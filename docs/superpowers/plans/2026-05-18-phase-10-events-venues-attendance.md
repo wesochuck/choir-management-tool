@@ -16,7 +16,7 @@
 - Create: `test/venueService.test.ts`
 - Modify: `src/services/venueService.ts` (or create if missing)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // test/venueService.test.ts
@@ -39,12 +39,12 @@ describe('checkVenueDependencies', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run test/venueService.test.ts`
 Expected: FAIL with "checkVenueDependencies is not a function"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // Create or modify src/services/venueService.ts
@@ -58,12 +58,12 @@ export async function checkVenueDependencies(venueId: string): Promise<boolean> 
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run test/venueService.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/venueService.test.ts src/services/venueService.ts
