@@ -27,3 +27,11 @@ export const venueService = {
     return await pb.collection('pbc_venues_001').delete(id);
   },
 };
+
+export async function checkVenueDependencies(venueId: string): Promise<boolean> {
+  const result = await pb.collection('events').getList(1, 1, {
+    filter: `venue="${venueId}"`,
+  });
+  return result.totalItems > 0;
+}
+
