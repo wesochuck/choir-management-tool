@@ -149,3 +149,18 @@ export const settingsService = {
     return await upsertSetting('attendance', value, false);
   },
 };
+
+export interface VoicePartDef {
+  label: string;
+  fullName: string;
+}
+
+export async function getVoiceParts(): Promise<VoicePartDef[]> {
+  try {
+    const settings = await pb.collection('app_settings').getFirstListItem('');
+    return settings.voiceParts || [];
+  } catch (error) {
+    return [];
+  }
+}
+
