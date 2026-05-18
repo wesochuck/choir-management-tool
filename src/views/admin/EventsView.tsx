@@ -169,11 +169,11 @@ export default function EventsView() {
 
       <EventList
         events={events}
-        auditionSettings={auditionSettings}
         onEdit={handleEdit}
         onEmailReminder={handleEmailReminder}
         onTextReminder={setTextEvent}
         onViewRoster={setRosterEvent}
+        openAuditionEventId={auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined}
       />
 
       {textEvent && (
