@@ -94,3 +94,33 @@ export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[
   return pieces;
 }
 
+import type { SetListItem } from '../services/eventService';
+
+/**
+ * Links a set list item in a list of items to a specific music library piece ID.
+ * @param items The current list of set list items.
+ * @param itemId The ID of the set list item to link.
+ * @param pieceId The ID of the created/selected music library piece.
+ * @returns A new array of set list items with the specified item linked, or the original array if not found.
+ */
+export function linkSetListItemToPiece(
+  items: SetListItem[],
+  itemId: string,
+  pieceId: string
+): SetListItem[] {
+  return items.map(item => 
+    item.id === itemId ? { ...item, pieceId } : item
+  );
+}
+
+/**
+ * Validates whether a set list item has the minimum information required to be converted/created
+ * as a music library piece.
+ * @param title The title of the piece.
+ * @returns true if valid, false otherwise.
+ */
+export function validatePieceForLibrary(title: string): boolean {
+  return typeof title === 'string' && title.trim().length > 0;
+}
+
+

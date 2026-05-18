@@ -141,3 +141,19 @@ export const profileService = {
     }
   },
 };
+
+export function exportToCSV(profiles: any[]): string {
+  const header = ['Name', 'Email', 'Phone', 'Voice Part', 'Status'].join(',');
+  const rows = profiles.map(p => {
+    const email = p.email || p.expand?.user?.email || '';
+    return [
+      `"${p.name || ''}"`,
+      `"${email}"`,
+      `"${p.phone || ''}"`,
+      `"${p.voicePart || ''}"`,
+      `"${p.globalStatus || ''}"`
+    ].join(',');
+  });
+  return [header, ...rows].join('\n');
+}
+

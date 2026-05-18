@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
-import { findPieceDetails, formatPerformanceHistory } from '../../lib/musicPieceUtils';
+import { findPieceDetails, formatPerformanceHistory, linkSetListItemToPiece, validatePieceForLibrary } from '../../lib/musicPieceUtils';
 import { BaseModal } from '../../components/common/BaseModal';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { AppCard } from '../../components/common/AppCard';
@@ -18,6 +18,7 @@ export default function SetListView() {
   const [items, setItems] = useState<SetListItem[]>([]);
   const [library, setLibrary] = useState<MusicPiece[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPromoting, setIsPromoting] = useState(false);
   
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -92,6 +93,46 @@ export default function SetListView() {
     setDuration(item.duration || '');
     setNotes(item.notes || '');
     setPieceId(item.pieceId || '');
+  };
+
+  const handleConvertToLibraryPiece = async () => {
+    if (!editingId) return;
+    if (!validatePieceForLibrary(title)) {
+      await dialog.showMessage({ title: 'Validation Error', message: 'Please enter a valid title for the library piece.', variant: 'danger' });
+      return;
+    }
+
+    setIsPromoting(true);
+    try {
+      const newPiece = await musicLibraryService.createPiece({
+        title: title.trim(),
+        composer: composer.trim() || undefined,
+        duration: duration.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+
+      const freshLibrary = await musicLibraryService.getLibrary();
+      setLibrary(freshLibrary);
+      setPieceId(newPiece.id);
+
+      const updatedItems = linkSetListItemToPiece(items, editingId, newPiece.id);
+      setItems(updatedItems);
+
+      await dialog.showMessage({
+        title: 'Success',
+        message: `"${title}" has been successfully added to the Music Library and linked to this set list item. Remember to click "Save to Event" to persist this change!`,
+        variant: 'info'
+      });
+    } catch (error) {
+      console.error('Failed to promote set list piece to library:', error);
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to create the music library piece.',
+        variant: 'danger'
+      });
+    } finally {
+      setIsPromoting(false);
+    }
   };
 
   const handleLibrarySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -316,6 +357,31 @@ export default function SetListView() {
                   If this is a medley, please list the names of the different pieces here.
                 </span>
               </div>
+              {editingId && !pieceId && (
+                <div className="flex-col" style={{ gap: 'var(--space-xs)', padding: 'var(--space-xs) 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', margin: 'var(--space-xs) 0' }}>
+                  <span className="text-xs text-muted" style={{ fontWeight: 500 }}>This piece is not linked to the Music Library:</span>
+                  <button
+                    type="button"
+                    onClick={handleConvertToLibraryPiece}
+                    disabled={isPromoting}
+                    className="btn btn-secondary"
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'var(--primary-light)',
+                      color: 'var(--primary-deep)',
+                      border: '1px solid rgba(74, 124, 89, 0.2)',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {isPromoting ? 'Converting...' : '✨ Convert to Library Piece'}
+                  </button>
+                </div>
+              )}
               <div className="flex-row" style={{ gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{editingId ? 'Update' : 'Add'}</button>
                 {editingId && <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>}
