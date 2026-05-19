@@ -33,6 +33,10 @@ export interface AttendanceSettings {
   defaultSort: 'lastName' | 'voicePart';
 }
 
+export interface RosterSettings {
+  defaultStatus: string;
+}
+
 export interface CommunicationConfig {
   smtp: {
     host: string;
@@ -116,6 +120,10 @@ export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = {
   defaultSort: 'lastName',
 };
 
+export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
+  defaultStatus: '',
+};
+
 export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
   smtp: {
     host: '',
@@ -193,6 +201,15 @@ export const settingsService = {
 
   async saveAttendanceSettings(value: AttendanceSettings) {
     return await upsertSetting('attendance', value, false);
+  },
+
+  async getRosterSettings() {
+    const setting = await getSetting<RosterSettings>('roster');
+    return { ...DEFAULT_ROSTER_SETTINGS, ...setting?.value };
+  },
+
+  async saveRosterSettings(value: RosterSettings) {
+    return await upsertSetting('roster', value, false);
   },
 };
 

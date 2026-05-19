@@ -7,7 +7,7 @@ import { RosterSummary } from '../../components/admin/RosterSummary';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
-import { getVoiceParts } from '../../services/settingsService';
+import { getVoiceParts, settingsService } from '../../services/settingsService';
 
 
 export default function RosterView() {
@@ -25,6 +25,14 @@ export default function RosterView() {
       if (parts && parts.length > 0) {
         setVoiceParts(parts.map(p => p.label));
       }
+    });
+
+    settingsService.getRosterSettings().then(settings => {
+      if (settings && settings.defaultStatus !== undefined) {
+        setFilter('status', settings.defaultStatus);
+      }
+    }).catch(err => {
+      console.error('Failed to load roster settings:', err);
     });
   }, []);
 

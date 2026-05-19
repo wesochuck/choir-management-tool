@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
+  DEFAULT_ROSTER_SETTINGS,
   settingsService,
   type AttendanceSettings,
+  type RosterSettings,
   getVoiceParts,
   saveVoiceParts,
   type VoicePartDef,
@@ -14,6 +16,7 @@ import { profileService, type Profile } from '../../services/profileService';
 export default function SettingsView() {
   const navigate = useNavigate();
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
+  const [rosterSettings, setRosterSettings] = useState<RosterSettings>(DEFAULT_ROSTER_SETTINGS);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +27,8 @@ export default function SettingsView() {
     const load = async () => {
       const attendance = await settingsService.getAttendanceSettings();
       setAttendanceSettings(attendance);
+      const roster = await settingsService.getRosterSettings();
+      setRosterSettings(roster);
       const parts = await getVoiceParts();
       setVoiceParts(parts);
       const allProfiles = await profileService.getProfiles();
@@ -43,6 +48,7 @@ export default function SettingsView() {
 
     try {
       await settingsService.saveAttendanceSettings(attendanceSettings);
+      await settingsService.saveRosterSettings(rosterSettings);
       await saveVoiceParts(voiceParts);
       setMessage('Settings saved.');
     } catch {
@@ -84,6 +90,26 @@ export default function SettingsView() {
           </select>
           <p className="text-muted" style={{ margin: 0 }}>
             Choose the default sorting option used when opening the check-in sheet.
+          </p>
+        </div>
+      </AppCard>
+
+      <AppCard title="Roster Settings">
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Default Status Filter</label>
+          <select
+            value={rosterSettings.defaultStatus}
+            onChange={(event) => setRosterSettings({ defaultStatus: event.target.value })}
+            className="card"
+            style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          >
+            <option value="">All Statuses</option>
+            <option value="Active (Current)">Active (Current)</option>
+            <option value="Active (Future)">Active (Future)</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <p className="text-muted" style={{ margin: 0 }}>
+            Choose the default status filter used when opening the global roster.
           </p>
         </div>
       </AppCard>

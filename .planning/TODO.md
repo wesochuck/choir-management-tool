@@ -1,4 +1,4 @@
-[ ] add the ability to have a setting for the default roster status when opening it.
+[x] add the ability to have a setting for the default roster status when opening it.
 [ ] make rsvp list in the events section actually do something.
 [x] Highlight Duplicates in music library should really be labeled, filter duplicates or show duplicates.
 [x] make a view that shows the photo as well for the roster management
