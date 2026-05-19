@@ -371,21 +371,21 @@ export default function SeatingView() {
                <button onClick={handlePrint} className="btn btn-sm btn-primary seating-toolbar-btn-print">
                   🖨️ Print
                </button>
-                <div className="flex-row seating-save-feedback-wrap">
-                  <SavingIndicator isSaving={isSaving} error={saveError} />
-                  <button
-                    onClick={handleManualSave}
-                    className="btn btn-sm btn-ghost seating-toolbar-btn-save"
-                    style={{ 
-                      color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
-                    }}
-                  >
-                    {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
-                  </button>
-                  <span className="text-muted seating-autosave-tag">
-                    Auto-saved
-                  </span>
-                </div>
+                 <div className="flex-row seating-save-feedback-wrap" style={{ alignItems: 'center' }}>
+                   <SavingIndicator isSaving={isSaving} error={saveError} />
+                   <span className="text-muted seating-autosave-tag">
+                     Auto-saved
+                   </span>
+                   <button
+                     onClick={handleManualSave}
+                     className="btn btn-sm btn-ghost seating-toolbar-btn-save"
+                     style={{ 
+                       color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
+                     }}
+                   >
+                     {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
+                   </button>
+                 </div>
             </div>
 
             {isLoading ? (
