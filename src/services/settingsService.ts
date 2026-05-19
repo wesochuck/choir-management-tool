@@ -231,10 +231,9 @@ export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
 
 export async function getVoiceParts(): Promise<VoicePartDef[]> {
   try {
-    const settings = await pb.collection('app_settings').getFirstListItem('');
-    const parts = settings.voiceParts || [];
-    if (parts.length > 0) {
-      return parts;
+    const setting = await getSetting<{ voiceParts: VoicePartDef[] }>('voiceParts');
+    if (setting && setting.value && Array.isArray(setting.value.voiceParts) && setting.value.voiceParts.length > 0) {
+      return setting.value.voiceParts;
     }
     return DEFAULT_VOICE_PARTS;
   } catch (error) {
@@ -243,12 +242,8 @@ export async function getVoiceParts(): Promise<VoicePartDef[]> {
 }
 
 export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<any> {
-  try {
-    const settings = await pb.collection('app_settings').getFirstListItem('');
-    return await pb.collection('app_settings').update(settings.id, { voiceParts });
-  } catch (error) {
-    return await pb.collection('app_settings').create({ voiceParts });
-  }
+  return await upsertSetting<{ voiceParts: VoicePartDef[] }>('voiceParts', { voiceParts }, true);
 }
+
 
 

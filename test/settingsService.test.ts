@@ -6,11 +6,11 @@ import { getVoiceParts, saveVoiceParts } from '../src/services/settingsService.t
 test('getVoiceParts fetches voice parts from settings', async (t) => {
   const originalCollection = pb.collection;
   const mockGetFirstListItem = t.mock.fn(async () => {
-    return { voiceParts: [{ label: 'S1', fullName: 'Soprano 1' }] };
+    return { key: 'voiceParts', value: { voiceParts: [{ label: 'S1', fullName: 'Soprano 1' }] } };
   });
 
   pb.collection = function (name: string) {
-    if (name === 'app_settings') {
+    if (name === 'appSettings') {
       return { getFirstListItem: mockGetFirstListItem } as any;
     }
     return originalCollection.call(pb, name);
@@ -29,11 +29,11 @@ test('getVoiceParts fetches voice parts from settings', async (t) => {
 test('getVoiceParts returns DEFAULT_VOICE_PARTS when settings has empty voiceParts list or database throws', async (t) => {
   const originalCollection = pb.collection;
   const mockGetFirstListItemEmpty = t.mock.fn(async () => {
-    return { voiceParts: [] };
+    return { key: 'voiceParts', value: { voiceParts: [] } };
   });
 
   pb.collection = function (name: string) {
-    if (name === 'app_settings') {
+    if (name === 'appSettings') {
       return { getFirstListItem: mockGetFirstListItemEmpty } as any;
     }
     return originalCollection.call(pb, name);
@@ -59,7 +59,7 @@ test('getVoiceParts returns DEFAULT_VOICE_PARTS when database throws an error', 
   });
 
   pb.collection = function (name: string) {
-    if (name === 'app_settings') {
+    if (name === 'appSettings') {
       return { getFirstListItem: mockGetFirstListItemError } as any;
     }
     return originalCollection.call(pb, name);
@@ -83,11 +83,11 @@ test('saveVoiceParts updates settings if present', async (t) => {
     return { id, ...data };
   });
   const mockGetFirstListItem = t.mock.fn(async () => {
-    return { id: 'settings_1', voiceParts: [] };
+    return { id: 'settings_1', key: 'voiceParts', value: { voiceParts: [] } };
   });
 
   pb.collection = function (name: string) {
-    if (name === 'app_settings') {
+    if (name === 'appSettings') {
       return { 
         getFirstListItem: mockGetFirstListItem,
         update: mockUpdate
@@ -99,7 +99,7 @@ test('saveVoiceParts updates settings if present', async (t) => {
   try {
     const result = await saveVoiceParts([{ label: 'T2', fullName: 'Tenor 2' }]);
     assert.equal(result.id, 'settings_1');
-    assert.deepEqual(result.voiceParts, [{ label: 'T2', fullName: 'Tenor 2' }]);
+    assert.deepEqual(result.value.voiceParts, [{ label: 'T2', fullName: 'Tenor 2' }]);
     assert.equal(mockGetFirstListItem.mock.callCount(), 1);
     assert.equal(mockUpdate.mock.callCount(), 1);
   } finally {
