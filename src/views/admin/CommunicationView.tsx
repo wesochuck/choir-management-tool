@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
@@ -30,13 +31,24 @@ const DEFAULT_CONFIG = communicationService.defaultConfig;
 
 export default function CommunicationView() {
   const dialog = useDialog();
+  const location = useLocation();
+  const routeState = location.state as {
+    initialRecipients?: CommunicationRecipient[];
+    initialSubject?: string;
+    initialContent?: string;
+  } | null;
+
   const [tab, setTab] = useState<Tab>('compose');
   const [events, setEvents] = useState<Event[]>([]);
   const [filters, setFilters] = useState<CommunicationFilters>(DEFAULT_FILTERS);
-  const [recipients, setRecipients] = useState<CommunicationRecipient[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
+  const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
+    routeState?.initialRecipients || []
+  );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    new Set(routeState?.initialRecipients?.map((r) => r.id) || [])
+  );
+  const [subject, setSubject] = useState(routeState?.initialSubject || '');
+  const [content, setContent] = useState(routeState?.initialContent || '');
   const [messageType, setMessageType] = useState<MessageType>('Email');
   const [history, setHistory] = useState<MessageRecord[]>([]);
   const [config, setConfig] = useState<CommunicationConfig>(DEFAULT_CONFIG);
@@ -47,6 +59,9 @@ export default function CommunicationView() {
   const [isResolving, setIsResolving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [hasCustomRecipients, setHasCustomRecipients] = useState(
+    Boolean(routeState?.initialRecipients)
+  );
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
@@ -81,6 +96,10 @@ export default function CommunicationView() {
   }, [dialog]);
 
   useEffect(() => {
+    if (hasCustomRecipients) {
+      setHasCustomRecipients(false);
+      return;
+    }
     let isCurrent = true;
     setIsResolving(true);
     communicationService.resolveRecipients(filters)
@@ -148,11 +167,22 @@ export default function CommunicationView() {
       setDeliveryLinks({ mailtoUrl: result.mailtoUrl, smsUrl: result.smsUrl });
       setHistory(await communicationService.getMessages());
 
-      if ((messageType === 'Email' || messageType === 'Both') && result.mailtoUrl) {
-        window.location.assign(result.mailtoUrl);
-      } else if (messageType === 'SMS' && result.smsUrl) {
+      if (messageType === 'SMS' && result.smsUrl) {
         window.location.assign(result.smsUrl);
       }
+
+      await dialog.showMessage({
+        title: 'Message Dispatched',
+        message: messageType === 'SMS'
+          ? 'The message has been logged and the SMS draft opened locally.'
+          : 'The message has been queued and is being sent to all recipients via the communications backend service.',
+        variant: 'info',
+      });
+
+      // Clear/Reset Compose fields
+      setSubject(templates.emailSubject);
+      setContent(templates.emailBody);
+      setDeliveryLinks(null);
     } catch {
       await dialog.showMessage({
         title: 'Could Not Send Message',
@@ -367,11 +397,11 @@ export default function CommunicationView() {
         <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
           <AppCard title="Delivery Mechanisms">
             <div className="text-muted text-sm">
-              Note: Automated SMS and email delivery are handled securely on the server side via PocketBase integrations. Communication config credentials should be configured using PocketBase environments or secure hooks directly on the server. We intentionally use client-side mailto: and sms: links here so the browser doesn't have to hold delivery secrets.
+              Note: Automated SMS and email delivery are handled securely on the server side via PocketBase integrations. Email delivery is dispatched entirely on the backend, ensuring a secure, professional, and consistent experience without spawning local email clients. Twilio SMS credentials can be configured directly below.
             </div>
           </AppCard>
 
-          <AppCard title="Templates">
+          <AppCard title="Templates (Manual)">
             <SettingsGrid>
               <Field label="Email Subject" value={templates.emailSubject} onChange={(value) => setTemplates({ ...templates, emailSubject: value })} />
               <Field label="SMS Body" value={templates.smsBody} onChange={(value) => setTemplates({ ...templates, smsBody: value })} />
@@ -384,6 +414,148 @@ export default function CommunicationView() {
                 onChange={(event) => setTemplates({ ...templates, emailBody: event.target.value })}
                 style={{ minHeight: '140px', padding: '12px', resize: 'vertical' }}
               />
+            </div>
+          </AppCard>
+
+          <AppCard title="Singer Event Reminders (Automated)">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <div className="flex-col" style={{ gap: 'var(--space-xxs)' }}>
+                  <span style={{ fontWeight: 600 }}>Enable Automated Reminders</span>
+                  <span className="text-muted text-sm">Send automatic reminder emails to active singers before event starts.</span>
+                </div>
+                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
+                  <input
+                    type="checkbox"
+                    checked={templates.reminderEnabled}
+                    onChange={(e) => setTemplates({ ...templates, reminderEnabled: e.target.checked })}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span className="slider" style={{
+                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: templates.reminderEnabled ? 'var(--primary)' : '#ccc',
+                    transition: '.4s', borderRadius: '34px',
+                    boxShadow: templates.reminderEnabled ? '0 0 8px var(--primary)' : 'none'
+                  }}>
+                    <span style={{
+                      position: 'absolute', height: '18px', width: '18px', left: '4px', bottom: '4px',
+                      backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
+                      transform: templates.reminderEnabled ? 'translateX(24px)' : 'none'
+                    }} />
+                  </span>
+                </label>
+              </div>
+
+              {templates.reminderEnabled && (
+                <>
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Send Timing (Hours Before Event)</label>
+                    <input
+                      type="number"
+                      className="card"
+                      value={templates.reminderHoursBefore}
+                      onChange={(e) => setTemplates({ ...templates, reminderHoursBefore: Number(e.target.value) })}
+                      style={{ height: '44px', padding: '0 12px', width: '120px' }}
+                      min="1"
+                    />
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Reminder Email Subject</label>
+                    <input
+                      type="text"
+                      className="card"
+                      value={templates.reminderSubjectTemplate}
+                      onChange={(e) => setTemplates({ ...templates, reminderSubjectTemplate: e.target.value })}
+                      style={{ height: '44px', padding: '0 12px' }}
+                    />
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Reminder Email Body Template</label>
+                    <textarea
+                      className="card"
+                      value={templates.reminderBodyTemplate}
+                      onChange={(e) => setTemplates({ ...templates, reminderBodyTemplate: e.target.value })}
+                      style={{ minHeight: '160px', padding: '12px', resize: 'vertical' }}
+                    />
+                    <div className="text-muted text-xs" style={{ marginTop: 'var(--space-xxs)' }}>
+                      Available placeholders: <code>{'{singerName}'}</code>, <code>{'{eventTitle}'}</code>, <code>{'{eventType}'}</code>, <code>{'{eventDate}'}</code>, <code>{'{eventLocation}'}</code>, <code>{'{eventDetails}'}</code>, <code>{'{rsvpLinks}'}</code>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </AppCard>
+
+          <AppCard title="Admin Attendance Reports (Automated)">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <div className="flex-col" style={{ gap: 'var(--space-xxs)' }}>
+                  <span style={{ fontWeight: 600 }}>Enable Automated Post-Event Reports</span>
+                  <span className="text-muted text-sm">Send event attendance summary reports to admins after event concludes.</span>
+                </div>
+                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
+                  <input
+                    type="checkbox"
+                    checked={templates.reportEnabled}
+                    onChange={(e) => setTemplates({ ...templates, reportEnabled: e.target.checked })}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span className="slider" style={{
+                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: templates.reportEnabled ? 'var(--primary)' : '#ccc',
+                    transition: '.4s', borderRadius: '34px',
+                    boxShadow: templates.reportEnabled ? '0 0 8px var(--primary)' : 'none'
+                  }}>
+                    <span style={{
+                      position: 'absolute', height: '18px', width: '18px', left: '4px', bottom: '4px',
+                      backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
+                      transform: templates.reportEnabled ? 'translateX(24px)' : 'none'
+                    }} />
+                  </span>
+                </label>
+              </div>
+
+              {templates.reportEnabled && (
+                <>
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Send Timing (Hours After Event)</label>
+                    <input
+                      type="number"
+                      className="card"
+                      value={templates.reportHoursAfter}
+                      onChange={(e) => setTemplates({ ...templates, reportHoursAfter: Number(e.target.value) })}
+                      style={{ height: '44px', padding: '0 12px', width: '120px' }}
+                      min="1"
+                    />
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Report Email Subject</label>
+                    <input
+                      type="text"
+                      className="card"
+                      value={templates.reportSubjectTemplate}
+                      onChange={(e) => setTemplates({ ...templates, reportSubjectTemplate: e.target.value })}
+                      style={{ height: '44px', padding: '0 12px' }}
+                    />
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Report Email Body Template</label>
+                    <textarea
+                      className="card"
+                      value={templates.reportBodyTemplate}
+                      onChange={(e) => setTemplates({ ...templates, reportBodyTemplate: e.target.value })}
+                      style={{ minHeight: '160px', padding: '12px', resize: 'vertical' }}
+                    />
+                    <div className="text-muted text-xs" style={{ marginTop: 'var(--space-xxs)' }}>
+                      Available placeholders: <code>{'{eventTitle}'}</code>, <code>{'{eventDate}'}</code>, <code>{'{attendanceRate}'}</code>, <code>{'{presentCount}'}</code>, <code>{'{totalCount}'}</code>, <code>{'{absenteesList}'}</code>, <code>{'{thresholdWarningsSection}'}</code>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </AppCard>
 

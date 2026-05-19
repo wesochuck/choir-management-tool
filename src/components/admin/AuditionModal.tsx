@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BaseModal } from '../common/BaseModal';
 import type { Audition } from '../../services/auditionService';
 import { eventService, type Event } from '../../services/eventService';
@@ -13,6 +14,7 @@ interface AuditionModalProps {
 }
 
 export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, onClose, onSave }) => {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<Audition['status']>('New');
   const [voicePart, setVoicePart] = useState<Audition['voicePart'] | ''>('');
   const [performance, setPerformance] = useState('');
@@ -73,12 +75,39 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
         {audition && (
           <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
             <div className="text-label">{audition.timeSlot}</div>
-            <a
-              href={audition.contact.includes('@') ? `mailto:${audition.contact}` : `tel:${audition.contact}`}
-              className="text-muted"
-            >
-              {audition.contact}
-            </a>
+            {audition.contact.includes('@') ? (
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/admin/communications', {
+                    state: {
+                      initialRecipients: [{
+                        id: `audition-${audition.contact}`,
+                        name: audition.name,
+                        email: audition.contact,
+                        phone: '',
+                        voicePart: audition.voicePart || '',
+                        globalStatus: 'Auditionee'
+                      }],
+                      initialSubject: 'Audition Inquiry',
+                      initialContent: `Dear ${audition.name},\n\n`
+                    }
+                  });
+                  onClose();
+                }}
+                className="btn btn-link text-muted"
+                style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
+              >
+                {audition.contact}
+              </button>
+            ) : (
+              <a
+                href={`tel:${audition.contact}`}
+                className="text-muted"
+              >
+                {audition.contact}
+              </a>
+            )}
           </div>
         )}
 

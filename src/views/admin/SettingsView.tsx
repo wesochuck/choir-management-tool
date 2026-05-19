@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
@@ -8,10 +9,13 @@ import {
   saveVoiceParts,
   type VoicePartDef,
 } from '../../services/settingsService';
+import { profileService, type Profile } from '../../services/profileService';
 
 export default function SettingsView() {
+  const navigate = useNavigate();
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -22,6 +26,8 @@ export default function SettingsView() {
       setAttendanceSettings(attendance);
       const parts = await getVoiceParts();
       setVoiceParts(parts);
+      const allProfiles = await profileService.getProfiles();
+      setProfiles(allProfiles);
       setIsLoading(false);
     };
 
@@ -44,6 +50,11 @@ export default function SettingsView() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const getSingerCountForPart = (label: string) => {
+    if (!label) return 0;
+    return profiles.filter(p => p.voicePart === label).length;
   };
 
   if (isLoading) return <div style={{ padding: 'var(--space-xl)' }}>Loading settings...</div>;
@@ -84,42 +95,64 @@ export default function SettingsView() {
           </p>
 
           <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-            {voiceParts.map((vp, index) => (
-              <div key={index} className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
-                <input
-                  value={vp.label}
-                  onChange={(e) => {
-                    const newParts = [...voiceParts];
-                    newParts[index] = { ...newParts[index], label: e.target.value };
-                    setVoiceParts(newParts);
-                  }}
-                  placeholder="Label (e.g. S1)"
-                  className="card"
-                  style={{ width: '120px', padding: '0 12px', height: '40px' }}
-                />
-                <input
-                  value={vp.fullName}
-                  onChange={(e) => {
-                    const newParts = [...voiceParts];
-                    newParts[index] = { ...newParts[index], fullName: e.target.value };
-                    setVoiceParts(newParts);
-                  }}
-                  placeholder="Full Name (e.g. Soprano 1)"
-                  className="card"
-                  style={{ flex: 1, padding: '0 12px', height: '40px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setVoiceParts(voiceParts.filter((_, idx) => idx !== index));
-                  }}
-                  className="btn btn-danger btn-sm"
-                  style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
+            {voiceParts.map((vp, index) => {
+              const count = getSingerCountForPart(vp.label);
+              const isTied = count > 0;
+              return (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+                  <input
+                    value={vp.label}
+                    onChange={(e) => {
+                      const newParts = [...voiceParts];
+                      newParts[index] = { ...newParts[index], label: e.target.value };
+                      setVoiceParts(newParts);
+                    }}
+                    placeholder="Label (e.g. S1)"
+                    disabled={isTied}
+                    className="card"
+                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                    title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
+                  />
+                  <input
+                    value={vp.fullName}
+                    onChange={(e) => {
+                      const newParts = [...voiceParts];
+                      newParts[index] = { ...newParts[index], fullName: e.target.value };
+                      setVoiceParts(newParts);
+                    }}
+                    placeholder="Full Name (e.g. Soprano 1)"
+                    className="card"
+                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                  />
+                  {vp.label ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/roster?voicePart=${vp.label}`)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      title={`Click to view the ${count} singer(s) in this voice part`}
+                    >
+                      <span style={{ fontWeight: 600 }}>{count}</span>
+                      <span>singer{count === 1 ? '' : 's'}</span>
+                    </button>
+                  ) : (
+                    <div style={{ height: '36px' }} />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVoiceParts(voiceParts.filter((_, idx) => idx !== index));
+                    }}
+                    disabled={isTied}
+                    className="btn btn-danger btn-sm"
+                    style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title={isTied ? "Cannot delete voice part with assigned singers" : undefined}
+                  >
+                    Delete
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <button

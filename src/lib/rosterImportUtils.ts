@@ -12,7 +12,7 @@ export interface MappedSinger {
     name: string;
     email: string;
     phone: string;
-    voicePart: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | '';
+    voicePart: string;
     globalStatus: 'Active (Current)' | 'Active (Future)' | 'Inactive';
     notes: string;
   };

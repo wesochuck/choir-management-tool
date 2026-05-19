@@ -15,6 +15,10 @@ import {
   type AuditionSettings,
   type CommunicationSettings,
 } from '../../services/settingsService';
+import {
+  communicationService,
+  type CommunicationRecipient,
+} from '../../services/communicationService';
 
 export default function EventsView() {
   const dialog = useDialog();
@@ -116,12 +120,22 @@ export default function EventsView() {
 
   const handleEmailReminder = async (event: Event) => {
     const roster = await rosterService.getEventRoster(event.id);
-    const emails = roster
+    const recipients = roster
       .filter((item) => item.expand?.profile?.globalStatus !== 'Inactive' && item.rsvp !== 'No')
-      .map((item) => item.expand?.profile?.expand?.user?.email)
-      .filter((email): email is string => Boolean(email));
+      .map((item) => {
+        const profile = item.expand?.profile;
+        return {
+          id: profile?.id || '',
+          name: profile?.name || '',
+          email: profile?.expand?.user?.email || '',
+          phone: profile?.phone || '',
+          voicePart: profile?.voicePart || '',
+          globalStatus: profile?.globalStatus || '',
+        };
+      })
+      .filter((r): r is CommunicationRecipient => Boolean(r.id && r.email));
 
-    if (emails.length === 0) {
+    if (recipients.length === 0) {
       await dialog.showMessage({
         title: 'No Email Addresses',
         message: 'No active event RSVP emails were found.',
@@ -130,10 +144,38 @@ export default function EventsView() {
     }
 
     const values = getTemplateValues(event);
-    const subject = encodeURIComponent(renderCommunicationTemplate(communicationSettings.emailSubject, values));
-    const body = encodeURIComponent(renderCommunicationTemplate(communicationSettings.emailBody, values));
+    const subject = renderCommunicationTemplate(communicationSettings.emailSubject, values);
+    const body = renderCommunicationTemplate(communicationSettings.emailBody, values);
 
-    window.location.assign(`mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${subject}&body=${body}`);
+    setIsRosterLoading(true);
+    try {
+      await communicationService.sendBulkMessage({
+        subject,
+        content: body,
+        type: 'Email',
+        recipients,
+        filters: {
+          eventId: event.id,
+          rsvp: 'All',
+          voicePart: '',
+          globalStatus: 'Active (Current)',
+        },
+      });
+
+      await dialog.showMessage({
+        title: 'Reminder Queueing',
+        message: `Event email reminders have been queued and sent to ${recipients.length} recipients via the communications backend service.`,
+        variant: 'info',
+      });
+    } catch {
+      await dialog.showMessage({
+        title: 'Could Not Send Reminder',
+        message: 'The email reminder could not be dispatched via the communications backend service.',
+        variant: 'danger',
+      });
+    } finally {
+      setIsRosterLoading(false);
+    }
   };
 
   const getTemplateValues = (event: Event) => ({

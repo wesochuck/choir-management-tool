@@ -1,18 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
-import { profileService, generateRandomPassword } from '../../services/profileService';
+import { musicLibraryService, type MusicPieceInput } from '../../services/musicLibraryService';
+import { parseCSV } from '../../lib/rosterImportUtils';
 import {
-  parseCSV,
-  suggestFieldMapping,
-  validateAndMapSingers,
-  type CSVData,
-  type FieldMapping,
-  type MappedSinger,
-  type RosterField,
-} from '../../lib/rosterImportUtils';
+  suggestMusicFieldMapping,
+  validateAndMapMusicPieces,
+  type MappedMusicPiece,
+  type MusicField,
+  type MusicFieldMapping,
+} from '../../lib/musicImportUtils';
 
-interface RosterImportModalProps {
+interface MusicImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => Promise<void>;
@@ -20,13 +19,7 @@ interface RosterImportModalProps {
 
 type ImportStep = 'UPLOAD' | 'MAP' | 'PREVIEW' | 'IMPORTING' | 'COMPLETE';
 
-interface CreatedCredential {
-  name: string;
-  email: string;
-  password?: string;
-}
-
-export const RosterImportModal: React.FC<RosterImportModalProps> = ({
+export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
@@ -36,24 +29,22 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
   // Wizard state
   const [step, setStep] = useState<ImportStep>('UPLOAD');
-  const [csvData, setCsvData] = useState<CSVData | null>(null);
-  const [mapping, setMapping] = useState<FieldMapping>({
-    name: -1,
-    email: -1,
-    phone: -1,
-    voicePart: -1,
-    globalStatus: -1,
+  const [csvData, setCsvData] = useState<any | null>(null);
+  const [mapping, setMapping] = useState<MusicFieldMapping>({
+    title: -1,
+    composer: -1,
+    copies: -1,
+    catalogId: -1,
+    duration: -1,
     notes: -1,
   });
-  const [mappedSingers, setMappedSingers] = useState<MappedSinger[]>([]);
+  const [mappedPieces, setMappedPieces] = useState<MappedMusicPiece[]>([]);
   
   // Execution progress
   const [importProgress, setImportProgress] = useState(0);
   const [importingIndex, setImportingIndex] = useState(0);
   const [successCount, setSuccessCount] = useState(0);
-  const [errorsList, setErrorsList] = useState<{ row: number; name: string; error: string }[]>([]);
-  const [credentialsList, setCredentialsList] = useState<CreatedCredential[]>([]);
-
+  const [errorsList, setErrorsList] = useState<{ row: number; title: string; error: string }[]>([]);
 
   // 1. Handlers for Upload Step
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +62,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       setCsvData(parsed);
       
       // Auto-suggest mapping based on headers
-      const suggested = suggestFieldMapping(parsed.headers);
+      const suggested = suggestMusicFieldMapping(parsed.headers);
       setMapping(suggested);
 
       setStep('MAP');
@@ -87,25 +78,25 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   };
 
   // 2. Handlers for Mapping Step
-  const handleMappingChange = (field: RosterField, index: number) => {
+  const handleMappingChange = (field: MusicField, index: number) => {
     setMapping(prev => ({ ...prev, [field]: index }));
   };
 
   const handleApplyMapping = () => {
     if (!csvData) return;
 
-    // Verify Name is mapped as it is required
-    if (mapping.name === -1) {
+    // Verify Title is mapped as it is required
+    if (mapping.title === -1) {
       dialog.showMessage({
         title: 'Mapping Required',
-        message: 'You must map a column to the "Name" field as it is required to create a profile.',
+        message: 'You must map a column to the "Title" field as it is required to create a music piece.',
         variant: 'danger',
       });
       return;
     }
 
-    const singers = validateAndMapSingers(csvData, mapping);
-    setMappedSingers(singers);
+    const pieces = validateAndMapMusicPieces(csvData, mapping);
+    setMappedPieces(pieces);
     setStep('PREVIEW');
   };
 
@@ -113,8 +104,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   const handleStartImport = async () => {
     if (!csvData) return;
 
-    const validSingers = mappedSingers.filter(s => s.isValid);
-    if (validSingers.length === 0) {
+    const validPieces = mappedPieces.filter(p => p.isValid);
+    if (validPieces.length === 0) {
       await dialog.showMessage({
         title: 'No Valid Records',
         message: 'There are no valid records to import. Please check your field mapping or fix errors.',
@@ -125,9 +116,9 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
     const confirmed = await dialog.confirm({
       title: 'Confirm Import',
-      message: `Ready to import ${validSingers.length} singers? ${
-        mappedSingers.length - validSingers.length > 0 
-          ? `${mappedSingers.length - validSingers.length} invalid rows will be skipped.` 
+      message: `Ready to import ${validPieces.length} music pieces? ${
+        mappedPieces.length - validPieces.length > 0 
+          ? `${mappedPieces.length - validPieces.length} invalid rows will be skipped.` 
           : ''
       }`,
       confirmLabel: 'Import Now',
@@ -140,84 +131,45 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     setImportingIndex(0);
     setSuccessCount(0);
     setErrorsList([]);
-    setCredentialsList([]);
 
     // Run import sequentially to show live progress and handle partial success robustly
     let successes = 0;
     const errors: typeof errorsList = [];
-    const credentials: typeof credentialsList = [];
 
-    for (let i = 0; i < mappedSingers.length; i++) {
-      const singer = mappedSingers[i];
-      if (!singer.isValid) continue;
+    for (let i = 0; i < mappedPieces.length; i++) {
+      const piece = mappedPieces[i];
+      if (!piece.isValid) continue;
 
       setImportingIndex(i + 1);
       
       try {
-        const payload: Parameters<typeof profileService.createProfile>[0] = {
-          name: singer.data.name,
-          phone: singer.data.phone,
-          voicePart: singer.data.voicePart || undefined,
-          globalStatus: singer.data.globalStatus,
-          notes: singer.data.notes,
+        const payload: Partial<MusicPieceInput> = {
+          title: piece.data.title,
+          composer: piece.data.composer || undefined,
+          copies: piece.data.copies || undefined,
+          catalogId: piece.data.catalogId || undefined,
+          duration: piece.data.duration || undefined,
+          notes: piece.data.notes || undefined,
         };
 
-        let generatedPassword: string | undefined = undefined;
-        if (singer.data.email) {
-          generatedPassword = generateRandomPassword();
-          payload.email = singer.data.email;
-          payload.password = generatedPassword;
-        }
-
-        await profileService.createProfile(payload);
+        await musicLibraryService.createPiece(payload);
         successes++;
         setSuccessCount(successes);
-
-        if (singer.data.email) {
-          credentials.push({
-            name: singer.data.name,
-            email: singer.data.email,
-            password: generatedPassword,
-          });
-        }
       } catch (err: any) {
-        console.error(`Import failed for row ${singer.rowNumber}:`, err);
+        console.error(`Import failed for row ${piece.rowNumber}:`, err);
         errors.push({
-          row: singer.rowNumber,
-          name: singer.data.name || 'Unknown Singer',
+          row: piece.rowNumber,
+          title: piece.data.title || 'Unknown Title',
           error: err instanceof Error ? err.message : 'Unknown database error',
         });
         setErrorsList([...errors]);
       }
 
-      setImportProgress(Math.round(((i + 1) / mappedSingers.length) * 100));
+      setImportProgress(Math.round(((i + 1) / mappedPieces.length) * 100));
     }
 
-    setCredentialsList(credentials);
     setStep('COMPLETE');
     await onSuccess();
-  };
-
-  // 4. Download Credentials CSV Helper
-  const handleDownloadCredentials = () => {
-    if (credentialsList.length === 0) return;
-
-    const headers = ['Name', 'Email', 'Temporary Password'];
-    const rows = credentialsList.map(c => [
-      c.name.includes(',') ? `"${c.name}"` : c.name,
-      c.email,
-      c.password || '',
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'singer_credentials.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // Helper for resetting modal states
@@ -225,16 +177,15 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     setStep('UPLOAD');
     setCsvData(null);
     setMapping({
-      name: -1,
-      email: -1,
-      phone: -1,
-      voicePart: -1,
-      globalStatus: -1,
+      title: -1,
+      composer: -1,
+      copies: -1,
+      catalogId: -1,
+      duration: -1,
       notes: -1,
     });
-    setMappedSingers([]);
+    setMappedPieces([]);
     setErrorsList([]);
-    setCredentialsList([]);
   };
 
   const handleModalClose = () => {
@@ -277,13 +228,13 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     }
   };
 
-  const fieldsConfig: { key: RosterField; label: string; desc: string; required?: boolean }[] = [
-    { key: 'name', label: 'Name', desc: 'Full name of the singer', required: true },
-    { key: 'email', label: 'Email', desc: 'Enables user login if provided' },
-    { key: 'phone', label: 'Phone', desc: 'Contact phone number' },
-    { key: 'voicePart', label: 'Voice Part', desc: 'S1, S2, A1, A2, T1, T2, B1, or B2' },
-    { key: 'globalStatus', label: 'Global Status', desc: 'Active (Current), Active (Future), or Inactive' },
-    { key: 'notes', label: 'Notes', desc: 'Administrative notes' },
+  const fieldsConfig: { key: MusicField; label: string; desc: string; required?: boolean }[] = [
+    { key: 'title', label: 'Title', desc: 'Title of the piece', required: true },
+    { key: 'composer', label: 'Composer/Arranger', desc: 'Who composed or arranged the piece' },
+    { key: 'copies', label: 'Copies count', desc: 'Number of copies in the library' },
+    { key: 'catalogId', label: 'Catalog ID', desc: 'Library unique identifier' },
+    { key: 'duration', label: 'Duration', desc: 'e.g. 3:30 or 15m' },
+    { key: 'notes', label: 'Notes', desc: 'Additional details or performances info' },
   ];
 
   return (
@@ -291,10 +242,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       isOpen={isOpen}
       onClose={step === 'IMPORTING' ? () => undefined : handleModalClose}
       title={
-        step === 'UPLOAD' ? 'Import Singers via CSV' :
+        step === 'UPLOAD' ? 'Import Music Pieces via CSV' :
         step === 'MAP' ? 'Map CSV Columns' :
         step === 'PREVIEW' ? 'Preview & Validation' :
-        step === 'IMPORTING' ? 'Importing Roster...' :
+        step === 'IMPORTING' ? 'Importing Music...' :
         'Import Completed'
       }
       footer={renderFooter()}
@@ -304,7 +255,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       {step === 'UPLOAD' && (
         <div className="flex-col" style={{ gap: 'var(--space-md)', textAlign: 'center', padding: '20px 0' }}>
           <p className="text-muted text-sm" style={{ margin: 0 }}>
-            Upload a CSV file containing your singer roster to bootstrap the process.
+            Upload a CSV file containing your music repertoire to bootstrap the process.
           </p>
 
           <div 
@@ -331,7 +282,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.02)';
             }}
           >
-            <span style={{ fontSize: '3rem' }}>📄</span>
+            <span style={{ fontSize: '3rem' }}>🎼</span>
             <div>
               <strong style={{ color: 'var(--primary-deep)', display: 'block', fontSize: '1rem' }}>
                 Select a CSV file to upload
@@ -360,7 +311,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       {step === 'MAP' && csvData && (
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
           <p className="text-muted text-sm" style={{ margin: 0 }}>
-            Align the columns in your CSV with our system database fields. Smart auto-matches have been pre-selected.
+            Align the columns in your CSV with our music library database fields. Smart auto-matches have been pre-selected.
           </p>
 
           <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
@@ -417,7 +368,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     }}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
-                    {csvData.headers.map((hdr, idx) => (
+                    {csvData.headers.map((hdr: string, idx: number) => (
                       <option key={idx} value={idx}>
                         Column: "{hdr}"
                       </option>
@@ -435,14 +386,14 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
           <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <p className="text-muted text-sm" style={{ margin: 0 }}>
-              Verify parsed singer details and resolve validation warnings or errors before importing.
+              Verify parsed music piece details and resolve validation warnings or errors before importing.
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <span className="text-xs card" style={{ padding: '4px 8px', background: 'rgba(74, 124, 89, 0.05)', color: 'var(--primary-deep)', fontWeight: 600 }}>
-                Total Mapped: {mappedSingers.length}
+                Total Mapped: {mappedPieces.length}
               </span>
               <span className="text-xs card" style={{ padding: '4px 8px', background: 'rgba(153, 27, 27, 0.05)', color: '#991b1b', fontWeight: 600 }}>
-                Errors: {mappedSingers.filter(s => !s.isValid).length}
+                Errors: {mappedPieces.filter(p => !p.isValid).length}
               </span>
             </div>
           </div>
@@ -452,17 +403,17 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 1, boxShadow: '0 1px 0 var(--border)' }}>
                 <tr>
                   <th style={{ width: '60px', textAlign: 'center' }}>Row</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th style={{ width: '100px' }}>Voice Part</th>
-                  <th style={{ width: '130px' }}>Status</th>
+                  <th>Title</th>
+                  <th>Composer</th>
+                  <th style={{ width: '80px', textAlign: 'center' }}>Copies</th>
+                  <th style={{ width: '100px' }}>Catalog ID</th>
                   <th>Status / Errors</th>
                 </tr>
               </thead>
               <tbody>
-                {mappedSingers.map((singer, idx) => {
-                  const hasErrors = !singer.isValid;
-                  const hasWarnings = singer.warnings.length > 0;
+                {mappedPieces.map((piece, idx) => {
+                  const hasErrors = !piece.isValid;
+                  const hasWarnings = piece.warnings.length > 0;
                   
                   return (
                     <tr 
@@ -472,33 +423,33 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                       }}
                     >
                       <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        {singer.rowNumber}
+                        {piece.rowNumber}
                       </td>
                       <td>
                         <strong style={{ color: hasErrors ? '#c62828' : 'inherit' }}>
-                          {singer.data.name || '(Empty Name)'}
+                          {piece.data.title || '(Empty Title)'}
                         </strong>
                       </td>
-                      <td style={{ fontSize: '0.85rem' }}>{singer.data.email || '-'}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{piece.data.composer || '-'}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span className="text-xs" style={{ fontWeight: 600 }}>
-                          {singer.data.voicePart || '-'}
+                          {piece.data.copies !== undefined ? piece.data.copies : '-'}
                         </span>
                       </td>
                       <td>
                         <span className="text-xs card" style={{ padding: '2px 6px', display: 'inline-block' }}>
-                          {singer.data.globalStatus}
+                          {piece.data.catalogId || '-'}
                         </span>
                       </td>
                       <td>
                         {hasErrors && (
                           <div style={{ color: '#c62828', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {singer.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
+                            {piece.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
                           </div>
                         )}
                         {hasWarnings && (
                           <div style={{ color: '#b78103', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {singer.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
+                            {piece.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
                           </div>
                         )}
                         {!hasErrors && !hasWarnings && (
@@ -521,10 +472,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           
           <div className="flex-col" style={{ gap: '6px', width: '100%', alignItems: 'center' }}>
             <strong style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
-              Importing {mappedSingers.filter(s => s.isValid).length} Singers...
+              Importing {mappedPieces.filter(p => p.isValid).length} Pieces...
             </strong>
             <span className="text-muted text-sm">
-              Processing row {importingIndex} of {mappedSingers.length}
+              Processing row {importingIndex} of {mappedPieces.length}
             </span>
           </div>
 
@@ -553,43 +504,9 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             <span style={{ fontSize: '3.5rem' }}>🎉</span>
             <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary-deep)' }}>Import Finished!</h3>
             <p className="text-muted text-sm" style={{ margin: 0 }}>
-              Successfully imported <strong>{successCount}</strong> singers into the roster.
+              Successfully imported <strong>{successCount}</strong> music pieces into your library.
             </p>
           </div>
-
-          {/* Credentials Download Callout */}
-          {credentialsList.length > 0 && (
-            <div 
-              className="card"
-              style={{
-                backgroundColor: 'rgba(74, 124, 89, 0.06)',
-                borderColor: 'rgba(74, 124, 89, 0.2)',
-                padding: '16px 20px',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-              }}
-            >
-              <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
-                <strong style={{ color: 'var(--primary-deep)', fontSize: '0.95rem' }}>
-                  🔑 Generated temporary credentials
-                </strong>
-                <span className="text-muted text-xs" style={{ lineHeight: 1.4 }}>
-                  Created {credentialsList.length} new login accounts. Download this CSV now to save their temporary login passwords.
-                </span>
-              </div>
-              <button 
-                onClick={handleDownloadCredentials} 
-                className="btn btn-primary"
-                style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
-              >
-                📥 Download CSV
-              </button>
-            </div>
-          )}
 
           {/* Error Details */}
           {errorsList.length > 0 && (
@@ -610,7 +527,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               >
                 {errorsList.map((err, i) => (
                   <div key={i} style={{ padding: '4px 0', borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined, color: '#444' }}>
-                    Row {err.row} (<strong>{err.name}</strong>): <span style={{ color: '#991b1b' }}>{err.error}</span>
+                    Row {err.row} (<strong>{err.title}</strong>): <span style={{ color: '#991b1b' }}>{err.error}</span>
                   </div>
                 ))}
               </div>

@@ -17,14 +17,7 @@ pb.authStore.onChange(() => undefined, true);
 pb.afterSend = async (response, data) => {
   const isAuthError = response.status === 401 || response.status === 403;
   const isStaleToken400 = response.status === 400 && 
-    (
-      data?.message?.includes('loadAuthToken') || 
-      data?.message?.includes('rule failure') ||
-      (
-        (data?.message?.includes('Failed to create') || data?.message?.includes('Failed to update')) &&
-        (!data?.data || Object.keys(data.data).length === 0)
-      )
-    );
+    data?.message?.includes('loadAuthToken');
 
   if (isAuthError || isStaleToken400) {
     console.warn("Stale or invalid session detected, clearing authStore.");

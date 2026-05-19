@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { AuditionModal } from '../../components/admin/AuditionModal';
 import { useDialog } from '../../contexts/DialogContext';
@@ -10,6 +11,25 @@ const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'C
 
 export default function AuditionsView() {
   const dialog = useDialog();
+  const navigate = useNavigate();
+
+  const handleEmailClick = (email: string, name: string, voicePart: string) => {
+    navigate('/admin/communications', {
+      state: {
+        initialRecipients: [{
+          id: `audition-${email}`,
+          name: name,
+          email: email,
+          phone: '',
+          voicePart: voicePart,
+          globalStatus: 'Auditionee'
+        }],
+        initialSubject: 'Audition Inquiry',
+        initialContent: `Dear ${name},\n\n`
+      }
+    });
+  };
+
   const [auditions, setAuditions] = useState<Audition[]>([]);
   const [performances, setPerformances] = useState<Event[]>([]);
   const [settings, setSettings] = useState<AuditionSettings | null>(null);
@@ -276,13 +296,27 @@ export default function AuditionsView() {
                 )}
               </div>
               {audition.experience && <p className="text-muted text-sm" style={{ margin: 0 }}>{audition.experience}</p>}
-              <a
-                href={audition.contact.includes('@') ? `mailto:${audition.contact}` : `tel:${audition.contact}`}
-                onClick={(event) => event.stopPropagation()}
-                className="text-muted"
-              >
-                {audition.contact}
-              </a>
+              {audition.contact.includes('@') ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleEmailClick(audition.contact, audition.name, audition.voicePart || '');
+                  }}
+                  className="btn btn-link text-muted"
+                  style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
+                >
+                  {audition.contact}
+                </button>
+              ) : (
+                <a
+                  href={`tel:${audition.contact}`}
+                  onClick={(event) => event.stopPropagation()}
+                  className="text-muted"
+                >
+                  {audition.contact}
+                </a>
+              )}
             </div>
             <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
               <textarea

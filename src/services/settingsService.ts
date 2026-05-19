@@ -19,6 +19,14 @@ export interface CommunicationSettings {
   emailSubject: string;
   emailBody: string;
   smsBody: string;
+  reminderEnabled: boolean;
+  reminderHoursBefore: number;
+  reminderSubjectTemplate: string;
+  reminderBodyTemplate: string;
+  reportEnabled: boolean;
+  reportHoursAfter: number;
+  reportSubjectTemplate: string;
+  reportBodyTemplate: string;
 }
 
 export interface AttendanceSettings {
@@ -64,6 +72,44 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
     '{eventDetails}',
   ].join('\n'),
   smsBody: 'Choir reminder: {eventTitle} on {eventDate} at {eventLocation}.',
+  reminderEnabled: false,
+  reminderHoursBefore: 24,
+  reminderSubjectTemplate: 'Choir Event Reminder: {eventTitle}',
+  reminderBodyTemplate: [
+    'Hello {singerName},',
+    '',
+    'This is an automatic reminder for the upcoming choir event:',
+    '**{eventTitle}** ({eventType})',
+    '',
+    '**When:** {eventDate}',
+    '**Where:** {eventLocation}',
+    '',
+    'Details: {eventDetails}',
+    '',
+    'Please make sure your RSVP is up to date: {rsvpLinks}',
+    '',
+    'See you there!',
+    'Choir Management'
+  ].join('\n'),
+  reportEnabled: true,
+  reportHoursAfter: 12,
+  reportSubjectTemplate: 'Attendance Report: {eventTitle} ({eventDate})',
+  reportBodyTemplate: [
+    '<h2>Attendance Summary</h2>',
+    '<p><strong>Event:</strong> {eventTitle}</p>',
+    '<p><strong>Date:</strong> {eventDate}</p>',
+    '<div style="background-color: #f8faf9; padding: 15px; border-radius: 6px; margin: 20px 0;">',
+    '    <p style="margin: 0; font-size: 18px;"><strong>Attendance Rate:</strong> <span style="color: #1b4d3e;">{attendanceRate}%</span></p>',
+    '    <p style="margin: 5px 0 0 0; color: #64748b;">{presentCount} present / {totalCount} total participants</p>',
+    '</div>',
+    '',
+    '<h3 style="border-bottom: 2px solid #e9f0eb; padding-bottom: 8px;">Absentees</h3>',
+    '<ul style="padding-left: 20px;">',
+    '    {absenteesList}',
+    '</ul>',
+    '',
+    '{thresholdWarningsSection}',
+  ].join('\n'),
 };
 
 export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = {
@@ -155,12 +201,27 @@ export interface VoicePartDef {
   fullName: string;
 }
 
+export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
+  { label: 'S1', fullName: 'Soprano 1' },
+  { label: 'S2', fullName: 'Soprano 2' },
+  { label: 'A1', fullName: 'Alto 1' },
+  { label: 'A2', fullName: 'Alto 2' },
+  { label: 'T1', fullName: 'Tenor 1' },
+  { label: 'T2', fullName: 'Tenor 2' },
+  { label: 'B1', fullName: 'Bass 1' },
+  { label: 'B2', fullName: 'Bass 2' },
+];
+
 export async function getVoiceParts(): Promise<VoicePartDef[]> {
   try {
     const settings = await pb.collection('app_settings').getFirstListItem('');
-    return settings.voiceParts || [];
+    const parts = settings.voiceParts || [];
+    if (parts.length > 0) {
+      return parts;
+    }
+    return DEFAULT_VOICE_PARTS;
   } catch (error) {
-    return [];
+    return DEFAULT_VOICE_PARTS;
   }
 }
 

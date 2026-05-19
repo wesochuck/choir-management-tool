@@ -5,7 +5,7 @@ export const useProfiles = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState({ voicePart: '', status: '' });
+  const [filters, setFilters] = useState({ voicePart: '', status: '', name: '' });
 
   const fetchProfiles = async () => {
     setIsLoading(true);
@@ -28,7 +28,8 @@ export const useProfiles = () => {
     return profiles.filter((p) => {
       const matchesVoice = !filters.voicePart || p.voicePart === filters.voicePart;
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
-      return matchesVoice && matchesStatus;
+      const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
+      return matchesVoice && matchesStatus && matchesName;
     });
   }, [profiles, filters]);
 

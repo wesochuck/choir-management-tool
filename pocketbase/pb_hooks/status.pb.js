@@ -27,15 +27,17 @@ function updateProfileStatus(roster) {
     // Find any future Performance with rsvp = 'Yes'
     let futureRosters = [];
     try {
-        futureRosters = $app.findAllRecords("eventRosters", {
-            filter: "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'",
-            params: { profileId, now },
-            sort: "-event.date",
-            limit: 1
-        });
+        futureRosters = $app.findRecordsByFilter(
+            "eventRosters",
+            "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'",
+            "-event.date",
+            1,
+            0,
+            { profileId: profileId, now: now }
+        );
     } catch (err) {}
 
-    if (futureRosters.length > 0) {
+    if (futureRosters && futureRosters.length > 0) {
         if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
             profile.set("globalStatus", "Active (Future)");
             profile.set("statusLastChangedAt", now);
@@ -49,15 +51,17 @@ function updateProfileStatus(roster) {
     // Find last 3 past Performances
     let pastRosters = [];
     try {
-        pastRosters = $app.findAllRecords("eventRosters", {
-            filter: "profile = {:profileId} && event.date < {:now} && event.type = 'Performance'",
-            params: { profileId, now },
-            sort: "-event.date",
-            limit: 3
-        });
+        pastRosters = $app.findRecordsByFilter(
+            "eventRosters",
+            "profile = {:profileId} && event.date < {:now} && event.type = 'Performance'",
+            "-event.date",
+            3,
+            0,
+            { profileId: profileId, now: now }
+        );
     } catch (err) {}
 
-    if (pastRosters.length === 3) {
+    if (pastRosters && pastRosters.length === 3) {
         const allMissed = pastRosters.every(r => r.get("attendance") === "Absent" || r.get("rsvp") === "No");
         if (allMissed) {
             if (profile.get("globalStatus") !== "Inactive") {

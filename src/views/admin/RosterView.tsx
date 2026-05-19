@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
@@ -7,15 +8,17 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
 import { getVoiceParts } from '../../services/settingsService';
-import { useEffect } from 'react';
 
 
 export default function RosterView() {
   const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
+  const [searchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+
+  const initialVoicePart = searchParams.get('voicePart') || '';
 
   useEffect(() => {
     getVoiceParts().then(parts => {
@@ -24,6 +27,13 @@ export default function RosterView() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (initialVoicePart) {
+      setFilter('voicePart', initialVoicePart);
+    }
+  }, [initialVoicePart]);
+
 
 
   const handleEdit = (profile: Profile) => {
@@ -77,7 +87,67 @@ export default function RosterView() {
 
       <RosterSummary profiles={profiles} />
 
-      <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+      <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1', minWidth: '240px', maxWidth: '400px' }}>
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={filters.name || ''}
+            onChange={(e) => setFilter('name', e.target.value)}
+            className="card"
+            style={{
+              padding: '0 40px 0 36px',
+              height: '44px',
+              width: '100%',
+              fontSize: '15px'
+            }}
+          />
+          <span style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            pointerEvents: 'none'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          {filters.name && (
+            <button
+              onClick={() => setFilter('name', '')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px',
+                borderRadius: '50%',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Clear search"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          )}
+        </div>
+
         <select 
           value={filters.voicePart} 
           onChange={(e) => setFilter('voicePart', e.target.value)}
