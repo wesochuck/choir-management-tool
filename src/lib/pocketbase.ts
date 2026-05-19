@@ -1,8 +1,13 @@
 import PocketBase from 'pocketbase';
 
-const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+type ViteEnv = Record<string, string | boolean | undefined> & { PROD?: boolean };
 
-export const pb = new PocketBase(env?.VITE_PB_URL || 'http://127.0.0.1:8090');
+const env = (import.meta as ImportMeta & { env?: ViteEnv }).env;
+const defaultPbUrl = env?.PROD && typeof window !== 'undefined'
+  ? window.location.origin
+  : 'http://127.0.0.1:8090';
+
+export const pb = new PocketBase(String(env?.VITE_PB_URL || defaultPbUrl));
 
 // Disable auto-cancellation globally to prevent aborted requests from React Strict Mode double-mounting
 pb.autoCancellation(false);

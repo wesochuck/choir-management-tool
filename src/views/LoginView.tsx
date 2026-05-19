@@ -16,7 +16,7 @@ export default function LoginView() {
     setError('');
     
     try {
-      await pb.collection('users').authWithPassword(email, password);
+      await pb.collection('users').authWithPassword(email.trim().toLowerCase(), password);
       navigate('/');
     } catch {
       setError('Invalid email or password');
