@@ -75,7 +75,7 @@ export const profileService = {
 
   async getMyProfile() {
     return await pb.collection('profiles').getFirstListItem<Profile>(
-      `user = "${pb.authStore.model?.id}"`
+      pb.filter('user = {:userId}', { userId: pb.authStore.model?.id || '' })
     );
   },
 
