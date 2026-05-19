@@ -8,6 +8,16 @@ onRecordAfterCreateSuccess((e) => {
     updateProfileStatus(e.record);
 }, "eventRosters");
 
+function saveProfileStatus(profile) {
+    try {
+        // Status automation should not block attendance/RSVP writes if an
+        // older profile has unrelated values that no longer pass validation.
+        $app.saveNoValidate(profile);
+    } catch (err) {
+        console.log("Failed to update automated profile status for " + profile.id + ": " + err);
+    }
+}
+
 function updateProfileStatus(roster) {
     const profileId = roster.get("profile");
     let profile;
@@ -42,7 +52,7 @@ function updateProfileStatus(roster) {
             profile.set("globalStatus", "Active (Future)");
             profile.set("statusLastChangedAt", now);
             profile.set("statusChangeReason", "Automated recovery via future RSVP");
-            $app.save(profile);
+            saveProfileStatus(profile);
         }
         return;
     }
@@ -68,7 +78,7 @@ function updateProfileStatus(roster) {
                 profile.set("globalStatus", "Inactive");
                 profile.set("statusLastChangedAt", now);
                 profile.set("statusChangeReason", "Automated deactivation due to 3 consecutive misses");
-                $app.save(profile);
+                saveProfileStatus(profile);
             }
             return;
         }

@@ -322,7 +322,6 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
         });
     });
 });
-});
 
 // Automated Server-Side Email Delivery on Message Creation
 onRecordAfterCreateSuccess((e) => {
@@ -379,4 +378,3 @@ onRecordAfterCreateSuccess((e) => {
         }
     });
 }, "messages");
-

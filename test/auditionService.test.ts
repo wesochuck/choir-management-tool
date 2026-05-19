@@ -28,7 +28,7 @@ test('convertAuditionToSinger creates profile with correct data from audition', 
       email: 's@test.com',
       phone: '123',
       voicePart: 'S1',
-      globalStatus: 'Active',
+      globalStatus: 'Active (Current)',
       notes: ''
     });
   } finally {

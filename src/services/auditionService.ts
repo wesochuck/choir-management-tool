@@ -89,7 +89,7 @@ export async function convertAuditionToSinger(audition: any) {
     email: email || '',
     phone: phone || '',
     voicePart: audition.voicePart || 'S1',
-    globalStatus: 'Active',
+    globalStatus: 'Active (Current)',
     notes: [
       audition.experience ? `Audition experience: ${audition.experience}` : '',
       audition.notes ? `Audition notes: ${audition.notes}` : '',
@@ -98,4 +98,3 @@ export async function convertAuditionToSinger(audition: any) {
 
   return await pb.collection('profiles').create(profileData);
 }
-
