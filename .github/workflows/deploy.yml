@@ -1,0 +1,50 @@
+name: Deploy to PocketHost
+
+on:
+  push:
+    branches:
+      - main  # Adjust branch if needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies and build frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare deployment structure
+        run: |
+          mkdir -p deploy
+          # Move frontend build to pb_public
+          cp -r dist deploy/pb_public
+          # Copy PocketBase migrations and hooks if they exist
+          if [ -d "pocketbase/pb_migrations" ]; then
+            cp -r pocketbase/pb_migrations deploy/pb_migrations
+          fi
+          if [ -d "pocketbase/pb_hooks" ]; then
+            cp -r pocketbase/pb_hooks deploy/pb_hooks
+          fi
+
+      - name: Deploy to PocketHost via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ftp.pockethost.io
+          username: ${{ secrets.POCKETHOST_USERNAME }}
+          password: ${{ secrets.POCKETHOST_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./deploy/
+          # REPLACE with your actual PocketHost instance subdomain (e.g., /my-choir-app/)
+          server-dir: /choir-manager/
