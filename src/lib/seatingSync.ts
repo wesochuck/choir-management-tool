@@ -77,3 +77,60 @@ export function groupSingersBySection<T extends { id: string; name: string; voic
   return groups;
 }
 
+export function removeSeatFromRow(
+  rowCounts: number[],
+  rowIndex: number,
+  seatIndex: number,
+  assignments: Record<string, string>
+): { rowCounts: number[]; assignments: Record<string, string> } {
+  const newRowCounts = [...rowCounts];
+  if (newRowCounts[rowIndex] > 0) {
+    newRowCounts[rowIndex] -= 1;
+  }
+
+  const newAssignments: Record<string, string> = {};
+  Object.entries(assignments).forEach(([key, profileId]) => {
+    const [rStr, sStr] = key.split('-');
+    const r = parseInt(rStr, 10);
+    const s = parseInt(sStr, 10);
+
+    if (r === rowIndex) {
+      if (s === seatIndex) {
+        return;
+      }
+      if (s < seatIndex) {
+        newAssignments[`${r}-${s}`] = profileId;
+      } else {
+        newAssignments[`${r}-${s - 1}`] = profileId;
+      }
+    } else {
+      newAssignments[key] = profileId;
+    }
+  });
+
+  return { rowCounts: newRowCounts, assignments: newAssignments };
+}
+
+export function removeRowAndShiftAssignments(
+  rowCounts: number[],
+  rowIndex: number,
+  assignments: Record<string, string>
+): { rowCounts: number[]; assignments: Record<string, string> } {
+  const newRowCounts = rowCounts.filter((_, idx) => idx !== rowIndex);
+  const newAssignments: Record<string, string> = {};
+  Object.entries(assignments).forEach(([key, profileId]) => {
+    const [rStr, sStr] = key.split('-');
+    const r = parseInt(rStr, 10);
+    if (r === rowIndex) {
+      return;
+    }
+    if (r < rowIndex) {
+      newAssignments[key] = profileId;
+    } else {
+      newAssignments[`${r - 1}-${sStr}`] = profileId;
+    }
+  });
+  return { rowCounts: newRowCounts, assignments: newAssignments };
+}
+
+

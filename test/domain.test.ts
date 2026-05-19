@@ -9,6 +9,8 @@ import {
   seatingContextId,
   shouldApplySeatingResponse,
   groupSingersBySection,
+  removeSeatFromRow,
+  removeRowAndShiftAssignments,
 } from '../src/lib/seatingSync.ts';
 import { findPieceDetails, formatPerformanceHistory, parseMusicLibraryCSV } from '../src/lib/musicPieceUtils.ts';
 
@@ -266,6 +268,45 @@ test('findPieceDetails preserves and returns duration if present', () => {
 
   const result = findPieceDetails('piece_1', library);
   assert.equal(result?.duration, '3:30');
+});
+
+test('removeSeatFromRow decrements seat count and shifts subsequent assignments in that row left', () => {
+  const rowCounts = [3, 4];
+  const assignments = {
+    '0-0': 'singerA',
+    '0-1': 'singerB', // target to remove
+    '0-2': 'singerC',
+    '1-0': 'singerD',
+    '1-2': 'singerE',
+  };
+
+  const result = removeSeatFromRow(rowCounts, 0, 1, assignments);
+
+  assert.deepEqual(result.rowCounts, [2, 4]);
+  assert.deepEqual(result.assignments, {
+    '0-0': 'singerA',
+    '0-1': 'singerC', // singerC shifted left
+    '1-0': 'singerD',
+    '1-2': 'singerE', // unaffected row
+  });
+});
+
+test('removeRowAndShiftAssignments removes the row and shifts all rows below it up by one index', () => {
+  const rowCounts = [3, 4, 5];
+  const assignments = {
+    '0-0': 'singerA',
+    '1-0': 'singerB', // row being removed
+    '1-1': 'singerC', // row being removed
+    '2-0': 'singerD',
+  };
+
+  const result = removeRowAndShiftAssignments(rowCounts, 1, assignments);
+
+  assert.deepEqual(result.rowCounts, [3, 5]);
+  assert.deepEqual(result.assignments, {
+    '0-0': 'singerA',
+    '1-0': 'singerD', // shifted from row 2 to row 1
+  });
 });
 
 

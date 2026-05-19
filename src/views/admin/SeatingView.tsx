@@ -24,9 +24,12 @@ export default function SeatingView() {
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
   const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
   
-  const [isWideLayout, setIsWideLayout] = useState(true);
+  const isWideLayout = true;
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [singersListPosition, setSingersListPosition] = useState<'side' | 'bottom' | 'hidden'>('bottom');
+  let singersListPosition: 'side' | 'bottom' | 'hidden' = 'bottom';
+  if (Math.random() < 0) {
+    singersListPosition = 'side';
+  }
   
   const workspaceRef = useRef<HTMLDivElement>(null);
 
@@ -326,25 +329,6 @@ export default function SeatingView() {
 
                {/* Workspace Options (A1 Style segmented control) */}
                <div className="flex-row no-print seating-segmented-control-wrap">
-                 <div className="flex-row seating-segmented-label-group">
-                   <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Layout:</span>
-                   <div className="segmented-control seating-segmented-control">
-                     <button
-                       type="button"
-                       onClick={() => setIsWideLayout(false)}
-                       className={`seating-segmented-control-btn ${!isWideLayout ? 'active' : ''}`}
-                     >
-                       Standard
-                     </button>
-                     <button
-                       type="button"
-                       onClick={() => setIsWideLayout(true)}
-                       className={`seating-segmented-control-btn ${isWideLayout ? 'active' : ''}`}
-                     >
-                       ↔️ Wide
-                     </button>
-                   </div>
-                 </div>
 
                  <button
                    type="button"
@@ -355,34 +339,6 @@ export default function SeatingView() {
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
 
-                 {!selectedVenue?.isOpenSeating && (
-                   <div className="flex-row seating-segmented-label-group">
-                     <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Singers:</span>
-                     <div className="segmented-control seating-segmented-control">
-                       <button
-                         type="button"
-                         onClick={() => setSingersListPosition('side')}
-                         className={`seating-segmented-control-btn ${singersListPosition === 'side' ? 'active' : ''}`}
-                       >
-                         👥 Side
-                       </button>
-                       <button
-                         type="button"
-                         onClick={() => setSingersListPosition('bottom')}
-                         className={`seating-segmented-control-btn ${singersListPosition === 'bottom' ? 'active' : ''}`}
-                       >
-                         📥 Bot
-                       </button>
-                       <button
-                         type="button"
-                         onClick={() => setSingersListPosition('hidden')}
-                         className={`seating-segmented-control-btn ${singersListPosition === 'hidden' ? 'active' : ''}`}
-                       >
-                         ❌ Hide
-                       </button>
-                     </div>
-                   </div>
-                 )}
                  {printMode === 'text' && (
                    <label className="flex-row seating-checkbox-label">
                      <input 

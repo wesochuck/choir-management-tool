@@ -413,3 +413,72 @@ body:has(.seating-chart-wide-active) .container {
   animation: spin 0.8s linear infinite;
   display: inline-block;
 }
+
+/* Seat removal button styling */
+.seat-cell {
+  position: relative;
+}
+
+.seat-remove-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-in-out, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s !important;
+}
+
+.seat-cell:hover .seat-remove-btn {
+  opacity: 0.9;
+  pointer-events: auto;
+}
+
+.seat-cell:hover .seat-remove-btn:hover {
+  opacity: 1;
+  transform: scale(1.18);
+}
+
+.seat-cell:hover .seat-remove-btn:hover[data-action="unassign"] {
+  background-color: var(--primary, #3b82f6) !important;
+  color: #ffffff !important;
+}
+
+.seat-cell:hover .seat-remove-btn:hover[data-action="delete"] {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* Instantly visible custom tooltips on seat hover */
+.seat-tooltip {
+  position: absolute;
+  bottom: 112%;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background-color: var(--primary-deep);
+  color: var(--surface);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 0.15s ease-in-out, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.seat-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--primary-deep) transparent transparent transparent;
+}
+
+.seat-cell:hover .seat-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+
