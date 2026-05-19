@@ -8,7 +8,7 @@ export interface Audition extends RecordModel {
   name: string;
   contact: string;
   timeSlot: string;
-  voicePart?: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2';
+  voicePart?: string;
   experience?: string;
   status: 'New' | 'Contacted' | 'Scheduled' | 'Closed';
   notes: string;

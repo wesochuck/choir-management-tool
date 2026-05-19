@@ -201,12 +201,27 @@ export interface VoicePartDef {
   fullName: string;
 }
 
+export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
+  { label: 'S1', fullName: 'Soprano 1' },
+  { label: 'S2', fullName: 'Soprano 2' },
+  { label: 'A1', fullName: 'Alto 1' },
+  { label: 'A2', fullName: 'Alto 2' },
+  { label: 'T1', fullName: 'Tenor 1' },
+  { label: 'T2', fullName: 'Tenor 2' },
+  { label: 'B1', fullName: 'Bass 1' },
+  { label: 'B2', fullName: 'Bass 2' },
+];
+
 export async function getVoiceParts(): Promise<VoicePartDef[]> {
   try {
     const settings = await pb.collection('app_settings').getFirstListItem('');
-    return settings.voiceParts || [];
+    const parts = settings.voiceParts || [];
+    if (parts.length > 0) {
+      return parts;
+    }
+    return DEFAULT_VOICE_PARTS;
   } catch (error) {
-    return [];
+    return DEFAULT_VOICE_PARTS;
   }
 }
 

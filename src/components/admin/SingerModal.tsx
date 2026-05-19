@@ -3,6 +3,7 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { formatPocketBaseError } from '../../lib/pocketbase';
+import { getVoiceParts, type VoicePartDef } from '../../services/settingsService';
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface SingerModalProps {
 
 export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData }) => {
   const dialog = useDialog();
+  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [formData, setFormData] = useState<ProfileInput>({
     name: '',
     email: '',
@@ -27,6 +29,18 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   });
   const [isSubmitting, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    getVoiceParts().then(parts => {
+      setVoiceParts(parts);
+      if (!initialData && parts.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          voicePart: parts[0].label as any
+        }));
+      }
+    });
+  }, [isOpen, initialData]);
 
   useEffect(() => {
     if (initialData) {
@@ -43,14 +57,15 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         email: '',
         password: '',
         phone: '',
-        voicePart: 'S1',
+        voicePart: voiceParts[0]?.label || 'S1',
         globalStatus: 'Active (Current)',
         notes: '',
         doNotEmail: false,
         statusIsManual: false,
       });
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, voiceParts]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,7 +193,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             >
-              {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map(v => <option key={v} value={v}>{v}</option>)}
+              {voiceParts.map(v => (
+                <option key={v.label} value={v.label}>
+                  {v.label} {v.fullName ? `(${v.fullName})` : ''}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>

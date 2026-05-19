@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
@@ -7,15 +8,17 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
 import { getVoiceParts } from '../../services/settingsService';
-import { useEffect } from 'react';
 
 
 export default function RosterView() {
   const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
+  const [searchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+
+  const initialVoicePart = searchParams.get('voicePart') || '';
 
   useEffect(() => {
     getVoiceParts().then(parts => {
@@ -24,6 +27,13 @@ export default function RosterView() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (initialVoicePart) {
+      setFilter('voicePart', initialVoicePart);
+    }
+  }, [initialVoicePart]);
+
 
 
   const handleEdit = (profile: Profile) => {
