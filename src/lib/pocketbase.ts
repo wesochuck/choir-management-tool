@@ -15,6 +15,10 @@ pb.autoCancellation(false);
 pb.authStore.onChange(() => undefined, true);
 
 pb.afterSend = async (response, data) => {
+  if (response.status === 400) {
+    console.error('[PB 400]', response.url, JSON.stringify(data, null, 2));
+  }
+
   const isAuthError = response.status === 401 || response.status === 403;
   const isStaleToken400 = response.status === 400 && 
     data?.message?.includes('loadAuthToken');
