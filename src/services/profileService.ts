@@ -40,9 +40,22 @@ const splitProfileInput = (data: ProfileInput) => {
   return { email: email?.trim(), password, profile };
 };
 
-const generateRandomPassword = () => {
+/**
+ * Generates a cryptographically secure random password of a given length.
+ * Uses Web Crypto API when available, falling back to Math.random only in legacy/unsupported environments.
+ */
+export const generateRandomPassword = (length = 12): string => {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const cryptoObj = typeof window !== 'undefined' ? window.crypto : (globalThis as any).crypto;
+  
+  if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+    const array = new Uint32Array(length);
+    cryptoObj.getRandomValues(array);
+    return Array.from(array, (num) => chars[num % chars.length]).join('');
+  }
+  
+  // Fallback to Math.random only if secure Web Crypto API is unavailable (e.g. testing environments)
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 };
 
 export const profileService = {

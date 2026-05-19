@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
-import { profileService } from '../../services/profileService';
+import { profileService, generateRandomPassword } from '../../services/profileService';
 import {
   parseCSV,
   suggestFieldMapping,
@@ -54,11 +54,6 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   const [errorsList, setErrorsList] = useState<{ row: number; name: string; error: string }[]>([]);
   const [credentialsList, setCredentialsList] = useState<CreatedCredential[]>([]);
 
-  // Helper to generate temporary secure passwords for new user logins
-  const generateRandomPassword = (): string => {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  };
 
   // 1. Handlers for Upload Step
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
