@@ -79,6 +79,18 @@ export default function AttendanceView() {
     setFilterStatus('');
   };
 
+  const handleSetAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
+    try {
+      await setAttendance(profileId, next);
+    } catch (err: unknown) {
+      await dialog.showMessage({
+        title: 'Could Not Update Attendance',
+        message: err instanceof Error ? err.message : 'Failed to update attendance',
+        variant: 'danger',
+      });
+    }
+  };
+
   const handleUpdateFolder = async (profileId: string, folderNumber: string, folderReturned: boolean) => {
     try {
       await updateFolder(profileId, folderNumber, folderReturned);
@@ -452,7 +464,7 @@ export default function AttendanceView() {
         ) : (
           <CheckInList
             items={filteredItems}
-            onSetAttendance={setAttendance}
+            onSetAttendance={handleSetAttendance}
             onUpdateFolder={handleUpdateFolder}
             onEdit={handleEditProfile}
             sortBy={sortBy}

@@ -4,7 +4,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
     // 1. Fetch SMTP Config
     let smtpConfig = null;
     try {
-        const setting = $app.dao().findFirstRecordByFilter("appSettings", "key = 'communications_config'");
+        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
         const value = setting.get("value");
         smtpConfig = (typeof value === 'string' ? JSON.parse(value) : value).smtp;
     } catch (e) {
@@ -21,7 +21,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
         reportBodyTemplate: '<h2>Attendance Summary</h2><p><strong>Event:</strong> {eventTitle}</p><p><strong>Date:</strong> {eventDate}</p><div style="background-color: #f8faf9; padding: 15px; border-radius: 6px; margin: 20px 0;"><p><strong>Attendance Rate:</strong> <span style="color: #1b4d3e;">{attendanceRate}%</span></p><p style="margin: 5px 0 0 0; color: #64748b;">{presentCount} present / {totalCount} total participants</p></div><h3 style="border-bottom: 2px solid #e9f0eb; padding-bottom: 8px;">Absentees</h3><ul style="padding-left: 20px;">{absenteesList}</ul>{thresholdWarningsSection}'
     };
     try {
-        const setting = $app.dao().findFirstRecordByFilter("appSettings", "key = 'communications'");
+        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const value = setting.get("value");
         const parsed = typeof value === 'string' ? JSON.parse(value) : value;
         if (parsed) {
@@ -50,7 +50,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
     const end = endWindow.toISOString().replace('T', ' ').split('.')[0];
 
     // Find events that occurred between configured hours ago
-    const events = $app.dao().findRecordsByFilter(
+    const events = $app.findRecordsByFilter(
         "events",
         "date >= {:start} && date < {:end}",
         "-date",
@@ -62,19 +62,19 @@ cronAdd("post_event_report", "0 * * * *", () => {
     if (!events || events.length === 0) return;
 
     // Fetch Admin Users
-    const admins = $app.dao().findRecordsByFilter("users", "role = 'admin'");
+    const admins = $app.findRecordsByFilter("users", "role = 'admin'");
     if (!admins || admins.length === 0) return;
 
     events.forEach(event => {
         // Aggregate Attendance for this event
-        const rosters = $app.dao().findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
+        const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
         if (!rosters || rosters.length === 0) return;
 
         const total = rosters.length;
         const present = rosters.filter(r => r.get("attendance") === "Present").length;
         const absentees = rosters.filter(r => r.get("attendance") === "Absent").map(r => {
             try {
-                const profile = $app.dao().findRecordById("profiles", r.get("profile"));
+                const profile = $app.findRecordById("profiles", r.get("profile"));
                 return profile.get("name");
             } catch (e) {
                 return "Unknown Singer";
@@ -87,7 +87,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
         let thresholdWarnings = [];
         const parentId = event.get("parentPerformanceId");
         if (parentId && event.get("type") === "Rehearsal") {
-            const otherRehearsals = $app.dao().findRecordsByFilter("events", "parentPerformanceId = {:parentId} && type = 'Rehearsal'", "date", 100, 0, { parentId });
+            const otherRehearsals = $app.findRecordsByFilter("events", "parentPerformanceId = {:parentId} && type = 'Rehearsal'", "date", 100, 0, { parentId });
             const rehearsalIds = otherRehearsals.map(r => r.id);
             
             const absenteeRecords = rosters.filter(r => r.get("attendance") === "Absent");
@@ -96,14 +96,14 @@ cronAdd("post_event_report", "0 * * * *", () => {
                 let totalMisses = 0;
                 rehearsalIds.forEach(rid => {
                     try {
-                        const pastRoster = $app.dao().findFirstRecordByFilter("eventRosters", "profile = {:profileId} && event = {:rid} && attendance = 'Absent'", { profileId, rid });
+                        const pastRoster = $app.findFirstRecordByFilter("eventRosters", "profile = {:profileId} && event = {:rid} && attendance = 'Absent'", { profileId, rid });
                         if (pastRoster) totalMisses++;
                     } catch (e) {}
                 });
 
                 if (totalMisses >= 2) {
                     try {
-                        const profile = $app.dao().findRecordById("profiles", profileId);
+                        const profile = $app.findRecordById("profiles", profileId);
                         thresholdWarnings.push(`${profile.get("name")} (${totalMisses} total misses for this concert series)`);
                     } catch (e) {}
                 }
@@ -168,7 +168,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
     // 1. Fetch SMTP Config
     let smtpConfig = null;
     try {
-        const setting = $app.dao().findFirstRecordByFilter("appSettings", "key = 'communications_config'");
+        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
         const value = setting.get("value");
         smtpConfig = (typeof value === 'string' ? JSON.parse(value) : value).smtp;
     } catch (e) {
@@ -185,7 +185,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
         reminderBodyTemplate: 'Hello {singerName},\n\nThis is an automatic reminder for the upcoming choir event:\n**{eventTitle}** ({eventType})\n\n**When:** {eventDate}\n**Where:** {eventLocation}\n\nDetails: {eventDetails}\n\nPlease make sure your RSVP is up to date: {rsvpLinks}\n\nSee you there!\nChoir Management'
     };
     try {
-        const setting = $app.dao().findFirstRecordByFilter("appSettings", "key = 'communications'");
+        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const value = setting.get("value");
         const parsed = typeof value === 'string' ? JSON.parse(value) : value;
         if (parsed) {
@@ -210,7 +210,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
     const start = windowStart.toISOString().replace('T', ' ').split('.')[0];
     const end = windowEnd.toISOString().replace('T', ' ').split('.')[0];
 
-    const events = $app.dao().findRecordsByFilter(
+    const events = $app.findRecordsByFilter(
         "events",
         "date >= {:start} && date < {:end}",
         "-date",
@@ -224,17 +224,17 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
     // 4. Fetch HMAC_SECRET for RSVP tokens
     let secret = "";
     try {
-        const record = $app.dao().findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         secret = record.get("value").secret;
     } catch (err) {}
 
     // Find active singers
-    const activeProfiles = $app.dao().findRecordsByFilter("profiles", "globalStatus != 'Inactive'");
+    const activeProfiles = $app.findRecordsByFilter("profiles", "globalStatus != 'Inactive'");
     if (!activeProfiles || activeProfiles.length === 0) return;
 
     events.forEach(event => {
         // Fetch rosters to check RSVP status
-        const rosters = $app.dao().findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
+        const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
         const rsvpMap = {};
         rosters.forEach(r => {
             rsvpMap[r.get("profile")] = r.get("rsvp");
@@ -245,7 +245,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
         try {
             const venueId = event.get("venue");
             if (venueId) {
-                const venueRecord = $app.dao().findRecordById("venues", venueId);
+                const venueRecord = $app.findRecordById("venues", venueId);
                 venueName = venueRecord.get("name") || "TBD";
             }
         } catch (e) {}
@@ -260,7 +260,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
             // Fetch singer's email
             let email = "";
             try {
-                const user = $app.dao().findRecordById("users", profile.get("user"));
+                const user = $app.findRecordById("users", profile.get("user"));
                 email = user.get("email");
             } catch (e) {
                 return; // skip if no email
@@ -351,7 +351,7 @@ onRecordAfterCreateSuccess((e) => {
 
     let smtpConfig = null;
     try {
-        const setting = $app.dao().findFirstRecordByFilter("appSettings", "key = 'communications_config'");
+        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
         const value = setting.get("value");
         smtpConfig = (typeof value === 'string' ? JSON.parse(value) : value).smtp;
     } catch (err) {}

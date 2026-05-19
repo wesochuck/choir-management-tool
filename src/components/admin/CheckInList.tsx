@@ -69,7 +69,8 @@ const CheckInRow: React.FC<{
 
   return (
     <div
-      className="card"
+      className="card checkin-row"
+      onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
       style={{
         padding: '12px 20px',
         opacity: isPresent ? 0.85 : 1,
@@ -204,7 +205,10 @@ const CheckInRow: React.FC<{
         {/* Edit Profile */}
         <button
           type="button"
-          onClick={() => onEdit(item.profileId)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(item.profileId);
+          }}
           className="btn btn-ghost btn-sm"
           style={{
             height: '32px',
