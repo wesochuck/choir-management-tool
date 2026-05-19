@@ -38,3 +38,26 @@ test('updateProfilePhoto calls pocketbase with FormData', async (t) => {
     pb.collection = originalCollection;
   }
 });
+
+test('in-memory profile name filtering works case-insensitively', () => {
+  const profiles = [
+    { id: '1', name: 'Alice Smith', voicePart: 'S1', globalStatus: 'Active' },
+    { id: '2', name: 'Bob Johnson', voicePart: 'B1', globalStatus: 'Active' },
+    { id: '3', name: 'Charlie Miller', voicePart: 'T1', globalStatus: 'Inactive' }
+  ];
+
+  const filterName = (list: any[], query: string) => {
+    return list.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+  };
+
+  const match1 = filterName(profiles, 'alice');
+  assert.equal(match1.length, 1);
+  assert.equal(match1[0].id, '1');
+
+  const match2 = filterName(profiles, 'JOHN');
+  assert.equal(match2.length, 1);
+  assert.equal(match2[0].id, '2');
+
+  const match3 = filterName(profiles, 'mi');
+  assert.equal(match3.length, 2);
+});

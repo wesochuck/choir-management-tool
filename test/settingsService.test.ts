@@ -56,3 +56,64 @@ test('saveVoiceParts updates settings if present', async (t) => {
   }
 });
 
+test('getCommunicationSettings and saveCommunicationSettings processes automatic email fields', async (t) => {
+  const { settingsService } = await import('../src/services/settingsService.ts');
+  const originalCollection = pb.collection;
+  let savedPayload: any = null;
+
+  const mockGetFirstListItem = t.mock.fn(async () => {
+    return {
+      key: 'communications',
+      value: {
+        emailSubject: 'Test subject',
+        emailBody: 'Test body',
+        smsBody: 'Test sms',
+        reminderEnabled: true,
+        reminderHoursBefore: 48,
+        reminderSubjectTemplate: 'Reminder test: {eventTitle}',
+        reminderBodyTemplate: 'Reminder body test',
+        reportEnabled: false,
+        reportHoursAfter: 6,
+        reportSubjectTemplate: 'Report test: {eventTitle}',
+        reportBodyTemplate: 'Report body test'
+      }
+    };
+  });
+
+  const mockUpdate = t.mock.fn(async (id: string, data: any) => {
+    savedPayload = data;
+    return { id, ...data };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'appSettings') {
+      return {
+        getFirstListItem: mockGetFirstListItem,
+        update: mockUpdate
+      } as any;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const settings = await settingsService.getCommunicationSettings();
+    assert.equal(settings.emailSubject, 'Test subject');
+    assert.equal(settings.reminderEnabled, true);
+    assert.equal(settings.reminderHoursBefore, 48);
+    assert.equal(settings.reportEnabled, false);
+    assert.equal(settings.reportHoursAfter, 6);
+
+    const testPayload = {
+      ...settings,
+      reminderHoursBefore: 12,
+      reportEnabled: true
+    };
+    
+    const result = await settingsService.saveCommunicationSettings(testPayload);
+    assert.deepEqual(savedPayload.value.reminderHoursBefore, 12);
+    assert.deepEqual(savedPayload.value.reportEnabled, true);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+

@@ -166,12 +166,9 @@ export const communicationService = {
     }
 
     const message = await this.saveMessage({ ...data, content: finalContent });
-    const emailRecipients = data.recipients.map((recipient) => recipient.email).filter(Boolean);
     const phoneRecipients = data.recipients.map((recipient) => recipient.phone.replace(/[^\d+]/g, '')).filter(Boolean);
 
-    const mailtoUrl = emailRecipients.length
-      ? `mailto:?bcc=${encodeURIComponent(emailRecipients.join(','))}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(finalContent)}`
-      : '';
+    const mailtoUrl = ''; // Intentionally left blank. Email is dispatched securely on the server side.
     const smsUrl = phoneRecipients.length
       ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(finalContent)}`
       : '';
