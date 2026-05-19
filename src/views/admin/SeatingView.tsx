@@ -52,11 +52,12 @@ export default function SeatingView() {
     isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave
   } = useSeatingChart(performanceId, selectedVenue);
 
-  const hasLayoutOverride = useMemo(() => {
-    if (!selectedVenue || !chart?.layoutOverride) return false;
-    if (chart.layoutOverride.length !== selectedVenue.rowCounts.length) return true;
-    return chart.layoutOverride.some((count, idx) => count !== selectedVenue.rowCounts[idx]);
-  }, [selectedVenue, chart?.layoutOverride]);
+  const hasLayoutOverride = (() => {
+    const layoutOverride = chart?.layoutOverride;
+    if (!selectedVenue || !layoutOverride) return false;
+    if (layoutOverride.length !== selectedVenue.rowCounts.length) return true;
+    return layoutOverride.some((count, idx) => count !== selectedVenue.rowCounts[idx]);
+  })();
 
   const [saveFeedback, setSaveFeedback] = useState(false);
   const wasSavingRef = useRef(false);
@@ -498,7 +499,7 @@ export default function SeatingView() {
                 )}
               </div>
             ) : (
-              <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+              <div className="seating-print-shell flex-col" style={{ gap: 'var(--space-lg)' }}>
                 {printMode === 'visual' && (
                   <div className="no-print" style={{ 
                     padding: 'var(--space-sm)', 

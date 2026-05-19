@@ -262,9 +262,18 @@ tr.relative-row:active {
     display: none !important;
   }
 
+  body .no-print.no-print.no-print {
+    display: none !important;
+  }
+
+  [data-print-mode="text"] .seating-print-shell > :not(.seating-text-list) {
+    display: none !important;
+  }
+
   /* Seating Text List Print Styles */
   .seating-text-list {
     display: block !important;
+    padding: 0 !important;
   }
   .seating-text-list h3 {
     border-bottom: 2px solid black !important;
@@ -322,10 +331,6 @@ tr.relative-row:active {
     border: 1px dashed #cccccc !important;
     background-color: #fafafa !important;
     opacity: 0.6;
-  }
-
-  .no-print {
-    display: none !important;
   }
 }
 @media (max-width: 640px) {
@@ -408,4 +413,3 @@ body:has(.seating-chart-wide-active) .container {
   animation: spin 0.8s linear infinite;
   display: inline-block;
 }
-
