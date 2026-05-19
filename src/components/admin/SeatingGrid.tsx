@@ -1,7 +1,7 @@
 import React from 'react';
 import { type Profile } from '../../services/profileService';
 import { type VoicePart } from '../../services/seatingService';
-import { getUniqueDisplayNames } from '../../lib/stringUtils';
+import { getUniqueDisplayNames, getLastName, getFirstName } from '../../lib/stringUtils';
 import { useDialog } from '../../contexts/DialogContext';
 
 interface SeatingGridProps {
@@ -25,6 +25,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   rowCounts, assignments, suggestions, activeProfiles, onAssign, isReadOnly = false, onUpdateRowCounts 
 }) => {
   const dialog = useDialog();
+  const formatNameLastFirst = React.useCallback((fullName: string): string => {
+    const last = getLastName(fullName);
+    const first = getFirstName(fullName);
+    return first ? `${last}, ${first}` : last;
+  }, []);
   const uniqueDisplayNames = React.useMemo(() => {
     return getUniqueDisplayNames(activeProfiles);
   }, [activeProfiles]);
@@ -307,8 +312,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                         {activeProfiles
                           .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                           .filter(p => p.voicePart[0] === suggestion)
+                          .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
                           .map(p => (
-                            <option key={p.id} value={p.id}>{p.name} ({p.voicePart})</option>
+                            <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
                           ))
                         }
                       </optgroup>
@@ -318,9 +324,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       {activeProfiles
                         .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                         .filter(p => p.voicePart[0] !== suggestion)
-                        .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
+                        .sort((a, b) => {
+                          const vpCompare = a.voicePart.localeCompare(b.voicePart);
+                          if (vpCompare !== 0) return vpCompare;
+                          return formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name));
+                        })
                         .map(p => (
-                          <option key={p.id} value={p.id}>{p.name} ({p.voicePart})</option>
+                          <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
                         ))
                       }
                     </optgroup>
