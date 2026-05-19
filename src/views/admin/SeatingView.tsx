@@ -3,12 +3,15 @@ import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { SeatingGrid } from '../../components/admin/SeatingGrid';
-import { groupSingersBySection } from '../../lib/seatingSync';
+import { SavingIndicator } from '../../components/admin/SavingIndicator';
+import { SeatingTextList } from '../../components/admin/SeatingTextList';
+import { UnassignedPrintSection } from '../../components/admin/UnassignedPrintSection';
+import { SeatingBottomDock } from '../../components/admin/SeatingBottomDock';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
-import { getLastName, getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { Profile } from '../../services/profileService';
+import './SeatingView.css';
 
 export default function SeatingView() {
   const dialog = useDialog();
@@ -185,27 +188,22 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex-col ${isWideLayout ? 'seating-chart-wide-active' : ''} ${isFullscreen ? 'seating-fullscreen-active' : ''}`} 
+      className={`flex-col seating-view-container ${isWideLayout ? 'seating-chart-wide-active' : ''} ${isFullscreen ? 'seating-fullscreen-active' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
-      style={{ 
-        gap: 'var(--space-md)', 
-        padding: isFullscreen ? 'var(--space-md)' : 'var(--space-sm) 0',
-        backgroundColor: isFullscreen ? 'var(--bg)' : 'transparent'
-      }}
     >
-      <div className="no-print flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-sm)' }}>
-        <h1 className="text-headline" style={{ margin: 0, fontWeight: 700, letterSpacing: '-0.02em', fontSize: '1.5rem', color: 'var(--text)' }}>
+      <div className="no-print flex-responsive seating-header">
+        <h1 className="text-headline seating-header-title">
           Seating Chart Creator
         </h1>
         
-        <div className="flex-row" style={{ gap: 'var(--space-sm)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div className="flex-row" style={{ gap: '6px' }}>
+        <div className="flex-row seating-controls-group">
+          <div className="flex-row seating-control-item">
             <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance:</span>
             <select 
               value={performanceId} 
               onChange={(e) => setPerformanceId(e.target.value)}
-              style={{ padding: '0 30px 0 10px', height: '36px', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '220px', minHeight: '36px' }}
+              className="seating-select-perf"
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
@@ -214,12 +212,12 @@ export default function SeatingView() {
             </select>
           </div>
 
-          <div className="flex-row" style={{ gap: '6px' }}>
+          <div className="flex-row seating-control-item">
             <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
             <select 
               value={venueId} 
               onChange={(e) => setVenueId(e.target.value)}
-              style={{ padding: '0 30px 0 10px', height: '36px', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '160px', minHeight: '36px' }}
+              className="seating-select-venue"
             >
               <option value="">-- Select Venue --</option>
               {venues.map(v => (
@@ -251,17 +249,7 @@ export default function SeatingView() {
                     }
                   }
                 }}
-                className="btn btn-sm btn-ghost no-print" 
-                style={{ 
-                  height: '36px', 
-                  minHeight: '36px',
-                  backgroundColor: 'var(--primary-light)',
-                  color: 'var(--primary-deep)',
-                  border: '1px dashed var(--primary)',
-                  fontWeight: 600,
-                  fontSize: '0.8125rem',
-                  padding: '0 var(--space-sm)'
-                }}
+                className="btn btn-sm btn-ghost no-print seating-update-venue-btn" 
                 title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
               >
                 💾 Update Venue
@@ -269,7 +257,7 @@ export default function SeatingView() {
             )}
           </div>
 
-          <div className="flex-row" style={{ gap: '6px' }}>
+          <div className="flex-row seating-control-item">
             <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formation:</span>
             <div className="flex-row" style={{ gap: '4px' }}>
               <select 
@@ -279,7 +267,7 @@ export default function SeatingView() {
                   'Custom'
                 } 
                 onChange={(e) => handlePatternChange(e.target.value)}
-                style={{ padding: '0 30px 0 10px', height: '36px', border: '1px solid var(--border)', fontSize: '0.8125rem', width: '150px', minHeight: '36px' }}
+                className="seating-select-pattern"
               >
                 <option value="SATB">SATB (Standard)</option>
                 <option value="SBTA">SBTA (Wedge Mix)</option>
@@ -293,12 +281,11 @@ export default function SeatingView() {
                     onKeyDown={(e) => e.key === 'Enter' && updateChart({ sectionOrder: localCustomPattern })}
                     onBlur={() => updateChart({ sectionOrder: localCustomPattern })}
                     placeholder="S,B,T,A"
-                    style={{ padding: '0 8px', height: '36px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', width: '80px', minHeight: '36px' }}
+                    className="seating-pattern-input"
                   />
                   <button 
                     onClick={() => updateChart({ sectionOrder: localCustomPattern })} 
-                    className="btn btn-primary"
-                    style={{ height: '36px', minHeight: '36px', padding: '0 10px', fontSize: '0.75rem' }}
+                    className="btn btn-primary seating-pattern-btn"
                   >
                     Apply
                   </button>
@@ -310,71 +297,49 @@ export default function SeatingView() {
       </div>
 
       {performanceId && venueId ? (
-        <div className="flex-responsive" style={{ alignItems: 'flex-start', gap: 'var(--space-md)' }}>
-          <AppCard className="flex-col" style={{ flex: 1, padding: 'var(--space-md)' }}>
-            <div className="no-print flex-responsive" style={{ 
-              justifyContent: 'space-between', 
-              padding: '6px 12px', 
-              backgroundColor: 'var(--primary-light)', 
-              borderRadius: 'var(--radius-md)',
-              gap: 'var(--space-sm)',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              boxShadow: 'var(--shadow-sm)',
-              border: '1px solid var(--border)'
-            }}>
+        <div className="flex-responsive seating-main-layout">
+          <AppCard className="flex-col seating-card-editor">
+            <div className="no-print flex-responsive seating-toolbar">
                <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
-                  <button onClick={handleClear} className="btn btn-sm btn-ghost" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', height: '32px', minHeight: '32px', padding: '0 10px' }}>
+                  <button onClick={handleClear} className="btn btn-sm btn-ghost seating-toolbar-btn">
                     🧹 Clear
                   </button>
-                  <button onClick={handleReset} className="btn btn-sm btn-danger" style={{ height: '32px', minHeight: '32px', padding: '0 10px' }}>
+                  <button onClick={handleReset} className="btn btn-sm btn-danger seating-toolbar-btn-danger">
                     💥 Reset
                   </button>
                </div>
                
-               <div className="flex-row no-print" style={{ 
-                backgroundColor: 'var(--surface)', 
-                borderRadius: 'var(--radius-md)', 
-                border: '1px solid var(--border)',
-                padding: '2px',
-                gap: '2px',
-                height: '32px',
-                alignItems: 'center'
-               }}>
+               <div className="flex-row no-print seating-toolbar-segmented-group">
                 <button 
                   onClick={() => setPrintMode('visual')}
-                  className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ height: '26px', minHeight: '26px', padding: '0 10px', fontSize: '0.75rem' }}
+                  className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
                 >
                   Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
-                  className={`btn btn-sm ${printMode === 'text' ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ height: '26px', minHeight: '26px', padding: '0 10px', fontSize: '0.75rem' }}
+                  className={`btn btn-sm ${printMode === 'text' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
                 >
                   List
                 </button>
                </div>
 
                {/* Workspace Options (A1 Style segmented control) */}
-               <div className="flex-row no-print" style={{ gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
-                 <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+               <div className="flex-row no-print seating-segmented-control-wrap">
+                 <div className="flex-row seating-segmented-label-group">
                    <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Layout:</span>
-                   <div className="segmented-control" style={{ padding: '2px', height: '32px' }}>
+                   <div className="segmented-control seating-segmented-control">
                      <button
                        type="button"
-                       className={!isWideLayout ? 'active' : ''}
                        onClick={() => setIsWideLayout(false)}
-                       style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
+                       className={`seating-segmented-control-btn ${!isWideLayout ? 'active' : ''}`}
                      >
                        Standard
                      </button>
                      <button
                        type="button"
-                       className={isWideLayout ? 'active' : ''}
                        onClick={() => setIsWideLayout(true)}
-                       style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
+                       className={`seating-segmented-control-btn ${isWideLayout ? 'active' : ''}`}
                      >
                        ↔️ Wide
                      </button>
@@ -384,37 +349,34 @@ export default function SeatingView() {
                  <button
                    type="button"
                    onClick={toggleFullscreen}
-                   className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'}`}
-                   style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)', border: '1px solid var(--border)', height: '32px', minHeight: '32px', padding: '0 10px' }}
+                   className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'} seating-toolbar-btn-fullscreen`}
+                   style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
                  >
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
 
                  {!selectedVenue?.isOpenSeating && (
-                   <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+                   <div className="flex-row seating-segmented-label-group">
                      <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>Singers:</span>
-                     <div className="segmented-control" style={{ padding: '2px', height: '32px' }}>
+                     <div className="segmented-control seating-segmented-control">
                        <button
                          type="button"
-                         className={singersListPosition === 'side' ? 'active' : ''}
                          onClick={() => setSingersListPosition('side')}
-                         style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
+                         className={`seating-segmented-control-btn ${singersListPosition === 'side' ? 'active' : ''}`}
                        >
                          👥 Side
                        </button>
                        <button
                          type="button"
-                         className={singersListPosition === 'bottom' ? 'active' : ''}
                          onClick={() => setSingersListPosition('bottom')}
-                         style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
+                         className={`seating-segmented-control-btn ${singersListPosition === 'bottom' ? 'active' : ''}`}
                        >
                          📥 Bot
                        </button>
                        <button
                          type="button"
-                         className={singersListPosition === 'hidden' ? 'active' : ''}
                          onClick={() => setSingersListPosition('hidden')}
-                         style={{ height: '26px', minHeight: '26px', padding: '4px 8px' }}
+                         className={`seating-segmented-control-btn ${singersListPosition === 'hidden' ? 'active' : ''}`}
                        >
                          ❌ Hide
                        </button>
@@ -422,24 +384,24 @@ export default function SeatingView() {
                    </div>
                  )}
                  {printMode === 'text' && (
-                   <label className="flex-row" style={{ gap: 'var(--space-xs)', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none', alignItems: 'center', marginLeft: 'var(--space-sm)' }}>
+                   <label className="flex-row seating-checkbox-label">
                      <input 
                        type="checkbox" 
                        checked={showVoicePartsInList} 
                        onChange={(e) => setShowVoicePartsInList(e.target.checked)}
-                       style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                       className="seating-checkbox-input"
                      />
                      Show Voice Parts
                    </label>
                  )}
                </div>
                
-               <div className="flex-row" style={{ gap: 'var(--space-xs)', flex: '1 1 auto', justifyContent: 'center', minWidth: '200px' }}>
+               <div className="flex-row seating-copy-section">
                   <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    style={{ fontSize: '0.8125rem', padding: '0 30px 0 10px', height: '32px', minHeight: '32px', flex: 1, maxWidth: '200px', border: '1px solid var(--border)' }}
+                    className="seating-copy-select"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
@@ -450,48 +412,36 @@ export default function SeatingView() {
                   </select>
                </div>
 
-               <button onClick={handlePrint} className="btn btn-sm btn-primary" style={{ height: '32px', minHeight: '32px', padding: '0 10px' }}>
+               <button onClick={handlePrint} className="btn btn-sm btn-primary seating-toolbar-btn-print">
                   🖨️ Print
                </button>
-                <div className="flex-row" style={{ gap: 'var(--space-xs)', position: 'relative' }}>
+                <div className="flex-row seating-save-feedback-wrap">
                   <SavingIndicator isSaving={isSaving} error={saveError} />
                   <button
                     onClick={handleManualSave}
-                    className="btn btn-sm btn-ghost"
+                    className="btn btn-sm btn-ghost seating-toolbar-btn-save"
                     style={{ 
-                      backgroundColor: 'var(--surface)', 
-                      border: '1px solid var(--border)', 
-                      height: '32px',
-                      minHeight: '32px',
-                      padding: '0 10px',
                       color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
                     }}
                   >
                     {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
                   </button>
-                  <span className="text-muted" style={{ 
-                    position: 'absolute', 
-                    top: 'calc(100% + 2px)', 
-                    right: '4px', 
-                    whiteSpace: 'nowrap',
-                    fontSize: '9px',
-                    opacity: 0.8
-                  }}>
+                  <span className="text-muted seating-autosave-tag">
                     Auto-saved
                   </span>
                 </div>
             </div>
 
             {isLoading ? (
-              <div className="flex-col" style={{ alignItems: 'center', padding: 'var(--space-xl)' }}>
+              <div className="flex-col seating-loading-wrap">
                 <p className="text-muted">Loading seating data...</p>
               </div>
             ) : selectedVenue?.isOpenSeating ? (
-              <div className="flex-col" style={{ alignItems: 'center', padding: 'var(--space-xl)', textAlign: 'center' }}>
+              <div className="flex-col seating-open-wrap">
                 <h3 className="text-headline">Open Seating</h3>
                 <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
                 {selectedVenue.address && (
-                  <p style={{ marginTop: 'var(--space-md)' }}>
+                  <p className="seating-open-map-btn">
                     <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
                       📍 View Map
                     </a>
@@ -501,16 +451,7 @@ export default function SeatingView() {
             ) : (
               <div className="seating-print-shell flex-col" style={{ gap: 'var(--space-lg)' }}>
                 {printMode === 'visual' && (
-                  <div className="no-print" style={{ 
-                    padding: 'var(--space-sm)', 
-                    backgroundColor: 'var(--primary-light)', 
-                    borderRadius: 'var(--radius-md)', 
-                    fontSize: 'var(--font-size-sm)', 
-                    color: 'var(--primary-deep)', 
-                    textAlign: 'center',
-                    border: '1px solid var(--border)',
-                    boxShadow: 'var(--shadow-sm)'
-                  }}>
+                  <div className="no-print seating-grid-editor-info">
                     <strong>Editor Mode:</strong>{' '}
                     {singersListPosition === 'bottom' ? (
                       <span>
@@ -543,7 +484,7 @@ export default function SeatingView() {
                 
                 {/* Bottom Dock horizontal lanes */}
                 {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
-                  <BottomDock 
+                  <SeatingBottomDock 
                     activeProfiles={activeProfiles}
                     assignments={optimisticAssignments}
                     assignSinger={assignSinger}
@@ -551,18 +492,7 @@ export default function SeatingView() {
                 )}
 
                 {printMode === 'text' && unassignedCount > 0 && (
-                  <div className="no-print" style={{ 
-                    padding: 'var(--space-md)', 
-                    backgroundColor: 'var(--color-danger-bg)', 
-                    borderRadius: 'var(--radius-md)', 
-                    fontSize: 'var(--font-size-sm)', 
-                    color: 'var(--color-danger-text)', 
-                    textAlign: 'center',
-                    border: '1px solid var(--color-danger-text)',
-                    boxShadow: 'var(--shadow-sm)',
-                    marginBottom: 'var(--space-md)',
-                    fontWeight: 600
-                  }}>
+                  <div className="no-print seating-grid-unassigned-warn">
                     ⚠️ You have {unassignedCount} unassigned singer{unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
                   </div>
                 )}
@@ -580,16 +510,7 @@ export default function SeatingView() {
           </AppCard>
 
           {(!selectedVenue?.isOpenSeating && singersListPosition === 'side' && printMode === 'visual') && (
-            <AppCard className="no-print" style={{ 
-              width: '320px', 
-              position: 'sticky', 
-              top: 'var(--space-lg)',
-              height: 'calc(100vh - 140px)',
-              display: 'flex',
-              flexDirection: 'column',
-              boxSizing: 'border-box',
-              border: '2px dashed var(--border)'
-            }}>
+            <AppCard className="no-print seating-sidebar">
               <div 
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -603,10 +524,10 @@ export default function SeatingView() {
                     console.error('Failed to parse sidebar drop data', err);
                   }
                 }}
-                style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}
+                className="seating-sidebar-content"
               >
-                <h3 className="text-headline" style={{ marginBottom: 'var(--space-md)' }}>Unassigned</h3>
-                <div className="flex-col" style={{ gap: 'var(--space-sm)', overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
+                <h3 className="text-headline seating-sidebar-title">Unassigned</h3>
+                <div className="flex-col seating-sidebar-list">
                   {activeProfiles
                     .filter(p => !Object.values(optimisticAssignments).includes(p.id))
                     .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
@@ -615,22 +536,14 @@ export default function SeatingView() {
                         key={p.id}
                         draggable
                         onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                        className="flex-row"
-                        style={{ 
-                          padding: 'var(--space-sm) var(--space-md)', 
-                          backgroundColor: 'var(--bg)', 
-                          border: '1px solid var(--border)', 
-                          borderRadius: 'var(--radius-md)', 
-                          cursor: 'grab',
-                          justifyContent: 'space-between'
-                        }}
+                        className="flex-row seating-sidebar-item"
                       >
                         <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
                         <span className="badge badge-rehearsal">{p.voicePart}</span>
                       </div>
                     ))}
                   {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
-                    <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                    <div className="seating-sidebar-empty">
                       <p className="text-muted text-sm">All singers assigned!</p>
                     </div>
                   )}
@@ -640,249 +553,10 @@ export default function SeatingView() {
           )}
         </div>
       ) : (
-        <AppCard style={{ padding: '80px', textAlign: 'center' }}>
+        <AppCard className="seating-empty-view">
           <p className="text-muted">Select a Performance and a Venue to start creating the seating chart.</p>
         </AppCard>
       )}
-    </div>
-  );
-}
-
-function SavingIndicator({ isSaving, error }: { isSaving: boolean; error: string | null }) {
-  if (error) {
-    return <span className="text-label" style={{ color: 'var(--color-danger-text)' }}>Save failed</span>;
-  }
-
-  if (isSaving) {
-    return <span className="text-label text-muted">Saving...</span>;
-  }
-
-  return null;
-}
-
-function SeatingTextList({ 
-  rows, 
-  showVoiceParts = true 
-}: { 
-  rows: (Profile | null)[][]; 
-  showVoiceParts?: boolean; 
-}) {
-  const allAssigned = useMemo(() => {
-    const list: Profile[] = [];
-    rows.forEach(row => {
-      row.forEach(p => {
-        if (p) list.push(p);
-      });
-    });
-    return list;
-  }, [rows]);
-
-  const uniqueDisplayNames = useMemo(() => {
-    return getUniqueDisplayNames(allAssigned);
-  }, [allAssigned]);
-
-  return (
-    <div className="seating-text-list flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
-      {rows.map((row, i) => {
-        const isFront = i === 0;
-        const isBack = i === rows.length - 1;
-        const label = `Row ${i + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
-
-        const assignedSingers = row.filter((p): p is Profile => !!p);
-        const namesString = assignedSingers.length > 0 
-          ? assignedSingers.map(p => {
-              const displayName = uniqueDisplayNames[p.id] || getLastName(p.name);
-              return showVoiceParts ? `${displayName} (${p.voicePart})` : displayName;
-            }).join(', ')
-          : 'No singers assigned';
-
-        return (
-          <div key={i} className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <h3 className="text-label" style={{ 
-              borderBottom: '2px solid var(--primary)', 
-              paddingBottom: '4px',
-              color: 'var(--primary-deep)',
-              margin: 0
-            }}>
-              {label}
-            </h3>
-            <div className="text-sm" style={{ 
-              padding: 'var(--space-sm)',
-              backgroundColor: 'var(--bg)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border)',
-              lineHeight: 1.5
-            }}>
-              {namesString}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function UnassignedPrintSection({ 
-  activeProfiles, 
-  assignments 
-}: { 
-  activeProfiles: Profile[]; 
-  assignments: Record<string, string>; 
-}) {
-  const assignedIds = new Set(Object.values(assignments));
-  const unassigned = activeProfiles.filter(p => !assignedIds.has(p.id));
-
-  if (unassigned.length === 0) return null;
-
-  return (
-    <div className="print-only unassigned-print-section" style={{ marginTop: 'var(--space-lg)', width: '100%' }}>
-      <div style={{ 
-        padding: '8px var(--space-md)',
-        border: '1px solid #000000',
-        borderRadius: 'var(--radius-sm)',
-        backgroundColor: '#f9fafb',
-        color: '#000000',
-        fontWeight: 700,
-        fontSize: '0.875rem',
-        display: 'inline-block'
-      }}>
-        ⚠️ Unassigned Singers: {unassigned.length}
-      </div>
-    </div>
-  );
-}
-
-function BottomDock({
-  activeProfiles,
-  assignments,
-  assignSinger
-}: {
-  activeProfiles: Profile[];
-  assignments: Record<string, string>;
-  assignSinger: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
-}) {
-  const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
-  const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds), [activeProfiles, assignedIds]);
-
-  const uniqueDisplayNames = useMemo(() => {
-    return getUniqueDisplayNames(activeProfiles);
-  }, [activeProfiles]);
-
-  const sections: { key: 'S' | 'A' | 'T' | 'B' | 'Other'; label: string }[] = [
-    { key: 'S', label: 'Sopranos' },
-    { key: 'A', label: 'Altos' },
-    { key: 'T', label: 'Tenors' },
-    { key: 'B', label: 'Basses' },
-    { key: 'Other', label: 'Other' },
-  ];
-
-  return (
-    <div 
-      className="no-print" 
-      style={{ 
-        marginTop: 'var(--space-md)', 
-        border: '1px solid var(--border)', 
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-md)',
-        backgroundColor: 'var(--primary-light)'
-      }}
-    >
-      <div 
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          try {
-            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-            if (data.fromSeatKey) {
-              assignSinger(data.fromSeatKey, '');
-            }
-          } catch (err) {
-            console.error('Failed to parse bottom dock drop data', err);
-          }
-        }}
-        className="flex-col"
-        style={{ gap: 'var(--space-md)' }}
-      >
-        <div className="flex-row" style={{ justifyContent: 'space-between' }}>
-          <h3 className="text-headline" style={{ margin: 0, fontSize: '1.05rem', color: 'var(--primary-deep)' }}>📥 Unassigned Singers Shelf</h3>
-          <span className="text-muted" style={{ fontSize: '11px' }}>Drag up to assign, or drop here to clear a seat assignment.</span>
-        </div>
-
-        <div 
-          style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(5, 1fr)', 
-            gap: 'var(--space-sm)',
-            height: '220px'
-          }}
-        >
-          {sections.map(({ key, label }) => {
-            const list = grouped[key];
-            return (
-              <div 
-                key={key} 
-                className="flex-col" 
-                style={{ 
-                  gap: 'var(--space-xs)', 
-                  backgroundColor: 'var(--surface)', 
-                  borderRadius: 'var(--radius-md)', 
-                  border: '1px solid var(--border)', 
-                  padding: 'var(--space-sm)',
-                  height: '100%',
-                  overflow: 'hidden'
-                }}
-              >
-                <div className="flex-row" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '4px' }}>
-                  <span className="text-label" style={{ fontWeight: 700, fontSize: 'var(--font-size-sm)', color: 'var(--text)' }}>
-                    {label}
-                  </span>
-                  <span className="badge badge-rehearsal" style={{ fontSize: '10px', padding: '0 6px' }}>
-                    {list.length}
-                  </span>
-                </div>
-
-                <div className="flex-col" style={{ gap: 'var(--space-xs)', overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
-                  {list.map(p => (
-                    <div 
-                      key={p.id}
-                      draggable
-                      onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                      className="flex-row"
-                      style={{ 
-                        padding: '6px var(--space-sm)', 
-                        backgroundColor: 'var(--bg)', 
-                        border: '1px solid var(--border)', 
-                        borderRadius: 'var(--radius-md)', 
-                        cursor: 'grab',
-                        justifyContent: 'space-between',
-                        fontSize: '0.8125rem',
-                        alignItems: 'center',
-                        boxShadow: 'var(--shadow-sm)'
-                      }}
-                    >
-                      <span style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '75px' }} title={p.name}>
-                        {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}
-                      </span>
-                      <span className="badge badge-rehearsal" style={{ 
-                        fontSize: '9px', 
-                        padding: '2px 4px',
-                        textTransform: 'uppercase'
-                      }}>
-                        {p.voicePart}
-                      </span>
-                    </div>
-                  ))}
-                  {list.length === 0 && (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
-                      <span style={{ fontSize: '10px' }}>Empty</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
