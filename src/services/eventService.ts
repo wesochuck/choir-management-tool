@@ -9,6 +9,7 @@ export interface SetListItem {
   duration?: string;
   notes?: string;
   pieceId?: string; // Links to musicLibrary
+  type?: 'song' | 'intermission';
 }
 
 export interface Event extends RecordModel {

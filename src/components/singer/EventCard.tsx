@@ -49,14 +49,25 @@ export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', o
           {event.setList && event.setList.length > 0 && (
             <div className="flex-col" style={{ marginTop: 'var(--space-sm)', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
               <div className="text-label" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '4px', marginBottom: '8px' }}>Set List</div>
-              <ol style={{ margin: 0, paddingLeft: 'var(--space-lg)', gap: '4px', display: 'flex', flexDirection: 'column' }}>
-                {event.setList.map(item => (
-                  <li key={item.id} className="text-body text-sm">
-                    <strong>{item.title}</strong>
-                    {(item.composer || item.duration) && <span className="text-muted"> ({item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration})</span>}
-                    {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic' }}>{item.notes}</div>}
-                  </li>
-                ))}
+              <ol style={{ margin: 0, paddingLeft: 'var(--space-lg)', gap: '6px', display: 'flex', flexDirection: 'column' }}>
+                {event.setList.map(item => {
+                  const isIntermission = item.type === 'intermission';
+                  if (isIntermission) {
+                    return (
+                      <li key={item.id} className="text-muted text-sm" style={{ listStyleType: 'none', margin: 'var(--space-xs) 0 var(--space-xs) calc(-1 * var(--space-lg))', padding: 'var(--space-xs) var(--space-sm)', backgroundColor: 'var(--primary-light)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--primary)' }}>
+                        <strong style={{ color: 'var(--primary-deep)' }}>⏸️ {item.title}</strong> {item.duration && <span className="text-muted">({item.duration})</span>}
+                        {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={item.id} className="text-body text-sm">
+                      <strong>{item.title}</strong>
+                      {(item.composer || item.duration) && <span className="text-muted"> ({item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration})</span>}
+                      {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
+                    </li>
+                  );
+                })}
               </ol>
             </div>
           )}

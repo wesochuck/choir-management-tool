@@ -31,6 +31,10 @@ export default function AuditionsView() {
       setAuditions(auditionList);
       setPerformances(allEvents.filter(e => e.type === 'Performance'));
       setSettings(auditionSettings);
+      // Auto-expand settings to guide user if no audition times are set
+      if (!auditionSettings.slots || auditionSettings.slots.length === 0) {
+        setShowSettings(true);
+      }
       setError('');
     } catch {
       setError('Could not load auditions data.');
@@ -119,11 +123,11 @@ export default function AuditionsView() {
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Auditions</h1>
-        <div className="flex-row">
+        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
           <button className="btn btn-secondary" onClick={() => setShowSettings(!showSettings)}>
-            {showSettings ? 'Hide Settings' : 'Audition Settings'}
+            {showSettings ? 'Hide Settings' : 'Configure Times & Settings'}
           </button>
-          <a className="btn btn-ghost" href="/auditions" target="_blank" rel="noreferrer">Open Public Form</a>
+          <a className="btn btn-ghost" href="/auditions" target="_blank" rel="noreferrer">Preview Public Form</a>
         </div>
       </div>
 
@@ -152,8 +156,13 @@ export default function AuditionsView() {
               </div>
             </div>
           </div>
-          {(!settings.enabled || !settings.defaultPerformanceId) && !showSettings && (
-            <button className="btn btn-primary btn-sm" onClick={() => setShowSettings(true)}>Configure & Open</button>
+          {!showSettings && (
+            <button 
+              className={settings.enabled && settings.defaultPerformanceId ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm"} 
+              onClick={() => setShowSettings(true)}
+            >
+              {settings.enabled && settings.defaultPerformanceId ? 'Configure Times' : 'Configure & Open'}
+            </button>
           )}
         </div>
       )}
@@ -190,14 +199,32 @@ export default function AuditionsView() {
             </div>
 
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Available Audition Times</label>
+              <label className="text-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                <span>Available Audition Times</span>
+                {(!settings.slots || settings.slots.length === 0) && (
+                  <span className="badge badge-rehearsal" style={{ backgroundColor: 'var(--color-danger-text)', color: 'white', padding: '2px 6px', fontSize: '0.7rem' }}>Required</span>
+                )}
+              </label>
               <textarea
                 value={(settings.slots || []).join('\n')}
                 onChange={(e) => setSettings({ ...settings, slots: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
                 className="card"
-                style={{ minHeight: '120px', resize: 'vertical' }}
-                placeholder="One time per line..."
+                style={{ 
+                  minHeight: '120px', 
+                  resize: 'vertical',
+                  border: (!settings.slots || settings.slots.length === 0) ? '1px solid var(--color-danger-text)' : '1px solid var(--border)' 
+                }}
+                placeholder="Enter audition times, one per line (e.g. Monday 5:00 PM)..."
               />
+              {(!settings.slots || settings.slots.length === 0) ? (
+                <p style={{ color: 'var(--color-danger-text)', fontSize: '0.8125rem', margin: 0, fontWeight: 500 }}>
+                  ⚠️ Add at least one audition time slot so applicants can schedule their audition.
+                </p>
+              ) : (
+                <p className="text-muted" style={{ margin: 0 }}>
+                  Enter one time per line. These will appear as options in the dropdown on the public audition form.
+                </p>
+              )}
             </div>
 
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>

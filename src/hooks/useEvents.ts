@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { eventService, type Event, type BulkRehearsalConfig } from '../services/eventService';
 
 export const useEvents = () => {
@@ -61,9 +61,13 @@ export const useEvents = () => {
     }
   };
 
+  const performances = useMemo(() => {
+    return events.filter(e => e.type === 'Performance');
+  }, [events]);
+
   return {
     events,
-    performances: events.filter(e => e.type === 'Performance'),
+    performances,
     isLoading,
     error,
     addEvent,

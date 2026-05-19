@@ -1,6 +1,8 @@
 import React from 'react';
 import { type Profile } from '../../services/profileService';
 import { type VoicePart } from '../../services/seatingService';
+import { getUniqueDisplayNames } from '../../lib/stringUtils';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface SeatingGridProps {
   rowCounts: number[];
@@ -9,6 +11,7 @@ interface SeatingGridProps {
   activeProfiles: Profile[];
   onAssign: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   isReadOnly?: boolean;
+  onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<any>;
 }
 
 const SECTION_COLORS: Record<string, { bg: string, text: string }> = {
@@ -19,8 +22,14 @@ const SECTION_COLORS: Record<string, { bg: string, text: string }> = {
 };
 
 export const SeatingGrid: React.FC<SeatingGridProps> = ({ 
-  rowCounts, assignments, suggestions, activeProfiles, onAssign, isReadOnly = false 
+  rowCounts, assignments, suggestions, activeProfiles, onAssign, isReadOnly = false, onUpdateRowCounts 
 }) => {
+  const dialog = useDialog();
+  const uniqueDisplayNames = React.useMemo(() => {
+    return getUniqueDisplayNames(activeProfiles);
+  }, [activeProfiles]);
+  const totalSeats = React.useMemo(() => rowCounts.reduce((sum, count) => sum + count, 0), [rowCounts]);
+
   const profileMap = React.useMemo(() => {
     const map: Record<string, Profile> = {};
     activeProfiles.forEach(p => map[p.id] = p);
@@ -72,18 +81,145 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
   return (
     <div className="flex-col grid-print" style={{ gap: 'var(--space-lg)', alignItems: 'center', width: '100%', overflowX: 'auto', padding: 'var(--space-md)' }}>
-      {rowCounts.map((seatCount, rowIndex) => (
-        <div key={rowIndex} className="row-print" style={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
+      {/* Warning banner if not enough seats */}
+      {activeProfiles.length > totalSeats && onUpdateRowCounts && (
+        <div className="no-print" style={{
+          backgroundColor: 'var(--color-danger-bg)',
+          border: '1px solid #fecaca',
+          borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-md)',
+          width: '100%',
+          maxWidth: '800px',
+          display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
-          gap: `${gridGap}px`, 
-          justifyContent: 'center', 
-          minWidth: 'max-content' 
+          gap: 'var(--space-sm)',
+          boxShadow: 'var(--shadow-sm)',
+          color: 'var(--color-danger-text)',
+          boxSizing: 'border-box'
         }}>
-          <div className="text-xs text-muted" style={{ width: isCompact ? '50px' : '72px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
-            Row {rowIndex + 1}
+          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <strong style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Not enough seats configured!</strong>
+            <span style={{ fontSize: '0.8125rem', opacity: 0.9 }}>
+              You have {activeProfiles.length} active singers but only {totalSeats} seats. Click the <strong style={{ color: 'var(--color-danger-text)' }}>+</strong> button at the end of any row to add seats.
+            </span>
           </div>
+        </div>
+      )}
+
+      {/* Add Row to Front Button */}
+      {!isReadOnly && onUpdateRowCounts && (
+        <button
+          onClick={() => {
+            const defaultSeats = 10;
+            const newRowCounts = [defaultSeats, ...rowCounts];
+            const shiftedAssignments: Record<string, string> = {};
+            Object.entries(assignments).forEach(([key, profileId]) => {
+              const [rStr, sStr] = key.split('-');
+              const r = parseInt(rStr, 10);
+              shiftedAssignments[`${r + 1}-${sStr}`] = profileId;
+            });
+            onUpdateRowCounts(newRowCounts, shiftedAssignments);
+          }}
+          className="btn btn-sm btn-ghost no-print"
+          style={{
+            backgroundColor: 'var(--primary-light)',
+            color: 'var(--primary-deep)',
+            border: '1px dashed var(--primary)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-xs) var(--space-md)',
+            fontWeight: 600,
+            fontSize: '0.8125rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginBottom: 'var(--space-xs)'
+          }}
+          title="Add a new row with 10 seats at the front"
+        >
+          ➕ Add Row to Front
+        </button>
+      )}
+
+      {rowCounts.map((seatCount, rowIndex) => {
+        const isFront = rowIndex === 0;
+        const isBack = rowIndex === rowCounts.length - 1;
+        const rowLabel = `Row ${rowIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
+
+        return (
+          <div key={rowIndex} className="row-print" style={{ 
+            display: 'flex', 
+            flexDirection: 'row', 
+            alignItems: 'center',
+            gap: `${gridGap}px`, 
+            justifyContent: 'center', 
+            minWidth: 'max-content' 
+          }}>
+            <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
+              {rowLabel}
+            </div>
+
+            {/* "-" remove row button */}
+            {!isReadOnly && onUpdateRowCounts && (
+              <button
+                className="no-print btn btn-ghost"
+                onClick={async () => {
+                  const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
+                  let shouldRemove = true;
+                  if (rowHasAssignments) {
+                    shouldRemove = await dialog.confirm({
+                      title: 'Remove Row?',
+                      message: `Row ${rowIndex + 1} has singer assignments. Removing the row will clear these assignments. Proceed?`,
+                      confirmLabel: 'Remove Row',
+                      cancelLabel: 'Cancel',
+                      variant: 'danger'
+                    });
+                  }
+                  
+                  if (shouldRemove) {
+                    const newRowCounts = rowCounts.filter((_, idx) => idx !== rowIndex);
+                    const shiftedAssignments: Record<string, string> = {};
+                    Object.entries(assignments).forEach(([key, profileId]) => {
+                      const [rStr, sStr] = key.split('-');
+                      const r = parseInt(rStr, 10);
+                      if (r === rowIndex) {
+                        return;
+                      }
+                      if (r < rowIndex) {
+                        shiftedAssignments[key] = profileId;
+                      } else {
+                        shiftedAssignments[`${r - 1}-${sStr}`] = profileId;
+                      }
+                    });
+                    onUpdateRowCounts(newRowCounts, shiftedAssignments);
+                  }
+                }}
+                style={{
+                  minHeight: '28px',
+                  height: '28px',
+                  width: '28px',
+                  minWidth: '28px',
+                  padding: 0,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'var(--color-danger-bg)',
+                  border: '1px dashed var(--color-danger-text)',
+                  color: 'var(--color-danger-text)',
+                  marginRight: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+                title="Remove this row"
+              >
+                -
+              </button>
+            )}
           {Array.from({ length: seatCount }).map((_, seatIndex) => {
             const seatKey = `${rowIndex}-${seatIndex}`;
             const suggestion = suggestions[seatKey];
@@ -197,7 +333,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 {assignedProfile ? (
                   <div className="flex-col" style={{ gap: 0, alignItems: 'center' }}>
                     <div style={{ fontWeight: 800, fontSize: isCompact ? 'var(--font-size-xs)' : 'var(--font-size-label)', color: colors.text, lineHeight: 1.1 }}>
-                      {isCompact ? getInitials(assignedProfile.name) : assignedProfile.name.split(' ').pop()}
+                      {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                     </div>
                     <div className="text-xs" style={{ fontWeight: 700, color: colors.text }}>
                       {assignedProfile.voicePart}
@@ -209,8 +345,72 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               </div>
             );
           })}
+
+          {/* "+" add seat button */}
+          {!isReadOnly && onUpdateRowCounts && (
+            <button
+              className="no-print btn btn-ghost"
+              onClick={() => {
+                const newRowCounts = [...rowCounts];
+                newRowCounts[rowIndex] += 1;
+                onUpdateRowCounts(newRowCounts);
+              }}
+              style={{
+                minHeight: '28px',
+                height: '28px',
+                width: '28px',
+                minWidth: '28px',
+                padding: 0,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'var(--primary-light)',
+                border: '1px dashed var(--primary)',
+                color: 'var(--primary-deep)',
+                marginLeft: '12px',
+                fontWeight: 'bold',
+                fontSize: '15px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+              title="Add seat to this row"
+            >
+              +
+            </button>
+          )}
         </div>
-      ))}
+      );
+      })}
+
+      {/* Add Row to Back Button */}
+      {!isReadOnly && onUpdateRowCounts && (
+        <button
+          onClick={() => {
+            const defaultSeats = 10;
+            const newRowCounts = [...rowCounts, defaultSeats];
+            onUpdateRowCounts(newRowCounts);
+          }}
+          className="btn btn-sm btn-ghost no-print"
+          style={{
+            backgroundColor: 'var(--primary-light)',
+            color: 'var(--primary-deep)',
+            border: '1px dashed var(--primary)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-xs) var(--space-md)',
+            fontWeight: 600,
+            fontSize: '0.8125rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginTop: 'var(--space-xs)'
+          }}
+          title="Add a new row with 10 seats at the back"
+        >
+          ➕ Add Row to Back
+        </button>
+      )}
     </div>
   );
 };

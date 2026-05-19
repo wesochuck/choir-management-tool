@@ -1,6 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
-import { profileService } from './profileService';
+
 
 import { type Event } from './eventService';
 

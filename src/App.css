@@ -225,33 +225,86 @@ tr.relative-row:active {
   display: none !important;
 }
 
+/* Print-only and Screen-only helpers */
+.print-only {
+  display: none !important;
+}
+
 /* Print Styles */
 @media print {
-  .no-print { display: none !important; }
-  .container { padding: 0 !important; max-width: none !important; }
+  .print-only { display: block !important; }
+
+  @page {
+    margin: 0.5in;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  /* Reset layout containers to standard block rendering to avoid browser print engine flexbox height bugs */
+  .container, main, .flex-responsive, .flex-col, .card, div:not(.grid-print):not(.row-print):not(.seat-cell) {
+    display: block !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background-color: transparent !important;
+  }
+
+  header.surface {
+    display: none !important;
+  }
 
   /* Seating Text List Print Styles */
+  .seating-text-list {
+    display: block !important;
+  }
   .seating-text-list h3 {
     border-bottom: 2px solid black !important;
     color: black !important;
+    margin-top: 15px !important;
+    margin-bottom: 5px !important;
+    font-size: 1.15rem !important;
   }
   .seating-text-list .text-sm {
     background-color: white !important;
     border: 1px solid #ddd !important;
     color: black !important;
+    padding: var(--space-sm) !important;
     page-break-inside: avoid;
   }
 
   /* Seating Visual Grid Print Styles */
   .grid-print { 
+    display: flex !important;
+    flex-direction: column !important;
     gap: 4px !important; 
     padding: 0 !important; 
+    margin: 0 auto !important;
     page-break-inside: avoid !important;
+    align-items: center !important;
+    width: auto !important;
   }
   .row-print { 
+    display: flex !important;
+    flex-direction: row !important;
     gap: 4px !important; 
+    justify-content: center !important;
+    margin-bottom: 4px !important;
+    width: auto !important;
   }
   .seat-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
     background-color: #ffffff !important;
     color: #000000 !important;
     border: 1px solid #000000 !important;
@@ -269,6 +322,10 @@ tr.relative-row:active {
     border: 1px dashed #cccccc !important;
     background-color: #fafafa !important;
     opacity: 0.6;
+  }
+
+  .no-print {
+    display: none !important;
   }
 }
 @media (max-width: 640px) {
@@ -336,3 +393,19 @@ body:has(.seating-chart-wide-active) .container {
   height: 100vh !important;
   width: 100vw !important;
 }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+

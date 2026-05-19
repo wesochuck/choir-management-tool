@@ -7,18 +7,19 @@ import { groupSingersBySection } from '../../lib/seatingSync';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
-import { getLastName } from '../../lib/stringUtils';
+import { getLastName, getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { Profile } from '../../services/profileService';
 
 export default function SeatingView() {
   const dialog = useDialog();
   const { performances } = useEvents();
-  const { venues } = useVenues();
+  const { venues, editVenue } = useVenues();
   
   const [performanceId, setPerformanceId] = useState('');
   const [venueId, setVenueId] = useState('');
   const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
+  const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
   
   const [isWideLayout, setIsWideLayout] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -50,6 +51,13 @@ export default function SeatingView() {
     chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, isLoading,
     isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave
   } = useSeatingChart(performanceId, selectedVenue);
+
+  const hasLayoutOverride = useMemo(() => {
+    if (!selectedVenue || !chart?.layoutOverride) return false;
+    if (chart.layoutOverride.length !== selectedVenue.rowCounts.length) return true;
+    return chart.layoutOverride.some((count, idx) => count !== selectedVenue.rowCounts[idx]);
+  }, [selectedVenue, chart?.layoutOverride]);
+
   const [saveFeedback, setSaveFeedback] = useState(false);
   const wasSavingRef = useRef(false);
 
@@ -92,6 +100,11 @@ export default function SeatingView() {
       return row;
     });
   }, [rowCounts, activeProfiles, optimisticAssignments]);
+
+  const unassignedCount = useMemo(() => {
+    const assignedIds = new Set(Object.values(optimisticAssignments));
+    return activeProfiles.filter(p => !assignedIds.has(p.id)).length;
+  }, [activeProfiles, optimisticAssignments]);
 
   const handlePrint = () => window.print();
 
@@ -212,6 +225,47 @@ export default function SeatingView() {
                 <option key={v.id} value={v.id}>{v.name}</option>
               ))}
             </select>
+            {hasLayoutOverride && (
+              <button 
+                onClick={async () => {
+                  const confirmed = await dialog.confirm({
+                    title: 'Update Master Venue Template?',
+                    message: `Would you like to overwrite the master template for "${selectedVenue?.name}" with this performance's row configuration (${chart?.layoutOverride?.join(', ')})? This will affect new seating charts for this venue.`,
+                    confirmLabel: 'Yes, Update Template',
+                    cancelLabel: 'Cancel'
+                  });
+                  if (confirmed && selectedVenue) {
+                    try {
+                      await editVenue(selectedVenue.id, { rowCounts: chart?.layoutOverride || undefined });
+                      dialog.showMessage({
+                        title: 'Success',
+                        message: `Successfully updated the master template for "${selectedVenue.name}".`
+                      });
+                    } catch (err) {
+                      console.error('Failed to update venue', err);
+                      dialog.showMessage({
+                        title: 'Error',
+                        message: err instanceof Error ? err.message : 'Failed to update venue template.'
+                      });
+                    }
+                  }
+                }}
+                className="btn btn-sm btn-ghost no-print" 
+                style={{ 
+                  height: '36px', 
+                  minHeight: '36px',
+                  backgroundColor: 'var(--primary-light)',
+                  color: 'var(--primary-deep)',
+                  border: '1px dashed var(--primary)',
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  padding: '0 var(--space-sm)'
+                }}
+                title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
+              >
+                💾 Update Venue
+              </button>
+            )}
           </div>
 
           <div className="flex-row" style={{ gap: '6px' }}>
@@ -366,6 +420,17 @@ export default function SeatingView() {
                      </div>
                    </div>
                  )}
+                 {printMode === 'text' && (
+                   <label className="flex-row" style={{ gap: 'var(--space-xs)', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none', alignItems: 'center', marginLeft: 'var(--space-sm)' }}>
+                     <input 
+                       type="checkbox" 
+                       checked={showVoicePartsInList} 
+                       onChange={(e) => setShowVoicePartsInList(e.target.checked)}
+                       style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                     />
+                     Show Voice Parts
+                   </label>
+                 )}
                </div>
                
                <div className="flex-row" style={{ gap: 'var(--space-xs)', flex: '1 1 auto', justifyContent: 'center', minWidth: '200px' }}>
@@ -434,40 +499,49 @@ export default function SeatingView() {
               </div>
             ) : (
               <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-                <div className="no-print" style={{ 
-                  padding: 'var(--space-sm)', 
-                  backgroundColor: 'var(--primary-light)', 
-                  borderRadius: 'var(--radius-md)', 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--primary-deep)', 
-                  textAlign: 'center',
-                  border: '1px solid var(--border)',
-                  boxShadow: 'var(--shadow-sm)'
-                }}>
-                  <strong>Editor Mode:</strong>{' '}
-                  {singersListPosition === 'bottom' ? (
-                    <span>
-                      Drag singers from the <strong>bottom shelf</strong> below or click a seat to assign. 
-                      <span style={{ marginLeft: 'var(--space-sm)', fontWeight: 700, color: 'var(--color-performance-text)' }}>
-                        👇 Scroll down to see unassigned singers!
+                {printMode === 'visual' && (
+                  <div className="no-print" style={{ 
+                    padding: 'var(--space-sm)', 
+                    backgroundColor: 'var(--primary-light)', 
+                    borderRadius: 'var(--radius-md)', 
+                    fontSize: 'var(--font-size-sm)', 
+                    color: 'var(--primary-deep)', 
+                    textAlign: 'center',
+                    border: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <strong>Editor Mode:</strong>{' '}
+                    {singersListPosition === 'bottom' ? (
+                      <span>
+                        Drag singers from the <strong>bottom shelf</strong> below or click a seat to assign. 
+                        <span style={{ marginLeft: 'var(--space-sm)', fontWeight: 700, color: 'var(--color-performance-text)' }}>
+                          👇 Scroll down to see unassigned singers!
+                        </span>
                       </span>
-                    </span>
-                  ) : singersListPosition === 'side' ? (
-                    <span>Drag singers from the <strong>right sidebar</strong> or click a seat to assign.</span>
-                  ) : (
-                    <span>Click a seat to assign. (Singers list is currently hidden).</span>
-                  )}
-                </div>
+                    ) : singersListPosition === 'side' ? (
+                      <span>Drag singers from the <strong>right sidebar</strong> or click a seat to assign.</span>
+                    ) : (
+                      <span>Click a seat to assign. (Singers list is currently hidden).</span>
+                    )}
+                  </div>
+                )}
                 <SeatingGrid 
                   rowCounts={rowCounts}
                   assignments={optimisticAssignments}
                   suggestions={suggestions}
                   activeProfiles={activeProfiles}
                   onAssign={assignSinger}
+                  onUpdateRowCounts={async (newRowCounts, newAssignments) => {
+                    const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
+                    if (newAssignments) {
+                      updates.assignments = newAssignments;
+                    }
+                    await updateChart(updates);
+                  }}
                 />
                 
                 {/* Bottom Dock horizontal lanes */}
-                {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom') && (
+                {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
                   <BottomDock 
                     activeProfiles={activeProfiles}
                     assignments={optimisticAssignments}
@@ -475,12 +549,36 @@ export default function SeatingView() {
                   />
                 )}
 
-                <SeatingTextList rows={groupedRows} />
+                {printMode === 'text' && unassignedCount > 0 && (
+                  <div className="no-print" style={{ 
+                    padding: 'var(--space-md)', 
+                    backgroundColor: 'var(--color-danger-bg)', 
+                    borderRadius: 'var(--radius-md)', 
+                    fontSize: 'var(--font-size-sm)', 
+                    color: 'var(--color-danger-text)', 
+                    textAlign: 'center',
+                    border: '1px solid var(--color-danger-text)',
+                    boxShadow: 'var(--shadow-sm)',
+                    marginBottom: 'var(--space-md)',
+                    fontWeight: 600
+                  }}>
+                    ⚠️ You have {unassignedCount} unassigned singer{unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
+                  </div>
+                )}
+
+                <SeatingTextList rows={groupedRows} showVoiceParts={showVoicePartsInList} />
+
+                {printMode === 'visual' && (
+                  <UnassignedPrintSection 
+                    activeProfiles={activeProfiles}
+                    assignments={optimisticAssignments}
+                  />
+                )}
               </div>
             )}
           </AppCard>
 
-          {(!selectedVenue?.isOpenSeating && singersListPosition === 'side') && (
+          {(!selectedVenue?.isOpenSeating && singersListPosition === 'side' && printMode === 'visual') && (
             <AppCard className="no-print" style={{ 
               width: '320px', 
               position: 'sticky', 
@@ -561,17 +659,40 @@ function SavingIndicator({ isSaving, error }: { isSaving: boolean; error: string
   return null;
 }
 
-function SeatingTextList({ rows }: { rows: (Profile | null)[][] }) {
+function SeatingTextList({ 
+  rows, 
+  showVoiceParts = true 
+}: { 
+  rows: (Profile | null)[][]; 
+  showVoiceParts?: boolean; 
+}) {
+  const allAssigned = useMemo(() => {
+    const list: Profile[] = [];
+    rows.forEach(row => {
+      row.forEach(p => {
+        if (p) list.push(p);
+      });
+    });
+    return list;
+  }, [rows]);
+
+  const uniqueDisplayNames = useMemo(() => {
+    return getUniqueDisplayNames(allAssigned);
+  }, [allAssigned]);
+
   return (
     <div className="seating-text-list flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
       {rows.map((row, i) => {
-        const isBack = i === 0;
-        const isFront = i === rows.length - 1;
-        const label = `Row ${i + 1}${isBack ? ' (Back)' : isFront ? ' (Front)' : ''}`;
+        const isFront = i === 0;
+        const isBack = i === rows.length - 1;
+        const label = `Row ${i + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
 
         const assignedSingers = row.filter((p): p is Profile => !!p);
         const namesString = assignedSingers.length > 0 
-          ? assignedSingers.map(p => `${getLastName(p.name)} (${p.voicePart})`).join(', ')
+          ? assignedSingers.map(p => {
+              const displayName = uniqueDisplayNames[p.id] || getLastName(p.name);
+              return showVoiceParts ? `${displayName} (${p.voicePart})` : displayName;
+            }).join(', ')
           : 'No singers assigned';
 
         return (
@@ -600,6 +721,36 @@ function SeatingTextList({ rows }: { rows: (Profile | null)[][] }) {
   );
 }
 
+function UnassignedPrintSection({ 
+  activeProfiles, 
+  assignments 
+}: { 
+  activeProfiles: Profile[]; 
+  assignments: Record<string, string>; 
+}) {
+  const assignedIds = new Set(Object.values(assignments));
+  const unassigned = activeProfiles.filter(p => !assignedIds.has(p.id));
+
+  if (unassigned.length === 0) return null;
+
+  return (
+    <div className="print-only unassigned-print-section" style={{ marginTop: 'var(--space-lg)', width: '100%' }}>
+      <div style={{ 
+        padding: '8px var(--space-md)',
+        border: '1px solid #000000',
+        borderRadius: 'var(--radius-sm)',
+        backgroundColor: '#f9fafb',
+        color: '#000000',
+        fontWeight: 700,
+        fontSize: '0.875rem',
+        display: 'inline-block'
+      }}>
+        ⚠️ Unassigned Singers: {unassigned.length}
+      </div>
+    </div>
+  );
+}
+
 function BottomDock({
   activeProfiles,
   assignments,
@@ -611,6 +762,10 @@ function BottomDock({
 }) {
   const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
   const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds), [activeProfiles, assignedIds]);
+
+  const uniqueDisplayNames = useMemo(() => {
+    return getUniqueDisplayNames(activeProfiles);
+  }, [activeProfiles]);
 
   const sections: { key: 'S' | 'A' | 'T' | 'B' | 'Other'; label: string }[] = [
     { key: 'S', label: 'Sopranos' },
@@ -657,8 +812,7 @@ function BottomDock({
             display: 'grid', 
             gridTemplateColumns: 'repeat(5, 1fr)', 
             gap: 'var(--space-sm)',
-            minHeight: '140px',
-            maxHeight: '220px'
+            height: '220px'
           }}
         >
           {sections.map(({ key, label }) => {
@@ -706,7 +860,7 @@ function BottomDock({
                       }}
                     >
                       <span style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '75px' }} title={p.name}>
-                        {p.name.split(' ').pop()}
+                        {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}
                       </span>
                       <span className="badge badge-rehearsal" style={{ 
                         fontSize: '9px', 

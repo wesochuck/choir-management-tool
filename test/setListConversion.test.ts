@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { linkSetListItemToPiece, validatePieceForLibrary } from '../src/lib/musicPieceUtils.ts';
+import { linkSetListItemToPiece, validatePieceForLibrary, parseDurationToSeconds, formatSecondsToDuration } from '../src/lib/musicPieceUtils.ts';
 import type { SetListItem } from '../src/services/eventService.ts';
 
 test('linkSetListItemToPiece links the correct set list item to the given pieceId', () => {
@@ -21,4 +21,29 @@ test('validatePieceForLibrary requires a non-empty trimmed title', () => {
   assert.equal(validatePieceForLibrary(''), false);
   assert.equal(validatePieceForLibrary('   '), false);
   assert.equal(validatePieceForLibrary('Messiah'), true);
+});
+
+test('parseDurationToSeconds parses various format strings correctly', () => {
+  assert.equal(parseDurationToSeconds(undefined), 0);
+  assert.equal(parseDurationToSeconds(''), 0);
+  assert.equal(parseDurationToSeconds('   '), 0);
+  assert.equal(parseDurationToSeconds('3:30'), 210);
+  assert.equal(parseDurationToSeconds('03:30'), 210);
+  assert.equal(parseDurationToSeconds('1:15:30'), 4530);
+  assert.equal(parseDurationToSeconds('15'), 900);
+  assert.equal(parseDurationToSeconds('15m'), 900);
+  assert.equal(parseDurationToSeconds('15 min'), 900);
+  assert.equal(parseDurationToSeconds('15 mins'), 900);
+  assert.equal(parseDurationToSeconds('1h 30m'), 5400);
+  assert.equal(parseDurationToSeconds('45s'), 45);
+  assert.equal(parseDurationToSeconds('invalid'), 0);
+});
+
+test('formatSecondsToDuration formats seconds to human-readable strings correctly', () => {
+  assert.equal(formatSecondsToDuration(0), '0:00');
+  assert.equal(formatSecondsToDuration(-10), '0:00');
+  assert.equal(formatSecondsToDuration(210), '3:30');
+  assert.equal(formatSecondsToDuration(900), '15:00');
+  assert.equal(formatSecondsToDuration(4530), '1:15:30');
+  assert.equal(formatSecondsToDuration(5400), '1:30:00');
 });
