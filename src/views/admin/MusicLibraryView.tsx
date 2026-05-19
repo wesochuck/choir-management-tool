@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { formatPerformanceHistory, parseMusicLibraryCSV, exportMusicToCSV, findDuplicates } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates } from '../../lib/musicPieceUtils';
+import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [pieces, setPieces] = useState<MusicPiece[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,6 +17,7 @@ export default function MusicLibraryView() {
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingPiece, setEditingPiece] = useState<MusicPiece | null>(null);
   
   // Duplicates & Bulk Delete state
@@ -85,38 +86,7 @@ export default function MusicLibraryView() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    try {
-        const text = await file.text();
-        const parsedPieces = parseMusicLibraryCSV(text);
-        
-        if (parsedPieces.length === 0) {
-            dialog.showMessage({ title: 'Import Failed', message: 'No valid rows found in CSV.', variant: 'danger' });
-            return;
-        }
-
-        const confirm = await dialog.confirm({
-            title: 'Confirm Import',
-            message: `Found ${parsedPieces.length} pieces. Import them into the library? Duplicates will NOT be automatically skipped.`,
-            confirmLabel: 'Import'
-        });
-
-        if (confirm) {
-            setIsLoading(true);
-            await musicLibraryService.bulkCreate(parsedPieces);
-            await loadData();
-            dialog.showMessage({ title: 'Import Complete', message: `Imported ${parsedPieces.length} pieces.` });
-        }
-    } catch (err: unknown) {
-        dialog.showMessage({ title: 'Import Error', message: err instanceof Error ? err.message : 'Failed to parse CSV.', variant: 'danger' });
-    } finally {
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        setIsLoading(false);
-    }
-  };
 
   const duplicateIds = useMemo(() => {
     const dups = findDuplicates(pieces);
@@ -175,17 +145,10 @@ export default function MusicLibraryView() {
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Music Library</h1>
         <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-          <input 
-            type="file" 
-            accept=".csv" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            style={{ display: 'none' }} 
-          />
           <button className="btn btn-secondary" onClick={handleExportCSV}>
             Export CSV
           </button>
-          <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+          <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(true)}>
             Import CSV
           </button>
           <button className="btn btn-primary" onClick={() => { setEditingPiece(null); setIsModalOpen(true); }}>
@@ -303,6 +266,12 @@ export default function MusicLibraryView() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSavePiece}
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
+      />
+
+      <MusicImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={loadData}
       />
     </div>
   );
