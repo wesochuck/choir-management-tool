@@ -56,12 +56,16 @@ npm test
 - Restart the running PocketBase server after applying migrations so the app can see new collections.
 - The frontend clears stale auth tokens on 401/403 responses. After a database reset, log out and log back in if a browser already has an old token.
 
-Create or reset a local superuser:
+Create or reset a local PocketBase superuser for database administration:
 
 ```bash
 cd pocketbase
 ./pocketbase superuser upsert admin@example.test password123
 ```
+
+Application admins are regular `users` records with `role` set to `admin`.
+Use the PocketBase admin UI to create a `users` record, set its password,
+turn on `verified`, and choose `admin` in the `role` field.
 
 ## Agent Hints
 

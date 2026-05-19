@@ -19,13 +19,7 @@ export default function LoginView() {
       await pb.collection('users').authWithPassword(email, password);
       navigate('/');
     } catch {
-      try {
-        // If regular user fails, try superuser login
-        await pb.collection('_superusers').authWithPassword(email, password);
-        navigate('/');
-      } catch {
-        setError('Invalid email or password');
-      }
+      setError('Invalid email or password');
     } finally {
       setIsLoading(false);
     }

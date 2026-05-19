@@ -27,7 +27,7 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   if (isLoading) return <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
 
-  const role = user.role || (user.collectionName === '_superusers' ? 'admin' : 'singer');
+  const role = user.role || 'singer';
   if (adminOnly && role !== 'admin') return <Navigate to="/" replace />;
 
   return <>{children}</>;
@@ -35,7 +35,7 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
 
 function MainDashboard() {
   const { user } = useAuth();
-  const role = user?.role || (user?.collectionName === '_superusers' ? 'admin' : 'singer');
+  const role = user?.role || 'singer';
   return role === 'admin' ? <AdminDashboardView /> : <SingerDashboardView />;
 }
 

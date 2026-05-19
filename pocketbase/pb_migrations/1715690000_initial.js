@@ -678,7 +678,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select1466534506",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "role",
           "presentable": false,
           "required": true,
@@ -851,7 +851,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select1704890621",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "voicePart",
           "presentable": false,
           "required": false,
@@ -871,7 +871,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select2995910389",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "globalStatus",
           "presentable": false,
           "required": true,
@@ -996,7 +996,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select2363381545",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "type",
           "presentable": false,
           "required": true,
@@ -1123,7 +1123,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select2678443598",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "rsvp",
           "presentable": false,
           "required": true,
@@ -1138,7 +1138,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select1843596689",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "attendance",
           "presentable": false,
           "required": true,
@@ -1465,7 +1465,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select2188170148",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "voicePart",
           "presentable": false,
           "required": false,
@@ -1499,7 +1499,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select1704890621",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "status",
           "presentable": false,
           "required": true,
@@ -1699,7 +1699,7 @@ migrate((app) => {
         {
           "hidden": false,
           "id": "select1704890621",
-          "maxSelect": 0,
+          "maxSelect": 1,
           "name": "type",
           "presentable": false,
           "required": true,
