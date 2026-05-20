@@ -72,6 +72,13 @@ export const rosterService = {
     });
   },
 
+  async getSingerRosters(profileId: string) {
+    return await pb.collection('eventRosters').getFullList<EventRoster>({
+      filter: pb.filter('profile = {:profileId}', { profileId }),
+      expand: 'event,event.venue',
+    });
+  },
+
   async updateRSVP(eventId: string, profileId: string, rsvp: 'Yes' | 'No' | 'Pending') {
     // Find existing or create new
     try {

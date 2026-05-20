@@ -93,4 +93,35 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
   }
 });
 
+test('getSingerRosters retrieves rosters filtered by profile and with expected expands', async (t) => {
+  const originalCollection = pb.collection;
+  const getFullList = t.mock.fn(async (options: any) => {
+    return [
+      { id: 'roster_1', profile: 'profile_1', event: 'event_1', expand: { event: { id: 'event_1', title: 'Concert' } } }
+    ];
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'eventRosters') {
+      return { getFullList } as any;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const result = await rosterService.getSingerRosters('profile_1');
+
+    assert.equal(result.length, 1);
+    assert.equal(result[0].id, 'roster_1');
+    assert.equal(getFullList.mock.callCount(), 1);
+
+    const callArgs = getFullList.mock.calls[0].arguments[0];
+    assert.ok(callArgs.filter.includes('profile_1'));
+    assert.equal(callArgs.expand, 'event,event.venue');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+
 
