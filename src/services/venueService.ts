@@ -30,7 +30,7 @@ export const venueService = {
 
 export async function checkVenueDependencies(venueId: string): Promise<boolean> {
   const result = await pb.collection('events').getList(1, 1, {
-    filter: `venue="${venueId}"`,
+    filter: pb.filter('venue={:venueId}', { venueId }),
   });
   return result.totalItems > 0;
 }
