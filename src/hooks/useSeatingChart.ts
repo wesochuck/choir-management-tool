@@ -8,7 +8,9 @@ import {
   seatingContextKey,
   shouldApplySeatingResponse,
   type SeatingSyncContext,
+  filterProfilesByRsvpYes,
 } from '../lib/seatingSync';
+import { rosterService } from '../services/rosterService';
 
 interface SyncOptions {
   performanceId?: string;
@@ -217,13 +219,14 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     }
 
     try {
-      const [existingChart, profiles] = await Promise.all([
+      const [existingChart, profiles, roster] = await Promise.all([
         seatingService.getChartForPerformance(performanceId, venueId || null),
         profileService.getActiveProfiles(), // Filtered for Active (Current/Future)
+        rosterService.getEventRoster(performanceId),
       ]);
 
-      // Strictly filter for Active (Current) as per user request for seating chart
-      const activeCurrent = profiles.filter(p => p.globalStatus === 'Active (Current)');
+      // Strictly filter for Active (Current) and RSVP'd Yes as per user request for seating chart
+      const activeCurrent = filterProfilesByRsvpYes(profiles, roster);
       if (seatingContextId(currentContextRef.current) !== requestContextId) return;
 
       const mergedChart = !contextChanged && isDirtyRef.current && dirtyPayloadRef.current

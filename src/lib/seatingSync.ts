@@ -133,4 +133,29 @@ export function removeRowAndShiftAssignments(
   return { rowCounts: newRowCounts, assignments: newAssignments };
 }
 
+export interface RsvpRecord {
+  profile: string;
+  rsvp: string;
+}
+
+export interface ProfileWithStatus {
+  id: string;
+  globalStatus: string;
+}
+
+export function filterProfilesByRsvpYes<T extends ProfileWithStatus>(
+  profiles: T[],
+  roster: RsvpRecord[]
+): T[] {
+  const attendingProfileIds = new Set(
+    roster
+      .filter(r => r.rsvp === 'Yes')
+      .map(r => r.profile)
+  );
+  return profiles.filter(
+    p => p.globalStatus === 'Active (Current)' && attendingProfileIds.has(p.id)
+  );
+}
+
+
 
