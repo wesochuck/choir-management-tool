@@ -2,7 +2,7 @@
 [ ] make rsvp list in the events section actually do something.
 [x] Highlight Duplicates in music library should really be labeled, filter duplicates or show duplicates.
 [x] make a view that shows the photo as well for the roster management
-[ ] make it so you can quickly and easily add the photo in the roster using a cell phone.
+[x] make it so you can quickly and easily add the photo in the roster using a cell phone.
 [x] for venues make it clearer when they are linked to something and can't be deleted
 [x] make it possible to export roster into csv.
 [x] make it possible to export music library into csv.
