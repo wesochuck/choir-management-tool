@@ -54,6 +54,7 @@ export default function SetListView() {
   const [library, setLibrary] = useState<MusicPiece[]>([]);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
   const [isPromoting, setIsPromoting] = useState(false);
+  const [isHoveredVisibility, setIsHoveredVisibility] = useState(false);
   
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -369,7 +370,7 @@ export default function SetListView() {
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
               className="card"
-              style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)' }}
+              style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
             >
               <option value="">-- Choose Event --</option>
               {events.map(e => (
@@ -385,7 +386,7 @@ export default function SetListView() {
                   value=""
                   onChange={(e) => handleCopyFrom(e.target.value)}
                   className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)' }}
+                  style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
                 >
                   <option value="">-- Select Source --</option>
                   {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map(e => (
@@ -399,14 +400,20 @@ export default function SetListView() {
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
               <label className="text-label">Singer Visibility</label>
               <div 
-                className="card flex-row" 
+                onMouseEnter={() => setIsHoveredVisibility(true)}
+                onMouseLeave={() => setIsHoveredVisibility(false)}
                 style={{ 
+                  display: 'flex',
+                  flexDirection: 'row',
                   alignItems: 'center', 
                   gap: 'var(--space-md)', 
                   height: '48px', 
                   padding: '0 16px', 
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg-card)'
+                  border: isHoveredVisibility ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: isHoveredVisibility ? 'var(--primary-light)' : 'var(--surface)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
                 }}
               >
                 <label 
@@ -417,7 +424,7 @@ export default function SetListView() {
                     cursor: 'pointer', 
                     width: '100%',
                     fontWeight: 500,
-                    fontSize: '0.95rem'
+                    fontSize: 'var(--font-size-label)'
                   }}
                 >
                   <input
@@ -463,14 +470,17 @@ export default function SetListView() {
                 </button>
               ) : (
                 <div 
-                  className="card flex-row" 
                   style={{ 
+                    display: 'flex',
+                    flexDirection: 'row',
                     alignItems: 'center', 
                     height: '48px', 
                     padding: '0 12px', 
-                    fontSize: '0.85rem', 
+                    fontSize: 'var(--font-size-label)', 
                     color: 'var(--text-muted)',
-                    border: '1px solid var(--border)' 
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--surface)'
                   }}
                 >
                   No parent Performance linked
