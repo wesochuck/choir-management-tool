@@ -8,6 +8,7 @@ interface EventListProps {
   onTextReminder: (event: Event) => void;
   onViewRoster: (event: Event) => void;
   onCheckAttendance?: (event: Event) => void;
+  onViewSeating?: (event: Event) => void;
   openAuditionEventId?: string;
   sendingEmailEventId?: string | null;
 }
@@ -20,6 +21,7 @@ export const EventList: React.FC<EventListProps> = ({
   onTextReminder, 
   onViewRoster, 
   onCheckAttendance,
+  onViewSeating,
   openAuditionEventId,
   sendingEmailEventId
 }) => {
@@ -90,6 +92,18 @@ export const EventList: React.FC<EventListProps> = ({
                 title="Take attendance for this event"
               >
                 📋 Attendance
+              </button>
+            )}
+            {onViewSeating && e.type === 'Performance' && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onViewSeating(e);
+                }}
+                className="btn btn-secondary btn-sm"
+                title="Open seating chart for this performance"
+              >
+                🪑 Seating
               </button>
             )}
             <button 

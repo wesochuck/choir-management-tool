@@ -240,6 +240,7 @@ export default function EventsView() {
         onTextReminder={(event) => setReminderConfig({ event, type: 'SMS' })}
         onViewRoster={(event) => navigate(`/admin/events/${event.id}/roster`)}
         onCheckAttendance={(event) => navigate(`/admin/attendance?eventId=${event.id}`)}
+        onViewSeating={(event) => navigate(`/admin/seating?eventId=${event.id}`)}
         openAuditionEventId={auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined}
       />
 

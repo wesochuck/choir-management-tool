@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
@@ -11,13 +12,14 @@ import { seatingService, type SeatingChart } from '../../services/seatingService
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile } from '../../services/profileService';
-import { findNearestEvent } from '../../lib/eventUtils';
+import { resolveInitialEventId } from '../../lib/eventUtils';
 import './SeatingView.css';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
 export default function SeatingView() {
   const dialog = useDialog();
+  const [searchParams] = useSearchParams();
   const { performances } = useEvents();
   const { venues, editVenue } = useVenues();
   const hasDefaultedRef = useRef(false);
@@ -26,13 +28,14 @@ export default function SeatingView() {
 
   useEffect(() => {
     if (performances.length > 0 && !performanceId && !hasDefaultedRef.current) {
-      const nearest = findNearestEvent(performances);
-      if (nearest) {
-        setPerformanceId(nearest.id);
+      const urlEventId = searchParams.get('eventId');
+      const resolved = resolveInitialEventId(performances, urlEventId);
+      if (resolved) {
+        setPerformanceId(resolved);
         hasDefaultedRef.current = true;
       }
     }
-  }, [performances, performanceId]);
+  }, [performances, performanceId, searchParams]);
   const [venueId, setVenueId] = useState('');
   const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
