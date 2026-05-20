@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
@@ -8,6 +8,7 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
 import { getVoiceParts, settingsService } from '../../services/settingsService';
+import { getLastName } from '../../lib/stringUtils';
 
 
 export default function RosterView() {
@@ -18,6 +19,7 @@ export default function RosterView() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'lastName' | 'voicePart'>('lastName');
 
   const initialVoicePart = searchParams.get('voicePart') || '';
 
@@ -29,8 +31,13 @@ export default function RosterView() {
     });
 
     settingsService.getRosterSettings().then(settings => {
-      if (settings && settings.defaultStatus !== undefined) {
-        setFilter('status', settings.defaultStatus);
+      if (settings) {
+        if (settings.defaultStatus !== undefined) {
+          setFilter('status', settings.defaultStatus);
+        }
+        if (settings.defaultSort !== undefined) {
+          setSortBy(settings.defaultSort);
+        }
       }
     }).catch(err => {
       console.error('Failed to load roster settings:', err);
@@ -54,6 +61,26 @@ export default function RosterView() {
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isDropdownOpen]);
+
+  const sortedProfiles = useMemo(() => {
+    return [...profiles].sort((a, b) => {
+      if (sortBy === 'voicePart') {
+        const idxA = voiceParts.indexOf(a.voicePart);
+        const idxB = voiceParts.indexOf(b.voicePart);
+        const orderA = idxA === -1 ? 999 : idxA;
+        const orderB = idxB === -1 ? 999 : idxB;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+      }
+      
+      const lastA = getLastName(a.name);
+      const lastB = getLastName(b.name);
+      const cmp = lastA.localeCompare(lastB);
+      if (cmp !== 0) return cmp;
+      return a.name.localeCompare(b.name);
+    });
+  }, [profiles, sortBy, voiceParts]);
 
   const handleVoicePartToggle = (part: string) => {
     const active = filters.voiceParts || [];
@@ -367,6 +394,16 @@ export default function RosterView() {
           <option value="Inactive">Inactive</option>
         </select>
 
+        <select 
+          value={sortBy} 
+          onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+          className="card"
+          style={{ padding: '0 12px', height: '44px', width: '200px' }}
+        >
+          <option value="lastName">Last Name</option>
+          <option value="voicePart">Voice Part + Last Name</option>
+        </select>
+
         {(filters.name || (filters.voiceParts && filters.voiceParts.length > 0) || filters.status) && (
           <button 
             onClick={() => {
@@ -392,7 +429,7 @@ export default function RosterView() {
         )}
       </div>
 
-      <RosterTable profiles={profiles} onEdit={handleEdit} onPhotoChange={refresh} />
+      <RosterTable profiles={sortedProfiles} onEdit={handleEdit} onPhotoChange={refresh} />
 
       <SingerModal 
         isOpen={isModalOpen} 

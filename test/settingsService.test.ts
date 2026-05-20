@@ -168,3 +168,52 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
   }
 });
 
+test('getRosterSettings and saveRosterSettings processes roster settings fields', async (t) => {
+  const { settingsService } = await import('../src/services/settingsService.ts');
+  const originalCollection = pb.collection;
+  let savedPayload: any = null;
+
+  const mockGetFirstListItem = t.mock.fn(async () => {
+    return {
+      key: 'roster',
+      value: {
+        defaultStatus: 'Active (Current)',
+        defaultSort: 'voicePart'
+      }
+    };
+  });
+
+  const mockUpdate = t.mock.fn(async (id: string, data: any) => {
+    savedPayload = data;
+    return { id, ...data };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'appSettings') {
+      return {
+        getFirstListItem: mockGetFirstListItem,
+        update: mockUpdate
+      } as any;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const settings = await settingsService.getRosterSettings();
+    assert.equal(settings.defaultStatus, 'Active (Current)');
+    assert.equal(settings.defaultSort, 'voicePart');
+
+    const testPayload = {
+      defaultStatus: 'Inactive',
+      defaultSort: 'lastName' as const
+    };
+    
+    await settingsService.saveRosterSettings(testPayload);
+    assert.deepEqual(savedPayload.value.defaultStatus, 'Inactive');
+    assert.deepEqual(savedPayload.value.defaultSort, 'lastName');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+

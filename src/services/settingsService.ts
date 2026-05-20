@@ -35,6 +35,7 @@ export interface AttendanceSettings {
 
 export interface RosterSettings {
   defaultStatus: string;
+  defaultSort: 'lastName' | 'voicePart';
 }
 
 export interface CommunicationConfig {
@@ -122,6 +123,7 @@ export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = {
 
 export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultStatus: '',
+  defaultSort: 'lastName',
 };
 
 export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {

@@ -95,22 +95,40 @@ export default function SettingsView() {
       </AppCard>
 
       <AppCard title="Roster Settings">
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Default Status Filter</label>
-          <select
-            value={rosterSettings.defaultStatus}
-            onChange={(event) => setRosterSettings({ defaultStatus: event.target.value })}
-            className="card"
-            style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-          >
-            <option value="">All Statuses</option>
-            <option value="Active (Current)">Active (Current)</option>
-            <option value="Active (Future)">Active (Future)</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-          <p className="text-muted" style={{ margin: 0 }}>
-            Choose the default status filter used when opening the global roster.
-          </p>
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Default Status Filter</label>
+            <select
+              value={rosterSettings.defaultStatus}
+              onChange={(event) => setRosterSettings({ ...rosterSettings, defaultStatus: event.target.value })}
+              className="card"
+              style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <option value="">All Statuses</option>
+              <option value="Active (Current)">Active (Current)</option>
+              <option value="Active (Future)">Active (Future)</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <p className="text-muted" style={{ margin: 0 }}>
+              Choose the default status filter used when opening the global roster.
+            </p>
+          </div>
+
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Default Sorting Option</label>
+            <select
+              value={rosterSettings.defaultSort}
+              onChange={(event) => setRosterSettings({ ...rosterSettings, defaultSort: event.target.value as 'lastName' | 'voicePart' })}
+              className="card"
+              style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <option value="lastName">Last Name</option>
+              <option value="voicePart">Voice Part + Last Name</option>
+            </select>
+            <p className="text-muted" style={{ margin: 0 }}>
+              Choose the default sorting option used when opening the global roster.
+            </p>
+          </div>
         </div>
       </AppCard>
 
