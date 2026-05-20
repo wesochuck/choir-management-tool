@@ -161,6 +161,29 @@ cronAdd("post_event_report", "0 * * * *", () => {
                 $app.newMailClient().send(message);
             } catch (e) {}
         });
+
+        // Save to communication history
+        try {
+            const messageCollection = $app.findCollectionByNameOrId("messages");
+            const recipients = admins.map(admin => ({
+                id: admin.id,
+                name: admin.get("name") || admin.get("email") || "Admin",
+                email: admin.get("email"),
+                phone: "",
+                voicePart: "",
+                globalStatus: "Admin"
+            }));
+            const record = new Record(messageCollection, {
+                subject: subject,
+                content: body,
+                type: "Email",
+                recipients: recipients,
+                filters: { alreadySent: true, type: "Automated Report", eventId: event.id }
+            });
+            $app.save(record);
+        } catch (e) {
+            console.log("Failed to save post-event report message log: " + e);
+        }
     });
 });
 
@@ -251,6 +274,8 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
         } catch (e) {}
 
         const eventDateStr = new Date(event.get("date")).toLocaleString();
+        const sentRecipients = [];
+        let bodyHtmlGeneric = "";
 
         activeProfiles.forEach(profile => {
             const rsvp = rsvpMap[profile.id] || "Pending";
@@ -294,6 +319,19 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
                 .replace(/{rsvpLinks}/g, rsvpLinksText)
                 .replace(/\n/g, "<br>");
 
+            // Generate a generic body template for logging
+            if (!bodyHtmlGeneric) {
+                bodyHtmlGeneric = commSettings.reminderBodyTemplate
+                    .replace(/{singerName}/g, "Singer")
+                    .replace(/{eventTitle}/g, event.get("title"))
+                    .replace(/{eventType}/g, event.get("type"))
+                    .replace(/{eventDate}/g, eventDateStr)
+                    .replace(/{eventLocation}/g, venueName)
+                    .replace(/{eventDetails}/g, event.get("details") || "")
+                    .replace(/{rsvpLinks}/g, rsvpLinksText)
+                    .replace(/\n/g, "<br>");
+            }
+
             const finalBody = `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
                     ${bodyHtml}
@@ -318,8 +356,44 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
                 });
 
                 $app.newMailClient().send(message);
+
+                sentRecipients.push({
+                    id: profile.id,
+                    name: profile.get("name"),
+                    email: email,
+                    phone: profile.get("phone") || "",
+                    voicePart: profile.get("voicePart") || "",
+                    globalStatus: profile.get("globalStatus") || ""
+                });
             } catch (e) {}
         });
+
+        if (sentRecipients.length > 0) {
+            try {
+                const messageCollection = $app.findCollectionByNameOrId("messages");
+                const finalBodyGeneric = `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
+                        ${bodyHtmlGeneric}
+                        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
+                        <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+                            This is an automated reminder generated before the event.
+                            <br />
+                            Choir Management Tool
+                        </p>
+                    </div>
+                `;
+                const record = new Record(messageCollection, {
+                    subject: commSettings.reminderSubjectTemplate.replace(/{eventTitle}/g, event.get("title")),
+                    content: finalBodyGeneric,
+                    type: "Email",
+                    recipients: sentRecipients,
+                    filters: { alreadySent: true, type: "Automated Reminder", eventId: event.id }
+                });
+                $app.save(record);
+            } catch (e) {
+                console.log("Failed to save automated reminder message log: " + e);
+            }
+        }
     });
 });
 
@@ -328,6 +402,20 @@ onRecordAfterCreateSuccess((e) => {
     const record = e.record;
     const type = record.get("type");
     if (type !== "Email" && type !== "Both") {
+        return;
+    }
+
+    const filtersRaw = record.get("filters");
+    let filters = {};
+    if (typeof filtersRaw === 'string' && filtersRaw.trim() !== '') {
+        try {
+            filters = JSON.parse(filtersRaw);
+        } catch (err) {}
+    } else if (filtersRaw) {
+        filters = filtersRaw;
+    }
+
+    if (filters && filters.alreadySent === true) {
         return;
     }
 
