@@ -14,6 +14,8 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **Post-Commit Hook Failures:** An after-create/after-update hook can throw after the database write has committed, causing a client-visible HTTP 400 even though the record exists after refresh. On this symptom, inspect PocketHost logs for hook errors before changing frontend payloads, collection rules, or schema.
 *   **Defensive Advisory Hooks:** Any advisory hook must wrap the entire registered callback body in `try/catch`. Its logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
 *   **File URL Retrieval:** Always use `pb.files.getURL(...)` (all-uppercase `URL`) when generating file/photo URLs from PocketBase records. Never use `pb.files.getUrl(...)` as it is deprecated in the JS SDK.
+*   **Secure Filter Strings:** Always use `pb.filter(...)` to construct and parameterize any PocketBase filters containing dynamic values/variables (such as record IDs or user inputs). Never interpolate variables directly using string concatenation or template literals.
+
 
 ## Authentication & Session Management
 *   **Stale Token Resilience:** The frontend MUST handle 401 and 403 errors by automatically clearing the `pb.authStore` and redirecting to `/login`. This prevents the "stale token loop" caused by local database resets.

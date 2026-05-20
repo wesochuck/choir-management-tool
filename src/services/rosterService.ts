@@ -52,7 +52,7 @@ async function createAttendanceWithVerification(eventId: string, profileId: stri
   } catch (err) {
     if (isPostCommitPocketBaseError(err)) {
       const saved = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        `event = "${eventId}" && profile = "${profileId}"`
+        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
       ).catch(() => null);
       if (saved?.attendance === attendance) {
         return saved;
@@ -127,7 +127,7 @@ export const rosterService = {
 
   async bulkUpsertAttendance(eventId: string, updates: { profileId: string, attendance: AttendanceStatus }[]) {
     const existing = await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: `event = "${eventId}"`,
+      filter: pb.filter('event = {:eventId}', { eventId }),
     });
     const existingMap = new Map(existing.map(r => [r.profile, r]));
 

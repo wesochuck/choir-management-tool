@@ -81,7 +81,7 @@ export default function PublicRsvpView() {
         // 3. If Performance, fetch linked Rehearsals
         if (eventData.type === 'Performance') {
           const rehearsalList = await pb.collection('events').getFullList<EventDetails>({
-            filter: `parentPerformanceId = "${eventId}"`,
+            filter: pb.filter('parentPerformanceId = {:eventId}', { eventId }),
             sort: 'date',
             expand: 'venue'
           });
