@@ -15,6 +15,53 @@ export interface EventRoster extends RecordModel {
   };
 }
 
+type AttendanceStatus = EventRoster['attendance'];
+
+const isPostCommitPocketBaseError = (err: unknown) => {
+  return Boolean(
+    err &&
+      typeof err === 'object' &&
+      'status' in err &&
+      err.status === 400
+  );
+};
+
+async function updateAttendanceWithVerification(rosterId: string, attendance: AttendanceStatus) {
+  try {
+    return await pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance });
+  } catch (err) {
+    if (isPostCommitPocketBaseError(err)) {
+      const saved = await pb.collection('eventRosters').getOne<EventRoster>(rosterId).catch(() => null);
+      if (saved?.attendance === attendance) {
+        return saved;
+      }
+    }
+    throw err;
+  }
+}
+
+async function createAttendanceWithVerification(eventId: string, profileId: string, attendance: AttendanceStatus) {
+  try {
+    return await pb.collection('eventRosters').create<EventRoster>({
+      event: eventId,
+      profile: profileId,
+      rsvp: 'Pending',
+      attendance,
+      folderReturned: false,
+    });
+  } catch (err) {
+    if (isPostCommitPocketBaseError(err)) {
+      const saved = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
+        `event = "${eventId}" && profile = "${profileId}"`
+      ).catch(() => null);
+      if (saved?.attendance === attendance) {
+        return saved;
+      }
+    }
+    throw err;
+  }
+}
+
 export const rosterService = {
   async getMyRosters() {
     // Note: This assumes we have a way to find the profile for the current user.
@@ -53,25 +100,19 @@ export const rosterService = {
     });
   },
   
-  async updateAttendance(rosterId: string, attendance: 'Present' | 'Absent' | 'Pending') {
-    return await pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance });
+  async updateAttendance(rosterId: string, attendance: AttendanceStatus) {
+    return await updateAttendanceWithVerification(rosterId, attendance);
   },
 
-  async upsertAttendance(eventId: string, profileId: string, attendance: 'Present' | 'Absent' | 'Pending') {
+  async upsertAttendance(eventId: string, profileId: string, attendance: AttendanceStatus) {
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
         `event = "${eventId}" && profile = "${profileId}"`
       );
-      return await pb.collection('eventRosters').update<EventRoster>(existing.id, { attendance });
+      return await updateAttendanceWithVerification(existing.id, attendance);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
-        return await pb.collection('eventRosters').create<EventRoster>({
-          event: eventId,
-          profile: profileId,
-          rsvp: 'Pending',
-          attendance,
-          folderReturned: false,
-        });
+        return await createAttendanceWithVerification(eventId, profileId, attendance);
       }
       throw err;
     }
