@@ -24,3 +24,59 @@ export function findNearestEvent<T extends EventLike>(events: T[], relativeTo: D
 
   return nearest;
 }
+
+export interface SetListVisibilityResult {
+  showSetList: boolean;
+  setList?: any[];
+  headerLabel?: string;
+}
+
+export function getSetListVisibility(
+  event: any,
+  myRosters: Record<string, { rsvp: string }> = {},
+  allEvents: any[] = []
+): SetListVisibilityResult {
+  if (!event) return { showSetList: false };
+
+  const isPerformance = event.type === 'Performance';
+  const isRehearsal = event.type === 'Rehearsal';
+
+  if (isPerformance) {
+    if (event.setListApproved === false) {
+      return { showSetList: false };
+    }
+    const rsvp = myRosters?.[event.id]?.rsvp;
+    if (rsvp === 'Yes') {
+      return {
+        showSetList: true,
+        setList: event.setList || [],
+        headerLabel: 'Set List'
+      };
+    }
+    return { showSetList: false };
+  }
+
+  if (isRehearsal) {
+    const parentId = event.parentPerformanceId;
+    if (!parentId) return { showSetList: false };
+
+    const parentPerformance = allEvents.find(e => e.id === parentId) || event.expand?.parentPerformanceId;
+    if (!parentPerformance) return { showSetList: false };
+
+    if (parentPerformance.setListApproved === false) {
+      return { showSetList: false };
+    }
+
+    const parentRsvp = myRosters?.[parentId]?.rsvp;
+    if (parentRsvp === 'Yes') {
+      return {
+        showSetList: true,
+        setList: parentPerformance.setList || [],
+        headerLabel: `Set List for ${parentPerformance.title || 'Concert'}`
+      };
+    }
+  }
+
+  return { showSetList: false };
+}
+

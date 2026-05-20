@@ -2,17 +2,26 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
+import { getSetListVisibility } from '../../lib/eventUtils';
+import { AppCard } from '../common/AppCard';
 
 interface EventCardProps {
   event: Event;
   rsvp?: 'Yes' | 'No' | 'Pending';
   onRSVP: (rsvp: 'Yes' | 'No') => Promise<void>;
+  allEvents?: any[];
+  myRosters?: Record<string, any>;
 }
 
-import { AppCard } from '../common/AppCard';
-
-export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', onRSVP }) => {
+export const EventCard: React.FC<EventCardProps> = ({ 
+  event, 
+  rsvp = 'Pending', 
+  onRSVP,
+  allEvents = [],
+  myRosters = {}
+}) => {
   const isPerformance = event.type === 'Performance';
+  const { showSetList, setList, headerLabel } = getSetListVisibility(event, myRosters, allEvents);
 
   return (
     <AppCard noPadding>
@@ -46,11 +55,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, rsvp = 'Pending', o
           </div>
           {event.details && <p className="text-muted text-sm">{event.details}</p>}
           
-          {event.setList && event.setList.length > 0 && (
+          {showSetList && setList && setList.length > 0 && (
             <div className="flex-col" style={{ marginTop: 'var(--space-sm)', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
-              <div className="text-label" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '4px', marginBottom: '8px' }}>Set List</div>
+              <div className="text-label" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '4px', marginBottom: '8px' }}>{headerLabel || 'Set List'}</div>
               <ol style={{ margin: 0, paddingLeft: 'var(--space-lg)', gap: '6px', display: 'flex', flexDirection: 'column' }}>
-                {event.setList.map(item => {
+                {setList.map(item => {
                   const isIntermission = item.type === 'intermission';
                   if (isIntermission) {
                     return (

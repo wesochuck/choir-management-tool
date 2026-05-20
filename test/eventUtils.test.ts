@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findNearestEvent } from '../src/lib/eventUtils.ts';
+import { findNearestEvent, getSetListVisibility } from '../src/lib/eventUtils.ts';
 
 test('findNearestEvent returns null when events is empty', () => {
   const result = findNearestEvent([]);
@@ -45,3 +45,123 @@ test('findNearestEvent returns the closest past event if it is closer than futur
   const result = findNearestEvent(events, new Date('2026-05-20T12:00:00Z'));
   assert.equal(result?.id, 'past_close');
 });
+
+test('getSetListVisibility: Performance (Concert) with RSVP Yes and setListApproved = true displays set list', () => {
+  const concert = {
+    id: 'c1',
+    type: 'Performance',
+    setListApproved: true,
+    setList: [{ id: 's1', title: 'Song 1' }]
+  };
+  const myRosters = {
+    c1: { rsvp: 'Yes' }
+  };
+  
+  const result = getSetListVisibility(concert, myRosters, [concert]);
+  assert.deepEqual(result, {
+    showSetList: true,
+    setList: [{ id: 's1', title: 'Song 1' }],
+    headerLabel: 'Set List'
+  });
+});
+
+test('getSetListVisibility: Performance (Concert) with RSVP Yes and setListApproved = false hides set list', () => {
+  const concert = {
+    id: 'c1',
+    type: 'Performance',
+    setListApproved: false,
+    setList: [{ id: 's1', title: 'Song 1' }]
+  };
+  const myRosters = {
+    c1: { rsvp: 'Yes' }
+  };
+  
+  const result = getSetListVisibility(concert, myRosters, [concert]);
+  assert.deepEqual(result, {
+    showSetList: false
+  });
+});
+
+test('getSetListVisibility: Performance (Concert) with RSVP No/Pending and setListApproved = true hides set list', () => {
+  const concert = {
+    id: 'c1',
+    type: 'Performance',
+    setListApproved: true,
+    setList: [{ id: 's1', title: 'Song 1' }]
+  };
+  
+  assert.deepEqual(getSetListVisibility(concert, { c1: { rsvp: 'No' } }, [concert]), { showSetList: false });
+  assert.deepEqual(getSetListVisibility(concert, { c1: { rsvp: 'Pending' } }, [concert]), { showSetList: false });
+  assert.deepEqual(getSetListVisibility(concert, {}, [concert]), { showSetList: false });
+});
+
+test('getSetListVisibility: Rehearsal linked to parent with RSVP Yes and setListApproved = true inherits parent set list', () => {
+  const concert = {
+    id: 'c1',
+    title: 'Spring Concert',
+    type: 'Performance',
+    setListApproved: true,
+    setList: [{ id: 's1', title: 'Song 1' }]
+  };
+  const rehearsal = {
+    id: 'r1',
+    type: 'Rehearsal',
+    parentPerformanceId: 'c1',
+    expand: { parentPerformanceId: concert }
+  };
+  const myRosters = {
+    c1: { rsvp: 'Yes' }
+  };
+
+  const result = getSetListVisibility(rehearsal, myRosters, [concert, rehearsal]);
+  assert.deepEqual(result, {
+    showSetList: true,
+    setList: [{ id: 's1', title: 'Song 1' }],
+    headerLabel: 'Set List for Spring Concert'
+  });
+});
+
+test('getSetListVisibility: Rehearsal linked to parent with RSVP Yes and setListApproved = false hides set list', () => {
+  const concert = {
+    id: 'c1',
+    title: 'Spring Concert',
+    type: 'Performance',
+    setListApproved: false,
+    setList: [{ id: 's1', title: 'Song 1' }]
+  };
+  const rehearsal = {
+    id: 'r1',
+    type: 'Rehearsal',
+    parentPerformanceId: 'c1',
+    expand: { parentPerformanceId: concert }
+  };
+  const myRosters = {
+    c1: { rsvp: 'Yes' }
+  };
+
+  const result = getSetListVisibility(rehearsal, myRosters, [concert, rehearsal]);
+  assert.deepEqual(result, {
+    showSetList: false
+  });
+});
+
+test('getSetListVisibility: Rehearsal linked to parent with RSVP No/Pending hides set list', () => {
+  const concert = {
+    id: 'c1',
+    title: 'Spring Concert',
+    type: 'Performance',
+    setListApproved: true,
+    setList: [{ id: 's1', title: 'Song 1' }]
+  };
+  const rehearsal = {
+    id: 'r1',
+    type: 'Rehearsal',
+    parentPerformanceId: 'c1',
+    expand: { parentPerformanceId: concert }
+  };
+
+  assert.deepEqual(getSetListVisibility(rehearsal, { c1: { rsvp: 'No' } }, [concert, rehearsal]), { showSetList: false });
+  assert.deepEqual(getSetListVisibility(rehearsal, { c1: { rsvp: 'Pending' } }, [concert, rehearsal]), { showSetList: false });
+  assert.deepEqual(getSetListVisibility(rehearsal, {}, [concert, rehearsal]), { showSetList: false });
+});
+

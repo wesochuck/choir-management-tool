@@ -25,6 +25,8 @@ export default function DashboardView() {
             event={e} 
             rsvp={myRosters[e.id]?.rsvp} 
             onRSVP={(rsvp) => updateRSVP(e.id, rsvp)} 
+            allEvents={events}
+            myRosters={myRosters}
           />
         ))}
 

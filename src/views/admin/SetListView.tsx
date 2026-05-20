@@ -18,6 +18,29 @@ export default function SetListView() {
   
   const [selectedEventId, setSelectedEventId] = useState('');
 
+  const selectedEvent = useMemo(() => {
+    return events.find(e => e.id === selectedEventId);
+  }, [events, selectedEventId]);
+
+  const parentPerformance = useMemo(() => {
+    if (!selectedEvent || selectedEvent.type !== 'Rehearsal') return null;
+    const parentId = selectedEvent.parentPerformanceId;
+    return events.find(e => e.id === parentId) || selectedEvent.expand?.parentPerformanceId;
+  }, [selectedEvent, events]);
+
+  const handleToggleApproved = async (checked: boolean) => {
+    if (!selectedEventId) return;
+    setSaveStatus('saving');
+    try {
+      await eventService.updateEvent(selectedEventId, { setListApproved: checked });
+      await refresh();
+      setSaveStatus('saved');
+    } catch (error) {
+      console.error('Failed to update set list approval status:', error);
+      setSaveStatus('error');
+    }
+  };
+
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
       const nearest = findNearestEvent(events);
@@ -371,10 +394,127 @@ export default function SetListView() {
                 </select>
             </div>
           )}
+
+          {selectedEvent && selectedEvent.type === 'Performance' && (
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Singer Visibility</label>
+              <div 
+                className="card flex-row" 
+                style={{ 
+                  alignItems: 'center', 
+                  gap: 'var(--space-md)', 
+                  height: '48px', 
+                  padding: '0 16px', 
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-card)'
+                }}
+              >
+                <label 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '10px', 
+                    cursor: 'pointer', 
+                    width: '100%',
+                    fontWeight: 500,
+                    fontSize: '0.95rem'
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedEvent.setListApproved !== false}
+                    onChange={(e) => handleToggleApproved(e.target.checked)}
+                    style={{ 
+                      width: '18px', 
+                      height: '18px', 
+                      accentColor: 'var(--primary)', 
+                      cursor: 'pointer' 
+                    }}
+                  />
+                  <span>Approved for Singers</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {selectedEvent && selectedEvent.type === 'Rehearsal' && (
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Parent Set List</label>
+              {parentPerformance ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSelectedEventId(parentPerformance.id)}
+                  style={{
+                    height: '48px',
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    backgroundColor: 'rgba(74, 124, 89, 0.08)',
+                    color: 'var(--primary-deep)',
+                    border: '1px solid rgba(74, 124, 89, 0.2)'
+                  }}
+                >
+                  🔗 Go to parent: {parentPerformance.title || 'Concert'}
+                </button>
+              ) : (
+                <div 
+                  className="card flex-row" 
+                  style={{ 
+                    alignItems: 'center', 
+                    height: '48px', 
+                    padding: '0 12px', 
+                    fontSize: '0.85rem', 
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border)' 
+                  }}
+                >
+                  No parent Performance linked
+                </div>
+              )}
+            </div>
+          )}
       </div>
 
       {selectedEventId ? (
-        <div className="flex-responsive" style={{ alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
+        <div className="flex-col" style={{ gap: 'var(--space-lg)', width: '100%' }}>
+          {selectedEvent?.type === 'Rehearsal' && (
+            <div 
+              style={{
+                backgroundColor: 'rgba(74, 124, 89, 0.05)',
+                borderLeft: '4px solid var(--primary)',
+                padding: 'var(--space-md)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.9rem',
+                color: 'var(--text-main)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 'var(--space-md)',
+                flexWrap: 'wrap'
+              }}
+            >
+              <div>
+                <strong>⚠️ Rehearsal Mode:</strong> This rehearsal inherits its set list and singer visibility from the parent Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct edits here will not be visible on the Singer Dashboard.
+              </div>
+              {parentPerformance && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setSelectedEventId(parentPerformance.id)}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Manage Parent Set List
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className="flex-responsive" style={{ alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
           
           <AppCard title="Current Set List" style={{ flex: 2 }}>
             <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
@@ -582,6 +722,7 @@ export default function SetListView() {
           </AppCard>
 
         </div>
+      </div>
       ) : (
         <AppCard style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
           <p className="text-muted">Select an event above to manage its set list.</p>

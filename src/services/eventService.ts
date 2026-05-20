@@ -20,6 +20,7 @@ export interface Event extends RecordModel {
   parentPerformanceId: string;
   venue?: string;
   isOpenForRSVP?: boolean;
+  setListApproved?: boolean;
   setList?: SetListItem[];
   expand?: {
     venue?: Venue;
@@ -58,7 +59,10 @@ export const eventService = {
 
   async createEvent(data: Partial<Event>) {
     // Ensure date is in a format PocketBase likes (ISO string)
-    const payload = { ...data };
+    const payload = { 
+      setListApproved: true,
+      ...data 
+    };
     if (payload.date) {
       payload.date = new Date(payload.date).toISOString();
     }
