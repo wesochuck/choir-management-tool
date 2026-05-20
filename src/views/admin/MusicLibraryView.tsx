@@ -5,7 +5,8 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { settingsService } from '../../services/settingsService';
+import { settingsService, getVoiceParts, type VoicePartDef } from '../../services/settingsService';
+import { pb } from '../../lib/pocketbase';
 import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
@@ -16,9 +17,29 @@ export default function MusicLibraryView() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
+
+  // Audio player state
+  const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
+  const [activeAudioTitle, setActiveAudioTitle] = useState<string>('');
+  const [activeAudioPart, setActiveAudioPart] = useState<string>('');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handlePlayDefaultTrack = (piece: MusicPiece) => {
+    if (!piece.audioTrackMapping) return;
+    const parts = Object.keys(piece.audioTrackMapping).filter(k => piece.audioTrackMapping?.[k]);
+    if (parts.length === 0) return;
+    
+    // Prefer tutti, then first available
+    const chosenPart = parts.includes('tutti') ? 'tutti' : parts[0];
+    const filename = piece.audioTrackMapping[chosenPart];
+    if (filename) {
+        setActiveAudioUrl(pb.files.getUrl(piece, filename));
+        setActiveAudioTitle(piece.title);
+        setActiveAudioPart(chosenPart === 'tutti' ? 'Tutti' : chosenPart);
+    }
+  };
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingPiece, setEditingPiece] = useState<MusicPiece | null>(null);
   
@@ -248,6 +269,7 @@ export default function MusicLibraryView() {
                 <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Duration</th>
                 <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Copies</th>
                 <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Catalog ID</th>
+                <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Tracks</th>
                 <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
                 </tr>
             </thead>
@@ -310,6 +332,31 @@ export default function MusicLibraryView() {
                             ) : '-'}
                         </td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
+                            {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePlayDefaultTrack(piece);
+                                    }}
+                                    style={{ 
+                                        padding: '2px 8px', 
+                                        height: '24px', 
+                                        minHeight: '24px', 
+                                        fontSize: '11px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        margin: 0
+                                    }}
+                                >
+                                    🎵 Play
+                                </button>
+                            ) : (
+                                <span className="text-xs text-muted">-</span>
+                            )}
+                        </td>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
                             <div className="flex-row" style={{ gap: 'var(--space-xs)', justifyContent: 'center' }}>
                             <button 
                                 className="btn btn-ghost btn-sm" 
@@ -336,6 +383,7 @@ export default function MusicLibraryView() {
         onSave={handleSavePiece}
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
+        onRefresh={loadData}
       />
 
       <MusicImportModal
@@ -343,18 +391,76 @@ export default function MusicLibraryView() {
         onClose={() => setIsImportModalOpen(false)}
         onSuccess={loadData}
       />
+
+      {activeAudioUrl && (
+        <div style={{
+            position: 'fixed',
+            bottom: 'var(--space-md)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90%',
+            maxWidth: '500px',
+            backgroundColor: 'rgba(27, 77, 62, 0.95)',
+            color: '#ffffff',
+            padding: '12px 18px',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--space-md)'
+        }}>
+            <div className="flex-col" style={{ minWidth: '0', flex: 1, gap: '2px' }}>
+                <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Playing Learning Track ({activeAudioPart})
+                </span>
+                <strong style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#ffffff', display: 'block' }}>
+                    {activeAudioTitle}
+                </strong>
+            </div>
+            
+            <audio 
+                src={activeAudioUrl} 
+                controls 
+                autoPlay
+                style={{ height: '30px', maxWidth: '170px' }} 
+            />
+            
+            <button 
+                type="button" 
+                onClick={() => setActiveAudioUrl(null)}
+                style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    padding: '4px',
+                    lineHeight: 1,
+                    margin: 0
+                }}
+                title="Close Player"
+            >
+                ×
+            </button>
+        </div>
+      )}
     </div>
   );
 }
 
 // Inline modal component for editing a single piece
-function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLookupTemplate }: { 
+function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLookupTemplate, onRefresh }: { 
     isOpen: boolean, 
     piece: MusicPiece | null, 
     onClose: () => void, 
     onSave: (data: Partial<MusicPieceInput>) => Promise<void>,
     onDelete?: () => Promise<void>,
-    catalogLookupTemplate?: string
+    catalogLookupTemplate?: string,
+    onRefresh?: () => Promise<void>
 }) {
     const dialog = useDialog();
     const [title, setTitle] = useState('');
@@ -365,6 +471,11 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Audio & Voice Parts state
+    const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
+    const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+    const [uploadingParts, setUploadingParts] = useState<Record<string, boolean>>({});
 
     // Performance states
     const [allPerformances, setAllPerformances] = useState<Event[]>([]);
@@ -386,10 +497,14 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
 
             // Load venues for quick add
             venueService.getVenues().then(setVenues).catch(console.error);
+
+            // Load voice parts
+            getVoiceParts().then(setVoiceParts).catch(console.error);
         }
     }, [isOpen]);
 
     useEffect(() => {
+        setLocalPiece(piece);
         if (piece) {
             setTitle(piece.title);
             setComposer(piece.composer || '');
@@ -412,6 +527,101 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         setQuickDate('');
         setQuickVenue('');
     }, [piece, isOpen]);
+
+    const handleFileUpload = async (voicePart: string, file: File) => {
+        if (!localPiece) return;
+        
+        setUploadingParts(prev => ({ ...prev, [voicePart]: true }));
+        try {
+            const existingFilename = localPiece.audioTrackMapping?.[voicePart];
+            let currentFiles = localPiece.audioFiles || [];
+            let currentMapping = { ...(localPiece.audioTrackMapping || {}) };
+            
+            if (existingFilename) {
+                currentFiles = currentFiles.filter(f => f !== existingFilename);
+                delete currentMapping[voicePart];
+            }
+            
+            const formData = new FormData();
+            currentFiles.forEach(f => {
+                formData.append('audioFiles', f);
+            });
+            formData.append('audioFiles', file);
+            
+            const updatedPiece = await musicLibraryService.updatePiece(localPiece.id, formData);
+            
+            const oldFiles = localPiece.audioFiles || [];
+            const newFiles = updatedPiece.audioFiles || [];
+            const addedFilename = newFiles.find(f => !oldFiles.includes(f));
+            
+            if (addedFilename) {
+                currentMapping[voicePart] = addedFilename;
+                const finalPiece = await musicLibraryService.updatePiece(localPiece.id, {
+                    audioTrackMapping: currentMapping
+                });
+                
+                setLocalPiece(finalPiece);
+                if (onRefresh) {
+                    await onRefresh();
+                }
+            } else {
+                throw new Error('Upload succeeded but no new filename returned.');
+            }
+        } catch (err) {
+            console.error(err);
+            dialog.showMessage({
+                title: 'Upload Failed',
+                message: 'Failed to upload the audio track. Ensure the file is under 20MB and is a valid audio format.',
+                variant: 'danger'
+            });
+        } finally {
+            setUploadingParts(prev => ({ ...prev, [voicePart]: false }));
+        }
+    };
+
+    const handleFileDelete = async (voicePart: string) => {
+        if (!localPiece) return;
+        
+        const filename = localPiece.audioTrackMapping?.[voicePart];
+        if (!filename) return;
+        
+        const confirmed = await dialog.confirm({
+            title: 'Delete Learning Track',
+            message: `Are you sure you want to delete the track for ${voicePart === 'tutti' ? 'Tutti' : voicePart}?`,
+            variant: 'danger',
+            confirmLabel: 'Delete'
+        });
+        if (!confirmed) return;
+        
+        try {
+            const filesToKeep = (localPiece.audioFiles || []).filter(f => f !== filename);
+            const newMapping = { ...(localPiece.audioTrackMapping || {}) };
+            delete newMapping[voicePart];
+            
+            const updatedPiece = await musicLibraryService.updatePiece(localPiece.id, {
+                audioFiles: filesToKeep,
+                audioTrackMapping: newMapping
+            });
+            
+            setLocalPiece(updatedPiece);
+            if (onRefresh) {
+                await onRefresh();
+            }
+            
+            dialog.showMessage({
+                title: 'Success',
+                message: 'Audio track deleted successfully.',
+                variant: 'info'
+            });
+        } catch (err) {
+            console.error(err);
+            dialog.showMessage({
+                title: 'Error',
+                message: 'Failed to delete the audio track.',
+                variant: 'danger'
+            });
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -521,20 +731,32 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                         <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
                     </div>
                     <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                            <label className="text-label" style={{ margin: 0 }}>Catalog ID</label>
-                            {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
-                                <a 
-                                    href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ fontSize: '0.75rem', color: 'var(--color-primary, #1b4d3e)', textDecoration: 'underline' }}
-                                >
-                                    Lookup ↗
-                                </a>
-                            )}
-                        </div>
+                        <label className="text-label">Catalog ID</label>
                         <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                        {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
+                            <a 
+                                href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary"
+                                style={{ 
+                                    alignSelf: 'flex-start',
+                                    borderRadius: '16px',
+                                    fontSize: '0.75rem',
+                                    padding: '4px 12px',
+                                    height: '24px',
+                                    minHeight: '24px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    textDecoration: 'none',
+                                    marginTop: '2px',
+                                    lineHeight: 1
+                                }}
+                            >
+                                Lookup ↗
+                            </a>
+                        )}
                     </div>
                 </div>
                 
@@ -645,6 +867,119 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                         </div>
                     </div>
                 )}
+
+                {/* Reference & Learning Tracks Card */}
+                <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+                    <label className="text-label">🎵 Reference & Learning Tracks</label>
+                    {!localPiece ? (
+                        <div className="flex-row" style={{
+                            alignItems: 'center',
+                            gap: 'var(--space-sm)',
+                            padding: 'var(--space-md)',
+                            backgroundColor: 'rgba(74, 124, 89, 0.03)',
+                            border: '1px dashed var(--border)',
+                            borderRadius: 'var(--radius)',
+                            color: 'var(--text-muted)',
+                            fontSize: '14px',
+                            justifyContent: 'center'
+                        }}>
+                            <span>Please save this piece first to enable learning track uploads.</span>
+                        </div>
+                    ) : (
+                        <div className="flex-col" style={{ 
+                            gap: 'var(--space-xs)', 
+                            border: '1px solid var(--border)', 
+                            borderRadius: 'var(--radius)',
+                            padding: 'var(--space-sm)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.02)'
+                        }}>
+                            {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
+                                const filename = localPiece.audioTrackMapping?.[partLabel];
+                                const isUploading = uploadingParts[partLabel];
+                                return (
+                                    <div key={partLabel} className="flex-row" style={{
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 12px',
+                                        backgroundColor: 'var(--bg-card-hover)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 'var(--radius)',
+                                        gap: 'var(--space-md)'
+                                    }}>
+                                        <div className="flex-col" style={{ minWidth: '90px' }}>
+                                            <strong style={{ fontSize: '13px', color: 'var(--text-color)' }}>
+                                                {partLabel === 'tutti' ? 'Tutti (Full)' : partLabel}
+                                            </strong>
+                                            <span className="text-xs text-muted" style={{ fontSize: '11px' }}>
+                                                {partLabel === 'tutti' ? 'Full Mix' : (voiceParts.find(vp => vp.label === partLabel)?.fullName || '')}
+                                            </span>
+                                        </div>
+                                        
+                                        {isUploading ? (
+                                            <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
+                                        ) : filename ? (
+                                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
+                                                <audio 
+                                                    src={pb.files.getUrl(localPiece, filename)} 
+                                                    controls 
+                                                    style={{ height: '28px', maxWidth: '220px', flex: 1 }} 
+                                                />
+                                                <button 
+                                                    type="button" 
+                                                    className="btn btn-ghost btn-sm" 
+                                                    onClick={() => handleFileDelete(partLabel)}
+                                                    style={{ 
+                                                        color: 'var(--danger)', 
+                                                        border: 'none', 
+                                                        background: 'none', 
+                                                        cursor: 'pointer',
+                                                        padding: '4px 6px',
+                                                        minHeight: 'auto',
+                                                        height: 'auto',
+                                                        margin: 0
+                                                    }}
+                                                    title="Delete track"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
+                                                <label 
+                                                    className="btn btn-secondary btn-sm" 
+                                                    style={{ 
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        fontSize: '11px',
+                                                        padding: '2px 8px',
+                                                        height: '24px',
+                                                        minHeight: '24px',
+                                                        margin: 0
+                                                    }}
+                                                >
+                                                    📤 Upload
+                                                    <input 
+                                                        type="file" 
+                                                        accept="audio/*" 
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                handleFileUpload(partLabel, file);
+                                                            }
+                                                        }}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                     <label className="text-label">Notes</label>

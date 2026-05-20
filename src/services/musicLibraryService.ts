@@ -9,6 +9,8 @@ export interface MusicPiece extends RecordModel {
   duration?: string;
   performances?: string[];
   notes?: string;
+  audioFiles?: string[];
+  audioTrackMapping?: Record<string, string>;
 }
 
 export type MusicPieceInput = Omit<MusicPiece, 'id' | 'created' | 'updated' | 'collectionId' | 'collectionName'>;
@@ -21,12 +23,12 @@ export const musicLibraryService = {
     });
   },
 
-  async createPiece(data: Partial<MusicPieceInput>) {
-    return await pb.collection('musicLibrary').create<MusicPiece>(data);
+  async createPiece(data: Partial<MusicPieceInput> | FormData) {
+    return await pb.collection('musicLibrary').create<MusicPiece>(data as any);
   },
 
-  async updatePiece(id: string, data: Partial<MusicPieceInput>) {
-    return await pb.collection('musicLibrary').update<MusicPiece>(id, data);
+  async updatePiece(id: string, data: Partial<MusicPieceInput> | FormData) {
+    return await pb.collection('musicLibrary').update<MusicPiece>(id, data as any);
   },
 
   async deletePiece(id: string) {

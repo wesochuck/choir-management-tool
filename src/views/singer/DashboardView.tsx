@@ -5,7 +5,7 @@ import { PageLayout } from '../../components/common/PageLayout';
 import { Link } from 'react-router-dom';
 
 export default function DashboardView() {
-  const { events, myRosters, isLoading, error, updateRSVP } = useMyEvents();
+  const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
 
   if (isLoading && events.length === 0) return <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading your events...</div>;
   if (error) return <div className="container" style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
@@ -33,6 +33,7 @@ export default function DashboardView() {
             onRSVP={(rsvp) => updateRSVP(e.id, rsvp)} 
             allEvents={events}
             myRosters={myRosters}
+            voicePart={myProfile?.voicePart}
           />
         ))}
 

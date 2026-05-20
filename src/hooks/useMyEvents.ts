@@ -51,6 +51,7 @@ export const useMyEvents = () => {
   return {
     events,
     myRosters,
+    myProfile,
     isLoading,
     error,
     updateRSVP,

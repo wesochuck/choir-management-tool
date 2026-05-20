@@ -15,3 +15,7 @@ A real-time breakdown of RSVP statuses grouped by voice parts. This allows direc
 ## Catalog Lookup URL Template
 A configurable URL format defined in settings that enables automatic linking of music piece Catalog IDs to external publisher/sheet music databases (e.g. J.W. Pepper). The placeholder `{catalogId}` is replaced dynamically with the piece's specific catalog number to build the hyperlink.
 
+## Reference Recording
+An audio track (typically MP3) attached to a piece in the Music Library. Used by administrators for archive management and made available to singers for practice and learning when the piece is included in their set list.
+
+

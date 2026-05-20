@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { exportMusicToCSV, findDuplicates, appendPieceToSetList, resolveCatalogLookupUrl } from '../src/lib/musicPieceUtils.ts';
+import { exportMusicToCSV, findDuplicates, appendPieceToSetList, resolveCatalogLookupUrl, resolveRecommendedTracks } from '../src/lib/musicPieceUtils.ts';
 
 test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
   const pieces = [{ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }];
@@ -85,6 +85,42 @@ test('resolveCatalogLookupUrl returns null if inputs are empty or missing', () =
   assert.equal(resolveCatalogLookupUrl(template, undefined), null);
   assert.equal(resolveCatalogLookupUrl('', '123'), null);
   assert.equal(resolveCatalogLookupUrl(template, '   '), null);
+});
+
+test('resolveRecommendedTracks resolves exact, prefix, fallback and Tutti tracks correctly', () => {
+  // Empty mapping handles safely
+  assert.deepEqual(resolveRecommendedTracks('S1', undefined), []);
+  assert.deepEqual(resolveRecommendedTracks('S1', {}), []);
+
+  const mapping = {
+    tutti: 'tutti.mp3',
+    S: 'soprano.mp3',
+    S1: 'soprano1.mp3',
+    A1: 'alto1.mp3',
+    B: 'bass.mp3'
+  };
+
+  // 1. Direct exact match
+  assert.deepEqual(resolveRecommendedTracks('S1', mapping), ['S1', 'tutti']);
+  assert.deepEqual(resolveRecommendedTracks('A1', mapping), ['A1', 'tutti']);
+
+  // 2. Broad section prefix match (e.g. S2 -> matches base S)
+  assert.deepEqual(resolveRecommendedTracks('S2', mapping), ['S', 'tutti']);
+
+  // 3. Subpart fallback: e.g. B2 has no exact or general B, falls back to S1 or other non-tutti starting with base (if present)
+  // Wait, let's test B2. It should match base "B", which is present in mapping.
+  assert.deepEqual(resolveRecommendedTracks('B2', mapping), ['B', 'tutti']);
+
+  // If base prefix is S (e.g. S3) and mapping has no S but has S1
+  const s3Mapping = {
+    tutti: 'tutti.mp3',
+    S1: 'soprano1.mp3'
+  };
+  assert.deepEqual(resolveRecommendedTracks('S3', s3Mapping), ['S1', 'tutti']);
+
+  // If no prefix matches at all, only Tutti is returned
+  assert.deepEqual(resolveRecommendedTracks('Tenor', mapping), ['tutti']);
+  assert.deepEqual(resolveRecommendedTracks(undefined, mapping), ['tutti']);
 });
 
 

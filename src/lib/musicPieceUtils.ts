@@ -279,6 +279,52 @@ export function resolveCatalogLookupUrl(
   return trimmedTemplate.replace(/{catalogId}/g, encodeURIComponent(trimmedId));
 }
 
+/**
+ * Resolves recommended audio tracks for a given voice part key from the tracks mapping.
+ * @param voicePart The singer's voice part (e.g. "S1", "S2", "A1", "Bass").
+ * @param mapping The track mapping object (e.g. {"tutti": "...", "S1": "...", "S": "..."}).
+ * @returns An array of matching keys in order of preference.
+ */
+export function resolveRecommendedTracks(
+  voicePart: string | undefined,
+  mapping: Record<string, string> | undefined
+): string[] {
+  if (!mapping) return [];
+  const activeKeys = Object.keys(mapping).filter(k => mapping[k] && mapping[k].trim() !== '');
+  if (activeKeys.length === 0) return [];
+
+  const recommendedSet = new Set<string>();
+  const normalizedPart = voicePart ? voicePart.trim() : '';
+
+  if (normalizedPart) {
+    // 1. Direct exact match
+    if (activeKeys.includes(normalizedPart)) {
+      recommendedSet.add(normalizedPart);
+    } else {
+      // 2. Broad section prefix match (e.g. "S1" -> extract "S", check "S")
+      const baseSection = normalizedPart.replace(/\d+/g, '').trim();
+      if (baseSection && baseSection !== normalizedPart && activeKeys.includes(baseSection)) {
+        recommendedSet.add(baseSection);
+      }
+
+      // 3. Cross-subpart fallback: if "S2" but only "S1" exists
+      if (recommendedSet.size === 0 && baseSection) {
+        const related = activeKeys.find(k => k.startsWith(baseSection) && k !== 'tutti');
+        if (related) {
+          recommendedSet.add(related);
+        }
+      }
+    }
+  }
+
+  // 4. Always add Tutti (Full Mix) as fallback option if available
+  if (activeKeys.includes('tutti')) {
+    recommendedSet.add('tutti');
+  }
+
+  return Array.from(recommendedSet);
+}
+
 
 
 

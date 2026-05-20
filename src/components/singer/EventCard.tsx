@@ -4,6 +4,9 @@ import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
 import { getSetListVisibility } from '../../lib/eventUtils';
 import { AppCard } from '../common/AppCard';
+import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
+import { resolveRecommendedTracks } from '../../lib/musicPieceUtils';
+import { pb } from '../../lib/pocketbase';
 
 interface EventCardProps {
   event: Event;
@@ -11,6 +14,7 @@ interface EventCardProps {
   onRSVP: (rsvp: 'Yes' | 'No') => Promise<void>;
   allEvents?: any[];
   myRosters?: Record<string, any>;
+  voicePart?: string;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ 
@@ -18,10 +22,20 @@ export const EventCard: React.FC<EventCardProps> = ({
   rsvp = 'Pending', 
   onRSVP,
   allEvents = [],
-  myRosters = {}
+  myRosters = {},
+  voicePart
 }) => {
   const isPerformance = event.type === 'Performance';
   const { showSetList, setList, headerLabel } = getSetListVisibility(event, myRosters, allEvents);
+
+  const [library, setLibrary] = React.useState<MusicPiece[]>([]);
+  const [playingTrack, setPlayingTrack] = React.useState<{ songId: string; label: string; url: string } | null>(null);
+
+  React.useEffect(() => {
+    if (showSetList) {
+      musicLibraryService.getLibrary().then(setLibrary).catch(console.error);
+    }
+  }, [showSetList]);
 
   return (
     <AppCard noPadding>
@@ -58,7 +72,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           {showSetList && setList && setList.length > 0 && (
             <div className="flex-col" style={{ marginTop: 'var(--space-sm)', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
               <div className="text-label" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '4px', marginBottom: '8px' }}>{headerLabel || 'Set List'}</div>
-              <ol style={{ margin: 0, paddingLeft: 'var(--space-lg)', gap: '6px', display: 'flex', flexDirection: 'column' }}>
+              <ol style={{ margin: 0, paddingLeft: 'var(--space-lg)', gap: '8px', display: 'flex', flexDirection: 'column' }}>
                 {setList.map(item => {
                   const isIntermission = item.type === 'intermission';
                   if (isIntermission) {
@@ -69,11 +83,98 @@ export const EventCard: React.FC<EventCardProps> = ({
                       </li>
                     );
                   }
+                  
+                  const piece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
+                  const recommendedTracks = piece ? resolveRecommendedTracks(voicePart, piece.audioTrackMapping) : [];
+
                   return (
-                    <li key={item.id} className="text-body text-sm">
-                      <strong>{item.title}</strong>
-                      {(item.composer || item.duration) && <span className="text-muted"> ({item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration})</span>}
-                      {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
+                    <li key={item.id} className="text-body text-sm" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
+                        <div>
+                          <strong>{item.title}</strong>
+                          {(item.composer || item.duration) && <span className="text-muted"> ({item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration})</span>}
+                          {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
+                        </div>
+                        
+                        {recommendedTracks.length > 0 && piece && (
+                          <div className="flex-row" style={{ gap: '4px', flexWrap: 'wrap', marginTop: '2px' }}>
+                            {recommendedTracks.map(trackKey => {
+                              const filename = piece.audioTrackMapping?.[trackKey];
+                              if (!filename) return null;
+                              const url = pb.files.getUrl(piece, filename);
+                              const isCurrent = playingTrack?.songId === item.id && playingTrack?.label === trackKey;
+                              return (
+                                <button
+                                  key={trackKey}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isCurrent) {
+                                      setPlayingTrack(null);
+                                    } else {
+                                      setPlayingTrack({
+                                        songId: item.id,
+                                        label: trackKey === 'tutti' ? 'Tutti' : trackKey,
+                                        url
+                                      });
+                                    }
+                                  }}
+                                  className={`btn ${isCurrent ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                                  style={{
+                                    fontSize: '11px',
+                                    padding: '2px 8px',
+                                    height: '22px',
+                                    minHeight: '22px',
+                                    borderRadius: '12px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    margin: 0
+                                  }}
+                                >
+                                  🎵 {trackKey === 'tutti' ? 'Tutti' : trackKey}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {playingTrack && playingTrack.songId === item.id && (
+                        <div className="flex-row" style={{ 
+                          alignItems: 'center', 
+                          gap: 'var(--space-sm)', 
+                          padding: '6px 10px', 
+                          backgroundColor: 'rgba(74, 124, 89, 0.05)', 
+                          border: '1px solid var(--border)',
+                          borderRadius: '8px', 
+                          marginTop: '4px' 
+                        }}>
+                          <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
+                            {playingTrack.label}
+                          </span>
+                          <audio 
+                            src={playingTrack.url} 
+                            controls 
+                            autoPlay 
+                            style={{ height: '26px', flex: 1, minWidth: '0' }} 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setPlayingTrack(null)}
+                            style={{ 
+                              background: 'none', 
+                              border: 'none', 
+                              color: 'var(--text-muted)', 
+                              cursor: 'pointer', 
+                              fontSize: '14px', 
+                              padding: '2px 6px',
+                              lineHeight: 1
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
