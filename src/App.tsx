@@ -6,6 +6,7 @@ import { PageLayout } from './components/common/PageLayout';
 const LoginView = lazy(() => import('./views/LoginView'));
 const RosterView = lazy(() => import('./views/admin/RosterView'));
 const EventsView = lazy(() => import('./views/admin/EventsView'));
+const EventRosterView = lazy(() => import('./views/admin/EventRosterView'));
 const VenuesView = lazy(() => import('./views/admin/VenuesView'));
 const SeatingView = lazy(() => import('./views/admin/SeatingView'));
 const AttendanceView = lazy(() => import('./views/admin/AttendanceView'));
@@ -62,6 +63,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Event Management" backTo="/">
                 <EventsView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/events/:eventId/roster" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Event Roster" backTo="/admin/events">
+                <EventRosterView />
               </PageLayout>
             </ProtectedRoute>
           } />

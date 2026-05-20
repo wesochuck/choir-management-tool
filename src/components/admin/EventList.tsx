@@ -71,9 +71,9 @@ export const EventList: React.FC<EventListProps> = ({
                 event.stopPropagation();
                 onViewRoster(e);
               }}
-              className="btn btn-primary btn-sm"
+              className={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm"}
               style={{
-                boxShadow: 'var(--shadow-sm)'
+                boxShadow: e.type === 'Rehearsal' && !e.isOpenForRSVP ? undefined : 'var(--shadow-sm)'
               }}
             >
               RSVP Roster
