@@ -9,6 +9,9 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **Stable Migrations:** Always use explicit collection IDs (pattern: `pbc_name_001`) in JavaScript migrations. Never rely on automatically generated IDs or name-based resolution alone, as these can drift during development resets.
 *   **Schema First:** Every database change MUST be captured in a migration file immediately. Do not manually edit the database schema via the PocketBase UI without a corresponding migration.
 *   **Mandatory Verification:** After any database reset (`rm pb_data`) or migration update, the agent MUST run a diagnostic CURL cycle (Create/Read/Delete) using a fresh superuser token to verify permissions and field presence before reporting success.
+*   **Hook Callback Isolation:** PocketHost may execute JavaScript hook callbacks in a context where helper functions declared elsewhere in the same hook file are not resolvable. Keep `onRecordAfterCreateSuccess`, `onRecordAfterUpdateSuccess`, and similar registered callbacks self-contained, or verify the exact helper pattern on PocketHost before deploying.
+*   **Post-Commit Hook Failures:** An after-create/after-update hook can throw after the database write has committed, causing a client-visible HTTP 400 even though the record exists after refresh. On this symptom, inspect PocketHost logs for hook errors before changing frontend payloads, collection rules, or schema.
+*   **Defensive Advisory Hooks:** Any advisory hook must wrap the entire registered callback body in `try/catch`. Its logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
 
 ## Authentication & Session Management
 *   **Stale Token Resilience:** The frontend MUST handle 401 and 403 errors by automatically clearing the `pb.authStore` and redirecting to `/login`. This prevents the "stale token loop" caused by local database resets.
@@ -25,3 +28,4 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **Infrastructure Audit:** Every new agent MUST verify that `src/lib/pocketbase.ts` contains the `afterSend` interceptor for stale token resilience. If missing, implement it immediately before proceeding with any feature work.
 *   **Log Inspection:** On any "Failed to create/update record" error (HTTP 400), the agent MUST inspect `pb_debug.log` and check for `loadAuthToken failure`. Do NOT assume data validation errors until the server-side authentication load is confirmed successful.
 *   **Verification Cycle:** If the agent modifies migrations, they MUST perform a `curl` auth cycle as defined in "PocketBase & Data Integrity" to ensure the schema matches the frontend's expectations.
+*   **PocketHost Hook Verification:** If the agent modifies `pb_hooks`, they MUST deploy and restart/wake the PocketHost instance, then confirm the expected hook startup log appears before testing behavior.
