@@ -17,3 +17,4 @@
 [ ] port over the music player, allowing for direct md5 links to playlist so people don't have to login.
 [ ] make better use of the set list space. more of it could be horizontal for things like the duration, etc.
 [ ] think about how we could track dues payment.
+[ ] be able to specifiy the voice parts for music in the music library

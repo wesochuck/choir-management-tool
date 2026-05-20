@@ -45,6 +45,7 @@ export default function MusicLibraryView() {
   
   // Duplicates & Bulk Delete state
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [showMovements, setShowMovements] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
@@ -171,6 +172,9 @@ export default function MusicLibraryView() {
 
   const filteredPieces = useMemo(() => {
     let result = pieces;
+    if (!showMovements) {
+        result = result.filter(p => !p.parentId);
+    }
     if (showDuplicatesOnly) {
         result = result.filter(p => duplicateIds.has(p.id));
     }
@@ -184,7 +188,7 @@ export default function MusicLibraryView() {
     }
     // Sort by title
     return result.sort((a, b) => a.title.localeCompare(b.title));
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements]);
 
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
@@ -244,6 +248,16 @@ export default function MusicLibraryView() {
           />
           
           <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+                <input 
+                    type="checkbox" 
+                    checked={showMovements} 
+                    onChange={(e) => setShowMovements(e.target.checked)}
+                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                />
+                <span className="text-sm">Show individual movements</span>
+              </label>
+
               <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
                 <input 
                     type="checkbox" 
@@ -1399,19 +1413,45 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                                     {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
                                                         const filename = m.audioTrackMapping?.[partLabel];
                                                         const isUploading = uploadingParts[`${m.id}_${partLabel}`];
+                                                        const dragKey = `${m.id}_${partLabel}`;
+                                                        const isDraggedOver = draggedOverPart === dragKey;
                                                         return (
                                                             <div 
                                                                 key={partLabel} 
                                                                 className="flex-row" 
+                                                                onDragOver={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    if (draggedOverPart !== dragKey) {
+                                                                        setDraggedOverPart(dragKey);
+                                                                    }
+                                                                }}
+                                                                onDragLeave={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setDraggedOverPart(null);
+                                                                }}
+                                                                onDrop={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setDraggedOverPart(null);
+                                                                    const file = e.dataTransfer.files?.[0];
+                                                                    if (file) {
+                                                                        handleMovementFileUpload(m, partLabel, file);
+                                                                    }
+                                                                }}
                                                                 style={{
                                                                     alignItems: 'center',
                                                                     justifyContent: 'space-between',
-                                                                    padding: '6px 10px',
-                                                                    backgroundColor: 'var(--bg-card-hover)',
-                                                                    border: '1px solid var(--border)',
+                                                                    padding: isDraggedOver ? '5px 9px' : '6px 10px',
+                                                                    backgroundColor: isDraggedOver ? 'rgba(74, 124, 89, 0.08)' : 'var(--bg-card-hover)',
+                                                                    border: isDraggedOver ? '2px dashed var(--primary)' : '1px solid var(--border)',
                                                                     borderRadius: 'var(--radius)',
                                                                     gap: 'var(--space-md)',
-                                                                    fontSize: '13px'
+                                                                    fontSize: '13px',
+                                                                    transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
+                                                                    transform: isDraggedOver ? 'scale(1.01)' : 'scale(1)',
+                                                                    boxShadow: isDraggedOver ? '0 2px 8px rgba(74, 124, 89, 0.12)' : 'none',
                                                                 }}
                                                             >
                                                                 <div className="flex-col" style={{ minWidth: '80px' }}>
