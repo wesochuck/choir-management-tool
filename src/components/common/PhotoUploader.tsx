@@ -574,7 +574,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>Camera Preview</h3>
               <button
-                onClick={handleCancelCamera}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelCamera(); }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -613,7 +614,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               }}>
                 <div>{cameraError}</div>
                 <button
-                  onClick={() => { setShowCamera(false); fileRef.current?.click(); }}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(false); fileRef.current?.click(); }}
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     border: '1px solid rgba(255,255,255,0.2)',
@@ -701,7 +703,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             {!cameraError && !isCameraLoading && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'var(--space-sm)' }}>
                 <button
-                  onClick={handleCapture}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCapture(); }}
                   style={{
                     position: 'relative',
                     width: 72,
@@ -778,21 +781,24 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             />
             <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
-                onClick={handleSaveOriginal}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveOriginal(); }}
                 disabled={isUploading}
                 className="btn btn-primary"
               >
                 {isUploading ? 'Uploading...' : 'Use Photo'}
               </button>
               <button
-                onClick={handleCrop}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCrop(); }}
                 disabled={isUploading}
                 className="btn btn-secondary"
               >
                 Crop to Square
               </button>
               <button
-                onClick={handleCancel}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancel(); }}
                 disabled={isUploading}
                 className="btn btn-ghost"
               >
