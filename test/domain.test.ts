@@ -95,6 +95,13 @@ test('button system keeps accessible minimum touch target height', () => {
   assert.match(css, /\.btn\s*\{[\s\S]*height:\s*44px;/);
 });
 
+test('singer card name allows full name text with flexible width', () => {
+  const css = readFileSync(new URL('../src/views/admin/SeatingView.css', import.meta.url), 'utf8');
+  assert.ok(!/\.singer-card-name\s*\{[^}]*max-width:\s*75px/.test(css), 'should not restrict name card with small hardcoded max-width');
+  assert.match(css, /\.singer-card-name\s*\{[^}]*flex:\s*1/);
+  assert.match(css, /\.singer-card-name\s*\{[^}]*min-width:\s*0/);
+});
+
 test('communication templates replace event placeholders', () => {
   const rendered = renderCommunicationTemplate(
     'Reminder: {eventTitle} at {eventLocation} on {eventDate}. {eventDetails}',
