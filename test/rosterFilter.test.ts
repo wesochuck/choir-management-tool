@@ -1,31 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-// Core matching logic matching our implementation plan
-const matchesVoicePart = (profilePart: string, filterPart: string): boolean => {
-  if (!filterPart) return true;
-  if (profilePart === filterPart) return true;
-  // If the filter is a single letter (S, A, T, B), match as a prefix prefix for the section
-  return filterPart.length === 1 && profilePart.startsWith(filterPart);
+// Core matching logic matching our implementation plan for multi-select
+const matchesVoiceParts = (profilePart: string, filterParts: string[]): boolean => {
+  if (!filterParts || filterParts.length === 0) return true;
+  return filterParts.some(vp => 
+    profilePart === vp || (vp.length === 1 && profilePart?.startsWith(vp))
+  );
 };
 
 // Double-layered filtering matching useProfiles.ts useMemo logic
 const filterProfiles = (
   profiles: any[],
-  filters: { voicePart: string; status: string; name: string }
+  filters: { voiceParts: string[]; status: string; name: string }
 ) => {
   return profiles.filter((p) => {
-    const matchesVoice = matchesVoicePart(p.voicePart, filters.voicePart);
+    const matchesVoice = matchesVoiceParts(p.voicePart, filters.voiceParts);
     const matchesStatus = !filters.status || p.globalStatus === filters.status;
     const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
     return matchesVoice && matchesStatus && matchesName;
   });
 };
 
-// Filtered list specifically for calculating RosterSummary counts (not filtered by voice part)
+// Filtered list specifically for calculating RosterSummary counts (not filtered by voice parts)
 const getProfilesForSummary = (
   profiles: any[],
-  filters: { voicePart: string; status: string; name: string }
+  filters: { voiceParts: string[]; status: string; name: string }
 ) => {
   return profiles.filter((p) => {
     const matchesStatus = !filters.status || p.globalStatus === filters.status;
@@ -43,58 +43,54 @@ const sampleProfiles = [
   { id: '6', name: 'Bruce Banner', voicePart: 'B2', globalStatus: 'Active (Current)' },
 ];
 
-test('matchesVoicePart correctly matches subparts', () => {
-  assert.equal(matchesVoicePart('S1', 'S1'), true);
-  assert.equal(matchesVoicePart('S1', 'S2'), false);
-  assert.equal(matchesVoicePart('T2', 'T2'), true);
-  assert.equal(matchesVoicePart('T2', 'T1'), false);
+test('matchesVoiceParts correctly matches multiple exact subparts', () => {
+  assert.equal(matchesVoiceParts('S1', ['S1', 'B2']), true);
+  assert.equal(matchesVoiceParts('B2', ['S1', 'B2']), true);
+  assert.equal(matchesVoiceParts('S2', ['S1', 'B2']), false);
 });
 
-test('matchesVoicePart correctly matches sections by first letter prefix', () => {
-  // S matches both S1 and S2
-  assert.equal(matchesVoicePart('S1', 'S'), true);
-  assert.equal(matchesVoicePart('S2', 'S'), true);
-  
-  // A matches A1 and A2
-  assert.equal(matchesVoicePart('A1', 'A'), true);
-  assert.equal(matchesVoicePart('A2', 'A'), true);
-  
-  // T matches T1 but not B2
-  assert.equal(matchesVoicePart('T1', 'T'), true);
-  assert.equal(matchesVoicePart('B2', 'T'), false);
+test('matchesVoiceParts correctly matches multiple mixed sections and parts by prefix', () => {
+  // S matches both S1 and S2. T matches T1.
+  assert.equal(matchesVoiceParts('S1', ['S', 'T1']), true);
+  assert.equal(matchesVoiceParts('S2', ['S', 'T1']), true);
+  assert.equal(matchesVoiceParts('T1', ['S', 'T1']), true);
+  assert.equal(matchesVoiceParts('B2', ['S', 'T1']), false);
 });
 
-test('matchesVoicePart handles empty filter part by returning true', () => {
-  assert.equal(matchesVoicePart('S1', ''), true);
-  assert.equal(matchesVoicePart('T2', ''), true);
+test('matchesVoiceParts handles empty filter part list by returning true', () => {
+  assert.equal(matchesVoiceParts('S1', []), true);
+  assert.equal(matchesVoiceParts('T2', []), true);
 });
 
-test('filterProfiles filters by subparts correctly', () => {
-  const result = filterProfiles(sampleProfiles, { voicePart: 'S1', status: '', name: '' });
-  assert.equal(result.length, 1);
-  assert.equal(result[0].name, 'Sarah Connor');
-});
-
-test('filterProfiles filters by full section correctly', () => {
-  const result = filterProfiles(sampleProfiles, { voicePart: 'S', status: '', name: '' });
+test('filterProfiles filters by multiple subparts correctly', () => {
+  const result = filterProfiles(sampleProfiles, { voiceParts: ['S1', 'A2'], status: '', name: '' });
   assert.equal(result.length, 2);
-  assert.equal(result[0].name, 'Sarah Connor');
-  assert.equal(result[1].name, 'Susan Storm');
+  assert.ok(result.some(p => p.name === 'Sarah Connor'));
+  assert.ok(result.some(p => p.name === 'Amy Pond'));
 });
 
-test('getProfilesForSummary bypasses voice part filter but respects status and name', () => {
-  const filters = { voicePart: 'S1', status: 'Active (Current)', name: '' };
-  
-  // The table is filtered by S1 and Active (Current) -> only 1 profile (Sarah)
-  const tableResult = filterProfiles(sampleProfiles, filters);
-  assert.equal(tableResult.length, 1);
-  assert.equal(tableResult[0].name, 'Sarah Connor');
+test('filterProfiles filters by combined sections and subparts correctly', () => {
+  // Section A (matches A1, A2) and subpart S2
+  const result = filterProfiles(sampleProfiles, { voiceParts: ['A', 'S2'], status: '', name: '' });
+  assert.equal(result.length, 3);
+  assert.ok(result.some(p => p.name === 'Susan Storm')); // S2
+  assert.ok(result.some(p => p.name === 'Arthur Pendragon')); // A1
+  assert.ok(result.some(p => p.name === 'Amy Pond')); // A2
+});
 
-  // The summary is filtered ONLY by Active (Current) -> Sarah (S1), Susan (S2), Arthur (A1), Bruce (B2)
+test('getProfilesForSummary bypasses voice parts filter but respects status and name', () => {
+  const filters = { voiceParts: ['S1', 'B2'], status: 'Active (Current)', name: '' };
+  
+  // Roster table shows S1 and B2 Active (Current) profiles -> Sarah (S1) and Bruce (B2)
+  const tableResult = filterProfiles(sampleProfiles, filters);
+  assert.equal(tableResult.length, 2);
+  assert.ok(tableResult.some(p => p.name === 'Sarah Connor'));
+  assert.ok(tableResult.some(p => p.name === 'Bruce Banner'));
+
+  // Roster summary counts shows all Active (Current) profiles -> Sarah (S1), Susan (S2), Arthur (A1), Bruce (B2)
   const summaryResult = getProfilesForSummary(sampleProfiles, filters);
   assert.equal(summaryResult.length, 4);
   
-  // All parts remain visible in summary counts
   const voicePartsInSummary = summaryResult.map(p => p.voicePart);
   assert.ok(voicePartsInSummary.includes('S1'));
   assert.ok(voicePartsInSummary.includes('S2'));

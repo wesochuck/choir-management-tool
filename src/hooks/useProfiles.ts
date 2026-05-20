@@ -5,7 +5,7 @@ export const useProfiles = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState({ voicePart: '', status: '', name: '' });
+  const [filters, setFilters] = useState({ voiceParts: [] as string[], status: '', name: '' });
 
   const fetchProfiles = async () => {
     setIsLoading(true);
@@ -34,9 +34,9 @@ export const useProfiles = () => {
 
   const filteredProfiles = useMemo(() => {
     return profiles.filter((p) => {
-      const matchesVoice = !filters.voicePart || 
-        p.voicePart === filters.voicePart || 
-        (filters.voicePart.length === 1 && p.voicePart?.startsWith(filters.voicePart));
+      const matchesVoice = filters.voiceParts.length === 0 || filters.voiceParts.some(vp => 
+        p.voicePart === vp || (vp.length === 1 && p.voicePart?.startsWith(vp))
+      );
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
       const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
       return matchesVoice && matchesStatus && matchesName;
@@ -70,7 +70,7 @@ export const useProfiles = () => {
     }
   };
 
-  const setFilter = (key: keyof typeof filters, value: string) => {
+  const setFilter = <K extends keyof typeof filters>(key: K, value: typeof filters[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 

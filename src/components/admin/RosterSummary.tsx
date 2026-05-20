@@ -3,7 +3,7 @@ import type { Profile } from '../../services/profileService';
 
 interface RosterSummaryProps {
   profiles: Profile[];
-  selectedVoicePart?: string;
+  selectedVoiceParts?: string[];
   onVoicePartToggle?: (part: string) => void;
 }
 
@@ -14,7 +14,7 @@ import { AppCard } from '../common/AppCard';
 
 export const RosterSummary: React.FC<RosterSummaryProps> = ({ 
   profiles, 
-  selectedVoicePart = '', 
+  selectedVoiceParts = [], 
   onVoicePartToggle 
 }) => {
   const { partCounts, sectionCounts } = useMemo(() => {
@@ -88,7 +88,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
         borderBottom: '1px solid var(--border)'
       }}>
         {SECTIONS.map(sec => {
-          const isSelected = selectedVoicePart === sec;
+          const isSelected = selectedVoiceParts.includes(sec);
           return (
             <div 
               key={sec} 
@@ -122,7 +122,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
         marginTop: 'var(--space-lg)'
       }}>
         {VOICE_PARTS.map(part => {
-          const isSelected = selectedVoicePart === part;
+          const isSelected = selectedVoiceParts.includes(part);
           return (
             <div 
               key={part} 

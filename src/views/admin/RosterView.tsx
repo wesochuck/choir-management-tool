@@ -17,6 +17,7 @@ export default function RosterView() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const initialVoicePart = searchParams.get('voicePart') || '';
 
@@ -38,11 +39,41 @@ export default function RosterView() {
 
   useEffect(() => {
     if (initialVoicePart) {
-      setFilter('voicePart', initialVoicePart);
+      setFilter('voiceParts', [initialVoicePart]);
     }
   }, [initialVoicePart]);
 
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('#voice-part-dropdown-container')) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isDropdownOpen]);
 
+  const handleVoicePartToggle = (part: string) => {
+    const active = filters.voiceParts || [];
+    const next = active.includes(part)
+      ? active.filter(p => p !== part)
+      : [...active, part];
+    setFilter('voiceParts', next);
+  };
+
+  const getDropdownLabel = () => {
+    const active = filters.voiceParts || [];
+    if (active.length === 0) return 'All Voice Parts';
+    return active.map(code => {
+      if (code === 'S') return 'Sopranos';
+      if (code === 'A') return 'Altos';
+      if (code === 'T') return 'Tenors';
+      if (code === 'B') return 'Basses';
+      return code;
+    }).join(', ');
+  };
 
   const handleEdit = (profile: Profile) => {
     setEditingProfile(profile);
@@ -95,8 +126,8 @@ export default function RosterView() {
 
       <RosterSummary 
         profiles={unfilteredByVoicePartProfiles} 
-        selectedVoicePart={filters.voicePart}
-        onVoicePartToggle={(part) => setFilter('voicePart', filters.voicePart === part ? '' : part)}
+        selectedVoiceParts={filters.voiceParts}
+        onVoicePartToggle={handleVoicePartToggle}
       />
 
       <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
@@ -160,23 +191,170 @@ export default function RosterView() {
           )}
         </div>
 
-        <select 
-          value={filters.voicePart} 
-          onChange={(e) => setFilter('voicePart', e.target.value)}
-          className="card"
-          style={{ padding: '0 12px', height: '44px', width: '200px' }}
-        >
-          <option value="">All Voice Parts</option>
-          <optgroup label="Sections">
-            <option value="S">Sopranos (S1, S2)</option>
-            <option value="A">Altos (A1, A2)</option>
-            <option value="T">Tenors (T1, T2)</option>
-            <option value="B">Basses (B1, B2)</option>
-          </optgroup>
-          <optgroup label="Individual Parts">
-            {voiceParts.map(v => <option key={v} value={v}>{v}</option>)}
-          </optgroup>
-        </select>
+        <div id="voice-part-dropdown-container" style={{ position: 'relative', width: '200px' }}>
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="card flex-row"
+            style={{
+              padding: '0 12px',
+              height: '44px',
+              width: '100%',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              backgroundColor: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '15px',
+              color: 'var(--text)',
+              textAlign: 'left'
+            }}
+          >
+            <span style={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '145px',
+              fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400
+            }}>
+              {getDropdownLabel()}
+            </span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              style={{
+                transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s',
+                color: 'var(--text-muted)'
+              }}
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          {isDropdownOpen && (
+            <div
+              className="card"
+              style={{
+                position: 'absolute',
+                top: '48px',
+                left: 0,
+                right: 0,
+                zIndex: 100,
+                maxHeight: '300px',
+                overflowY: 'auto',
+                padding: 'var(--space-xs) 0',
+                boxShadow: 'var(--shadow-lg)',
+                backgroundColor: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px'
+              }}
+            >
+              <div style={{
+                padding: '6px 12px 2px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Sections
+              </div>
+              {[
+                { code: 'S', label: 'Sopranos (S1, S2)' },
+                { code: 'A', label: 'Altos (A1, A2)' },
+                { code: 'T', label: 'Tenors (T1, T2)' },
+                { code: 'B', label: 'Basses (B1, B2)' }
+              ].map(sec => {
+                const isChecked = (filters.voiceParts || []).includes(sec.code);
+                return (
+                  <label
+                    key={sec.code}
+                    className="flex-row"
+                    style={{
+                      padding: '8px 12px',
+                      alignItems: 'center',
+                      gap: 'var(--space-sm)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      userSelect: 'none',
+                      transition: 'background-color 0.15s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleVoicePartToggle(sec.code)}
+                      style={{
+                        cursor: 'pointer',
+                        accentColor: 'var(--primary)',
+                        width: '15px',
+                        height: '15px'
+                      }}
+                    />
+                    <span style={{ fontWeight: isChecked ? 600 : 400 }}>{sec.label}</span>
+                  </label>
+                );
+              })}
+
+              <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
+
+              <div style={{
+                padding: '6px 12px 2px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Individual Parts
+              </div>
+              {voiceParts.map(part => {
+                const isChecked = (filters.voiceParts || []).includes(part);
+                return (
+                  <label
+                    key={part}
+                    className="flex-row"
+                    style={{
+                      padding: '8px 12px',
+                      alignItems: 'center',
+                      gap: 'var(--space-sm)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      userSelect: 'none',
+                      transition: 'background-color 0.15s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleVoicePartToggle(part)}
+                      style={{
+                        cursor: 'pointer',
+                        accentColor: 'var(--primary)',
+                        width: '15px',
+                        height: '15px'
+                      }}
+                    />
+                    <span style={{ fontWeight: isChecked ? 600 : 400 }}>{part}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <select 
           value={filters.status} 
           onChange={(e) => setFilter('status', e.target.value)}
@@ -189,11 +367,11 @@ export default function RosterView() {
           <option value="Inactive">Inactive</option>
         </select>
 
-        {(filters.name || filters.voicePart || filters.status) && (
+        {(filters.name || (filters.voiceParts && filters.voiceParts.length > 0) || filters.status) && (
           <button 
             onClick={() => {
               setFilter('name', '');
-              setFilter('voicePart', '');
+              setFilter('voiceParts', []);
               setFilter('status', '');
             }}
             className="btn btn-secondary"
