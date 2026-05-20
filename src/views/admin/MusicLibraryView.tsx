@@ -590,6 +590,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
 
     // Active Tab state
     const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>('details');
@@ -687,10 +688,35 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         setNewMovementTitle('');
         setNewMovementDuration('');
         setExpandedMovementId(null);
+        setSuggestedDuration(null);
     }, [piece, isOpen, loadMovements]);
 
     const handleFileUpload = async (voicePart: string, file: File) => {
         if (!localPiece) return;
+        
+        // Extract audio track duration if this is the first learning track and no duration is set
+        const trackCountBefore = Object.keys(localPiece.audioTrackMapping || {}).length;
+        if (trackCountBefore === 0 && !duration.trim()) {
+            try {
+                const seconds = await new Promise<number>((resolve) => {
+                    const audio = new Audio();
+                    audio.src = URL.createObjectURL(file);
+                    audio.addEventListener('loadedmetadata', () => {
+                        URL.revokeObjectURL(audio.src);
+                        resolve(audio.duration);
+                    });
+                    audio.addEventListener('error', () => {
+                        resolve(0);
+                    });
+                });
+                if (seconds > 0) {
+                    const formatted = formatSecondsToDuration(Math.round(seconds));
+                    setSuggestedDuration(formatted);
+                }
+            } catch (e) {
+                console.error('Failed to get audio duration', e);
+            }
+        }
         
         setUploadingParts(prev => ({ ...prev, [voicePart]: true }));
         try {
@@ -920,11 +946,6 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             setNewMovementTitle('');
             setNewMovementDuration('');
             await loadMovements();
-            dialog.showMessage({
-                title: 'Success',
-                message: `Added movement "${finalTitle}".`,
-                variant: 'info'
-            });
         } catch (err) {
             console.error(err);
             dialog.showMessage({
@@ -1130,6 +1151,33 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Duration</label>
                                 <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                                {suggestedDuration && !duration.trim() && (
+                                    <div className="flex-row" style={{ 
+                                        marginTop: '6px', 
+                                        padding: '8px 12px', 
+                                        borderRadius: '6px', 
+                                        backgroundColor: 'var(--primary-light, rgba(27, 77, 62, 0.08))', 
+                                        border: '1px dashed rgba(27, 77, 62, 0.3)', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        gap: '8px'
+                                    }}>
+                                        <span className="text-xs text-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary, #1b4d3e)', fontWeight: 500 }}>
+                                            💡 Track length: <strong>{suggestedDuration}</strong>. Use this?
+                                        </span>
+                                        <button 
+                                            type="button"
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={() => {
+                                                setDuration(suggestedDuration);
+                                                setSuggestedDuration(null);
+                                            }}
+                                            style={{ padding: '2px 8px', height: '22px', minHeight: '22px', fontSize: '11px', lineHeight: '1', cursor: 'pointer' }}
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Copies</label>
