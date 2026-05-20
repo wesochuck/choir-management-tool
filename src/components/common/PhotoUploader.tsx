@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { updateProfilePhoto, type Profile } from '../../services/profileService';
+import { updateProfilePhoto, deleteProfilePhoto, type Profile } from '../../services/profileService';
+
 
 interface PhotoUploaderProps {
   profileId: string;
@@ -281,6 +282,28 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     setShowCrop(false);
   };
 
+  const handleRemovePhoto = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to remove your profile photo?')) {
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const updated = await deleteProfilePhoto(profileId);
+      setDisplayUrl('');
+      setPreview(null);
+      setRawFile(null);
+      setShowCrop(false);
+      onSuccess?.(updated);
+    } catch (err) {
+      console.error('Failed to remove photo:', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
   const initials = profileName.charAt(0).toUpperCase();
   const showImage = displayUrl || preview;
 
@@ -516,6 +539,38 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </svg>
               Take Photo
             </button>
+
+            {displayUrl && (
+              <>
+                <span style={{ color: 'var(--border)', fontSize: '0.75rem' }}>|</span>
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--danger, #ef4444)',
+                    cursor: 'pointer',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    padding: '4px 6px',
+                    minHeight: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'color 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--danger-hover, #dc2626)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--danger, #ef4444)'}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  Remove
+                </button>
+              </>
+            )}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             or drag & drop photo here
@@ -525,10 +580,45 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
       {/* Mobile-only clean footer instruction */}
       {isMobile && size !== 'sm' && (
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 'var(--space-sm)' }}>
-          Tap photo to change
-        </span>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          marginTop: 'var(--space-sm)',
+        }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Tap photo to change
+          </span>
+          {displayUrl && (
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--danger, #ef4444)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                padding: '4px 6px',
+                minHeight: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'color 0.2s',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              Remove Photo
+            </button>
+          )}
+        </div>
       )}
+
 
       {/* Hidden File input */}
       <input

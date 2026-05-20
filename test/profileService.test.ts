@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { exportToCSV, updateProfilePhoto, type Profile } from '../src/services/profileService.ts';
+import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, type Profile } from '../src/services/profileService.ts';
+
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('exportToCSV maps profiles to CSV format correctly', () => {
-  const profiles = [{ id: '1', name: 'John Doe', phone: '123', voicePart: 'T1', globalStatus: 'Active (Current)', user: '', photo: '', notes: '', expand: { user: { email: 'john@example.com', name: 'John Doe', role: 'singer', id: 'u1', collectionId: '', collectionName: '', created: '', updated: '' } } }] as Profile[];
+  const profiles = [{ id: '1', name: 'John Doe', phone: '123', voicePart: 'T1', globalStatus: 'Active (Current)', user: '', photo: '', notes: '', expand: { user: { email: 'john@example.com', name: 'John Doe', role: 'singer', id: 'u1', collectionId: '', collectionName: '', created: '', updated: '' } } }] as unknown as Profile[];
   const csv = exportToCSV(profiles);
+
   assert.ok(csv.includes('Name,Email,Phone,Voice Part,Status'));
   assert.ok(csv.includes('"John Doe","john@example.com","123","T1","Active (Current)"'));
 });
@@ -35,7 +37,7 @@ test('updateProfilePhoto calls pocketbase with FormData', async (t) => {
     assert.equal(mockUpdate.mock.callCount(), 1);
     const firstCall = mockUpdate.mock.calls[0];
     assert.equal(firstCall.arguments[0], '1');
-    assert.equal(firstCall.arguments[1], formData);
+    assert.equal((firstCall.arguments as unknown[])[1], formData);
   } finally {
     pb.collection = originalCollection;
   }
@@ -48,7 +50,7 @@ test('in-memory profile name filtering works case-insensitively', () => {
     { id: '3', name: 'Charlie Miller', voicePart: 'T1', globalStatus: 'Inactive' }
   ];
 
-  const filterName = (list: Array<{ name: string }>, query: string) => {
+  const filterName = <T extends { name: string }>(list: T[], query: string): T[] => {
     return list.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
   };
 
@@ -92,7 +94,7 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
     assert.equal(result.id, 'profile123');
     assert.equal(mockGetFirstListItem.mock.callCount(), 1);
     
-    const callArgs = mockGetFirstListItem.mock.calls[0].arguments;
+    const callArgs = mockGetFirstListItem.mock.calls[0].arguments as unknown[];
     // Parameterized filter should be expanded to "user = 'user123'" by pb.filter
     assert.equal(callArgs[0], "user = 'user123'");
   } finally {
@@ -143,3 +145,28 @@ test('profileService.updateProfile leaves photo file field untouched', async (t)
     pb.collection = originalCollection;
   }
 });
+
+test('deleteProfilePhoto calls pocketbase with photo set to null', async (t) => {
+  const originalCollection = pb.collection;
+  const mockUpdate = t.mock.fn(async (id: string, payload: Record<string, unknown>) => {
+    return { id, ...payload };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { update: mockUpdate } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const result = await deleteProfilePhoto('profile123');
+    assert.equal(result.photo, null);
+    assert.equal(mockUpdate.mock.callCount(), 1);
+    assert.equal(mockUpdate.mock.calls[0].arguments[0], 'profile123');
+    assert.deepEqual(mockUpdate.mock.calls[0].arguments[1], { photo: null });
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+

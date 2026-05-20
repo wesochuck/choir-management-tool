@@ -175,3 +175,8 @@ export function exportToCSV(profiles: Profile[]): string {
 export async function updateProfilePhoto(id: string, formData: FormData) {
   return await pb.collection('profiles').update<Profile>(id, formData);
 }
+
+export async function deleteProfilePhoto(id: string) {
+  return await pb.collection('profiles').update<Profile>(id, { photo: null });
+}
+
