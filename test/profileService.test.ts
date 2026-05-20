@@ -101,7 +101,7 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
   }
 });
 
-test('profileService.updateProfile preserves photo when defined and deletes when undefined', async (t) => {
+test('profileService.updateProfile leaves photo file field untouched', async (t) => {
   const originalCollection = pb.collection;
 
   const mockGetOne = t.mock.fn(async (id: string) => {
@@ -125,23 +125,20 @@ test('profileService.updateProfile preserves photo when defined and deletes when
   try {
     const { profileService } = await import('../src/services/profileService.ts');
     
-    // Case 1: photo is undefined in input
     await profileService.updateProfile('profile123', { name: 'New Name' });
     assert.equal(mockUpdate.mock.callCount(), 1);
     let payload = mockUpdate.mock.calls[0].arguments[1];
-    assert.equal('photo' in payload, false); // omitted when undefined
+    assert.equal('photo' in payload, false);
 
-    // Case 2: photo is a valid string filename in input
     await profileService.updateProfile('profile123', { name: 'New Name', photo: 'new_photo.jpg' });
     assert.equal(mockUpdate.mock.callCount(), 2);
     payload = mockUpdate.mock.calls[1].arguments[1];
-    assert.equal(payload.photo, 'new_photo.jpg'); // preserved when defined
+    assert.equal('photo' in payload, false);
 
-    // Case 3: photo is an empty string in input (representing removal)
     await profileService.updateProfile('profile123', { name: 'New Name', photo: '' });
     assert.equal(mockUpdate.mock.callCount(), 3);
     payload = mockUpdate.mock.calls[2].arguments[1];
-    assert.equal(payload.photo, ''); // preserved when defined as empty string
+    assert.equal('photo' in payload, false);
   } finally {
     pb.collection = originalCollection;
   }

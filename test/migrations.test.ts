@@ -36,3 +36,15 @@ test('pocketbase/pb_migrations contains only standard javascript (.js) files', (
 
   assert.ok(true, 'All files in pb_migrations are standard .js files');
 });
+
+test('file upload fields are represented by source-controlled migrations', () => {
+  const migrationsDir = path.resolve(import.meta.dirname || __dirname || '.', '../pocketbase/pb_migrations');
+  const migrationFiles = fs
+    .readdirSync(migrationsDir)
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => fs.readFileSync(path.join(migrationsDir, file), 'utf8'));
+  const migrationSource = migrationFiles.join('\n');
+
+  assert.match(migrationSource, /new FileField\(\{[\s\S]*name:\s*"photo"/);
+  assert.match(migrationSource, /new FileField\(\{[\s\S]*name:\s*"audioFiles"/);
+});

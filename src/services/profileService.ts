@@ -38,9 +38,7 @@ const splitProfileInput = (data: ProfileInput) => {
   delete profile.email;
   delete profile.password;
   delete profile.expand;
-  if (profile.photo === undefined) {
-    delete profile.photo;
-  }
+  delete profile.photo;
   return { email: email?.trim(), password, profile };
 };
 
@@ -177,4 +175,3 @@ export function exportToCSV(profiles: Profile[]): string {
 export async function updateProfilePhoto(id: string, formData: FormData) {
   return await pb.collection('profiles').update<Profile>(id, formData);
 }
-
