@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import { pb } from '../lib/pocketbase';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { calendarUtils } from '../lib/calendar';
 
 interface EventDetails {
@@ -41,6 +42,9 @@ export default function PublicRsvpView() {
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [rehearsals, setRehearsals] = useState<EventDetails[]>([]);
+
+  const rsvpTitle = event?.title ? `RSVP for ${event.title}` : 'RSVP';
+  useDocumentTitle(rsvpTitle);
 
   useEffect(() => {
     if (!token || !initialRsvp) {

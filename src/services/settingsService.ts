@@ -232,6 +232,15 @@ export const settingsService = {
   async saveMusicLibrarySettings(value: MusicLibrarySettings) {
     return await upsertSetting('music_library', value, true);
   },
+
+  async getChoirName(): Promise<string> {
+    const setting = await getSetting<string>('choir_name');
+    return setting?.value || '';
+  },
+
+  async saveChoirName(name: string) {
+    return await upsertSetting('choir_name', name, true);
+  },
 };
 
 export interface SectionDef {

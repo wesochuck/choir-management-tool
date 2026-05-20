@@ -15,9 +15,12 @@ import {
   type SectionDef,
 } from '../../services/settingsService';
 import { profileService, type Profile } from '../../services/profileService';
+import { useChoirName } from '../../hooks/useDocumentTitle';
 
 export default function SettingsView() {
   const navigate = useNavigate();
+  const { setChoirName: setContextChoirName } = useChoirName();
+  const [choirName, setChoirName] = useState('');
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [rosterSettings, setRosterSettings] = useState<RosterSettings>(DEFAULT_ROSTER_SETTINGS);
   const [musicLibrarySettings, setMusicLibrarySettings] = useState<MusicLibrarySettings>(DEFAULT_MUSIC_LIBRARY_SETTINGS);
@@ -30,6 +33,8 @@ export default function SettingsView() {
 
   useEffect(() => {
     const load = async () => {
+      const loadedChoirName = await settingsService.getChoirName();
+      setChoirName(loadedChoirName);
       const attendance = await settingsService.getAttendanceSettings();
       setAttendanceSettings(attendance);
       const roster = await settingsService.getRosterSettings();
@@ -55,6 +60,8 @@ export default function SettingsView() {
     setMessage('');
 
     try {
+      await settingsService.saveChoirName(choirName);
+      setContextChoirName(choirName);
       await settingsService.saveAttendanceSettings(attendanceSettings);
       await settingsService.saveRosterSettings(rosterSettings);
       await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
@@ -88,6 +95,24 @@ export default function SettingsView() {
       </div>
 
       {message && <div className="badge badge-rehearsal" style={{ alignSelf: 'flex-start' }}>{message}</div>}
+
+      <AppCard title="Choir Name">
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Organization Name</label>
+          <input
+            id="choir-name"
+            type="text"
+            value={choirName}
+            onChange={(event) => setChoirName(event.target.value)}
+            placeholder="e.g. Downtown Community Chorale"
+            className="card"
+            style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          />
+          <p className="text-muted" style={{ margin: 0 }}>
+            Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
+          </p>
+        </div>
+      </AppCard>
 
       <AppCard title="Attendance Settings">
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>

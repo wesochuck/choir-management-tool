@@ -4,8 +4,10 @@ import { AppCard } from '../components/common/AppCard';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, getVoiceParts, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function PublicAuditionView() {
+  useDocumentTitle('Auditions');
   const [settings, setSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
   const [targetPerformance, setTargetPerformance] = useState<Event | null>(null);
   const [rehearsals, setRehearsals] = useState<Event[]>([]);

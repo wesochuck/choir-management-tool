@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { pb } from '../lib/pocketbase';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function LoginView() {
+  useDocumentTitle('Login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);

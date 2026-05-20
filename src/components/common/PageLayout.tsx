@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface PageLayoutProps {
 export const PageLayout: React.FC<PageLayoutProps> = ({ 
   children, title, subtitle, backTo, actions, maxWidth = '1200px' 
 }) => {
+  useDocumentTitle(title);
   return (
     <div className="flex-col" style={{ minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
       <header className="surface" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
