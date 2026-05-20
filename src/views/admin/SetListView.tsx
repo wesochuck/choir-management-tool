@@ -363,7 +363,7 @@ export default function SetListView() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-lg)' }}>
+      <div className="setlist-grid">
           <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
             <label className="text-label">Select Event</label>
             <select 
@@ -524,9 +524,9 @@ export default function SetListView() {
             </div>
           )}
 
-          <div className="flex-responsive" style={{ alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
+          <div className="setlist-grid" style={{ alignItems: 'flex-start' }}>
           
-          <AppCard title="Current Set List" style={{ flex: 2 }}>
+          <AppCard title="Current Set List" className="setlist-col-span-2">
             <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
               {items.length > 0 && (
                 <div className="flex-responsive" style={{ 
@@ -580,7 +580,7 @@ export default function SetListView() {
             </div>
           </AppCard>
 
-          <AppCard title={editingId ? "Edit Item" : "Add Item"} style={{ flex: 1 }}>
+          <AppCard title={editingId ? "Edit Item" : "Add Item"} className="setlist-col-span-1">
             <form onSubmit={handleFormSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
               
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>

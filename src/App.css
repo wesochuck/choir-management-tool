@@ -514,5 +514,32 @@ body:has(.seating-chart-wide-active) .container {
   box-shadow: var(--shadow-sm);
 }
 
+/* Responsive Set List Grid */
+.setlist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+}
+
+.setlist-col-span-2 {
+  grid-column: span 2;
+}
+
+.setlist-col-span-1 {
+  grid-column: span 1;
+}
+
+@media (max-width: 900px) {
+  .setlist-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .setlist-col-span-2,
+  .setlist-col-span-1 {
+    grid-column: span 1;
+  }
+}
+
+
 
 
