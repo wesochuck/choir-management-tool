@@ -71,9 +71,12 @@ export const EventList: React.FC<EventListProps> = ({
                 event.stopPropagation();
                 onViewRoster(e);
               }}
-              className="btn btn-ghost btn-sm"
+              className="btn btn-primary btn-sm"
+              style={{
+                boxShadow: 'var(--shadow-sm)'
+              }}
             >
-              RSVP List
+              RSVP Roster
             </button>
             <button 
               onClick={(event) => {
@@ -94,7 +97,7 @@ export const EventList: React.FC<EventListProps> = ({
                   <span>Sending...</span>
                 </>
               ) : (
-                'Email Reminder'
+                '✉️ Email Reminder'
               )}
             </button>
             <button
@@ -104,7 +107,7 @@ export const EventList: React.FC<EventListProps> = ({
               }}
               className="btn btn-secondary btn-sm"
             >
-              Text Reminder
+              💬 Text Reminder
             </button>
             <button 
               onClick={(event) => {
@@ -112,8 +115,12 @@ export const EventList: React.FC<EventListProps> = ({
                 onEdit(e);
               }}
               className="btn btn-ghost btn-sm"
+              style={{ 
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)'
+              }}
             >
-              Edit
+              ✏️ Edit
             </button>
           </div>
         </div>

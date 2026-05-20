@@ -9,6 +9,7 @@ import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 import { profileService, type Profile } from '../../services/profileService';
 import { AppCard } from '../../components/common/AppCard';
+import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import {
   DEFAULT_COMMUNICATION_SETTINGS,
@@ -34,7 +35,11 @@ export default function EventsView() {
   const [rosterEvent, setRosterEvent] = useState<Event | null>(null);
   const [eventRoster, setEventRoster] = useState<EventRoster[]>([]);
   const [isRosterLoading, setIsRosterLoading] = useState(false);
-  const [textEvent, setTextEvent] = useState<Event | null>(null);
+  const [reminderConfig, setReminderConfig] = useState<{ event: Event; type: 'Email' | 'SMS' } | null>(null);
+  const [reminderRoster, setReminderRoster] = useState<EventRoster[]>([]);
+  const [isReminderLoading, setIsReminderLoading] = useState(false);
+  const [reminderTarget, setReminderTarget] = useState<'Yes' | 'YesPending' | 'All'>('YesPending');
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [auditionSettings, setAuditionSettings] = useState<AuditionSettings | null>(null);
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
@@ -43,7 +48,6 @@ export default function EventsView() {
   const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
   const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [sendingEmailEventId, setSendingEmailEventId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -89,6 +93,32 @@ export default function EventsView() {
     };
   }, [rosterEvent]);
 
+  useEffect(() => {
+    if (!reminderConfig) {
+      setReminderRoster([]);
+      return;
+    }
+    
+    let isCurrent = true;
+    setIsReminderLoading(true);
+    rosterService.getEventRoster(reminderConfig.event.id)
+      .then((rosters) => {
+        if (isCurrent) {
+          setReminderRoster(rosters);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load reminder roster', err);
+      })
+      .finally(() => {
+        if (isCurrent) setIsReminderLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [reminderConfig]);
+
   const handleEdit = (event: Event) => {
     setEditingEvent(event);
     setIsModalOpen(true);
@@ -130,7 +160,6 @@ export default function EventsView() {
         message: `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
       });
     } else if (!openAuditions && savedEvent && savedEvent.type === 'Performance') {
-        // If they explicitly unchecked it, and it WAS the default, we should probably disable it or unset it
         const currentSettings = await settingsService.getAuditionSettings();
         if (currentSettings.defaultPerformanceId === savedEvent.id && currentSettings.enabled) {
             const updatedSettings = {
@@ -143,31 +172,56 @@ export default function EventsView() {
     }
   };
 
-  const handleEmailReminder = async (event: Event) => {
-    if (sendingEmailEventId) return;
-    setSendingEmailEventId(event.id);
+  const getTemplateValues = (event: Event) => ({
+    eventTitle: event.title || event.type,
+    eventDate: new Date(event.date).toLocaleString(),
+    eventLocation: event.expand?.venue?.name || '',
+    eventDetails: event.details || '',
+  });
 
+  const getFilteredRecipients = () => {
+    if (!reminderConfig) return [];
+    
+    return reminderRoster
+      .filter((item) => {
+        const profile = item.expand?.profile;
+        if (!profile || profile.globalStatus === 'Inactive') return false;
+        
+        if (reminderTarget === 'Yes') {
+          return item.rsvp === 'Yes';
+        }
+        if (reminderTarget === 'YesPending') {
+          return item.rsvp !== 'No';
+        }
+        return true;
+      })
+      .map((item) => item.expand?.profile)
+      .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile));
+  };
+
+  const getFilteredRecipientsForSms = () => {
+    return getFilteredRecipients().filter(p => p.phone);
+  };
+
+  const handleSendReminderEmail = async (event: Event) => {
+    setIsSendingReminder(true);
     try {
-      const roster = await rosterService.getEventRoster(event.id);
-      const recipients = roster
-        .filter((item) => item.expand?.profile?.globalStatus !== 'Inactive' && item.rsvp !== 'No')
-        .map((item) => {
-          const profile = item.expand?.profile;
-          return {
-            id: profile?.id || '',
-            name: profile?.name || '',
-            email: profile?.expand?.user?.email || '',
-            phone: profile?.phone || '',
-            voicePart: profile?.voicePart || '',
-            globalStatus: profile?.globalStatus || '',
-          };
-        })
-        .filter((r): r is CommunicationRecipient => Boolean(r.id && r.email));
+      const activeProfiles = getFilteredRecipients();
+      const recipients = activeProfiles
+        .map((profile): CommunicationRecipient => ({
+          id: profile.id,
+          name: profile.name,
+          email: profile.expand?.user?.email || '',
+          phone: profile.phone || '',
+          voicePart: profile.voicePart || '',
+          globalStatus: profile.globalStatus || '',
+        }))
+        .filter((r) => Boolean(r.id && r.email));
 
       if (recipients.length === 0) {
         await dialog.showMessage({
           title: 'No Email Addresses',
-          message: 'No active event RSVP emails were found.',
+          message: 'No active event RSVP emails were found matching this filter.',
         });
         return;
       }
@@ -176,52 +230,34 @@ export default function EventsView() {
       const subject = renderCommunicationTemplate(communicationSettings.emailSubject, values);
       const body = renderCommunicationTemplate(communicationSettings.emailBody, values);
 
-      setIsRosterLoading(true);
-      try {
-        await communicationService.sendBulkMessage({
-          subject,
-          content: body,
-          type: 'Email',
-          recipients,
-          filters: {
-            eventId: event.id,
-            rsvp: 'All',
-            voicePart: '',
-            globalStatus: 'Active (Current)',
-          },
-        });
+      await communicationService.sendBulkMessage({
+        subject,
+        content: body,
+        type: 'Email',
+        recipients,
+        filters: {
+          eventId: event.id,
+          rsvp: reminderTarget === 'Yes' ? 'Yes' : reminderTarget === 'YesPending' ? 'Pending' : 'All',
+          voicePart: '',
+          globalStatus: 'Active (Current)',
+        },
+      });
 
-        await dialog.showMessage({
-          title: 'Reminder Queueing',
-          message: `Event email reminders have been queued and sent to ${recipients.length} recipients via the communications backend service.`,
-          variant: 'info',
-        });
-      } catch {
-        await dialog.showMessage({
-          title: 'Could Not Send Reminder',
-          message: 'The email reminder could not be dispatched via the communications backend service.',
-          variant: 'danger',
-        });
-      } finally {
-        setIsRosterLoading(false);
-      }
+      await dialog.showMessage({
+        title: 'Reminder Queueing',
+        message: `Event email reminders have been queued and sent to ${recipients.length} recipients via the communications backend service.`,
+        variant: 'info',
+      });
+      setReminderConfig(null);
+    } catch {
+      await dialog.showMessage({
+        title: 'Could Not Send Reminder',
+        message: 'The email reminder could not be dispatched via the communications backend service.',
+        variant: 'danger',
+      });
     } finally {
-      setSendingEmailEventId(null);
+      setIsSendingReminder(false);
     }
-  };
-
-  const getTemplateValues = (event: Event) => ({
-    eventTitle: event.title || event.type,
-    eventDate: new Date(event.date).toLocaleString(),
-    eventLocation: event.expand?.venue?.name || '',
-    eventDetails: event.details || '',
-  });
-
-  const activeProfilesForText = async (eventId: string) => {
-    const roster = await rosterService.getEventRoster(eventId);
-    return roster
-      .map((item) => item.expand?.profile)
-      .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile && profile.globalStatus !== 'Inactive' && profile.phone));
   };
 
   if (isLoading && events.length === 0) return <div style={{ padding: '20px' }}>Loading events...</div>;
@@ -244,24 +280,156 @@ export default function EventsView() {
       <EventList
         events={events}
         onEdit={handleEdit}
-        onEmailReminder={handleEmailReminder}
-        onTextReminder={setTextEvent}
+        onEmailReminder={(event) => setReminderConfig({ event, type: 'Email' })}
+        onTextReminder={(event) => setReminderConfig({ event, type: 'SMS' })}
         onViewRoster={setRosterEvent}
         openAuditionEventId={auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined}
-        sendingEmailEventId={sendingEmailEventId}
       />
 
-      {textEvent && (
-        <AppCard
-          title={`Text Reminder: ${textEvent.title || textEvent.expand?.venue?.name || ''}`}
-          actions={<button className="btn btn-ghost btn-sm" onClick={() => setTextEvent(null)}>Close</button>}
+      {reminderConfig && (
+        <BaseModal
+          isOpen={Boolean(reminderConfig)}
+          onClose={() => setReminderConfig(null)}
+          title={`Send ${reminderConfig.type} Reminder`}
+          maxWidth="550px"
+          footer={
+            <>
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => setReminderConfig(null)} 
+                disabled={isSendingReminder}
+              >
+                Cancel
+              </button>
+              {reminderConfig.type === 'Email' ? (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => handleSendReminderEmail(reminderConfig.event)}
+                  disabled={isSendingReminder || isReminderLoading || getFilteredRecipients().length === 0}
+                >
+                  {isSendingReminder ? 'Sending...' : `Send Email (${getFilteredRecipients().length})`}
+                </button>
+              ) : (
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => setReminderConfig(null)}
+                >
+                  Close
+                </button>
+              )}
+            </>
+          }
         >
-          <TextReminderPanel
-            event={textEvent}
-            message={renderCommunicationTemplate(communicationSettings.smsBody, getTemplateValues(textEvent))}
-            loadProfiles={() => activeProfilesForText(textEvent.id)}
-          />
-        </AppCard>
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label" style={{ fontWeight: 'bold' }}>1. Select Recipient Filter</label>
+              <div className="flex-row" style={{ gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setReminderTarget('Yes')}
+                  style={{
+                    height: '38px',
+                    backgroundColor: reminderTarget === 'Yes' ? 'rgba(74, 117, 89, 0.15)' : 'transparent',
+                    color: reminderTarget === 'Yes' ? 'var(--primary-deep)' : 'var(--text-muted)',
+                    border: `1px solid ${reminderTarget === 'Yes' ? 'rgba(74, 117, 89, 0.3)' : 'var(--border)'}`,
+                    fontWeight: 700,
+                  }}
+                >
+                  🟢 Attending Only ({reminderRoster.filter(r => r.expand?.profile?.globalStatus !== 'Inactive' && r.rsvp === 'Yes').length})
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setReminderTarget('YesPending')}
+                  style={{
+                    height: '38px',
+                    backgroundColor: reminderTarget === 'YesPending' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                    color: reminderTarget === 'YesPending' ? '#1d4ed8' : 'var(--text-muted)',
+                    border: `1px solid ${reminderTarget === 'YesPending' ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)'}`,
+                    fontWeight: 700,
+                  }}
+                >
+                  👥 Attending + Pending ({reminderRoster.filter(r => r.expand?.profile?.globalStatus !== 'Inactive' && r.rsvp !== 'No').length})
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setReminderTarget('All')}
+                  style={{
+                    height: '38px',
+                    backgroundColor: reminderTarget === 'All' ? 'rgba(107, 114, 128, 0.08)' : 'transparent',
+                    color: reminderTarget === 'All' ? '#4b5563' : 'var(--text-muted)',
+                    border: `1px solid ${reminderTarget === 'All' ? 'rgba(107, 114, 128, 0.2)' : 'var(--border)'}`,
+                    fontWeight: 700,
+                  }}
+                >
+                  📢 Everyone Active ({reminderRoster.filter(r => r.expand?.profile?.globalStatus !== 'Inactive').length})
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label" style={{ fontWeight: 'bold' }}>2. Message Template Preview</label>
+              <div className="card" style={{ backgroundColor: 'var(--bg)', boxShadow: 'none', padding: 'var(--space-md)', border: '1px solid var(--border)' }}>
+                {reminderConfig.type === 'Email' ? (
+                  <>
+                    <div style={{ fontWeight: 'bold', borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '8px' }}>
+                      Subject: {renderCommunicationTemplate(communicationSettings.emailSubject, getTemplateValues(reminderConfig.event))}
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>
+                      {renderCommunicationTemplate(communicationSettings.emailBody, getTemplateValues(reminderConfig.event))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>
+                    {renderCommunicationTemplate(communicationSettings.smsBody, getTemplateValues(reminderConfig.event))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label" style={{ fontWeight: 'bold' }}>
+                3. Recipients ({reminderConfig.type === 'Email' ? getFilteredRecipients().length : getFilteredRecipientsForSms().length})
+              </label>
+              <div className="card flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '180px', overflowY: 'auto', boxShadow: 'none', backgroundColor: 'var(--bg)', padding: 'var(--space-sm)', border: '1px solid var(--border)' }}>
+                {isReminderLoading ? (
+                  <p className="text-muted text-xs">Loading recipients...</p>
+                ) : reminderConfig.type === 'Email' ? (
+                  getFilteredRecipients().map((profile) => (
+                    <div key={profile.id} className="flex-row" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                      <span><strong>{profile.name}</strong> <span style={{ color: 'var(--text-muted)' }}>({profile.voicePart || 'No Part'})</span></span>
+                      <span className="text-muted">{profile.expand?.user?.email || 'No email'}</span>
+                    </div>
+                  ))
+                ) : (
+                  getFilteredRecipientsForSms().map((profile) => {
+                    const smsMessage = renderCommunicationTemplate(communicationSettings.smsBody, getTemplateValues(reminderConfig.event));
+                    return (
+                      <div key={profile.id} className="flex-row" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                        <span><strong>{profile.name}</strong> <span style={{ color: 'var(--text-muted)' }}>({profile.phone})</span></span>
+                        <a 
+                          className="btn btn-secondary btn-sm" 
+                          style={{ height: '28px', padding: '0 10px', fontSize: '0.7rem' }}
+                          href={`sms:${encodeURIComponent(profile.phone)}?&body=${encodeURIComponent(smsMessage)}`}
+                        >
+                          Send Text
+                        </a>
+                      </div>
+                    );
+                  })
+                )}
+                {!isReminderLoading && reminderConfig.type === 'Email' && getFilteredRecipients().length === 0 && (
+                  <p className="text-muted text-xs">No active singers match this filter.</p>
+                )}
+                {!isReminderLoading && reminderConfig.type === 'SMS' && getFilteredRecipientsForSms().length === 0 && (
+                  <p className="text-muted text-xs">No active singers with phone numbers match this filter.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </BaseModal>
       )}
 
       {rosterEvent && (
@@ -305,16 +473,22 @@ export default function EventsView() {
             const noCount = mappedSingers.filter(s => s.rsvp === 'No').length;
             const pendingCount = mappedSingers.filter(s => s.rsvp === 'Pending').length;
 
+            // Filter mappedSingers by the selected rsvpFilter for the voice breakdown counts
+            const activeCountSingers = mappedSingers.filter(s => {
+              if (rsvpFilter === 'All') return true;
+              return s.rsvp === rsvpFilter;
+            });
+
             const sectionCounts = {
-              S: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('S')).length,
-              A: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('A')).length,
-              T: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('T')).length,
-              B: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('B')).length,
+              S: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('S')).length,
+              A: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('A')).length,
+              T: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('T')).length,
+              B: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('B')).length,
             };
 
             const partCounts = new Map<string, number>();
             voiceParts.forEach(vp => {
-              const count = mappedSingers.filter(s => s.profile.voicePart === vp.label && s.rsvp === 'Yes').length;
+              const count = activeCountSingers.filter(s => s.profile.voicePart === vp.label).length;
               partCounts.set(vp.label, count);
             });
 
@@ -362,7 +536,201 @@ export default function EventsView() {
 
             return (
               <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                {/* Filters Row */}
+                {/* Voice Part RSVP Balance Summary Card */}
+                {voiceParts.length > 0 && (
+                  <AppCard 
+                    title="Voice Part RSVP Balance"
+                    actions={
+                      <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
+                        {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
+                        {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
+                        {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
+                        {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
+                      </span>
+                    }
+                    style={{ gap: 'var(--space-md)' }}
+                  >
+                    <style>{`
+                      .voice-section-card {
+                        transition: all 0.2s ease-in-out;
+                        cursor: pointer;
+                        border: 2px solid transparent;
+                      }
+                      .voice-section-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: var(--shadow-sm);
+                        opacity: 0.9;
+                      }
+                      .voice-section-card.selected {
+                        border-color: var(--primary) !important;
+                        box-shadow: 0 0 0 1px var(--primary);
+                      }
+                      .voice-part-card {
+                        transition: all 0.2s ease-in-out;
+                        cursor: pointer;
+                        border: 1px solid var(--border);
+                      }
+                      .voice-part-card:hover {
+                        border-color: var(--primary-deep);
+                        background-color: var(--primary-light) !important;
+                        transform: translateY(-1px);
+                      }
+                      .voice-part-card.selected {
+                        border-color: var(--primary) !important;
+                        background-color: var(--primary-light) !important;
+                      }
+                    `}</style>
+
+                    {/* RSVP Status Filters acting on Voice Part Counts */}
+                    <div 
+                      className="flex-row" 
+                      style={{ 
+                        gap: 'var(--space-sm)', 
+                        flexWrap: 'wrap', 
+                        paddingBottom: 'var(--space-sm)',
+                        borderBottom: '1px solid var(--border)'
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setRsvpFilter('All')}
+                        className={`btn btn-sm`}
+                        style={{
+                          height: '38px',
+                          padding: '0 16px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                          color: rsvpFilter === 'All' ? '#1d4ed8' : 'var(--text-muted)',
+                          border: `1px solid ${rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)'}`,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        👥 All Active ({mappedSingers.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRsvpFilter('Yes')}
+                        className={`btn btn-sm`}
+                        style={{
+                          height: '38px',
+                          padding: '0 16px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.15)' : 'transparent',
+                          color: rsvpFilter === 'Yes' ? 'var(--primary-deep)' : 'var(--text-muted)',
+                          border: `1px solid ${rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.3)' : 'var(--border)'}`,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        🟢 Attending ({yesCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRsvpFilter('No')}
+                        className={`btn btn-sm`}
+                        style={{
+                          height: '38px',
+                          padding: '0 16px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                          color: rsvpFilter === 'No' ? '#b91c1c' : 'var(--text-muted)',
+                          border: `1px solid ${rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        🔴 Declined ({noCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRsvpFilter('Pending')}
+                        className={`btn btn-sm`}
+                        style={{
+                          height: '38px',
+                          padding: '0 16px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.08)' : 'transparent',
+                          color: rsvpFilter === 'Pending' ? '#4b5563' : 'var(--text-muted)',
+                          border: `1px solid ${rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.2)' : 'var(--border)'}`,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ⏳ No Response ({pendingCount})
+                      </button>
+                    </div>
+
+                    {/* Section Subtotals */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(4, 1fr)', 
+                      gap: 'var(--space-md)',
+                      paddingBottom: 'var(--space-md)',
+                      borderBottom: '1px solid var(--border)'
+                    }}>
+                      {(['S', 'A', 'T', 'B'] as const).map(sec => {
+                        const isSelected = selectedVoiceParts.includes(sec);
+                        return (
+                          <div 
+                            key={sec} 
+                            className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleVoicePartToggle(sec)}
+                            style={{ 
+                              textAlign: 'center', 
+                              padding: 'calc(var(--space-md) - 2px)', 
+                              borderRadius: 'var(--radius-md)', 
+                              backgroundColor: 'var(--primary-light)',
+                              gap: 'var(--space-xs)',
+                              borderWidth: '2px',
+                              borderStyle: 'solid',
+                              borderColor: isSelected ? 'var(--primary)' : 'transparent'
+                            }}
+                          >
+                            <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Individual Part Breakdowns */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
+                      gap: 'var(--space-sm)',
+                      marginTop: 0
+                    }}>
+                      {voiceParts.map(vp => {
+                        const isSelected = selectedVoiceParts.includes(vp.label);
+                        const count = partCounts.get(vp.label) || 0;
+                        return (
+                          <div 
+                            key={vp.label} 
+                            className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleVoicePartToggle(vp.label)}
+                            style={{ 
+                              textAlign: 'center', 
+                              borderRadius: 'var(--radius-sm)', 
+                              backgroundColor: 'var(--bg)',
+                              gap: '2px',
+                              borderStyle: 'solid',
+                              borderWidth: isSelected ? '2px' : '1px',
+                              padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
+                            }}
+                          >
+                            <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
+                            <div className="text-label" style={{ fontWeight: 700 }}>{count}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </AppCard>
+                )}
+
+                {/* Filters & Search Row (Positioned closer to the list of names) */}
                 <div 
                   className="flex-responsive" 
                   style={{ 
@@ -370,7 +738,8 @@ export default function EventsView() {
                     alignItems: 'center', 
                     flexWrap: 'wrap',
                     borderBottom: '1px solid var(--border)',
-                    paddingBottom: 'var(--space-md)'
+                    paddingBottom: 'var(--space-md)',
+                    marginTop: 'var(--space-sm)'
                   }}
                 >
                   {/* Name Search */}
@@ -460,196 +829,6 @@ export default function EventsView() {
                   )}
                 </div>
 
-                {/* Voice Part RSVP Balance Summary Card */}
-                {voiceParts.length > 0 && (
-                  <AppCard 
-                    title="Voice Part RSVP Balance"
-                    actions={
-                      <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
-                        Total: {yesCount} Attending
-                      </span>
-                    }
-                    style={{ gap: 'var(--space-md)' }}
-                  >
-                    <style>{`
-                      .voice-section-card {
-                        transition: all 0.2s ease-in-out;
-                        cursor: pointer;
-                        border: 2px solid transparent;
-                      }
-                      .voice-section-card:hover {
-                        transform: translateY(-2px);
-                        box-shadow: var(--shadow-sm);
-                        opacity: 0.9;
-                      }
-                      .voice-section-card.selected {
-                        border-color: var(--primary) !important;
-                        box-shadow: 0 0 0 1px var(--primary);
-                      }
-                      .voice-part-card {
-                        transition: all 0.2s ease-in-out;
-                        cursor: pointer;
-                        border: 1px solid var(--border);
-                      }
-                      .voice-part-card:hover {
-                        border-color: var(--primary-deep);
-                        background-color: var(--primary-light) !important;
-                        transform: translateY(-1px);
-                      }
-                      .voice-part-card.selected {
-                        border-color: var(--primary) !important;
-                        background-color: var(--primary-light) !important;
-                      }
-                    `}</style>
-
-                    {/* Section Subtotals */}
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(4, 1fr)', 
-                      gap: 'var(--space-md)',
-                      paddingBottom: 'var(--space-md)',
-                      borderBottom: '1px solid var(--border)'
-                    }}>
-                      {(['S', 'A', 'T', 'B'] as const).map(sec => {
-                        const isSelected = selectedVoiceParts.includes(sec);
-                        return (
-                          <div 
-                            key={sec} 
-                            className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
-                            onClick={() => handleVoicePartToggle(sec)}
-                            style={{ 
-                              textAlign: 'center', 
-                              padding: 'calc(var(--space-md) - 2px)', 
-                              borderRadius: 'var(--radius-md)', 
-                              backgroundColor: 'var(--primary-light)',
-                              gap: 'var(--space-xs)',
-                              borderWidth: '2px',
-                              borderStyle: 'solid',
-                              borderColor: isSelected ? 'var(--primary)' : 'transparent'
-                            }}
-                          >
-                            <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
-                            </div>
-                            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Individual Part Breakdowns */}
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
-                      gap: 'var(--space-sm)',
-                      marginTop: 0
-                    }}>
-                      {voiceParts.map(vp => {
-                        const isSelected = selectedVoiceParts.includes(vp.label);
-                        const count = partCounts.get(vp.label) || 0;
-                        return (
-                          <div 
-                            key={vp.label} 
-                            className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
-                            onClick={() => handleVoicePartToggle(vp.label)}
-                            style={{ 
-                              textAlign: 'center', 
-                              borderRadius: 'var(--radius-sm)', 
-                              backgroundColor: 'var(--bg)',
-                              gap: '2px',
-                              borderStyle: 'solid',
-                              borderWidth: isSelected ? '2px' : '1px',
-                              padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
-                            }}
-                          >
-                            <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
-                            <div className="text-label" style={{ fontWeight: 700 }}>{count}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </AppCard>
-                )}
-
-                {/* Quick Info / Count Banner */}
-                <div 
-                  className="flex-row" 
-                  style={{ 
-                    gap: 'var(--space-sm)', 
-                    flexWrap: 'wrap', 
-                    paddingBottom: 'var(--space-xs)' 
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setRsvpFilter('All')}
-                    className={`btn btn-sm`}
-                    style={{
-                      height: '38px',
-                      padding: '0 16px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                      color: rsvpFilter === 'All' ? '#1d4ed8' : 'var(--text-muted)',
-                      border: `1px solid ${rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)'}`,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    👥 All Active ({mappedSingers.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRsvpFilter('Yes')}
-                    className={`btn btn-sm`}
-                    style={{
-                      height: '38px',
-                      padding: '0 16px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.15)' : 'transparent',
-                      color: rsvpFilter === 'Yes' ? 'var(--primary-deep)' : 'var(--text-muted)',
-                      border: `1px solid ${rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.3)' : 'var(--border)'}`,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    🟢 Attending ({yesCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRsvpFilter('No')}
-                    className={`btn btn-sm`}
-                    style={{
-                      height: '38px',
-                      padding: '0 16px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
-                      color: rsvpFilter === 'No' ? '#b91c1c' : 'var(--text-muted)',
-                      border: `1px solid ${rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    🔴 Declined ({noCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRsvpFilter('Pending')}
-                    className={`btn btn-sm`}
-                    style={{
-                      height: '38px',
-                      padding: '0 16px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.08)' : 'transparent',
-                      color: rsvpFilter === 'Pending' ? '#4b5563' : 'var(--text-muted)',
-                      border: `1px solid ${rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.2)' : 'var(--border)'}`,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ⏳ No Response ({pendingCount})
-                  </button>
-                </div>
-
                 {/* Unified Event Roster Table */}
                 <EventRosterTable 
                   singers={filteredSingers}
@@ -685,58 +864,6 @@ export default function EventsView() {
         performances={performances}
         venues={venues}
       />
-    </div>
-  );
-}
-
-function TextReminderPanel({
-  event,
-  message,
-  loadProfiles,
-}: {
-  event: Event;
-  message: string;
-  loadProfiles: () => Promise<Array<{ id: string; name: string; phone: string }>>;
-}) {
-  const [profiles, setProfiles] = useState<Array<{ id: string; name: string; phone: string }>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isCurrent = true;
-    setIsLoading(true);
-    loadProfiles()
-      .then((loaded) => {
-        if (isCurrent) setProfiles(loaded);
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoading(false);
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [event.id, loadProfiles]);
-
-  if (isLoading) return <p className="text-muted">Loading phone numbers...</p>;
-
-  return (
-    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-      <div className="card" style={{ backgroundColor: 'var(--bg)', boxShadow: 'none' }}>
-        <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{message}</p>
-      </div>
-
-      {profiles.map((profile) => (
-        <div key={profile.id} className="flex-responsive" style={{ justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
-          <div>
-            <div style={{ fontWeight: 700 }}>{profile.name}</div>
-            <div className="text-muted">{profile.phone}</div>
-          </div>
-          <a className="btn btn-secondary btn-sm" href={`sms:${encodeURIComponent(profile.phone)}?&body=${encodeURIComponent(message)}`}>
-            Text
-          </a>
-        </div>
-      ))}
-
-      {profiles.length === 0 && <p className="text-muted">No active singers have phone numbers.</p>}
     </div>
   );
 }
