@@ -20,7 +20,6 @@ test('resolveInitialEventId returns urlEventId when it matches an event in the l
 });
 
 test('resolveInitialEventId falls back to nearest event when urlEventId is absent', () => {
-  const now = new Date('2026-06-07T12:00:00Z');
   const events = [
     makeEvent('evt_1', '2026-06-01T19:00:00Z'),
     makeEvent('evt_2', '2026-06-08T19:00:00Z'),

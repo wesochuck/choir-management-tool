@@ -171,7 +171,7 @@ export default function MusicLibraryView() {
   }, [pieces]);
 
   const filteredPieces = useMemo(() => {
-    let result = pieces;
+    let result = [...pieces];
     if (!showMovements) {
         result = result.filter(p => !p.parentId);
     }
@@ -186,8 +186,48 @@ export default function MusicLibraryView() {
         p.catalogId?.toLowerCase().includes(lower)
       );
     }
-    // Sort by title
-    return result.sort((a, b) => a.title.localeCompare(b.title));
+
+    // Separate parent/standalone and child pieces
+    const parents = result.filter(p => !p.parentId);
+    const children = result.filter(p => p.parentId);
+
+    // Sort parents alphabetically by title
+    parents.sort((a, b) => a.title.localeCompare(b.title));
+
+    // Construct final nested list
+    const sorted: MusicPiece[] = [];
+    const childMap = new Map<string, MusicPiece[]>();
+
+    // Group children by parentId
+    children.forEach(child => {
+        if (child.parentId) {
+            const list = childMap.get(child.parentId) || [];
+            list.push(child);
+            childMap.set(child.parentId, list);
+        }
+    });
+
+    // Sort each parent's children alphabetically by title
+    childMap.forEach(list => {
+        list.sort((a, b) => a.title.localeCompare(b.title));
+    });
+
+    // Insert children immediately following their parent piece
+    parents.forEach(parent => {
+        sorted.push(parent);
+        const parentChildren = childMap.get(parent.id);
+        if (parentChildren) {
+            sorted.push(...parentChildren);
+        }
+    });
+
+    // Handle orphans (children whose parents are not in the current filtered list)
+    const sortedIds = new Set(sorted.map(p => p.id));
+    const orphans = children.filter(child => !sortedIds.has(child.id));
+    orphans.sort((a, b) => a.title.localeCompare(b.title));
+    sorted.push(...orphans);
+
+    return sorted;
   }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements]);
 
   const toggleSelection = (id: string) => {
@@ -315,12 +355,17 @@ export default function MusicLibraryView() {
                 ) : (
                 filteredPieces.map(piece => {
                     const isDuplicate = duplicateIds.has(piece.id);
+                    const isParent = pieces.some(p => p.parentId === piece.id);
+                    const isChild = !!piece.parentId;
                     return (
                         <tr 
                             key={piece.id} 
                             className="relative-row"
                             onClick={() => { setEditingPiece(piece); setIsModalOpen(true); }}
-                            style={{ backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : undefined, cursor: 'pointer' }}
+                            style={{ 
+                                backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : isChild ? 'rgba(248, 250, 252, 0.4)' : undefined, 
+                                cursor: 'pointer' 
+                            }}
                         >
                         <td style={{ textAlign: 'center', padding: '6px 10px', border: '1px solid var(--border)' }}>
                             <input 
@@ -331,9 +376,53 @@ export default function MusicLibraryView() {
                                 style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
                             />
                         </td>
-                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
-                            <div className="flex-col" style={{ gap: 0 }}>
-                                <strong style={{ color: isDuplicate ? '#e64a19' : 'inherit' }}>{piece.title}</strong>
+                        <td style={{ 
+                            padding: '6px 10px', 
+                            paddingLeft: isChild ? '28px' : '10px',
+                            border: '1px solid var(--border)', 
+                            verticalAlign: 'middle' 
+                        }}>
+                            <div className="flex-col" style={{ gap: '2px' }}>
+                                <div className="flex-row" style={{ alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    {isChild && (
+                                        <span className="text-xs text-muted" style={{ fontFamily: 'monospace', marginRight: '2px', userSelect: 'none' }}>
+                                            └─
+                                        </span>
+                                    )}
+                                    <strong style={{ color: isDuplicate ? '#e64a19' : 'inherit' }}>{piece.title}</strong>
+                                    {isParent && (
+                                        <span style={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            padding: '2px 6px', 
+                                            borderRadius: '4px', 
+                                            backgroundColor: 'var(--primary-light, rgba(27, 77, 62, 0.1))', 
+                                            color: 'var(--primary, #1b4d3e)', 
+                                            fontSize: '10px', 
+                                            fontWeight: 600,
+                                            border: '1px solid rgba(27, 77, 62, 0.2)',
+                                            lineHeight: '1.2'
+                                        }}>
+                                            Multi-Movement
+                                        </span>
+                                    )}
+                                    {isChild && (
+                                        <span style={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            padding: '1px 5px', 
+                                            borderRadius: '4px', 
+                                            backgroundColor: 'rgba(100, 116, 139, 0.1)', 
+                                            color: 'var(--text-muted, #64748b)', 
+                                            fontSize: '9px', 
+                                            fontWeight: 500,
+                                            border: '1px solid rgba(100, 116, 139, 0.2)',
+                                            lineHeight: '1.2'
+                                        }}>
+                                            Movement
+                                        </span>
+                                    )}
+                                </div>
                                 {piece.performances && piece.performances.length > 0 && (
                                     <span className="text-xs text-muted" title={formatPerformanceHistory(piece).join('\n')}>
                                         {piece.performances.length} historical performances
@@ -529,7 +618,15 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [newMovementDuration, setNewMovementDuration] = useState('');
     const [expandedMovementId, setExpandedMovementId] = useState<string | null>(null);
 
-    const loadMovements = async () => {
+    useEffect(() => {
+        if (piece) {
+            setNewMovementTitle(`Movement ${movements.length + 1}`);
+        } else {
+            setNewMovementTitle('');
+        }
+    }, [movements, piece]);
+
+    const loadMovements = useCallback(async () => {
         if (!piece) return;
         try {
             const list = await pb.collection('musicLibrary').getFullList<MusicPiece>({
@@ -543,7 +640,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         } catch (err) {
             console.error('Failed to load movements', err);
         }
-    };
+    }, [piece]);
 
     useEffect(() => {
         if (isOpen) {
@@ -590,7 +687,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         setNewMovementTitle('');
         setNewMovementDuration('');
         setExpandedMovementId(null);
-    }, [piece, isOpen]);
+    }, [piece, isOpen, loadMovements]);
 
     const handleFileUpload = async (voicePart: string, file: File) => {
         if (!localPiece) return;

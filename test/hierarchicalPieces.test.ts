@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import type { RecordModel } from 'pocketbase';
 import { musicLibraryService, type MusicPiece } from '../src/services/musicLibraryService.ts';
 import { resolvePieceMetadata } from '../src/lib/musicPieceUtils.ts';
 
