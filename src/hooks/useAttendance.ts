@@ -56,7 +56,7 @@ export const useAttendance = (eventId: string) => {
           name: p.name,
           voicePart: p.voicePart,
           attendance: roster?.attendance || 'Pending',
-          rsvp: roster?.rsvp || 'Pending',
+          rsvp: currentEvent?.type === 'Rehearsal' ? (parentRoster?.rsvp || 'Pending') : (roster?.rsvp || 'Pending'),
           rosterId: roster?.id,
           folderNumber: parentRoster?.folderNumber || '',
           folderReturned: parentRoster?.folderReturned || false,
@@ -75,6 +75,32 @@ export const useAttendance = (eventId: string) => {
   useEffect(() => {
     fetchAttendance();
   }, [fetchAttendance]);
+
+  const setRSVP = async (profileId: string, nextRsvp: 'Yes' | 'No') => {
+    const originalItem = items.find(item => item.profileId === profileId);
+    if (!originalItem) return;
+
+    // Optimistically update local state immediately
+    setItems(prev => prev.map(item => 
+      item.profileId === profileId 
+        ? { ...item, rsvp: nextRsvp } 
+        : item
+    ));
+
+    try {
+      const targetEventId = event?.type === 'Performance' ? eventId : event?.parentPerformanceId;
+      if (!targetEventId) throw new Error("No parent performance linked to this rehearsal to record RSVP.");
+      await rosterService.updateRSVP(targetEventId, profileId, nextRsvp);
+    } catch (err: unknown) {
+      // Revert on failure
+      setItems(prev => prev.map(item => 
+        item.profileId === profileId 
+          ? { ...item, rsvp: originalItem.rsvp } 
+          : item
+      ));
+      throw new Error(err instanceof Error ? err.message : 'Failed to update RSVP');
+    }
+  };
 
   const setAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
     const originalItem = items.find(item => item.profileId === profileId);
@@ -197,6 +223,7 @@ export const useAttendance = (eventId: string) => {
     isLoading,
     error,
     setAttendance,
+    setRSVP,
     setAllAttendance,
     updateFolder,
     refresh: fetchAttendance,

@@ -72,7 +72,7 @@ export const rosterService = {
     });
   },
 
-  async updateRSVP(eventId: string, profileId: string, rsvp: 'Yes' | 'No') {
+  async updateRSVP(eventId: string, profileId: string, rsvp: 'Yes' | 'No' | 'Pending') {
     // Find existing or create new
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(

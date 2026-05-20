@@ -23,6 +23,8 @@ export default function AttendanceView() {
   const [filterVoicePart, setFilterVoicePart] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [sortBy, setSortBy] = useState<'lastName' | 'voicePart'>('lastName');
+  const [isPendingExpanded, setIsPendingExpanded] = useState(false);
+  const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
 
   useEffect(() => {
     settingsService.getAttendanceSettings()
@@ -44,16 +46,11 @@ export default function AttendanceView() {
     }
   }, [events, selectedEventId]);
 
-  const { items, isLoading, error, setAttendance, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId);
+  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId);
 
   const selectedEvent = useMemo(() => 
     events.find(e => e.id === selectedEventId), 
     [events, selectedEventId]
-  );
-
-  const sortedEvents = useMemo(() => 
-    [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [events]
   );
 
   // Compute filtered items dynamically
@@ -85,6 +82,42 @@ export default function AttendanceView() {
     });
   }, [items, filterName, filterVoicePart, filterStatus]);
 
+  const expectedItems = useMemo(() => {
+    return filteredItems.filter(item => item.rsvp === 'Yes');
+  }, [filteredItems]);
+
+  const pendingItems = useMemo(() => {
+    return filteredItems.filter(item => item.rsvp === 'Pending');
+  }, [filteredItems]);
+
+  const declinedSingers = useMemo(() => {
+    return items.filter(item => item.rsvp === 'No');
+  }, [items]);
+
+  const handleRescueDeclined = async (profileId: string) => {
+    if (!profileId) return;
+    try {
+      await setRSVP(profileId, 'Yes');
+      setSelectedDeclinedProfileId('');
+      await dialog.showMessage({
+        title: 'Singer Added Back',
+        message: 'The singer has been successfully set to Attending and added to the check-in list.',
+        variant: 'info'
+      });
+    } catch (err: unknown) {
+      await dialog.showMessage({
+        title: 'Error Adding Singer',
+        message: err instanceof Error ? err.message : 'Failed to update RSVP',
+        variant: 'danger'
+      });
+    }
+  };
+
+  const sortedEvents = useMemo(() => 
+    [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [events]
+  );
+
   const handleResetFilters = () => {
     setFilterName('');
     setFilterVoicePart('');
@@ -93,6 +126,11 @@ export default function AttendanceView() {
 
   const handleSetAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
     try {
+      const originalItem = items.find(i => i.profileId === profileId);
+      if (originalItem && originalItem.rsvp === 'Pending' && next === 'Present') {
+        // Automatically promote pending singers to Yes when marked Present
+        await setRSVP(profileId, 'Yes');
+      }
       await setAttendance(profileId, next);
     } catch (err: unknown) {
       await dialog.showMessage({
@@ -466,7 +504,7 @@ export default function AttendanceView() {
           <p style={{ color: 'var(--color-danger-text)', fontWeight: 600 }}>{error}</p>
         </AppCard>
       ) : selectedEventId ? (
-        filteredItems.length === 0 ? (
+        filteredItems.length === 0 && declinedSingers.length === 0 ? (
           <AppCard style={{ textAlign: 'center', padding: '48px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
             <span style={{ fontSize: '2rem' }}>🔍</span>
             <h3 style={{ marginTop: '12px', marginBottom: '4px', fontWeight: 800, fontSize: '1.25rem' }}>No Matching Singers</h3>
@@ -474,13 +512,115 @@ export default function AttendanceView() {
             <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
           </AppCard>
         ) : (
-          <CheckInList
-            items={filteredItems}
-            onSetAttendance={handleSetAttendance}
-            onUpdateFolder={handleUpdateFolder}
-            onEdit={handleEditProfile}
-            sortBy={sortBy}
-          />
+          <div className="flex-col" style={{ gap: 'var(--space-md)', width: '100%' }}>
+            
+            {/* 1. Expected / Attending Singers Section */}
+            <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
+              {expectedItems.length > 0 ? (
+                <CheckInList
+                  items={expectedItems}
+                  onSetAttendance={handleSetAttendance}
+                  onUpdateFolder={handleUpdateFolder}
+                  onEdit={handleEditProfile}
+                  sortBy={sortBy}
+                />
+              ) : (
+                <AppCard style={{ textAlign: 'center', padding: '24px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
+                  <p className="text-muted text-sm" style={{ margin: 0 }}>No expected singers (RSVP'd Yes) match your filters.</p>
+                </AppCard>
+              )}
+            </div>
+
+            {/* 2. Pending RSVPs Collapsible Section */}
+            {pendingItems.length > 0 && (
+              <div className="flex-col" style={{ marginTop: 'var(--space-md)', width: '100%', gap: 'var(--space-xs)' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsPendingExpanded(!isPendingExpanded)}
+                  className="btn btn-ghost"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '10px 16px',
+                    height: '44px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--primary-light)',
+                    color: 'var(--primary-deep)',
+                    fontWeight: 700,
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <span>⏳ Pending RSVPs ({pendingItems.length} singers)</span>
+                  <span>{isPendingExpanded ? '▲ Hide' : '▼ Show'}</span>
+                </button>
+
+                {isPendingExpanded && (
+                  <div style={{ marginTop: '8px', width: '100%' }}>
+                    <CheckInList
+                      items={pendingItems}
+                      onSetAttendance={handleSetAttendance}
+                      onUpdateFolder={handleUpdateFolder}
+                      onEdit={handleEditProfile}
+                      sortBy={sortBy}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. Declined Singers Rescue Control */}
+            {declinedSingers.length > 0 && (
+              <div 
+                className="card" 
+                style={{ 
+                  marginTop: 'var(--space-md)', 
+                  padding: '16px 20px', 
+                  border: '1px dashed var(--border)', 
+                  backgroundColor: 'rgba(239, 68, 68, 0.02)',
+                  borderRadius: 'var(--radius-md)'
+                }}
+              >
+                <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
+                  <div className="flex-col" style={{ gap: '2px' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#991b1b' }}>Rescue Declined RSVP</h3>
+                    <p className="text-muted text-xs" style={{ margin: 0 }}>Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
+                  </div>
+                  
+                  <div className="flex-row" style={{ gap: '10px', alignItems: 'center', minWidth: '280px', flexWrap: 'wrap' }}>
+                    <select
+                      value={selectedDeclinedProfileId}
+                      onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
+                      className="card"
+                      style={{ flex: 1, padding: '0 12px', height: '36px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}
+                    >
+                      <option value="">-- Select Declined Singer --</option>
+                      {declinedSingers.map(s => (
+                        <option key={s.profileId} value={s.profileId}>{s.name} ({s.voicePart})</option>
+                      ))}
+                    </select>
+                    <button
+                      disabled={!selectedDeclinedProfileId}
+                      onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ 
+                        height: '36px', 
+                        backgroundColor: '#fee2e2', 
+                        color: '#991b1b', 
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        fontWeight: 700 
+                      }}
+                    >
+                      + Add Back
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
         )
       ) : (
         <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
