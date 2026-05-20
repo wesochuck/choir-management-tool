@@ -47,6 +47,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           Total: {total} Singers
         </span>
       }
+      style={{ gap: 'var(--space-md)' }}
     >
       <style>{`
         .voice-section-card {
@@ -84,7 +85,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
         display: 'grid', 
         gridTemplateColumns: 'repeat(4, 1fr)', 
         gap: 'var(--space-md)',
-        paddingBottom: 'var(--space-lg)',
+        paddingBottom: 'var(--space-md)',
         borderBottom: '1px solid var(--border)'
       }}>
         {SECTIONS.map(sec => {
@@ -108,7 +109,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
               <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
             </div>
           );
         })}
@@ -119,7 +120,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
         gap: 'var(--space-sm)',
-        marginTop: 'var(--space-lg)'
+        marginTop: 0
       }}>
         {VOICE_PARTS.map(part => {
           const isSelected = selectedVoiceParts.includes(part);
