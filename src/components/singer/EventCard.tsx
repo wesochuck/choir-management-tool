@@ -86,6 +86,115 @@ export const EventCard: React.FC<EventCardProps> = ({
                   }
                   
                   const piece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
+                  const movements = piece ? library.filter(p => p.parentId === piece.id).sort((a, b) => (a.created || '').localeCompare(b.created || '')) : [];
+
+                  if (movements.length > 0) {
+                    return (
+                      <li key={item.id} className="text-body text-sm" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div>
+                          <strong>{item.title}</strong>
+                          {(item.composer) && <span className="text-muted"> ({item.composer})</span>}
+                          {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
+                        </div>
+                        
+                        {/* Nested movements */}
+                        <ol style={{ margin: '4px 0 0 0', paddingLeft: 'var(--space-lg)', gap: '8px', display: 'flex', flexDirection: 'column', listStyleType: 'decimal' }}>
+                          {movements.map(m => {
+                            const recommendedTracks = resolveRecommendedTracks(voicePart, m.audioTrackMapping);
+                            const movementTrackId = `${item.id}_${m.id}`;
+                            return (
+                              <li key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
+                                  <span className="text-sm">
+                                    {m.title} {m.duration && <span className="text-xs text-muted">({m.duration})</span>}
+                                  </span>
+                                  {recommendedTracks.length > 0 && (
+                                    <div className="flex-row" style={{ gap: '4px', flexWrap: 'wrap' }}>
+                                      {recommendedTracks.map(trackKey => {
+                                        const filename = m.audioTrackMapping?.[trackKey];
+                                        if (!filename) return null;
+                                        const url = pb.files.getURL(m, filename);
+                                        const isCurrent = playingTrack?.songId === movementTrackId && playingTrack?.label === trackKey;
+                                        return (
+                                          <button
+                                            key={trackKey}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isCurrent) {
+                                                setPlayingTrack(null);
+                                              } else {
+                                                setPlayingTrack({
+                                                  songId: movementTrackId,
+                                                  label: trackKey === 'tutti' ? 'Tutti' : trackKey,
+                                                  url
+                                                });
+                                              }
+                                            }}
+                                            className={`btn ${isCurrent ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                                            style={{
+                                              fontSize: '11px',
+                                              padding: '2px 8px',
+                                              height: '22px',
+                                              minHeight: '22px',
+                                              borderRadius: '12px',
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '3px',
+                                              margin: 0
+                                            }}
+                                          >
+                                            🎵 {trackKey === 'tutti' ? 'Tutti' : trackKey}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {playingTrack && playingTrack.songId === movementTrackId && (
+                                  <div className="flex-row" style={{ 
+                                    alignItems: 'center', 
+                                    gap: 'var(--space-sm)', 
+                                    padding: '6px 10px', 
+                                    backgroundColor: 'rgba(74, 124, 89, 0.05)', 
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '8px', 
+                                    marginTop: '4px' 
+                                  }}>
+                                    <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
+                                      {playingTrack.label}
+                                    </span>
+                                    <audio 
+                                      src={playingTrack.url} 
+                                      controls 
+                                      autoPlay 
+                                      style={{ height: '26px', flex: 1, minWidth: '0' }} 
+                                    />
+                                    <button 
+                                      type="button" 
+                                      onClick={() => setPlayingTrack(null)}
+                                      style={{ 
+                                        background: 'none', 
+                                        border: 'none', 
+                                        color: 'var(--text-muted)', 
+                                        cursor: 'pointer', 
+                                        fontSize: '14px', 
+                                        padding: '2px 6px',
+                                        lineHeight: 1
+                                      }}
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </li>
+                    );
+                  }
+
                   const recommendedTracks = piece ? resolveRecommendedTracks(voicePart, piece.audioTrackMapping) : [];
 
                   return (

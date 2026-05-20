@@ -332,7 +332,22 @@ export function resolveRecommendedTracks(
   return Array.from(recommendedSet);
 }
 
-
-
-
-
+/**
+ * Resolves metadata for a music piece, inheriting fields from a parent piece if the child's fields are blank.
+ * @param piece The music piece to resolve.
+ * @param parent Optional parent music piece to inherit from.
+ * @returns A new music piece object with inherited values.
+ */
+export function resolvePieceMetadata(
+  piece: Partial<MusicPiece>,
+  parent?: Partial<MusicPiece>
+): Partial<MusicPiece> {
+  if (!parent) return piece;
+  return {
+    ...piece,
+    composer: piece.composer?.trim() ? piece.composer : (parent.composer || ''),
+    voicing: piece.voicing?.trim() ? piece.voicing : (parent.voicing || ''),
+    copies: piece.copies !== undefined && piece.copies !== null ? piece.copies : parent.copies,
+    catalogId: piece.catalogId?.trim() ? piece.catalogId : (parent.catalogId || ''),
+  };
+}

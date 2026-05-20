@@ -139,7 +139,23 @@ export default function MusicLibraryView() {
     if (!confirmed) return;
 
     try {
-      await musicLibraryService.deletePiece(id);
+      // Check if there are child movements
+      const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
+        filter: pb.filter('parentId = {:id}', { id })
+      });
+
+      let unlinkChildren = false;
+      if (children.length > 0) {
+        unlinkChildren = await dialog.confirm({
+          title: 'Unlink Child Movements?',
+          message: `This piece contains ${children.length} movement(s). Would you like to unlink and keep them as standalone pieces in your library? If you click "Cancel", they will be permanently deleted along with this parent piece.`,
+          variant: 'warning',
+          confirmLabel: 'Keep Movements (Unlink)',
+          cancelLabel: 'Delete Everything'
+        });
+      }
+
+      await musicLibraryService.deletePiece(id, { unlinkChildren });
       await loadData();
     } catch {
       dialog.showMessage({ title: 'Error', message: 'Could not delete the piece.', variant: 'danger' });
@@ -473,7 +489,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [isSaving, setIsSaving] = useState(false);
 
     // Active Tab state
-    const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances'>('details');
+    const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>('details');
 
     // Audio & Voice Parts state
     const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
@@ -491,6 +507,29 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [quickDate, setQuickDate] = useState('');
     const [quickVenue, setQuickVenue] = useState('');
     const [isQuickAdding, setIsQuickAdding] = useState(false);
+
+    // Movements & Hierarchy state
+    const [movements, setMovements] = useState<MusicPiece[]>([]);
+    const [isMultiMovement, setIsMultiMovement] = useState(false);
+    const [newMovementTitle, setNewMovementTitle] = useState('');
+    const [newMovementDuration, setNewMovementDuration] = useState('');
+    const [expandedMovementId, setExpandedMovementId] = useState<string | null>(null);
+
+    const loadMovements = async () => {
+        if (!piece) return;
+        try {
+            const list = await pb.collection('musicLibrary').getFullList<MusicPiece>({
+                filter: pb.filter('parentId = {:id}', { id: piece.id }),
+                sort: 'created'
+            });
+            setMovements(list);
+            if (list.length > 0) {
+                setIsMultiMovement(true);
+            }
+        } catch (err) {
+            console.error('Failed to load movements', err);
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -517,6 +556,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             setCatalogId(piece.catalogId || '');
             setSelectedPerformanceIds(piece.performances || []);
             setNotes(piece.notes || '');
+            loadMovements();
         } else {
             setTitle('');
             setComposer('');
@@ -525,12 +565,17 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             setCatalogId('');
             setSelectedPerformanceIds([]);
             setNotes('');
+            setMovements([]);
+            setIsMultiMovement(false);
         }
         setShowQuickAdd(false);
         setQuickTitle('');
         setQuickDate('');
         setQuickVenue('');
         setActiveTab('details');
+        setNewMovementTitle('');
+        setNewMovementDuration('');
+        setExpandedMovementId(null);
     }, [piece, isOpen]);
 
     const handleFileUpload = async (voicePart: string, file: File) => {
@@ -623,6 +668,157 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             dialog.showMessage({
                 title: 'Error',
                 message: 'Failed to delete the audio track.',
+                variant: 'danger'
+            });
+        }
+    };
+
+    const handleMovementFileUpload = async (movement: MusicPiece, voicePart: string, file: File) => {
+        const uploadKey = `${movement.id}_${voicePart}`;
+        setUploadingParts(prev => ({ ...prev, [uploadKey]: true }));
+        try {
+            const existingFilename = movement.audioTrackMapping?.[voicePart];
+            let currentFiles = movement.audioFiles || [];
+            const currentMapping = { ...(movement.audioTrackMapping || {}) };
+            
+            if (existingFilename) {
+                currentFiles = currentFiles.filter(f => f !== existingFilename);
+                delete currentMapping[voicePart];
+            }
+            
+            const formData = new FormData();
+            currentFiles.forEach(f => {
+                formData.append('audioFiles', f);
+            });
+            formData.append('audioFiles', file);
+            
+            const updatedPiece = await musicLibraryService.updatePiece(movement.id, formData);
+            
+            const oldFiles = movement.audioFiles || [];
+            const newFiles = updatedPiece.audioFiles || [];
+            const addedFilename = newFiles.find(f => !oldFiles.includes(f));
+            
+            if (addedFilename) {
+                currentMapping[voicePart] = addedFilename;
+                await musicLibraryService.updatePiece(movement.id, {
+                    audioTrackMapping: currentMapping
+                });
+                
+                await loadMovements();
+            } else {
+                throw new Error('Upload succeeded but no new filename returned.');
+            }
+        } catch (err) {
+            console.error(err);
+            dialog.showMessage({
+                title: 'Upload Failed',
+                message: 'Failed to upload the audio track for this movement. Ensure the file is under 20MB and is a valid audio format.',
+                variant: 'danger'
+            });
+        } finally {
+            setUploadingParts(prev => ({ ...prev, [uploadKey]: false }));
+        }
+    };
+
+    const handleMovementFileDelete = async (movement: MusicPiece, voicePart: string) => {
+        const filename = movement.audioTrackMapping?.[voicePart];
+        if (!filename) return;
+        
+        const confirmed = await dialog.confirm({
+            title: 'Delete Learning Track',
+            message: `Are you sure you want to delete the track for ${voicePart === 'tutti' ? 'Tutti' : voicePart} in this movement?`,
+            variant: 'danger',
+            confirmLabel: 'Delete'
+        });
+        if (!confirmed) return;
+        
+        try {
+            const filesToKeep = (movement.audioFiles || []).filter(f => f !== filename);
+            const newMapping = { ...(movement.audioTrackMapping || {}) };
+            delete newMapping[voicePart];
+            
+            await musicLibraryService.updatePiece(movement.id, {
+                audioFiles: filesToKeep,
+                audioTrackMapping: newMapping
+            });
+            
+            await loadMovements();
+            
+            dialog.showMessage({
+                title: 'Success',
+                message: 'Movement audio track deleted successfully.',
+                variant: 'info'
+            });
+        } catch (err) {
+            console.error(err);
+            dialog.showMessage({
+                title: 'Error',
+                message: 'Failed to delete the movement audio track.',
+                variant: 'danger'
+            });
+        }
+    };
+
+    const handleDeleteMovement = async (mId: string, mTitle: string) => {
+        const confirmed = await dialog.confirm({
+            title: 'Delete Movement',
+            message: `Are you sure you want to delete the movement "${mTitle}"?`,
+            variant: 'danger',
+            confirmLabel: 'Delete'
+        });
+        if (!confirmed) return;
+        
+        try {
+            await musicLibraryService.deletePiece(mId);
+            await loadMovements();
+            dialog.showMessage({
+                title: 'Success',
+                message: 'Movement deleted successfully.',
+                variant: 'info'
+            });
+        } catch (err) {
+            console.error(err);
+            dialog.showMessage({
+                title: 'Error',
+                message: 'Failed to delete movement.',
+                variant: 'danger'
+            });
+        }
+    };
+
+    const handleAddMovement = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!localPiece) return;
+        
+        const nextIndex = movements.length + 1;
+        const defaultTitle = `Movement ${nextIndex}`;
+        const finalTitle = newMovementTitle.trim() || defaultTitle;
+        
+        try {
+            await musicLibraryService.createPiece({
+                title: finalTitle,
+                parentId: localPiece.id,
+                duration: newMovementDuration.trim() || undefined,
+                composer: composer || undefined,
+                voicing: localPiece.voicing || undefined,
+                copies: copies ? parseInt(copies, 10) : undefined,
+                catalogId: catalogId || undefined,
+                performances: []
+            });
+            
+            setNewMovementTitle('');
+            setNewMovementDuration('');
+            await loadMovements();
+            dialog.showMessage({
+                title: 'Success',
+                message: `Added movement "${finalTitle}".`,
+                variant: 'info'
+            });
+        } catch (err) {
+            console.error(err);
+            dialog.showMessage({
+                title: 'Error',
+                message: 'Failed to add movement.',
                 variant: 'danger'
             });
         }
@@ -772,6 +968,25 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                     >
                         Linked Performances
                     </button>
+                    {isMultiMovement && (
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('movements')}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: activeTab === 'movements' ? '2px solid var(--primary)' : '2px solid transparent',
+                                color: activeTab === 'movements' ? 'var(--primary)' : 'var(--text-muted)',
+                                padding: '8px 16px',
+                                cursor: 'pointer',
+                                fontSize: '15px',
+                                fontWeight: activeTab === 'movements' ? 600 : 500,
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            Movements ({movements.length})
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -786,6 +1001,20 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                             <label className="text-label">Composer/Arranger</label>
                             <input value={composer} onChange={e => setComposer(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
                         </div>
+                        {piece && (
+                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', margin: '4px 0' }}>
+                                <input 
+                                    type="checkbox" 
+                                    id="is-multi-movement"
+                                    checked={isMultiMovement} 
+                                    onChange={e => setIsMultiMovement(e.target.checked)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label htmlFor="is-multi-movement" className="text-label" style={{ margin: 0, cursor: 'pointer', fontWeight: 500 }}>
+                                    This is a multi-movement piece
+                                </label>
+                            </div>
+                        )}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-md)' }}>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Duration</label>
@@ -1097,6 +1326,208 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                 })}
                             </div>
                         )}
+                    </div>
+                )}
+
+                {(piece && activeTab === 'movements' && isMultiMovement) && (
+                    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                        <div className="flex-row animate-fade-in" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 className="text-md" style={{ margin: 0, color: 'var(--primary)' }}>Movements ({movements.length})</h3>
+                        </div>
+
+                        {movements.length === 0 ? (
+                            <div className="card" style={{ padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                No movements added yet. Add your first movement below.
+                            </div>
+                        ) : (
+                            <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+                                {movements.map((m, idx) => {
+                                    const isExpanded = expandedMovementId === m.id;
+                                    return (
+                                        <div 
+                                            key={m.id} 
+                                            className="card" 
+                                            style={{ 
+                                                padding: 'var(--space-sm)', 
+                                                backgroundColor: 'var(--bg-card-hover)', 
+                                                border: '1px solid var(--border)' 
+                                            }}
+                                        >
+                                            <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                                <div className="flex-col">
+                                                    <strong style={{ fontSize: '14px' }}>
+                                                        {idx + 1}. {m.title}
+                                                    </strong>
+                                                    {m.duration && (
+                                                        <span className="text-xs text-muted">
+                                                            Duration: {m.duration}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => setExpandedMovementId(isExpanded ? null : m.id)}
+                                                        style={{ fontSize: '12px', padding: '4px 8px', height: '28px', minHeight: 'auto' }}
+                                                    >
+                                                        {isExpanded ? 'Hide Tracks ▴' : 'Manage Tracks ▾'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => handleDeleteMovement(m.id, m.title)}
+                                                        style={{ color: 'var(--danger)', fontSize: '12px', padding: '4px 8px', height: '28px', minHeight: 'auto' }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {isExpanded && (
+                                                <div className="flex-col" style={{ 
+                                                    gap: '4px', 
+                                                    border: '1px solid var(--border)', 
+                                                    borderRadius: 'var(--radius)',
+                                                    padding: 'var(--space-xs)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                                                    marginTop: 'var(--space-sm)'
+                                                }}>
+                                                    <strong style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px', display: 'block' }}>
+                                                        🎵 Reference & Learning Tracks for {m.title}
+                                                    </strong>
+                                                    {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
+                                                        const filename = m.audioTrackMapping?.[partLabel];
+                                                        const isUploading = uploadingParts[`${m.id}_${partLabel}`];
+                                                        return (
+                                                            <div 
+                                                                key={partLabel} 
+                                                                className="flex-row" 
+                                                                style={{
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    padding: '6px 10px',
+                                                                    backgroundColor: 'var(--bg-card-hover)',
+                                                                    border: '1px solid var(--border)',
+                                                                    borderRadius: 'var(--radius)',
+                                                                    gap: 'var(--space-md)',
+                                                                    fontSize: '13px'
+                                                                }}
+                                                            >
+                                                                <div className="flex-col" style={{ minWidth: '80px' }}>
+                                                                    <strong style={{ fontSize: '12px', color: 'var(--text-color)' }}>
+                                                                        {partLabel === 'tutti' ? 'Tutti' : partLabel}
+                                                                    </strong>
+                                                                    <span className="text-xs text-muted" style={{ fontSize: '10px' }}>
+                                                                        {partLabel === 'tutti' ? 'Full Mix' : (voiceParts.find(vp => vp.label === partLabel)?.fullName || '')}
+                                                                    </span>
+                                                                </div>
+                                                                
+                                                                {isUploading ? (
+                                                                    <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
+                                                                ) : filename ? (
+                                                                    <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
+                                                                        <audio 
+                                                                            src={pb.files.getURL(m, filename)} 
+                                                                            controls 
+                                                                            style={{ height: '24px', maxWidth: '160px', flex: 1 }} 
+                                                                        />
+                                                                        <button 
+                                                                            type="button" 
+                                                                            className="btn btn-ghost btn-sm" 
+                                                                            onClick={() => handleMovementFileDelete(m, partLabel)}
+                                                                            style={{ 
+                                                                                color: 'var(--danger)', 
+                                                                                border: 'none', 
+                                                                                background: 'none', 
+                                                                                cursor: 'pointer',
+                                                                                padding: '4px 6px',
+                                                                                minHeight: 'auto',
+                                                                                height: 'auto',
+                                                                                margin: 0
+                                                                            }}
+                                                                            title="Delete track"
+                                                                        >
+                                                                            🗑️
+                                                                        </button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
+                                                                        <label 
+                                                                            className="btn btn-secondary btn-sm" 
+                                                                            style={{ 
+                                                                                cursor: 'pointer',
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '4px',
+                                                                                fontSize: '11px',
+                                                                                padding: '2px 8px',
+                                                                                height: '24px',
+                                                                                minHeight: '24px',
+                                                                                margin: 0
+                                                                            }}
+                                                                        >
+                                                                            📤 Upload
+                                                                            <input 
+                                                                                type="file" 
+                                                                                accept="audio/*" 
+                                                                                onChange={(e) => {
+                                                                                    const file = e.target.files?.[0];
+                                                                                    if (file) {
+                                                                                        handleMovementFileUpload(m, partLabel, file);
+                                                                                    }
+                                                                                }}
+                                                                                style={{ display: 'none' }}
+                                                                            />
+                                                                        </label>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        <div className="card" style={{ padding: 'var(--space-md)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', backgroundColor: 'var(--bg-card-hover)' }}>
+                            <h4 className="text-sm" style={{ marginTop: 0, marginBottom: 'var(--space-sm)', color: 'var(--primary)' }}>Add New Movement</h4>
+                            <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                                <div className="flex-col" style={{ gap: '4px', flex: '2 1 200px' }}>
+                                    <label className="text-xs text-muted">Movement Name (defaults sequentially)</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder={`e.g. Movement ${movements.length + 1}`}
+                                        value={newMovementTitle}
+                                        onChange={e => setNewMovementTitle(e.target.value)}
+                                        className="card"
+                                        style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
+                                    />
+                                </div>
+                                <div className="flex-col" style={{ gap: '4px', flex: '1 1 100px' }}>
+                                    <label className="text-xs text-muted">Duration (optional)</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. 2:45"
+                                        value={newMovementDuration}
+                                        onChange={e => setNewMovementDuration(e.target.value)}
+                                        className="card"
+                                        style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
+                                    />
+                                </div>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-primary"
+                                    onClick={handleAddMovement}
+                                    style={{ height: '36px', minHeight: '36px', padding: '0 16px', fontSize: '13px' }}
+                                >
+                                    + Add
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </form>

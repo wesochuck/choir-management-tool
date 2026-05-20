@@ -21,5 +21,8 @@ An audio track (typically MP3) attached to a piece in the Music Library. Used by
 ## Twilio SMS Integration
 A configurable outbound messaging service that allows administrators to input Twilio credentials (Account SID, Auth Token, and From Number) to securely route bulk text message alerts and reminders directly through the server, replacing or bypassing local device-based SMS client handoffs.
 
+## Multi-Work Piece
+A sheet music catalog record representing a compound musical work consisting of multiple distinct sections or movements (e.g. masses, cantatas, or oratorios).
 
-
+## Movement
+An individual, named section of a Multi-Work Piece. Each movement possesses its own specific duration and voice-part-specific learning tracks, while inheriting general metadata (like composer, catalog ID, voicing, and physical copies) from its parent piece.

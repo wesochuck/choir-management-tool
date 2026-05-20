@@ -1,5 +1,5 @@
 [x] add the ability to have a setting for the default roster status when opening it.
-[ ] make rsvp list in the events section actually do something.
+[x] make rsvp list in the events section actually do something.
 [x] Highlight Duplicates in music library should really be labeled, filter duplicates or show duplicates.
 [x] make a view that shows the photo as well for the roster management
 [x] make it so you can quickly and easily add the photo in the roster using a cell phone.
@@ -11,6 +11,9 @@
 [x] for the attendance check-in automatically default to the most closest date of something so either something that's just upcoming or maybe has just passed but pick the closest one by the phone
 [x] the convert from audition into singer doesn't work - fix that.
 [x] make it so the admin can manually add someone to the audition roster.
-[ ] make sure all communication history from the various parts of the platform are visible in the communication history section
+[?] make sure all communication history from the various parts of the platform are visible in the communication history section
 [x] allow singers to see the approved set list for any concert which they are committed to singing at
 [ ] Twilio SMS Integration: Add admin UI credentials settings card and server-side PocketBase dispatch hook in pb_hooks to route SMS messages directly via Twilio.
+[ ] port over the music player, allowing for direct md5 links to playlist so people don't have to login.
+[ ] make better use of the set list space. more of it could be horizontal for things like the duration, etc.
+[ ] think about how we could track dues payment.

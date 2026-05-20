@@ -13,8 +13,10 @@ export interface MusicPiece extends RecordModel {
   audioFiles?: string[];
   audioTrackMapping?: Record<string, string>;
   voicing?: string;
+  parentId?: string;
   expand?: {
     performances?: Event[];
+    parentId?: MusicPiece;
   };
 }
 
@@ -41,7 +43,17 @@ export const musicLibraryService = {
     return await pb.collection('musicLibrary').update<MusicPiece>(id, toRecordBody(data));
   },
 
-  async deletePiece(id: string) {
+  async deletePiece(id: string, options?: { unlinkChildren?: boolean }) {
+    if (options?.unlinkChildren) {
+      const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
+        filter: pb.filter('parentId = {:id}', { id })
+      });
+      await Promise.all(
+        children.map(child =>
+          pb.collection('musicLibrary').update(child.id, { parentId: '' })
+        )
+      );
+    }
     return await pb.collection('musicLibrary').delete(id);
   },
 
