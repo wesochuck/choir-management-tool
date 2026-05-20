@@ -1,5 +1,16 @@
 // Profile Status Engine Hooks
 
+const STATUS_HOOK_VERSION = "2026-05-19T20:54:03-04:00-4e54240";
+
+console.log("Profile status hook loaded: " + STATUS_HOOK_VERSION);
+
+routerAdd("GET", "/api/debug/status-hook-version", (e) => {
+    return e.json(200, {
+        hook: "status",
+        version: STATUS_HOOK_VERSION,
+    });
+});
+
 onRecordAfterUpdateSuccess((e) => {
     runProfileStatusUpdate(e.record, "update");
 }, "eventRosters");
