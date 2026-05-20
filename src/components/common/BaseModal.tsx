@@ -7,10 +7,11 @@ interface BaseModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: string;
+  minHeight?: string;
 }
 
 export const BaseModal: React.FC<BaseModalProps> = ({ 
-  isOpen, onClose, title, children, footer, maxWidth = '500px' 
+  isOpen, onClose, title, children, footer, maxWidth = '500px', minHeight
 }) => {
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -65,8 +66,11 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         aria-labelledby={titleId}
         style={{ 
           width: '100%', maxWidth, maxHeight: '90vh', 
+          minHeight,
           overflowY: 'auto', gap: 'var(--space-lg)', 
-          boxShadow: 'var(--shadow-md)'
+          boxShadow: 'var(--shadow-md)',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         <div className="flex-row" style={{ alignItems: 'center' }}>
@@ -78,7 +82,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         </div>
 
         {footer && (
-          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)', marginTop: 'var(--space-sm)' }}>
+          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)', marginTop: 'auto' }}>
             {footer}
           </div>
         )}
