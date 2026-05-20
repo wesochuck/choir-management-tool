@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
-import { findPieceDetails, formatPerformanceHistory, linkSetListItemToPiece, validatePieceForLibrary, parseDurationToSeconds, formatSecondsToDuration } from '../../lib/musicPieceUtils';
+import { findPieceDetails, formatPerformanceHistory, linkSetListItemToPiece, validatePieceForLibrary, parseDurationToSeconds, formatSecondsToDuration, isValidDurationString } from '../../lib/musicPieceUtils';
 import { BaseModal } from '../../components/common/BaseModal';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { AppCard } from '../../components/common/AppCard';
@@ -290,13 +290,23 @@ export default function SetListView() {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    const normalizedDuration = duration.trim();
+
+    if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+      dialog.showMessage({
+        title: 'Invalid Duration',
+        message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+        variant: 'danger'
+      });
+      return;
+    }
 
     let newItems: SetListItem[];
     const itemData: SetListItem = {
       id: editingId || crypto.randomUUID(),
       title: title.trim(),
       composer: type === 'song' ? (composer.trim() || undefined) : undefined,
-      duration: duration.trim() || undefined,
+      duration: normalizedDuration || undefined,
       notes: notes.trim() || undefined,
       pieceId: type === 'song' ? (pieceId || undefined) : undefined,
       type
@@ -310,7 +320,7 @@ export default function SetListView() {
 
     // Sync duration changes to the Music Library if it is a linked song
     if (type === 'song' && pieceId) {
-      musicLibraryService.updatePiece(pieceId, { duration: duration.trim() || undefined })
+      musicLibraryService.updatePiece(pieceId, { duration: normalizedDuration || undefined })
         .then(() => musicLibraryService.getLibrary())
         .then(setLibrary)
         .catch(err => console.error('Failed to update music library duration:', err));

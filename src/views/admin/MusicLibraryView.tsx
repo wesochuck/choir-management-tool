@@ -7,7 +7,7 @@ import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
 import { settingsService, getVoiceParts, type VoicePartDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
@@ -960,10 +960,20 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         e.preventDefault();
         setIsSaving(true);
         try {
+            const normalizedDuration = duration.trim();
+            if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+                await dialog.showMessage({
+                    title: 'Invalid Duration',
+                    message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+                    variant: 'danger'
+                });
+                return;
+            }
+
             await onSave({
                 title,
                 composer,
-                duration: duration || undefined,
+                duration: normalizedDuration || undefined,
                 copies: copies ? parseInt(copies, 10) : undefined,
                 catalogId,
                 performances: selectedPerformanceIds,

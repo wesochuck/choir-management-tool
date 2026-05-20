@@ -171,13 +171,11 @@ export function parseDurationToSeconds(durationStr: string | undefined): number 
   if (!durationStr) return 0;
   const cleaned = durationStr.trim().toLowerCase();
   if (!cleaned) return 0;
+  if (!isValidDurationString(cleaned)) return 0;
 
   // Check if it's in format HH:MM:SS or MM:SS
   if (cleaned.includes(':')) {
-    const parts = cleaned.split(':').map(p => {
-      const val = parseInt(p, 10);
-      return isNaN(val) ? 0 : val;
-    });
+    const parts = cleaned.split(':').map(p => Number.parseInt(p, 10));
 
     if (parts.length === 3) {
       // HH:MM:SS
@@ -210,6 +208,36 @@ export function parseDurationToSeconds(durationStr: string | undefined): number 
   }
 
   return 0;
+}
+
+/**
+ * Returns true when a duration is in one of the formats the app can safely parse.
+ */
+export function isValidDurationString(durationStr: string | undefined): boolean {
+  if (!durationStr) return false;
+  const cleaned = durationStr.trim().toLowerCase();
+  if (!cleaned) return false;
+
+  if (cleaned.includes(':')) {
+    const parts = cleaned.split(':');
+    if (parts.length !== 2 && parts.length !== 3) return false;
+    if (!parts.every(part => /^\d+$/.test(part))) return false;
+
+    const numbers = parts.map(part => Number.parseInt(part, 10));
+    if (parts.length === 2) {
+      const [, seconds] = numbers;
+      return seconds < 60;
+    }
+
+    const [, minutes, seconds] = numbers;
+    return minutes < 60 && seconds < 60;
+  }
+
+  if (/^\d+$/.test(cleaned)) return true;
+
+  const durationUnitsPattern = /^(?=.*\d)\s*(?:(\d+)\s*(?:h|hr|hrs|hours?)\s*)?(?:(\d+)\s*(?:m|min|mins|minutes?)\s*)?(?:(\d+)\s*(?:s|sec|secs|seconds?)\s*)?$/;
+  const match = cleaned.match(durationUnitsPattern);
+  return Boolean(match && (match[1] || match[2] || match[3]));
 }
 
 /**
