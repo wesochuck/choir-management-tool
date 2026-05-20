@@ -50,7 +50,7 @@ const splitProfileInput = (data: ProfileInput) => {
  */
 export const generateRandomPassword = (length = 12): string => {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  const cryptoObj = typeof window !== 'undefined' ? window.crypto : (globalThis as any).crypto;
+  const cryptoObj = typeof window !== 'undefined' ? window.crypto : globalThis.crypto;
   
   if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
     const array = new Uint32Array(length);
@@ -159,7 +159,7 @@ export const profileService = {
   },
 };
 
-export function exportToCSV(profiles: any[]): string {
+export function exportToCSV(profiles: Profile[]): string {
   const header = ['Name', 'Email', 'Phone', 'Voice Part', 'Status'].join(',');
   const rows = profiles.map(p => {
     const email = p.email || p.expand?.user?.email || '';
@@ -177,5 +177,4 @@ export function exportToCSV(profiles: any[]): string {
 export async function updateProfilePhoto(id: string, formData: FormData) {
   return await pb.collection('profiles').update<Profile>(id, formData);
 }
-
 

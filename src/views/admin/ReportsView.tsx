@@ -72,7 +72,7 @@ export default function ReportsView() {
 
       // 1. Add historical dates from the linked performances
       if (piece.expand?.performances) {
-        piece.expand.performances.forEach((perf: any) => {
+        piece.expand.performances.forEach((perf) => {
           if (perf.date) {
             const d = new Date(perf.date);
             if (!isNaN(d.getTime())) dates.push(d);

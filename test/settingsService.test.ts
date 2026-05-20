@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
 import { getVoiceParts, saveVoiceParts } from '../src/services/settingsService.ts';
 
+type CollectionMock = ReturnType<typeof pb.collection>;
+type SavedPayload = { value: Record<string, unknown> };
+
 test('getVoiceParts fetches voice parts from settings', async (t) => {
   const originalCollection = pb.collection;
   const mockGetFirstListItem = t.mock.fn(async () => {
@@ -11,7 +14,7 @@ test('getVoiceParts fetches voice parts from settings', async (t) => {
 
   pb.collection = function (name: string) {
     if (name === 'appSettings') {
-      return { getFirstListItem: mockGetFirstListItem } as any;
+      return { getFirstListItem: mockGetFirstListItem } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -34,7 +37,7 @@ test('getVoiceParts returns DEFAULT_VOICE_PARTS when settings has empty voicePar
 
   pb.collection = function (name: string) {
     if (name === 'appSettings') {
-      return { getFirstListItem: mockGetFirstListItemEmpty } as any;
+      return { getFirstListItem: mockGetFirstListItemEmpty } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -60,7 +63,7 @@ test('getVoiceParts returns DEFAULT_VOICE_PARTS when database throws an error', 
 
   pb.collection = function (name: string) {
     if (name === 'appSettings') {
-      return { getFirstListItem: mockGetFirstListItemError } as any;
+      return { getFirstListItem: mockGetFirstListItemError } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -79,7 +82,7 @@ test('getVoiceParts returns DEFAULT_VOICE_PARTS when database throws an error', 
 
 test('saveVoiceParts updates settings if present', async (t) => {
   const originalCollection = pb.collection;
-  const mockUpdate = t.mock.fn(async (id: string, data: any) => {
+  const mockUpdate = t.mock.fn(async (id: string, data: Record<string, unknown>) => {
     return { id, ...data };
   });
   const mockGetFirstListItem = t.mock.fn(async () => {
@@ -91,7 +94,7 @@ test('saveVoiceParts updates settings if present', async (t) => {
       return { 
         getFirstListItem: mockGetFirstListItem,
         update: mockUpdate
-      } as any;
+      } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -110,7 +113,7 @@ test('saveVoiceParts updates settings if present', async (t) => {
 test('getCommunicationSettings and saveCommunicationSettings processes automatic email fields', async (t) => {
   const { settingsService } = await import('../src/services/settingsService.ts');
   const originalCollection = pb.collection;
-  let savedPayload: any = null;
+  let savedPayload: SavedPayload | null = null;
 
   const mockGetFirstListItem = t.mock.fn(async () => {
     return {
@@ -131,7 +134,7 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
     };
   });
 
-  const mockUpdate = t.mock.fn(async (id: string, data: any) => {
+  const mockUpdate = t.mock.fn(async (id: string, data: SavedPayload) => {
     savedPayload = data;
     return { id, ...data };
   });
@@ -141,7 +144,7 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
       return {
         getFirstListItem: mockGetFirstListItem,
         update: mockUpdate
-      } as any;
+      } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -160,9 +163,9 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
       reportEnabled: true
     };
     
-    const result = await settingsService.saveCommunicationSettings(testPayload);
-    assert.deepEqual(savedPayload.value.reminderHoursBefore, 12);
-    assert.deepEqual(savedPayload.value.reportEnabled, true);
+    await settingsService.saveCommunicationSettings(testPayload);
+    assert.deepEqual(savedPayload?.value.reminderHoursBefore, 12);
+    assert.deepEqual(savedPayload?.value.reportEnabled, true);
   } finally {
     pb.collection = originalCollection;
   }
@@ -171,7 +174,7 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
 test('getRosterSettings and saveRosterSettings processes roster settings fields', async (t) => {
   const { settingsService } = await import('../src/services/settingsService.ts');
   const originalCollection = pb.collection;
-  let savedPayload: any = null;
+  let savedPayload: SavedPayload | null = null;
 
   const mockGetFirstListItem = t.mock.fn(async () => {
     return {
@@ -183,7 +186,7 @@ test('getRosterSettings and saveRosterSettings processes roster settings fields'
     };
   });
 
-  const mockUpdate = t.mock.fn(async (id: string, data: any) => {
+  const mockUpdate = t.mock.fn(async (id: string, data: SavedPayload) => {
     savedPayload = data;
     return { id, ...data };
   });
@@ -193,7 +196,7 @@ test('getRosterSettings and saveRosterSettings processes roster settings fields'
       return {
         getFirstListItem: mockGetFirstListItem,
         update: mockUpdate
-      } as any;
+      } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -209,11 +212,9 @@ test('getRosterSettings and saveRosterSettings processes roster settings fields'
     };
     
     await settingsService.saveRosterSettings(testPayload);
-    assert.deepEqual(savedPayload.value.defaultStatus, 'Inactive');
-    assert.deepEqual(savedPayload.value.defaultSort, 'lastName');
+    assert.deepEqual(savedPayload?.value.defaultStatus, 'Inactive');
+    assert.deepEqual(savedPayload?.value.defaultSort, 'lastName');
   } finally {
     pb.collection = originalCollection;
   }
 });
-
-

@@ -180,7 +180,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             password: generatedPassword,
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`Import failed for row ${singer.rowNumber}:`, err);
         errors.push({
           row: singer.rowNumber,

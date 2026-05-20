@@ -47,7 +47,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       if (!initialData && parts.length > 0) {
         setFormData(prev => ({
           ...prev,
-          voicePart: parts[0].label as any
+          voicePart: parts[0].label
         }));
       }
     });
@@ -331,7 +331,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <select
                 value={currentRsvp}
                 disabled={isSaving}
-                onChange={(e) => handleRsvpChange(p.id, e.target.value as any)}
+                onChange={(e) => handleRsvpChange(p.id, e.target.value as EventRoster['rsvp'])}
                 style={getSelectStyle(currentRsvp)}
               >
                 <option value="Pending">Pending</option>

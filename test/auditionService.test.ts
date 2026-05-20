@@ -1,24 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { convertAuditionToSinger, auditionService } from '../src/services/auditionService.ts';
+import { convertAuditionToSinger, auditionService, type Audition } from '../src/services/auditionService.ts';
+
+type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('convertAuditionToSinger creates profile with correct data from audition', async (t) => {
   const originalCollection = pb.collection;
-  const mockCreate = t.mock.fn(async (data: any) => {
+  const mockCreate = t.mock.fn(async (data: Record<string, unknown>) => {
     return { id: 'profile_1', ...data };
   });
 
   pb.collection = function (name: string) {
     if (name === 'profiles') {
-      return { create: mockCreate } as any;
+      return { create: mockCreate } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
 
   try {
-    const audition = { id: 'a1', name: 'Singer', email: 's@test.com', phone: '123', voicePart: 'S1' };
-    const result = await convertAuditionToSinger(audition as any);
+    const audition = { id: 'a1', name: 'Singer', contact: 's@test.com', phone: '123', timeSlot: 'Monday 5:00 PM', voicePart: 'S1', status: 'New', notes: '' } as Audition & { phone: string };
+    const result = await convertAuditionToSinger(audition);
 
     assert.equal(result.id, 'profile_1');
     assert.equal(mockCreate.mock.callCount(), 1);
@@ -38,13 +40,13 @@ test('convertAuditionToSinger creates profile with correct data from audition', 
 
 test('createAudition correctly passes status and notes fields', async (t) => {
   const originalCollection = pb.collection;
-  const mockCreate = t.mock.fn(async (data: any) => {
+  const mockCreate = t.mock.fn(async (data: Record<string, unknown>) => {
     return { id: 'audition_1', ...data };
   });
 
   pb.collection = function (name: string) {
     if (name === 'auditions') {
-      return { create: mockCreate } as any;
+      return { create: mockCreate } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -80,4 +82,3 @@ test('createAudition correctly passes status and notes fields', async (t) => {
     pb.collection = originalCollection;
   }
 });
-

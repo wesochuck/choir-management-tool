@@ -307,12 +307,12 @@ export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
       }
     }
     return { sections: DEFAULT_SECTIONS, voiceParts: DEFAULT_VOICE_PARTS };
-  } catch (error) {
+  } catch {
     return { sections: DEFAULT_SECTIONS, voiceParts: DEFAULT_VOICE_PARTS };
   }
 }
 
-export async function saveVoicePartsAndSections(voiceParts: VoicePartDef[], sections: SectionDef[]): Promise<any> {
+export async function saveVoicePartsAndSections(voiceParts: VoicePartDef[], sections: SectionDef[]): Promise<AppSetting<VoicePartSettings>> {
   return await upsertSetting<VoicePartSettings>('voiceParts', { voiceParts, sections }, true);
 }
 
@@ -321,11 +321,10 @@ export async function getVoiceParts(): Promise<VoicePartDef[]> {
   return settings.voiceParts;
 }
 
-export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<any> {
+export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<AppSetting<VoicePartSettings>> {
   const current = await getVoicePartsAndSections();
   return await saveVoicePartsAndSections(voiceParts, current.sections);
 }
-
 
 
 

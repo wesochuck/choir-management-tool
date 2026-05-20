@@ -1,4 +1,11 @@
 import type { MusicPiece, MusicPieceInput } from '../services/musicLibraryService';
+import type { Event } from '../services/eventService';
+
+type MusicPieceWithPerformanceHistory = MusicPiece & {
+  expand?: {
+    performances?: Event[];
+  };
+};
 
 /**
  * Searches the music library for a specific piece by its unique ID.
@@ -21,11 +28,11 @@ export function findPieceDetails(
  * @param piece The music piece object.
  * @returns An array of formatted performance string titles with dates.
  */
-export function formatPerformanceHistory(piece: any): string[] {
+export function formatPerformanceHistory(piece: MusicPieceWithPerformanceHistory): string[] {
   if (!piece || !piece.expand || !piece.expand.performances || !Array.isArray(piece.expand.performances)) {
     return [];
   }
-  return piece.expand.performances.map((perf: any) => {
+  return piece.expand.performances.map((perf) => {
     const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
     return `${perf.title}${dateStr ? ` (${dateStr})` : ''}`;
   });
@@ -123,7 +130,7 @@ export function validatePieceForLibrary(title: string): boolean {
   return typeof title === 'string' && title.trim().length > 0;
 }
 
-export function exportMusicToCSV(pieces: any[]): string {
+export function exportMusicToCSV(pieces: MusicPiece[]): string {
   const header = ['Title', 'Composer', 'Voicing'].join(',');
   const rows = pieces.map(p => [
     `"${p.title || ''}"`,
@@ -133,15 +140,15 @@ export function exportMusicToCSV(pieces: any[]): string {
   return [header, ...rows].join('\n');
 }
 
-export function findDuplicates(pieces: any[]): any[] {
-  const seen = new Map<string, any[]>();
+export function findDuplicates(pieces: MusicPiece[]): MusicPiece[] {
+  const seen = new Map<string, MusicPiece[]>();
   for (const piece of pieces) {
     const key = `${piece.title?.toLowerCase()?.trim() || ''}|${piece.composer?.toLowerCase()?.trim() || ''}`;
     if (!seen.has(key)) seen.set(key, []);
     seen.get(key)!.push(piece);
   }
   
-  const duplicates: any[] = [];
+  const duplicates: MusicPiece[] = [];
   for (const group of seen.values()) {
     if (group.length > 1) {
       duplicates.push(...group);
@@ -324,7 +331,6 @@ export function resolveRecommendedTracks(
 
   return Array.from(recommendedSet);
 }
-
 
 
 

@@ -3,15 +3,17 @@ import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
 import { checkVenueDependencies } from '../src/services/venueService.ts';
 
+type CollectionMock = ReturnType<typeof pb.collection>;
+
 test('checkVenueDependencies returns true if venue has linked events', async (t) => {
   const originalCollection = pb.collection;
-  const mockGetList = t.mock.fn(async (page: number, perPage: number, options: any) => {
+  const mockGetList = t.mock.fn(async () => {
     return { totalItems: 1 };
   });
 
   pb.collection = function (name: string) {
     if (name === 'events') {
-      return { getList: mockGetList } as any;
+      return { getList: mockGetList } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };

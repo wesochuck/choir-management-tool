@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
 import { getSetListVisibility } from '../../lib/eventUtils';
+import type { EventRoster } from '../../services/rosterService';
 import { AppCard } from '../common/AppCard';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { resolveRecommendedTracks } from '../../lib/musicPieceUtils';
@@ -12,8 +13,8 @@ interface EventCardProps {
   event: Event;
   rsvp?: 'Yes' | 'No' | 'Pending';
   onRSVP: (rsvp: 'Yes' | 'No') => Promise<void>;
-  allEvents?: any[];
-  myRosters?: Record<string, any>;
+  allEvents?: Event[];
+  myRosters?: Record<string, EventRoster>;
   voicePart?: string;
 }
 

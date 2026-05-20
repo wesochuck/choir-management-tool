@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPieceInput } from '../../services/musicLibraryService';
-import { parseCSV } from '../../lib/rosterImportUtils';
+import { parseCSV, type CSVData } from '../../lib/rosterImportUtils';
 import {
   suggestMusicFieldMapping,
   validateAndMapMusicPieces,
@@ -29,7 +29,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   // Wizard state
   const [step, setStep] = useState<ImportStep>('UPLOAD');
-  const [csvData, setCsvData] = useState<any | null>(null);
+  const [csvData, setCsvData] = useState<CSVData | null>(null);
   const [mapping, setMapping] = useState<MusicFieldMapping>({
     title: -1,
     composer: -1,
@@ -155,7 +155,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         await musicLibraryService.createPiece(payload);
         successes++;
         setSuccessCount(successes);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`Import failed for row ${piece.rowNumber}:`, err);
         errors.push({
           row: piece.rowNumber,

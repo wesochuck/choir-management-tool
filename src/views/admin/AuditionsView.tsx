@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { AuditionModal } from '../../components/admin/AuditionModal';
 import { useDialog } from '../../contexts/DialogContext';
-import { auditionService, type Audition } from '../../services/auditionService';
+import { auditionService, type Audition, type AuditionInput } from '../../services/auditionService';
 import { settingsService, type AuditionSettings } from '../../services/settingsService';
 import { eventService, type Event } from '../../services/eventService';
 
@@ -99,7 +99,7 @@ export default function AuditionsView() {
         setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
         dialog.showMessage({ title: 'Success', message: 'Audition updated.' });
       } else {
-        const created = await auditionService.createAudition({
+        const payload: AuditionInput = {
           name: data.name!,
           contact: data.contact!,
           timeSlot: data.timeSlot!,
@@ -108,7 +108,8 @@ export default function AuditionsView() {
           performance: data.performance,
           notes: data.notes,
           status: data.status,
-        } as any);
+        };
+        const created = await auditionService.createAudition(payload);
         setAuditions((current) => [created, ...current]);
         dialog.showMessage({ title: 'Success', message: 'Audition created successfully.' });
       }

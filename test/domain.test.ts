@@ -13,6 +13,8 @@ import {
   removeRowAndShiftAssignments,
 } from '../src/lib/seatingSync.ts';
 import { findPieceDetails, formatPerformanceHistory, parseMusicLibraryCSV } from '../src/lib/musicPieceUtils.ts';
+import type { Event } from '../src/services/eventService.ts';
+import type { MusicPiece } from '../src/services/musicLibraryService.ts';
 
 test('calendarUtils.createICS emits a valid two-hour event', () => {
   const event = {
@@ -181,7 +183,7 @@ test('findPieceDetails matches and returns the piece by id', () => {
   const library = [
     { id: 'piece_1', title: 'Messiah', composer: 'Handel' },
     { id: 'piece_2', title: 'Requiem', composer: 'Mozart' }
-  ] as any[];
+  ] as MusicPiece[];
 
   const result = findPieceDetails('piece_2', library);
   assert.equal(result?.title, 'Requiem');
@@ -191,7 +193,7 @@ test('findPieceDetails matches and returns the piece by id', () => {
 test('findPieceDetails returns null if piece id is not in library', () => {
   const library = [
     { id: 'piece_1', title: 'Messiah', composer: 'Handel' }
-  ] as any[];
+  ] as MusicPiece[];
 
   const result = findPieceDetails('piece_unknown', library);
   assert.equal(result, null);
@@ -213,7 +215,7 @@ test('formatPerformanceHistory returns formatted performance strings when expand
         { id: 'evt_2', title: 'Winter Gala', date: '2025-12-15T19:00:00.000Z', type: 'Performance' }
       ]
     }
-  } as any;
+  } as MusicPiece & { expand: { performances: Event[] } };
 
   const result = formatPerformanceHistory(piece);
   assert.deepEqual(result, [
@@ -223,13 +225,13 @@ test('formatPerformanceHistory returns formatted performance strings when expand
 });
 
 test('formatPerformanceHistory returns empty array when expand or performances is missing', () => {
-  const pieceBody = { id: 'piece_2', title: 'Requiem' } as any;
+  const pieceBody = { id: 'piece_2', title: 'Requiem' } as MusicPiece;
   assert.deepEqual(formatPerformanceHistory(pieceBody), []);
 
-  const pieceEmptyExpand = { id: 'piece_2', title: 'Requiem', expand: {} } as any;
+  const pieceEmptyExpand = { id: 'piece_2', title: 'Requiem', expand: {} } as MusicPiece;
   assert.deepEqual(formatPerformanceHistory(pieceEmptyExpand), []);
 
-  const pieceEmptyPerformances = { id: 'piece_2', title: 'Requiem', expand: { performances: [] } } as any;
+  const pieceEmptyPerformances = { id: 'piece_2', title: 'Requiem', expand: { performances: [] } } as MusicPiece;
   assert.deepEqual(formatPerformanceHistory(pieceEmptyPerformances), []);
 });
 
@@ -271,7 +273,7 @@ Ave Verum,Mozart,30,,,`;
 test('findPieceDetails preserves and returns duration if present', () => {
   const library = [
     { id: 'piece_1', title: 'Messiah', composer: 'Handel', duration: '3:30' }
-  ] as any[];
+  ] as MusicPiece[];
 
   const result = findPieceDetails('piece_1', library);
   assert.equal(result?.duration, '3:30');
@@ -315,6 +317,5 @@ test('removeRowAndShiftAssignments removes the row and shifts all rows below it 
     '1-0': 'singerD', // shifted from row 2 to row 1
   });
 });
-
 
 

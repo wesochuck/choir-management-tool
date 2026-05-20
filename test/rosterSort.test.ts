@@ -2,8 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getLastName } from '../src/lib/stringUtils.ts';
 
+interface SortableProfile {
+  id: string;
+  name: string;
+  voicePart: string;
+}
+
 // Extract the exact sort logic implemented in RosterView
-const sortProfiles = (profiles: any[], sortBy: 'lastName' | 'voicePart', voiceParts: string[]) => {
+const sortProfiles = (profiles: SortableProfile[], sortBy: 'lastName' | 'voicePart', voiceParts: string[]) => {
   return [...profiles].sort((a, b) => {
     if (sortBy === 'voicePart') {
       const idxA = voiceParts.indexOf(a.voicePart);

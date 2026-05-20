@@ -2,6 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 // Core matching logic matching our implementation plan for multi-select
+interface FilterableProfile {
+  id: string;
+  name: string;
+  voicePart: string;
+  globalStatus: string;
+}
+
 const matchesVoiceParts = (profilePart: string, filterParts: string[]): boolean => {
   if (!filterParts || filterParts.length === 0) return true;
   return filterParts.some(vp => 
@@ -11,7 +18,7 @@ const matchesVoiceParts = (profilePart: string, filterParts: string[]): boolean 
 
 // Double-layered filtering matching useProfiles.ts useMemo logic
 const filterProfiles = (
-  profiles: any[],
+  profiles: FilterableProfile[],
   filters: { voiceParts: string[]; status: string; name: string }
 ) => {
   return profiles.filter((p) => {
@@ -24,7 +31,7 @@ const filterProfiles = (
 
 // Filtered list specifically for calculating RosterSummary counts (not filtered by voice parts)
 const getProfilesForSummary = (
-  profiles: any[],
+  profiles: FilterableProfile[],
   filters: { voiceParts: string[]; status: string; name: string }
 ) => {
   return profiles.filter((p) => {

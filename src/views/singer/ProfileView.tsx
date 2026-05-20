@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { profileService, type Profile } from '../../services/profileService';
 import { PhotoUploader } from '../../components/common/PhotoUploader';
@@ -16,11 +16,7 @@ export default function ProfileView() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setIsLoading(true);
     try {
       const p = await profileService.getMyProfile();
@@ -29,12 +25,16 @@ export default function ProfileView() {
       setPhone(p.phone || '');
       // Get email from auth store
       setEmail(pb.authStore.record?.email || '');
-    } catch (err) {
+    } catch {
       setError('Could not load your profile.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,7 +1,10 @@
+import type { Event, SetListItem } from '../services/eventService';
+import type { EventRoster } from '../services/rosterService';
+
 export interface EventLike {
   id: string;
   date: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -27,14 +30,14 @@ export function findNearestEvent<T extends EventLike>(events: T[], relativeTo: D
 
 export interface SetListVisibilityResult {
   showSetList: boolean;
-  setList?: any[];
+  setList?: SetListItem[];
   headerLabel?: string;
 }
 
 export function getSetListVisibility(
-  event: any,
-  myRosters: Record<string, { rsvp: string }> = {},
-  allEvents: any[] = []
+  event: Event,
+  myRosters: Record<string, Pick<EventRoster, 'rsvp'>> = {},
+  allEvents: Event[] = []
 ): SetListVisibilityResult {
   if (!event) return { showSetList: false };
 
@@ -79,4 +82,3 @@ export function getSetListVisibility(
 
   return { showSetList: false };
 }
-

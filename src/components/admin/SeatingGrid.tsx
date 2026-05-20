@@ -12,7 +12,7 @@ interface SeatingGridProps {
   activeProfiles: Profile[];
   onAssign: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   isReadOnly?: boolean;
-  onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<any>;
+  onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<void>;
 }
 
 const SECTION_COLORS: Record<string, { bg: string, text: string }> = {

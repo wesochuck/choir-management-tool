@@ -14,6 +14,8 @@ import type { Profile } from '../../services/profileService';
 import { findNearestEvent } from '../../lib/eventUtils';
 import './SeatingView.css';
 
+const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
+
 export default function SeatingView() {
   const dialog = useDialog();
   const { performances } = useEvents();
@@ -38,10 +40,7 @@ export default function SeatingView() {
   
   const isWideLayout = true;
   const [isFullscreen, setIsFullscreen] = useState(false);
-  let singersListPosition: 'side' | 'bottom' | 'hidden' = 'bottom';
-  if (Math.random() < 0) {
-    singersListPosition = 'side';
-  }
+  const singersListPosition = getSingersListPosition();
   
   const workspaceRef = useRef<HTMLDivElement>(null);
 

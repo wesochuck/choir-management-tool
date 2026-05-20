@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -60,9 +60,7 @@ export default function CommunicationView() {
   const [isResolving, setIsResolving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const [hasCustomRecipients, setHasCustomRecipients] = useState(
-    Boolean(routeState?.initialRecipients)
-  );
+  const skipNextRecipientResolveRef = useRef(Boolean(routeState?.initialRecipients));
   const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
 
   const selectedRecipients = useMemo(
@@ -102,8 +100,8 @@ export default function CommunicationView() {
   }, [dialog]);
 
   useEffect(() => {
-    if (hasCustomRecipients) {
-      setHasCustomRecipients(false);
+    if (skipNextRecipientResolveRef.current) {
+      skipNextRecipientResolveRef.current = false;
       return;
     }
     let isCurrent = true;

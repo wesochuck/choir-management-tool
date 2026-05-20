@@ -1,5 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
+import type { Event } from './eventService';
 
 export interface MusicPiece extends RecordModel {
   title: string;
@@ -11,9 +12,18 @@ export interface MusicPiece extends RecordModel {
   notes?: string;
   audioFiles?: string[];
   audioTrackMapping?: Record<string, string>;
+  voicing?: string;
+  expand?: {
+    performances?: Event[];
+  };
 }
 
 export type MusicPieceInput = Omit<MusicPiece, 'id' | 'created' | 'updated' | 'collectionId' | 'collectionName'>;
+type PocketBaseRecordBody = Record<string, unknown> | FormData;
+
+const toRecordBody = (data: Partial<MusicPieceInput> | FormData): PocketBaseRecordBody => {
+  return data instanceof FormData ? data : data as Record<string, unknown>;
+};
 
 export const musicLibraryService = {
   async getLibrary() {
@@ -24,11 +34,11 @@ export const musicLibraryService = {
   },
 
   async createPiece(data: Partial<MusicPieceInput> | FormData) {
-    return await pb.collection('musicLibrary').create<MusicPiece>(data as any);
+    return await pb.collection('musicLibrary').create<MusicPiece>(toRecordBody(data));
   },
 
   async updatePiece(id: string, data: Partial<MusicPieceInput> | FormData) {
-    return await pb.collection('musicLibrary').update<MusicPiece>(id, data as any);
+    return await pb.collection('musicLibrary').update<MusicPiece>(id, toRecordBody(data));
   },
 
   async deletePiece(id: string) {

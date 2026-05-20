@@ -1,12 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { updateProfilePhoto } from '../../services/profileService';
+import { updateProfilePhoto, type Profile } from '../../services/profileService';
 
 interface PhotoUploaderProps {
   profileId: string;
   profileName: string;
   currentPhotoUrl?: string;
   size?: 'sm' | 'md' | 'lg';
-  onSuccess?: (updatedRecord: any) => void;
+  onSuccess?: (updatedRecord: Profile) => void;
   readOnlyOnDesktop?: boolean;
 }
 
@@ -114,10 +114,10 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Camera startup failed', err);
         if (active) {
-          if (err.name === 'NotAllowedError') {
+          if (err instanceof DOMException && err.name === 'NotAllowedError') {
             setCameraError('Camera access denied. Please check your browser or system permissions.');
           } else {
             setCameraError('Unable to open the camera. It might be in use by another application.');

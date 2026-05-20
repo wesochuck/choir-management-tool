@@ -42,13 +42,13 @@ export default function RosterView() {
     }).catch(err => {
       console.error('Failed to load roster settings:', err);
     });
-  }, []);
+  }, [setFilter]);
 
   useEffect(() => {
     if (initialVoicePart) {
       setFilter('voiceParts', [initialVoicePart]);
     }
-  }, [initialVoicePart]);
+  }, [initialVoicePart, setFilter]);
 
   useEffect(() => {
     if (!isDropdownOpen) return;

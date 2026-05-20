@@ -3,12 +3,16 @@ import { performance } from 'perf_hooks';
 // Simulate network latency
 const mockDelay = 50;
 
-async function mockCreate<T>(data: any): Promise<T> {
-  await new Promise(resolve => setTimeout(resolve, mockDelay));
-  return { id: Math.random().toString(), ...data } as T;
+interface RehearsalInput {
+  title: string;
 }
 
-async function originalBulkCreateRehearsals(rehearsals: any[]) {
+async function mockCreate<T extends object>(data: T): Promise<T & { id: string }> {
+  await new Promise(resolve => setTimeout(resolve, mockDelay));
+  return { id: Math.random().toString(), ...data };
+}
+
+async function originalBulkCreateRehearsals(rehearsals: RehearsalInput[]) {
     const results = [];
     for (const r of rehearsals.reverse()) {
        const res = await mockCreate(r);
@@ -17,7 +21,7 @@ async function originalBulkCreateRehearsals(rehearsals: any[]) {
     return results;
 }
 
-async function optimizedBulkCreateRehearsals(rehearsals: any[]) {
+async function optimizedBulkCreateRehearsals(rehearsals: RehearsalInput[]) {
     // We reverse here so it matches original behavior
     const reversedRehearsals = [...rehearsals].reverse();
     return await Promise.all(reversedRehearsals.map(r => mockCreate(r)));

@@ -15,6 +15,7 @@ export default function SetListView() {
   const { events, refresh } = useEvents();
   const dialog = useDialog();
   const hasDefaultedRef = useRef(false);
+  const eventsRef = useRef(events);
   
   const [selectedEventId, setSelectedEventId] = useState('');
 
@@ -40,6 +41,10 @@ export default function SetListView() {
       setSaveStatus('error');
     }
   };
+
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
@@ -141,8 +146,13 @@ export default function SetListView() {
 
   // Resolves linked music library piece info and computes running timestamps
   const itemsWithDetails = useMemo(() => {
-    let elapsedSeconds = 0;
-    return items.map((item) => {
+    return items.reduce<Array<typeof items[number] & {
+      displayTitle: string;
+      displayComposer: string;
+      displayDuration: string;
+      cumulativeStart: string;
+      cumulativeEnd: string;
+    }>>((acc, item) => {
       const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
       
       const displayTitle = item.title || linkedPiece?.title || '';
@@ -150,19 +160,19 @@ export default function SetListView() {
       const rawDuration = item.duration || linkedPiece?.duration || '';
       const durationSeconds = parseDurationToSeconds(rawDuration);
       
-      const startSec = elapsedSeconds;
-      const endSec = elapsedSeconds + durationSeconds;
-      elapsedSeconds = endSec;
+      const previousEnd = acc.length > 0 ? parseDurationToSeconds(acc[acc.length - 1].cumulativeEnd) : 0;
+      const endSec = previousEnd + durationSeconds;
 
-      return {
+      acc.push({
         ...item,
         displayTitle,
         displayComposer,
         displayDuration: rawDuration ? formatSecondsToDuration(durationSeconds) : '',
-        cumulativeStart: formatSecondsToDuration(startSec),
+        cumulativeStart: formatSecondsToDuration(previousEnd),
         cumulativeEnd: formatSecondsToDuration(endSec)
-      };
-    });
+      });
+      return acc;
+    }, []);
   }, [items, library]);
 
   const filteredLibrary = useMemo(() => {
@@ -199,7 +209,7 @@ export default function SetListView() {
   // Load event items ONLY when selectedEventId changes (NOT when global events state changes, to prevent resetting active edits)
   useEffect(() => {
     if (selectedEventId) {
-      const ev = events.find(e => e.id === selectedEventId);
+      const ev = eventsRef.current.find(e => e.id === selectedEventId);
       setItems(ev?.setList || []);
     } else {
       setItems([]);

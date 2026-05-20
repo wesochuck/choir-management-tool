@@ -1,24 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { exportToCSV, updateProfilePhoto } from '../src/services/profileService.ts';
+import { exportToCSV, updateProfilePhoto, type Profile } from '../src/services/profileService.ts';
+
+type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('exportToCSV maps profiles to CSV format correctly', () => {
-  const profiles = [{ id: '1', name: 'John Doe', email: 'john@example.com', phone: '123', voicePart: 'T1', globalStatus: 'Active' }];
+  const profiles = [{ id: '1', name: 'John Doe', phone: '123', voicePart: 'T1', globalStatus: 'Active (Current)', user: '', photo: '', notes: '', expand: { user: { email: 'john@example.com', name: 'John Doe', role: 'singer', id: 'u1', collectionId: '', collectionName: '', created: '', updated: '' } } }] as Profile[];
   const csv = exportToCSV(profiles);
   assert.ok(csv.includes('Name,Email,Phone,Voice Part,Status'));
-  assert.ok(csv.includes('"John Doe","john@example.com","123","T1","Active"'));
+  assert.ok(csv.includes('"John Doe","john@example.com","123","T1","Active (Current)"'));
 });
 
 test('updateProfilePhoto calls pocketbase with FormData', async (t) => {
   const originalCollection = pb.collection;
-  const mockUpdate = t.mock.fn(async (id: string, data: any) => {
+  const mockUpdate = t.mock.fn(async (id: string) => {
     return { id, photo: 'photo.jpg' };
   });
 
   pb.collection = function (name: string) {
     if (name === 'profiles') {
-      return { update: mockUpdate } as any;
+      return { update: mockUpdate } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -46,7 +48,7 @@ test('in-memory profile name filtering works case-insensitively', () => {
     { id: '3', name: 'Charlie Miller', voicePart: 'T1', globalStatus: 'Inactive' }
   ];
 
-  const filterName = (list: any[], query: string) => {
+  const filterName = (list: Array<{ name: string }>, query: string) => {
     return list.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
   };
 
@@ -66,13 +68,13 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
   const originalCollection = pb.collection;
   const originalAuthStore = pb.authStore;
 
-  const mockGetFirstListItem = t.mock.fn(async (filter: string) => {
+  const mockGetFirstListItem = t.mock.fn(async () => {
     return { id: 'profile123', user: 'user123' };
   });
 
   pb.collection = function (name: string) {
     if (name === 'profiles') {
-      return { getFirstListItem: mockGetFirstListItem } as any;
+      return { getFirstListItem: mockGetFirstListItem } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -81,7 +83,7 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
   pb.authStore = {
     ...originalAuthStore,
     model: { id: 'user123' }
-  } as any;
+  } as typeof originalAuthStore;
 
   try {
     const { profileService } = await import('../src/services/profileService.ts');
@@ -102,11 +104,11 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
 test('profileService.updateProfile preserves photo when defined and deletes when undefined', async (t) => {
   const originalCollection = pb.collection;
 
-  const mockGetOne = t.mock.fn(async (id: string, options: any) => {
+  const mockGetOne = t.mock.fn(async (id: string) => {
     return { id, name: 'John Doe', user: 'user123', photo: 'existing.jpg' };
   });
 
-  const mockUpdate = t.mock.fn(async (id: string, payload: any) => {
+  const mockUpdate = t.mock.fn(async (id: string, payload: Record<string, unknown>) => {
     return { id, ...payload };
   });
 
@@ -115,7 +117,7 @@ test('profileService.updateProfile preserves photo when defined and deletes when
       return {
         getOne: mockGetOne,
         update: mockUpdate,
-      } as any;
+      } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };

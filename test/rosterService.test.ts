@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
 import { rosterService } from '../src/services/rosterService.ts';
 
+type CollectionMock = ReturnType<typeof pb.collection>;
+
 test('updateAttendance returns the saved roster when PocketBase reports a post-commit 400', async (t) => {
   const originalCollection = pb.collection;
   const error = Object.assign(new Error('Failed to update record.'), { status: 400 });
@@ -22,7 +24,7 @@ test('updateAttendance returns the saved roster when PocketBase reports a post-c
 
   pb.collection = function (name: string) {
     if (name === 'eventRosters') {
-      return { update, getOne } as any;
+      return { update, getOne } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -44,7 +46,7 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
   const getFullList = t.mock.fn(async () => [
     { id: 'roster_1', profile: 'profile_1', attendance: 'Pending' }
   ]);
-  const update = t.mock.fn(async (id: string, data: any) => ({
+  const update = t.mock.fn(async (id: string, data: { attendance: 'Present' | 'Absent' | 'Pending' }) => ({
     id,
     event: 'event_1',
     profile: 'profile_1',
@@ -54,7 +56,7 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
     folderNumber: '',
     folderReturned: false,
   }));
-  const create = t.mock.fn(async (data: any) => ({
+  const create = t.mock.fn(async (data: { profile: string; attendance: 'Present' | 'Absent' | 'Pending' }) => ({
     id: 'roster_2',
     event: 'event_1',
     profile: data.profile,
@@ -67,7 +69,7 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
 
   pb.collection = function (name: string) {
     if (name === 'eventRosters') {
-      return { getFullList, update, create } as any;
+      return { getFullList, update, create } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -95,7 +97,7 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
 
 test('getSingerRosters retrieves rosters filtered by profile and with expected expands', async (t) => {
   const originalCollection = pb.collection;
-  const getFullList = t.mock.fn(async (options: any) => {
+  const getFullList = t.mock.fn(async () => {
     return [
       { id: 'roster_1', profile: 'profile_1', event: 'event_1', expand: { event: { id: 'event_1', title: 'Concert' } } }
     ];
@@ -103,7 +105,7 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
 
   pb.collection = function (name: string) {
     if (name === 'eventRosters') {
-      return { getFullList } as any;
+      return { getFullList } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
   };
@@ -122,6 +124,5 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
     pb.collection = originalCollection;
   }
 });
-
 
 

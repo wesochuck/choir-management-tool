@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { profileService, type Profile, type ProfileInput } from '../services/profileService';
 import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
@@ -10,7 +10,7 @@ export const useProfiles = () => {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({ voiceParts: [] as string[], status: '', name: '' });
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await profileService.getProfiles();
@@ -21,12 +21,12 @@ export const useProfiles = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProfiles();
     getVoiceParts().then(setVoiceParts).catch(() => undefined);
-  }, []);
+  }, [fetchProfiles]);
 
   const unfilteredByVoicePartProfiles = useMemo(() => {
     return profiles.filter((p) => {
@@ -45,36 +45,36 @@ export const useProfiles = () => {
     });
   }, [profiles, filters, voiceParts]);
 
-  const addProfile = async (data: ProfileInput) => {
+  const addProfile = useCallback(async (data: ProfileInput) => {
     try {
       await profileService.createProfile(data);
       await fetchProfiles();
     } catch (err: unknown) {
       throw new Error(err instanceof Error ? err.message : 'Failed to add profile');
     }
-  };
+  }, [fetchProfiles]);
 
-  const editProfile = async (id: string, data: ProfileInput) => {
+  const editProfile = useCallback(async (id: string, data: ProfileInput) => {
     try {
       await profileService.updateProfile(id, data);
       await fetchProfiles();
     } catch (err: unknown) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update profile');
     }
-  };
+  }, [fetchProfiles]);
 
-  const removeProfile = async (id: string) => {
+  const removeProfile = useCallback(async (id: string) => {
     try {
       await profileService.deleteProfile(id);
       await fetchProfiles();
     } catch (err: unknown) {
       throw new Error(err instanceof Error ? err.message : 'Failed to delete profile');
     }
-  };
+  }, [fetchProfiles]);
 
-  const setFilter = <K extends keyof typeof filters>(key: K, value: typeof filters[K]) => {
+  const setFilter = useCallback(<K extends keyof typeof filters>(key: K, value: typeof filters[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
   return {
     profiles: filteredProfiles,

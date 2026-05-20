@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
@@ -61,7 +61,7 @@ export default function MusicLibraryView() {
     document.body.removeChild(link);
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [data, settings] = await Promise.all([
@@ -70,17 +70,17 @@ export default function MusicLibraryView() {
       ]);
       setPieces(data);
       setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
-    } catch (err: any) {
-      if (err?.isAbort) return;
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'isAbort' in err && err.isAbort) return;
       dialog.showMessage({ title: 'Error', message: 'Could not load music library.', variant: 'danger' });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dialog]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleSavePiece = async (data: Partial<MusicPieceInput>) => {
     try {
@@ -540,7 +540,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         try {
             const existingFilename = localPiece.audioTrackMapping?.[voicePart];
             let currentFiles = localPiece.audioFiles || [];
-            let currentMapping = { ...(localPiece.audioTrackMapping || {}) };
+            const currentMapping = { ...(localPiece.audioTrackMapping || {}) };
             
             if (existingFilename) {
                 currentFiles = currentFiles.filter(f => f !== existingFilename);

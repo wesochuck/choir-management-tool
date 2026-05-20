@@ -3,6 +3,7 @@ import type { RecordModel } from 'pocketbase';
 
 
 import { type Event } from './eventService';
+import type { Profile } from './profileService';
 
 export interface Audition extends RecordModel {
   name: string;
@@ -20,6 +21,9 @@ export interface Audition extends RecordModel {
   };
 }
 
+export type AuditionInput = Pick<Audition, 'name' | 'contact' | 'timeSlot'> & Partial<Pick<Audition, 'voicePart' | 'experience' | 'performance' | 'status' | 'notes'>>;
+type ConvertibleAudition = Audition & Partial<{ email: string; phone: string }>;
+
 const isEmailContact = (contact: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim());
 
 export const auditionService = {
@@ -30,7 +34,7 @@ export const auditionService = {
     });
   },
 
-  async createAudition(data: Pick<Audition, 'name' | 'contact' | 'timeSlot'> & Partial<Pick<Audition, 'voicePart' | 'experience' | 'performance' | 'status' | 'notes'>>) {
+  async createAudition(data: AuditionInput) {
     return await pb.collection('auditions').create<Audition>({
       status: 'New',
       ...data,
@@ -80,7 +84,7 @@ export const auditionService = {
   },
 };
 
-export async function convertAuditionToSinger(audition: any) {
+export async function convertAuditionToSinger(audition: ConvertibleAudition): Promise<Profile> {
   const email = isEmailContact(audition.contact || '') ? audition.contact.trim() : (audition.email || '');
   const phone = !email && audition.contact && /[\d+]/.test(audition.contact) ? audition.contact.trim() : (audition.phone || '');
 
@@ -96,5 +100,5 @@ export async function convertAuditionToSinger(audition: any) {
     ].filter(Boolean).join('\n\n'),
   };
 
-  return await pb.collection('profiles').create(profileData);
+  return await pb.collection('profiles').create<Profile>(profileData);
 }
