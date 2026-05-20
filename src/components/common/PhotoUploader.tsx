@@ -7,6 +7,7 @@ interface PhotoUploaderProps {
   currentPhotoUrl?: string;
   size?: 'sm' | 'md' | 'lg';
   onSuccess?: (updatedRecord: any) => void;
+  readOnlyOnDesktop?: boolean;
 }
 
 const SIZES = {
@@ -21,12 +22,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   currentPhotoUrl,
   size = 'md',
   onSuccess,
+  readOnlyOnDesktop = false,
 }) => {
   const px = SIZES[size];
   const fileRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -34,8 +34,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showCrop, setShowCrop] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [displayUrl, setDisplayUrl] = useState(currentPhotoUrl || '');
+
+  // Environment and user interaction states
+  const [isMobile, setIsMobile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Webcam-specific states
   const [showCamera, setShowCamera] = useState(false);
@@ -44,22 +48,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
 
+  // Detect mobile user agent on mount
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
+
   // Keep displayUrl in sync if the parent passes a new photo URL
   useEffect(() => {
     setDisplayUrl(currentPhotoUrl || '');
   }, [currentPhotoUrl]);
-
-  // Close menu on outside click
-  useEffect(() => {
-    if (!showMenu) return;
-    const handleOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [showMenu]);
 
   // Camera stream management
   useEffect(() => {
@@ -77,17 +74,16 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       setIsCameraLoading(true);
       setCameraError(null);
       try {
-        // Enumerate devices to see if we have permissions and device info
+        // Enumerate devices to check permissions and available webcams
         let devices = await navigator.mediaDevices.enumerateDevices();
         let videoInputs = devices.filter((d) => d.kind === 'videoinput');
 
-        // If no devices or labels are empty, trigger a quick permission prompt to get full info
+        // Trigger a temporary permission prompt to obtain webcam labels if empty
         const hasLabels = videoInputs.some((d) => d.label);
         if (videoInputs.length === 0 || !hasLabels) {
           const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
           devices = await navigator.mediaDevices.enumerateDevices();
           videoInputs = devices.filter((d) => d.kind === 'videoinput');
-          // Stop temp stream
           tempStream.getTracks().forEach((t) => t.stop());
         }
 
@@ -145,29 +141,37 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     };
   }, [showCamera, selectedDeviceId]);
 
-  const handleClick = (e: React.MouseEvent) => {
+  // Drag and Drop event handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    if (isMobile || readOnlyOnDesktop) return;
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    if (isMobile || readOnlyOnDesktop) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    if (isMobile || readOnlyOnDesktop) return;
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setRawFile(file);
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      setShowCrop(true);
+    }
+  };
+
+  // Mobile direct tap upload handler
+  const handleMobileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setShowMenu((prev) => !prev);
-  };
-
-  const handleChooseFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu(false);
     fileRef.current?.click();
-  };
-
-  const handleTakePhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu(false);
-
-    // Detect mobile environment to delegate to native OS camera prompt
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      cameraRef.current?.click();
-    } else {
-      setShowCamera(true);
-    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,8 +181,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     const url = URL.createObjectURL(file);
     setPreview(url);
     setShowCrop(true);
-    // Reset input so the same file can be re-selected
-    e.target.value = '';
+    e.target.value = ''; // Reset input to allow re-selection
   };
 
   const uploadFile = useCallback(async (file: File) => {
@@ -240,7 +243,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       const sx = (video.videoWidth - size) / 2;
       const sy = (video.videoHeight - size) / 2;
       
-      // Mirror the photo snapshot to match the viewer mirror
+      // Mirror horizontal translation for captured snapshots
       ctx.translate(size, 0);
       ctx.scale(-1, 1);
       
@@ -281,152 +284,213 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const initials = profileName.charAt(0).toUpperCase();
   const showImage = displayUrl || preview;
 
+  // Render a completely passive avatar if on desktop and in read-only context (e.g. Roster table)
+  if (readOnlyOnDesktop && !isMobile) {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          width: px,
+          height: px,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          flexShrink: 0,
+          backgroundColor: 'var(--primary-light)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        {showImage ? (
+          <img
+            src={preview || displayUrl}
+            alt={profileName}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'var(--primary-light)',
+            color: 'var(--primary-deep)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px',
+            fontWeight: 600,
+          }}>
+            {initials}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
-      <div style={{ position: 'relative', flexShrink: 0 }} ref={menuRef}>
-        <div
-          onClick={handleClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any); }}
-          title="Change photo"
-          style={{
-            position: 'relative',
-            width: px,
-            height: px,
-            borderRadius: '50%',
-            overflow: 'hidden',
-            cursor: 'pointer',
-            transition: 'box-shadow 0.2s',
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px var(--primary-light)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
-        >
-          {showImage ? (
-            <img
-              src={preview || displayUrl}
-              alt={profileName}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'var(--primary-light)',
-              color: 'var(--primary-deep)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px',
-              fontWeight: 600,
-            }}>
-              {initials}
-            </div>
-          )}
+      {/* Upload trigger zone */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onMouseEnter={() => !isMobile && setIsHovered(true)}
+        onMouseLeave={() => !isMobile && setIsHovered(false)}
+        onClick={isMobile ? handleMobileClick : undefined}
+        style={{
+          position: 'relative',
+          width: px,
+          height: px,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          cursor: 'pointer',
+          flexShrink: 0,
+          border: isDragging ? '3px dashed var(--primary)' : '2px solid transparent',
+          boxShadow: isDragging ? '0 0 0 4px rgba(74, 124, 89, 0.25)' : 'none',
+          transition: 'all 0.2s ease',
+          backgroundColor: 'var(--primary-light)',
+        }}
+      >
+        {showImage ? (
+          <img
+            src={preview || displayUrl}
+            alt={profileName}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'var(--primary-light)',
+            color: 'var(--primary-deep)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px',
+            fontWeight: 600,
+          }}>
+            {initials}
+          </div>
+        )}
 
-          {/* Upload spinner overlay */}
-          {isUploading && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.45)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <div className="photo-spinner" />
-            </div>
-          )}
+        {/* Upload spinner overlay */}
+        {isUploading && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 20,
+          }}>
+            <div className="photo-spinner" />
+          </div>
+        )}
 
-          {/* Camera icon overlay on hover */}
-          {!isUploading && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: 0,
-              transition: 'opacity 0.2s',
-            }}
-              className="photo-overlay"
-            >
-              <svg
-                width={size === 'sm' ? 14 : px * 0.3}
-                height={size === 'sm' ? 14 : px * 0.3}
-                viewBox="0 0 24 24" fill="none" stroke="white"
-                strokeWidth={size === 'sm' ? 2.5 : 2}
-                strokeLinecap="round" strokeLinejoin="round"
-              >
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </div>
-          )}
-        </div>
+        {/* Desktop premium Drag & Drop + hover control zone */}
+        {!isMobile && (isHovered || isDragging) && !isUploading && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: isDragging ? 'rgba(74, 124, 89, 0.85)' : 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: size === 'sm' ? '2px' : '8px',
+            color: '#fff',
+            transition: 'background-color 0.2s',
+            zIndex: 10,
+          }}>
+            {isDragging ? (
+              <span style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>
+            ) : (
+              <>
+                <span style={{ fontSize: size === 'sm' ? '8px' : '10px', fontWeight: 600, opacity: 0.9 }}>Change</span>
+                {size !== 'sm' && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Folder file input button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+                      title="Upload from device"
+                      style={{
+                        width: 32, height: 32,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        border: '1px solid rgba(255,255,255,0.4)',
+                        color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', transition: 'all 0.2s ease',
+                        padding: 0,
+                        minHeight: 'auto',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </button>
 
-        {/* Action menu */}
-        {showMenu && (
-          <div
-            style={{
-              position: 'absolute',
-              top: px + 6,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 100,
-              minWidth: 180,
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-md)',
-              overflow: 'hidden',
-              animation: 'slideUp 0.15s ease-out',
-            }}
-          >
-            <button
-              onClick={handleTakePhoto}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                width: '100%', padding: '10px 14px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '0.875rem', fontWeight: 500,
-                color: 'var(--text)', textAlign: 'left',
-                borderBottom: '1px solid var(--border)',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary-light)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    {/* Live webcam capture button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowCamera(true); }}
+                      title="Use webcam"
+                      style={{
+                        width: 32, height: 32,
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        border: '1px solid rgba(255,255,255,0.4)',
+                        color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', transition: 'all 0.2s ease',
+                        padding: 0,
+                        minHeight: 'auto',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Lightweight Mobile Hover Indicator (or passive overlay) */}
+        {isMobile && !isUploading && (
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            insetInline: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: size === 'sm' ? '12px' : '26px',
+            zIndex: 10,
+          }}>
+            <svg
+              width={size === 'sm' ? 8 : 12}
+              height={size === 'sm' ? 8 : 12}
+              viewBox="0 0 24 24" fill="none" stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round" strokeLinejoin="round"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-              Take Photo
-            </button>
-            <button
-              onClick={handleChooseFile}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                width: '100%', padding: '10px 14px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '0.875rem', fontWeight: 500,
-                color: 'var(--text)', textAlign: 'left',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary-light)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              Choose from Library
-            </button>
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
           </div>
         )}
       </div>
 
-      {/* File picker (gallery/files) */}
+      {/* File picker */}
       <input
         ref={fileRef}
         type="file"
@@ -435,17 +499,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         style={{ display: 'none' }}
       />
 
-      {/* Mobile-only native Camera capture */}
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={handleFileChange}
-        style={{ display: 'none' }}
-      />
-
-      {/* In-app Webcam Modal (Desktop/Laptop & Fallback) */}
+      {/* In-app Webcam Modal (Desktop/Laptop webcam capture) */}
       {showCamera && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -502,7 +556,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </button>
             </div>
 
-            {/* Error Message */}
+            {/* Error messaging */}
             {cameraError ? (
               <div style={{
                 width: '100%',
@@ -519,7 +573,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               }}>
                 <div>{cameraError}</div>
                 <button
-                  onClick={handleChooseFile}
+                  onClick={() => { setShowCamera(false); fileRef.current?.click(); }}
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     border: '1px solid rgba(255,255,255,0.2)',
@@ -537,7 +591,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 </button>
               </div>
             ) : (
-              /* Camera view frame */
+              /* Viewfinder frame */
               <div style={{
                 position: 'relative',
                 width: '100%',
@@ -567,14 +621,14 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    transform: 'scaleX(-1)', // Mirror image for natural looking preview
+                    transform: 'scaleX(-1)', // Mirrored feed
                     display: isCameraLoading ? 'none' : 'block',
                   }}
                 />
               </div>
             )}
 
-            {/* Camera list dropdown (if multiple input devices are available) */}
+            {/* Switching devices dropdown */}
             {!cameraError && videoDevices.length > 1 && (
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8' }}>Switch Camera</span>
@@ -603,7 +657,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </div>
             )}
 
-            {/* Shutter capture controls */}
+            {/* Shutter capture button */}
             {!cameraError && !isCameraLoading && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'var(--space-sm)' }}>
                 <button

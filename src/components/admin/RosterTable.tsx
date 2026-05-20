@@ -41,6 +41,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit, onPh
                     currentPhotoUrl={p.photo ? pb.files.getUrl(p, p.photo) : undefined}
                     size="sm"
                     onSuccess={onPhotoChange}
+                    readOnlyOnDesktop={true}
                   />
                   <span>{p.name}</span>
                 </div>
