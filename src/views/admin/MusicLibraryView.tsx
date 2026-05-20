@@ -5,7 +5,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
@@ -187,10 +187,10 @@ export default function MusicLibraryView() {
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-            <table className="table" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className="table" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid var(--border)' }}>
             <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th className="text-label" style={{ width: '40px', textAlign: 'center', padding: 'var(--space-md)', color: 'var(--text-muted)' }}>
+                <tr style={{ backgroundColor: 'var(--primary-light)' }}>
+                <th className="text-label" style={{ width: '40px', textAlign: 'center', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>
                     <input 
                         type="checkbox" 
                         checked={filteredPieces.length > 0 && selectedIds.size === filteredPieces.length}
@@ -201,38 +201,41 @@ export default function MusicLibraryView() {
                                 setSelectedIds(new Set());
                             }
                         }}
+                        style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
                     />
                 </th>
-                <th className="text-label" style={{ padding: 'var(--space-md)', color: 'var(--text-muted)' }}>Title</th>
-                <th className="text-label" style={{ padding: 'var(--space-md)', color: 'var(--text-muted)' }}>Composer/Arranger</th>
-                <th className="text-label" style={{ padding: 'var(--space-md)', color: 'var(--text-muted)' }}>Duration</th>
-                <th className="text-label" style={{ padding: 'var(--space-md)', color: 'var(--text-muted)' }}>Copies</th>
-                <th className="text-label" style={{ padding: 'var(--space-md)', color: 'var(--text-muted)' }}>Catalog ID</th>
-                <th className="text-label" style={{ width: '100px', padding: 'var(--space-md)', color: 'var(--text-muted)' }}>Actions</th>
+                <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Title</th>
+                <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Composer/Arranger</th>
+                <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Duration</th>
+                <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Copies</th>
+                <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Catalog ID</th>
+                <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {isLoading ? (
                 <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>Loading library...</td>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
                 </tr>
                 ) : filteredPieces.length === 0 ? (
                 <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>No pieces found.</td>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
                 </tr>
                 ) : (
                 filteredPieces.map(piece => {
                     const isDuplicate = duplicateIds.has(piece.id);
+                    const seconds = piece.duration ? parseDurationToSeconds(piece.duration) : 0;
                     return (
-                        <tr key={piece.id} style={{ backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : undefined, borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ textAlign: 'center', padding: 'var(--space-md)' }}>
+                        <tr key={piece.id} style={{ backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : undefined }}>
+                        <td style={{ textAlign: 'center', padding: '6px 10px', border: '1px solid var(--border)' }}>
                             <input 
                                 type="checkbox" 
                                 checked={selectedIds.has(piece.id)}
                                 onChange={() => toggleSelection(piece.id)}
+                                style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
                             />
                         </td>
-                        <td style={{ padding: 'var(--space-md)' }}>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
                             <div className="flex-col" style={{ gap: 0 }}>
                                 <strong style={{ color: isDuplicate ? '#e64a19' : 'inherit' }}>{piece.title}</strong>
                                 {piece.performances && piece.performances.length > 0 && (
@@ -242,13 +245,21 @@ export default function MusicLibraryView() {
                                 )}
                             </div>
                         </td>
-                        <td style={{ padding: 'var(--space-md)' }}>{piece.composer || '-'}</td>
-                        <td style={{ padding: 'var(--space-md)' }}>{piece.duration || '-'}</td>
-                        <td style={{ padding: 'var(--space-md)' }}>{piece.copies !== undefined ? piece.copies : '-'}</td>
-                        <td style={{ padding: 'var(--space-md)' }}>{piece.catalogId || '-'}</td>
-                        <td style={{ padding: 'var(--space-md)' }}>
-                            <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
-                            <button className="btn btn-ghost btn-sm" onClick={() => { setEditingPiece(piece); setIsModalOpen(true); }}>Edit</button>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.composer || '-'}</td>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
+                            {piece.duration ? `${piece.duration} (${seconds}s)` : '-'}
+                        </td>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.copies !== undefined ? piece.copies : '-'}</td>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.catalogId || '-'}</td>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
+                            <div className="flex-row" style={{ gap: 'var(--space-xs)', justifyContent: 'center' }}>
+                            <button 
+                                className="btn btn-ghost btn-sm" 
+                                onClick={() => { setEditingPiece(piece); setIsModalOpen(true); }}
+                                style={{ minHeight: 'auto', height: '24px', padding: '0 8px', fontSize: '0.75rem', margin: 0 }}
+                            >
+                                Edit
+                            </button>
                             </div>
                         </td>
                         </tr>
