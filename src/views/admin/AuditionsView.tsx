@@ -38,6 +38,7 @@ export default function AuditionsView() {
   const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState('');
   const [editingAudition, setEditingAudition] = useState<Audition | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [performanceFilter, setPerformanceFilter] = useState('all');
 
   const fetchData = async () => {
@@ -89,6 +90,36 @@ export default function AuditionsView() {
   const updateAudition = async (id: string, data: Partial<Audition>) => {
     const updated = await auditionService.updateAudition(id, data);
     setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
+  };
+
+  const handleSaveAudition = async (id: string | null, data: Partial<Audition>) => {
+    try {
+      if (id) {
+        const updated = await auditionService.updateAudition(id, data);
+        setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
+        dialog.showMessage({ title: 'Success', message: 'Audition updated.' });
+      } else {
+        const created = await auditionService.createAudition({
+          name: data.name!,
+          contact: data.contact!,
+          timeSlot: data.timeSlot!,
+          voicePart: data.voicePart,
+          experience: data.experience,
+          performance: data.performance,
+          notes: data.notes,
+          status: data.status,
+        } as any);
+        setAuditions((current) => [created, ...current]);
+        dialog.showMessage({ title: 'Success', message: 'Audition created successfully.' });
+      }
+      setIsModalOpen(false);
+    } catch (err: unknown) {
+      dialog.showMessage({
+        title: 'Error',
+        message: err instanceof Error ? err.message : 'Failed to save audition.',
+        variant: 'danger',
+      });
+    }
   };
 
   const saveNotes = async (audition: Audition, notes: string) => {
@@ -144,6 +175,9 @@ export default function AuditionsView() {
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Auditions</h1>
         <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <button className="btn btn-primary" onClick={() => { setEditingAudition(null); setIsModalOpen(true); }}>
+            Add Audition
+          </button>
           <button className="btn btn-secondary" onClick={() => setShowSettings(!showSettings)}>
             {showSettings ? 'Hide Settings' : 'Configure Times & Settings'}
           </button>
@@ -345,7 +379,7 @@ export default function AuditionsView() {
               >
                 Convert
               </button>
-              <button className="btn btn-ghost btn-sm expanded-hit-area" onClick={() => setEditingAudition(audition)}>Edit</button>
+              <button className="btn btn-ghost btn-sm expanded-hit-area" onClick={() => { setEditingAudition(audition); setIsModalOpen(true); }}>Edit</button>
               <button
                 className="btn btn-danger btn-sm"
                 onClick={(event) => {
@@ -367,9 +401,9 @@ export default function AuditionsView() {
 
       <AuditionModal
         audition={editingAudition}
-        isOpen={Boolean(editingAudition)}
-        onClose={() => setEditingAudition(null)}
-        onSave={updateAudition}
+        isOpen={isModalOpen}
+        onClose={() => { setEditingAudition(null); setIsModalOpen(false); }}
+        onSave={handleSaveAudition}
       />
     </div>
   );

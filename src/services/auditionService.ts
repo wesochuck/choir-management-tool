@@ -30,10 +30,10 @@ export const auditionService = {
     });
   },
 
-  async createAudition(data: Pick<Audition, 'name' | 'contact' | 'timeSlot'> & Partial<Pick<Audition, 'voicePart' | 'experience' | 'performance'>>) {
+  async createAudition(data: Pick<Audition, 'name' | 'contact' | 'timeSlot'> & Partial<Pick<Audition, 'voicePart' | 'experience' | 'performance' | 'status' | 'notes'>>) {
     return await pb.collection('auditions').create<Audition>({
-      ...data,
       status: 'New',
+      ...data,
     });
   },
 
