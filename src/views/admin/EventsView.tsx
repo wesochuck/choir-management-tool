@@ -4,6 +4,7 @@ import { useVenues } from '../../hooks/useVenues';
 import { EventList } from '../../components/admin/EventList';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
+import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 import { profileService, type Profile } from '../../services/profileService';
@@ -36,7 +37,8 @@ export default function EventsView() {
   const [auditionSettings, setAuditionSettings] = useState<AuditionSettings | null>(null);
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'Yes' | 'No' | 'Pending'>('Yes');
+  const [voicePartFilter, setVoicePartFilter] = useState('');
+  const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -249,7 +251,19 @@ export default function EventsView() {
       {rosterEvent && (
         <AppCard
           title={`RSVP Management: ${rosterEvent.title || rosterEvent.expand?.venue?.name || ''}`}
-          actions={<button className="btn btn-ghost btn-sm" onClick={() => { setRosterEvent(null); setSearchQuery(''); }}>Close</button>}
+          actions={
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={() => { 
+                setRosterEvent(null); 
+                setSearchQuery(''); 
+                setVoicePartFilter(''); 
+                setRsvpFilter('All'); 
+              }}
+            >
+              Close
+            </button>
+          }
         >
           {isRosterLoading ? (
             <p className="text-muted">Loading RSVP details...</p>
@@ -276,7 +290,8 @@ export default function EventsView() {
             const pendingCount = mappedSingers.filter(s => s.rsvp === 'Pending').length;
 
             const filteredSingers = mappedSingers.filter(singer => {
-              if (singer.rsvp !== activeTab) return false;
+              if (rsvpFilter !== 'All' && singer.rsvp !== rsvpFilter) return false;
+              if (voicePartFilter && singer.profile.voicePart !== voicePartFilter) return false;
               if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
                 return singer.profile.name.toLowerCase().includes(q);
@@ -303,36 +318,167 @@ export default function EventsView() {
 
             return (
               <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                {/* Search Bar */}
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="🔍 Search active singers by name..."
-                  className="card"
-                  style={{
-                    width: '100%',
-                    padding: '0 12px',
-                    height: '40px',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--surface)',
+                {/* Filters Row */}
+                <div 
+                  className="flex-responsive" 
+                  style={{ 
+                    gap: 'var(--space-md)', 
+                    alignItems: 'center', 
+                    flexWrap: 'wrap',
+                    borderBottom: '1px solid var(--border)',
+                    paddingBottom: 'var(--space-md)'
                   }}
-                />
+                >
+                  {/* Name Search */}
+                  <div style={{ position: 'relative', flex: '1', minWidth: '240px', maxWidth: '400px' }}>
+                    <input
+                      type="text"
+                      placeholder="Search active singers..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="card"
+                      style={{
+                        padding: '0 40px 0 36px',
+                        height: '44px',
+                        width: '100%',
+                        fontSize: '15px'
+                      }}
+                    />
+                    <span style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      pointerEvents: 'none'
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                    </span>
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '4px',
+                          borderRadius: '50%',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Clear search"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
 
-                {/* Tab Selector */}
-                <div className="flex-row" style={{ gap: 'var(--space-sm)', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-sm)' }}>
+                  {/* Voice Part Filter */}
+                  <select 
+                    value={voicePartFilter} 
+                    onChange={(e) => setVoicePartFilter(e.target.value)}
+                    className="card"
+                    style={{ padding: '0 12px', height: '44px', width: '200px' }}
+                  >
+                    <option value="">All Voice Parts</option>
+                    {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map(part => (
+                      <option key={part} value={part}>{part}</option>
+                    ))}
+                  </select>
+
+                  {/* RSVP Status Filter */}
+                  <select 
+                    value={rsvpFilter} 
+                    onChange={(e) => setRsvpFilter(e.target.value as any)}
+                    className="card"
+                    style={{ padding: '0 12px', height: '44px', width: '200px' }}
+                  >
+                    <option value="All">All RSVPs</option>
+                    <option value="Yes">🟢 Attending</option>
+                    <option value="No">🔴 Declined</option>
+                    <option value="Pending">⏳ No Response</option>
+                  </select>
+
+                  {/* Reset Filters */}
+                  {(searchQuery || voicePartFilter || rsvpFilter !== 'All') && (
+                    <button 
+                      onClick={() => {
+                        setSearchQuery('');
+                        setVoicePartFilter('');
+                        setRsvpFilter('All');
+                      }}
+                      className="btn btn-secondary"
+                      style={{ 
+                        height: '44px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 'var(--space-xs)',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                      </svg>
+                      Reset Filters
+                    </button>
+                  )}
+                </div>
+
+                {/* Quick Info / Count Banner */}
+                <div 
+                  className="flex-row" 
+                  style={{ 
+                    gap: 'var(--space-sm)', 
+                    flexWrap: 'wrap', 
+                    paddingBottom: 'var(--space-xs)' 
+                  }}
+                >
                   <button
                     type="button"
-                    onClick={() => setActiveTab('Yes')}
+                    onClick={() => setRsvpFilter('All')}
                     className={`btn btn-sm`}
                     style={{
                       height: '38px',
                       padding: '0 16px',
                       borderRadius: 'var(--radius-md)',
-                      backgroundColor: activeTab === 'Yes' ? 'rgba(74, 117, 89, 0.15)' : 'transparent',
-                      color: activeTab === 'Yes' ? 'var(--primary-deep)' : 'var(--text-muted)',
-                      border: `1px solid ${activeTab === 'Yes' ? 'rgba(74, 117, 89, 0.3)' : 'var(--border)'}`,
+                      backgroundColor: rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      color: rsvpFilter === 'All' ? '#1d4ed8' : 'var(--text-muted)',
+                      border: `1px solid ${rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)'}`,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    👥 All Active ({mappedSingers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRsvpFilter('Yes')}
+                    className={`btn btn-sm`}
+                    style={{
+                      height: '38px',
+                      padding: '0 16px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.15)' : 'transparent',
+                      color: rsvpFilter === 'Yes' ? 'var(--primary-deep)' : 'var(--text-muted)',
+                      border: `1px solid ${rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.3)' : 'var(--border)'}`,
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
@@ -341,15 +487,15 @@ export default function EventsView() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveTab('No')}
+                    onClick={() => setRsvpFilter('No')}
                     className={`btn btn-sm`}
                     style={{
                       height: '38px',
                       padding: '0 16px',
                       borderRadius: 'var(--radius-md)',
-                      backgroundColor: activeTab === 'No' ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
-                      color: activeTab === 'No' ? '#b91c1c' : 'var(--text-muted)',
-                      border: `1px solid ${activeTab === 'No' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
+                      backgroundColor: rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                      color: rsvpFilter === 'No' ? '#b91c1c' : 'var(--text-muted)',
+                      border: `1px solid ${rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
@@ -358,15 +504,15 @@ export default function EventsView() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveTab('Pending')}
+                    onClick={() => setRsvpFilter('Pending')}
                     className={`btn btn-sm`}
                     style={{
                       height: '38px',
                       padding: '0 16px',
                       borderRadius: 'var(--radius-md)',
-                      backgroundColor: activeTab === 'Pending' ? 'rgba(107, 114, 128, 0.08)' : 'transparent',
-                      color: activeTab === 'Pending' ? '#4b5563' : 'var(--text-muted)',
-                      border: `1px solid ${activeTab === 'Pending' ? 'rgba(107, 114, 128, 0.2)' : 'var(--border)'}`,
+                      backgroundColor: rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.08)' : 'transparent',
+                      color: rsvpFilter === 'Pending' ? '#4b5563' : 'var(--text-muted)',
+                      border: `1px solid ${rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.2)' : 'var(--border)'}`,
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
@@ -375,97 +521,17 @@ export default function EventsView() {
                   </button>
                 </div>
 
-                {/* Singers List */}
-                <div className="flex-col" style={{ gap: 'var(--space-xs)', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {filteredSingers.map((singer) => (
-                    <div
-                      key={singer.profile.id}
-                      className="flex-responsive"
-                      style={{
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--border)',
-                        padding: 'var(--space-sm) 0',
-                        gap: 'var(--space-md)',
-                      }}
-                    >
-                      <div className="flex-col" style={{ gap: '2px' }}>
-                        <div style={{ fontWeight: 700 }}>{singer.profile.name}</div>
-                        <div className="text-muted text-xs">{singer.profile.voicePart || 'No voice part'}</div>
-                      </div>
-
-                      {/* Override Button Group */}
-                      <div className="flex-row" style={{ gap: '6px', alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          disabled={isUpdating}
-                          onClick={() => handleUpdateRSVP(singer.profile.id, 'Yes')}
-                          className="btn btn-sm"
-                          style={{
-                            height: '34px',
-                            minWidth: '76px',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            backgroundColor: singer.rsvp === 'Yes' ? 'var(--primary-deep)' : 'transparent',
-                            color: singer.rsvp === 'Yes' ? '#ffffff' : 'var(--text-muted)',
-                            border: `1px solid ${singer.rsvp === 'Yes' ? 'var(--primary-deep)' : 'var(--border)'}`,
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          Attending
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isUpdating}
-                          onClick={() => handleUpdateRSVP(singer.profile.id, 'No')}
-                          className="btn btn-sm"
-                          style={{
-                            height: '34px',
-                            minWidth: '76px',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            backgroundColor: singer.rsvp === 'No' ? '#ef4444' : 'transparent',
-                            color: singer.rsvp === 'No' ? '#ffffff' : 'var(--text-muted)',
-                            border: `1px solid ${singer.rsvp === 'No' ? '#ef4444' : 'var(--border)'}`,
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          Declined
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isUpdating}
-                          onClick={() => handleUpdateRSVP(singer.profile.id, 'Pending')}
-                          className="btn btn-sm"
-                          style={{
-                            height: '34px',
-                            minWidth: '76px',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            backgroundColor: singer.rsvp === 'Pending' ? '#6b7280' : 'transparent',
-                            color: singer.rsvp === 'Pending' ? '#ffffff' : 'var(--text-muted)',
-                            border: `1px solid ${singer.rsvp === 'Pending' ? '#6b7280' : 'var(--border)'}`,
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          Reset
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {filteredSingers.length === 0 && (
-                    <p className="text-muted" style={{ padding: 'var(--space-md) 0', textAlign: 'center' }}>
-                      {searchQuery ? `No active singers matching "${searchQuery}" found in this section.` : `No active singers found in this section.`}
-                    </p>
-                  )}
-                </div>
+                {/* Unified Event Roster Table */}
+                <EventRosterTable 
+                  singers={filteredSingers}
+                  isUpdating={isUpdating}
+                  onUpdateRSVP={handleUpdateRSVP}
+                  onPhotoChange={() => {
+                    if (rosterEvent) {
+                      rosterService.getEventRoster(rosterEvent.id).then(setEventRoster);
+                    }
+                  }}
+                />
               </div>
             );
           })()}
