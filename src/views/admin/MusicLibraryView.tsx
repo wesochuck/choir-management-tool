@@ -479,6 +479,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
     const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
     const [uploadingParts, setUploadingParts] = useState<Record<string, boolean>>({});
+    const [draggedOverPart, setDraggedOverPart] = useState<string | null>(null);
 
     // Performance states
     const [allPerformances, setAllPerformances] = useState<Event[]>([]);
@@ -946,7 +947,18 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                 )}
 
                 {(piece && activeTab === 'tracks') && (
-                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <div 
+                        className="flex-col" 
+                        style={{ gap: 'var(--space-xs)' }}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                    >
                         <label className="text-label">🎵 Reference & Learning Tracks</label>
                         {!localPiece ? (
                             <div className="flex-row" style={{
@@ -973,16 +985,45 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                 {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
                                     const filename = localPiece.audioTrackMapping?.[partLabel];
                                     const isUploading = uploadingParts[partLabel];
+                                    const isDraggedOver = draggedOverPart === partLabel;
                                     return (
-                                        <div key={partLabel} className="flex-row" style={{
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '8px 12px',
-                                            backgroundColor: 'var(--bg-card-hover)',
-                                            border: '1px solid var(--border)',
-                                            borderRadius: 'var(--radius)',
-                                            gap: 'var(--space-md)'
-                                        }}>
+                                        <div 
+                                            key={partLabel} 
+                                            className="flex-row" 
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (draggedOverPart !== partLabel) {
+                                                    setDraggedOverPart(partLabel);
+                                                }
+                                            }}
+                                            onDragLeave={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setDraggedOverPart(null);
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setDraggedOverPart(null);
+                                                const file = e.dataTransfer.files?.[0];
+                                                if (file) {
+                                                    handleFileUpload(partLabel, file);
+                                                }
+                                            }}
+                                            style={{
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: isDraggedOver ? '7px 11px' : '8px 12px',
+                                                backgroundColor: isDraggedOver ? 'rgba(74, 124, 89, 0.08)' : 'var(--bg-card-hover)',
+                                                border: isDraggedOver ? '2px dashed var(--primary)' : '1px solid var(--border)',
+                                                borderRadius: 'var(--radius)',
+                                                gap: 'var(--space-md)',
+                                                transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
+                                                transform: isDraggedOver ? 'scale(1.015)' : 'scale(1)',
+                                                boxShadow: isDraggedOver ? '0 4px 12px rgba(74, 124, 89, 0.15)' : 'none',
+                                            }}
+                                        >
                                             <div className="flex-col" style={{ minWidth: '90px' }}>
                                                 <strong style={{ fontSize: '13px', color: 'var(--text-color)' }}>
                                                     {partLabel === 'tutti' ? 'Tutti (Full)' : partLabel}
