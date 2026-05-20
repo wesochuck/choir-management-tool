@@ -40,7 +40,7 @@ export default function EventsView() {
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [voicePartFilter, setVoicePartFilter] = useState('');
+  const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
   const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
   const [isUpdating, setIsUpdating] = useState(false);
   const [sendingEmailEventId, setSendingEmailEventId] = useState<string | null>(null);
@@ -273,7 +273,7 @@ export default function EventsView() {
               onClick={() => { 
                 setRosterEvent(null); 
                 setSearchQuery(''); 
-                setVoicePartFilter(''); 
+                setSelectedVoiceParts([]); 
                 setRsvpFilter('All'); 
               }}
             >
@@ -305,28 +305,43 @@ export default function EventsView() {
             const noCount = mappedSingers.filter(s => s.rsvp === 'No').length;
             const pendingCount = mappedSingers.filter(s => s.rsvp === 'Pending').length;
 
-            const voicePartCounts = voiceParts.map(vp => {
-              const partSingers = mappedSingers.filter(s => s.profile.voicePart === vp.label);
-              const yes = partSingers.filter(s => s.rsvp === 'Yes').length;
-              const no = partSingers.filter(s => s.rsvp === 'No').length;
-              const pending = partSingers.filter(s => s.rsvp === 'Pending').length;
-              return {
-                ...vp,
-                yes,
-                no,
-                pending,
-              };
+            const sectionCounts = {
+              S: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('S')).length,
+              A: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('A')).length,
+              T: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('T')).length,
+              B: mappedSingers.filter(s => s.rsvp === 'Yes' && s.profile.voicePart?.startsWith('B')).length,
+            };
+
+            const partCounts = new Map<string, number>();
+            voiceParts.forEach(vp => {
+              const count = mappedSingers.filter(s => s.profile.voicePart === vp.label && s.rsvp === 'Yes').length;
+              partCounts.set(vp.label, count);
             });
 
             const filteredSingers = mappedSingers.filter(singer => {
               if (rsvpFilter !== 'All' && singer.rsvp !== rsvpFilter) return false;
-              if (voicePartFilter && singer.profile.voicePart !== voicePartFilter) return false;
+              
+              if (selectedVoiceParts.length > 0) {
+                const matchesVoice = selectedVoiceParts.some(vp => 
+                  singer.profile.voicePart === vp || (vp.length === 1 && singer.profile.voicePart?.startsWith(vp))
+                );
+                if (!matchesVoice) return false;
+              }
+
               if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
                 return singer.profile.name.toLowerCase().includes(q);
               }
               return true;
             });
+
+            const handleVoicePartToggle = (part: string) => {
+              setSelectedVoiceParts(prev => 
+                prev.includes(part)
+                  ? prev.filter(p => p !== part)
+                  : [...prev, part]
+              );
+            };
 
             const handleUpdateRSVP = async (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => {
               setIsUpdating(true);
@@ -419,38 +434,12 @@ export default function EventsView() {
                     )}
                   </div>
 
-                  {/* Voice Part Filter */}
-                  <select 
-                    value={voicePartFilter} 
-                    onChange={(e) => setVoicePartFilter(e.target.value)}
-                    className="card"
-                    style={{ padding: '0 12px', height: '44px', width: '200px' }}
-                  >
-                    <option value="">All Voice Parts</option>
-                    {voiceParts.map(vp => (
-                      <option key={vp.label} value={vp.label}>{vp.label} - {vp.fullName}</option>
-                    ))}
-                  </select>
-
-                  {/* RSVP Status Filter */}
-                  <select 
-                    value={rsvpFilter} 
-                    onChange={(e) => setRsvpFilter(e.target.value as any)}
-                    className="card"
-                    style={{ padding: '0 12px', height: '44px', width: '200px' }}
-                  >
-                    <option value="All">All RSVPs</option>
-                    <option value="Yes">🟢 Attending</option>
-                    <option value="No">🔴 Declined</option>
-                    <option value="Pending">⏳ No Response</option>
-                  </select>
-
                   {/* Reset Filters */}
-                  {(searchQuery || voicePartFilter || rsvpFilter !== 'All') && (
+                  {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
                     <button 
                       onClick={() => {
                         setSearchQuery('');
-                        setVoicePartFilter('');
+                        setSelectedVoiceParts([]);
                         setRsvpFilter('All');
                       }}
                       className="btn btn-secondary"
@@ -471,118 +460,115 @@ export default function EventsView() {
                   )}
                 </div>
 
-                {/* Voice Part RSVP Balance Grid */}
+                {/* Voice Part RSVP Balance Summary Card */}
                 {voiceParts.length > 0 && (
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
-                    <h3 className="text-label" style={{ fontWeight: 700, margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                      Voice Part RSVP Balance
-                    </h3>
-                    <div 
-                      style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
-                        gap: 'var(--space-md)', 
-                        width: '100%',
-                        paddingBottom: 'var(--space-sm)'
-                      }}
-                    >
-                      {voicePartCounts.map((vp) => {
-                        const isWarning = vp.yes === 0;
+                  <AppCard 
+                    title="Voice Part RSVP Balance"
+                    actions={
+                      <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
+                        Total: {yesCount} Attending
+                      </span>
+                    }
+                    style={{ gap: 'var(--space-md)' }}
+                  >
+                    <style>{`
+                      .voice-section-card {
+                        transition: all 0.2s ease-in-out;
+                        cursor: pointer;
+                        border: 2px solid transparent;
+                      }
+                      .voice-section-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: var(--shadow-sm);
+                        opacity: 0.9;
+                      }
+                      .voice-section-card.selected {
+                        border-color: var(--primary) !important;
+                        box-shadow: 0 0 0 1px var(--primary);
+                      }
+                      .voice-part-card {
+                        transition: all 0.2s ease-in-out;
+                        cursor: pointer;
+                        border: 1px solid var(--border);
+                      }
+                      .voice-part-card:hover {
+                        border-color: var(--primary-deep);
+                        background-color: var(--primary-light) !important;
+                        transform: translateY(-1px);
+                      }
+                      .voice-part-card.selected {
+                        border-color: var(--primary) !important;
+                        background-color: var(--primary-light) !important;
+                      }
+                    `}</style>
+
+                    {/* Section Subtotals */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(4, 1fr)', 
+                      gap: 'var(--space-md)',
+                      paddingBottom: 'var(--space-md)',
+                      borderBottom: '1px solid var(--border)'
+                    }}>
+                      {(['S', 'A', 'T', 'B'] as const).map(sec => {
+                        const isSelected = selectedVoiceParts.includes(sec);
                         return (
                           <div 
-                            key={vp.label}
-                            className="card"
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
+                            key={sec} 
+                            className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleVoicePartToggle(sec)}
+                            style={{ 
+                              textAlign: 'center', 
+                              padding: 'calc(var(--space-md) - 2px)', 
+                              borderRadius: 'var(--radius-md)', 
+                              backgroundColor: 'var(--primary-light)',
                               gap: 'var(--space-xs)',
-                              padding: 'var(--space-md)',
-                              backgroundColor: isWarning ? 'rgba(245, 158, 11, 0.04)' : 'var(--bg)',
-                              border: `1.5px solid ${isWarning ? 'rgba(245, 158, 11, 0.4)' : 'var(--border)'}`,
-                              borderRadius: 'var(--radius-lg)',
-                              transition: 'all 0.2s ease-in-out',
-                              boxShadow: 'none',
-                              position: 'relative',
-                              overflow: 'hidden'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.borderColor = isWarning ? 'rgba(245, 158, 11, 0.6)' : 'var(--primary)';
-                              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'none';
-                              e.currentTarget.style.borderColor = isWarning ? 'rgba(245, 158, 11, 0.4)' : 'var(--border)';
-                              e.currentTarget.style.boxShadow = 'none';
+                              borderWidth: '2px',
+                              borderStyle: 'solid',
+                              borderColor: isSelected ? 'var(--primary)' : 'transparent'
                             }}
                           >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span 
-                                className="text-label" 
-                                style={{ 
-                                  fontWeight: 800, 
-                                  fontSize: '0.9rem',
-                                  color: isWarning ? 'rgba(245, 158, 11, 1)' : 'var(--primary-deep)',
-                                  backgroundColor: isWarning ? 'rgba(245, 158, 11, 0.1)' : 'var(--primary-light)',
-                                  padding: '2px 8px',
-                                  borderRadius: '4px'
-                                }}
-                              >
-                                {vp.label}
-                              </span>
-                              {isWarning && (
-                                <span 
-                                  className="text-label"
-                                  style={{ 
-                                    fontSize: '0.7rem', 
-                                    fontWeight: 700, 
-                                    color: '#d97706',
-                                    backgroundColor: '#fef3c7',
-                                    padding: '1px 6px',
-                                    borderRadius: '10px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '2px'
-                                  }}
-                                >
-                                  ⚠️ Empty
-                                </span>
-                              )}
+                            <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
                             </div>
-                            
-                            <div 
-                              className="text-muted" 
-                              style={{ 
-                                fontSize: '0.75rem', 
-                                fontWeight: 500,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}
-                              title={vp.fullName}
-                            >
-                              {vp.fullName}
-                            </div>
-                            
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
-                                <span style={{ color: 'var(--text-muted)' }}>🟢 Attending:</span>
-                                <span style={{ color: vp.yes > 0 ? 'var(--primary-deep)' : 'var(--text-muted)' }}>{vp.yes}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
-                                <span style={{ color: 'var(--text-muted)' }}>🔴 Declined:</span>
-                                <span style={{ color: vp.no > 0 ? '#b91c1c' : 'var(--text-muted)' }}>{vp.no}</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
-                                <span style={{ color: 'var(--text-muted)' }}>⏳ Pending:</span>
-                                <span style={{ color: 'var(--text-muted)' }}>{vp.pending}</span>
-                              </div>
-                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
+
+                    {/* Individual Part Breakdowns */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
+                      gap: 'var(--space-sm)',
+                      marginTop: 0
+                    }}>
+                      {voiceParts.map(vp => {
+                        const isSelected = selectedVoiceParts.includes(vp.label);
+                        const count = partCounts.get(vp.label) || 0;
+                        return (
+                          <div 
+                            key={vp.label} 
+                            className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleVoicePartToggle(vp.label)}
+                            style={{ 
+                              textAlign: 'center', 
+                              borderRadius: 'var(--radius-sm)', 
+                              backgroundColor: 'var(--bg)',
+                              gap: '2px',
+                              borderStyle: 'solid',
+                              borderWidth: isSelected ? '2px' : '1px',
+                              padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
+                            }}
+                          >
+                            <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
+                            <div className="text-label" style={{ fontWeight: 700 }}>{count}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </AppCard>
                 )}
 
                 {/* Quick Info / Count Banner */}

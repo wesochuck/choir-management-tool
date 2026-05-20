@@ -137,3 +137,32 @@ test('calculateVoicePartRSVPs correctly flags empty sections as 0 attending', ()
   assert.equal(b2.no, 0);
   assert.equal(b2.pending, 0);
 });
+
+// Helper matching our React filter logic
+function matchesVoiceParts(voicePart: string, selectedVoiceParts: string[]): boolean {
+  if (selectedVoiceParts.length === 0) return true;
+  return selectedVoiceParts.some(vp => 
+    voicePart === vp || (vp.length === 1 && voicePart.startsWith(vp))
+  );
+}
+
+test('matchesVoiceParts correctly filters section-level and individual part-level selections', () => {
+  // Empty selection allows all
+  assert.equal(matchesVoiceParts('S1', []), true);
+  assert.equal(matchesVoiceParts('A2', []), true);
+
+  // Section level selection matches all sub-parts
+  assert.equal(matchesVoiceParts('S1', ['S']), true);
+  assert.equal(matchesVoiceParts('S2', ['S']), true);
+  assert.equal(matchesVoiceParts('A1', ['S']), false);
+
+  // Exact part selection matches only the specific part
+  assert.equal(matchesVoiceParts('S1', ['S1']), true);
+  assert.equal(matchesVoiceParts('S2', ['S1']), false);
+
+  // Multi-select matches either section or specific parts
+  assert.equal(matchesVoiceParts('S2', ['S1', 'A']), false);
+  assert.equal(matchesVoiceParts('A1', ['S1', 'A']), true);
+  assert.equal(matchesVoiceParts('A2', ['S1', 'A']), true);
+});
+
