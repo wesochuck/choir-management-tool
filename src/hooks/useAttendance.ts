@@ -160,9 +160,11 @@ export const useAttendance = (eventId: string) => {
     ));
 
     try {
-      const updatedRosters = await Promise.all(
-        subset.map(item => rosterService.upsertAttendance(eventId, item.profileId, next))
-      );
+      const updates = subset.map(item => ({
+        profileId: item.profileId,
+        attendance: next
+      }));
+      const updatedRosters = await rosterService.bulkUpsertAttendance(eventId, updates);
 
       const rosterMap = new Map(updatedRosters.map(r => [r.profile, r]));
       setItems(prev => prev.map(item => {

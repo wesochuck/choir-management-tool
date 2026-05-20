@@ -118,6 +118,32 @@ export const rosterService = {
     }
   },
 
+  async bulkUpsertAttendance(eventId: string, updates: { profileId: string, attendance: AttendanceStatus }[]) {
+    const existing = await pb.collection('eventRosters').getFullList<EventRoster>({
+      filter: `event = "${eventId}"`,
+    });
+    const existingMap = new Map(existing.map(r => [r.profile, r]));
+
+    const operations = updates.map(update => {
+      const existingRoster = existingMap.get(update.profileId);
+      if (existingRoster) {
+        return () => updateAttendanceWithVerification(existingRoster.id, update.attendance);
+      } else {
+        return () => createAttendanceWithVerification(eventId, update.profileId, update.attendance);
+      }
+    });
+
+    const results: EventRoster[] = [];
+    const chunkSize = 4;
+    for (let i = 0; i < operations.length; i += chunkSize) {
+      const chunk = operations.slice(i, i + chunkSize);
+      const chunkResults = await Promise.all(chunk.map(op => op()));
+      results.push(...chunkResults);
+    }
+
+    return results;
+  },
+
   async updateFolder(rosterId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
     return await pb.collection('eventRosters').update<EventRoster>(rosterId, data);
   },
