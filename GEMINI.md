@@ -25,6 +25,11 @@ These foundational mandates MUST be followed by all agents working on this codeb
     *   `src/hooks/`: State coordination and business logic.
     *   `src/components/`: Pure presentational "dumb" components.
 *   **Type Safety:** Use shared TypeScript interfaces for all PocketBase records to ensure consistency between the backend schema and frontend state.
+*   **No Explicit `any`:** Do not introduce explicit `any` in TypeScript or TSX files. Use `unknown` first, then narrow with type guards, schema validation, or local helper types.
+*   **Safe Error Handling:** Type `catch` block errors as `unknown` and normalize them safely, for example: `const message = err instanceof Error ? err.message : String(err)`.
+*   **No Type Suppression:** Do not silence type errors with `as any`, `// @ts-ignore`, `// eslint-disable`, or broad assertions unless the user explicitly approves it.
+*   **Typed Boundaries:** If a third-party API forces an untyped boundary, isolate it in a small adapter with a named type and a short comment explaining the boundary.
+*   **Verification:** Before finishing TypeScript work, run `npm run lint` or the relevant typecheck command and fix all `@typescript-eslint/no-explicit-any` violations introduced by the change.
 
 ## Recurring Failure Prevention (MANDATORY)
 *   **Infrastructure Audit:** Every new agent MUST verify that `src/lib/pocketbase.ts` contains the `afterSend` interceptor for stale token resilience. If missing, implement it immediately before proceeding with any feature work.

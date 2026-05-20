@@ -1,5 +1,21 @@
 # Agent Instructions
 
+## TypeScript Type Safety
+
+- Do not introduce explicit `any` in TypeScript or TSX files.
+- When a value is unknown, use `unknown` first, then narrow it with type guards, schema validation, or local helper types.
+- For `catch` blocks, type errors as `unknown` and normalize them safely, for example:
+
+  ```ts
+  catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+  }
+  ```
+
+- Do not silence type errors with `as any`, `// @ts-ignore`, `// eslint-disable`, or broad assertions unless the user explicitly approves it.
+- Before finishing TypeScript work, run the project's lint/typecheck command and fix all `@typescript-eslint/no-explicit-any` violations introduced by the change.
+- If a third-party API forces an untyped boundary, isolate it in a small adapter with a named type and a short comment explaining the boundary.
+
 ## PocketBase Hook Safety
 
 - PocketHost/PocketBase JavaScript hook callbacks must be self-contained. Do not register `onRecordAfterCreateSuccess`, `onRecordAfterUpdateSuccess`, or other hook callbacks that call helper functions declared elsewhere in the hook file unless you have verified that exact pattern on PocketHost.

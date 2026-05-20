@@ -11,6 +11,7 @@ export default defineConfig([
     'node_modules',
     'pocketbase/pb_data',
     'pocketbase/pocketbase',
+    'pocketbase/types.d.ts',
     '.planning',
     '.superpowers',
     'docs',
@@ -28,7 +29,7 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
       'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': 'off',
       'preserve-caught-error': 'off',
