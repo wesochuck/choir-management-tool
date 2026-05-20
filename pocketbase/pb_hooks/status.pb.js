@@ -1,12 +1,22 @@
 // Profile Status Engine Hooks
 
 onRecordAfterUpdateSuccess((e) => {
-    updateProfileStatus(e.record);
+    runProfileStatusUpdate(e.record, "update");
 }, "eventRosters");
 
 onRecordAfterCreateSuccess((e) => {
-    updateProfileStatus(e.record);
+    runProfileStatusUpdate(e.record, "create");
 }, "eventRosters");
+
+function runProfileStatusUpdate(roster, action) {
+    try {
+        updateProfileStatus(roster);
+    } catch (err) {
+        // This hook is advisory. Attendance writes must never fail after the
+        // roster row has already been saved.
+        console.log("Profile status hook failed after eventRosters " + action + " for " + roster.id + ": " + err);
+    }
+}
 
 function saveProfileStatus(profile) {
     try {
