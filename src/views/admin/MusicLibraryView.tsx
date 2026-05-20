@@ -35,7 +35,7 @@ export default function MusicLibraryView() {
     const chosenPart = parts.includes('tutti') ? 'tutti' : parts[0];
     const filename = piece.audioTrackMapping[chosenPart];
     if (filename) {
-        setActiveAudioUrl(pb.files.getUrl(piece, filename));
+        setActiveAudioUrl(pb.files.getURL(piece, filename));
         setActiveAudioTitle(piece.title);
         setActiveAudioPart(chosenPart === 'tutti' ? 'Tutti' : chosenPart);
     }
@@ -1038,7 +1038,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                             ) : filename ? (
                                                 <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
                                                     <audio 
-                                                        src={pb.files.getUrl(localPiece, filename)} 
+                                                        src={pb.files.getURL(localPiece, filename)} 
                                                         controls 
                                                         style={{ height: '28px', maxWidth: '220px', flex: 1 }} 
                                                     />

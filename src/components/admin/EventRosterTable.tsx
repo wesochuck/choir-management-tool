@@ -47,7 +47,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     <PhotoUploader
                       profileId={p.id}
                       profileName={p.name}
-                      currentPhotoUrl={p.photo ? pb.files.getUrl(p, p.photo) : undefined}
+                      currentPhotoUrl={p.photo ? pb.files.getURL(p, p.photo) : undefined}
                       size="sm"
                       onSuccess={onPhotoChange}
                       readOnlyOnDesktop={true}

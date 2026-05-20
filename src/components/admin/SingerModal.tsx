@@ -450,7 +450,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 <PhotoUploader
                   profileId={initialData.id}
                   profileName={initialData.name}
-                  currentPhotoUrl={initialData.photo ? pb.files.getUrl(initialData, initialData.photo) : undefined}
+                  currentPhotoUrl={initialData.photo ? pb.files.getURL(initialData, initialData.photo) : undefined}
                   size="md"
                   onSuccess={(updated) => {
                     setFormData(prev => ({

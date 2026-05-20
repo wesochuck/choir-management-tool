@@ -76,7 +76,7 @@ export default function ProfileView() {
           <PhotoUploader
             profileId={profile.id}
             profileName={profile.name}
-            currentPhotoUrl={profile.photo ? pb.files.getUrl(profile, profile.photo) : undefined}
+            currentPhotoUrl={profile.photo ? pb.files.getURL(profile, profile.photo) : undefined}
             size="lg"
             onSuccess={handlePhotoSuccess}
           />

@@ -101,7 +101,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                             {recommendedTracks.map(trackKey => {
                               const filename = piece.audioTrackMapping?.[trackKey];
                               if (!filename) return null;
-                              const url = pb.files.getUrl(piece, filename);
+                              const url = pb.files.getURL(piece, filename);
                               const isCurrent = playingTrack?.songId === item.id && playingTrack?.label === trackKey;
                               return (
                                 <button
