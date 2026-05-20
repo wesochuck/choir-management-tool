@@ -1,15 +1,17 @@
 import React from 'react';
 import type { Profile } from '../../services/profileService';
 import { pb } from '../../lib/pocketbase';
+import { PhotoUploader } from '../common/PhotoUploader';
 
 interface RosterTableProps {
   profiles: Profile[];
   onEdit: (profile: Profile) => void;
+  onPhotoChange?: () => void;
 }
 
 import { AppCard } from '../common/AppCard';
 
-export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit }) => {
+export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit, onPhotoChange }) => {
   return (
     <AppCard noPadding style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -33,30 +35,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit }) =>
             >
               <td style={{ padding: 'var(--space-md)', fontWeight: 500 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                  {p.photo ? (
-                    <img 
-                      src={pb.files.getUrl(p, p.photo)} 
-                      alt={p.name} 
-                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
-                    />
-                  ) : (
-                    <div 
-                      style={{ 
-                        width: '32px', 
-                        height: '32px', 
-                        borderRadius: '50%', 
-                        backgroundColor: 'var(--primary-light)', 
-                        color: 'var(--primary-deep)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        fontSize: '14px',
-                        fontWeight: 600
-                      }}
-                    >
-                      {p.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <PhotoUploader
+                    profileId={p.id}
+                    profileName={p.name}
+                    currentPhotoUrl={p.photo ? pb.files.getUrl(p, p.photo) : undefined}
+                    size="sm"
+                    onSuccess={onPhotoChange}
+                  />
                   <span>{p.name}</span>
                 </div>
               </td>

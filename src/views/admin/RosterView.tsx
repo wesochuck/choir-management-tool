@@ -178,7 +178,7 @@ export default function RosterView() {
         </select>
       </div>
 
-      <RosterTable profiles={profiles} onEdit={handleEdit} />
+      <RosterTable profiles={profiles} onEdit={handleEdit} onPhotoChange={refresh} />
 
       <SingerModal 
         isOpen={isModalOpen} 

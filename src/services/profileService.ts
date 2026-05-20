@@ -5,6 +5,7 @@ export interface Profile extends RecordModel {
   user: string;
   name: string;
   phone: string;
+  photo: string;
   voicePart: string;
   globalStatus: 'Active (Current)' | 'Active (Future)' | 'Inactive';
   notes: string;

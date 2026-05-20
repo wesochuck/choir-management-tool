@@ -2,6 +2,7 @@ import { useMyEvents } from '../../hooks/useMyEvents';
 import { EventCard } from '../../components/singer/EventCard';
 import { pb } from '../../lib/pocketbase';
 import { PageLayout } from '../../components/common/PageLayout';
+import { Link } from 'react-router-dom';
 
 export default function DashboardView() {
   const { events, myRosters, isLoading, error, updateRSVP } = useMyEvents();
@@ -15,7 +16,12 @@ export default function DashboardView() {
     <PageLayout 
       title="Upcoming Events" 
       subtitle="Please let us know if you can make it!"
-      actions={<button onClick={() => pb.authStore.clear()} className="btn btn-ghost">Logout</button>}
+      actions={
+        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <Link to="/profile" className="btn btn-ghost">My Profile</Link>
+          <button onClick={() => pb.authStore.clear()} className="btn btn-ghost">Logout</button>
+        </div>
+      }
       maxWidth="800px"
     >
       <div className="flex-col" style={{ gap: 'var(--space-lg)', padding: 'var(--space-xl) 0' }}>

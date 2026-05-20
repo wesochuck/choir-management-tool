@@ -18,6 +18,7 @@ const MusicLibraryView = lazy(() => import('./views/admin/MusicLibraryView'));
 const AdminDashboardView = lazy(() => import('./views/admin/AdminDashboardView'));
 const SingerDashboardView = lazy(() => import('./views/singer/DashboardView'));
 const SeatingFinderView = lazy(() => import('./views/singer/SeatingFinderView'));
+const ProfileView = lazy(() => import('./views/singer/ProfileView'));
 const PublicAuditionView = lazy(() => import('./views/PublicAuditionView'));
 const PublicRsvpView = lazy(() => import('./views/PublicRsvpView'));
 
@@ -138,6 +139,7 @@ export default function App() {
           } />
 
           <Route path="/seating/:eventId" element={<ProtectedRoute><SeatingFinderView /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

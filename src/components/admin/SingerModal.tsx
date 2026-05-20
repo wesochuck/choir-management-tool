@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
-import { formatPocketBaseError } from '../../lib/pocketbase';
+import { PhotoUploader } from '../common/PhotoUploader';
+import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { getVoiceParts, type VoicePartDef } from '../../services/settingsService';
 
 interface SingerModalProps {
@@ -139,6 +140,33 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       }
     >
       <form id="singer-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        {/* Photo upload */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          {initialData ? (
+            <>
+              <PhotoUploader
+                profileId={initialData.id}
+                profileName={initialData.name}
+                currentPhotoUrl={initialData.photo ? pb.files.getUrl(initialData, initialData.photo) : undefined}
+                size="md"
+              />
+              <span className="text-xs text-muted">Tap to change photo</span>
+            </>
+          ) : (
+            <>
+              <div style={{
+                width: 96, height: 96, borderRadius: '50%',
+                backgroundColor: 'var(--bg)', border: '2px dashed var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-muted)', fontSize: '36px',
+              }}>
+                ?
+              </div>
+              <span className="text-xs text-muted">Save first to add a photo</span>
+            </>
+          )}
+        </div>
+
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <label className="text-label">Name</label>
           <input 
