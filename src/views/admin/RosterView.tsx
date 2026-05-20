@@ -11,7 +11,7 @@ import { getVoiceParts, settingsService } from '../../services/settingsService';
 
 
 export default function RosterView() {
-  const { profiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
+  const { profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
   const [searchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -93,7 +93,11 @@ export default function RosterView() {
         </div>
       </div>
 
-      <RosterSummary profiles={profiles} />
+      <RosterSummary 
+        profiles={unfilteredByVoicePartProfiles} 
+        selectedVoicePart={filters.voicePart}
+        onVoicePartToggle={(part) => setFilter('voicePart', filters.voicePart === part ? '' : part)}
+      />
 
       <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: '1', minWidth: '240px', maxWidth: '400px' }}>
@@ -163,7 +167,15 @@ export default function RosterView() {
           style={{ padding: '0 12px', height: '44px', width: '200px' }}
         >
           <option value="">All Voice Parts</option>
-          {voiceParts.map(v => <option key={v} value={v}>{v}</option>)}
+          <optgroup label="Sections">
+            <option value="S">Sopranos (S1, S2)</option>
+            <option value="A">Altos (A1, A2)</option>
+            <option value="T">Tenors (T1, T2)</option>
+            <option value="B">Basses (B1, B2)</option>
+          </optgroup>
+          <optgroup label="Individual Parts">
+            {voiceParts.map(v => <option key={v} value={v}>{v}</option>)}
+          </optgroup>
         </select>
         <select 
           value={filters.status} 
@@ -176,6 +188,30 @@ export default function RosterView() {
           <option value="Active (Future)">Active (Future)</option>
           <option value="Inactive">Inactive</option>
         </select>
+
+        {(filters.name || filters.voicePart || filters.status) && (
+          <button 
+            onClick={() => {
+              setFilter('name', '');
+              setFilter('voicePart', '');
+              setFilter('status', '');
+            }}
+            className="btn btn-secondary"
+            style={{ 
+              height: '44px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 'var(--space-xs)',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            Reset Filters
+          </button>
+        )}
       </div>
 
       <RosterTable profiles={profiles} onEdit={handleEdit} onPhotoChange={refresh} />

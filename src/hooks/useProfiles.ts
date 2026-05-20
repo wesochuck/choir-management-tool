@@ -24,9 +24,19 @@ export const useProfiles = () => {
     fetchProfiles();
   }, []);
 
+  const unfilteredByVoicePartProfiles = useMemo(() => {
+    return profiles.filter((p) => {
+      const matchesStatus = !filters.status || p.globalStatus === filters.status;
+      const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
+      return matchesStatus && matchesName;
+    });
+  }, [profiles, filters.status, filters.name]);
+
   const filteredProfiles = useMemo(() => {
     return profiles.filter((p) => {
-      const matchesVoice = !filters.voicePart || p.voicePart === filters.voicePart;
+      const matchesVoice = !filters.voicePart || 
+        p.voicePart === filters.voicePart || 
+        (filters.voicePart.length === 1 && p.voicePart?.startsWith(filters.voicePart));
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
       const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
       return matchesVoice && matchesStatus && matchesName;
@@ -66,6 +76,7 @@ export const useProfiles = () => {
 
   return {
     profiles: filteredProfiles,
+    unfilteredByVoicePartProfiles,
     isLoading,
     error,
     filters,

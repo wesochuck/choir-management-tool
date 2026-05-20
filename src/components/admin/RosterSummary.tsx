@@ -3,6 +3,8 @@ import type { Profile } from '../../services/profileService';
 
 interface RosterSummaryProps {
   profiles: Profile[];
+  selectedVoicePart?: string;
+  onVoicePartToggle?: (part: string) => void;
 }
 
 const VOICE_PARTS = ['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'] as const;
@@ -10,7 +12,11 @@ const SECTIONS = ['S', 'A', 'T', 'B'] as const;
 
 import { AppCard } from '../common/AppCard';
 
-export const RosterSummary: React.FC<RosterSummaryProps> = ({ profiles }) => {
+export const RosterSummary: React.FC<RosterSummaryProps> = ({ 
+  profiles, 
+  selectedVoicePart = '', 
+  onVoicePartToggle 
+}) => {
   const { partCounts, sectionCounts } = useMemo(() => {
     const pc: Record<string, number> = {};
     const sc: Record<string, number> = {};
@@ -42,6 +48,37 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({ profiles }) => {
         </span>
       }
     >
+      <style>{`
+        .voice-section-card {
+          transition: all 0.2s ease-in-out;
+          cursor: pointer;
+          border: 2px solid transparent;
+        }
+        .voice-section-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-sm);
+          opacity: 0.9;
+        }
+        .voice-section-card.selected {
+          border-color: var(--primary) !important;
+          box-shadow: 0 0 0 1px var(--primary);
+        }
+        .voice-part-card {
+          transition: all 0.2s ease-in-out;
+          cursor: pointer;
+          border: 1px solid var(--border);
+        }
+        .voice-part-card:hover {
+          border-color: var(--primary-deep);
+          background-color: var(--primary-light) !important;
+          transform: translateY(-1px);
+        }
+        .voice-part-card.selected {
+          border-color: var(--primary) !important;
+          background-color: var(--primary-light) !important;
+        }
+      `}</style>
+
       {/* Section Subtotals */}
       <div style={{ 
         display: 'grid', 
@@ -50,41 +87,62 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({ profiles }) => {
         paddingBottom: 'var(--space-lg)',
         borderBottom: '1px solid var(--border)'
       }}>
-        {SECTIONS.map(sec => (
-          <div key={sec} className="flex-col" style={{ 
-            textAlign: 'center', 
-            padding: 'var(--space-md)', 
-            borderRadius: 'var(--radius-md)', 
-            backgroundColor: 'var(--primary-light)',
-            gap: 'var(--space-xs)'
-          }}>
-            <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
+        {SECTIONS.map(sec => {
+          const isSelected = selectedVoicePart === sec;
+          return (
+            <div 
+              key={sec} 
+              className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
+              onClick={() => onVoicePartToggle?.(sec)}
+              style={{ 
+                textAlign: 'center', 
+                padding: 'calc(var(--space-md) - 2px)', 
+                borderRadius: 'var(--radius-md)', 
+                backgroundColor: 'var(--primary-light)',
+                gap: 'var(--space-xs)',
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: isSelected ? 'var(--primary)' : 'transparent'
+              }}
+            >
+              <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
             </div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Individual Part Breakdowns */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
-        gap: 'var(--space-sm)' 
+        gap: 'var(--space-sm)',
+        marginTop: 'var(--space-lg)'
       }}>
-        {VOICE_PARTS.map(part => (
-          <div key={part} className="flex-col" style={{ 
-            textAlign: 'center', 
-            padding: 'var(--space-sm)', 
-            borderRadius: 'var(--radius-sm)', 
-            backgroundColor: 'var(--bg)',
-            border: '1px solid var(--border)',
-            gap: '2px'
-          }}>
-            <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{part}</div>
-            <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[part]}</div>
-          </div>
-        ))}
+        {VOICE_PARTS.map(part => {
+          const isSelected = selectedVoicePart === part;
+          return (
+            <div 
+              key={part} 
+              className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
+              onClick={() => onVoicePartToggle?.(part)}
+              style={{ 
+                textAlign: 'center', 
+                borderRadius: 'var(--radius-sm)', 
+                backgroundColor: 'var(--bg)',
+                gap: '2px',
+                borderStyle: 'solid',
+                borderWidth: isSelected ? '2px' : '1px',
+                padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
+              }}
+            >
+              <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{part}</div>
+              <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[part]}</div>
+            </div>
+          );
+        })}
       </div>
     </AppCard>
   );
