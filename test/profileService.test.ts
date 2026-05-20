@@ -98,3 +98,49 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
     pb.authStore = originalAuthStore;
   }
 });
+
+test('profileService.updateProfile preserves photo when defined and deletes when undefined', async (t) => {
+  const originalCollection = pb.collection;
+
+  const mockGetOne = t.mock.fn(async (id: string, options: any) => {
+    return { id, name: 'John Doe', user: 'user123', photo: 'existing.jpg' };
+  });
+
+  const mockUpdate = t.mock.fn(async (id: string, payload: any) => {
+    return { id, ...payload };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return {
+        getOne: mockGetOne,
+        update: mockUpdate,
+      } as any;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    
+    // Case 1: photo is undefined in input
+    await profileService.updateProfile('profile123', { name: 'New Name' });
+    assert.equal(mockUpdate.mock.callCount(), 1);
+    let payload = mockUpdate.mock.calls[0].arguments[1];
+    assert.equal('photo' in payload, false); // omitted when undefined
+
+    // Case 2: photo is a valid string filename in input
+    await profileService.updateProfile('profile123', { name: 'New Name', photo: 'new_photo.jpg' });
+    assert.equal(mockUpdate.mock.callCount(), 2);
+    payload = mockUpdate.mock.calls[1].arguments[1];
+    assert.equal(payload.photo, 'new_photo.jpg'); // preserved when defined
+
+    // Case 3: photo is an empty string in input (representing removal)
+    await profileService.updateProfile('profile123', { name: 'New Name', photo: '' });
+    assert.equal(mockUpdate.mock.callCount(), 3);
+    payload = mockUpdate.mock.calls[2].arguments[1];
+    assert.equal(payload.photo, ''); // preserved when defined as empty string
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
