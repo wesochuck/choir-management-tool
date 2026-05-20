@@ -148,7 +148,10 @@ export const useAttendance = (eventId: string) => {
       ? items.filter(item => targetProfileIds.includes(item.profileId))
       : items;
 
-    if (subset.length === 0) return;
+    // Only update records whose current attendance status differs from the next status
+    const changedSubset = subset.filter(item => item.attendance !== next);
+
+    if (changedSubset.length === 0) return;
 
     const originalItems = [...items];
 
@@ -160,7 +163,7 @@ export const useAttendance = (eventId: string) => {
     ));
 
     try {
-      const updates = subset.map(item => ({
+      const updates = changedSubset.map(item => ({
         profileId: item.profileId,
         attendance: next
       }));
