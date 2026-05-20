@@ -80,7 +80,6 @@ export default function ProfileView() {
             size="lg"
             onSuccess={handlePhotoSuccess}
           />
-          <span className="text-xs text-muted">Tap to change photo</span>
         </div>
 
         {/* Form */}

@@ -167,8 +167,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     }
   };
 
-  // Mobile direct tap upload handler
-  const handleMobileClick = (e: React.MouseEvent) => {
+  // Click handler (avatar direct tap/click launches file picker)
+  const handleAvatarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     fileRef.current?.click();
@@ -325,15 +325,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   }
 
   return (
-    <>
-      {/* Upload trigger zone */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+      {/* Upload trigger circle zone */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onMouseEnter={() => !isMobile && setIsHovered(true)}
         onMouseLeave={() => !isMobile && setIsHovered(false)}
-        onClick={isMobile ? handleMobileClick : undefined}
+        onClick={handleAvatarClick}
         style={{
           position: 'relative',
           width: px,
@@ -341,7 +341,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           borderRadius: '50%',
           overflow: 'hidden',
           cursor: 'pointer',
-          flexShrink: 0,
           border: isDragging ? '3px dashed var(--primary)' : '2px solid transparent',
           boxShadow: isDragging ? '0 0 0 4px rgba(74, 124, 89, 0.25)' : 'none',
           transition: 'all 0.2s ease',
@@ -385,81 +384,41 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           </div>
         )}
 
-        {/* Desktop premium Drag & Drop + hover control zone */}
-        {!isMobile && (isHovered || isDragging) && !isUploading && (
+        {/* Drag and Drop Over Overlay (active during active drag overlays) */}
+        {!isMobile && isDragging && !isUploading && (
           <div style={{
             position: 'absolute',
             inset: 0,
-            backgroundColor: isDragging ? 'rgba(74, 124, 89, 0.85)' : 'rgba(15, 23, 42, 0.7)',
+            backgroundColor: 'rgba(74, 124, 89, 0.85)',
             backdropFilter: 'blur(3px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: size === 'sm' ? '2px' : '8px',
             color: '#fff',
-            transition: 'background-color 0.2s',
             zIndex: 10,
           }}>
-            {isDragging ? (
-              <span style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>
-            ) : (
-              <>
-                <span style={{ fontSize: size === 'sm' ? '8px' : '10px', fontWeight: 600, opacity: 0.9 }}>Change</span>
-                {size !== 'sm' && (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* Folder file input button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
-                      title="Upload from device"
-                      style={{
-                        width: 32, height: 32,
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        border: '1px solid rgba(255,255,255,0.4)',
-                        color: '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', transition: 'all 0.2s ease',
-                        padding: 0,
-                        minHeight: 'auto',
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
-                    </button>
+            <span style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>
+          </div>
+        )}
 
-                    {/* Live webcam capture button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setShowCamera(true); }}
-                      title="Use webcam"
-                      style={{
-                        width: 32, height: 32,
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        border: '1px solid rgba(255,255,255,0.4)',
-                        color: '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', transition: 'all 0.2s ease',
-                        padding: 0,
-                        minHeight: 'auto',
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+        {/* Subtle hover overlay to denote clickability on desktop */}
+        {!isMobile && isHovered && !isDragging && !isUploading && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            transition: 'background-color 0.2s',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.9 }}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
           </div>
         )}
 
@@ -490,7 +449,88 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         )}
       </div>
 
-      {/* File picker */}
+      {/* Desktop instructions and buttons panel below the photo */}
+      {!isMobile && size !== 'sm' && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          marginTop: 'var(--space-sm)',
+          width: '100%',
+        }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                padding: '4px 6px',
+                minHeight: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-deep)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--primary)'}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Choose File
+            </button>
+            
+            <span style={{ color: 'var(--border)', fontSize: '0.75rem' }}>|</span>
+
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(true); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                padding: '4px 6px',
+                minHeight: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-deep)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--primary)'}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              Take Photo
+            </button>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            or drag & drop photo here
+          </span>
+        </div>
+      )}
+
+      {/* Mobile-only clean footer instruction */}
+      {isMobile && size !== 'sm' && (
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 'var(--space-sm)' }}>
+          Tap photo to change
+        </span>
+      )}
+
+      {/* Hidden File input */}
       <input
         ref={fileRef}
         type="file"
@@ -764,6 +804,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       )}
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-    </>
+    </div>
   );
 };

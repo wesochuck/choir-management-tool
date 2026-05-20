@@ -150,7 +150,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 currentPhotoUrl={initialData.photo ? pb.files.getUrl(initialData, initialData.photo) : undefined}
                 size="md"
               />
-              <span className="text-xs text-muted">Tap to change photo</span>
             </>
           ) : (
             <>
