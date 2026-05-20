@@ -144,7 +144,7 @@ export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
 
 const getSetting = async <T>(key: string) => {
   try {
-    const setting = await pb.collection('appSettings').getFirstListItem<AppSetting<T>>(`key = "${key}"`);
+    const setting = await pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }));
     return setting;
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;

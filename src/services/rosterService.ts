@@ -67,7 +67,7 @@ export const rosterService = {
     // Note: This assumes we have a way to find the profile for the current user.
     // We'll filter by profile.user = pb.authStore.model.id
     return await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: `profile.user = "${pb.authStore.model?.id}"`,
+      filter: pb.filter('profile.user = {:userId}', { userId: pb.authStore.model?.id }),
       expand: 'event',
     });
   },
@@ -76,7 +76,7 @@ export const rosterService = {
     // Find existing or create new
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        `event = "${eventId}" && profile = "${profileId}"`
+        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
       );
       return await pb.collection('eventRosters').update<EventRoster>(existing.id, { rsvp });
     } catch (err: unknown) {
@@ -95,7 +95,7 @@ export const rosterService = {
 
   async getEventRoster(eventId: string) {
     return await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: `event = "${eventId}"`,
+      filter: pb.filter('event = {:eventId}', { eventId }),
       expand: 'profile,profile.user',
     });
   },
@@ -107,7 +107,7 @@ export const rosterService = {
   async upsertAttendance(eventId: string, profileId: string, attendance: AttendanceStatus) {
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        `event = "${eventId}" && profile = "${profileId}"`
+        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
       );
       return await updateAttendanceWithVerification(existing.id, attendance);
     } catch (err: unknown) {
@@ -154,7 +154,7 @@ export const rosterService = {
   async upsertFolder(eventId: string, profileId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        `event = "${eventId}" && profile = "${profileId}"`
+        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
       );
       return await pb.collection('eventRosters').update<EventRoster>(existing.id, data);
     } catch (err: unknown) {

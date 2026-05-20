@@ -23,7 +23,7 @@ test('checkVenueDependencies returns true if venue has linked events', async (t)
     const firstCall = mockGetList.mock.calls[0];
     assert.equal(firstCall.arguments[0], 1);
     assert.equal(firstCall.arguments[1], 1);
-    assert.equal(firstCall.arguments[2].filter, 'venue="venue_1"');
+    assert.equal(firstCall.arguments[2].filter, "venue='venue_1'");
   } finally {
     pb.collection = originalCollection;
   }
