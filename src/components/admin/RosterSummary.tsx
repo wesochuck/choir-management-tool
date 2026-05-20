@@ -1,5 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { Profile } from '../../services/profileService';
+import { getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
+import { getSectionFromVoicePart, getSectionsFromVoiceParts } from '../../lib/voicePartUtils';
+import { AppCard } from '../common/AppCard';
 
 interface RosterSummaryProps {
   profiles: Profile[];
@@ -7,35 +10,51 @@ interface RosterSummaryProps {
   onVoicePartToggle?: (part: string) => void;
 }
 
-const VOICE_PARTS = ['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'] as const;
-const SECTIONS = ['S', 'A', 'T', 'B'] as const;
-
-import { AppCard } from '../common/AppCard';
-
 export const RosterSummary: React.FC<RosterSummaryProps> = ({ 
   profiles, 
   selectedVoiceParts = [], 
   onVoicePartToggle 
 }) => {
-  const { partCounts, sectionCounts } = useMemo(() => {
+  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+  const [sections, setSections] = useState<SectionDef[]>([]);
+
+  useEffect(() => {
+    getVoicePartsAndSections().then((settings) => {
+      setVoiceParts(settings.voiceParts);
+      setSections(settings.sections);
+    }).catch(() => undefined);
+  }, []);
+
+  const { partCounts, sectionCounts, sectionsList } = useMemo(() => {
     const pc: Record<string, number> = {};
     const sc: Record<string, number> = {};
     
-    VOICE_PARTS.forEach(part => pc[part] = 0);
-    SECTIONS.forEach(sec => sc[sec] = 0);
+    const sectionsListToUse = sections.length > 0 ? sections : getSectionsFromVoiceParts(voiceParts);
+    
+    voiceParts.forEach(part => pc[part.label] = 0);
+    sectionsListToUse.forEach((sec: SectionDef) => sc[sec.code] = 0);
 
     profiles.forEach(p => {
-      if (p.voicePart && pc[p.voicePart] !== undefined) {
-        pc[p.voicePart]++;
-        const section = p.voicePart[0]; // 'S', 'A', 'T', or 'B'
+      if (p.voicePart) {
+        if (pc[p.voicePart] !== undefined) {
+          pc[p.voicePart]++;
+        } else {
+          pc[p.voicePart] = 1;
+        }
+
+        const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+        const section = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(p.voicePart);
+
         if (sc[section] !== undefined) {
           sc[section]++;
+        } else {
+          sc[section] = (sc[section] || 0) + 1;
         }
       }
     });
     
-    return { partCounts: pc, sectionCounts: sc };
-  }, [profiles]);
+    return { partCounts: pc, sectionCounts: sc, sectionsList: sectionsListToUse };
+  }, [profiles, voiceParts, sections]);
 
   const total = profiles.length;
 
@@ -83,18 +102,18 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       {/* Section Subtotals */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
+        gridTemplateColumns: `repeat(${sectionsList.length}, 1fr)`, 
         gap: 'var(--space-md)',
         paddingBottom: 'var(--space-md)',
         borderBottom: '1px solid var(--border)'
       }}>
-        {SECTIONS.map(sec => {
-          const isSelected = selectedVoiceParts.includes(sec);
+        {sectionsList.map((sec: SectionDef) => {
+          const isSelected = selectedVoiceParts.includes(sec.code);
           return (
             <div 
-              key={sec} 
+              key={sec.code} 
               className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
-              onClick={() => onVoicePartToggle?.(sec)}
+              onClick={() => onVoicePartToggle?.(sec.code)}
               style={{ 
                 textAlign: 'center', 
                 padding: 'calc(var(--space-md) - 2px)', 
@@ -107,9 +126,9 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
               }}
             >
               <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
+                {sec.name}
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec.code] || 0}</div>
             </div>
           );
         })}
@@ -122,13 +141,13 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
         gap: 'var(--space-sm)',
         marginTop: 0
       }}>
-        {VOICE_PARTS.map(part => {
-          const isSelected = selectedVoiceParts.includes(part);
+        {voiceParts.map(vp => {
+          const isSelected = selectedVoiceParts.includes(vp.label);
           return (
             <div 
-              key={part} 
+              key={vp.label} 
               className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
-              onClick={() => onVoicePartToggle?.(part)}
+              onClick={() => onVoicePartToggle?.(vp.label)}
               style={{ 
                 textAlign: 'center', 
                 borderRadius: 'var(--radius-sm)', 
@@ -139,8 +158,8 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
               }}
             >
-              <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{part}</div>
-              <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[part]}</div>
+              <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
+              <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[vp.label] || 0}</div>
             </div>
           );
         })}

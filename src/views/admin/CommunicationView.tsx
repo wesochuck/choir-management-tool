@@ -15,6 +15,7 @@ import type { Event } from '../../services/eventService';
 import {
   DEFAULT_COMMUNICATION_SETTINGS,
   settingsService,
+  getVoiceParts,
   type CommunicationSettings,
 } from '../../services/settingsService';
 
@@ -62,6 +63,7 @@ export default function CommunicationView() {
   const [hasCustomRecipients, setHasCustomRecipients] = useState(
     Boolean(routeState?.initialRecipients)
   );
+  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
@@ -70,11 +72,12 @@ export default function CommunicationView() {
 
   useEffect(() => {
     const load = async () => {
-      const [loadedEvents, loadedHistory, loadedConfig, loadedTemplates] = await Promise.all([
+      const [loadedEvents, loadedHistory, loadedConfig, loadedTemplates, loadedVoiceParts] = await Promise.all([
         communicationService.getEvents(),
         communicationService.getMessages(),
         communicationService.getConfig(),
         settingsService.getCommunicationSettings(),
+        getVoiceParts().catch(() => []),
       ]);
       setEvents(loadedEvents);
       setHistory(loadedHistory);
@@ -82,6 +85,9 @@ export default function CommunicationView() {
       setTemplates(loadedTemplates);
       setSubject((current) => current || loadedTemplates.emailSubject);
       setContent((current) => current || loadedTemplates.emailBody);
+      if (loadedVoiceParts && loadedVoiceParts.length > 0) {
+        setVoiceParts(loadedVoiceParts.map(vp => vp.label));
+      }
       setIsLoading(false);
     };
 
@@ -270,7 +276,7 @@ export default function CommunicationView() {
                 <label className="text-label">Voice Part</label>
                 <select className="card" value={filters.voicePart} onChange={(event) => updateFilter('voicePart', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
                   <option value="">All Voice Parts</option>
-                  {communicationService.voiceParts.map((part) => <option key={part} value={part}>{part}</option>)}
+                  {voiceParts.map((part) => <option key={part} value={part}>{part}</option>)}
                 </select>
               </div>
 

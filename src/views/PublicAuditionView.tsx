@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import { auditionService, type Audition } from '../services/auditionService';
-import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
+import { DEFAULT_AUDITION_SETTINGS, settingsService, getVoiceParts, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
 
 export default function PublicAuditionView() {
@@ -19,13 +19,20 @@ export default function PublicAuditionView() {
   const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const loaded = await settingsService.getAuditionSettings();
+        const [loaded, loadedParts] = await Promise.all([
+          settingsService.getAuditionSettings(),
+          getVoiceParts().catch(() => []),
+        ]);
         setSettings(loaded);
         setTimeSlot(loaded.slots[0] || '');
+        if (loadedParts && loadedParts.length > 0) {
+          setVoiceParts(loadedParts.map(p => p.label));
+        }
 
         if (loaded.defaultPerformanceId) {
           try {
@@ -179,7 +186,7 @@ export default function PublicAuditionView() {
                   <label className="text-label">Voice Part</label>
                   <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px' }}>
                     <option value="">Not sure yet</option>
-                    {['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'].map((part) => (
+                    {voiceParts.map((part) => (
                       <option key={part} value={part}>{part}</option>
                     ))}
                   </select>

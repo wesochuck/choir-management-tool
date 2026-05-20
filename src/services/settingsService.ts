@@ -232,37 +232,101 @@ export const settingsService = {
   },
 };
 
+export interface SectionDef {
+  code: string;
+  name: string;
+}
+
 export interface VoicePartDef {
   label: string;
   fullName: string;
+  sectionCode: string;
 }
 
-export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
-  { label: 'S1', fullName: 'Soprano 1' },
-  { label: 'S2', fullName: 'Soprano 2' },
-  { label: 'A1', fullName: 'Alto 1' },
-  { label: 'A2', fullName: 'Alto 2' },
-  { label: 'T1', fullName: 'Tenor 1' },
-  { label: 'T2', fullName: 'Tenor 2' },
-  { label: 'B1', fullName: 'Bass 1' },
-  { label: 'B2', fullName: 'Bass 2' },
+export interface VoicePartSettings {
+  sections: SectionDef[];
+  voiceParts: VoicePartDef[];
+}
+
+export const DEFAULT_SECTIONS: SectionDef[] = [
+  { code: 'S', name: 'Sopranos' },
+  { code: 'A', name: 'Altos' },
+  { code: 'T', name: 'Tenors' },
+  { code: 'B', name: 'Basses' },
 ];
 
-export async function getVoiceParts(): Promise<VoicePartDef[]> {
+export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
+  { label: 'S1', fullName: 'Soprano 1', sectionCode: 'S' },
+  { label: 'S2', fullName: 'Soprano 2', sectionCode: 'S' },
+  { label: 'A1', fullName: 'Alto 1', sectionCode: 'A' },
+  { label: 'A2', fullName: 'Alto 2', sectionCode: 'A' },
+  { label: 'T1', fullName: 'Tenor 1', sectionCode: 'T' },
+  { label: 'T2', fullName: 'Tenor 2', sectionCode: 'T' },
+  { label: 'B1', fullName: 'Bass 1', sectionCode: 'B' },
+  { label: 'B2', fullName: 'Bass 2', sectionCode: 'B' },
+];
+
+export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
   try {
-    const setting = await getSetting<{ voiceParts: VoicePartDef[] }>('voiceParts');
-    if (setting && setting.value && Array.isArray(setting.value.voiceParts) && setting.value.voiceParts.length > 0) {
-      return setting.value.voiceParts;
+    const setting = await getSetting<VoicePartSettings>('voiceParts');
+    if (setting && setting.value) {
+      let sections = setting.value.sections || [];
+      let voiceParts = setting.value.voiceParts || [];
+
+      // Auto-migrate old format to new format
+      if (sections.length === 0 && voiceParts.length > 0) {
+        const detectedCodes = new Set<string>();
+        voiceParts = voiceParts.map(vp => {
+          let code = vp.sectionCode;
+          if (!code) {
+            const label = vp.label || '';
+            if (/^(soprano|s)(\s*\d+)?$/i.test(label)) code = 'S';
+            else if (/^(alto|a)(\s*\d+)?$/i.test(label)) code = 'A';
+            else if (/^(tenor|t)(\s*\d+)?$/i.test(label)) code = 'T';
+            else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(label)) code = 'B';
+            else code = 'Other';
+          }
+          detectedCodes.add(code);
+          return { ...vp, sectionCode: code };
+        });
+
+        sections = [];
+        if (detectedCodes.has('S')) sections.push({ code: 'S', name: 'Sopranos' });
+        if (detectedCodes.has('A')) sections.push({ code: 'A', name: 'Altos' });
+        if (detectedCodes.has('T')) sections.push({ code: 'T', name: 'Tenors' });
+        if (detectedCodes.has('B')) sections.push({ code: 'B', name: 'Basses' });
+        if (detectedCodes.has('Other')) sections.push({ code: 'Other', name: 'Other' });
+        
+        if (sections.length === 0) {
+          sections = [...DEFAULT_SECTIONS];
+        }
+      }
+
+      if (sections.length > 0 && voiceParts.length > 0) {
+        return { sections, voiceParts };
+      }
     }
-    return DEFAULT_VOICE_PARTS;
+    return { sections: DEFAULT_SECTIONS, voiceParts: DEFAULT_VOICE_PARTS };
   } catch (error) {
-    return DEFAULT_VOICE_PARTS;
+    return { sections: DEFAULT_SECTIONS, voiceParts: DEFAULT_VOICE_PARTS };
   }
 }
 
-export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<any> {
-  return await upsertSetting<{ voiceParts: VoicePartDef[] }>('voiceParts', { voiceParts }, true);
+export async function saveVoicePartsAndSections(voiceParts: VoicePartDef[], sections: SectionDef[]): Promise<any> {
+  return await upsertSetting<VoicePartSettings>('voiceParts', { voiceParts, sections }, true);
 }
+
+export async function getVoiceParts(): Promise<VoicePartDef[]> {
+  const settings = await getVoicePartsAndSections();
+  return settings.voiceParts;
+}
+
+export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<any> {
+  const current = await getVoicePartsAndSections();
+  return await saveVoicePartsAndSections(voiceParts, current.sections);
+}
+
+
 
 
 

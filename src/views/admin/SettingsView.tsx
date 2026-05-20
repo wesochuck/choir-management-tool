@@ -9,9 +9,10 @@ import {
   type AttendanceSettings,
   type RosterSettings,
   type MusicLibrarySettings,
-  getVoiceParts,
-  saveVoiceParts,
+  getVoicePartsAndSections,
+  saveVoicePartsAndSections,
   type VoicePartDef,
+  type SectionDef,
 } from '../../services/settingsService';
 import { profileService, type Profile } from '../../services/profileService';
 
@@ -20,6 +21,7 @@ export default function SettingsView() {
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [rosterSettings, setRosterSettings] = useState<RosterSettings>(DEFAULT_ROSTER_SETTINGS);
   const [musicLibrarySettings, setMusicLibrarySettings] = useState<MusicLibrarySettings>(DEFAULT_MUSIC_LIBRARY_SETTINGS);
+  const [sections, setSections] = useState<SectionDef[]>([]);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,8 +36,9 @@ export default function SettingsView() {
       setRosterSettings(roster);
       const musicLib = await settingsService.getMusicLibrarySettings();
       setMusicLibrarySettings(musicLib);
-      const parts = await getVoiceParts();
-      setVoiceParts(parts);
+      const settings = await getVoicePartsAndSections();
+      setVoiceParts(settings.voiceParts);
+      setSections(settings.sections);
       const allProfiles = await profileService.getProfiles();
       setProfiles(allProfiles);
       setIsLoading(false);
@@ -55,7 +58,7 @@ export default function SettingsView() {
       await settingsService.saveAttendanceSettings(attendanceSettings);
       await settingsService.saveRosterSettings(rosterSettings);
       await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
-      await saveVoiceParts(voiceParts);
+      await saveVoicePartsAndSections(voiceParts, sections);
       setMessage('Settings saved.');
     } catch {
       setMessage('Settings could not be saved.');
@@ -67,6 +70,10 @@ export default function SettingsView() {
   const getSingerCountForPart = (label: string) => {
     if (!label) return 0;
     return profiles.filter(p => p.voicePart === label).length;
+  };
+
+  const isSectionReferenced = (code: string) => {
+    return voiceParts.some(vp => vp.sectionCode === code);
   };
 
   if (isLoading) return <div style={{ padding: 'var(--space-xl)' }}>Loading settings...</div>;
@@ -155,10 +162,77 @@ export default function SettingsView() {
         </div>
       </AppCard>
 
+      <AppCard title="Section Bucket Configurations">
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <p className="text-muted" style={{ margin: 0 }}>
+            Configure the section buckets for your choir (e.g. S, Sopranos).
+          </p>
+
+          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            {sections.map((sec, index) => {
+              const count = voiceParts.filter(vp => vp.sectionCode === sec.code).length;
+              const isTied = isSectionReferenced(sec.code);
+              return (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+                  <input
+                    value={sec.code}
+                    onChange={(e) => {
+                      const newSecs = [...sections];
+                      newSecs[index] = { ...newSecs[index], code: e.target.value };
+                      setSections(newSecs);
+                    }}
+                    placeholder="Code (e.g. S)"
+                    disabled={isTied}
+                    className="card"
+                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                    title={isTied ? "Cannot change code of a section bucket referenced by voice parts" : undefined}
+                  />
+                  <input
+                    value={sec.name}
+                    onChange={(e) => {
+                      const newSecs = [...sections];
+                      newSecs[index] = { ...newSecs[index], name: e.target.value };
+                      setSections(newSecs);
+                    }}
+                    placeholder="Name (e.g. Sopranos)"
+                    className="card"
+                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                  />
+                  <div style={{ fontSize: 'var(--font-size-label)', color: 'var(--text-light)', textAlign: 'center' }}>
+                    {count} voice part{count === 1 ? '' : 's'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSections(sections.filter((_, idx) => idx !== index));
+                    }}
+                    disabled={isTied}
+                    className="btn btn-danger btn-sm"
+                    style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title={isTied ? "Cannot delete section referenced by voice parts" : undefined}
+                  >
+                    Delete
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSections([...sections, { code: '', name: '' }])}
+            className="btn btn-secondary"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            + Add Section Bucket
+          </button>
+        </div>
+      </AppCard>
+
       <AppCard title="Voice Part Configurations">
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
           <p className="text-muted" style={{ margin: 0 }}>
-            Configure the custom voice parts for the choir (e.g. S1, Soprano 1).
+            Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a Section Bucket.
           </p>
 
           <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
@@ -166,7 +240,7 @@ export default function SettingsView() {
               const count = getSingerCountForPart(vp.label);
               const isTied = count > 0;
               return (
-                <div key={index} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 160px 120px 100px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
                   <input
                     value={vp.label}
                     onChange={(e) => {
@@ -191,6 +265,21 @@ export default function SettingsView() {
                     className="card"
                     style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
                   />
+                  <select
+                    value={vp.sectionCode}
+                    onChange={(e) => {
+                      const newParts = [...voiceParts];
+                      newParts[index] = { ...newParts[index], sectionCode: e.target.value };
+                      setVoiceParts(newParts);
+                    }}
+                    className="card"
+                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  >
+                    <option value="">Select Section...</option>
+                    {sections.map(s => (
+                      <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
+                    ))}
+                  </select>
                   {vp.label ? (
                     <button
                       type="button"
@@ -224,7 +313,7 @@ export default function SettingsView() {
 
           <button
             type="button"
-            onClick={() => setVoiceParts([...voiceParts, { label: '', fullName: '' }])}
+            onClick={() => setVoiceParts([...voiceParts, { label: '', fullName: '', sectionCode: '' }])}
             className="btn btn-secondary"
             style={{ alignSelf: 'flex-start' }}
           >
@@ -235,4 +324,3 @@ export default function SettingsView() {
     </div>
   );
 }
-

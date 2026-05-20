@@ -97,10 +97,10 @@ test('saveVoiceParts updates settings if present', async (t) => {
   };
 
   try {
-    const result = await saveVoiceParts([{ label: 'T2', fullName: 'Tenor 2' }]);
+    const result = await saveVoiceParts([{ label: 'T2', fullName: 'Tenor 2', sectionCode: 'T' }]);
     assert.equal(result.id, 'settings_1');
-    assert.deepEqual(result.value.voiceParts, [{ label: 'T2', fullName: 'Tenor 2' }]);
-    assert.equal(mockGetFirstListItem.mock.callCount(), 1);
+    assert.deepEqual(result.value.voiceParts, [{ label: 'T2', fullName: 'Tenor 2', sectionCode: 'T' }]);
+    assert.equal(mockGetFirstListItem.mock.callCount(), 2);
     assert.equal(mockUpdate.mock.callCount(), 1);
   } finally {
     pb.collection = originalCollection;

@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { profileService, type Profile, type ProfileInput } from '../services/profileService';
+import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
+import { matchesVoiceParts } from '../lib/voicePartUtils';
 
 export const useProfiles = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({ voiceParts: [] as string[], status: '', name: '' });
@@ -22,6 +25,7 @@ export const useProfiles = () => {
 
   useEffect(() => {
     fetchProfiles();
+    getVoiceParts().then(setVoiceParts).catch(() => undefined);
   }, []);
 
   const unfilteredByVoicePartProfiles = useMemo(() => {
@@ -34,14 +38,12 @@ export const useProfiles = () => {
 
   const filteredProfiles = useMemo(() => {
     return profiles.filter((p) => {
-      const matchesVoice = filters.voiceParts.length === 0 || filters.voiceParts.some(vp => 
-        p.voicePart === vp || (vp.length === 1 && p.voicePart?.startsWith(vp))
-      );
+      const matchesVoice = matchesVoiceParts(p.voicePart, filters.voiceParts, voiceParts);
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
       const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
       return matchesVoice && matchesStatus && matchesName;
     });
-  }, [profiles, filters]);
+  }, [profiles, filters, voiceParts]);
 
   const addProfile = async (data: ProfileInput) => {
     try {

@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { eventService, type Event } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 import { profileService, type Profile } from '../../services/profileService';
-import { getVoiceParts, type VoicePartDef } from '../../services/settingsService';
+import { getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
+import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
 
 export default function EventRosterView() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -17,6 +18,7 @@ export default function EventRosterView() {
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
   const [eventRoster, setEventRoster] = useState<EventRoster[]>([]);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+  const [sections, setSections] = useState<SectionDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -37,14 +39,15 @@ export default function EventRosterView() {
       eventService.getEventById(eventId),
       profileService.getActiveProfiles(),
       rosterService.getEventRoster(eventId),
-      getVoiceParts()
+      getVoicePartsAndSections()
     ])
-      .then(([evt, profiles, rosters, parts]) => {
+      .then(([evt, profiles, rosters, settings]) => {
         if (isCurrent) {
           setEvent(evt);
           setActiveProfiles(profiles);
           setEventRoster(rosters);
-          setVoiceParts(parts);
+          setVoiceParts(settings.voiceParts);
+          setSections(settings.sections);
           setIsLoading(false);
         }
       })
@@ -96,12 +99,24 @@ export default function EventRosterView() {
     return s.rsvp === rsvpFilter;
   });
 
-  const sectionCounts = {
-    S: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('S')).length,
-    A: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('A')).length,
-    T: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('T')).length,
-    B: activeCountSingers.filter(s => s.profile.voicePart?.startsWith('B')).length,
-  };
+  const sectionCounts = (() => {
+    const counts: Record<string, number> = {};
+    sections.forEach(sec => {
+      counts[sec.code] = 0;
+    });
+    activeCountSingers.forEach(s => {
+      if (s.profile.voicePart) {
+        const vpDef = voiceParts.find(vp => vp.label === s.profile.voicePart);
+        const section = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(s.profile.voicePart);
+        if (counts[section] !== undefined) {
+          counts[section]++;
+        } else {
+          counts[section] = (counts[section] || 0) + 1;
+        }
+      }
+    });
+    return counts;
+  })();
 
   const partCounts = new Map<string, number>();
   voiceParts.forEach(vp => {
@@ -113,9 +128,7 @@ export default function EventRosterView() {
     if (rsvpFilter !== 'All' && singer.rsvp !== rsvpFilter) return false;
     
     if (selectedVoiceParts.length > 0) {
-      const matchesVoice = selectedVoiceParts.some(vp => 
-        singer.profile.voicePart === vp || (vp.length === 1 && singer.profile.voicePart?.startsWith(vp))
-      );
+      const matchesVoice = matchesVoiceParts(singer.profile.voicePart, selectedVoiceParts, voiceParts);
       if (!matchesVoice) return false;
     }
 
@@ -299,18 +312,18 @@ export default function EventRosterView() {
             {/* Section Subtotals */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(4, 1fr)', 
+              gridTemplateColumns: `repeat(${sections.length}, 1fr)`, 
               gap: 'var(--space-md)',
               paddingBottom: 'var(--space-md)',
               borderBottom: '1px solid var(--border)'
             }}>
-              {(['S', 'A', 'T', 'B'] as const).map(sec => {
-                const isSelected = selectedVoiceParts.includes(sec);
+              {sections.map(sec => {
+                const isSelected = selectedVoiceParts.includes(sec.code);
                 return (
                   <div 
-                    key={sec} 
+                    key={sec.code} 
                     className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
-                    onClick={() => handleVoicePartToggle(sec)}
+                    onClick={() => handleVoicePartToggle(sec.code)}
                     style={{ 
                       textAlign: 'center', 
                       padding: 'calc(var(--space-md) - 2px)', 
@@ -323,9 +336,9 @@ export default function EventRosterView() {
                     }}
                   >
                     <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {sec === 'S' ? 'Sopranos' : sec === 'A' ? 'Altos' : sec === 'T' ? 'Tenors' : 'Basses'}
+                      {sec.name}
                     </div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec]}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec.code] || 0}</div>
                   </div>
                 );
               })}
