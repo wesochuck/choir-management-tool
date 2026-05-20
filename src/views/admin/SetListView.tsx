@@ -237,11 +237,16 @@ export default function SetListView() {
 
     setIsPromoting(true);
     try {
+      const performanceIdToLink = selectedEvent?.type === 'Rehearsal'
+        ? (parentPerformance?.id || selectedEvent.parentPerformanceId || selectedEventId)
+        : selectedEventId;
+
       const newPiece = await musicLibraryService.createPiece({
         title: title.trim(),
         composer: composer.trim() || undefined,
         duration: duration.trim() || undefined,
         notes: notes.trim() || undefined,
+        performances: performanceIdToLink ? [performanceIdToLink] : undefined,
       });
 
       const freshLibrary = await musicLibraryService.getLibrary();

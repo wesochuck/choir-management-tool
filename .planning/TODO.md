@@ -13,3 +13,4 @@
 [x] make it so the admin can manually add someone to the audition roster.
 [ ] make sure all communication history from the various parts of the platform are visible in the communication history section
 [x] allow singers to see the approved set list for any concert which they are committed to singing at
+[ ] Twilio SMS Integration: Add admin UI credentials settings card and server-side PocketBase dispatch hook in pb_hooks to route SMS messages directly via Twilio.
