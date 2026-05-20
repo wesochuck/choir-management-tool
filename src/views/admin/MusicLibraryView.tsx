@@ -276,11 +276,11 @@ export default function MusicLibraryView() {
             <tbody>
                 {isLoading ? (
                 <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
                 </tr>
                 ) : filteredPieces.length === 0 ? (
                 <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
                 </tr>
                 ) : (
                 filteredPieces.map(piece => {
