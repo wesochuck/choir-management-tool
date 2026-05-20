@@ -5,7 +5,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
@@ -57,11 +57,44 @@ export default function MusicLibraryView() {
 
   const handleSavePiece = async (data: Partial<MusicPieceInput>) => {
     try {
+      let savedPiece: MusicPiece;
       if (editingPiece) {
-        await musicLibraryService.updatePiece(editingPiece.id, data);
+        savedPiece = await musicLibraryService.updatePiece(editingPiece.id, data);
       } else {
-        await musicLibraryService.createPiece(data);
+        savedPiece = await musicLibraryService.createPiece(data);
       }
+
+      // Determine newly linked performances
+      const oldPerformances = editingPiece?.performances || [];
+      const newPerformances = data.performances || [];
+      const newlyLinkedIds = newPerformances.filter((id: string) => !oldPerformances.includes(id));
+
+      if (newlyLinkedIds.length > 0) {
+        const failedTitles: string[] = [];
+        for (const perfId of newlyLinkedIds) {
+          let eventTitle = perfId;
+          try {
+            const event = await eventService.getEventById(perfId);
+            eventTitle = event.title || perfId;
+            const { updated, setList: updatedSetList } = appendPieceToSetList(event.setList, savedPiece);
+            if (updated) {
+              await eventService.updateEvent(perfId, { setList: updatedSetList });
+            }
+          } catch (err) {
+            console.error(`Failed to update set list for performance ${perfId}:`, err);
+            failedTitles.push(eventTitle);
+          }
+        }
+
+        if (failedTitles.length > 0) {
+          dialog.showMessage({
+            title: 'Set List Update Failed',
+            message: `The music piece was saved successfully, but it could not be automatically appended to the set list for: ${failedTitles.join(', ')}.`,
+            variant: 'warning'
+          });
+        }
+      }
+
       setIsModalOpen(false);
       await loadData();
     } catch {
@@ -224,14 +257,19 @@ export default function MusicLibraryView() {
                 ) : (
                 filteredPieces.map(piece => {
                     const isDuplicate = duplicateIds.has(piece.id);
-                    const seconds = piece.duration ? parseDurationToSeconds(piece.duration) : 0;
                     return (
-                        <tr key={piece.id} style={{ backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : undefined }}>
+                        <tr 
+                            key={piece.id} 
+                            className="relative-row"
+                            onClick={() => { setEditingPiece(piece); setIsModalOpen(true); }}
+                            style={{ backgroundColor: isDuplicate ? 'rgba(255, 138, 101, 0.05)' : undefined, cursor: 'pointer' }}
+                        >
                         <td style={{ textAlign: 'center', padding: '6px 10px', border: '1px solid var(--border)' }}>
                             <input 
                                 type="checkbox" 
                                 checked={selectedIds.has(piece.id)}
                                 onChange={() => toggleSelection(piece.id)}
+                                onClick={(e) => e.stopPropagation()}
                                 style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
                             />
                         </td>
@@ -247,7 +285,7 @@ export default function MusicLibraryView() {
                         </td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.composer || '-'}</td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
-                            {piece.duration ? `${piece.duration} (${seconds}s)` : '-'}
+                            {piece.duration ? formatSecondsToDuration(parseDurationToSeconds(piece.duration)) : '-'}
                         </td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.copies !== undefined ? piece.copies : '-'}</td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.catalogId || '-'}</td>
@@ -255,7 +293,7 @@ export default function MusicLibraryView() {
                             <div className="flex-row" style={{ gap: 'var(--space-xs)', justifyContent: 'center' }}>
                             <button 
                                 className="btn btn-ghost btn-sm" 
-                                onClick={() => { setEditingPiece(piece); setIsModalOpen(true); }}
+                                onClick={(e) => { e.stopPropagation(); setEditingPiece(piece); setIsModalOpen(true); }}
                                 style={{ minHeight: 'auto', height: '24px', padding: '0 8px', fontSize: '0.75rem', margin: 0 }}
                             >
                                 Edit
