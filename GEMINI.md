@@ -7,6 +7,7 @@ These foundational mandates MUST be followed by all agents working on this codeb
 
 ## PocketBase & Data Integrity
 *   **Stable Migrations:** Always use explicit collection IDs (pattern: `pbc_name_001`) in JavaScript migrations. Never rely on automatically generated IDs or name-based resolution alone, as these can drift during development resets.
+*   **No Stray Files in pb_migrations:** The `pocketbase/pb_migrations` directory must ONLY contain standard JavaScript migration files (`.js`). Never place or commit utility, configuration, or declaration files (such as `types.d.ts`) in the migrations folder, as PocketBase will attempt to execute them and crash. Keep `types.d.ts` in the parent `pocketbase/` directory.
 *   **Schema First:** Every database change MUST be captured in a migration file immediately. Do not manually edit the database schema via the PocketBase UI without a corresponding migration.
 *   **Mandatory Verification:** After any database reset (`rm pb_data`) or migration update, the agent MUST run a diagnostic CURL cycle (Create/Read/Delete) using a fresh superuser token to verify permissions and field presence before reporting success.
 *   **Hook Callback Isolation:** PocketHost may execute JavaScript hook callbacks in a context where helper functions declared elsewhere in the same hook file are not resolvable. Keep `onRecordAfterCreateSuccess`, `onRecordAfterUpdateSuccess`, and similar registered callbacks self-contained, or verify the exact helper pattern on PocketHost before deploying.

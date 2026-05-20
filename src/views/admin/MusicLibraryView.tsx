@@ -472,6 +472,9 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    // Active Tab state
+    const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances'>('details');
+
     // Audio & Voice Parts state
     const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
     const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
@@ -526,6 +529,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         setQuickTitle('');
         setQuickDate('');
         setQuickVenue('');
+        setActiveTab('details');
     }, [piece, isOpen]);
 
     const handleFileUpload = async (voicePart: string, file: File) => {
@@ -702,6 +706,8 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             isOpen={isOpen}
             onClose={onClose}
             title={piece ? 'Edit Piece' : 'Add Piece'}
+            maxWidth="640px"
+            minHeight={piece ? '580px' : undefined}
             footer={
                 <>
                     {onDelete && <button type="button" className="btn btn-danger" onClick={() => { onClose(); onDelete(); }} style={{ marginRight: 'auto' }}>Delete</button>}
@@ -712,282 +718,346 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                 </>
             }
         >
+            {piece && (
+                <div className="flex-row" style={{ borderBottom: '1px solid var(--border)', marginBottom: 'var(--space-md)', gap: 'var(--space-md)' }}>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('details')}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'details' ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: activeTab === 'details' ? 'var(--primary)' : 'var(--text-muted)',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '15px',
+                            fontWeight: activeTab === 'details' ? 600 : 500,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        Piece Details
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('tracks')}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'tracks' ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: activeTab === 'tracks' ? 'var(--primary)' : 'var(--text-muted)',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '15px',
+                            fontWeight: activeTab === 'tracks' ? 600 : 500,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        Learning Tracks
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('performances')}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'performances' ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: activeTab === 'performances' ? 'var(--primary)' : 'var(--text-muted)',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '15px',
+                            fontWeight: activeTab === 'performances' ? 600 : 500,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        Linked Performances
+                    </button>
+                </div>
+            )}
+
             <form id="music-piece-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Title</label>
-                    <input required value={title} onChange={e => setTitle(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
-                </div>
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Composer/Arranger</label>
-                    <input value={composer} onChange={e => setComposer(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-md)' }}>
-                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <label className="text-label">Duration</label>
-                        <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
-                    </div>
-                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <label className="text-label">Copies</label>
-                        <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
-                    </div>
-                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <label className="text-label">Catalog ID</label>
-                        <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
-                        {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
-                            <a 
-                                href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-secondary"
-                                style={{ 
-                                    alignSelf: 'flex-start',
-                                    borderRadius: '16px',
-                                    fontSize: '0.75rem',
-                                    padding: '4px 12px',
-                                    height: '24px',
-                                    minHeight: '24px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    textDecoration: 'none',
-                                    marginTop: '2px',
-                                    lineHeight: 1
-                                }}
-                            >
-                                Lookup ↗
-                            </a>
-                        )}
-                    </div>
-                </div>
-                
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Linked Performances</label>
-                    
-                    {/* Selected performances pills */}
-                    <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-xs)', minHeight: '40px', padding: 'var(--space-xs) 0' }}>
-                        {selectedPerformances.length === 0 ? (
-                            <span className="text-sm text-muted">No performances linked.</span>
-                        ) : (
-                            selectedPerformances.map(perf => {
-                                const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-                                return (
-                                    <div key={perf.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', padding: '4px 10px', backgroundColor: 'rgba(74, 124, 89, 0.1)', border: '1px solid var(--primary)', borderRadius: '16px', color: 'var(--primary)', fontSize: '13px' }}>
-                                        <span>{perf.title} {dateStr && `(${dateStr})`}</span>
-                                        <button type="button" onClick={() => togglePerformance(perf.id)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, fontSize: '14px', fontWeight: 'bold' }}>×</button>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-
-                    <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
-                        <select 
-                            className="card" 
-                            value="" 
-                            onChange={e => {
-                                if (e.target.value) {
-                                    togglePerformance(e.target.value);
-                                }
-                            }}
-                            style={{ flex: '1 1 200px', padding: '0 12px', height: '40px', minWidth: '0' }}
-                        >
-                            <option value="">-- Add a performance --</option>
-                            {availablePerformances.map(perf => {
-                                const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-                                return (
-                                    <option key={perf.id} value={perf.id}>
-                                        {perf.title} {dateStr && `(${dateStr})`}
-                                    </option>
-                                );
-                            })}
-                        </select>
-                        <button 
-                            type="button" 
-                            className="btn btn-secondary btn-sm" 
-                            onClick={() => setShowQuickAdd(!showQuickAdd)}
-                            style={{ flex: '1 1 auto', justifyContent: 'center' }}
-                        >
-                            {showQuickAdd ? 'Cancel Quick Add' : 'Quick Add Performance'}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Quick Add Performance form */}
-                {showQuickAdd && (
-                    <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card-hover)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', marginTop: 'var(--space-xs)' }}>
-                        <h4 className="text-sm" style={{ marginTop: 0, marginBottom: 'var(--space-md)', color: 'var(--primary)' }}>Quick Add Historic Performance</h4>
-                        <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                <label className="text-xs text-muted">Performance Title</label>
-                                <input 
-                                    value={quickTitle} 
-                                    onChange={e => setQuickTitle(e.target.value)} 
-                                    placeholder="e.g. Spring Concert 2018"
-                                    className="card" 
-                                    style={{ padding: '0 12px', height: '36px', fontSize: '14px' }} 
-                                />
-                            </div>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-md)' }}>
-                                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                    <label className="text-xs text-muted">Date</label>
-                                    <input 
-                                        type="datetime-local" 
-                                        value={quickDate} 
-                                        onChange={e => setQuickDate(e.target.value)} 
-                                        className="card" 
-                                        style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }} 
-                                    />
-                                </div>
-                                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                    <label className="text-xs text-muted">Venue</label>
-                                    <select 
-                                        value={quickVenue} 
-                                        onChange={e => setQuickVenue(e.target.value)} 
-                                        className="card" 
-                                        style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
-                                    >
-                                        <option value="">-- Select Venue --</option>
-                                        {venues.map(v => (
-                                            <option key={v.id} value={v.id}>{v.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button 
-                                type="button" 
-                                className="btn btn-primary btn-sm" 
-                                onClick={handleQuickAddPerformance} 
-                                disabled={isQuickAdding}
-                                style={{ alignSelf: 'flex-end', marginTop: 'var(--space-xs)' }}
-                            >
-                                {isQuickAdding ? 'Creating...' : 'Create & Link'}
-                            </button>
+                {(!piece || activeTab === 'details') && (
+                    <>
+                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                            <label className="text-label">Title</label>
+                            <input required value={title} onChange={e => setTitle(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
                         </div>
-                    </div>
+                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                            <label className="text-label">Composer/Arranger</label>
+                            <input value={composer} onChange={e => setComposer(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-md)' }}>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Duration</label>
+                                <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                            </div>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Copies</label>
+                                <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                            </div>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Catalog ID</label>
+                                <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                                {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
+                                    <a 
+                                        href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-secondary"
+                                        style={{ 
+                                            alignSelf: 'flex-start',
+                                            borderRadius: '16px',
+                                            fontSize: '0.75rem',
+                                            padding: '4px 12px',
+                                            height: '24px',
+                                            minHeight: '24px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            textDecoration: 'none',
+                                            marginTop: '2px',
+                                            lineHeight: 1
+                                        }}
+                                    >
+                                        Lookup ↗
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                            <label className="text-label">Notes</label>
+                            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card" style={{ padding: '12px', minHeight: '80px', resize: 'vertical' }} />
+                            <span className="text-xs text-muted" style={{ marginTop: '2px' }}>
+                                If this is a medley, please list the names of the different pieces here.
+                            </span>
+                        </div>
+                    </>
                 )}
 
-                {/* Reference & Learning Tracks Card */}
-                <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
-                    <label className="text-label">🎵 Reference & Learning Tracks</label>
-                    {!localPiece ? (
-                        <div className="flex-row" style={{
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            padding: 'var(--space-md)',
-                            backgroundColor: 'rgba(74, 124, 89, 0.03)',
-                            border: '1px dashed var(--border)',
-                            borderRadius: 'var(--radius)',
-                            color: 'var(--text-muted)',
-                            fontSize: '14px',
-                            justifyContent: 'center'
-                        }}>
-                            <span>Please save this piece first to enable learning track uploads.</span>
-                        </div>
-                    ) : (
-                        <div className="flex-col" style={{ 
-                            gap: 'var(--space-xs)', 
-                            border: '1px solid var(--border)', 
-                            borderRadius: 'var(--radius)',
-                            padding: 'var(--space-sm)',
-                            backgroundColor: 'rgba(0, 0, 0, 0.02)'
-                        }}>
-                            {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
-                                const filename = localPiece.audioTrackMapping?.[partLabel];
-                                const isUploading = uploadingParts[partLabel];
-                                return (
-                                    <div key={partLabel} className="flex-row" style={{
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '8px 12px',
-                                        backgroundColor: 'var(--bg-card-hover)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 'var(--radius)',
-                                        gap: 'var(--space-md)'
-                                    }}>
-                                        <div className="flex-col" style={{ minWidth: '90px' }}>
-                                            <strong style={{ fontSize: '13px', color: 'var(--text-color)' }}>
-                                                {partLabel === 'tutti' ? 'Tutti (Full)' : partLabel}
-                                            </strong>
-                                            <span className="text-xs text-muted" style={{ fontSize: '11px' }}>
-                                                {partLabel === 'tutti' ? 'Full Mix' : (voiceParts.find(vp => vp.label === partLabel)?.fullName || '')}
-                                            </span>
-                                        </div>
-                                        
-                                        {isUploading ? (
-                                            <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
-                                        ) : filename ? (
-                                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
-                                                <audio 
-                                                    src={pb.files.getUrl(localPiece, filename)} 
-                                                    controls 
-                                                    style={{ height: '28px', maxWidth: '220px', flex: 1 }} 
-                                                />
-                                                <button 
-                                                    type="button" 
-                                                    className="btn btn-ghost btn-sm" 
-                                                    onClick={() => handleFileDelete(partLabel)}
-                                                    style={{ 
-                                                        color: 'var(--danger)', 
-                                                        border: 'none', 
-                                                        background: 'none', 
-                                                        cursor: 'pointer',
-                                                        padding: '4px 6px',
-                                                        minHeight: 'auto',
-                                                        height: 'auto',
-                                                        margin: 0
-                                                    }}
-                                                    title="Delete track"
-                                                >
-                                                    🗑️
-                                                </button>
+                {(piece && activeTab === 'performances') && (
+                    <>
+                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                            <label className="text-label">Linked Performances</label>
+                            
+                            {/* Selected performances pills */}
+                            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-xs)', minHeight: '40px', padding: 'var(--space-xs) 0' }}>
+                                {selectedPerformances.length === 0 ? (
+                                    <span className="text-sm text-muted">No performances linked.</span>
+                                ) : (
+                                    selectedPerformances.map(perf => {
+                                        const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
+                                        return (
+                                            <div key={perf.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', padding: '4px 10px', backgroundColor: 'rgba(74, 124, 89, 0.1)', border: '1px solid var(--primary)', borderRadius: '16px', color: 'var(--primary)', fontSize: '13px' }}>
+                                                <span>{perf.title} {dateStr && `(${dateStr})`}</span>
+                                                <button type="button" onClick={() => togglePerformance(perf.id)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, fontSize: '14px', fontWeight: 'bold' }}>×</button>
                                             </div>
-                                        ) : (
-                                            <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
-                                                <label 
-                                                    className="btn btn-secondary btn-sm" 
-                                                    style={{ 
-                                                        cursor: 'pointer',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        fontSize: '11px',
-                                                        padding: '2px 8px',
-                                                        height: '24px',
-                                                        minHeight: '24px',
-                                                        margin: 0
-                                                    }}
-                                                >
-                                                    📤 Upload
-                                                    <input 
-                                                        type="file" 
-                                                        accept="audio/*" 
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                handleFileUpload(partLabel, file);
-                                                            }
-                                                        }}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                </label>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+                                        );
+                                    })
+                                )}
+                            </div>
 
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Notes</label>
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card" style={{ padding: '12px', minHeight: '80px', resize: 'vertical' }} />
-                    <span className="text-xs text-muted" style={{ marginTop: '2px' }}>
-                        If this is a medley, please list the names of the different pieces here.
-                    </span>
-                </div>
+                            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
+                                <select 
+                                    className="card" 
+                                    value="" 
+                                    onChange={e => {
+                                        if (e.target.value) {
+                                            togglePerformance(e.target.value);
+                                        }
+                                    }}
+                                    style={{ flex: '1 1 200px', padding: '0 12px', height: '40px', minWidth: '0' }}
+                                >
+                                    <option value="">-- Add a performance --</option>
+                                    {availablePerformances.map(perf => {
+                                        const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
+                                        return (
+                                            <option key={perf.id} value={perf.id}>
+                                                {perf.title} {dateStr && `(${dateStr})`}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-secondary btn-sm" 
+                                    onClick={() => setShowQuickAdd(!showQuickAdd)}
+                                    style={{ flex: '1 1 auto', justifyContent: 'center' }}
+                                >
+                                    {showQuickAdd ? 'Cancel Quick Add' : 'Quick Add Performance'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Quick Add Performance form */}
+                        {showQuickAdd && (
+                            <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card-hover)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', marginTop: 'var(--space-xs)' }}>
+                                <h4 className="text-sm" style={{ marginTop: 0, marginBottom: 'var(--space-md)', color: 'var(--primary)' }}>Quick Add Historic Performance</h4>
+                                <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+                                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                        <label className="text-xs text-muted">Performance Title</label>
+                                        <input 
+                                            value={quickTitle} 
+                                            onChange={e => setQuickTitle(e.target.value)} 
+                                            placeholder="e.g. Spring Concert 2018"
+                                            className="card" 
+                                            style={{ padding: '0 12px', height: '36px', fontSize: '14px' }} 
+                                        />
+                                    </div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-md)' }}>
+                                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                            <label className="text-xs text-muted">Date</label>
+                                            <input 
+                                                type="datetime-local" 
+                                                value={quickDate} 
+                                                onChange={e => setQuickDate(e.target.value)} 
+                                                className="card" 
+                                                style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }} 
+                                            />
+                                        </div>
+                                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                            <label className="text-xs text-muted">Venue</label>
+                                            <select 
+                                                value={quickVenue} 
+                                                onChange={e => setQuickVenue(e.target.value)} 
+                                                className="card" 
+                                                style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
+                                            >
+                                                <option value="">-- Select Venue --</option>
+                                                {venues.map(v => (
+                                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-primary btn-sm" 
+                                        onClick={handleQuickAddPerformance} 
+                                        disabled={isQuickAdding}
+                                        style={{ alignSelf: 'flex-end', marginTop: 'var(--space-xs)' }}
+                                    >
+                                        {isQuickAdding ? 'Creating...' : 'Create & Link'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {(piece && activeTab === 'tracks') && (
+                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                        <label className="text-label">🎵 Reference & Learning Tracks</label>
+                        {!localPiece ? (
+                            <div className="flex-row" style={{
+                                alignItems: 'center',
+                                gap: 'var(--space-sm)',
+                                padding: 'var(--space-md)',
+                                backgroundColor: 'rgba(74, 124, 89, 0.03)',
+                                border: '1px dashed var(--border)',
+                                borderRadius: 'var(--radius)',
+                                color: 'var(--text-muted)',
+                                fontSize: '14px',
+                                justifyContent: 'center'
+                            }}>
+                                <span>Please save this piece first to enable learning track uploads.</span>
+                            </div>
+                        ) : (
+                            <div className="flex-col" style={{ 
+                                gap: 'var(--space-xs)', 
+                                border: '1px solid var(--border)', 
+                                borderRadius: 'var(--radius)',
+                                padding: 'var(--space-sm)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.02)'
+                            }}>
+                                {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
+                                    const filename = localPiece.audioTrackMapping?.[partLabel];
+                                    const isUploading = uploadingParts[partLabel];
+                                    return (
+                                        <div key={partLabel} className="flex-row" style={{
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '8px 12px',
+                                            backgroundColor: 'var(--bg-card-hover)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 'var(--radius)',
+                                            gap: 'var(--space-md)'
+                                        }}>
+                                            <div className="flex-col" style={{ minWidth: '90px' }}>
+                                                <strong style={{ fontSize: '13px', color: 'var(--text-color)' }}>
+                                                    {partLabel === 'tutti' ? 'Tutti (Full)' : partLabel}
+                                                </strong>
+                                                <span className="text-xs text-muted" style={{ fontSize: '11px' }}>
+                                                    {partLabel === 'tutti' ? 'Full Mix' : (voiceParts.find(vp => vp.label === partLabel)?.fullName || '')}
+                                                </span>
+                                            </div>
+                                            
+                                            {isUploading ? (
+                                                <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
+                                            ) : filename ? (
+                                                <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
+                                                    <audio 
+                                                        src={pb.files.getUrl(localPiece, filename)} 
+                                                        controls 
+                                                        style={{ height: '28px', maxWidth: '220px', flex: 1 }} 
+                                                    />
+                                                    <button 
+                                                        type="button" 
+                                                        className="btn btn-ghost btn-sm" 
+                                                        onClick={() => handleFileDelete(partLabel)}
+                                                        style={{ 
+                                                            color: 'var(--danger)', 
+                                                            border: 'none', 
+                                                            background: 'none', 
+                                                            cursor: 'pointer',
+                                                            padding: '4px 6px',
+                                                            minHeight: 'auto',
+                                                            height: 'auto',
+                                                            margin: 0
+                                                        }}
+                                                        title="Delete track"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
+                                                    <label 
+                                                        className="btn btn-secondary btn-sm" 
+                                                        style={{ 
+                                                            cursor: 'pointer',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            fontSize: '11px',
+                                                            padding: '2px 8px',
+                                                            height: '24px',
+                                                            minHeight: '24px',
+                                                            margin: 0
+                                                        }}
+                                                    >
+                                                        📤 Upload
+                                                        <input 
+                                                            type="file" 
+                                                            accept="audio/*" 
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    handleFileUpload(partLabel, file);
+                                                                }
+                                                            }}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
             </form>
         </BaseModal>
     );
