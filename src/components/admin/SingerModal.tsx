@@ -370,7 +370,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       isOpen={isOpen}
       onClose={onClose}
       title={initialData ? 'Edit Singer' : 'Add Singer'}
-      maxWidth={activeTab === 'rsvps' ? '680px' : '500px'}
+      maxWidth="640px"
       footer={
         <>
           {activeTab === 'profile' ? (
