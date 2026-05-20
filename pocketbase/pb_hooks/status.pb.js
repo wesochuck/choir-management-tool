@@ -1,32 +1,49 @@
 // Profile Status Engine Hooks
 
-const STATUS_HOOK_VERSION = "2026-05-19T20:54:03-04:00-4e54240";
+const STATUS_HOOK_VERSION = "2026-05-19T21:20:00-04:00-robust-wrapper";
 
 console.log("Profile status hook loaded: " + STATUS_HOOK_VERSION);
 
-routerAdd("GET", "/api/debug/status-hook-version", (e) => {
-    return e.json(200, {
-        hook: "status",
-        version: STATUS_HOOK_VERSION,
-    });
-});
-
 onRecordAfterUpdateSuccess((e) => {
-    runProfileStatusUpdate(e.record, "update");
+    handleProfileStatusHook(e, "update");
 }, "eventRosters");
 
 onRecordAfterCreateSuccess((e) => {
-    runProfileStatusUpdate(e.record, "create");
+    handleProfileStatusHook(e, "create");
 }, "eventRosters");
+
+function handleProfileStatusHook(e, action) {
+    try {
+        runProfileStatusUpdate(e && e.record, action);
+    } catch (err) {
+        logProfileStatusHookFailure(null, action, err);
+    }
+}
 
 function runProfileStatusUpdate(roster, action) {
     try {
+        if (!roster) {
+            return;
+        }
         updateProfileStatus(roster);
     } catch (err) {
         // This hook is advisory. Attendance writes must never fail after the
         // roster row has already been saved.
-        console.log("Profile status hook failed after eventRosters " + action + " for " + roster.id + ": " + err);
+        logProfileStatusHookFailure(roster, action, err);
     }
+}
+
+function logProfileStatusHookFailure(roster, action, err) {
+    let rosterId = "unknown";
+    try {
+        if (roster && typeof roster.get === "function") {
+            rosterId = roster.get("id") || roster.id || "unknown";
+        } else if (roster && roster.id) {
+            rosterId = roster.id;
+        }
+    } catch (idErr) {}
+
+    console.log("Profile status hook failed after eventRosters " + action + " for " + rosterId + ": " + err);
 }
 
 function saveProfileStatus(profile) {
@@ -35,7 +52,11 @@ function saveProfileStatus(profile) {
         // older profile has unrelated values that no longer pass validation.
         $app.saveNoValidate(profile);
     } catch (err) {
-        console.log("Failed to update automated profile status for " + profile.id + ": " + err);
+        let profileId = "unknown";
+        try {
+            profileId = profile.get("id") || profile.id || "unknown";
+        } catch (idErr) {}
+        console.log("Failed to update automated profile status for " + profileId + ": " + err);
     }
 }
 
