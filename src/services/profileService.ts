@@ -38,6 +38,7 @@ const splitProfileInput = (data: ProfileInput) => {
   delete profile.email;
   delete profile.password;
   delete profile.expand;
+  delete profile.photo; // Prevent accidental overwrite/wipe of photo field via text field updates
   return { email: email?.trim(), password, profile };
 };
 
