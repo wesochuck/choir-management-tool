@@ -28,6 +28,22 @@ export function findNearestEvent<T extends EventLike>(events: T[], relativeTo: D
   return nearest;
 }
 
+/**
+ * Determines which event ID to initially select.
+ * Prefers urlEventId when it matches an event in the list,
+ * otherwise falls back to the nearest event by date.
+ */
+export function resolveInitialEventId<T extends EventLike>(
+  events: T[],
+  urlEventId?: string | null
+): string | null {
+  if (urlEventId && events.some(e => e.id === urlEventId)) {
+    return urlEventId;
+  }
+  const nearest = findNearestEvent(events);
+  return nearest ? nearest.id : null;
+}
+
 export interface SetListVisibilityResult {
   showSetList: boolean;
   setList?: SetListItem[];

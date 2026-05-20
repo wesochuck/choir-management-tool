@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useAttendance } from '../../hooks/useAttendance';
 import { useProfiles } from '../../hooks/useProfiles';
@@ -8,10 +9,11 @@ import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { settingsService, getVoiceParts } from '../../services/settingsService';
-import { findNearestEvent } from '../../lib/eventUtils';
+import { resolveInitialEventId } from '../../lib/eventUtils';
 
 export default function AttendanceView() {
   const dialog = useDialog();
+  const [searchParams] = useSearchParams();
   const { events } = useEvents();
   const { profiles, editProfile } = useProfiles();
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -47,13 +49,14 @@ export default function AttendanceView() {
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
-      const nearest = findNearestEvent(events);
-      if (nearest) {
-        setSelectedEventId(nearest.id);
+      const urlEventId = searchParams.get('eventId');
+      const resolved = resolveInitialEventId(events, urlEventId);
+      if (resolved) {
+        setSelectedEventId(resolved);
         hasDefaultedRef.current = true;
       }
     }
-  }, [events, selectedEventId]);
+  }, [events, selectedEventId, searchParams]);
 
   const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId);
 

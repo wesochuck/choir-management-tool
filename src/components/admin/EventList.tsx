@@ -7,6 +7,7 @@ interface EventListProps {
   onEmailReminder: (event: Event) => void;
   onTextReminder: (event: Event) => void;
   onViewRoster: (event: Event) => void;
+  onCheckAttendance?: (event: Event) => void;
   openAuditionEventId?: string;
   sendingEmailEventId?: string | null;
 }
@@ -18,6 +19,7 @@ export const EventList: React.FC<EventListProps> = ({
   onEmailReminder, 
   onTextReminder, 
   onViewRoster, 
+  onCheckAttendance,
   openAuditionEventId,
   sendingEmailEventId
 }) => {
@@ -78,6 +80,18 @@ export const EventList: React.FC<EventListProps> = ({
             >
               RSVP Roster
             </button>
+            {onCheckAttendance && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCheckAttendance(e);
+                }}
+                className="btn btn-secondary btn-sm"
+                title="Take attendance for this event"
+              >
+                📋 Attendance
+              </button>
+            )}
             <button 
               onClick={(event) => {
                 event.stopPropagation();
