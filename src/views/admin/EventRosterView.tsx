@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { eventService, type Event } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 import { profileService, type Profile } from '../../services/profileService';
-import { getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
+import { getVoicePartsAndSections, settingsService, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
+import { getLastName } from '../../lib/stringUtils';
 
 export default function EventRosterView() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -25,6 +26,7 @@ export default function EventRosterView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
   const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
+  const [sortBy, setSortBy] = useState<'lastName' | 'voicePart'>('lastName');
 
   useEffect(() => {
     if (!eventId) {
@@ -39,15 +41,19 @@ export default function EventRosterView() {
       eventService.getEventById(eventId),
       profileService.getActiveProfiles(),
       rosterService.getEventRoster(eventId),
-      getVoicePartsAndSections()
+      getVoicePartsAndSections(),
+      settingsService.getRosterSettings()
     ])
-      .then(([evt, profiles, rosters, settings]) => {
+      .then(([evt, profiles, rosters, settings, rosterSettings]) => {
         if (isCurrent) {
           setEvent(evt);
           setActiveProfiles(profiles);
           setEventRoster(rosters);
           setVoiceParts(settings.voiceParts);
           setSections(settings.sections);
+          if (rosterSettings && rosterSettings.defaultRsvpSort) {
+            setSortBy(rosterSettings.defaultRsvpSort);
+          }
           setIsLoading(false);
         }
       })
@@ -68,10 +74,6 @@ export default function EventRosterView() {
       isCurrent = false;
     };
   }, [eventId, navigate, dialog]);
-
-  if (isLoading || !event) {
-    return <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Loading RSVP details...</div>;
-  }
 
   const profileRosterMap = new Map<string, EventRoster>();
   eventRoster.forEach(item => {
@@ -138,6 +140,33 @@ export default function EventRosterView() {
     }
     return true;
   });
+
+  const sortedSingers = useMemo(() => {
+    const parts = voiceParts.map(vp => vp.label);
+    return [...filteredSingers].sort((a, b) => {
+      const profA = a.profile;
+      const profB = b.profile;
+      if (sortBy === 'voicePart') {
+        const idxA = parts.indexOf(profA.voicePart);
+        const idxB = parts.indexOf(profB.voicePart);
+        const orderA = idxA === -1 ? 999 : idxA;
+        const orderB = idxB === -1 ? 999 : idxB;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+      }
+      
+      const lastA = getLastName(profA.name);
+      const lastB = getLastName(profB.name);
+      const cmp = lastA.localeCompare(lastB);
+      if (cmp !== 0) return cmp;
+      return profA.name.localeCompare(profB.name);
+    });
+  }, [filteredSingers, sortBy, voiceParts]);
+
+  if (isLoading || !event) {
+    return <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Loading RSVP details...</div>;
+  }
 
   const handleVoicePartToggle = (part: string) => {
     setSelectedVoiceParts(prev => 
@@ -451,6 +480,24 @@ export default function EventRosterView() {
             )}
           </div>
 
+          {/* Sort By Select */}
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+            className="card"
+            style={{ 
+              padding: '0 12px', 
+              height: '44px', 
+              width: '200px', 
+              border: '1px solid var(--border)', 
+              borderRadius: 'var(--radius-md)',
+              fontSize: '15px'
+            }}
+          >
+            <option value="lastName">Last Name</option>
+            <option value="voicePart">Voice Part + Last Name</option>
+          </select>
+
           {/* Reset Filters */}
           {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
             <button 
@@ -479,7 +526,7 @@ export default function EventRosterView() {
 
         {/* Unified Event Roster Table */}
         <EventRosterTable 
-          singers={filteredSingers}
+          singers={sortedSingers}
           isUpdating={isUpdating}
           onUpdateRSVP={handleUpdateRSVP}
           onPhotoChange={handlePhotoChange}

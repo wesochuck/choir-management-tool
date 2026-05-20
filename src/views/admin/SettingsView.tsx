@@ -142,6 +142,22 @@ export default function SettingsView() {
               Choose the default sorting option used when opening the global roster.
             </p>
           </div>
+
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Default RSVP Sorting Option</label>
+            <select
+              value={rosterSettings.defaultRsvpSort || 'lastName'}
+              onChange={(event) => setRosterSettings({ ...rosterSettings, defaultRsvpSort: event.target.value as 'lastName' | 'voicePart' })}
+              className="card"
+              style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <option value="lastName">Last Name</option>
+              <option value="voicePart">Voice Part + Last Name</option>
+            </select>
+            <p className="text-muted" style={{ margin: 0 }}>
+              Choose the default sorting option used when reviewing an event RSVP list.
+            </p>
+          </div>
         </div>
       </AppCard>
 

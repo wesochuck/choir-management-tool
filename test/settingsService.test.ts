@@ -113,7 +113,7 @@ test('saveVoiceParts updates settings if present', async (t) => {
 test('getCommunicationSettings and saveCommunicationSettings processes automatic email fields', async (t) => {
   const { settingsService } = await import('../src/services/settingsService.ts');
   const originalCollection = pb.collection;
-  let savedPayload: SavedPayload | null = null;
+  const saved = { payload: null as SavedPayload | null };
 
   const mockGetFirstListItem = t.mock.fn(async () => {
     return {
@@ -135,7 +135,7 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
   });
 
   const mockUpdate = t.mock.fn(async (id: string, data: SavedPayload) => {
-    savedPayload = data;
+    saved.payload = data;
     return { id, ...data };
   });
 
@@ -164,8 +164,8 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
     };
     
     await settingsService.saveCommunicationSettings(testPayload);
-    assert.deepEqual(savedPayload?.value.reminderHoursBefore, 12);
-    assert.deepEqual(savedPayload?.value.reportEnabled, true);
+    assert.deepEqual(saved.payload?.value.reminderHoursBefore, 12);
+    assert.deepEqual(saved.payload?.value.reportEnabled, true);
   } finally {
     pb.collection = originalCollection;
   }
@@ -174,20 +174,21 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
 test('getRosterSettings and saveRosterSettings processes roster settings fields', async (t) => {
   const { settingsService } = await import('../src/services/settingsService.ts');
   const originalCollection = pb.collection;
-  let savedPayload: SavedPayload | null = null;
+  const saved = { payload: null as SavedPayload | null };
 
   const mockGetFirstListItem = t.mock.fn(async () => {
     return {
       key: 'roster',
       value: {
         defaultStatus: 'Active (Current)',
-        defaultSort: 'voicePart'
+        defaultSort: 'voicePart',
+        defaultRsvpSort: 'voicePart'
       }
     };
   });
 
   const mockUpdate = t.mock.fn(async (id: string, data: SavedPayload) => {
-    savedPayload = data;
+    saved.payload = data;
     return { id, ...data };
   });
 
@@ -205,15 +206,18 @@ test('getRosterSettings and saveRosterSettings processes roster settings fields'
     const settings = await settingsService.getRosterSettings();
     assert.equal(settings.defaultStatus, 'Active (Current)');
     assert.equal(settings.defaultSort, 'voicePart');
+    assert.equal(settings.defaultRsvpSort, 'voicePart');
 
     const testPayload = {
       defaultStatus: 'Inactive',
-      defaultSort: 'lastName' as const
+      defaultSort: 'lastName' as const,
+      defaultRsvpSort: 'lastName' as const
     };
     
     await settingsService.saveRosterSettings(testPayload);
-    assert.deepEqual(savedPayload?.value.defaultStatus, 'Inactive');
-    assert.deepEqual(savedPayload?.value.defaultSort, 'lastName');
+    assert.deepEqual(saved.payload?.value.defaultStatus, 'Inactive');
+    assert.deepEqual(saved.payload?.value.defaultSort, 'lastName');
+    assert.deepEqual(saved.payload?.value.defaultRsvpSort, 'lastName');
   } finally {
     pb.collection = originalCollection;
   }
