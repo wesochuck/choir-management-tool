@@ -38,6 +38,10 @@ export interface RosterSettings {
   defaultSort: 'lastName' | 'voicePart';
 }
 
+export interface MusicLibrarySettings {
+  catalogLookupUrlTemplate: string;
+}
+
 export interface CommunicationConfig {
   smtp: {
     host: string;
@@ -126,6 +130,10 @@ export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultSort: 'lastName',
 };
 
+export const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
+  catalogLookupUrlTemplate: '',
+};
+
 export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
   smtp: {
     host: '',
@@ -212,6 +220,15 @@ export const settingsService = {
 
   async saveRosterSettings(value: RosterSettings) {
     return await upsertSetting('roster', value, false);
+  },
+
+  async getMusicLibrarySettings() {
+    const setting = await getSetting<MusicLibrarySettings>('music_library');
+    return { ...DEFAULT_MUSIC_LIBRARY_SETTINGS, ...setting?.value };
+  },
+
+  async saveMusicLibrarySettings(value: MusicLibrarySettings) {
+    return await upsertSetting('music_library', value, true);
   },
 };
 

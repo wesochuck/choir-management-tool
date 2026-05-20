@@ -4,9 +4,11 @@ import { AppCard } from '../../components/common/AppCard';
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
   DEFAULT_ROSTER_SETTINGS,
+  DEFAULT_MUSIC_LIBRARY_SETTINGS,
   settingsService,
   type AttendanceSettings,
   type RosterSettings,
+  type MusicLibrarySettings,
   getVoiceParts,
   saveVoiceParts,
   type VoicePartDef,
@@ -17,6 +19,7 @@ export default function SettingsView() {
   const navigate = useNavigate();
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [rosterSettings, setRosterSettings] = useState<RosterSettings>(DEFAULT_ROSTER_SETTINGS);
+  const [musicLibrarySettings, setMusicLibrarySettings] = useState<MusicLibrarySettings>(DEFAULT_MUSIC_LIBRARY_SETTINGS);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +32,8 @@ export default function SettingsView() {
       setAttendanceSettings(attendance);
       const roster = await settingsService.getRosterSettings();
       setRosterSettings(roster);
+      const musicLib = await settingsService.getMusicLibrarySettings();
+      setMusicLibrarySettings(musicLib);
       const parts = await getVoiceParts();
       setVoiceParts(parts);
       const allProfiles = await profileService.getProfiles();
@@ -49,6 +54,7 @@ export default function SettingsView() {
     try {
       await settingsService.saveAttendanceSettings(attendanceSettings);
       await settingsService.saveRosterSettings(rosterSettings);
+      await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
       await saveVoiceParts(voiceParts);
       setMessage('Settings saved.');
     } catch {
@@ -129,6 +135,23 @@ export default function SettingsView() {
               Choose the default sorting option used when opening the global roster.
             </p>
           </div>
+        </div>
+      </AppCard>
+
+      <AppCard title="Music Library Settings">
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Catalog Lookup URL Template</label>
+          <input
+            type="url"
+            value={musicLibrarySettings.catalogLookupUrlTemplate}
+            onChange={(event) => setMusicLibrarySettings({ catalogLookupUrlTemplate: event.target.value })}
+            placeholder="https://www.jwpepper.com/s?q={catalogId}"
+            className="card"
+            style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          />
+          <p className="text-muted" style={{ margin: 0 }}>
+            Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
+          </p>
         </div>
       </AppCard>
 

@@ -5,7 +5,8 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList } from '../../lib/musicPieceUtils';
+import { settingsService } from '../../services/settingsService';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
@@ -14,6 +15,7 @@ export default function MusicLibraryView() {
   const [pieces, setPieces] = useState<MusicPiece[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,8 +43,12 @@ export default function MusicLibraryView() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await musicLibraryService.getLibrary();
+      const [data, settings] = await Promise.all([
+        musicLibraryService.getLibrary(),
+        settingsService.getMusicLibrarySettings()
+      ]);
       setPieces(data);
+      setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
     } catch (err: any) {
       if (err?.isAbort) return;
       dialog.showMessage({ title: 'Error', message: 'Could not load music library.', variant: 'danger' });
@@ -288,7 +294,21 @@ export default function MusicLibraryView() {
                             {piece.duration ? formatSecondsToDuration(parseDurationToSeconds(piece.duration)) : '-'}
                         </td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.copies !== undefined ? piece.copies : '-'}</td>
-                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.catalogId || '-'}</td>
+                        <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
+                            {piece.catalogId ? (
+                                resolveCatalogLookupUrl(catalogLookupTemplate, piece.catalogId) ? (
+                                    <a 
+                                        href={resolveCatalogLookupUrl(catalogLookupTemplate, piece.catalogId)!} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{ color: 'var(--color-primary, #1b4d3e)', textDecoration: 'underline', fontWeight: 500 }}
+                                    >
+                                        {piece.catalogId}
+                                    </a>
+                                ) : piece.catalogId
+                            ) : '-'}
+                        </td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
                             <div className="flex-row" style={{ gap: 'var(--space-xs)', justifyContent: 'center' }}>
                             <button 
@@ -315,6 +335,7 @@ export default function MusicLibraryView() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSavePiece}
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
+        catalogLookupTemplate={catalogLookupTemplate}
       />
 
       <MusicImportModal
@@ -327,12 +348,13 @@ export default function MusicLibraryView() {
 }
 
 // Inline modal component for editing a single piece
-function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete }: { 
+function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLookupTemplate }: { 
     isOpen: boolean, 
     piece: MusicPiece | null, 
     onClose: () => void, 
     onSave: (data: Partial<MusicPieceInput>) => Promise<void>,
-    onDelete?: () => Promise<void>
+    onDelete?: () => Promise<void>,
+    catalogLookupTemplate?: string
 }) {
     const dialog = useDialog();
     const [title, setTitle] = useState('');
@@ -499,7 +521,19 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete }: {
                         <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
                     </div>
                     <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <label className="text-label">Catalog ID</label>
+                        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label className="text-label" style={{ margin: 0 }}>Catalog ID</label>
+                            {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
+                                <a 
+                                    href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontSize: '0.75rem', color: 'var(--color-primary, #1b4d3e)', textDecoration: 'underline' }}
+                                >
+                                    Lookup ↗
+                                </a>
+                            )}
+                        </div>
                         <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
                     </div>
                 </div>

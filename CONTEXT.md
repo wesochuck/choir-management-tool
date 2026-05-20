@@ -11,3 +11,7 @@ The attendance response provided by or assigned to a singer for a specific event
 
 ## RSVP Balance
 A real-time breakdown of RSVP statuses grouped by voice parts. This allows directors to quickly identify imbalances (e.g., zero or low Tenor 1 attendance) before rehearsals or performances.
+
+## Catalog Lookup URL Template
+A configurable URL format defined in settings that enables automatic linking of music piece Catalog IDs to external publisher/sheet music databases (e.g. J.W. Pepper). The placeholder `{catalogId}` is replaced dynamically with the piece's specific catalog number to build the hyperlink.
+

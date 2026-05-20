@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../src/lib/musicPieceUtils.ts';
+import { exportMusicToCSV, findDuplicates, appendPieceToSetList, resolveCatalogLookupUrl } from '../src/lib/musicPieceUtils.ts';
 
 test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
   const pieces = [{ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }];
@@ -65,4 +65,26 @@ test('appendPieceToSetList returns updated: false and original/copied set list i
   assert.equal(result.setList.length, 1);
   assert.equal(result.setList[0].id, 'item1');
 });
+
+test('resolveCatalogLookupUrl replaces placeholder and handles URI encoding', () => {
+  const template = 'https://www.jwpepper.com/s?q={catalogId}&sort=score_desc';
+  
+  // Basic replacement
+  const url1 = resolveCatalogLookupUrl(template, '100456');
+  assert.equal(url1, 'https://www.jwpepper.com/s?q=100456&sort=score_desc');
+
+  // Encoding special chars
+  const url2 = resolveCatalogLookupUrl(template, 'JW-999 / AB');
+  assert.equal(url2, 'https://www.jwpepper.com/s?q=JW-999%20%2F%20AB&sort=score_desc');
+});
+
+test('resolveCatalogLookupUrl returns null if inputs are empty or missing', () => {
+  const template = 'https://www.jwpepper.com/s?q={catalogId}';
+  
+  assert.equal(resolveCatalogLookupUrl(undefined, '123'), null);
+  assert.equal(resolveCatalogLookupUrl(template, undefined), null);
+  assert.equal(resolveCatalogLookupUrl('', '123'), null);
+  assert.equal(resolveCatalogLookupUrl(template, '   '), null);
+});
+
 
