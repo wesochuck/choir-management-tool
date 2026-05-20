@@ -134,8 +134,11 @@ export const rosterService = {
     });
 
     const results: EventRoster[] = [];
-    const chunkSize = 4;
+    const chunkSize = 2;
     for (let i = 0; i < operations.length; i += chunkSize) {
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 80));
+      }
       const chunk = operations.slice(i, i + chunkSize);
       const chunkResults = await Promise.all(chunk.map(op => op()));
       results.push(...chunkResults);
