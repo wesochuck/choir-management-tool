@@ -40,6 +40,7 @@ export default function EventsView() {
   const [voicePartFilter, setVoicePartFilter] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [sendingEmailEventId, setSendingEmailEventId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -136,62 +137,69 @@ export default function EventsView() {
   };
 
   const handleEmailReminder = async (event: Event) => {
-    const roster = await rosterService.getEventRoster(event.id);
-    const recipients = roster
-      .filter((item) => item.expand?.profile?.globalStatus !== 'Inactive' && item.rsvp !== 'No')
-      .map((item) => {
-        const profile = item.expand?.profile;
-        return {
-          id: profile?.id || '',
-          name: profile?.name || '',
-          email: profile?.expand?.user?.email || '',
-          phone: profile?.phone || '',
-          voicePart: profile?.voicePart || '',
-          globalStatus: profile?.globalStatus || '',
-        };
-      })
-      .filter((r): r is CommunicationRecipient => Boolean(r.id && r.email));
+    if (sendingEmailEventId) return;
+    setSendingEmailEventId(event.id);
 
-    if (recipients.length === 0) {
-      await dialog.showMessage({
-        title: 'No Email Addresses',
-        message: 'No active event RSVP emails were found.',
-      });
-      return;
-    }
-
-    const values = getTemplateValues(event);
-    const subject = renderCommunicationTemplate(communicationSettings.emailSubject, values);
-    const body = renderCommunicationTemplate(communicationSettings.emailBody, values);
-
-    setIsRosterLoading(true);
     try {
-      await communicationService.sendBulkMessage({
-        subject,
-        content: body,
-        type: 'Email',
-        recipients,
-        filters: {
-          eventId: event.id,
-          rsvp: 'All',
-          voicePart: '',
-          globalStatus: 'Active (Current)',
-        },
-      });
+      const roster = await rosterService.getEventRoster(event.id);
+      const recipients = roster
+        .filter((item) => item.expand?.profile?.globalStatus !== 'Inactive' && item.rsvp !== 'No')
+        .map((item) => {
+          const profile = item.expand?.profile;
+          return {
+            id: profile?.id || '',
+            name: profile?.name || '',
+            email: profile?.expand?.user?.email || '',
+            phone: profile?.phone || '',
+            voicePart: profile?.voicePart || '',
+            globalStatus: profile?.globalStatus || '',
+          };
+        })
+        .filter((r): r is CommunicationRecipient => Boolean(r.id && r.email));
 
-      await dialog.showMessage({
-        title: 'Reminder Queueing',
-        message: `Event email reminders have been queued and sent to ${recipients.length} recipients via the communications backend service.`,
-        variant: 'info',
-      });
-    } catch {
-      await dialog.showMessage({
-        title: 'Could Not Send Reminder',
-        message: 'The email reminder could not be dispatched via the communications backend service.',
-        variant: 'danger',
-      });
+      if (recipients.length === 0) {
+        await dialog.showMessage({
+          title: 'No Email Addresses',
+          message: 'No active event RSVP emails were found.',
+        });
+        return;
+      }
+
+      const values = getTemplateValues(event);
+      const subject = renderCommunicationTemplate(communicationSettings.emailSubject, values);
+      const body = renderCommunicationTemplate(communicationSettings.emailBody, values);
+
+      setIsRosterLoading(true);
+      try {
+        await communicationService.sendBulkMessage({
+          subject,
+          content: body,
+          type: 'Email',
+          recipients,
+          filters: {
+            eventId: event.id,
+            rsvp: 'All',
+            voicePart: '',
+            globalStatus: 'Active (Current)',
+          },
+        });
+
+        await dialog.showMessage({
+          title: 'Reminder Queueing',
+          message: `Event email reminders have been queued and sent to ${recipients.length} recipients via the communications backend service.`,
+          variant: 'info',
+        });
+      } catch {
+        await dialog.showMessage({
+          title: 'Could Not Send Reminder',
+          message: 'The email reminder could not be dispatched via the communications backend service.',
+          variant: 'danger',
+        });
+      } finally {
+        setIsRosterLoading(false);
+      }
     } finally {
-      setIsRosterLoading(false);
+      setSendingEmailEventId(null);
     }
   };
 
@@ -233,6 +241,7 @@ export default function EventsView() {
         onTextReminder={setTextEvent}
         onViewRoster={setRosterEvent}
         openAuditionEventId={auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined}
+        sendingEmailEventId={sendingEmailEventId}
       />
 
       {textEvent && (

@@ -8,10 +8,19 @@ interface EventListProps {
   onTextReminder: (event: Event) => void;
   onViewRoster: (event: Event) => void;
   openAuditionEventId?: string;
+  sendingEmailEventId?: string | null;
 }
 import { AppCard } from '../common/AppCard';
 
-export const EventList: React.FC<EventListProps> = ({ events, onEdit, onEmailReminder, onTextReminder, onViewRoster, openAuditionEventId }) => {
+export const EventList: React.FC<EventListProps> = ({ 
+  events, 
+  onEdit, 
+  onEmailReminder, 
+  onTextReminder, 
+  onViewRoster, 
+  openAuditionEventId,
+  sendingEmailEventId
+}) => {
   return (
     <AppCard noPadding style={{ gap: 0 }}>
       {events.map((e) => (
@@ -71,9 +80,22 @@ export const EventList: React.FC<EventListProps> = ({ events, onEdit, onEmailRem
                 event.stopPropagation();
                 onEmailReminder(e);
               }}
+              disabled={sendingEmailEventId === e.id}
               className="btn btn-secondary btn-sm"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
             >
-              Email Reminder
+              {sendingEmailEventId === e.id ? (
+                <>
+                  <span className="spinner-small" style={{ margin: 0, width: '12px', height: '12px' }} />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                'Email Reminder'
+              )}
             </button>
             <button
               onClick={(event) => {
