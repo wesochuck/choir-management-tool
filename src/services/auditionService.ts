@@ -56,7 +56,7 @@ export const auditionService = {
       try {
         // 1. Find all related events (the performance itself + rehearsals tied to it)
         const relatedEvents = await pb.collection('events').getFullList<Event>({
-          filter: `id = "${audition.performance}" || parentPerformanceId = "${audition.performance}"`,
+          filter: pb.filter('id = {:performanceId} || parentPerformanceId = {:performanceId}', { performanceId: audition.performance }),
         });
 
         // 2. Create roster entries for each

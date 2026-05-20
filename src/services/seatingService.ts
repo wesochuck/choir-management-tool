@@ -16,8 +16,8 @@ export const seatingService = {
   async getChartForPerformance(performanceId: string, venueId: string | null) {
     try {
       const filterStr = venueId
-        ? `performance = "${performanceId}" && venue = "${venueId}"`
-        : `performance = "${performanceId}"`;
+        ? pb.filter('performance = {:performanceId} && venue = {:venueId}', { performanceId, venueId })
+        : pb.filter('performance = {:performanceId}', { performanceId });
       return await pb.collection('pbc_seating_001').getFirstListItem<SeatingChart>(
         filterStr,
         { expand: 'venue' }

@@ -51,7 +51,7 @@ export const eventService = {
 
   async getRehearsalsForPerformance(performanceId: string) {
     return await pb.collection('events').getFullList<Event>({
-      filter: `parentPerformanceId = "${performanceId}" && type = "Rehearsal"`,
+      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),
       sort: 'date',
       expand: 'venue',
     });
