@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
 import { findPieceDetails, formatPerformanceHistory, linkSetListItemToPiece, validatePieceForLibrary, parseDurationToSeconds, formatSecondsToDuration } from '../../lib/musicPieceUtils';
@@ -9,12 +9,24 @@ import { SortableSetListItem } from '../../components/admin/SortableSetListItem'
 import { useDialog } from '../../contexts/DialogContext';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { findNearestEvent } from '../../lib/eventUtils';
 
 export default function SetListView() {
   const { events, refresh } = useEvents();
   const dialog = useDialog();
+  const hasDefaultedRef = useRef(false);
   
   const [selectedEventId, setSelectedEventId] = useState('');
+
+  useEffect(() => {
+    if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
+      const nearest = findNearestEvent(events);
+      if (nearest) {
+        setSelectedEventId(nearest.id);
+        hasDefaultedRef.current = true;
+      }
+    }
+  }, [events, selectedEventId]);
   const [items, setItems] = useState<SetListItem[]>([]);
   const [library, setLibrary] = useState<MusicPiece[]>([]);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);

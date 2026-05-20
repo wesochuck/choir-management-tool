@@ -11,14 +11,26 @@ import { seatingService, type SeatingChart } from '../../services/seatingService
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile } from '../../services/profileService';
+import { findNearestEvent } from '../../lib/eventUtils';
 import './SeatingView.css';
 
 export default function SeatingView() {
   const dialog = useDialog();
   const { performances } = useEvents();
   const { venues, editVenue } = useVenues();
+  const hasDefaultedRef = useRef(false);
   
   const [performanceId, setPerformanceId] = useState('');
+
+  useEffect(() => {
+    if (performances.length > 0 && !performanceId && !hasDefaultedRef.current) {
+      const nearest = findNearestEvent(performances);
+      if (nearest) {
+        setPerformanceId(nearest.id);
+        hasDefaultedRef.current = true;
+      }
+    }
+  }, [performances, performanceId]);
   const [venueId, setVenueId] = useState('');
   const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');

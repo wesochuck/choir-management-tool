@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { useAttendance } from '../../hooks/useAttendance';
 import { useProfiles } from '../../hooks/useProfiles';
@@ -8,6 +8,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { settingsService } from '../../services/settingsService';
+import { findNearestEvent } from '../../lib/eventUtils';
 
 export default function AttendanceView() {
   const dialog = useDialog();
@@ -15,6 +16,7 @@ export default function AttendanceView() {
   const { profiles, editProfile } = useProfiles();
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const hasDefaultedRef = useRef(false);
   
   // Filter States
   const [filterName, setFilterName] = useState('');
@@ -31,6 +33,16 @@ export default function AttendanceView() {
         console.error('Failed to load attendance settings', err);
       });
   }, []);
+
+  useEffect(() => {
+    if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
+      const nearest = findNearestEvent(events);
+      if (nearest) {
+        setSelectedEventId(nearest.id);
+        hasDefaultedRef.current = true;
+      }
+    }
+  }, [events, selectedEventId]);
 
   const { items, isLoading, error, setAttendance, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId);
 
