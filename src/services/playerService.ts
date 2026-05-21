@@ -82,6 +82,53 @@ export const playerService = {
     return { event, files, voiceParts };
   },
 
+  async fetchPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {
+    const [event, pieces, vpRecord] = await Promise.all([
+      pb.collection('events').getOne<Event>(eventId),
+      pb.collection('musicLibrary').getFullList<MusicPiece>(), // In a real app, filter this
+      pb.collection('appSettings').getFirstListItem<any>('key = "voiceParts"').catch(() => null)
+    ]);
+
+    const setList = event.setList || [];
+    const voiceParts = vpRecord?.value?.voiceParts || [];
+    const piecesMap = pieces.reduce((acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    }, {} as Record<string, MusicPiece>);
+
+    const files: PlayerMediaFile[] = [];
+
+    for (const item of setList) {
+      if (item.type === 'intermission') continue;
+      const piece = item.pieceId ? piecesMap[item.pieceId] : null;
+      if (!piece) continue;
+
+      const mapping = piece.audioTrackMapping || {};
+      const defaultTrackKey = mapping['tutti'] ? 'tutti' : Object.keys(mapping)[0];
+      const filename = mapping[defaultTrackKey];
+
+      if (filename) {
+        files.push({
+          id: `${item.id}_${defaultTrackKey}`,
+          name: item.title,
+          composer: item.composer || piece.composer,
+          duration: item.duration || piece.duration,
+          pieceId: piece.id,
+          trackKey: defaultTrackKey,
+          availableTracks: mapping,
+          streamUrl: pb.files.getURL(piece, filename),
+          isFolder: false
+        });
+      }
+    }
+
+    return { 
+      event: { id: event.id, title: event.title, date: event.date }, 
+      files, 
+      voiceParts 
+    };
+  },
+
   async generateToken(eventId: string): Promise<string> {
     const response = await pb.send('/api/generate-player-token', {
       method: 'POST',
