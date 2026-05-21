@@ -164,7 +164,7 @@ test('codebase integrity: parentTitle and headphone indicators integration', () 
   const serviceFile = resolveProjectPath('src/services/playerService.ts');
   const playlistFile = resolveProjectPath('src/components/player/Playlist.tsx');
   const playerFile = resolveProjectPath('src/components/player/Player.tsx');
-  const libraryViewFile = resolveProjectPath('src/views/admin/MusicLibraryView.tsx');
+  const libraryTableFile = resolveProjectPath('src/views/admin/music-library/MusicLibraryTable.tsx');
 
   // Verify PlayerMediaFile interface has parentTitle
   const serviceContent = fs.readFileSync(serviceFile, 'utf8');
@@ -178,9 +178,9 @@ test('codebase integrity: parentTitle and headphone indicators integration', () 
   const playerContent = fs.readFileSync(playerFile, 'utf8');
   assert.ok(playerContent.includes('parentTitle') && playerContent.includes('track-parent-label'), 'Player must render parentTitle utilizing track-parent-label');
 
-  // Verify MusicLibraryView renders totalMovementTracksCount and hasTracks headphone emoji
-  const libraryContent = fs.readFileSync(libraryViewFile, 'utf8');
-  assert.ok(libraryContent.includes('totalMovementTracksCount') && libraryContent.includes('hasTracks'), 'MusicLibraryView must compute totalMovementTracksCount and hasTracks to render headphone indicators');
+  // Verify MusicLibraryTable renders totalMovementTracksCount and hasTracks headphone emoji
+  const libraryContent = fs.readFileSync(libraryTableFile, 'utf8');
+  assert.ok(libraryContent.includes('totalMovementTracksCount') && libraryContent.includes('hasTracks'), 'MusicLibraryTable must compute totalMovementTracksCount and hasTracks to render headphone indicators');
 });
 
 

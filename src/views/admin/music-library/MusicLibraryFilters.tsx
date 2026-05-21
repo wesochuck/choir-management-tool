@@ -1,0 +1,89 @@
+import React from 'react';
+import type { SectionDef } from '../../../services/settingsService';
+
+export interface MusicLibraryFiltersProps {
+    searchTerm: string;
+    onSearchChange: (value: string) => void;
+    sectionFilter: string;
+    onSectionFilterChange: (value: string) => void;
+    sections: SectionDef[];
+    showMovements: boolean;
+    onShowMovementsChange: (value: boolean) => void;
+    showDuplicatesOnly: boolean;
+    onShowDuplicatesOnlyChange: (value: boolean) => void;
+    duplicateCount: number;
+    selectedCount: number;
+    isBulkDeleting: boolean;
+    onBulkDelete: () => void;
+}
+
+export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
+    searchTerm,
+    onSearchChange,
+    sectionFilter,
+    onSectionFilterChange,
+    sections,
+    showMovements,
+    onShowMovementsChange,
+    showDuplicatesOnly,
+    onShowDuplicatesOnlyChange,
+    duplicateCount,
+    selectedCount,
+    isBulkDeleting,
+    onBulkDelete
+}) => {
+    return (
+        <div className="flex-responsive" style={{ padding: 'var(--space-md) var(--space-lg)', borderBottom: '1px solid var(--border)', gap: 'var(--space-md)', justifyContent: 'space-between' }}>
+            <input
+                className="card"
+                placeholder="Search title, composer, catalog..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                style={{ width: '100%', maxWidth: '400px', height: '40px', padding: '0 12px' }}
+            />
+
+            <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+                <span className="text-sm text-muted">Filter by Section:</span>
+                <select
+                    className="card"
+                    value={sectionFilter}
+                    onChange={(e) => onSectionFilterChange(e.target.value)}
+                    style={{ height: '40px', padding: '0 8px', minWidth: '140px', cursor: 'pointer' }}
+                >
+                    <option value="">All Pieces</option>
+                    {sections.map(s => (
+                        <option key={s.code} value={s.code}>{s.name}</option>
+                    ))}
+                </select>
+            </div>
+            
+            <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+                    <input 
+                        type="checkbox" 
+                        checked={showMovements} 
+                        onChange={(e) => onShowMovementsChange(e.target.checked)}
+                        style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                    />
+                    <span className="text-sm">Show individual movements</span>
+                </label>
+
+                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+                    <input 
+                        type="checkbox" 
+                        checked={showDuplicatesOnly} 
+                        onChange={(e) => onShowDuplicatesOnlyChange(e.target.checked)}
+                        style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                    />
+                    <span className="text-sm">Filter Duplicates ({duplicateCount})</span>
+                </label>
+
+                {selectedCount > 0 && (
+                    <button className="btn btn-danger btn-sm" onClick={onBulkDelete} disabled={isBulkDeleting}>
+                        {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
