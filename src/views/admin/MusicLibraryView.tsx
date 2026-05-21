@@ -7,15 +7,17 @@ import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
 import { settingsService, getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel, filterPiecesBySectionBucket } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
 
   const [pieces, setPieces] = useState<MusicPiece[]>([]);
+  const [sections, setSections] = useState<SectionDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sectionFilter, setSectionFilter] = useState('');
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
 
   // Audio player state
@@ -65,12 +67,14 @@ export default function MusicLibraryView() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [data, settings] = await Promise.all([
+      const [data, settings, sectionsData] = await Promise.all([
         musicLibraryService.getLibrary(),
-        settingsService.getMusicLibrarySettings()
+        settingsService.getMusicLibrarySettings(),
+        getVoicePartsAndSections()
       ]);
       setPieces(data);
       setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
+      setSections(sectionsData.sections);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'isAbort' in err && err.isAbort) return;
       dialog.showMessage({ title: 'Error', message: 'Could not load music library.', variant: 'danger' });
@@ -196,6 +200,10 @@ export default function MusicLibraryView() {
       );
     }
 
+    if (sectionFilter) {
+        result = filterPiecesBySectionBucket(result, sectionFilter);
+    }
+
     // Separate parent/standalone and child pieces
     const parents = result.filter(p => !p.parentId);
     const children = result.filter(p => p.parentId);
@@ -237,7 +245,7 @@ export default function MusicLibraryView() {
     sorted.push(...orphans);
 
     return sorted;
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements, sectionFilter]);
 
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
@@ -295,6 +303,21 @@ export default function MusicLibraryView() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: '100%', maxWidth: '400px', height: '40px', padding: '0 12px' }}
           />
+
+          <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+            <span className="text-sm text-muted">Filter by Section:</span>
+            <select
+                className="card"
+                value={sectionFilter}
+                onChange={(e) => setSectionFilter(e.target.value)}
+                style={{ height: '40px', padding: '0 8px', minWidth: '140px', cursor: 'pointer' }}
+            >
+                <option value="">All Pieces</option>
+                {sections.map(s => (
+                    <option key={s.code} value={s.code}>{s.name}</option>
+                ))}
+            </select>
+          </div>
           
           <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
               <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
@@ -463,6 +486,35 @@ export default function MusicLibraryView() {
                                         {piece.performances.length} historical performances
                                     </span>
                                 )}
+                                <div className="flex-row" style={{ gap: 'var(--space-xs)', marginTop: '2px', flexWrap: 'wrap' }}>
+                                    {!piece.sectionBuckets || piece.sectionBuckets.length === 0 ? (
+                                        <span className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.6, fontSize: '10px' }}>
+                                            All Sections
+                                        </span>
+                                    ) : (
+                                        piece.sectionBuckets.map(code => {
+                                            const section = sections.find(s => s.code === code);
+                                            return (
+                                                <span 
+                                                    key={code}
+                                                    title={section ? section.name : code}
+                                                    style={{ 
+                                                        display: 'inline-flex',
+                                                        padding: '1px 5px',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: 'var(--bg-card-hover)',
+                                                        border: '1px solid var(--border)',
+                                                        fontSize: '10px',
+                                                        fontWeight: 600,
+                                                        color: 'var(--text-muted)'
+                                                    }}
+                                                >
+                                                    {code}
+                                                </span>
+                                            );
+                                        })
+                                    )}
+                                </div>
                             </div>
                         </td>
                         <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.composer || '-'}</td>
