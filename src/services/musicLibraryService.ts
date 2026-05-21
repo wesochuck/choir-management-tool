@@ -13,6 +13,7 @@ export interface MusicPiece extends RecordModel {
   audioFiles?: string[];
   audioTrackMapping?: Record<string, string>;
   voicing?: string;
+  sectionBuckets?: string[];
   parentId?: string;
   expand?: {
     performances?: Event[];

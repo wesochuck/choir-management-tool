@@ -1,7 +1,65 @@
-import test from 'node:test';
+import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { exportMusicToCSV, findDuplicates, appendPieceToSetList, resolveCatalogLookupUrl, resolveRecommendedTracks, parseDurationToSeconds, isValidDurationString } from '../src/lib/musicPieceUtils.ts';
+import { 
+  exportMusicToCSV, 
+  findDuplicates, 
+  appendPieceToSetList, 
+  resolveCatalogLookupUrl, 
+  resolveRecommendedTracks, 
+  parseDurationToSeconds, 
+  isValidDurationString,
+  pieceAppliesToSectionBucket,
+  getSectionBucketApplicabilityLabel,
+  filterPiecesBySectionBucket
+} from '../src/lib/musicPieceUtils.ts';
 import type { MusicPiece } from '../src/services/musicLibraryService.ts';
+import type { SectionDef } from '../src/services/settingsService';
+
+describe('section-bucket applicability', () => {
+  const sections: SectionDef[] = [
+    { code: 'S', name: 'Sopranos', allowedVoiceParts: [] },
+    { code: 'A', name: 'Altos', allowedVoiceParts: [] }
+  ];
+
+  it('pieceAppliesToSectionBucket handles missing/empty', () => {
+    assert.strictEqual(pieceAppliesToSectionBucket({} as any, 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: [] } as any, 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: undefined } as any, 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: null } as any, 'S'), true);
+  });
+
+  it('pieceAppliesToSectionBucket handles restrictions', () => {
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S'] } as any, 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S'] } as any, 'A'), false);
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S', 'A'] } as any, 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S', 'A'] } as any, 'A'), true);
+  });
+
+  it('getSectionBucketApplicabilityLabel formats correctly', () => {
+    assert.strictEqual(getSectionBucketApplicabilityLabel({} as any, sections), 'All section buckets');
+    assert.strictEqual(getSectionBucketApplicabilityLabel({ sectionBuckets: ['S'] } as any, sections), 'Sopranos');
+    assert.strictEqual(getSectionBucketApplicabilityLabel({ sectionBuckets: ['S', 'A'] } as any, sections), 'Sopranos, Altos');
+    assert.strictEqual(getSectionBucketApplicabilityLabel({ sectionBuckets: ['S', 'UNKNOWN'] } as any, sections), 'Sopranos, UNKNOWN');
+  });
+
+  it('filterPiecesBySectionBucket works', () => {
+    const pieces = [
+      { id: '1', title: 'All' }, // unrestricted
+      { id: '2', title: 'S Only', sectionBuckets: ['S'] },
+      { id: '3', title: 'A Only', sectionBuckets: ['A'] }
+    ] as any[];
+
+    // Filter by empty/All
+    assert.strictEqual(filterPiecesBySectionBucket(pieces, '').length, 3);
+    
+    // Filter by S
+    const filteredS = filterPiecesBySectionBucket(pieces, 'S');
+    assert.strictEqual(filteredS.length, 2);
+    assert.ok(filteredS.find(p => p.id === '1'));
+    assert.ok(filteredS.find(p => p.id === '2'));
+    assert.ok(!filteredS.find(p => p.id === '3'));
+  });
+});
 
 test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
   const pieces = [{ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }] as unknown as MusicPiece[];
