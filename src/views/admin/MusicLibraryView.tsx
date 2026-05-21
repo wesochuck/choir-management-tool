@@ -914,6 +914,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     const [duration, setDuration] = useState('');
     const [copies, setCopies] = useState<string>('');
     const [catalogId, setCatalogId] = useState('');
+    const [sectionBuckets, setSectionBuckets] = useState<string[]>([]);
     const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -1011,6 +1012,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             setDuration(piece.duration || '');
             setCopies(piece.copies?.toString() || '');
             setCatalogId(piece.catalogId || '');
+            setSectionBuckets(piece.sectionBuckets || []);
             setSelectedPerformanceIds(piece.performances || []);
             setNotes(piece.notes || '');
             loadMovements();
@@ -1026,6 +1028,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             setDuration('');
             setCopies('');
             setCatalogId('');
+            setSectionBuckets([]);
             setSelectedPerformanceIds([]);
             setNotes('');
             setMovements([]);
@@ -1319,6 +1322,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                 voicing: localPiece.voicing || undefined,
                 copies: copies ? parseInt(copies, 10) : undefined,
                 catalogId: catalogId || undefined,
+                sectionBuckets: sectionBuckets,
                 performances: []
             });
             
@@ -1355,6 +1359,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                 duration: normalizedDuration || undefined,
                 copies: copies ? parseInt(copies, 10) : undefined,
                 catalogId,
+                sectionBuckets,
                 performances: selectedPerformanceIds,
                 notes,
                 tuttiFile: !piece ? tuttiFile : undefined,
@@ -1683,6 +1688,35 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card" style={{ padding: '12px', minHeight: '80px', resize: 'vertical' }} />
                             <span className="text-xs text-muted" style={{ marginTop: '2px' }}>
                                 If this is a medley, please list the names of the different pieces here.
+                            </span>
+                        </div>
+
+                        <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+                            <label className="text-label">Applies to Sections</label>
+                            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: 'var(--space-sm)', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                {sections.map(section => (
+                                    <label key={section.code} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={sectionBuckets.includes(section.code)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSectionBuckets(prev => [...prev, section.code]);
+                                                } else {
+                                                    setSectionBuckets(prev => prev.filter(code => code !== section.code));
+                                                }
+                                            }}
+                                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                                        />
+                                        <span className="text-sm">{section.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <span className="text-xs text-muted">
+                                {sectionBuckets.length === 0 
+                                    ? "Currently applies to all sections. Select one or more to restrict." 
+                                    : `Applies to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
+                                }
                             </span>
                         </div>
                         {!piece && (
