@@ -94,8 +94,10 @@ export default function MusicLibraryView() {
     try {
       let savedPiece: MusicPiece;
       if (editingPiece) {
-        const { tuttiFile, movements, ...rest } = data;
-        savedPiece = await musicLibraryService.updatePiece(editingPiece.id, rest);
+        const updateData = { ...data };
+        delete updateData.tuttiFile;
+        delete updateData.movements;
+        savedPiece = await musicLibraryService.updatePiece(editingPiece.id, updateData);
       } else {
         const { tuttiFile, movements, ...rest } = data;
         if (tuttiFile || (movements && movements.length > 0)) {

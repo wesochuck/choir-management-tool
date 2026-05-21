@@ -17,7 +17,7 @@
 [x] port over the music player, allowing for direct md5 links to playlist so people don't have to login.
 [ ] make better use of the set list space. more of it could be horizontal for things like the duration, etc.
 [x] think about how we could track dues payment.
-[ ] be able to specifiy the voice parts for music in the music library - like this song is for satb, ttbb singers, etc. ? 
+[x] be able to specifiy the voice parts for music in the music library - like this song is for satb, ttbb singers, etc. ? 
 [x] you should be able to specify multiple movements when adding something to library
 [x] you should be able to add a tutti track easily when adding something to library.
-[ ] make adding something from the library to the set list a first class experience. also when adding something to the set list for a performance it should then be added as linked performance for that piece automatically.
+[x] make adding something from the library to the set list a first class experience. also when adding something to the set list for a performance it should then be added as linked performance for that piece automatically.
