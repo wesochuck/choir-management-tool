@@ -2,7 +2,7 @@
 migrate((app) => {
   const collection = app.findCollectionByNameOrId("pbc_music_library_001");
   
-  collection.fields.push(new JsonField({
+  collection.fields.push(new JSONField({
     name: "sectionBuckets",
     required: false,
     presentable: false
