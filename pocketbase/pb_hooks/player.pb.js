@@ -29,7 +29,12 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
 });
 
 routerAdd("GET", "/api/player-playlist", (e) => {
-    const token = e.requestInfo().query.token;
+    let token = e.requestInfo().query.token;
+    const sParam = e.requestInfo().query.s;
+    if (token && sParam && !token.includes('s=')) {
+        token = `${token}&s=${sParam}`;
+    }
+
     if (!token) {
         return e.json(400, { error: "Missing token" });
     }
@@ -63,11 +68,23 @@ routerAdd("GET", "/api/player-playlist", (e) => {
 
     try {
         const event = $app.findRecordById("events", parts.e);
-        const setList = event.get("setList") || [];
+        const rawSetList = event.get("setList");
+        let setList = [];
+        if (rawSetList) {
+            try {
+                const str = typeof rawSetList === 'string' ? rawSetList : JSON.stringify(rawSetList);
+                setList = JSON.parse(str);
+            } catch (e) {
+                setList = [];
+            }
+        }
+        if (!Array.isArray(setList)) {
+            setList = [];
+        }
         
         // Fetch piece details for any linked pieces
         const pieceIds = setList
-            .filter(item => item.pieceId)
+            .filter(item => item && item.pieceId)
             .map(item => item.pieceId);
 
         let pieces = [];
@@ -85,14 +102,46 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                 // Ignore if no children found
             }
             
-            pieces = [...primaryPieces, ...childPieces];
+            const allPieces = [...primaryPieces, ...childPieces];
+            pieces = allPieces.map(p => {
+                const rawMapping = p.get("audioTrackMapping");
+                let mapping = {};
+                if (rawMapping) {
+                    try {
+                        const str = typeof rawMapping === 'string' ? rawMapping : JSON.stringify(rawMapping);
+                        mapping = JSON.parse(str);
+                    } catch (e) {
+                        mapping = {};
+                    }
+                }
+                return {
+                    id: p.id,
+                    parentId: p.get("parentId"),
+                    title: p.get("title"),
+                    composer: p.get("composer"),
+                    duration: p.get("duration"),
+                    created: p.get("created"),
+                    updated: p.get("updated"),
+                    audioTrackMapping: mapping,
+                    collectionId: p.collectionId(),
+                    collectionName: p.collectionName()
+                };
+            });
         }
 
         // Include voice parts configuration for the selector
         let voiceParts = [];
         try {
             const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
-            voiceParts = vpRecord.get("value").voiceParts || [];
+            const rawVal = vpRecord.get("value");
+            let parsedVal = null;
+            if (rawVal) {
+                const str = typeof rawVal === 'string' ? rawVal : JSON.stringify(rawVal);
+                parsedVal = JSON.parse(str);
+            }
+            if (parsedVal && parsedVal.voiceParts) {
+                voiceParts = parsedVal.voiceParts;
+            }
         } catch (e) {
             // Fallback to empty if not found
         }

@@ -40,7 +40,8 @@ function buildFilesFromPiece(
   piece: MusicPiece,
   allPieces: MusicPiece[]
 ): PlayerMediaFile[] {
-  const mapping = piece.audioTrackMapping || {};
+  const rawMapping = piece.audioTrackMapping || {};
+  const mapping: Record<string, string> = typeof rawMapping === 'string' ? JSON.parse(rawMapping) : rawMapping;
   const hasOwnTracks = Object.keys(mapping).length > 0;
 
   if (hasOwnTracks) {
@@ -68,7 +69,8 @@ function buildFilesFromPiece(
 
   const result: PlayerMediaFile[] = [];
   for (const m of movements) {
-    const mMapping = m.audioTrackMapping || {};
+    const rawMMapping = m.audioTrackMapping || {};
+    const mMapping: Record<string, string> = typeof rawMMapping === 'string' ? JSON.parse(rawMMapping) : rawMMapping;
     const mDefaultKey = mMapping['tutti'] ? 'tutti' : Object.keys(mMapping)[0];
     const mFilename = mMapping[mDefaultKey];
     if (!mFilename) continue;
@@ -94,12 +96,83 @@ export const playerService = {
       query: { token }
     });
 
-    const { event, setList, voiceParts, pieces } = response as {
+    const { event, setList: rawSetList, voiceParts: rawVoiceParts, pieces: rawPieces } = response as {
       event: { id: string; title: string; date: string };
-      setList: SetListItem[];
-      voiceParts: VoicePartDef[];
-      pieces: MusicPiece[];
+      setList: unknown;
+      voiceParts: unknown;
+      pieces: unknown;
     };
+
+    // Defensively parse/cast setList
+    let setList: SetListItem[] = [];
+    if (rawSetList) {
+      if (typeof rawSetList === 'string') {
+        try {
+          setList = JSON.parse(rawSetList);
+        } catch {
+          setList = [];
+        }
+      } else if (Array.isArray(rawSetList)) {
+        setList = rawSetList as SetListItem[];
+      }
+    }
+
+    // Defensively parse/cast voiceParts
+    let voiceParts: VoicePartDef[] = [];
+    if (rawVoiceParts) {
+      if (typeof rawVoiceParts === 'string') {
+        try {
+          voiceParts = JSON.parse(rawVoiceParts);
+        } catch {
+          voiceParts = [];
+        }
+      } else if (Array.isArray(rawVoiceParts)) {
+        voiceParts = rawVoiceParts as VoicePartDef[];
+      }
+    }
+
+    // Defensively parse/cast pieces
+    let pieces: MusicPiece[] = [];
+    if (rawPieces) {
+      let parsedPieces: unknown[] = [];
+      if (typeof rawPieces === 'string') {
+        try {
+          parsedPieces = JSON.parse(rawPieces);
+        } catch {
+          parsedPieces = [];
+        }
+      } else if (Array.isArray(rawPieces)) {
+        parsedPieces = rawPieces;
+      }
+
+      pieces = parsedPieces.map(item => {
+        const p = item as Record<string, unknown>;
+        let mapping: Record<string, string> = {};
+        if (p.audioTrackMapping) {
+          if (typeof p.audioTrackMapping === 'string') {
+            try {
+              mapping = JSON.parse(p.audioTrackMapping);
+            } catch {
+              mapping = {};
+            }
+          } else if (typeof p.audioTrackMapping === 'object' && p.audioTrackMapping !== null) {
+            mapping = p.audioTrackMapping as Record<string, string>;
+          }
+        }
+        return {
+          id: String(p.id || ''),
+          parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
+          title: String(p.title || ''),
+          composer: typeof p.composer === 'string' ? p.composer : undefined,
+          duration: typeof p.duration === 'string' ? p.duration : undefined,
+          created: typeof p.created === 'string' ? p.created : undefined,
+          updated: typeof p.updated === 'string' ? p.updated : undefined,
+          audioTrackMapping: mapping,
+          collectionId: typeof p.collectionId === 'string' ? p.collectionId : undefined,
+          collectionName: typeof p.collectionName === 'string' ? p.collectionName : undefined,
+        } as MusicPiece;
+      });
+    }
 
     const piecesMap = pieces.reduce((acc, p) => {
       acc[p.id] = p;
