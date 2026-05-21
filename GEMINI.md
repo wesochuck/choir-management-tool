@@ -8,8 +8,9 @@ These foundational mandates MUST be followed by all agents working on this codeb
 ## PocketBase & Data Integrity
 *   **Stable Migrations:** Always use explicit collection IDs (pattern: `pbc_name_001`) in JavaScript migrations. Never rely on automatically generated IDs or name-based resolution alone, as these can drift during development resets.
 *   **No Stray Files in pb_migrations:** The `pocketbase/pb_migrations` directory must ONLY contain standard JavaScript migration files (`.js`). Never place or commit utility, configuration, or declaration files (such as `types.d.ts`) in the migrations folder, as PocketBase will attempt to execute them and crash. Keep `types.d.ts` in the parent `pocketbase/` directory.
+*   **Correct Field Class Names:** In JavaScript migrations, always use correct SDK class names. Specifically, use all-uppercase `JSONField` (not `JsonField`) to define or append JSON fields in collection schemas to prevent ReferenceErrors at startup.
 *   **Schema First:** Every database change MUST be captured in a migration file immediately. Do not manually edit the database schema via the PocketBase UI without a corresponding migration.
-*   **Mandatory Verification:** After any database reset (`rm pb_data`) or migration update, the agent MUST run a diagnostic CURL cycle (Create/Read/Delete) using a fresh superuser token to verify permissions and field presence before reporting success.
+*   **Mandatory Verification:** After any local database reset (`rm pb_data` on a local instance only) or migration update, if a local server is running, the agent MUST run a diagnostic CURL cycle (Create/Read/Delete) using a fresh superuser token to verify permissions and field presence. Do not attempt this on the hosted/remote instance unless credentials are explicitly available.
 *   **Hook Callback Isolation:** PocketHost may execute JavaScript hook callbacks in a context where helper functions declared elsewhere in the same hook file are not resolvable. Keep `onRecordAfterCreateSuccess`, `onRecordAfterUpdateSuccess`, and similar registered callbacks self-contained, or verify the exact helper pattern on PocketHost before deploying.
 *   **Post-Commit Hook Failures:** An after-create/after-update hook can throw after the database write has committed, causing a client-visible HTTP 400 even though the record exists after refresh. On this symptom, inspect PocketHost logs for hook errors before changing frontend payloads, collection rules, or schema.
 *   **Defensive Advisory Hooks:** Any advisory hook must wrap the entire registered callback body in `try/catch`. Its logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
@@ -21,6 +22,11 @@ These foundational mandates MUST be followed by all agents working on this codeb
     *   *The Safe Pattern (Frontend):* In `src/services/` (e.g. `playerService.ts`), defensively decode raw numerical arrays into standard UTF-8 strings before attempting to `JSON.parse` or assign standard objects. Refer to `decodeGoBytes` and `parseJsonField` helpers.
 *   **Static Collection Metadata for Asset URLs:** When returning raw records or custom JSON payloads from custom backend endpoints (`routerAdd`), do not rely on JS VM dynamic mapping of `p.collectionId` or `p.collectionName` as they may evaluate to `null` or throw errors. Instead, return the known collection ID (e.g., `"pbc_music_library_001"`) and collection name (e.g., `"musicLibrary"`) explicitly so client-side `pb.files.getURL(...)` can construct correct URLs.
 
+## Hosted PocketBase Workflow
+*   **Required:** Add the corresponding migration script for database changes.
+*   **Required:** Run all project tests, linters, and typechecks (`npm run test`, `npm run lint`).
+*   **Not Required during unit tests:** Spawning a local PocketBase server. Unit tests run offline or mock PocketBase interactions.
+*   **Hosted Verification:** Only perform live database resets or administrative CURL cycles when superuser credentials and environment configuration are explicitly provided/available in the workspace. Never attempt to reset or modify a remote/hosted database directly.
 
 ## Token & URL Parameter Safety (Ampersand Issue Prevention)
 *   **Query Parameter Encoding:** When constructing sharing URLs or passing composite tokens via query parameters (e.g., for RSVP or Player links), ALWAYS use `encodeURIComponent(token)` to prevent the browser or HTTP clients from truncating or splitting tokens containing ampersands (`&`).
@@ -46,5 +52,5 @@ These foundational mandates MUST be followed by all agents working on this codeb
 ## Recurring Failure Prevention (MANDATORY)
 *   **Infrastructure Audit:** Every new agent MUST verify that `src/lib/pocketbase.ts` contains the `afterSend` interceptor for stale token resilience. If missing, implement it immediately before proceeding with any feature work.
 *   **Log Inspection:** On any "Failed to create/update record" error (HTTP 400), the agent MUST inspect `pb_debug.log` and check for `loadAuthToken failure`. Do NOT assume data validation errors until the server-side authentication load is confirmed successful.
-*   **Verification Cycle:** If the agent modifies migrations, they MUST perform a `curl` auth cycle as defined in "PocketBase & Data Integrity" to ensure the schema matches the frontend's expectations.
+*   **Verification Cycle:** If the agent modifies migrations locally, they MUST perform a `curl` auth cycle as defined in "PocketBase & Data Integrity" to ensure the schema matches expectations (if a local instance is running). Do not attempt on hosted/remote instances without credentials.
 *   **PocketHost Hook Verification:** If the agent modifies `pb_hooks`, they MUST deploy and restart/wake the PocketHost instance, then confirm the expected hook startup log appears before testing behavior.

@@ -26,6 +26,14 @@
 ## PocketBase Migration Safety
 
 - The `pocketbase/pb_migrations` directory must ONLY contain standard JavaScript migration files (`.js`). Never place or commit utility, configuration, or declaration files (such as `types.d.ts`) in the migrations folder, as PocketBase will attempt to execute them and crash. Keep `types.d.ts` in the parent `pocketbase/` directory.
+- Always use correct SDK class names in JavaScript migrations. Specifically, use all-uppercase `JSONField` (not `JsonField`) when defining or appending JSON fields in collection schemas, otherwise PocketBase will throw a ReferenceError at startup.
+
+## Hosted PocketBase Workflow
+
+- **Required:** Add the corresponding migration script for database changes.
+- **Required:** Run all project tests, linters, and typechecks (`npm run test`, `npm run lint`).
+- **Not Required during unit tests:** Spawning a local PocketBase server. Unit tests run offline or mock PocketBase interactions.
+- **Hosted Verification:** Only perform live database resets or administrative CURL cycles when superuser credentials and environment configuration are explicitly provided/available in the workspace. Never attempt to reset or modify a remote/hosted database directly.
 
 ## PocketBase JS SDK Usage
 
