@@ -72,11 +72,20 @@ routerAdd("GET", "/api/player-playlist", (e) => {
 
         let pieces = [];
         if (pieceIds.length > 0) {
-            // Find all pieces and their movements
-            // For simplicity in the hook, we'll return the pieces mapped by ID
-            // The frontend service will handle the final assembly
+            // Find all primary pieces
             const filterStr = pieceIds.map(id => `id = '${id}'`).join(" || ");
-            pieces = $app.findRecordsByFilter("musicLibrary", filterStr);
+            const primaryPieces = $app.findRecordsByFilter("musicLibrary", filterStr);
+            
+            // Find all child movements for these pieces
+            const parentFilterStr = pieceIds.map(id => `parentId = '${id}'`).join(" || ");
+            let childPieces = [];
+            try {
+                childPieces = $app.findRecordsByFilter("musicLibrary", parentFilterStr);
+            } catch (e) {
+                // Ignore if no children found
+            }
+            
+            pieces = [...primaryPieces, ...childPieces];
         }
 
         // Include voice parts configuration for the selector

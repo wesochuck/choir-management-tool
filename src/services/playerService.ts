@@ -91,18 +91,14 @@ export const playerService = {
       query: { token }
     });
 
-    const { event, setList, voiceParts } = response as {
+    const { event, setList, voiceParts, pieces } = response as {
       event: { id: string; title: string; date: string };
       setList: SetListItem[];
       voiceParts: VoicePartDef[];
+      pieces: MusicPiece[];
     };
 
-    // The hook only returns the pieces referenced in the setList (parent level).
-    // Fetch the full library so we can resolve child movements for pieces that
-    // carry no direct audioTrackMapping (i.e. multi-movement works).
-    const allPieces = await pb.collection('musicLibrary').getFullList<MusicPiece>();
-
-    const piecesMap = allPieces.reduce((acc, p) => {
+    const piecesMap = pieces.reduce((acc, p) => {
       acc[p.id] = p;
       return acc;
     }, {} as Record<string, MusicPiece>);
@@ -120,12 +116,12 @@ export const playerService = {
         item.composer,
         item.duration,
         piece,
-        allPieces
+        pieces // use pieces from the hook instead of fetching allPieces
       );
       files.push(...entries);
     }
 
-    return { event, files, voiceParts, allPieces };
+    return { event, files, voiceParts, allPieces: pieces };
   },
 
   async fetchPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {

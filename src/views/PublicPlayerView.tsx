@@ -81,7 +81,7 @@ export default function PublicPlayerView() {
     loadData();
   }, [loadData]);
 
-  const handleVoicePartChange = (part: string) => {
+  const handleVoicePartChange = async (part: string) => {
     setSelectedVoicePart(part);
     safeLocalStorage.setItem('player-voice-part', part);
 
@@ -91,7 +91,7 @@ export default function PublicPlayerView() {
       return acc;
     }, {} as Record<string, (typeof data.allPieces)[number]>);
 
-    setPlaylist(prev => prev.map(file => {
+    const updatedPlaylist = playlist.map(file => {
       if (!file.availableTracks || !file.pieceId) return file;
 
       const filename = file.availableTracks[part] || file.availableTracks['tutti'];
@@ -101,12 +101,29 @@ export default function PublicPlayerView() {
       if (!piece) return file;
 
       const trackKey = file.availableTracks[part] ? part : 'tutti';
+      
+      // We must regenerate the ID so the offline store knows this is a different track
+      // e.g. song1_soprano vs song1_alto
+      // We parse out the base ID (everything before the last underscore)
+      const baseIdParts = file.id.split('_');
+      baseIdParts.pop(); // remove old trackKey
+      const newId = `${baseIdParts.join('_')}_${trackKey}`;
+
       return {
         ...file,
+        id: newId,
         trackKey,
         streamUrl: pb.files.getURL(piece, filename),
+        // Crucial: clear offline status so it must be re-downloaded
+        isDownloaded: false,
+        offlineUrl: undefined,
+        downloadStatus: 'idle' as const
       };
-    }));
+    });
+    
+    // Re-hydrate to see if this new trackKey happens to already be downloaded
+    const hydrated = await hydrateOfflineStatus(updatedPlaylist);
+    setPlaylist(hydrated);
   };
 
   const handleDownload = async (track: PlayerMediaFile) => {
@@ -136,6 +153,10 @@ export default function PublicPlayerView() {
     const toDownload = playlist.filter(f => !f.isFolder && !f.isDownloaded);
     if (toDownload.length === 0) return;
     setIsDownloadingAll(true);
+    
+    // Track errors during the loop
+    const errorIds = new Set<string>();
+    
     for (const track of toDownload) {
       try {
         setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));
@@ -145,11 +166,15 @@ export default function PublicPlayerView() {
         });
       } catch (err) {
         console.error('Download failed for', track.name, err);
+        errorIds.add(track.id);
         setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'error' } : f));
       }
     }
+    
     const hydrated = await hydrateOfflineStatus(playlist);
-    setPlaylist(hydrated);
+    // Restore error states that hydration might have wiped out
+    const finalPlaylist = hydrated.map(f => errorIds.has(f.id) ? { ...f, downloadStatus: 'error' as const } : f);
+    setPlaylist(finalPlaylist);
     setIsDownloadingAll(false);
   };
 
