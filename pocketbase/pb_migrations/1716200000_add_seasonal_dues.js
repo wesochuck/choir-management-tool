@@ -6,37 +6,30 @@ migrate((app) => {
     name: "seasonalDues",
     type: "base",
     fields: [
-      {
+      new TextField({
         name: "id",
-        type: "text",
         primaryKey: true,
         required: true,
         system: true,
         pattern: "^[a-z0-9]+$"
-      },
-      {
+      }),
+      new RelationField({
         name: "profile",
-        type: "relation",
         required: true,
         presentable: false,
-        options: {
-          collectionId: "pbc_3414089001", // profiles collection
-          cascadeDelete: true,
-          minSelect: null,
-          maxSelect: 1,
-          displayFields: null
-        }
-      },
-      {
+        collectionId: "pbc_3414089001",
+        cascadeDelete: true,
+        minSelect: 0,
+        maxSelect: 1
+      }),
+      new TextField({
         name: "season",
-        type: "text",
         required: true
-      },
-      {
+      }),
+      new BoolField({
         name: "paid",
-        type: "bool",
         required: false
-      }
+      })
     ],
     listRule: "@request.auth.role = 'admin'",
     viewRule: "@request.auth.role = 'admin'",
