@@ -5,7 +5,7 @@ type DialogVariant = 'info' | 'danger' | 'warning';
 
 interface MessageOptions {
   title: string;
-  message: string;
+  message: string | React.ReactNode;
   confirmLabel?: string;
   variant?: DialogVariant;
 }
@@ -90,9 +90,9 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
           )
         }
       >
-        <p className="text-body" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+        <div className="text-body" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
           {activeDialog?.options.message}
-        </p>
+        </div>
       </BaseModal>
     </DialogContext.Provider>
   );

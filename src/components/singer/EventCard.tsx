@@ -8,7 +8,6 @@ import { AppCard } from '../common/AppCard';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { resolveRecommendedTracks } from '../../lib/musicPieceUtils';
 import { pb } from '../../lib/pocketbase';
-import { playerService } from '../../services/playerService';
 
 interface EventCardProps {
   event: Event;

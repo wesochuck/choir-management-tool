@@ -214,7 +214,7 @@ export async function removeOfflineTrack(trackId: string): Promise<void> {
   });
 }
 
-export async function listDownloadedTrackIds(): Set<string> | Promise<Set<string>> {
+export async function listDownloadedTrackIds(): Promise<Set<string>> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_TRACKS, 'readonly');
@@ -227,6 +227,29 @@ export async function listDownloadedTrackIds(): Set<string> | Promise<Set<string
     };
     request.onerror = () => reject(request.error);
   });
+}
+
+export async function hydrateOfflineStatus(files: PlayerMediaFile[]): Promise<PlayerMediaFile[]> {
+  try {
+    const downloadedIds = await listDownloadedTrackIds();
+    const hydrated: PlayerMediaFile[] = [];
+    
+    for (const file of files) {
+      const isDownloaded = downloadedIds.has(file.id);
+      const offlineUrl = isDownloaded ? (await getOfflineTrackUrl(file.id) || undefined) : undefined;
+      
+      hydrated.push({
+        ...file,
+        isDownloaded,
+        offlineUrl,
+        downloadStatus: isDownloaded ? 'downloaded' : 'idle',
+      });
+    }
+    return hydrated;
+  } catch (err) {
+    console.error('Failed to hydrate offline status:', err);
+    return files;
+  }
 }
 
 export async function getOfflineStorageSummary(): Promise<{
