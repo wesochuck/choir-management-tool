@@ -35,6 +35,47 @@ export default function PublicPlayerView() {
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
+  // Helper to map tracks to the targeted voice part or fallback to tutti
+  const mapPlaylistToVoicePart = useCallback((
+    rawFiles: PlayerMediaFile[], 
+    part: string, 
+    allPieces: any[]
+  ) => {
+    const piecesMap = allPieces.reduce((acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    }, {} as Record<string, any>);
+
+    return rawFiles.map(file => {
+      if (!file.availableTracks || !file.pieceId) return file;
+
+      const trackKey = file.availableTracks[part] ? part : 'tutti';
+      const actualFilename = file.availableTracks[part] || file.availableTracks['tutti'];
+
+      if (!actualFilename) return file;
+
+      const piece = piecesMap[file.pieceId];
+      if (!piece) return file;
+      
+      const baseIdParts = file.id.split('_');
+      // If it doesn't have an underscore suffix yet, keep the full parts array
+      if (baseIdParts.length > 1) {
+        baseIdParts.pop(); 
+      }
+      const newId = `${baseIdParts.join('_')}_${trackKey}`;
+
+      return {
+        ...file,
+        id: newId,
+        trackKey,
+        streamUrl: pb.files.getURL(piece, actualFilename),
+        isDownloaded: false,
+        offlineUrl: undefined,
+        downloadStatus: 'idle' as const
+      };
+    });
+  }, []);
+
   const loadData = useCallback(async () => {
     if (!token && !eventId) {
       setError('Missing player token or event ID.');
@@ -48,34 +89,34 @@ export default function PublicPlayerView() {
       
       if (token) {
         result = await playerService.fetchPlaylistByToken(token);
-        // Cache offline by token
         await savePlaylistOffline(token, result.files);
       } else {
         result = await playerService.fetchPlaylistByEventId(eventId);
-        // Cache offline by eventId
         await savePlaylistOffline(eventId, result.files);
       }
 
       setData(result);
       
-      // Hydrate with offline status
-      const hydrated = await hydrateOfflineStatus(result.files);
+      // Apply the persistent voice part mapping directly to the incoming tracks
+      const targetedTracks = mapPlaylistToVoicePart(result.files, selectedVoicePart, result.allPieces);
+      const hydrated = await hydrateOfflineStatus(targetedTracks);
+      
       setPlaylist(hydrated);
       setIsLoading(false);
     } catch (err) {
       console.error('Failed to load playlist', err);
-      // Try offline fallback
       const key = token || eventId;
       const cached = await getOfflinePlaylist(key);
       if (cached) {
-        setPlaylist(await hydrateOfflineStatus(cached));
+        const targetedTracks = mapPlaylistToVoicePart(cached, selectedVoicePart, data?.allPieces || []);
+        setPlaylist(await hydrateOfflineStatus(targetedTracks));
         setIsLoading(false);
       } else {
         setError('Failed to load playlist. Please check your link.');
         setIsLoading(false);
       }
     }
-  }, [token, eventId]);
+  }, [token, eventId, selectedVoicePart, mapPlaylistToVoicePart, data?.allPieces]);
 
   useEffect(() => {
     loadData();
@@ -86,42 +127,9 @@ export default function PublicPlayerView() {
     safeLocalStorage.setItem('player-voice-part', part);
 
     if (!data) return;
-    const piecesMap = data.allPieces.reduce((acc, p) => {
-      acc[p.id] = p;
-      return acc;
-    }, {} as Record<string, (typeof data.allPieces)[number]>);
-
-    const updatedPlaylist = playlist.map(file => {
-      if (!file.availableTracks || !file.pieceId) return file;
-
-      const trackKey = file.availableTracks[part] ? part : 'tutti';
-      const actualFilename = file.availableTracks[part] || file.availableTracks['tutti'];
-
-      if (!actualFilename) return file;
-
-      const piece = piecesMap[file.pieceId];
-      if (!piece) return file;
-      
-      // We must regenerate the ID so the offline store knows this is a different track
-      // e.g. song1_soprano vs song1_alto
-      // We parse out the base ID (everything before the last underscore)
-      const baseIdParts = file.id.split('_');
-      baseIdParts.pop(); // remove old trackKey
-      const newId = `${baseIdParts.join('_')}_${trackKey}`;
-
-      return {
-        ...file,
-        id: newId,
-        trackKey,
-        streamUrl: pb.files.getURL(piece, actualFilename),
-        // Crucial: clear offline status so it must be re-downloaded
-        isDownloaded: false,
-        offlineUrl: undefined,
-        downloadStatus: 'idle' as const
-      };
-    });
     
-    // Re-hydrate to see if this new trackKey happens to already be downloaded
+    // Remap current tracks using the new part selection
+    const updatedPlaylist = mapPlaylistToVoicePart(playlist, part, data.allPieces);
     const hydrated = await hydrateOfflineStatus(updatedPlaylist);
     setPlaylist(hydrated);
   };
@@ -154,7 +162,6 @@ export default function PublicPlayerView() {
     if (toDownload.length === 0) return;
     setIsDownloadingAll(true);
     
-    // Track errors during the loop
     const errorIds = new Set<string>();
     
     for (const track of toDownload) {
@@ -172,7 +179,6 @@ export default function PublicPlayerView() {
     }
     
     const hydrated = await hydrateOfflineStatus(playlist);
-    // Restore error states that hydration might have wiped out
     const finalPlaylist = hydrated.map(f => errorIds.has(f.id) ? { ...f, downloadStatus: 'error' as const } : f);
     setPlaylist(finalPlaylist);
     setIsDownloadingAll(false);
