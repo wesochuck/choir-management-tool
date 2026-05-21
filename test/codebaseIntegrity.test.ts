@@ -1,0 +1,186 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Reusable recursive file scanner
+function getFilesRecursively(dir: string, extensions: string[]): string[] {
+  const results: string[] = [];
+  if (!fs.existsSync(dir)) return results;
+  const list = fs.readdirSync(dir);
+  for (const file of list) {
+    const filePath = path.resolve(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) {
+      results.push(...getFilesRecursively(filePath, extensions));
+    } else if (extensions.some(ext => file.endsWith(ext))) {
+      results.push(filePath);
+    }
+  }
+  return results;
+}
+
+test('codebase integrity: no deprecated pb.files.getUrl calls allowed', () => {
+  const srcDir = path.resolve(import.meta.dirname || __dirname || '.', '../src');
+  const files = getFilesRecursively(srcDir, ['.ts', '.tsx', '.js', '.jsx']);
+
+  const violations: string[] = [];
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    if (content.includes('pb.files.getUrl(')) {
+      const relPath = path.relative(srcDir, file);
+      violations.push(`src/${relPath}`);
+    }
+  }
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found deprecated 'pb.files.getUrl' usage in files:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nAlways use standard 'pb.files.getURL' (uppercase 'URL') to prevent breaking file asset generation.`
+    );
+  }
+  assert.ok(true, 'No deprecated getUrl calls found');
+});
+
+test('codebase integrity: enforce pb.filter parameterization rules', () => {
+  const srcDir = path.resolve(import.meta.dirname || __dirname || '.', '../src');
+  const files = getFilesRecursively(srcDir, ['.ts', '.tsx']);
+
+  const violations: string[] = [];
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+
+    lines.forEach((line, idx) => {
+      // Look for lines containing filter: option
+      if (line.includes('filter:') && !line.includes('pb.filter')) {
+        // Enforce that filter string does not use template literal string interpolation or string concatenations
+        const lineTrimmed = line.trim();
+        const hasTemplateInterpolation = lineTrimmed.includes('`') && lineTrimmed.includes('${');
+        const hasStringConcatenation = lineTrimmed.includes('+') && !lineTrimmed.includes("'") && !lineTrimmed.includes('"');
+        
+        if (hasTemplateInterpolation || hasStringConcatenation) {
+          const relPath = path.relative(srcDir, file);
+          violations.push(`src/${relPath}:${idx + 1} -> "${lineTrimmed}"`);
+        }
+      }
+    });
+  }
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found raw dynamic string concatenation or template interpolation in PocketBase filters:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nAlways use 'pb.filter(...)' to parameterized and construct query filters safely. Never interpolate variables directly.`
+    );
+  }
+  assert.ok(true, 'All PocketBase query filters are safe and parameterized');
+});
+
+test('defensive parsing: reconstruct token split by unencoded ampersands', () => {
+  // Reusable token reconstruction logic matching frontend behavior
+  const reconstructToken = (token: string, sParam: string | null, pParam: string | null): string => {
+    let result = token;
+    if (result) {
+      if (pParam && sParam && !result.includes('p=')) {
+        result = `${result}&p=${pParam}&s=${sParam}`;
+      } else if (sParam && !result.includes('s=')) {
+        result = `${result}&s=${sParam}`;
+      }
+    }
+    return result;
+  };
+
+  // 1. Normal unencoded ampersand split token (e.g. user clicked raw copy-paste link)
+  // URL: /player?token=e=event123&s=sig456
+  // browser parses as:
+  // token: 'e=event123'
+  // s: 'sig456'
+  const reconstructedPlayerToken = reconstructToken('e=event123', 'sig456', null);
+  assert.strictEqual(reconstructedPlayerToken, 'e=event123&s=sig456', 'Should reconstruct split player token');
+
+  // 2. RSVP split token:
+  // URL: /rsvp?token=e=event123&p=prof789&s=sig456
+  // browser parses as:
+  // token: 'e=event123'
+  // p: 'prof789'
+  // s: 'sig456'
+  const reconstructedRsvpToken = reconstructToken('e=event123', 'sig456', 'prof789');
+  assert.strictEqual(reconstructedRsvpToken, 'e=event123&p=prof789&s=sig456', 'Should reconstruct split RSVP token');
+
+  // 3. Fully encoded standard token (reconstructed should NOT duplicate params)
+  // URL: /player?token=e%3Devent123%26s%3Dsig456
+  // browser parses as:
+  // token: 'e=event123&s=sig456'
+  // s: null (since it was inside the encoded parameter)
+  const encodedToken = 'e=event123&s=sig456';
+  const reconstructedEncoded = reconstructToken(encodedToken, null, null);
+  assert.strictEqual(reconstructedEncoded, 'e=event123&s=sig456', 'Should leave already complete token intact');
+});
+
+test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte arrays', () => {
+  // Decoding helpers matching playerService.ts
+  function decodeGoBytes(val: unknown): string {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) {
+      if (val.length > 0 && typeof val[0] === 'number') {
+        try {
+          return val.map(b => String.fromCharCode(Number(b))).join('');
+        } catch {
+          return '';
+        }
+      }
+    }
+    return '';
+  }
+
+  function parseJsonField<T>(val: unknown): T | null {
+    if (!val) return null;
+    if (typeof val === 'object' && !Array.isArray(val)) {
+      return val as T;
+    }
+    const str = decodeGoBytes(val);
+    if (!str) {
+      if (Array.isArray(val)) {
+        return val as unknown as T;
+      }
+      return null;
+    }
+    try {
+      return JSON.parse(str) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  // 1. Standard parsed object input
+  const objInput = { foo: 'bar' };
+  assert.deepStrictEqual(parseJsonField<typeof objInput>(objInput), objInput, 'Should return object intact');
+
+  // 2. Stringified JSON string input
+  const stringInput = JSON.stringify({ key: 'val' });
+  assert.deepStrictEqual(parseJsonField<Record<string, string>>(stringInput), { key: 'val' }, 'Should parse JSON string');
+
+  // 3. Goja numerical byte array input
+  const sourceObj = { id: 'm1', tracks: ['t1', 't2'] };
+  const sourceStr = JSON.stringify(sourceObj);
+  const bytesInput = Array.from(sourceStr).map(c => c.charCodeAt(0));
+  
+  // Verify bytesInput is indeed a list of ASCII char numbers
+  assert.ok(Array.isArray(bytesInput));
+  assert.strictEqual(typeof bytesInput[0], 'number');
+
+  const decodedString = decodeGoBytes(bytesInput);
+  assert.strictEqual(decodedString, sourceStr, 'Should reconstruct matching string from bytes');
+
+  const parsedObject = parseJsonField<typeof sourceObj>(bytesInput);
+  assert.deepStrictEqual(parsedObject, sourceObj, 'Should decode and parse Goja bytes successfully');
+
+  // 4. Invalid input handling
+  assert.strictEqual(parseJsonField(null), null);
+  assert.strictEqual(parseJsonField(undefined), null);
+  assert.strictEqual(parseJsonField('not-a-json-string'), null);
+  assert.strictEqual(parseJsonField([1, 2, 3, 'not-a-byte']), null);
+});

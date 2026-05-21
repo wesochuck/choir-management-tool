@@ -120,6 +120,40 @@ function buildFilesFromPiece(
   return result;
 }
 
+function decodeGoBytes(val: unknown): string {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) {
+    if (val.length > 0 && typeof val[0] === 'number') {
+      try {
+        return val.map(b => String.fromCharCode(Number(b))).join('');
+      } catch {
+        return '';
+      }
+    }
+  }
+  return '';
+}
+
+function parseJsonField<T>(val: unknown): T | null {
+  if (!val) return null;
+  if (typeof val === 'object' && !Array.isArray(val)) {
+    return val as T;
+  }
+  const str = decodeGoBytes(val);
+  if (!str) {
+    if (Array.isArray(val)) {
+      return val as unknown as T;
+    }
+    return null;
+  }
+  try {
+    return JSON.parse(str) as T;
+  } catch {
+    return null;
+  }
+}
+
 export const playerService = {
   async fetchPlaylistByToken(token: string): Promise<PlayerPlaylist> {
     const response = await pb.send('/api/player-playlist', {
@@ -134,59 +168,28 @@ export const playerService = {
     };
 
     // Defensively parse/cast setList
-    let setList: SetListItem[] = [];
-    if (rawSetList) {
-      if (typeof rawSetList === 'string') {
-        try {
-          setList = JSON.parse(rawSetList);
-        } catch {
-          setList = [];
-        }
-      } else if (Array.isArray(rawSetList)) {
-        setList = rawSetList as SetListItem[];
-      }
+    let setList: SetListItem[] = parseJsonField<SetListItem[]>(rawSetList) || [];
+    if (!Array.isArray(setList)) {
+      setList = [];
     }
 
     // Defensively parse/cast voiceParts
-    let voiceParts: VoicePartDef[] = [];
-    if (rawVoiceParts) {
-      if (typeof rawVoiceParts === 'string') {
-        try {
-          voiceParts = JSON.parse(rawVoiceParts);
-        } catch {
-          voiceParts = [];
-        }
-      } else if (Array.isArray(rawVoiceParts)) {
-        voiceParts = rawVoiceParts as VoicePartDef[];
-      }
+    let voiceParts: VoicePartDef[] = parseJsonField<VoicePartDef[]>(rawVoiceParts) || [];
+    if (!Array.isArray(voiceParts)) {
+      voiceParts = [];
     }
 
     // Defensively parse/cast pieces
+    const rawPiecesList = parseJsonField<unknown[]>(rawPieces) || [];
     let pieces: MusicPiece[] = [];
-    if (rawPieces) {
-      let parsedPieces: unknown[] = [];
-      if (typeof rawPieces === 'string') {
-        try {
-          parsedPieces = JSON.parse(rawPieces);
-        } catch {
-          parsedPieces = [];
-        }
-      } else if (Array.isArray(rawPieces)) {
-        parsedPieces = rawPieces;
-      }
-
-      pieces = parsedPieces.map(item => {
+    if (Array.isArray(rawPiecesList)) {
+      pieces = rawPiecesList.map(item => {
         const p = item as Record<string, unknown>;
         let mapping: Record<string, string> = {};
         if (p.audioTrackMapping) {
-          if (typeof p.audioTrackMapping === 'string') {
-            try {
-              mapping = JSON.parse(p.audioTrackMapping);
-            } catch {
-              mapping = {};
-            }
-          } else if (typeof p.audioTrackMapping === 'object' && p.audioTrackMapping !== null) {
-            mapping = p.audioTrackMapping as Record<string, string>;
+          const parsedMapping = parseJsonField<Record<string, string>>(p.audioTrackMapping);
+          if (parsedMapping && typeof parsedMapping === 'object') {
+            mapping = parsedMapping;
           }
         }
         return {

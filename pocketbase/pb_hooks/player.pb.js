@@ -1,4 +1,35 @@
-// Audio Player Standalone Hooks
+// Helper to safely convert Go byte slices (which Goja maps as array-like objects of numbers) to JS strings
+function decodeGoBytes(val) {
+    if (!val) return "";
+    if (typeof val === 'string') return val;
+    try {
+        if (typeof val === 'object') {
+            let str = "";
+            const len = val.length;
+            if (typeof len === 'number') {
+                for (let i = 0; i < len; i++) {
+                    str += String.fromCharCode(val[i]);
+                }
+                return str;
+            }
+        }
+    } catch (e) {
+        // ignore
+    }
+    return JSON.stringify(val);
+}
+
+// Safely parse JSON columns
+function parseJsonField(val) {
+    if (!val) return null;
+    const str = decodeGoBytes(val);
+    if (!str) return null;
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        return null;
+    }
+}
 
 routerAdd("POST", "/api/generate-player-token", (e) => {
     const authRecord = e.auth;
@@ -69,15 +100,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     try {
         const event = $app.findRecordById("events", parts.e);
         const rawSetList = event.get("setList");
-        let setList = [];
-        if (rawSetList) {
-            try {
-                const str = typeof rawSetList === 'string' ? rawSetList : JSON.stringify(rawSetList);
-                setList = JSON.parse(str);
-            } catch (e) {
-                setList = [];
-            }
-        }
+        let setList = parseJsonField(rawSetList);
         if (!Array.isArray(setList)) {
             setList = [];
         }
@@ -88,14 +111,9 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
             pieces = allPieces.map(p => {
                 const rawMapping = p.get("audioTrackMapping");
-                let mapping = {};
-                if (rawMapping) {
-                    try {
-                        const str = typeof rawMapping === 'string' ? rawMapping : JSON.stringify(rawMapping);
-                        mapping = JSON.parse(str);
-                    } catch (e) {
-                        mapping = {};
-                    }
+                let mapping = parseJsonField(rawMapping);
+                if (!mapping || typeof mapping !== 'object') {
+                    mapping = {};
                 }
                 return {
                     id: p.id,
@@ -106,8 +124,8 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                     created: p.get("created"),
                     updated: p.get("updated"),
                     audioTrackMapping: mapping,
-                    collectionId: p.collectionId,
-                    collectionName: p.collectionName
+                    collectionId: "pbc_music_library_001",
+                    collectionName: "musicLibrary"
                 };
             });
         } catch (err) {
@@ -119,11 +137,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         try {
             const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
             const rawVal = vpRecord.get("value");
-            let parsedVal = null;
-            if (rawVal) {
-                const str = typeof rawVal === 'string' ? rawVal : JSON.stringify(rawVal);
-                parsedVal = JSON.parse(str);
-            }
+            const parsedVal = parseJsonField(rawVal);
             if (parsedVal && parsedVal.voiceParts) {
                 voiceParts = parsedVal.voiceParts;
             }

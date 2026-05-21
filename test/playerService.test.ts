@@ -332,5 +332,41 @@ describe('playerService', () => {
       assert.strictEqual(result.files[0].pieceId, 'movement1');
       assert.strictEqual(result.files[0].trackKey, 'tutti');
     });
+
+    it('defensively decodes and parses Goja-style byte arrays (arrays of numbers) for JSON fields', async () => {
+      const encodeToBytes = (str: string): number[] => {
+        return Array.from(str).map(c => c.charCodeAt(0));
+      };
+
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: encodeToBytes(JSON.stringify([
+            { id: 'item1', type: 'piece', pieceId: 'piece1', title: 'Song 1' }
+          ])),
+          voiceParts: encodeToBytes(JSON.stringify([
+            { label: 'Soprano', sectionBucketId: 'S' }
+          ])),
+          pieces: encodeToBytes(JSON.stringify([
+            {
+              id: 'piece1',
+              title: 'Song 1',
+              audioTrackMapping: encodeToBytes(JSON.stringify({ tutti: 'tutti.mp3' })),
+              collectionName: 'musicLibrary'
+            }
+          ]))
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+
+      assert.strictEqual(result.event.id, 'evt1');
+      assert.strictEqual(result.voiceParts.length, 1);
+      assert.strictEqual(result.voiceParts[0].label, 'Soprano');
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(result.files[0].name, 'Song 1');
+      assert.strictEqual(result.files[0].trackKey, 'tutti');
+      assert.strictEqual(result.files[0].availableTracks?.tutti, 'tutti.mp3');
+    });
   });
 });

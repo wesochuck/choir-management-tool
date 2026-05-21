@@ -37,3 +37,28 @@
 - **Query Parameter Encoding:** When constructing URLs with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)` to prevent query parameter splitting/truncation.
 - **Defensive Parsing Fallback:** When parsing composite tokens from URL parameters, always check if the token was split by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls.
 
+## PocketBase JS VM (Goja) JSON Field & File URL Safety
+
+- **Goja VM JSON Column []byte Serialization Bug:** PocketBase Goja JS VM handles JSON database columns as raw Go `[]byte` (represented in Javascript hooks as a numerical `[]uint8` array of character codes) rather than strings or standard JS objects.
+  - *The Failure Mode:* Running `JSON.stringify` or raw conversion directly on a byte slice in Goja produces a JSON array of the character numbers (e.g. `[91, 123, 34...]` instead of `"[{\"id\"..."`). This structural mismatch causes client-side parse errors or blank outputs.
+  - *The Safe Pattern (Backend):* In `pb_hooks/`, always decode the raw bytes using a string conversion helper (e.g. `String.fromCharCode`) or cast appropriately before standard parsing or returning in custom HTTP endpoints.
+  - *The Safe Pattern (Frontend):* In `src/services/` (e.g. `playerService.ts`), defensively decode raw numerical arrays into standard UTF-8 strings before attempting to `JSON.parse` or assign standard objects.
+  - *The Safe Helper:* Use a robust parser like:
+    ```typescript
+    function decodeGoBytes(val: unknown): string {
+      if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+        return val.map(b => String.fromCharCode(Number(b))).join('');
+      }
+      return typeof val === 'string' ? val : '';
+    }
+    ```
+
+- **Dynamic collectionId Resolution inside Custom Endpoints:** Do not rely on dynamic evaluation of collection properties like `p.collectionId` or `p.collectionName` on raw records returned inside custom router additions (`routerAdd`), as Goja record wrappers or raw DB rows can lose these properties or evaluate to `null`.
+  - *The Failure Mode:* Generating asset URLs on the client via `pb.files.getURL(record, filename)` will fail or construct invalid paths (e.g. `https://.../api/files/undefined/filename`) if `collectionId`/`collectionName` are missing or `undefined` in the serialized payload.
+  - *The Safe Pattern:* Explicitly attach the known, hardcoded Collection ID (e.g. `"pbc_music_library_001"`) and Collection Name (e.g. `"musicLibrary"`) to the JSON output returned by custom endpoints, and ensure they are populated in the frontend model interface to guarantee correct absolute/relative URL construction.
+
+- **Token & URL Parameter Safety (Ampersand Prevention & Fallback):**
+  - *Encoding:* When generating links with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)`.
+  - *Fallback Decoding:* When parsing from URL parameters on the frontend, check if the browser split the token by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls. Refer to [PublicPlayerView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicPlayerView.tsx) and [PublicRsvpView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicRsvpView.tsx).
+
+
