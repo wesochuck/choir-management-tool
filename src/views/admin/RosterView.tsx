@@ -9,10 +9,11 @@ import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
 import { getVoiceParts, settingsService } from '../../services/settingsService';
 import { getLastName } from '../../lib/stringUtils';
-
+import { useDues } from '../../hooks/useDues';
 
 export default function RosterView() {
   const { profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
+  const { currentSeason, duesMap, toggleDues } = useDues();
   const [searchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -429,7 +430,14 @@ export default function RosterView() {
         )}
       </div>
 
-      <RosterTable profiles={sortedProfiles} onEdit={handleEdit} onPhotoChange={refresh} />
+      <RosterTable 
+        profiles={sortedProfiles} 
+        onEdit={handleEdit} 
+        onPhotoChange={refresh} 
+        currentSeason={currentSeason}
+        duesMap={duesMap}
+        onToggleDues={toggleDues}
+      />
 
       <SingerModal 
         isOpen={isModalOpen} 

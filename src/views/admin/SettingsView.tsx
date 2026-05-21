@@ -186,6 +186,23 @@ export default function SettingsView() {
         </div>
       </AppCard>
 
+      <AppCard title="Season Management">
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Current Season</label>
+          <input
+            type="text"
+            value={rosterSettings.currentSeason || ''}
+            onChange={(event) => setRosterSettings({ ...rosterSettings, currentSeason: event.target.value })}
+            placeholder="e.g. Fall 2026"
+            className="card"
+            style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          />
+          <p className="text-muted" style={{ margin: 0 }}>
+            Set the active season for tracking dues in the roster view. Leave blank to disable dues tracking.
+          </p>
+        </div>
+      </AppCard>
+
       <AppCard title="Music Library Settings">
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <label className="text-label">Catalog Lookup URL Template</label>

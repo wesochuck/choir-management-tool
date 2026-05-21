@@ -37,6 +37,7 @@ export interface RosterSettings {
   defaultStatus: string;
   defaultSort: 'lastName' | 'voicePart';
   defaultRsvpSort?: 'lastName' | 'voicePart';
+  currentSeason?: string;
 }
 
 export interface MusicLibrarySettings {
@@ -130,6 +131,7 @@ export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultStatus: '',
   defaultSort: 'lastName',
   defaultRsvpSort: 'lastName',
+  currentSeason: '',
 };
 
 export const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
