@@ -268,5 +268,69 @@ describe('playerService', () => {
       assert.strictEqual(result.files.length, 1);
       assert.strictEqual(result.files[0].name, 'Song 1');
     });
+
+    it('falls back to matching by set list title when pieceId is missing', async () => {
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: [
+            { id: 'item1', type: 'song', pieceId: '', title: 'Four Freedoms 𝄞' }
+          ],
+          voiceParts: [],
+          pieces: [
+            {
+              id: 'parent1',
+              title: 'Four Freedoms',
+              audioTrackMapping: {},
+              collectionName: 'musicLibrary'
+            },
+            {
+              id: 'movement1',
+              parentId: 'parent1',
+              title: 'Movement 1',
+              audioTrackMapping: { tutti: 'mvt1.mp3' },
+              collectionName: 'musicLibrary'
+            }
+          ]
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(result.files[0].pieceId, 'movement1');
+      assert.strictEqual(result.files[0].trackKey, 'tutti');
+    });
+
+    it('falls back to matching by set list title when pieceId points to deleted piece', async () => {
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: [
+            { id: 'item1', type: 'song', pieceId: 'missing-piece-id', title: 'Four Freedoms' }
+          ],
+          voiceParts: [],
+          pieces: [
+            {
+              id: 'parent1',
+              title: 'Four Freedoms',
+              audioTrackMapping: {},
+              collectionName: 'musicLibrary'
+            },
+            {
+              id: 'movement1',
+              parentId: 'parent1',
+              title: 'Movement 1',
+              audioTrackMapping: { tutti: 'mvt1.mp3' },
+              collectionName: 'musicLibrary'
+            }
+          ]
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(result.files[0].pieceId, 'movement1');
+      assert.strictEqual(result.files[0].trackKey, 'tutti');
+    });
   });
 });

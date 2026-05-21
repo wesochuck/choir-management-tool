@@ -31,6 +31,36 @@ export interface PlayerPlaylist {
   allPieces: MusicPiece[];
 }
 
+function normalizeSetListTitle(title: string | undefined): string {
+  if (!title) return '';
+  return title
+    .toLowerCase()
+    .replace(/[♪♫♬♩𝄞]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolvePieceForSetListItem(
+  item: SetListItem,
+  piecesMap: Record<string, MusicPiece>,
+  allPieces: MusicPiece[]
+): MusicPiece | null {
+  if (item.pieceId) {
+    const linkedPiece = piecesMap[item.pieceId];
+    if (linkedPiece) return linkedPiece;
+  }
+
+  const normalizedTitle = normalizeSetListTitle(item.title);
+  if (!normalizedTitle) return null;
+
+  const topLevelMatch = allPieces.find(
+    p => !p.parentId && normalizeSetListTitle(p.title) === normalizedTitle
+  );
+  if (topLevelMatch) return topLevelMatch;
+
+  return allPieces.find(p => normalizeSetListTitle(p.title) === normalizedTitle) || null;
+}
+
 /** Build PlayerMediaFile entries from a single piece (or its movements if it's a parent). */
 function buildFilesFromPiece(
   itemId: string,
@@ -183,7 +213,7 @@ export const playerService = {
 
     for (const item of setList) {
       if (item.type === 'intermission') continue;
-      const piece = item.pieceId ? piecesMap[item.pieceId] : null;
+      const piece = resolvePieceForSetListItem(item, piecesMap, pieces);
       if (!piece) continue;
 
       const entries = buildFilesFromPiece(
@@ -218,7 +248,7 @@ export const playerService = {
 
     for (const item of setList) {
       if (item.type === 'intermission') continue;
-      const piece = item.pieceId ? piecesMap[item.pieceId] : null;
+      const piece = resolvePieceForSetListItem(item, piecesMap, allPieces);
       if (!piece) continue;
 
       const entries = buildFilesFromPiece(
