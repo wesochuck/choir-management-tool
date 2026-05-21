@@ -74,12 +74,41 @@ describe('playerService', () => {
       assert.strictEqual(result[0].isDownloaded, false);
     });
 
+    it('maps voice part case-insensitively', () => {
+      const result = playerService.applyVoicePartToFiles(initialFiles, 'SOPRANO', mockPieces);
+      
+      assert.strictEqual(result[0].id, 'item1_soprano');
+      assert.strictEqual(result[0].trackKey, 'soprano');
+      assert.strictEqual(result[0].streamUrl, 'https://pb.com/api/files/musicLibrary/piece1/s.mp3');
+    });
+
     it('falls back to tutti when part is missing', () => {
       const result = playerService.applyVoicePartToFiles(initialFiles, 'tenor', mockPieces);
       
       assert.strictEqual(result[0].id, 'item1_tutti');
       assert.strictEqual(result[0].trackKey, 'tutti');
       assert.strictEqual(result[0].streamUrl, 'https://pb.com/api/files/musicLibrary/piece1/tutti.mp3');
+    });
+
+    it('falls back to first track key when both requested part and tutti are missing', () => {
+      const noTuttiFiles: PlayerMediaFile[] = [
+        {
+          id: 'item1_soprano',
+          name: 'Song 1',
+          pieceId: 'piece1',
+          trackKey: 'soprano',
+          availableTracks: {
+            soprano: 's.mp3',
+            alto: 'a.mp3'
+          },
+          streamUrl: '...',
+          isFolder: false
+        }
+      ];
+      const result = playerService.applyVoicePartToFiles(noTuttiFiles, 'tenor', mockPieces);
+      
+      assert.strictEqual(result[0].id, 'item1_soprano');
+      assert.strictEqual(result[0].trackKey, 'soprano');
     });
 
     it('handles files without availableTracks or pieceId gracefully', () => {

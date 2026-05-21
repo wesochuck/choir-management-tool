@@ -5,6 +5,7 @@ import type { VoicePartDef } from './settingsService';
 
 export interface PlayerMediaFile {
   id: string;
+  baseId?: string;
   name: string;
   streamUrl: string;
   composer?: string;
@@ -48,6 +49,7 @@ function buildFilesFromPiece(
     if (!filename) return [];
     return [{
       id: `${itemId}_${defaultTrackKey}`,
+      baseId: itemId,
       name: itemTitle,
       composer: itemComposer || piece.composer,
       duration: itemDuration || piece.duration,
@@ -72,6 +74,7 @@ function buildFilesFromPiece(
     if (!mFilename) continue;
     result.push({
       id: `${itemId}_${m.id}_${mDefaultKey}`,
+      baseId: `${itemId}_${m.id}`,
       name: m.title || `${itemTitle} — Movement`,
       composer: m.composer || piece.composer,
       duration: m.duration,
@@ -188,20 +191,38 @@ export const playerService = {
     return files.map(file => {
       if (!file.availableTracks || !file.pieceId) return file;
 
-      const trackKey = file.availableTracks[part] ? part : 'tutti';
-      const actualFilename = file.availableTracks[trackKey];
+      // Case-insensitive lookup for requested part
+      const matchedKey = Object.keys(file.availableTracks).find(
+        k => k.toLowerCase() === part.toLowerCase()
+      );
 
+      // Fallback hierarchy:
+      // 1. Requested part (case-insensitive)
+      // 2. Tutti (case-insensitive)
+      // 3. First available track key
+      let trackKey = 'tutti';
+      if (matchedKey && file.availableTracks[matchedKey]) {
+        trackKey = matchedKey;
+      } else {
+        const tuttiKey = Object.keys(file.availableTracks).find(
+          k => k.toLowerCase() === 'tutti'
+        );
+        if (tuttiKey && file.availableTracks[tuttiKey]) {
+          trackKey = tuttiKey;
+        } else if (Object.keys(file.availableTracks).length > 0) {
+          trackKey = Object.keys(file.availableTracks)[0];
+        }
+      }
+
+      const actualFilename = file.availableTracks[trackKey];
       if (!actualFilename) return file;
 
       const piece = piecesMap[file.pieceId];
       if (!piece) return file;
 
-      const baseIdParts = file.id.split('_');
-      // If it doesn't have an underscore suffix yet, keep the full parts array
-      if (baseIdParts.length > 1) {
-        baseIdParts.pop();
-      }
-      const newId = `${baseIdParts.join('_')}_${trackKey}`;
+      // Regenerate ID using baseId or split parsing
+      const baseId = file.baseId || file.id.split('_').slice(0, -1).join('_') || file.id;
+      const newId = `${baseId}_${trackKey}`;
 
       return {
         ...file,
