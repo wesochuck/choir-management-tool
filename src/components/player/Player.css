@@ -1021,7 +1021,8 @@
 
   .chorus-player .playlist {
     border-radius: var(--radius-sm);
-    max-height: 400px;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .chorus-player .playlist h3 {
