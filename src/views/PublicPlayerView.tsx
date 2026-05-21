@@ -138,7 +138,7 @@ export default function PublicPlayerView() {
       <header>
         <div>
           <h1>Chorus</h1>
-          <div className="text-muted" style={{ fontSize: '0.9rem' }}>{data.event.title}</div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{data.event.title}</div>
         </div>
       </header>
 
