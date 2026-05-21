@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList, resolveCatalogLookupUrl, resolveRecommendedTracks, parseDurationToSeconds, isValidDurationString } from '../src/lib/musicPieceUtils.ts';
+import type { MusicPiece } from '../src/services/musicLibraryService.ts';
 
 test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
-  const pieces = [{ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }];
+  const pieces = [{ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }] as unknown as MusicPiece[];
   const csv = exportMusicToCSV(pieces);
   assert.ok(csv.includes('Title,Composer,Voicing'));
   assert.ok(csv.includes('"Hallelujah","Handel","SATB"'));
@@ -14,7 +15,7 @@ test('findDuplicates returns pieces with identical title and composer', () => {
     { id: '1', title: 'Song A', composer: 'Comp A' },
     { id: '2', title: 'Song B', composer: 'Comp B' },
     { id: '3', title: 'Song A', composer: 'Comp A' }
-  ];
+  ] as unknown as MusicPiece[];
   const duplicates = findDuplicates(pieces);
   assert.equal(duplicates.length, 2);
   assert.deepEqual(duplicates.map(p => p.id).sort(), ['1', '3']);

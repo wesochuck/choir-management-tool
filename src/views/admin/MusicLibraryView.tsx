@@ -5,7 +5,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
-import { settingsService, getVoiceParts, type VoicePartDef } from '../../services/settingsService';
+import { settingsService, getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
 import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
@@ -572,6 +572,280 @@ export default function MusicLibraryView() {
   );
 }
 
+// Helper to compute and sort visible track keys
+const getVisibleTrackKeys = (
+    piece: MusicPiece,
+    sections: SectionDef[],
+    voiceParts: VoicePartDef[],
+    manuallyAdded: string[] = []
+): string[] => {
+    const keys = new Set<string>();
+    
+    // 1. Tutti is always visible
+    keys.add('tutti');
+    
+    // 2. Default buckets (section codes)
+    sections.forEach(s => keys.add(s.code));
+    
+    // 3. Existing uploaded keys
+    if (piece.audioTrackMapping) {
+        Object.entries(piece.audioTrackMapping).forEach(([k, val]) => {
+            if (val) {
+                keys.add(k);
+            }
+        });
+    }
+    
+    // 4. Manually added keys for this piece/movement
+    manuallyAdded.forEach(k => keys.add(k));
+    
+    const sortedKeys = Array.from(keys);
+    
+    const getSortPriority = (key: string): number => {
+        if (key === 'tutti') return -100;
+        
+        const sectionIndex = sections.findIndex(s => s.code === key);
+        if (sectionIndex !== -1) {
+            return sectionIndex * 10;
+        }
+        
+        const vp = voiceParts.find(v => v.label === key);
+        if (vp) {
+            const sIdx = sections.findIndex(s => s.code === vp.sectionCode);
+            if (sIdx !== -1) {
+                const vpIdx = voiceParts.filter(v => v.sectionCode === vp.sectionCode).findIndex(v => v.label === key);
+                return sIdx * 10 + 1 + (vpIdx !== -1 ? vpIdx : 0);
+            }
+        }
+        
+        return 1000;
+    };
+    
+    return sortedKeys.sort((a, b) => getSortPriority(a) - getSortPriority(b));
+};
+
+interface LearningTracksEditorProps {
+    piece: MusicPiece;
+    voiceParts: VoicePartDef[];
+    sections: SectionDef[];
+    uploadingParts: Record<string, boolean>;
+    uploadingKeyPrefix: string;
+    onUpload: (voicePart: string, file: File) => Promise<void>;
+    onDelete: (voicePart: string) => Promise<void>;
+    manuallyAddedParts: string[];
+    onAddPart: (part: string) => void;
+}
+
+const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
+    piece,
+    voiceParts,
+    sections,
+    uploadingParts,
+    uploadingKeyPrefix,
+    onUpload,
+    onDelete,
+    manuallyAddedParts,
+    onAddPart
+}) => {
+    const [draggedOverPart, setDraggedOverPart] = useState<string | null>(null);
+
+    const visibleKeys = getVisibleTrackKeys(piece, sections, voiceParts, manuallyAddedParts);
+    const addableParts = voiceParts.filter(vp => !visibleKeys.includes(vp.label));
+    const isMovement = !!uploadingKeyPrefix;
+
+    return (
+        <div className="flex-col" style={{ 
+            gap: 'var(--space-xs)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 'var(--radius)',
+            padding: 'var(--space-sm)',
+            backgroundColor: 'rgba(0, 0, 0, 0.02)'
+        }}>
+            {visibleKeys.map(partLabel => {
+                const filename = piece.audioTrackMapping?.[partLabel];
+                const uploadKey = `${uploadingKeyPrefix}${partLabel}`;
+                const isUploading = uploadingParts[uploadKey];
+                const isDraggedOver = draggedOverPart === partLabel;
+
+                const isTutti = partLabel === 'tutti';
+                const section = sections.find(s => s.code === partLabel);
+                const voicePart = voiceParts.find(vp => vp.label === partLabel);
+
+                const displayName = isTutti 
+                    ? (isMovement ? 'Tutti' : 'Tutti (Full)') 
+                    : partLabel;
+                const fullName = isTutti 
+                    ? 'Full Mix' 
+                    : section 
+                        ? section.name 
+                        : voicePart 
+                            ? voicePart.fullName 
+                            : '';
+
+                return (
+                    <div 
+                        key={partLabel} 
+                        className="flex-row" 
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (draggedOverPart !== partLabel) {
+                                setDraggedOverPart(partLabel);
+                            }
+                        }}
+                        onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDraggedOverPart(null);
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDraggedOverPart(null);
+                            const file = e.dataTransfer.files?.[0];
+                            if (file) {
+                                onUpload(partLabel, file);
+                            }
+                        }}
+                        style={{
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: isDraggedOver 
+                                ? (isMovement ? '5px 9px' : '7px 11px') 
+                                : (isMovement ? '6px 10px' : '8px 12px'),
+                            backgroundColor: isDraggedOver ? 'rgba(74, 124, 89, 0.08)' : 'var(--bg-card-hover)',
+                            border: isDraggedOver ? '2px dashed var(--primary)' : '1px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            gap: 'var(--space-md)',
+                            fontSize: isMovement ? '13px' : 'inherit',
+                            transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
+                            transform: isDraggedOver ? 'scale(1.01)' : 'scale(1)',
+                            boxShadow: isDraggedOver 
+                                ? (isMovement ? '0 2px 8px rgba(74, 124, 89, 0.12)' : '0 4px 12px rgba(74, 124, 89, 0.15)') 
+                                : 'none',
+                        }}
+                    >
+                        <div className="flex-col" style={{ minWidth: isMovement ? '80px' : '90px' }}>
+                            <strong style={{ fontSize: isMovement ? '12px' : '13px', color: 'var(--text-color)' }}>
+                                {displayName}
+                            </strong>
+                            <span className="text-xs text-muted" style={{ fontSize: isMovement ? '10px' : '11px' }}>
+                                {fullName}
+                            </span>
+                        </div>
+                        
+                        {isUploading ? (
+                            <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
+                        ) : filename ? (
+                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
+                                <audio 
+                                    src={pb.files.getURL(piece, filename)} 
+                                    controls 
+                                    style={{ 
+                                        height: isMovement ? '24px' : '28px', 
+                                        maxWidth: isMovement ? '160px' : '220px', 
+                                        flex: 1 
+                                    }} 
+                                />
+                                <button 
+                                    type="button" 
+                                    className="btn btn-ghost btn-sm" 
+                                    onClick={() => onDelete(partLabel)}
+                                    style={{ 
+                                        color: 'var(--danger)', 
+                                        border: 'none', 
+                                        background: 'none', 
+                                        cursor: 'pointer',
+                                        padding: '4px 6px',
+                                        minHeight: 'auto',
+                                        height: 'auto',
+                                        margin: 0
+                                    }}
+                                    title="Delete track"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
+                                <label 
+                                    className="btn btn-secondary btn-sm" 
+                                    style={{ 
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        fontSize: '11px',
+                                        padding: '2px 8px',
+                                        height: '24px',
+                                        minHeight: '24px',
+                                        margin: 0
+                                    }}
+                                >
+                                    📤 Upload
+                                    <input 
+                                        type="file" 
+                                        accept="audio/*" 
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                onUpload(partLabel, file);
+                                            }
+                                        }}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+
+            {addableParts.length > 0 && (
+                <div className="flex-row animate-fade-in" style={{
+                    alignItems: 'center',
+                    gap: 'var(--space-xs)',
+                    marginTop: 'var(--space-xs)',
+                    paddingTop: 'var(--space-xs)',
+                    borderTop: '1px dashed var(--border)',
+                    justifyContent: 'flex-start'
+                }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        ➕ Add voice part track slot:
+                    </span>
+                    <select
+                        value=""
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                                onAddPart(val);
+                            }
+                        }}
+                        style={{
+                            fontSize: '11px',
+                            padding: '3px 8px',
+                            borderRadius: 'var(--radius)',
+                            border: '1px solid var(--border)',
+                            backgroundColor: 'var(--bg-card-hover)',
+                            color: 'var(--text-color)',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            fontWeight: 500
+                        }}
+                    >
+                        <option value="" disabled>Select voice part...</option>
+                        {addableParts.map(vp => (
+                            <option key={vp.label} value={vp.label}>
+                                {vp.label} ({vp.fullName})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Inline modal component for editing a single piece
 function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLookupTemplate, onRefresh, allPieces }: { 
     isOpen: boolean, 
@@ -600,8 +874,9 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
     // Audio & Voice Parts state
     const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
     const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+    const [sections, setSections] = useState<SectionDef[]>([]);
     const [uploadingParts, setUploadingParts] = useState<Record<string, boolean>>({});
-    const [draggedOverPart, setDraggedOverPart] = useState<string | null>(null);
+    const [manuallyAddedParts, setManuallyAddedParts] = useState<Record<string, string[]>>({});
 
     // Performance states
     const [allPerformances, setAllPerformances] = useState<Event[]>([]);
@@ -655,8 +930,11 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             // Load venues for quick add
             venueService.getVenues().then(setVenues).catch(console.error);
 
-            // Load voice parts
-            getVoiceParts().then(setVoiceParts).catch(console.error);
+            // Load voice parts and sections
+            getVoicePartsAndSections().then(data => {
+                setVoiceParts(data.voiceParts);
+                setSections(data.sections);
+            }).catch(console.error);
         }
     }, [isOpen]);
 
@@ -691,6 +969,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         setNewMovementDuration('');
         setExpandedMovementId(null);
         setSuggestedDuration(null);
+        setManuallyAddedParts({});
     }, [piece, isOpen, loadMovements]);
 
     const handleFileUpload = async (voicePart: string, file: File) => {
@@ -896,6 +1175,13 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                 variant: 'danger'
             });
         }
+    };
+
+    const handleAddPart = (id: string, part: string) => {
+        setManuallyAddedParts(prev => ({
+            ...prev,
+            [id]: [...(prev[id] || []), part]
+        }));
     };
 
     const handleDeleteMovement = async (mId: string, mTitle: string) => {
@@ -1412,127 +1698,17 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                 <span>Please save this piece first to enable learning track uploads.</span>
                             </div>
                         ) : (
-                            <div className="flex-col" style={{ 
-                                gap: 'var(--space-xs)', 
-                                border: '1px solid var(--border)', 
-                                borderRadius: 'var(--radius)',
-                                padding: 'var(--space-sm)',
-                                backgroundColor: 'rgba(0, 0, 0, 0.02)'
-                            }}>
-                                {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
-                                    const filename = localPiece.audioTrackMapping?.[partLabel];
-                                    const isUploading = uploadingParts[partLabel];
-                                    const isDraggedOver = draggedOverPart === partLabel;
-                                    return (
-                                        <div 
-                                            key={partLabel} 
-                                            className="flex-row" 
-                                            onDragOver={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                if (draggedOverPart !== partLabel) {
-                                                    setDraggedOverPart(partLabel);
-                                                }
-                                            }}
-                                            onDragLeave={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                setDraggedOverPart(null);
-                                            }}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                setDraggedOverPart(null);
-                                                const file = e.dataTransfer.files?.[0];
-                                                if (file) {
-                                                    handleFileUpload(partLabel, file);
-                                                }
-                                            }}
-                                            style={{
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                padding: isDraggedOver ? '7px 11px' : '8px 12px',
-                                                backgroundColor: isDraggedOver ? 'rgba(74, 124, 89, 0.08)' : 'var(--bg-card-hover)',
-                                                border: isDraggedOver ? '2px dashed var(--primary)' : '1px solid var(--border)',
-                                                borderRadius: 'var(--radius)',
-                                                gap: 'var(--space-md)',
-                                                transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
-                                                transform: isDraggedOver ? 'scale(1.015)' : 'scale(1)',
-                                                boxShadow: isDraggedOver ? '0 4px 12px rgba(74, 124, 89, 0.15)' : 'none',
-                                            }}
-                                        >
-                                            <div className="flex-col" style={{ minWidth: '90px' }}>
-                                                <strong style={{ fontSize: '13px', color: 'var(--text-color)' }}>
-                                                    {partLabel === 'tutti' ? 'Tutti (Full)' : partLabel}
-                                                </strong>
-                                                <span className="text-xs text-muted" style={{ fontSize: '11px' }}>
-                                                    {partLabel === 'tutti' ? 'Full Mix' : (voiceParts.find(vp => vp.label === partLabel)?.fullName || '')}
-                                                </span>
-                                            </div>
-                                            
-                                            {isUploading ? (
-                                                <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
-                                            ) : filename ? (
-                                                <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
-                                                    <audio 
-                                                        src={pb.files.getURL(localPiece, filename)} 
-                                                        controls 
-                                                        style={{ height: '28px', maxWidth: '220px', flex: 1 }} 
-                                                    />
-                                                    <button 
-                                                        type="button" 
-                                                        className="btn btn-ghost btn-sm" 
-                                                        onClick={() => handleFileDelete(partLabel)}
-                                                        style={{ 
-                                                            color: 'var(--danger)', 
-                                                            border: 'none', 
-                                                            background: 'none', 
-                                                            cursor: 'pointer',
-                                                            padding: '4px 6px',
-                                                            minHeight: 'auto',
-                                                            height: 'auto',
-                                                            margin: 0
-                                                        }}
-                                                        title="Delete track"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
-                                                    <label 
-                                                        className="btn btn-secondary btn-sm" 
-                                                        style={{ 
-                                                            cursor: 'pointer',
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            fontSize: '11px',
-                                                            padding: '2px 8px',
-                                                            height: '24px',
-                                                            minHeight: '24px',
-                                                            margin: 0
-                                                        }}
-                                                    >
-                                                        📤 Upload
-                                                        <input 
-                                                            type="file" 
-                                                            accept="audio/*" 
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (file) {
-                                                                    handleFileUpload(partLabel, file);
-                                                                }
-                                                            }}
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                    </label>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <LearningTracksEditor
+                                piece={localPiece}
+                                voiceParts={voiceParts}
+                                sections={sections}
+                                uploadingParts={uploadingParts}
+                                uploadingKeyPrefix=""
+                                onUpload={handleFileUpload}
+                                onDelete={handleFileDelete}
+                                manuallyAddedParts={manuallyAddedParts[localPiece.id] || []}
+                                onAddPart={(part) => handleAddPart(localPiece.id, part)}
+                            />
                         )}
                     </div>
                 )}
@@ -1595,130 +1771,22 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                             {isExpanded && (
                                                 <div className="flex-col" style={{ 
                                                     gap: '4px', 
-                                                    border: '1px solid var(--border)', 
-                                                    borderRadius: 'var(--radius)',
-                                                    padding: 'var(--space-xs)',
-                                                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
                                                     marginTop: 'var(--space-sm)'
                                                 }}>
                                                     <strong style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px', display: 'block' }}>
                                                         🎵 Reference & Learning Tracks for {m.title}
                                                     </strong>
-                                                    {['tutti', ...voiceParts.map(vp => vp.label)].map(partLabel => {
-                                                        const filename = m.audioTrackMapping?.[partLabel];
-                                                        const isUploading = uploadingParts[`${m.id}_${partLabel}`];
-                                                        const dragKey = `${m.id}_${partLabel}`;
-                                                        const isDraggedOver = draggedOverPart === dragKey;
-                                                        return (
-                                                            <div 
-                                                                key={partLabel} 
-                                                                className="flex-row" 
-                                                                onDragOver={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    if (draggedOverPart !== dragKey) {
-                                                                        setDraggedOverPart(dragKey);
-                                                                    }
-                                                                }}
-                                                                onDragLeave={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setDraggedOverPart(null);
-                                                                }}
-                                                                onDrop={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setDraggedOverPart(null);
-                                                                    const file = e.dataTransfer.files?.[0];
-                                                                    if (file) {
-                                                                        handleMovementFileUpload(m, partLabel, file);
-                                                                    }
-                                                                }}
-                                                                style={{
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'space-between',
-                                                                    padding: isDraggedOver ? '5px 9px' : '6px 10px',
-                                                                    backgroundColor: isDraggedOver ? 'rgba(74, 124, 89, 0.08)' : 'var(--bg-card-hover)',
-                                                                    border: isDraggedOver ? '2px dashed var(--primary)' : '1px solid var(--border)',
-                                                                    borderRadius: 'var(--radius)',
-                                                                    gap: 'var(--space-md)',
-                                                                    fontSize: '13px',
-                                                                    transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
-                                                                    transform: isDraggedOver ? 'scale(1.01)' : 'scale(1)',
-                                                                    boxShadow: isDraggedOver ? '0 2px 8px rgba(74, 124, 89, 0.12)' : 'none',
-                                                                }}
-                                                            >
-                                                                <div className="flex-col" style={{ minWidth: '80px' }}>
-                                                                    <strong style={{ fontSize: '12px', color: 'var(--text-color)' }}>
-                                                                        {partLabel === 'tutti' ? 'Tutti' : partLabel}
-                                                                    </strong>
-                                                                    <span className="text-xs text-muted" style={{ fontSize: '10px' }}>
-                                                                        {partLabel === 'tutti' ? 'Full Mix' : (voiceParts.find(vp => vp.label === partLabel)?.fullName || '')}
-                                                                    </span>
-                                                                </div>
-                                                                
-                                                                {isUploading ? (
-                                                                    <span className="text-xs text-muted animate-pulse" style={{ fontSize: '12px' }}>Uploading...</span>
-                                                                ) : filename ? (
-                                                                    <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flex: 1, justifyContent: 'flex-end' }}>
-                                                                        <audio 
-                                                                            src={pb.files.getURL(m, filename)} 
-                                                                            controls 
-                                                                            style={{ height: '24px', maxWidth: '160px', flex: 1 }} 
-                                                                        />
-                                                                        <button 
-                                                                            type="button" 
-                                                                            className="btn btn-ghost btn-sm" 
-                                                                            onClick={() => handleMovementFileDelete(m, partLabel)}
-                                                                            style={{ 
-                                                                                color: 'var(--danger)', 
-                                                                                border: 'none', 
-                                                                                background: 'none', 
-                                                                                cursor: 'pointer',
-                                                                                padding: '4px 6px',
-                                                                                minHeight: 'auto',
-                                                                                height: 'auto',
-                                                                                margin: 0
-                                                                            }}
-                                                                            title="Delete track"
-                                                                        >
-                                                                            🗑️
-                                                                        </button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="flex-row" style={{ alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
-                                                                        <label 
-                                                                            className="btn btn-secondary btn-sm" 
-                                                                            style={{ 
-                                                                                cursor: 'pointer',
-                                                                                display: 'inline-flex',
-                                                                                alignItems: 'center',
-                                                                                gap: '4px',
-                                                                                fontSize: '11px',
-                                                                                padding: '2px 8px',
-                                                                                height: '24px',
-                                                                                minHeight: '24px',
-                                                                                margin: 0
-                                                                            }}
-                                                                        >
-                                                                            📤 Upload
-                                                                            <input 
-                                                                                type="file" 
-                                                                                accept="audio/*" 
-                                                                                onChange={(e) => {
-                                                                                    const file = e.target.files?.[0];
-                                                                                    if (file) {
-                                                                                        handleMovementFileUpload(m, partLabel, file);
-                                                                                    }
-                                                                                }}
-                                                                                style={{ display: 'none' }}
-                                                                            />
-                                                                        </label>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    <LearningTracksEditor
+                                                        piece={m}
+                                                        voiceParts={voiceParts}
+                                                        sections={sections}
+                                                        uploadingParts={uploadingParts}
+                                                        uploadingKeyPrefix={`${m.id}_`}
+                                                        onUpload={(part, file) => handleMovementFileUpload(m, part, file)}
+                                                        onDelete={(part) => handleMovementFileDelete(m, part)}
+                                                        manuallyAddedParts={manuallyAddedParts[m.id] || []}
+                                                        onAddPart={(part) => handleAddPart(m.id, part)}
+                                                    />
                                                 </div>
                                             )}
                                         </div>
