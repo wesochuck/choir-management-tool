@@ -7,7 +7,7 @@ import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
 import { settingsService, getVoiceParts, type VoicePartDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../lib/musicPieceUtils';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
@@ -503,6 +503,7 @@ export default function MusicLibraryView() {
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
         onRefresh={loadData}
+        allPieces={pieces}
       />
 
       <MusicImportModal
@@ -572,14 +573,15 @@ export default function MusicLibraryView() {
 }
 
 // Inline modal component for editing a single piece
-function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLookupTemplate, onRefresh }: { 
+function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLookupTemplate, onRefresh, allPieces }: { 
     isOpen: boolean, 
     piece: MusicPiece | null, 
     onClose: () => void, 
     onSave: (data: Partial<MusicPieceInput>) => Promise<void>,
     onDelete?: () => Promise<void>,
     catalogLookupTemplate?: string,
-    onRefresh?: () => Promise<void>
+    onRefresh?: () => Promise<void>,
+    allPieces?: MusicPiece[]
 }) {
     const dialog = useDialog();
     const [title, setTitle] = useState('');
@@ -1357,7 +1359,44 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                             e.stopPropagation();
                         }}
                     >
-                        <label className="text-label">🎵 Reference & Learning Tracks</label>
+                        {/* Context header: shows piece name + movement name */}
+                        {(() => {
+                            const parentPiece = piece.parentId && allPieces
+                                ? allPieces.find(p => p.id === piece.parentId)
+                                : undefined;
+                            const contextLabel = getLearningTrackContextLabel(
+                                piece,
+                                parentPiece?.title
+                            );
+                            return (
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '2px',
+                                    marginBottom: 'var(--space-xs)',
+                                    paddingBottom: 'var(--space-sm)',
+                                    borderBottom: '1px solid var(--border)',
+                                }}>
+                                    <span style={{
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.07em',
+                                        color: 'var(--text-muted)',
+                                    }}>
+                                        🎵 Learning Tracks for
+                                    </span>
+                                    <span style={{
+                                        fontSize: '16px',
+                                        fontWeight: 700,
+                                        color: 'var(--primary)',
+                                        letterSpacing: '-0.01em',
+                                    }}>
+                                        {contextLabel}
+                                    </span>
+                                </div>
+                            );
+                        })()}
                         {!localPiece ? (
                             <div className="flex-row" style={{
                                 alignItems: 'center',
