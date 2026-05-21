@@ -105,12 +105,73 @@
   font-size: 1.25rem;
   font-weight: 700;
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.02em;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Title row: track name + active part badge side by side */
+.chorus-player .player-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  min-width: 0;
+}
+
+/* Badge in the player card */
+.chorus-player .track-part-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.chorus-player .track-part-badge.matched {
+  background: var(--active-bg);
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+}
+
+.chorus-player .track-part-badge.fallback {
+  background: oklch(96% 0.06 70);
+  color: oklch(55% 0.12 70);
+  border: 1px solid oklch(80% 0.1 70);
+}
+
+/* Playlist row badge */
+.chorus-player .playlist-part-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.chorus-player .playlist-part-badge.matched {
+  background: var(--active-bg);
+  color: var(--accent-color);
+}
+
+.chorus-player .playlist-part-badge.fallback {
+  background: oklch(96% 0.06 70);
+  color: oklch(55% 0.12 70);
 }
 
 /* ── Error Message ──────────────────────── */
@@ -178,15 +239,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Seek bar — gradient fill applied inline via JS */
 .chorus-player .seek-bar {
   flex-grow: 1;
   height: 6px;
   -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
-  background: var(--border-color);
   border-radius: 3px;
   outline: none;
   cursor: pointer;
+  /* Base fallback; actual fill comes from inline style gradient */
+  background: var(--border-color);
 }
 
 .chorus-player .seek-bar::-webkit-slider-thumb {
@@ -195,26 +259,29 @@
   height: 20px;
   background: var(--accent-color);
   border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: grab;
 }
 
-.chorus-player .seek-bar::-webkit-slider-thumb:hover {
+.chorus-player .seek-bar:active::-webkit-slider-thumb {
+  cursor: grabbing;
   transform: scale(1.2);
 }
 
 .chorus-player .seek-bar::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  border: none;
+  border: 2px solid white;
   background: var(--accent-color);
   border-radius: 50%;
-  transition: transform 0.15s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: grab;
 }
 
 .chorus-player .seek-bar::-moz-range-track {
-  background: var(--border-color);
+  background: transparent;
   height: 6px;
   border-radius: 3px;
 }
@@ -303,38 +370,54 @@
   height: 32px;
 }
 
-/* ── Repeat Button ──────────────────────── */
+/* ── Repeat Button ──────────────────────────
+   Sits in controls-right, matches skip-button height (48px).
+   Uses border+bg rather than inheriting the generic .controls button size.
+──────────────────────────────────────────── */
 
 .chorus-player .repeat-button {
+  /* Override generic .controls button sizing to be auto-width */
+  width: auto !important;
+  height: 44px !important;
+  padding: 0 0.85rem !important;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   white-space: nowrap;
-  text-transform: capitalize;
-}
-
-.chorus-player .repeat-button.all {
-  color: var(--accent-color);
-  border-color: var(--accent-color);
-  background: var(--active-bg);
-}
-
-.chorus-player .repeat-button.one {
-  color: var(--accent-color);
-  border-color: var(--accent-color);
-  background: var(--active-bg);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 22px !important;
+  background: var(--hover-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  transition: all 0.2s ease;
 }
 
 .chorus-player .repeat-button svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
-.chorus-player .repeat-button span {
-  font-size: 0.7rem;
-  letter-spacing: 0.02em;
+.chorus-player .repeat-button:hover:not(:disabled) {
+  background: var(--border-color);
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.chorus-player .repeat-button.all {
+  background: var(--active-bg) !important;
+  border-color: var(--accent-color) !important;
+  color: var(--accent-color) !important;
+}
+
+.chorus-player .repeat-button.one {
+  background: var(--active-bg) !important;
+  border-color: var(--accent-color) !important;
+  color: var(--accent-color) !important;
 }
 
 /* ── Volume / Settings Row ──────────────── */
@@ -350,7 +433,7 @@
 }
 
 .chorus-player .volume-container label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -358,35 +441,49 @@
   white-space: nowrap;
 }
 
-.chorus-player .volume-container input[type="range"] {
+/* Volume slider — gradient fill applied inline via JS */
+.chorus-player .volume-bar {
   flex: 1;
-  min-width: 100px;
+  min-width: 80px;
   height: 4px;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background: var(--border-color);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
+  background: var(--border-color);
 }
 
-.chorus-player .volume-container input[type="range"]::-webkit-slider-thumb {
+.chorus-player .volume-bar::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 16px;
   height: 16px;
   background: var(--accent-color);
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: grab;
 }
 
-.chorus-player .volume-container input[type="range"]::-moz-range-thumb {
+.chorus-player .volume-bar:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+
+.chorus-player .volume-bar::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  border: none;
+  border: 2px solid white;
   background: var(--accent-color);
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: grab;
+}
+
+.chorus-player .volume-bar::-moz-range-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 2px;
 }
 
 /* ── Skip (Start At) Setting ────────────── */
@@ -425,6 +522,7 @@
 
 .chorus-player .skip-setting-container input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .chorus-player .unit-label {
@@ -559,6 +657,114 @@
   position: relative;
 }
 
+/* Playlist header: title row + action buttons */
+.chorus-player .playlist-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chorus-player .playlist-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.chorus-player .playlist-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.chorus-player .playlist-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chorus-player .playlist-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.chorus-player .playlist-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.chorus-player .playlist-action-btn:hover:not(:disabled) {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.chorus-player .playlist-action-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.chorus-player .playlist-action-btn.download-all-btn {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--active-bg);
+}
+
+.chorus-player .playlist-action-btn.download-all-btn:hover:not(:disabled) {
+  background: var(--accent-color);
+  color: white;
+}
+
+.chorus-player .playlist-action-btn.download-all-btn.loading {
+  background: var(--active-bg);
+  color: var(--accent-color);
+}
+
+.chorus-player .playlist-action-btn.clear-btn {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.chorus-player .playlist-action-btn.clear-btn:hover:not(:disabled) {
+  border-color: var(--error-color);
+  color: var(--error-color);
+  background: oklch(97% 0.02 20);
+}
+
+/* Spin animation for download-all in-progress icon */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.chorus-player .spin {
+  animation: spin 0.9s linear infinite;
+  display: block;
+}
+
+/* Keep old h3 for backwards compat if needed */
 .chorus-player .playlist h3 {
   position: sticky;
   top: 0;

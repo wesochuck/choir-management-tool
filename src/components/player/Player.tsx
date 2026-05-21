@@ -18,6 +18,7 @@ interface PlayerProps {
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
   offlineMode?: boolean;
+  selectedVoicePart?: string;
 }
 
 export const Player: React.FC<PlayerProps> = ({ 
@@ -26,7 +27,8 @@ export const Player: React.FC<PlayerProps> = ({
   onTrackChange,
   isPlaying,
   setIsPlaying,
-  offlineMode = false
+  offlineMode = false,
+  selectedVoicePart,
 }) => {
   const {
     loopMode,
@@ -77,10 +79,30 @@ export const Player: React.FC<PlayerProps> = ({
 
   if (!currentTrack) return <div className="player empty">No track selected</div>;
 
+  // Voice part badge logic
+  const activeKey = currentTrack.trackKey || 'tutti';
+  const isFallback = selectedVoicePart && selectedVoicePart !== 'tutti' && activeKey === 'tutti';
+  const badgeLabel = activeKey.toUpperCase();
+
+  // Inline gradient fill for sliders (cross-browser filled-track)
+  const seekPct = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const seekStyle = {
+    background: `linear-gradient(to right, var(--accent-color) ${seekPct}%, var(--border-color) ${seekPct}%)`
+  };
+  const volPct = volume * 100;
+  const volStyle = {
+    background: `linear-gradient(to right, var(--accent-color) ${volPct}%, var(--border-color) ${volPct}%)`
+  };
+
   return (
     <div className="player-card">
       <div className="player">
-        <h2>{currentTrack.name}</h2>
+        <div className="player-title-row">
+          <h2>{currentTrack.name}</h2>
+          <span className={`track-part-badge ${isFallback ? 'fallback' : 'matched'}`}>
+            {badgeLabel}
+          </span>
+        </div>
         <audio 
           ref={audioRef} 
           src={currentTrack.offlineUrl || currentTrack.streamUrl} 
@@ -129,6 +151,7 @@ export const Player: React.FC<PlayerProps> = ({
             onMouseUp={handleSeekEnd}
             onTouchEnd={handleSeekEnd}
             className="seek-bar"
+            style={seekStyle}
           />
           <span>{formatTime(duration)}</span>
         </div>
@@ -191,7 +214,9 @@ export const Player: React.FC<PlayerProps> = ({
             max="1" 
             step="0.01" 
             value={volume} 
-            onChange={handleVolumeChange} 
+            onChange={handleVolumeChange}
+            className="volume-bar"
+            style={volStyle}
           />
           
           {/* INTER-TRACK GAP SETTING */}

@@ -10,7 +10,8 @@ import {
   downloadTrack, 
   removeOfflineTrack, 
   savePlaylistOffline,
-  hydrateOfflineStatus
+  hydrateOfflineStatus,
+  clearAllDownloads
 } from '../services/offlineMediaStore';
 import { safeLocalStorage } from '../lib/storage';
 import '../components/player/Player.css';
@@ -32,6 +33,7 @@ export default function PublicPlayerView() {
   });
 
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!token && !eventId) {
@@ -129,6 +131,34 @@ export default function PublicPlayerView() {
     setPlaylist(await hydrateOfflineStatus(playlist));
   };
 
+  const handleDownloadAll = async () => {
+    if (isDownloadingAll) return;
+    const toDownload = playlist.filter(f => !f.isFolder && !f.isDownloaded);
+    if (toDownload.length === 0) return;
+    setIsDownloadingAll(true);
+    for (const track of toDownload) {
+      try {
+        setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));
+        setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f));
+        await downloadTrack(track, (prog) => {
+          setDownloadProgress(prev => ({ ...prev, [track.id]: prog }));
+        });
+      } catch (err) {
+        console.error('Download failed for', track.name, err);
+        setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'error' } : f));
+      }
+    }
+    const hydrated = await hydrateOfflineStatus(playlist);
+    setPlaylist(hydrated);
+    setIsDownloadingAll(false);
+  };
+
+  const handleClearAll = async () => {
+    await clearAllDownloads();
+    const hydrated = await hydrateOfflineStatus(playlist);
+    setPlaylist(hydrated);
+  };
+
   if (isLoading) return <div className="chorus-player" style={{ textAlign: 'center', paddingTop: '4rem' }}>Loading playlist...</div>;
   if (error) return <div className="chorus-player"><div className="error-message">{error}</div></div>;
   if (!data) return null;
@@ -154,6 +184,7 @@ export default function PublicPlayerView() {
         onTrackChange={setCurrentIndex}
         isPlaying={isPlaying}
         setIsPlaying={setIsPlaying}
+        selectedVoicePart={selectedVoicePart}
       />
 
       <Playlist 
@@ -166,6 +197,10 @@ export default function PublicPlayerView() {
         onDownloadTrack={handleDownload}
         onRemoveDownload={handleRemoveDownload}
         downloadProgressById={downloadProgress}
+        selectedVoicePart={selectedVoicePart}
+        onDownloadAll={handleDownloadAll}
+        onClearAll={handleClearAll}
+        isDownloadingAll={isDownloadingAll}
       />
 
       <div className="help-text" style={{ marginTop: '2rem' }}>
