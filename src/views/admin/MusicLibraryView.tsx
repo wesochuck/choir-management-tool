@@ -7,7 +7,8 @@ import { eventService, type Event } from '../../services/eventService';
 import { venueService, type Venue } from '../../services/venueService';
 import { settingsService, getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel, filterPiecesBySectionBucket } from '../../lib/musicPieceUtils';
+import { formatPerformanceHistory, exportMusicToCSV, findDuplicates, parseDurationToSeconds, formatSecondsToDuration, appendPieceToSetList, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../lib/musicPieceUtils';
+import { buildVisibleMusicLibraryRows } from '../../lib/music/libraryRows';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function MusicLibraryView() {
@@ -186,67 +187,13 @@ export default function MusicLibraryView() {
   }, [pieces]);
 
   const filteredPieces = useMemo(() => {
-    let result = [...pieces];
-    if (!showMovements) {
-        result = result.filter(p => !p.parentId);
-    }
-    if (showDuplicatesOnly) {
-        result = result.filter(p => duplicateIds.has(p.id));
-    }
-    if (searchTerm) {
-      const lower = searchTerm.toLowerCase();
-      result = result.filter(p => 
-        p.title.toLowerCase().includes(lower) || 
-        p.composer?.toLowerCase().includes(lower) ||
-        p.catalogId?.toLowerCase().includes(lower)
-      );
-    }
-
-    if (sectionFilter) {
-        result = filterPiecesBySectionBucket(result, sectionFilter);
-    }
-
-    // Separate parent/standalone and child pieces
-    const parents = result.filter(p => !p.parentId);
-    const children = result.filter(p => p.parentId);
-
-    // Sort parents alphabetically by title
-    parents.sort((a, b) => a.title.localeCompare(b.title));
-
-    // Construct final nested list
-    const sorted: MusicPiece[] = [];
-    const childMap = new Map<string, MusicPiece[]>();
-
-    // Group children by parentId
-    children.forEach(child => {
-        if (child.parentId) {
-            const list = childMap.get(child.parentId) || [];
-            list.push(child);
-            childMap.set(child.parentId, list);
-        }
+    return buildVisibleMusicLibraryRows(pieces, {
+      searchTerm,
+      showDuplicatesOnly,
+      showMovements,
+      duplicateIds,
+      sectionFilter
     });
-
-    // Sort each parent's children alphabetically by title
-    childMap.forEach(list => {
-        list.sort((a, b) => a.title.localeCompare(b.title));
-    });
-
-    // Insert children immediately following their parent piece
-    parents.forEach(parent => {
-        sorted.push(parent);
-        const parentChildren = childMap.get(parent.id);
-        if (parentChildren) {
-            sorted.push(...parentChildren);
-        }
-    });
-
-    // Handle orphans (children whose parents are not in the current filtered list)
-    const sortedIds = new Set(sorted.map(p => p.id));
-    const orphans = children.filter(child => !sortedIds.has(child.id));
-    orphans.sort((a, b) => a.title.localeCompare(b.title));
-    sorted.push(...orphans);
-
-    return sorted;
   }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements, sectionFilter]);
 
   const toggleSelection = (id: string) => {
