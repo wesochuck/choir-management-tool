@@ -23,10 +23,10 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **Static Collection Metadata for Asset URLs:** When returning raw records or custom JSON payloads from custom backend endpoints (`routerAdd`), do not rely on JS VM dynamic mapping of `p.collectionId` or `p.collectionName` as they may evaluate to `null` or throw errors. Instead, return the known collection ID (e.g., `"pbc_music_library_001"`) and collection name (e.g., `"musicLibrary"`) explicitly so client-side `pb.files.getURL(...)` can construct correct URLs.
 
 ## Hosted PocketBase Workflow
-*   **Required:** Add the corresponding migration script for database changes.
-*   **Required:** Run all project tests, linters, and typechecks (`npm run test`, `npm run lint`).
-*   **Not Required during unit tests:** Spawning a local PocketBase server. Unit tests run offline or mock PocketBase interactions.
-*   **Hosted Verification:** Only perform live database resets or administrative CURL cycles when superuser credentials and environment configuration are explicitly provided/available in the workspace. Never attempt to reset or modify a remote/hosted database directly.
+*   **Required:** Add a corresponding JavaScript migration script in `pocketbase/pb_migrations/` for any database schema changes. This ensures the hosted/remote PocketBase environment can be updated through the project's normal deployment process.
+*   **Prohibited during tests:** Never require a local PocketBase server to be running for unit or integration tests. Do not attempt to start, seed, reset, or migrate a local PocketBase instance as part of the `npm test` workflow.
+*   **Hosted Verification:** Administrative actions like diagnostic CURL cycles or database resets should only be performed when superuser credentials and environment configuration are explicitly provided in the workspace. Never attempt to modify the remote/hosted production database directly without authorization.
+*   **Testing Strategy:** Use pure unit tests and mocks for services and React hooks. Validate logic in isolation rather than depending on a live database connection.
 
 ## Token & URL Parameter Safety (Ampersand Issue Prevention)
 *   **Query Parameter Encoding:** When constructing sharing URLs or passing composite tokens via query parameters (e.g., for RSVP or Player links), ALWAYS use `encodeURIComponent(token)` to prevent the browser or HTTP clients from truncating or splitting tokens containing ampersands (`&`).

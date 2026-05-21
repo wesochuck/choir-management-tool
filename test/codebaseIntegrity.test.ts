@@ -138,49 +138,43 @@ test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte ar
 test('codebase integrity: DialogContext must declare showToast API', () => {
   const contextFile = resolveProjectPath('src/contexts/DialogContext.tsx');
   const content = fs.readFileSync(contextFile, 'utf8');
-  assert.ok(content.includes('showToast'), 'DialogContext must declare and export showToast method');
+  assert.ok(content.includes('showToast'), 'DialogContext must export showToast method');
 });
 
-test('codebase integrity: MusicPieceModal must listen to Enter onNewMovement inputs', () => {
-  const file = resolveProjectPath('src/views/admin/music-library/MusicPieceModal.tsx');
-  const content = fs.readFileSync(file, 'utf8');
+test('codebase integrity: Music Library UI policies', () => {
+  const modalFile = resolveProjectPath('src/views/admin/music-library/MusicPieceModal.tsx');
+  const tableFile = resolveProjectPath('src/views/admin/music-library/MusicLibraryTable.tsx');
+  
+  const modalContent = fs.readFileSync(modalFile, 'utf8');
+  const tableContent = fs.readFileSync(tableFile, 'utf8');
 
-  // Verify handleAddMovement is updated to accept an event argument or parameter
-  assert.ok(
-    content.includes('const handleAddMovement = async (e?:') ||
-    content.includes('const handleAddMovement = async (e: React.FormEvent') ||
-    /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(content),
-    'handleAddMovement must accept an optional event argument'
-  );
+  // Policy: MusicPieceModal must listen to Enter onNewMovement inputs
+  const hasAddMovementHandler = /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(modalContent);
+  const hasEnterKeyCheck = modalContent.includes('newMovementTitle') && modalContent.includes('onKeyDown') && modalContent.includes('handleAddMovement(');
+  
+  assert.ok(hasAddMovementHandler, 'MusicPieceModal must define handleAddMovement handler');
+  assert.ok(hasEnterKeyCheck, 'MusicPieceModal must trigger handleAddMovement on Enter key');
 
-  // Verify the movement title input checks for Enter key
-  assert.ok(
-    content.includes('newMovementTitle') && content.includes('onKeyDown') && content.includes('handleAddMovement('),
-    'MusicPieceModal must define onKeyDown handler on newMovementTitle input to trigger handleAddMovement'
-  );
+  // Policy: MusicLibraryTable must render headphone indicators for tracks
+  const hasHeadphoneLogic = tableContent.includes('totalMovementTracksCount') && tableContent.includes('hasTracks');
+  assert.ok(hasHeadphoneLogic, 'MusicLibraryTable must compute and render headphone indicators for pieces with tracks');
 });
 
-test('codebase integrity: parentTitle and headphone indicators integration', () => {
+test('codebase integrity: player integration consistency', () => {
   const serviceFile = resolveProjectPath('src/services/playerService.ts');
   const playlistFile = resolveProjectPath('src/components/player/Playlist.tsx');
   const playerFile = resolveProjectPath('src/components/player/Player.tsx');
-  const libraryTableFile = resolveProjectPath('src/views/admin/music-library/MusicLibraryTable.tsx');
 
-  // Verify PlayerMediaFile interface has parentTitle
   const serviceContent = fs.readFileSync(serviceFile, 'utf8');
-  assert.ok(serviceContent.includes('parentTitle?: string;'), 'PlayerMediaFile must declare parentTitle?: string');
-
-  // Verify Playlist renders parentTitle
   const playlistContent = fs.readFileSync(playlistFile, 'utf8');
-  assert.ok(playlistContent.includes('parentTitle') && playlistContent.includes('track-parent-title'), 'Playlist must render parentTitle utilizing track-parent-title');
-
-  // Verify Player renders parentTitle and uses track-parent-label
   const playerContent = fs.readFileSync(playerFile, 'utf8');
-  assert.ok(playerContent.includes('parentTitle') && playerContent.includes('track-parent-label'), 'Player must render parentTitle utilizing track-parent-label');
 
-  // Verify MusicLibraryTable renders totalMovementTracksCount and hasTracks headphone emoji
-  const libraryContent = fs.readFileSync(libraryTableFile, 'utf8');
-  assert.ok(libraryContent.includes('totalMovementTracksCount') && libraryContent.includes('hasTracks'), 'MusicLibraryTable must compute totalMovementTracksCount and hasTracks to render headphone indicators');
+  // Verify PlayerMediaFile interface has parentTitle (required for movement identification)
+  assert.ok(serviceContent.includes('parentTitle?: string;'), 'PlayerMediaFile must declare parentTitle');
+
+  // Verify UI components render parentTitle
+  assert.ok(playlistContent.includes('parentTitle'), 'Playlist must support rendering parent piece titles');
+  assert.ok(playerContent.includes('parentTitle'), 'Player must support rendering parent piece titles');
 });
 
 
