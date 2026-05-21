@@ -101,6 +101,12 @@ export default function PublicPlayerView() {
       if (!piece) return file;
 
       const trackKey = file.availableTracks[part] ? part : 'tutti';
+      const actualFilename = file.availableTracks[part] || file.availableTracks['tutti'];
+
+      if (!actualFilename) return file;
+
+      const piece = piecesMap[file.pieceId];
+      if (!piece) return file;
       
       // We must regenerate the ID so the offline store knows this is a different track
       // e.g. song1_soprano vs song1_alto
@@ -113,7 +119,7 @@ export default function PublicPlayerView() {
         ...file,
         id: newId,
         trackKey,
-        streamUrl: pb.files.getURL(piece, filename),
+        streamUrl: pb.files.getURL(piece, actualFilename),
         // Crucial: clear offline status so it must be re-downloaded
         isDownloaded: false,
         offlineUrl: undefined,
