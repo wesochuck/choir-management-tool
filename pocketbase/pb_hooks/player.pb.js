@@ -156,6 +156,10 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             voiceParts: voiceParts
         });
     } catch (err) {
-        return e.json(404, { error: "Event or related pieces not found" });
+        console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+        return e.json(404, { 
+            error: "Event or related pieces not found", 
+            details: err.message || String(err)
+        });
     }
 });
