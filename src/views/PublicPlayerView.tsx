@@ -94,12 +94,6 @@ export default function PublicPlayerView() {
     const updatedPlaylist = playlist.map(file => {
       if (!file.availableTracks || !file.pieceId) return file;
 
-      const filename = file.availableTracks[part] || file.availableTracks['tutti'];
-      if (!filename) return file;
-
-      const piece = piecesMap[file.pieceId];
-      if (!piece) return file;
-
       const trackKey = file.availableTracks[part] ? part : 'tutti';
       const actualFilename = file.availableTracks[part] || file.availableTracks['tutti'];
 
