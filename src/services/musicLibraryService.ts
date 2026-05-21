@@ -1,6 +1,7 @@
 import { pb } from '../lib/pocketbase';
 import type { MusicPiece, MusicPieceInput } from '../types/musicLibrary';
 
+
 export type { MusicPiece, MusicPieceInput } from '../types/musicLibrary';
 
 type PocketBaseRecordBody = Record<string, unknown> | FormData;
@@ -65,6 +66,7 @@ export const musicLibraryService = {
       }
   },
 
+  /** @deprecated Use musicLibraryWorkflows.createPieceWithMovementsAndTutti instead */
   async createPieceWithMovementsAndTutti(
     data: Partial<MusicPieceInput>,
     options?: {
@@ -72,39 +74,7 @@ export const musicLibraryService = {
       movements?: { title: string; duration?: string }[];
     }
   ) {
-    let parent = await this.createPiece(data);
-
-    if (options?.tuttiFile) {
-      const formData = new FormData();
-      formData.append('audioFiles', options.tuttiFile);
-      const uploaded = await this.updatePiece(parent.id, formData);
-      
-      const lastFile = uploaded.audioFiles?.[uploaded.audioFiles.length - 1];
-      if (lastFile) {
-        parent = await this.updatePiece(parent.id, {
-          audioTrackMapping: {
-            ...(parent.audioTrackMapping || {}),
-            tutti: lastFile
-          }
-        });
-      }
-    }
-
-    if (options?.movements && options.movements.length > 0) {
-      for (const mov of options.movements) {
-        await this.createPiece({
-          title: mov.title,
-          duration: mov.duration || undefined,
-          parentId: parent.id,
-          composer: parent.composer || undefined,
-          voicing: parent.voicing || undefined,
-          copies: parent.copies !== undefined ? parent.copies : undefined,
-          catalogId: parent.catalogId || undefined,
-          performances: []
-        });
-      }
-    }
-
-    return parent;
+    const { musicLibraryWorkflows } = await import('./musicLibraryWorkflows');
+    return musicLibraryWorkflows.createPieceWithMovementsAndTutti(data, options);
   }
 };

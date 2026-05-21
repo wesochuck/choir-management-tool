@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
+import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { eventService } from '../../services/eventService';
 import { settingsService, getVoicePartsAndSections, type SectionDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
@@ -104,7 +105,7 @@ export default function MusicLibraryView() {
       } else {
         const { tuttiFile, movements, ...rest } = data;
         if (tuttiFile || (movements && movements.length > 0)) {
-          savedPiece = await musicLibraryService.createPieceWithMovementsAndTutti(rest, { tuttiFile, movements });
+          savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, { tuttiFile, movements });
         } else {
           savedPiece = await musicLibraryService.createPiece(rest);
         }
