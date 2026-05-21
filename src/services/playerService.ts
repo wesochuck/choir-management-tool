@@ -19,6 +19,7 @@ export interface PlayerMediaFile {
   offlineUrl?: string;
   isDownloaded?: boolean;
   downloadStatus?: 'idle' | 'downloading' | 'downloaded' | 'error';
+  parentTitle?: string;
 }
 
 export interface PlayerPlaylist {
@@ -80,6 +81,15 @@ function buildFilesFromPiece(
     const defaultTrackKey = mapping['tutti'] ? 'tutti' : Object.keys(mapping)[0];
     const filename = mapping[defaultTrackKey];
     if (!filename) return [];
+
+    let parentTitle: string | undefined = undefined;
+    if (piece.parentId) {
+      const parentPiece = allPieces.find(p => p.id === piece.parentId);
+      if (parentPiece) {
+        parentTitle = parentPiece.title;
+      }
+    }
+
     return [{
       id: `${itemId}_${defaultTrackKey}`,
       baseId: itemId,
@@ -91,6 +101,7 @@ function buildFilesFromPiece(
       availableTracks: mapping,
       streamUrl: pb.files.getURL(piece, filename),
       isFolder: false,
+      parentTitle,
     }];
   }
 
@@ -117,6 +128,7 @@ function buildFilesFromPiece(
       availableTracks: mMapping,
       streamUrl: pb.files.getURL(m, mFilename),
       isFolder: false,
+      parentTitle: itemTitle,
     });
   }
   return result;

@@ -193,6 +193,11 @@ export const Playlist: React.FC<PlaylistProps> = ({
                 </span>
                 <div className="track-info" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
                   <span className="track-name" style={{ fontWeight: 600 }}>{item.name}</span>
+                  {item.parentTitle && (
+                    <span className="track-parent-title">
+                      From: {item.parentTitle}
+                    </span>
+                  )}
                   {item.composer && <span className="track-composer" style={{ fontSize: '0.75rem', opacity: 0.8 }}>{item.composer}</span>}
                 </div>
                 {!item.isFolder && (

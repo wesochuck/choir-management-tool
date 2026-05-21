@@ -357,6 +357,18 @@ export default function MusicLibraryView() {
                     const isDuplicate = duplicateIds.has(piece.id);
                     const isParent = pieces.some(p => p.parentId === piece.id);
                     const isChild = !!piece.parentId;
+                    
+                    const hasOwnTracks = !!(piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).some(k => piece.audioTrackMapping?.[k]));
+                    const hasMovementTracks = pieces.some(m => m.parentId === piece.id && m.audioTrackMapping && Object.keys(m.audioTrackMapping).some(k => m.audioTrackMapping?.[k]));
+                    const hasTracks = hasOwnTracks || hasMovementTracks;
+
+                    const childMovements = pieces.filter(m => m.parentId === piece.id);
+                    const totalMovementTracksCount = childMovements.reduce((acc, m) => {
+                        const mMapping = m.audioTrackMapping || {};
+                        const mCount = Object.keys(mMapping).filter(k => mMapping[k]).length;
+                        return acc + mCount;
+                    }, 0);
+
                     return (
                         <tr 
                             key={piece.id} 
@@ -390,6 +402,20 @@ export default function MusicLibraryView() {
                                         </span>
                                     )}
                                     <strong style={{ color: isDuplicate ? '#e64a19' : 'inherit' }}>{piece.title}</strong>
+                                    {hasTracks && (
+                                        <span 
+                                            title="Has learning tracks" 
+                                            style={{ 
+                                                fontSize: '13px', 
+                                                lineHeight: 1, 
+                                                cursor: 'default',
+                                                display: 'inline-flex',
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            🎧
+                                        </span>
+                                    )}
                                     {isParent && (
                                         <span style={{ 
                                             display: 'inline-flex', 
@@ -471,6 +497,22 @@ export default function MusicLibraryView() {
                                 >
                                     🎵 Play
                                 </button>
+                            ) : isParent && totalMovementTracksCount > 0 ? (
+                                <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    backgroundColor: 'rgba(27, 77, 62, 0.08)',
+                                    color: 'var(--primary, #1b4d3e)',
+                                    fontSize: '11px',
+                                    fontWeight: 500,
+                                    border: '1px solid rgba(27, 77, 62, 0.15)',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    🎧 {totalMovementTracksCount} track{totalMovementTracksCount !== 1 ? 's' : ''} in movements
+                                </span>
                             ) : (
                                 <span className="text-xs text-muted">-</span>
                             )}
@@ -1203,8 +1245,8 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
         }
     };
 
-    const handleAddMovement = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAddMovement = async (e?: React.SyntheticEvent | React.KeyboardEvent) => {
+        e?.preventDefault();
         if (!localPiece) return;
         
         const nextIndex = movements.length + 1;
@@ -1719,6 +1761,8 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                             <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
                                 {movements.map((m, idx) => {
                                     const isExpanded = expandedMovementId === m.id;
+                                    const mMapping = m.audioTrackMapping || {};
+                                    const mTrackCount = Object.keys(mMapping).filter(k => mMapping[k]).length;
                                     return (
                                         <div 
                                             key={m.id} 
@@ -1731,9 +1775,28 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                         >
                                             <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
                                                 <div className="flex-col">
-                                                    <strong style={{ fontSize: '14px' }}>
-                                                        {idx + 1}. {m.title}
-                                                    </strong>
+                                                    <div className="flex-row" style={{ alignItems: 'center', gap: '8px' }}>
+                                                        <strong style={{ fontSize: '14px' }}>
+                                                            {idx + 1}. {m.title}
+                                                        </strong>
+                                                        {mTrackCount > 0 && (
+                                                            <span style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '3px',
+                                                                padding: '1px 6px',
+                                                                borderRadius: '10px',
+                                                                backgroundColor: 'rgba(27, 77, 62, 0.08)',
+                                                                color: 'var(--primary, #1b4d3e)',
+                                                                fontSize: '10px',
+                                                                fontWeight: 600,
+                                                                border: '1px solid rgba(27, 77, 62, 0.15)',
+                                                                lineHeight: '1.2'
+                                                            }}>
+                                                                🎧 {mTrackCount} Track{mTrackCount !== 1 ? 's' : ''}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {m.duration && (
                                                         <span className="text-xs text-muted">
                                                             Duration: {m.duration}
@@ -1797,6 +1860,11 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                         placeholder={`e.g. Movement ${movements.length + 1}`}
                                         value={newMovementTitle}
                                         onChange={e => setNewMovementTitle(e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                handleAddMovement(e);
+                                            }
+                                        }}
                                         className="card"
                                         style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
                                     />
@@ -1808,6 +1876,11 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                                         placeholder="e.g. 2:45"
                                         value={newMovementDuration}
                                         onChange={e => setNewMovementDuration(e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                handleAddMovement(e);
+                                            }
+                                        }}
                                         className="card"
                                         style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
                                     />

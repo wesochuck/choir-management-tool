@@ -97,6 +97,11 @@ export const Player: React.FC<PlayerProps> = ({
   return (
     <div className="player-card">
       <div className="player">
+        {currentTrack.parentTitle && (
+          <span className="track-parent-label">
+            From: {currentTrack.parentTitle}
+          </span>
+        )}
         <div className="player-title-row">
           <h2>{currentTrack.name}</h2>
           <span className={`track-part-badge ${isFallback ? 'fallback' : 'matched'}`}>

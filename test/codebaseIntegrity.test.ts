@@ -190,3 +190,47 @@ test('codebase integrity: DialogContext must declare showToast API', () => {
   const content = fs.readFileSync(contextFile, 'utf8');
   assert.ok(content.includes('showToast'), 'DialogContext must declare and export showToast method');
 });
+
+test('codebase integrity: MusicLibraryView must listen to Enter onNewMovement inputs', () => {
+  const file = path.resolve(import.meta.dirname || __dirname || '.', '../src/views/admin/MusicLibraryView.tsx');
+  const content = fs.readFileSync(file, 'utf8');
+
+  // Verify handleAddMovement is updated to accept an event argument or parameter
+  assert.ok(
+    content.includes('const handleAddMovement = async (e?:') ||
+    content.includes('const handleAddMovement = async (e: React.FormEvent') ||
+    /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(content),
+    'handleAddMovement must accept an optional event argument'
+  );
+
+  // Verify the movement title input checks for Enter key
+  assert.ok(
+    content.includes('newMovementTitle') && content.includes('onKeyDown') && content.includes('handleAddMovement('),
+    'MusicLibraryView must define onKeyDown handler on newMovementTitle input to trigger handleAddMovement'
+  );
+});
+
+test('codebase integrity: parentTitle and headphone indicators integration', () => {
+  const serviceFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/services/playerService.ts');
+  const playlistFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/components/player/Playlist.tsx');
+  const playerFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/components/player/Player.tsx');
+  const libraryViewFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/views/admin/MusicLibraryView.tsx');
+
+  // Verify PlayerMediaFile interface has parentTitle
+  const serviceContent = fs.readFileSync(serviceFile, 'utf8');
+  assert.ok(serviceContent.includes('parentTitle?: string;'), 'PlayerMediaFile must declare parentTitle?: string');
+
+  // Verify Playlist renders parentTitle
+  const playlistContent = fs.readFileSync(playlistFile, 'utf8');
+  assert.ok(playlistContent.includes('parentTitle') && playlistContent.includes('track-parent-title'), 'Playlist must render parentTitle utilizing track-parent-title');
+
+  // Verify Player renders parentTitle and uses track-parent-label
+  const playerContent = fs.readFileSync(playerFile, 'utf8');
+  assert.ok(playerContent.includes('parentTitle') && playerContent.includes('track-parent-label'), 'Player must render parentTitle utilizing track-parent-label');
+
+  // Verify MusicLibraryView renders totalMovementTracksCount and hasTracks headphone emoji
+  const libraryContent = fs.readFileSync(libraryViewFile, 'utf8');
+  assert.ok(libraryContent.includes('totalMovementTracksCount') && libraryContent.includes('hasTracks'), 'MusicLibraryView must compute totalMovementTracksCount and hasTracks to render headphone indicators');
+});
+
+

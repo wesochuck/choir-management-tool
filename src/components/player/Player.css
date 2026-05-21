@@ -124,6 +124,26 @@
   min-width: 0;
 }
 
+.chorus-player .track-parent-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.chorus-player .track-parent-title {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  font-weight: 500;
+  margin-top: 0.1rem;
+  display: block;
+}
+
+
 /* Badge in the player card */
 .chorus-player .track-part-badge {
   flex-shrink: 0;
