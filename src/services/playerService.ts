@@ -26,6 +26,63 @@ export interface PlayerPlaylist {
   };
   files: PlayerMediaFile[];
   voiceParts: VoicePartDef[];
+  /** All music library pieces (parents + movements) for voice part URL resolution. */
+  allPieces: MusicPiece[];
+}
+
+/** Build PlayerMediaFile entries from a single piece (or its movements if it's a parent). */
+function buildFilesFromPiece(
+  itemId: string,
+  itemTitle: string,
+  itemComposer: string | undefined,
+  itemDuration: string | undefined,
+  piece: MusicPiece,
+  allPieces: MusicPiece[]
+): PlayerMediaFile[] {
+  const mapping = piece.audioTrackMapping || {};
+  const hasOwnTracks = Object.keys(mapping).length > 0;
+
+  if (hasOwnTracks) {
+    const defaultTrackKey = mapping['tutti'] ? 'tutti' : Object.keys(mapping)[0];
+    const filename = mapping[defaultTrackKey];
+    if (!filename) return [];
+    return [{
+      id: `${itemId}_${defaultTrackKey}`,
+      name: itemTitle,
+      composer: itemComposer || piece.composer,
+      duration: itemDuration || piece.duration,
+      pieceId: piece.id,
+      trackKey: defaultTrackKey,
+      availableTracks: mapping,
+      streamUrl: pb.files.getURL(piece, filename),
+      isFolder: false,
+    }];
+  }
+
+  // No own tracks — look for child movements
+  const movements = allPieces
+    .filter(p => p.parentId === piece.id)
+    .sort((a, b) => (a.created || '').localeCompare(b.created || ''));
+
+  const result: PlayerMediaFile[] = [];
+  for (const m of movements) {
+    const mMapping = m.audioTrackMapping || {};
+    const mDefaultKey = mMapping['tutti'] ? 'tutti' : Object.keys(mMapping)[0];
+    const mFilename = mMapping[mDefaultKey];
+    if (!mFilename) continue;
+    result.push({
+      id: `${itemId}_${m.id}_${mDefaultKey}`,
+      name: m.title || `${itemTitle} — Movement`,
+      composer: m.composer || piece.composer,
+      duration: m.duration,
+      pieceId: m.id,
+      trackKey: mDefaultKey,
+      availableTracks: mMapping,
+      streamUrl: pb.files.getURL(m, mFilename),
+      isFolder: false,
+    });
+  }
+  return result;
 }
 
 export const playerService = {
@@ -41,7 +98,12 @@ export const playerService = {
       voiceParts: VoicePartDef[];
     };
 
-    const piecesMap = pieces.reduce((acc, p) => {
+    // The hook only returns the pieces referenced in the setList (parent level).
+    // Fetch the full library so we can resolve child movements for pieces that
+    // carry no direct audioTrackMapping (i.e. multi-movement works).
+    const allPieces = await pb.collection('musicLibrary').getFullList<MusicPiece>();
+
+    const piecesMap = allPieces.reduce((acc, p) => {
       acc[p.id] = p;
       return acc;
     }, {} as Record<string, MusicPiece>);
@@ -50,48 +112,33 @@ export const playerService = {
 
     for (const item of setList) {
       if (item.type === 'intermission') continue;
-      
       const piece = item.pieceId ? piecesMap[item.pieceId] : null;
       if (!piece) continue;
 
-      // Map the piece to one or more files (if it has movements, we'd handle that here, 
-      // but for now let's assume the set list items are the primary unit)
-      
-      // We store the mapping so the UI can switch tracks
-      const mapping = piece.audioTrackMapping || {};
-      
-      // Use "tutti" or the first available track as default
-      const defaultTrackKey = mapping['tutti'] ? 'tutti' : Object.keys(mapping)[0];
-      const filename = mapping[defaultTrackKey];
-
-      if (filename) {
-        files.push({
-          id: `${item.id}_${defaultTrackKey}`,
-          name: item.title,
-          composer: item.composer || piece.composer,
-          duration: item.duration || piece.duration,
-          pieceId: piece.id,
-          trackKey: defaultTrackKey,
-          availableTracks: mapping,
-          streamUrl: pb.files.getURL(piece, filename),
-          isFolder: false
-        });
-      }
+      const entries = buildFilesFromPiece(
+        item.id,
+        item.title,
+        item.composer,
+        item.duration,
+        piece,
+        allPieces
+      );
+      files.push(...entries);
     }
 
-    return { event, files, voiceParts };
+    return { event, files, voiceParts, allPieces };
   },
 
   async fetchPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {
-    const [event, pieces, vpRecord] = await Promise.all([
+    const [event, allPieces, vpRecord] = await Promise.all([
       pb.collection('events').getOne<Event>(eventId),
-      pb.collection('musicLibrary').getFullList<MusicPiece>(), // In a real app, filter this
-      pb.collection('appSettings').getFirstListItem<any>('key = "voiceParts"').catch(() => null)
+      pb.collection('musicLibrary').getFullList<MusicPiece>(),
+      pb.collection('appSettings').getFirstListItem<{ value: { voiceParts: VoicePartDef[] } }>('key = "voiceParts"').catch(() => null)
     ]);
 
     const setList = event.setList || [];
     const voiceParts = vpRecord?.value?.voiceParts || [];
-    const piecesMap = pieces.reduce((acc, p) => {
+    const piecesMap = allPieces.reduce((acc, p) => {
       acc[p.id] = p;
       return acc;
     }, {} as Record<string, MusicPiece>);
@@ -103,29 +150,22 @@ export const playerService = {
       const piece = item.pieceId ? piecesMap[item.pieceId] : null;
       if (!piece) continue;
 
-      const mapping = piece.audioTrackMapping || {};
-      const defaultTrackKey = mapping['tutti'] ? 'tutti' : Object.keys(mapping)[0];
-      const filename = mapping[defaultTrackKey];
-
-      if (filename) {
-        files.push({
-          id: `${item.id}_${defaultTrackKey}`,
-          name: item.title,
-          composer: item.composer || piece.composer,
-          duration: item.duration || piece.duration,
-          pieceId: piece.id,
-          trackKey: defaultTrackKey,
-          availableTracks: mapping,
-          streamUrl: pb.files.getURL(piece, filename),
-          isFolder: false
-        });
-      }
+      const entries = buildFilesFromPiece(
+        item.id,
+        item.title,
+        item.composer,
+        item.duration,
+        piece,
+        allPieces
+      );
+      files.push(...entries);
     }
 
     return { 
       event: { id: event.id, title: event.title, date: event.date }, 
       files, 
-      voiceParts 
+      voiceParts,
+      allPieces
     };
   },
 

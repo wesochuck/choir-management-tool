@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { playerService, type PlayerPlaylist, type PlayerMediaFile } from '../services/playerService';
+import { pb } from '../lib/pocketbase';
 import { Player } from '../components/player/Player';
 import { Playlist } from '../components/player/Playlist';
 import { VoicePartSelector } from '../components/player/VoicePartSelector';
@@ -81,27 +82,27 @@ export default function PublicPlayerView() {
   const handleVoicePartChange = (part: string) => {
     setSelectedVoicePart(part);
     safeLocalStorage.setItem('player-voice-part', part);
-    
-    // Update stream URLs for all tracks based on the new voice part
+
+    if (!data) return;
+    const piecesMap = data.allPieces.reduce((acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    }, {} as Record<string, (typeof data.allPieces)[number]>);
+
     setPlaylist(prev => prev.map(file => {
-      if (!file.availableTracks) return file;
-      
+      if (!file.availableTracks || !file.pieceId) return file;
+
       const filename = file.availableTracks[part] || file.availableTracks['tutti'];
       if (!filename) return file;
 
-      // We need the piece record to get the URL, but playerService 
-      // already constructed the initial streamUrl. 
-      // For standalone mode, we might need to store more info or 
-      // rely on the hook returning constructed URLs for ALL tracks.
-      
-      // Refinement: The hook should probably return the mapping of labels to URLs.
-      // But for now, let's assume if they switch, we fetch the new URL.
-      // Actually, since it's a public record, we can construct the URL if we have the ID.
-      
+      const piece = piecesMap[file.pieceId];
+      if (!piece) return file;
+
+      const trackKey = file.availableTracks[part] ? part : 'tutti';
       return {
         ...file,
-        trackKey: file.availableTracks[part] ? part : 'tutti',
-        streamUrl: `/api/files/musicLibrary/${file.pieceId}/${filename}`
+        trackKey,
+        streamUrl: pb.files.getURL(piece, filename),
       };
     }));
   };
