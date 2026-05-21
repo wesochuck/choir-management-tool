@@ -9,6 +9,7 @@ interface EventListProps {
   onViewRoster: (event: Event) => void;
   onCheckAttendance?: (event: Event) => void;
   onViewSeating?: (event: Event) => void;
+  onOpenPlayer?: (event: Event) => void;
   openAuditionEventId?: string;
   sendingEmailEventId?: string | null;
 }
@@ -22,6 +23,7 @@ export const EventList: React.FC<EventListProps> = ({
   onViewRoster, 
   onCheckAttendance,
   onViewSeating,
+  onOpenPlayer,
   openAuditionEventId,
   sendingEmailEventId
 }) => {
@@ -104,6 +106,18 @@ export const EventList: React.FC<EventListProps> = ({
                 title="Open seating chart for this performance"
               >
                 🪑 Seating
+              </button>
+            )}
+            {onOpenPlayer && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenPlayer(e);
+                }}
+                className="btn btn-secondary btn-sm"
+                title="Open audio practice player"
+              >
+                🎧 Player
               </button>
             )}
             <button 

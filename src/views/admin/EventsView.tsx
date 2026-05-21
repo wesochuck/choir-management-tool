@@ -20,6 +20,7 @@ import {
   communicationService,
   type CommunicationRecipient,
 } from '../../services/communicationService';
+import { playerService } from '../../services/playerService';
 
 export default function EventsView() {
   const dialog = useDialog();
@@ -48,6 +49,48 @@ export default function EventsView() {
       })
       .catch(() => undefined);
   }, []);
+
+  const handleOpenPlayer = async (event: Event) => {
+    try {
+      const token = await playerService.generateToken(event.id);
+      const url = `${window.location.origin}/player?token=${token}`;
+      
+      await dialog.showMessage({
+        title: 'Player Link Generated',
+        message: (
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
+            <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', wordBreak: 'break-all', fontSize: '0.85rem' }}>
+              {url}
+            </div>
+            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(url);
+                }}
+              >
+                Copy Link
+              </button>
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={() => window.open(url, '_blank')}
+              >
+                Open Player
+              </button>
+            </div>
+          </div>
+        )
+      });
+    } catch (e) {
+      console.error(e);
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Could not generate player link.',
+        variant: 'danger'
+      });
+    }
+  };
 
   useEffect(() => {
     if (!reminderConfig) {
@@ -241,6 +284,7 @@ export default function EventsView() {
         onViewRoster={(event) => navigate(`/admin/events/${event.id}/roster`)}
         onCheckAttendance={(event) => navigate(`/admin/attendance?eventId=${event.id}`)}
         onViewSeating={(event) => navigate(`/admin/seating?eventId=${event.id}`)}
+        onOpenPlayer={handleOpenPlayer}
         openAuditionEventId={auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined}
       />
 

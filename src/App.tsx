@@ -22,6 +22,7 @@ const SeatingFinderView = lazy(() => import('./views/singer/SeatingFinderView'))
 const ProfileView = lazy(() => import('./views/singer/ProfileView'));
 const PublicAuditionView = lazy(() => import('./views/PublicAuditionView'));
 const PublicRsvpView = lazy(() => import('./views/PublicRsvpView'));
+const PublicPlayerView = lazy(() => import('./views/PublicPlayerView'));
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/login" element={<LoginView />} />
           <Route path="/auditions" element={<PublicAuditionView />} />
           <Route path="/rsvp" element={<PublicRsvpView />} />
+          <Route path="/player" element={<PublicPlayerView />} />
           <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
 
           <Route path="/admin/roster" element={

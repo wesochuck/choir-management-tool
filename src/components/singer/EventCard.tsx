@@ -8,6 +8,7 @@ import { AppCard } from '../common/AppCard';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { resolveRecommendedTracks } from '../../lib/musicPieceUtils';
 import { pb } from '../../lib/pocketbase';
+import { playerService } from '../../services/playerService';
 
 interface EventCardProps {
   event: Event;
@@ -31,6 +32,30 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   const [library, setLibrary] = React.useState<MusicPiece[]>([]);
   const [playingTrack, setPlayingTrack] = React.useState<{ songId: string; label: string; url: string } | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = React.useState(false);
+
+  const handleOpenPlayer = async () => {
+    try {
+      setIsGeneratingToken(true);
+      // Since this is the singer dashboard, we are authenticated. 
+      // We can use the admin-only token generation API if we have permission,
+      // or we can just navigate to /player and let it handle auth.
+      // But the spec says standalone links use HMAC.
+      
+      // Let's check if there's a public way to get a player token or if we should 
+      // just pass the eventId if authenticated.
+      
+      // For now, let's assume the singer can generate their own practice token 
+      // via a dedicated endpoint or we just use eventId if auth is present.
+      
+      // Refined Approach: Redirect to /player?eventId=xxx if authenticated.
+      window.open(`/player?eventId=${event.id}`, '_blank');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
 
   React.useEffect(() => {
     if (showSetList) {
@@ -51,6 +76,15 @@ export const EventCard: React.FC<EventCardProps> = ({
             >
               📅 Add to Calendar
             </button>
+            {showSetList && setList && setList.length > 0 && (
+              <button 
+                onClick={handleOpenPlayer}
+                className="btn btn-primary btn-sm"
+                disabled={isGeneratingToken}
+              >
+                🎧 Practice Player
+              </button>
+            )}
         </div>
 
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
