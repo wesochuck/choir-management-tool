@@ -1,36 +1,3 @@
-// Helper to safely convert Go byte slices (which Goja maps as array-like objects of numbers) to JS strings
-function decodeGoBytes(val) {
-    if (!val) return "";
-    if (typeof val === 'string') return val;
-    try {
-        if (typeof val === 'object') {
-            let str = "";
-            const len = val.length;
-            if (typeof len === 'number') {
-                for (let i = 0; i < len; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
-            }
-        }
-    } catch (e) {
-        // ignore
-    }
-    return JSON.stringify(val);
-}
-
-// Safely parse JSON columns
-function parseJsonField(val) {
-    if (!val) return null;
-    const str = decodeGoBytes(val);
-    if (!str) return null;
-    try {
-        return JSON.parse(str);
-    } catch (e) {
-        return null;
-    }
-}
-
 routerAdd("POST", "/api/generate-player-token", (e) => {
     const authRecord = e.auth;
     if (!authRecord || authRecord.get("role") !== "admin") {
@@ -60,6 +27,39 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
 });
 
 routerAdd("GET", "/api/player-playlist", (e) => {
+    // Helper to safely convert Go byte slices to JS strings
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        try {
+            if (typeof val === 'object') {
+                let str = "";
+                const len = val.length;
+                if (typeof len === 'number') {
+                    for (let i = 0; i < len; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+            }
+        } catch (err) {
+            // ignore
+        }
+        return JSON.stringify(val);
+    }
+
+    // Safely parse JSON columns
+    function parseJsonField(val) {
+        if (!val) return null;
+        const str = decodeGoBytes(val);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (err) {
+            return null;
+        }
+    }
+
     let token = e.requestInfo().query.token;
     const sParam = e.requestInfo().query.s;
     if (token && sParam && !token.includes('s=')) {
