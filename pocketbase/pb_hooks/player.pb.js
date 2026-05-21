@@ -82,27 +82,10 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             setList = [];
         }
         
-        // Fetch piece details for any linked pieces
-        const pieceIds = setList
-            .filter(item => item && item.pieceId)
-            .map(item => item.pieceId);
-
+        // Fetch all pieces from the music library to allow title-based fallback matching on the client side
         let pieces = [];
-        if (pieceIds.length > 0) {
-            // Find all primary pieces
-            const filterStr = pieceIds.map(id => `id = '${id}'`).join(" || ");
-            const primaryPieces = $app.findRecordsByFilter("musicLibrary", filterStr);
-            
-            // Find all child movements for these pieces
-            const parentFilterStr = pieceIds.map(id => `parentId = '${id}'`).join(" || ");
-            let childPieces = [];
-            try {
-                childPieces = $app.findRecordsByFilter("musicLibrary", parentFilterStr);
-            } catch (e) {
-                // Ignore if no children found
-            }
-            
-            const allPieces = [...primaryPieces, ...childPieces];
+        try {
+            const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
             pieces = allPieces.map(p => {
                 const rawMapping = p.get("audioTrackMapping");
                 let mapping = {};
@@ -123,10 +106,12 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                     created: p.get("created"),
                     updated: p.get("updated"),
                     audioTrackMapping: mapping,
-                    collectionId: p.collectionId(),
-                    collectionName: p.collectionName()
+                    collectionId: p.collectionId,
+                    collectionName: p.collectionName
                 };
             });
+        } catch (err) {
+            // Fallback to empty list if querying fails
         }
 
         // Include voice parts configuration for the selector
