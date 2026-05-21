@@ -207,17 +207,20 @@ export const Player: React.FC<PlayerProps> = ({
             <span className="unit-label">s</span>
           </div>
 
-          <label>Volume</label>
-          <input 
-            type="range" 
-            min="0" 
-            max="1" 
-            step="0.01" 
-            value={volume} 
-            onChange={handleVolumeChange}
-            className="volume-bar"
-            style={volStyle}
-          />
+          <div className="volume-control">
+            <label htmlFor="volume-input">Volume</label>
+            <input 
+              id="volume-input"
+              type="range" 
+              min="0" 
+              max="1" 
+              step="0.01" 
+              value={volume} 
+              onChange={handleVolumeChange}
+              className="volume-bar"
+              style={volStyle}
+            />
+          </div>
           
           {/* INTER-TRACK GAP SETTING */}
           <div className="delay-setting-container">
