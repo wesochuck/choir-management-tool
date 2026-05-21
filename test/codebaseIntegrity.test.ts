@@ -184,3 +184,9 @@ test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte ar
   assert.strictEqual(parseJsonField('not-a-json-string'), null);
   assert.strictEqual(parseJsonField([1, 2, 3, 'not-a-byte']), null);
 });
+
+test('codebase integrity: DialogContext must declare showToast API', () => {
+  const contextFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/contexts/DialogContext.tsx');
+  const content = fs.readFileSync(contextFile, 'utf8');
+  assert.ok(content.includes('showToast'), 'DialogContext must declare and export showToast method');
+});

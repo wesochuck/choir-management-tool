@@ -1076,11 +1076,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
                 await onRefresh();
             }
             
-            dialog.showMessage({
-                title: 'Success',
-                message: 'Audio track deleted successfully.',
-                variant: 'info'
-            });
+            dialog.showToast('Audio track deleted successfully.');
         } catch (err) {
             console.error(err);
             dialog.showMessage({
@@ -1162,11 +1158,7 @@ function MusicPieceModal({ isOpen, piece, onClose, onSave, onDelete, catalogLook
             
             await loadMovements();
             
-            dialog.showMessage({
-                title: 'Success',
-                message: 'Movement audio track deleted successfully.',
-                variant: 'info'
-            });
+            dialog.showToast('Movement audio track deleted successfully.');
         } catch (err) {
             console.error(err);
             dialog.showMessage({
