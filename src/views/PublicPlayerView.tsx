@@ -61,7 +61,7 @@ export default function PublicPlayerView() {
       
       // Read directly from storage to avoid dependency triggers
       const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
-      const targetedTracks = playerService.applyVoicePartToFiles(result.files, initialPart, result.allPieces);
+      const targetedTracks = playerService.applyVoicePartToFiles(result.files, initialPart, result.allPieces, result.voiceParts);
       const hydrated = await hydrateOfflineStatus(targetedTracks);
       
       setPlaylist(hydrated);
@@ -72,7 +72,7 @@ export default function PublicPlayerView() {
       const cached = await getOfflinePlaylist(key);
       if (cached) {
         const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
-        const targetedTracks = playerService.applyVoicePartToFiles(cached, initialPart, data?.allPieces || []); 
+        const targetedTracks = playerService.applyVoicePartToFiles(cached, initialPart, data?.allPieces || [], data?.voiceParts || []);
         setPlaylist(await hydrateOfflineStatus(targetedTracks));
         setIsLoading(false);
       } else {
@@ -93,7 +93,7 @@ export default function PublicPlayerView() {
     if (!data) return;
     
     // Remap current tracks using the new part selection
-    const updatedPlaylist = playerService.applyVoicePartToFiles(playlist, part, data.allPieces);
+    const updatedPlaylist = playerService.applyVoicePartToFiles(playlist, part, data.allPieces, data.voiceParts);
     const hydrated = await hydrateOfflineStatus(updatedPlaylist);
     setPlaylist(hydrated);
   };

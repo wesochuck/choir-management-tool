@@ -2,6 +2,8 @@ import { pb } from '../lib/pocketbase';
 import type { MusicPiece } from './musicLibraryService';
 import type { Event, SetListItem } from './eventService';
 import type { VoicePartDef } from './settingsService';
+import { DEFAULT_VOICE_PARTS } from './settingsService';
+import { getSectionFromVoicePart } from '../lib/voicePartUtils';
 
 export interface PlayerMediaFile {
   id: string;
@@ -287,38 +289,93 @@ export const playerService = {
   applyVoicePartToFiles(
     files: PlayerMediaFile[],
     part: string,
-    allPieces: MusicPiece[]
+    allPieces: MusicPiece[],
+    voiceParts?: VoicePartDef[]
   ): PlayerMediaFile[] {
     const piecesMap = allPieces.reduce((acc, p) => {
       acc[p.id] = p;
       return acc;
     }, {} as Record<string, MusicPiece>);
 
+    const resolvedVoiceParts = voiceParts && voiceParts.length > 0 ? voiceParts : DEFAULT_VOICE_PARTS;
+
+    const getSectionOfKey = (k: string): string => {
+      const vp = resolvedVoiceParts.find(v => v.label.toLowerCase() === k.toLowerCase());
+      if (vp && vp.sectionCode) {
+        return vp.sectionCode;
+      }
+      return getSectionFromVoicePart(k);
+    };
+
+    const requestedSection = getSectionOfKey(part);
+
     return files.map(file => {
       if (!file.availableTracks || !file.pieceId) return file;
 
-      // Case-insensitive lookup for requested part
+      let trackKey = '';
+
+      // 1. Case-insensitive lookup for requested part
       const matchedKey = Object.keys(file.availableTracks).find(
         k => k.toLowerCase() === part.toLowerCase()
       );
 
-      // Fallback hierarchy:
-      // 1. Requested part (case-insensitive)
-      // 2. Tutti (case-insensitive)
-      // 3. First available track key
-      let trackKey = 'tutti';
       if (matchedKey && file.availableTracks[matchedKey]) {
         trackKey = matchedKey;
-      } else {
+      } else if (requestedSection !== 'Other') {
+        const activeKeys = Object.keys(file.availableTracks).filter(
+          k => file.availableTracks![k] && file.availableTracks![k].trim() !== ''
+        );
+
+        // 2a. Section code itself
+        const sectionMatch = activeKeys.find(
+          k => k.toLowerCase() === requestedSection.toLowerCase()
+        );
+        if (sectionMatch) {
+          trackKey = sectionMatch;
+        }
+
+        // 2b. Other voice parts in the same section
+        if (!trackKey) {
+          const sameSectionLabels = resolvedVoiceParts
+            .filter(vp => vp.sectionCode === requestedSection)
+            .map(vp => vp.label.toLowerCase());
+
+          for (const label of sameSectionLabels) {
+            const match = activeKeys.find(k => k.toLowerCase() === label);
+            if (match) {
+              trackKey = match;
+              break;
+            }
+          }
+        }
+
+        // 2c. Generic fallback for same section
+        if (!trackKey) {
+          const genericMatch = activeKeys.find(
+            k => getSectionOfKey(k) === requestedSection
+          );
+          if (genericMatch) {
+            trackKey = genericMatch;
+          }
+        }
+      }
+
+      // 3. Tutti fallback
+      if (!trackKey) {
         const tuttiKey = Object.keys(file.availableTracks).find(
           k => k.toLowerCase() === 'tutti'
         );
         if (tuttiKey && file.availableTracks[tuttiKey]) {
           trackKey = tuttiKey;
-        } else if (Object.keys(file.availableTracks).length > 0) {
-          trackKey = Object.keys(file.availableTracks)[0];
         }
       }
+
+      // 4. First available fallback
+      if (!trackKey && Object.keys(file.availableTracks).length > 0) {
+        trackKey = Object.keys(file.availableTracks)[0];
+      }
+
+      if (!trackKey) return file;
 
       const actualFilename = file.availableTracks[trackKey];
       if (!actualFilename) return file;

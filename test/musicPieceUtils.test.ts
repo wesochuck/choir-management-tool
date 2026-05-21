@@ -104,8 +104,8 @@ test('resolveRecommendedTracks resolves exact, prefix, fallback and Tutti tracks
   assert.deepEqual(resolveRecommendedTracks('S1', mapping), ['S1', 'tutti']);
   assert.deepEqual(resolveRecommendedTracks('A1', mapping), ['A1', 'tutti']);
 
-  // 2. Broad section prefix match (e.g. S2 -> matches base S)
-  assert.deepEqual(resolveRecommendedTracks('S2', mapping), ['S', 'tutti']);
+  // 2. Broad section prefix match (e.g. S2 -> matches base S and S1 via same-bucket fallback)
+  assert.deepEqual(resolveRecommendedTracks('S2', mapping), ['S', 'S1', 'tutti']);
 
   // 3. Subpart fallback: e.g. B2 has no exact or general B, falls back to S1 or other non-tutti starting with base (if present)
   // Wait, let's test B2. It should match base "B", which is present in mapping.
@@ -121,6 +121,17 @@ test('resolveRecommendedTracks resolves exact, prefix, fallback and Tutti tracks
   // If no prefix matches at all, only Tutti is returned
   assert.deepEqual(resolveRecommendedTracks('Tenor', mapping), ['tutti']);
   assert.deepEqual(resolveRecommendedTracks(undefined, mapping), ['tutti']);
+
+  // 4. Same-bucket fallback using custom voice parts configuration
+  const customVoiceParts = [
+    { label: 'HighSop', fullName: 'High Soprano', sectionCode: 'HighSopSection' },
+    { label: 'LowSop', fullName: 'Low Soprano', sectionCode: 'HighSopSection' }
+  ];
+  const customMapping = {
+    tutti: 'tutti.mp3',
+    HighSop: 'high_sop.mp3'
+  };
+  assert.deepEqual(resolveRecommendedTracks('LowSop', customMapping, customVoiceParts), ['HighSop', 'tutti']);
 });
 
 test('duration parsing accepts supported formats and rejects polluted text', () => {

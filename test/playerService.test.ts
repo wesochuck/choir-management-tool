@@ -192,6 +192,74 @@ describe('playerService', () => {
       assert.strictEqual(a1Result[0].trackKey, 'tutti');
       assert.strictEqual(a1Result[0].id, 'item1_tutti');
     });
+
+    it('falls back to other voice part in same bucket when requested part is missing', () => {
+      const files: PlayerMediaFile[] = [
+        {
+          id: 'item1_tutti',
+          name: 'Song 1',
+          pieceId: 'piece1',
+          trackKey: 'tutti',
+          availableTracks: {
+            tutti: 'tutti.mp3',
+            S1: 's1.mp3'
+          },
+          streamUrl: '...',
+          isFolder: false
+        }
+      ];
+
+      const result = playerService.applyVoicePartToFiles(files, 'S2', mockPieces);
+      assert.strictEqual(result[0].trackKey, 'S1');
+      assert.strictEqual(result[0].id, 'item1_S1');
+    });
+
+    it('falls back to section bucket track when requested part is missing', () => {
+      const files: PlayerMediaFile[] = [
+        {
+          id: 'item1_tutti',
+          name: 'Song 1',
+          pieceId: 'piece1',
+          trackKey: 'tutti',
+          availableTracks: {
+            tutti: 'tutti.mp3',
+            S: 's.mp3'
+          },
+          streamUrl: '...',
+          isFolder: false
+        }
+      ];
+
+      const result = playerService.applyVoicePartToFiles(files, 'S2', mockPieces);
+      assert.strictEqual(result[0].trackKey, 'S');
+      assert.strictEqual(result[0].id, 'item1_S');
+    });
+
+    it('falls back to other voice part in same bucket when using custom settings', () => {
+      const customVoiceParts = [
+        { label: 'HighSop', fullName: 'High Soprano', sectionCode: 'HighSopSection' },
+        { label: 'LowSop', fullName: 'Low Soprano', sectionCode: 'HighSopSection' }
+      ];
+
+      const files: PlayerMediaFile[] = [
+        {
+          id: 'item1_tutti',
+          name: 'Song 1',
+          pieceId: 'piece1',
+          trackKey: 'tutti',
+          availableTracks: {
+            tutti: 'tutti.mp3',
+            HighSop: 'high_sop.mp3'
+          },
+          streamUrl: '...',
+          isFolder: false
+        }
+      ];
+
+      const result = playerService.applyVoicePartToFiles(files, 'LowSop', mockPieces, customVoiceParts);
+      assert.strictEqual(result[0].trackKey, 'HighSop');
+      assert.strictEqual(result[0].id, 'item1_HighSop');
+    });
   });
 
   describe('fetchPlaylistByToken', () => {
