@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
@@ -13,42 +12,40 @@ import {
   getSectionBucketApplicabilityLabel,
   filterPiecesBySectionBucket
 } from '../src/lib/musicPieceUtils.ts';
-import type { MusicPiece } from '../src/services/musicLibraryService.ts';
 import type { SectionDef } from '../src/services/settingsService';
+import { createMusicPieceFixture, createSectionDefFixture } from './helpers.ts';
 
 describe('section-bucket applicability', () => {
   const sections: SectionDef[] = [
-    { code: 'S', name: 'Sopranos', allowedVoiceParts: [] },
-    { code: 'A', name: 'Altos', allowedVoiceParts: [] }
+    createSectionDefFixture({ code: 'S', name: 'Sopranos' }),
+    createSectionDefFixture({ code: 'A', name: 'Altos' })
   ];
 
   it('pieceAppliesToSectionBucket handles missing/empty', () => {
-    assert.strictEqual(pieceAppliesToSectionBucket({} as any, 'S'), true);
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: [] } as any, 'S'), true);
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: undefined } as any, 'S'), true);
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: null } as any, 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket(createMusicPieceFixture({ sectionBuckets: undefined }), 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket(createMusicPieceFixture({ sectionBuckets: [] }), 'S'), true);
   });
 
   it('pieceAppliesToSectionBucket handles restrictions', () => {
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S'] } as any, 'S'), true);
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S'] } as any, 'A'), false);
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S', 'A'] } as any, 'S'), true);
-    assert.strictEqual(pieceAppliesToSectionBucket({ sectionBuckets: ['S', 'A'] } as any, 'A'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket(createMusicPieceFixture({ sectionBuckets: ['S'] }), 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket(createMusicPieceFixture({ sectionBuckets: ['S'] }), 'A'), false);
+    assert.strictEqual(pieceAppliesToSectionBucket(createMusicPieceFixture({ sectionBuckets: ['S', 'A'] }), 'S'), true);
+    assert.strictEqual(pieceAppliesToSectionBucket(createMusicPieceFixture({ sectionBuckets: ['S', 'A'] }), 'A'), true);
   });
 
   it('getSectionBucketApplicabilityLabel formats correctly', () => {
-    assert.strictEqual(getSectionBucketApplicabilityLabel({} as any, sections), 'All section buckets');
-    assert.strictEqual(getSectionBucketApplicabilityLabel({ sectionBuckets: ['S'] } as any, sections), 'Sopranos');
-    assert.strictEqual(getSectionBucketApplicabilityLabel({ sectionBuckets: ['S', 'A'] } as any, sections), 'Sopranos, Altos');
-    assert.strictEqual(getSectionBucketApplicabilityLabel({ sectionBuckets: ['S', 'UNKNOWN'] } as any, sections), 'Sopranos, UNKNOWN');
+    assert.strictEqual(getSectionBucketApplicabilityLabel(createMusicPieceFixture({ sectionBuckets: undefined }), sections), 'All section buckets');
+    assert.strictEqual(getSectionBucketApplicabilityLabel(createMusicPieceFixture({ sectionBuckets: ['S'] }), sections), 'Sopranos');
+    assert.strictEqual(getSectionBucketApplicabilityLabel(createMusicPieceFixture({ sectionBuckets: ['S', 'A'] }), sections), 'Sopranos, Altos');
+    assert.strictEqual(getSectionBucketApplicabilityLabel(createMusicPieceFixture({ sectionBuckets: ['S', 'UNKNOWN'] }), sections), 'Sopranos, UNKNOWN');
   });
 
   it('filterPiecesBySectionBucket works', () => {
     const pieces = [
-      { id: '1', title: 'All' }, // unrestricted
-      { id: '2', title: 'S Only', sectionBuckets: ['S'] },
-      { id: '3', title: 'A Only', sectionBuckets: ['A'] }
-    ] as any[];
+      createMusicPieceFixture({ id: '1', title: 'All' }), // unrestricted
+      createMusicPieceFixture({ id: '2', title: 'S Only', sectionBuckets: ['S'] }),
+      createMusicPieceFixture({ id: '3', title: 'A Only', sectionBuckets: ['A'] })
+    ];
 
     // Filter by empty/All
     assert.strictEqual(filterPiecesBySectionBucket(pieces, '').length, 3);
@@ -64,9 +61,9 @@ describe('section-bucket applicability', () => {
 
 test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
   const pieces = [
-    { id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' },
-    { id: '2', title: 'Restricted', composer: 'Comp', voicing: 'S', sectionBuckets: ['S', 'A'] }
-  ] as unknown as MusicPiece[];
+    createMusicPieceFixture({ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }),
+    createMusicPieceFixture({ id: '2', title: 'Restricted', composer: 'Comp', voicing: 'S', sectionBuckets: ['S', 'A'] })
+  ];
   const csv = exportMusicToCSV(pieces);
   assert.ok(csv.includes('Title,Composer,Voicing,Applies To'));
   assert.ok(csv.includes('"Hallelujah","Handel","SATB","All"'));
@@ -75,17 +72,17 @@ test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
 
 test('findDuplicates returns pieces with identical title and composer', () => {
   const pieces = [
-    { id: '1', title: 'Song A', composer: 'Comp A' },
-    { id: '2', title: 'Song B', composer: 'Comp B' },
-    { id: '3', title: 'Song A', composer: 'Comp A' }
-  ] as unknown as MusicPiece[];
+    createMusicPieceFixture({ id: '1', title: 'Song A', composer: 'Comp A' }),
+    createMusicPieceFixture({ id: '2', title: 'Song B', composer: 'Comp B' }),
+    createMusicPieceFixture({ id: '3', title: 'Song A', composer: 'Comp A' })
+  ];
   const duplicates = findDuplicates(pieces);
   assert.equal(duplicates.length, 2);
   assert.deepEqual(duplicates.map(p => p.id).sort(), ['1', '3']);
 });
 
 test('appendPieceToSetList appends to undefined or empty set list', () => {
-  const piece = { id: 'p1', title: 'Hallelujah', composer: 'Handel', duration: '3:45' };
+  const piece = createMusicPieceFixture({ id: 'p1', title: 'Hallelujah', composer: 'Handel', duration: '3:45' });
   
   // Undefined set list
   const result1 = appendPieceToSetList(undefined, piece);
@@ -108,7 +105,7 @@ test('appendPieceToSetList appends to the end of a non-empty set list', () => {
   const existingSetList = [
     { id: 'item1', title: 'Ode to Joy', composer: 'Beethoven', duration: '5:00', type: 'song' as const }
   ];
-  const piece = { id: 'p2', title: 'Messiah', composer: 'Handel', duration: '4:20' };
+  const piece = createMusicPieceFixture({ id: 'p2', title: 'Messiah', composer: 'Handel', duration: '4:20' });
 
   const result = appendPieceToSetList(existingSetList, piece);
   assert.equal(result.updated, true);
@@ -122,7 +119,7 @@ test('appendPieceToSetList returns updated: false and original/copied set list i
   const existingSetList = [
     { id: 'item1', pieceId: 'p1', title: 'Hallelujah', composer: 'Handel', duration: '3:45', type: 'song' as const }
   ];
-  const piece = { id: 'p1', title: 'Hallelujah (Updated)', composer: 'Handel', duration: '3:45' };
+  const piece = createMusicPieceFixture({ id: 'p1', title: 'Hallelujah (Updated)', composer: 'Handel', duration: '3:45' });
 
   const result = appendPieceToSetList(existingSetList, piece);
   assert.equal(result.updated, false);

@@ -2,27 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-
-// Reusable recursive file scanner
-function getFilesRecursively(dir: string, extensions: string[]): string[] {
-  const results: string[] = [];
-  if (!fs.existsSync(dir)) return results;
-  const list = fs.readdirSync(dir);
-  for (const file of list) {
-    const filePath = path.resolve(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat.isDirectory()) {
-      results.push(...getFilesRecursively(filePath, extensions));
-    } else if (extensions.some(ext => file.endsWith(ext))) {
-      results.push(filePath);
-    }
-  }
-  return results;
-}
+import { getSrcFiles, resolveProjectPath } from './helpers.ts';
+import { decodeGoBytes, parseJsonField } from '../src/lib/pocketbaseJson.ts';
 
 test('codebase integrity: no deprecated pb.files.getUrl calls allowed', () => {
-  const srcDir = path.resolve(import.meta.dirname || __dirname || '.', '../src');
-  const files = getFilesRecursively(srcDir, ['.ts', '.tsx', '.js', '.jsx']);
+  const files = getSrcFiles(['.ts', '.tsx', '.js', '.jsx']);
+  const srcDir = resolveProjectPath('src');
 
   const violations: string[] = [];
   for (const file of files) {
@@ -44,8 +29,8 @@ test('codebase integrity: no deprecated pb.files.getUrl calls allowed', () => {
 });
 
 test('codebase integrity: enforce pb.filter parameterization rules', () => {
-  const srcDir = path.resolve(import.meta.dirname || __dirname || '.', '../src');
-  const files = getFilesRecursively(srcDir, ['.ts', '.tsx']);
+  const files = getSrcFiles(['.ts', '.tsx']);
+  const srcDir = resolveProjectPath('src');
 
   const violations: string[] = [];
   for (const file of files) {
@@ -120,41 +105,6 @@ test('defensive parsing: reconstruct token split by unencoded ampersands', () =>
 });
 
 test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte arrays', () => {
-  // Decoding helpers matching playerService.ts
-  function decodeGoBytes(val: unknown): string {
-    if (!val) return '';
-    if (typeof val === 'string') return val;
-    if (Array.isArray(val)) {
-      if (val.length > 0 && typeof val[0] === 'number') {
-        try {
-          return val.map(b => String.fromCharCode(Number(b))).join('');
-        } catch {
-          return '';
-        }
-      }
-    }
-    return '';
-  }
-
-  function parseJsonField<T>(val: unknown): T | null {
-    if (!val) return null;
-    if (typeof val === 'object' && !Array.isArray(val)) {
-      return val as T;
-    }
-    const str = decodeGoBytes(val);
-    if (!str) {
-      if (Array.isArray(val)) {
-        return val as unknown as T;
-      }
-      return null;
-    }
-    try {
-      return JSON.parse(str) as T;
-    } catch {
-      return null;
-    }
-  }
-
   // 1. Standard parsed object input
   const objInput = { foo: 'bar' };
   assert.deepStrictEqual(parseJsonField<typeof objInput>(objInput), objInput, 'Should return object intact');
@@ -186,13 +136,13 @@ test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte ar
 });
 
 test('codebase integrity: DialogContext must declare showToast API', () => {
-  const contextFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/contexts/DialogContext.tsx');
+  const contextFile = resolveProjectPath('src/contexts/DialogContext.tsx');
   const content = fs.readFileSync(contextFile, 'utf8');
   assert.ok(content.includes('showToast'), 'DialogContext must declare and export showToast method');
 });
 
 test('codebase integrity: MusicLibraryView must listen to Enter onNewMovement inputs', () => {
-  const file = path.resolve(import.meta.dirname || __dirname || '.', '../src/views/admin/MusicLibraryView.tsx');
+  const file = resolveProjectPath('src/views/admin/MusicLibraryView.tsx');
   const content = fs.readFileSync(file, 'utf8');
 
   // Verify handleAddMovement is updated to accept an event argument or parameter
@@ -211,10 +161,10 @@ test('codebase integrity: MusicLibraryView must listen to Enter onNewMovement in
 });
 
 test('codebase integrity: parentTitle and headphone indicators integration', () => {
-  const serviceFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/services/playerService.ts');
-  const playlistFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/components/player/Playlist.tsx');
-  const playerFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/components/player/Player.tsx');
-  const libraryViewFile = path.resolve(import.meta.dirname || __dirname || '.', '../src/views/admin/MusicLibraryView.tsx');
+  const serviceFile = resolveProjectPath('src/services/playerService.ts');
+  const playlistFile = resolveProjectPath('src/components/player/Playlist.tsx');
+  const playerFile = resolveProjectPath('src/components/player/Player.tsx');
+  const libraryViewFile = resolveProjectPath('src/views/admin/MusicLibraryView.tsx');
 
   // Verify PlayerMediaFile interface has parentTitle
   const serviceContent = fs.readFileSync(serviceFile, 'utf8');

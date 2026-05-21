@@ -4,6 +4,7 @@ import assert from 'node:assert';
 import { playerService, type PlayerMediaFile } from '../src/services/playerService';
 import { pb } from '../src/lib/pocketbase';
 import type { MusicPiece } from '../src/services/musicLibraryService';
+import { createMusicPieceFixture } from './helpers.ts';
 
 describe('playerService', () => {
   let mockPieces: MusicPiece[];
@@ -17,34 +18,31 @@ describe('playerService', () => {
     });
 
     mockPieces = [
-      {
+      createMusicPieceFixture({
         id: 'piece1',
         title: 'Song 1',
-        collectionName: 'musicLibrary',
         audioTrackMapping: {
           tutti: 'tutti.mp3',
           soprano: 's.mp3',
           alto: 'a.mp3'
         }
-      } as any,
-      {
+      }),
+      createMusicPieceFixture({
         id: 'piece2',
         title: 'Song 2',
-        collectionName: 'musicLibrary',
         audioTrackMapping: {
           tutti: 'tutti2.mp3'
           // no parts
         }
-      } as any,
-      {
+      }),
+      createMusicPieceFixture({
         id: 'movement1',
         parentId: 'parent1',
         title: 'Mvt 1',
-        collectionName: 'musicLibrary',
         audioTrackMapping: {
           tutti: 'mvt1.mp3'
         }
-      } as any
+      })
     ];
   });
 

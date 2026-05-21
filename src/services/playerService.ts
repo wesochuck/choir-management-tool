@@ -4,6 +4,7 @@ import type { Event, SetListItem } from './eventService';
 import type { VoicePartDef } from './settingsService';
 import { DEFAULT_VOICE_PARTS } from './settingsService';
 import { getSectionFromVoicePart } from '../lib/voicePartUtils';
+import { parseJsonField } from '../lib/pocketbaseJson';
 
 export interface PlayerMediaFile {
   id: string;
@@ -132,40 +133,6 @@ function buildFilesFromPiece(
     });
   }
   return result;
-}
-
-function decodeGoBytes(val: unknown): string {
-  if (!val) return '';
-  if (typeof val === 'string') return val;
-  if (Array.isArray(val)) {
-    if (val.length > 0 && typeof val[0] === 'number') {
-      try {
-        return val.map(b => String.fromCharCode(Number(b))).join('');
-      } catch {
-        return '';
-      }
-    }
-  }
-  return '';
-}
-
-function parseJsonField<T>(val: unknown): T | null {
-  if (!val) return null;
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    return val as T;
-  }
-  const str = decodeGoBytes(val);
-  if (!str) {
-    if (Array.isArray(val)) {
-      return val as unknown as T;
-    }
-    return null;
-  }
-  try {
-    return JSON.parse(str) as T;
-  } catch {
-    return null;
-  }
 }
 
 export const playerService = {
