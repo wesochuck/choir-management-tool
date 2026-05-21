@@ -134,12 +134,19 @@ export function validatePieceForLibrary(title: string): boolean {
 }
 
 export function exportMusicToCSV(pieces: MusicPiece[]): string {
-  const header = ['Title', 'Composer', 'Voicing'].join(',');
-  const rows = pieces.map(p => [
-    `"${p.title || ''}"`,
-    `"${p.composer || ''}"`,
-    `"${p.voicing || ''}"`
-  ].join(','));
+  const header = ['Title', 'Composer', 'Voicing', 'Applies To'].join(',');
+  const rows = pieces.map(p => {
+    const applicability = (!p.sectionBuckets || p.sectionBuckets.length === 0) 
+      ? 'All' 
+      : p.sectionBuckets.join(';');
+      
+    return [
+      `"${p.title || ''}"`,
+      `"${p.composer || ''}"`,
+      `"${p.voicing || ''}"`,
+      `"${applicability}"`
+    ].join(',');
+  });
   return [header, ...rows].join('\n');
 }
 
