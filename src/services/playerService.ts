@@ -91,10 +91,9 @@ export const playerService = {
       query: { token }
     });
 
-    const { event, setList, pieces, voiceParts } = response as {
+    const { event, setList, voiceParts } = response as {
       event: { id: string; title: string; date: string };
       setList: SetListItem[];
-      pieces: MusicPiece[];
       voiceParts: VoicePartDef[];
     };
 
