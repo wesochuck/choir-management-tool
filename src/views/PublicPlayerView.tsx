@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { playerService, type PlayerPlaylist, type PlayerMediaFile } from '../services/playerService';
-import { pb } from '../lib/pocketbase';
 import { Player } from '../components/player/Player';
 import { Playlist } from '../components/player/Playlist';
 import { VoicePartSelector } from '../components/player/VoicePartSelector';
@@ -35,47 +34,6 @@ export default function PublicPlayerView() {
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
-  // Helper to map tracks to the targeted voice part or fallback to tutti
-  const mapPlaylistToVoicePart = useCallback((
-    rawFiles: PlayerMediaFile[], 
-    part: string, 
-    allPieces: any[]
-  ) => {
-    const piecesMap = allPieces.reduce((acc, p) => {
-      acc[p.id] = p;
-      return acc;
-    }, {} as Record<string, any>);
-
-    return rawFiles.map(file => {
-      if (!file.availableTracks || !file.pieceId) return file;
-
-      const trackKey = file.availableTracks[part] ? part : 'tutti';
-      const actualFilename = file.availableTracks[part] || file.availableTracks['tutti'];
-
-      if (!actualFilename) return file;
-
-      const piece = piecesMap[file.pieceId];
-      if (!piece) return file;
-      
-      const baseIdParts = file.id.split('_');
-      // If it doesn't have an underscore suffix yet, keep the full parts array
-      if (baseIdParts.length > 1) {
-        baseIdParts.pop(); 
-      }
-      const newId = `${baseIdParts.join('_')}_${trackKey}`;
-
-      return {
-        ...file,
-        id: newId,
-        trackKey,
-        streamUrl: pb.files.getURL(piece, actualFilename),
-        isDownloaded: false,
-        offlineUrl: undefined,
-        downloadStatus: 'idle' as const
-      };
-    });
-  }, []);
-
   const loadData = useCallback(async () => {
     if (!token && !eventId) {
       setError('Missing player token or event ID.');
@@ -97,8 +55,9 @@ export default function PublicPlayerView() {
 
       setData(result);
       
-      // Apply the persistent voice part mapping directly to the incoming tracks
-      const targetedTracks = mapPlaylistToVoicePart(result.files, selectedVoicePart, result.allPieces);
+      // Read directly from storage to avoid dependency triggers
+      const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
+      const targetedTracks = playerService.applyVoicePartToFiles(result.files, initialPart, result.allPieces);
       const hydrated = await hydrateOfflineStatus(targetedTracks);
       
       setPlaylist(hydrated);
@@ -108,7 +67,8 @@ export default function PublicPlayerView() {
       const key = token || eventId;
       const cached = await getOfflinePlaylist(key);
       if (cached) {
-        const targetedTracks = mapPlaylistToVoicePart(cached, selectedVoicePart, data?.allPieces || []);
+        const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
+        const targetedTracks = playerService.applyVoicePartToFiles(cached, initialPart, data?.allPieces || []); 
         setPlaylist(await hydrateOfflineStatus(targetedTracks));
         setIsLoading(false);
       } else {
@@ -116,7 +76,7 @@ export default function PublicPlayerView() {
         setIsLoading(false);
       }
     }
-  }, [token, eventId, selectedVoicePart, mapPlaylistToVoicePart, data?.allPieces]);
+  }, [token, eventId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadData();
@@ -129,7 +89,7 @@ export default function PublicPlayerView() {
     if (!data) return;
     
     // Remap current tracks using the new part selection
-    const updatedPlaylist = mapPlaylistToVoicePart(playlist, part, data.allPieces);
+    const updatedPlaylist = playerService.applyVoicePartToFiles(playlist, part, data.allPieces);
     const hydrated = await hydrateOfflineStatus(updatedPlaylist);
     setPlaylist(hydrated);
   };

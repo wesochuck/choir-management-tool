@@ -1,4 +1,5 @@
-import test, { describe, it, mock, beforeEach } from 'node:test';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, mock, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { duesService } from '../src/services/duesService';
 import { pb } from '../src/lib/pocketbase';
@@ -7,7 +8,12 @@ import { pb } from '../src/lib/pocketbase';
 // Since `pb` is imported directly into `duesService`, we need to mock its methods before tests run.
 
 describe('duesService', () => {
-  let mockCollection: any;
+  let mockCollection: {
+    getFullList: any;
+    getFirstListItem: any;
+    update: any;
+    create: any;
+  };
 
   beforeEach(() => {
     mock.restoreAll();
@@ -19,8 +25,10 @@ describe('duesService', () => {
       create: mock.fn(),
     };
     
-    mock.method(pb, 'collection', () => mockCollection);
-    mock.method(pb, 'filter', (str: string, params: any) => {
+    // Use type casting to handle the mock
+    const pbMock = pb as any;
+    mock.method(pbMock, 'collection', () => mockCollection);
+    mock.method(pbMock, 'filter', (str: string, params: Record<string, string>) => {
       let res = str;
       if (params) {
         for (const [k, v] of Object.entries(params)) {
@@ -35,7 +43,7 @@ describe('duesService', () => {
     it('returns empty array if season is falsy', async () => {
       const result = await duesService.getDuesForSeason('');
       assert.deepStrictEqual(result, []);
-      assert.strictEqual((pb.collection as any).mock.callCount(), 0);
+      assert.strictEqual((pb as any).collection.mock.callCount(), 0);
     });
 
     it('queries seasonalDues for the given season', async () => {
@@ -44,7 +52,7 @@ describe('duesService', () => {
 
       const result = await duesService.getDuesForSeason('Fall 2026');
       
-      assert.strictEqual((pb.collection as any).mock.calls[0].arguments[0], 'seasonalDues');
+      assert.strictEqual((pb as any).collection.mock.calls[0].arguments[0], 'seasonalDues');
       assert.deepStrictEqual(mockCollection.getFullList.mock.calls[0].arguments[0], {
         filter: "season = 'Fall 2026'"
       });
@@ -69,8 +77,7 @@ describe('duesService', () => {
     });
 
     it('creates new record if existing not found (404)', async () => {
-      const notFoundError: any = new Error('Not found');
-      notFoundError.status = 404;
+      const notFoundError = { status: 404 };
       mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(notFoundError));
       
       const createdRecord = { id: 'new_id', profile: 'prof1', season: 'Fall 2026', paid: true };
@@ -89,8 +96,8 @@ describe('duesService', () => {
     });
 
     it('re-throws error if not 404', async () => {
-      const otherError: any = new Error('Server error');
-      otherError.status = 500;
+      const otherError = new Error('Server error');
+      (otherError as any).status = 500;
       mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(otherError));
       
       await assert.rejects(

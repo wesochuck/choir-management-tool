@@ -164,12 +164,55 @@ export const playerService = {
     };
   },
 
-  async generateToken(eventId: string): Promise<string> {
-    const response = await pb.send('/api/generate-player-token', {
+  generateToken(eventId: string): Promise<string> {
+    return pb.send('/api/generate-player-token', {
       method: 'POST',
       body: { eventId }
+    }).then(res => res.token);
+  },
+
+  /** 
+   * Re-maps existing PlayerMediaFile entries to a new voice part.
+   * Handles fallback to tutti and track ID regeneration.
+   */
+  applyVoicePartToFiles(
+    files: PlayerMediaFile[],
+    part: string,
+    allPieces: MusicPiece[]
+  ): PlayerMediaFile[] {
+    const piecesMap = allPieces.reduce((acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    }, {} as Record<string, MusicPiece>);
+
+    return files.map(file => {
+      if (!file.availableTracks || !file.pieceId) return file;
+
+      const trackKey = file.availableTracks[part] ? part : 'tutti';
+      const actualFilename = file.availableTracks[trackKey];
+
+      if (!actualFilename) return file;
+
+      const piece = piecesMap[file.pieceId];
+      if (!piece) return file;
+
+      const baseIdParts = file.id.split('_');
+      // If it doesn't have an underscore suffix yet, keep the full parts array
+      if (baseIdParts.length > 1) {
+        baseIdParts.pop();
+      }
+      const newId = `${baseIdParts.join('_')}_${trackKey}`;
+
+      return {
+        ...file,
+        id: newId,
+        trackKey,
+        streamUrl: pb.files.getURL(piece, actualFilename),
+        isDownloaded: false,
+        offlineUrl: undefined,
+        downloadStatus: 'idle' as const
+      };
     });
-    return response.token;
   },
 
   getStreamUrl(piece: MusicPiece, filename: string): string {
