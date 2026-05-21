@@ -141,8 +141,8 @@ test('codebase integrity: DialogContext must declare showToast API', () => {
   assert.ok(content.includes('showToast'), 'DialogContext must declare and export showToast method');
 });
 
-test('codebase integrity: MusicLibraryView must listen to Enter onNewMovement inputs', () => {
-  const file = resolveProjectPath('src/views/admin/MusicLibraryView.tsx');
+test('codebase integrity: MusicPieceModal must listen to Enter onNewMovement inputs', () => {
+  const file = resolveProjectPath('src/views/admin/music-library/MusicPieceModal.tsx');
   const content = fs.readFileSync(file, 'utf8');
 
   // Verify handleAddMovement is updated to accept an event argument or parameter
@@ -156,7 +156,7 @@ test('codebase integrity: MusicLibraryView must listen to Enter onNewMovement in
   // Verify the movement title input checks for Enter key
   assert.ok(
     content.includes('newMovementTitle') && content.includes('onKeyDown') && content.includes('handleAddMovement('),
-    'MusicLibraryView must define onKeyDown handler on newMovementTitle input to trigger handleAddMovement'
+    'MusicPieceModal must define onKeyDown handler on newMovementTitle input to trigger handleAddMovement'
   );
 });
 
