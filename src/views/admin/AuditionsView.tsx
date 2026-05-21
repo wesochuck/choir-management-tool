@@ -182,7 +182,7 @@ export default function AuditionsView() {
           <button className="btn btn-secondary" onClick={() => setShowSettings(!showSettings)}>
             {showSettings ? 'Hide Settings' : 'Configure Times & Settings'}
           </button>
-          <a className="btn btn-ghost" href="/auditions" target="_blank" rel="noreferrer">Preview Public Form</a>
+          <a className="btn btn-ghost" href="/auditions" target="_blank" rel="noopener noreferrer">Preview Public Form</a>
         </div>
       </div>
 
