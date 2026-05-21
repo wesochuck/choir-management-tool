@@ -124,8 +124,8 @@ export const communicationService = {
     recipients.forEach(r => {
       const token = tokens[r.id];
       if (token) {
-        const yesLink = `${baseUrl}/rsvp?token=${token}&rsvp=Yes`;
-        const noLink = `${baseUrl}/rsvp?token=${token}&rsvp=No`;
+        const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+        const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
         const text = `Yes: ${yesLink}\nNo: ${noLink}`;
         logs.push(`RSVP Links for ${r.name}:\n${text}`);
         

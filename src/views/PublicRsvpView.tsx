@@ -28,7 +28,12 @@ interface ProfileDetails {
 
 export default function PublicRsvpView() {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  let token = searchParams.get('token') || '';
+  const pParam = searchParams.get('p');
+  const sParam = searchParams.get('s');
+  if (token && pParam && sParam && !token.includes('p=')) {
+    token = `${token}&p=${pParam}&s=${sParam}`;
+  }
   const initialRsvp = searchParams.get('rsvp') as 'Yes' | 'No' | null;
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');

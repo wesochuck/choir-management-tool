@@ -300,8 +300,8 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
                 const token = `${payload}&s=${signature}`;
                 
                 const baseUrl = "http://localhost:5173"; // Default dev frontend URL
-                const yesLink = `${baseUrl}/rsvp?token=${token}&rsvp=Yes`;
-                const noLink = `${baseUrl}/rsvp?token=${token}&rsvp=No`;
+                const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+                const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
                 rsvpLinksText = `Yes: ${yesLink}\nNo: ${noLink}`;
             }
 

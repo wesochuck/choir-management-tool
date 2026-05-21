@@ -141,5 +141,56 @@ describe('playerService', () => {
       assert.strictEqual(result[0].isDownloaded, false);
       assert.strictEqual(result[0].offlineUrl, undefined);
     });
+
+    it('correctly maps various settings voice parts to case-sensitive track keys', () => {
+      const mockSettingsVoiceParts = [
+        { label: 'S1', sectionBucketId: 'S' },
+        { label: 'S2', sectionBucketId: 'S' },
+        { label: 'A1', sectionBucketId: 'A' }
+      ];
+
+      const files: PlayerMediaFile[] = [
+        {
+          id: 'item1_tutti',
+          name: 'Song 1',
+          pieceId: 'piece1',
+          trackKey: 'tutti',
+          availableTracks: {
+            tutti: 'tutti.mp3',
+            S1: 's1.mp3',
+            S2: 's2.mp3'
+          },
+          streamUrl: '...',
+          isFolder: false
+        }
+      ];
+
+      // Test active matching for S1 (lowercase selector value)
+      const s1Result = playerService.applyVoicePartToFiles(
+        files,
+        mockSettingsVoiceParts[0].label.toLowerCase(),
+        mockPieces
+      );
+      assert.strictEqual(s1Result[0].trackKey, 'S1');
+      assert.strictEqual(s1Result[0].id, 'item1_S1');
+
+      // Test active matching for S2 (lowercase selector value)
+      const s2Result = playerService.applyVoicePartToFiles(
+        files,
+        mockSettingsVoiceParts[1].label.toLowerCase(),
+        mockPieces
+      );
+      assert.strictEqual(s2Result[0].trackKey, 'S2');
+      assert.strictEqual(s2Result[0].id, 'item1_S2');
+
+      // Test fallback for A1 (not in availableTracks, should fall back to tutti)
+      const a1Result = playerService.applyVoicePartToFiles(
+        files,
+        mockSettingsVoiceParts[2].label.toLowerCase(),
+        mockPieces
+      );
+      assert.strictEqual(a1Result[0].trackKey, 'tutti');
+      assert.strictEqual(a1Result[0].id, 'item1_tutti');
+    });
   });
 });

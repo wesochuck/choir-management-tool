@@ -32,3 +32,8 @@
 - Always use `pb.files.getURL(...)` (all-uppercase `URL`) when generating file/photo URLs from PocketBase records. Never use `pb.files.getUrl(...)` as it is deprecated in the JS SDK.
 - Always use `pb.filter(...)` to parameterize and construct filter strings that include dynamic variables (e.g. IDs, names, search tokens). Never interpolate variables directly into PocketBase filter strings via template literals or string concatenation.
 
+## Token & URL Parameter Safety (Ampersand Issue Prevention)
+
+- **Query Parameter Encoding:** When constructing URLs with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)` to prevent query parameter splitting/truncation.
+- **Defensive Parsing Fallback:** When parsing composite tokens from URL parameters, always check if the token was split by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls.
+

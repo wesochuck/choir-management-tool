@@ -53,7 +53,7 @@ export default function EventsView() {
   const handleOpenPlayer = async (event: Event) => {
     try {
       const token = await playerService.generateToken(event.id);
-      const url = `${window.location.origin}/player?token=${token}`;
+      const url = `${window.location.origin}/player?token=${encodeURIComponent(token)}`;
       
       await dialog.showMessage({
         title: 'Player Link Generated',

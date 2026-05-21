@@ -17,6 +17,11 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **Secure Filter Strings:** Always use `pb.filter(...)` to construct and parameterize any PocketBase filters containing dynamic values/variables (such as record IDs or user inputs). Never interpolate variables directly using string concatenation or template literals.
 
 
+## Token & URL Parameter Safety (Ampersand Issue Prevention)
+*   **Query Parameter Encoding:** When constructing sharing URLs or passing composite tokens via query parameters (e.g., for RSVP or Player links), ALWAYS use `encodeURIComponent(token)` to prevent the browser or HTTP clients from truncating or splitting tokens containing ampersands (`&`).
+*   **Defensive Parsing Fallback:** When parsing composite tokens from URL parameters, always check if the token was split by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API requests.
+
+
 ## Authentication & Session Management
 *   **Stale Token Resilience:** The frontend MUST handle 401 and 403 errors by automatically clearing the `pb.authStore` and redirecting to `/login`. This prevents the "stale token loop" caused by local database resets.
 *   **Development Hygiene:** Whenever a database reset occurs, the agent MUST explicitly instruct the user to logout and re-login on the frontend to refresh the browser's local storage.

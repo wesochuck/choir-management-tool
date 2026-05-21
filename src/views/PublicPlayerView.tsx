@@ -17,7 +17,11 @@ import '../components/player/Player.css';
 
 export default function PublicPlayerView() {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
+  let token = searchParams.get('token') || '';
+  const sParam = searchParams.get('s');
+  if (token && sParam && !token.includes('s=')) {
+    token = `${token}&s=${sParam}`;
+  }
   const eventId = searchParams.get('eventId') || '';
 
   const [data, setData] = useState<PlayerPlaylist | null>(null);
