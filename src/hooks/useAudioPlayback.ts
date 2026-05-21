@@ -277,8 +277,9 @@ export function useAudioPlayback({
   const handleSkipStartChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value) || 0;
     setSkipStart(val);
-    if (currentTrack?.id) {
-      safeLocalStorage.setItem(`track_skip_${currentTrack.id}`, val.toString());
+    const trackId = currentTrack?.id;
+    if (trackId) {
+      safeLocalStorage.setItem(`track_skip_${trackId}`, val.toString());
     }
   }, [currentTrack?.id]);
 
