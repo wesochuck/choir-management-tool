@@ -2,9 +2,9 @@ import { pb } from '../lib/pocketbase';
 import { eventService, type Event } from './eventService';
 import { profileService, type Profile } from './profileService';
 import { rosterService } from './rosterService';
+import { settingsService } from './settingsService';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
-  settingsService,
   type CommunicationConfig,
 } from './settingsService';
 import type { RecordModel } from 'pocketbase';
@@ -166,7 +166,21 @@ export const communicationService = {
       console.log('----------------------------');
     }
 
-    const message = await this.saveMessage({ ...data, content: finalContent });
+    // Decision: For now, I will append a GENERIC footer to the message record,
+    // and if the backend hook sees an email, it will wrap the content with the compliant footer.
+    
+    const footerHtml = `
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
+        <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
+        <p style="margin: 0;">
+          You are receiving this because you are an active member of the choir. 
+          <br>
+          <a href="{{UNSUBSCRIBE_LINK}}" style="color: #4a7c59; text-decoration: underline;">Unsubscribe from these emails</a>
+        </p>
+      </div>
+    `;
+
+    const message = await this.saveMessage({ ...data, content: finalContent + footerHtml });
     const phoneRecipients = data.recipients.map((recipient) => recipient.phone.replace(/[^\d+]/g, '')).filter(Boolean);
 
     const mailtoUrl = ''; // Intentionally left blank. Email is dispatched securely on the server side.
@@ -219,11 +233,14 @@ export const communicationService = {
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
             ${templateBody}
             <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
-            <p style="font-size: 12px; color: #94a3b8; text-align: center;">
-                This is a manually triggered attendance report.
-                <br />
-                Choir Management Tool
-            </p>
+            <div style="font-size: 12px; color: #94a3b8; text-align: center;">
+                <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
+                <p style="margin: 0;">
+                    This is a manually triggered attendance report.
+                    <br />
+                    Choir Management Tool
+                </p>
+            </div>
         </div>
     `;
 

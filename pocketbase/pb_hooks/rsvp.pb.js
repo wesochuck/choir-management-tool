@@ -97,3 +97,49 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
 
     return e.json(200, { success: true });
 });
+
+routerAdd("POST", "/api/unsubscribe", (e) => {
+    const data = e.requestInfo().body;
+    const token = data.token; 
+
+    if (!token) {
+        return e.json(400, { error: "Missing token" });
+    }
+
+    const parts = {};
+    token.split('&').forEach(part => {
+        const kv = part.split('=');
+        if (kv.length === 2) {
+            parts[kv[0]] = kv[1];
+        }
+    });
+
+    if (!parts.p || !parts.s) {
+        return e.json(400, { error: "Invalid token format" });
+    }
+
+    let secret = "";
+    try {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        secret = record.get("value").secret;
+    } catch (err) {
+        return e.json(500, { error: "HMAC_SECRET not configured" });
+    }
+
+    const payload = `p=${parts.p}`;
+    const expectedSignature = $security.hs256(payload, secret);
+
+    if (!$security.equal(parts.s, expectedSignature)) {
+        return e.json(401, { error: "Invalid signature" });
+    }
+
+    try {
+        const profile = $app.findRecordById("profiles", parts.p);
+        profile.set("doNotEmail", true);
+        $app.save(profile);
+    } catch (err) {
+        return e.json(404, { error: "Profile not found" });
+    }
+
+    return e.json(200, { success: true });
+});

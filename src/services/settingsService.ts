@@ -19,6 +19,8 @@ export interface CommunicationSettings {
   emailSubject: string;
   emailBody: string;
   smsBody: string;
+  mailingAddress: string;
+  frontendUrl: string;
   reminderEnabled: boolean;
   reminderHoursBefore: number;
   reminderSubjectTemplate: string;
@@ -89,6 +91,8 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
     '{eventDetails}',
   ].join('\n'),
   smsBody: 'Choir reminder: {eventTitle} on {eventDate} at {eventLocation}.',
+  mailingAddress: '123 Choir St, Harmony City, HC 12345',
+  frontendUrl: 'http://localhost:5173',
   reminderEnabled: false,
   reminderHoursBefore: 24,
   reminderSubjectTemplate: 'Choir Event Reminder: {eventTitle}',

@@ -87,8 +87,9 @@ export default function CommunicationView() {
     [recipients, selectedIds],
   );
 
-  const upcomingTasks = useMemo(() => {
-    const tasks: AutomatedTask[] = [];
+  const { upcomingTasks, pastTasks } = useMemo(() => {
+    const upcoming: AutomatedTask[] = [];
+    const past: AutomatedTask[] = [];
     const now = new Date();
 
     events.forEach(event => {
@@ -97,18 +98,23 @@ export default function CommunicationView() {
       // Reminders
       if (templates.reminderEnabled) {
         const scheduledTime = new Date(eventDate.getTime() - templates.reminderHoursBefore * 60 * 60 * 1000);
-        if (scheduledTime > now) {
-          const alreadySent = history.some(m => {
-            const mFilters = m.filters as Record<string, unknown>;
-            return mFilters?.type === 'Automated Reminder' && mFilters?.eventId === event.id;
-          });
-          tasks.push({
-            id: `reminder-${event.id}`,
-            type: 'Reminder',
-            event,
-            scheduledTime,
-            status: alreadySent ? 'Sent' : 'Scheduled'
-          });
+        const alreadySent = history.some(m => {
+          const mFilters = m.filters as Record<string, unknown>;
+          return mFilters?.type === 'Automated Reminder' && mFilters?.eventId === event.id;
+        });
+
+        const task: AutomatedTask = {
+          id: `reminder-${event.id}`,
+          type: 'Reminder',
+          event,
+          scheduledTime,
+          status: alreadySent ? 'Sent' : 'Scheduled'
+        };
+
+        if (alreadySent || scheduledTime < now) {
+          past.push(task);
+        } else {
+          upcoming.push(task);
         }
       }
 
@@ -120,28 +126,26 @@ export default function CommunicationView() {
           return (mFilters?.type === 'Automated Report' || mFilters?.type === 'Attendance Report') && mFilters?.eventId === event.id;
         });
         
-        if (scheduledTime > now || alreadySent) {
-          tasks.push({
-            id: `report-${event.id}`,
-            type: 'Report',
-            event,
-            scheduledTime,
-            status: alreadySent ? 'Sent' : 'Scheduled'
-          });
-        } else if (eventDate < now) {
-          // If event is in the past but report time is also in the past and not sent, still show as overdue/pending
-          tasks.push({
-            id: `report-${event.id}`,
-            type: 'Report',
-            event,
-            scheduledTime,
-            status: 'Scheduled'
-          });
+        const task: AutomatedTask = {
+          id: `report-${event.id}`,
+          type: 'Report',
+          event,
+          scheduledTime,
+          status: alreadySent ? 'Sent' : 'Scheduled'
+        };
+
+        if (alreadySent || scheduledTime < now) {
+          past.push(task);
+        } else {
+          upcoming.push(task);
         }
       }
     });
 
-    return tasks.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
+    return {
+      upcomingTasks: upcoming.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime()),
+      pastTasks: past.sort((a, b) => b.scheduledTime.getTime() - a.scheduledTime.getTime())
+    };
   }, [events, templates, history]);
 
   useEffect(() => {
@@ -332,117 +336,155 @@ export default function CommunicationView() {
       </div>
 
       {tab === 'automated' && (
-        <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-          <AppCard title="Upcoming & Recently Scheduled Automated Tasks">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <p className="text-muted text-sm">
-                These tasks are managed by the system based on your settings. You can trigger them manually below.
-              </p>
+        <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <h3 className="text-headline" style={{ fontSize: '1.1rem', color: 'var(--primary-deep)' }}>Upcoming Automated Tasks</h3>
+            <p className="text-muted text-sm" style={{ marginTop: '-8px' }}>
+              These messages are scheduled to be sent automatically. You can trigger them early below.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
+              {upcomingTasks.length === 0 && (
+                <div className="card" style={{ padding: 'var(--space-xl)', textAlign: 'center', gridColumn: '1 / -1', border: '1px dashed var(--border)' }}>
+                  <p className="text-muted">No upcoming automated tasks found.</p>
+                </div>
+              )}
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
-                {upcomingTasks.length === 0 && (
-                  <p className="text-muted" style={{ padding: 'var(--space-xl)', textAlign: 'center', gridColumn: '1 / -1' }}>
-                    No automated tasks found for upcoming events.
-                  </p>
-                )}
-                
-                {upcomingTasks.map(task => {
-                  const isReport = task.type === 'Report';
-                  return (
-                    <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                      <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span className={`badge ${isReport ? 'badge-concert' : 'badge-rehearsal'}`}>
-                          {task.type} {task.status === 'Sent' ? '(Sent)' : ''}
-                        </span>
-                        <span className="text-muted text-xs">
-                          {isReport ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}
-                        </span>
-                      </div>
-                      
-                      <div className="flex-col" style={{ gap: '2px' }}>
-                        <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
-                        <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
-                      </div>
-                      
-                      <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
-                        {!isReport && (
-                          <button 
-                            className="btn btn-ghost btn-sm"
-                            onClick={async () => {
-                              const r = await communicationService.resolveRecipients({ 
-                                eventId: task.event.id, 
-                                rsvp: 'All', 
-                                voicePart: '', 
-                                globalStatus: 'Active (Current)' 
-                              });
-                              setRecipientPreviewList({ 
-                                isOpen: true, 
-                                recipients: r, 
-                                title: `Expected Recipients for ${task.event.title || task.event.type}` 
-                              });
-                            }}
-                          >
-                            View Recipients
-                          </button>
-                        )}
-                        {isReport && (
-                          <div className="text-muted text-xs" style={{ display: 'flex', alignItems: 'center' }}>
-                            Target: All Admins
-                          </div>
-                        )}
-                        
+              {upcomingTasks.map(task => {
+                const isReport = task.type === 'Report';
+                return (
+                  <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span className={`badge ${isReport ? 'badge-concert' : 'badge-rehearsal'}`}>
+                        {task.type}
+                      </span>
+                      <span className="text-muted text-xs">
+                        {isReport ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex-col" style={{ gap: '2px' }}>
+                      <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
+                      <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
+                    </div>
+                    
+                    <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
+                      {!isReport && (
                         <button 
-                          className="btn btn-primary btn-sm"
-                          disabled={isSending}
+                          className="btn btn-ghost btn-sm"
                           onClick={async () => {
-                            if (isReport) {
-                              const confirmed = await dialog.confirm({
-                                title: 'Send Report Now?',
-                                message: `Generate and send the attendance report for "${task.event.title || task.event.type}" to all admins immediately?`,
-                                confirmLabel: 'Send Now',
-                              });
-                              if (confirmed) {
-                                setIsSending(true);
-                                try {
-                                  await communicationService.triggerAttendanceReport(task.event.id);
-                                  await dialog.showMessage({ title: 'Report Sent', message: 'The report has been generated and emailed to admins.', variant: 'info' });
-                                  setHistory(await communicationService.getMessages());
-                                } catch (err: unknown) {
-                                  const msg = err instanceof Error ? err.message : String(err);
-                                  await dialog.showMessage({ title: 'Error', message: msg || 'Failed to send report.', variant: 'danger' });
-                                } finally {
-                                  setIsSending(false);
-                                }
-                              }
-                            } else {
-                              // Open Compose pre-filled
-                              const values = {
-                                eventTitle: task.event.title || task.event.type,
-                                eventType: task.event.type,
-                                eventDate: new Date(task.event.date).toLocaleString(),
-                                eventLocation: task.event.expand?.venue?.name || 'TBD',
-                                eventDetails: task.event.details || '',
-                                singerName: '{singerName}',
-                                rsvpLinks: '{{RSVP_LINKS}}',
-                              };
-                              
-                              setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id });
-                              setSubject(renderCommunicationTemplate(templates.reminderSubjectTemplate, values));
-                              setContent(renderCommunicationTemplate(templates.reminderBodyTemplate, values));
-                              setMessageType('Email');
-                              setTab('compose');
-                            }
+                            const r = await communicationService.resolveRecipients({ 
+                              eventId: task.event.id, 
+                              rsvp: 'All', 
+                              voicePart: '', 
+                              globalStatus: 'Active (Current)' 
+                            });
+                            setRecipientPreviewList({ 
+                              isOpen: true, 
+                              recipients: r, 
+                              title: `Expected Recipients for ${task.event.title || task.event.type}` 
+                            });
                           }}
                         >
-                          {isReport ? 'Send Now' : 'Open Compose'}
+                          View Recipients
                         </button>
-                      </div>
+                      )}
+                      {isReport && (
+                        <div className="text-muted text-xs" style={{ display: 'flex', alignItems: 'center' }}>
+                          Target: All Admins
+                        </div>
+                      )}
+                      
+                      <button 
+                        className="btn btn-primary btn-sm"
+                        disabled={isSending}
+                        onClick={async () => {
+                          if (isReport) {
+                            const confirmed = await dialog.confirm({
+                              title: 'Send Report Now?',
+                              message: `Generate and send the attendance report for "${task.event.title || task.event.type}" to all admins immediately?`,
+                              confirmLabel: 'Send Now',
+                            });
+                            if (confirmed) {
+                              setIsSending(true);
+                              try {
+                                await communicationService.triggerAttendanceReport(task.event.id);
+                                await dialog.showMessage({ title: 'Report Sent', message: 'The report has been generated and emailed to admins.', variant: 'info' });
+                                setHistory(await communicationService.getMessages());
+                              } catch (err: unknown) {
+                                const msg = err instanceof Error ? err.message : String(err);
+                                await dialog.showMessage({ title: 'Error', message: msg || 'Failed to send report.', variant: 'danger' });
+                              } finally {
+                                setIsSending(false);
+                              }
+                            }
+                          } else {
+                            // Open Compose pre-filled
+                            const values = {
+                              eventTitle: task.event.title || task.event.type,
+                              eventType: task.event.type,
+                              eventDate: new Date(task.event.date).toLocaleString(),
+                              eventLocation: task.event.expand?.venue?.name || 'TBD',
+                              eventDetails: task.event.details || '',
+                              singerName: '{singerName}',
+                              rsvpLinks: '{{RSVP_LINKS}}',
+                            };
+                            
+                            setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id });
+                            setSubject(renderCommunicationTemplate(templates.reminderSubjectTemplate, values));
+                            setContent(renderCommunicationTemplate(templates.reminderBodyTemplate, values));
+                            setMessageType('Email');
+                            setTab('compose');
+                          }
+                        }}
+                      >
+                        {isReport ? 'Send Now' : 'Open Compose'}
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
-          </AppCard>
+          </div>
+
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <h3 className="text-headline" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Sent / Past Automated Tasks</h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
+              {pastTasks.length === 0 && (
+                <p className="text-muted text-sm" style={{ gridColumn: '1 / -1' }}>No past automated tasks found in the logs.</p>
+              )}
+              
+              {pastTasks.map(task => {
+                const isSent = task.status === 'Sent';
+                return (
+                  <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', opacity: 0.8 }}>
+                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span className={`badge ${isSent ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: isSent ? undefined : 'var(--border)' }}>
+                        {task.type} {isSent ? '(Sent)' : '(Passed)'}
+                      </span>
+                      <span className="text-muted text-xs">
+                        {isSent ? 'Processed at:' : 'Scheduled for:'} {task.scheduledTime.toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex-col" style={{ gap: '2px' }}>
+                      <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
+                      <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
+                    </div>
+
+                    <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
+                      {isSent ? (
+                        <span className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 600 }}>✓ Logged in History</span>
+                      ) : (
+                        <span className="text-xs text-muted">No log entry found</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -639,6 +681,24 @@ export default function CommunicationView() {
                 value={templates.emailBody}
                 onChange={(event) => setTemplates({ ...templates, emailBody: event.target.value })}
                 style={{ minHeight: '140px', padding: '12px', resize: 'vertical' }}
+              />
+            </div>
+          </AppCard>
+
+          <AppCard title="Compliance & Footers">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <p className="text-muted text-sm">
+                For legal compliance (e.g. CAN-SPAM), all outgoing emails will automatically include a physical mailing address and an unsubscribe link in the footer.
+              </p>
+              <Field 
+                label="Physical Mailing Address" 
+                value={templates.mailingAddress} 
+                onChange={(value) => setTemplates({ ...templates, mailingAddress: value })} 
+              />
+              <Field 
+                label="Application Base URL" 
+                value={templates.frontendUrl} 
+                onChange={(value) => setTemplates({ ...templates, frontendUrl: value })} 
               />
             </div>
           </AppCard>

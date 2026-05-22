@@ -1,12 +1,42 @@
 // PocketBase Backend Hooks - Automated Attendance Reports
 
 cronAdd("post_event_report", "0 * * * *", () => {
+    // Helper to safely convert Go byte slices to JS strings
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        try {
+            if (typeof val === 'object') {
+                let str = "";
+                const len = val.length;
+                if (typeof len === 'number') {
+                    for (let i = 0; i < len; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+            }
+        } catch (err) {}
+        return JSON.stringify(val);
+    }
+
+    function parseJsonField(val) {
+        if (!val) return null;
+        const str = decodeGoBytes(val);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (err) {
+            return null;
+        }
+    }
+
     // 1. Fetch SMTP Config
     let smtpConfig = null;
     try {
         const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
-        const value = setting.get("value");
-        smtpConfig = (typeof value === 'string' ? JSON.parse(value) : value).smtp;
+        const parsed = parseJsonField(setting.get("value"));
+        smtpConfig = parsed ? parsed.smtp : null;
     } catch (e) {
         return;
     }
@@ -22,8 +52,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
     };
     try {
         const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-        const value = setting.get("value");
-        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        const parsed = parseJsonField(setting.get("value"));
         if (parsed) {
             if (typeof parsed.reportEnabled !== 'undefined') commSettings.reportEnabled = parsed.reportEnabled;
             if (typeof parsed.reportHoursAfter !== 'undefined') commSettings.reportHoursAfter = Number(parsed.reportHoursAfter);
@@ -133,15 +162,26 @@ cronAdd("post_event_report", "0 * * * *", () => {
                 </div>
             ` : '');
 
+        // Resolve mailing address for report
+        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+        try {
+            const commSetting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const parsed = parseJsonField(commSetting.get("value"));
+            if (parsed && parsed.mailingAddress) mailingAddress = parsed.mailingAddress;
+        } catch (e) {}
+
         const body = `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
                 ${templateBody}
                 <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
-                <p style="font-size: 12px; color: #94a3b8; text-align: center;">
-                    This is an automated report generated ${hoursAfter} hours after the event concluded.
-                    <br />
-                    Choir Management Tool
-                </p>
+                <div style="font-size: 12px; color: #94a3b8; text-align: center;">
+                    <p style="margin: 0 0 10px 0;">${mailingAddress}</p>
+                    <p style="margin: 0;">
+                        This is an automated report generated ${hoursAfter} hours after the event concluded.
+                        <br />
+                        Choir Management Tool
+                    </p>
+                </div>
             </div>
         `;
 
@@ -188,12 +228,42 @@ cronAdd("post_event_report", "0 * * * *", () => {
 });
 
 cronAdd("automated_event_reminders", "30 * * * *", () => {
+    // Helper to safely convert Go byte slices to JS strings
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        try {
+            if (typeof val === 'object') {
+                let str = "";
+                const len = val.length;
+                if (typeof len === 'number') {
+                    for (let i = 0; i < len; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+            }
+        } catch (err) {}
+        return JSON.stringify(val);
+    }
+
+    function parseJsonField(val) {
+        if (!val) return null;
+        const str = decodeGoBytes(val);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (err) {
+            return null;
+        }
+    }
+
     // 1. Fetch SMTP Config
     let smtpConfig = null;
     try {
         const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
-        const value = setting.get("value");
-        smtpConfig = (typeof value === 'string' ? JSON.parse(value) : value).smtp;
+        const parsed = parseJsonField(setting.get("value"));
+        smtpConfig = parsed ? parsed.smtp : null;
     } catch (e) {
         return;
     }
@@ -209,8 +279,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
     };
     try {
         const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-        const value = setting.get("value");
-        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        const parsed = parseJsonField(setting.get("value"));
         if (parsed) {
             if (typeof parsed.reminderEnabled !== 'undefined') commSettings.reminderEnabled = parsed.reminderEnabled;
             if (typeof parsed.reminderHoursBefore !== 'undefined') commSettings.reminderHoursBefore = Number(parsed.reminderHoursBefore);
@@ -248,7 +317,8 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
     let secret = "";
     try {
         const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        secret = record.get("value").secret;
+        const parsed = parseJsonField(record.get("value"));
+        secret = parsed ? parsed.secret : "";
     } catch (err) {}
 
     // Find active singers
@@ -274,6 +344,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
         } catch (e) {}
 
         const eventDateStr = new Date(event.get("date")).toLocaleString();
+        const subject = commSettings.reminderSubjectTemplate.replace(/{eventTitle}/g, event.get("title"));
         const sentRecipients = [];
         let bodyHtmlGeneric = "";
 
@@ -294,20 +365,28 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
 
             // Generate RSVP links if needed
             let rsvpLinksText = "[RSVP Links will appear here]";
+            let unsubscribeLink = "{{UNSUBSCRIBE_LINK}}";
+            let baseUrl = "http://localhost:5173";
+            let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+            try {
+                const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+                const p = parseJsonField(setting.get("value"));
+                if (p && p.frontendUrl) baseUrl = p.frontendUrl;
+                if (p && p.mailingAddress) mailingAddress = p.mailingAddress;
+            } catch (e) {}
+
             if (secret) {
                 const payload = `e=${event.id}&p=${profile.id}`;
                 const signature = $security.hs256(payload, secret);
                 const token = `${payload}&s=${signature}`;
-                
-                const baseUrl = "http://localhost:5173"; // Default dev frontend URL
+
                 const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
                 const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
                 rsvpLinksText = `Yes: ${yesLink}\nNo: ${noLink}`;
-            }
 
-            // Render subject and body templates
-            const subject = commSettings.reminderSubjectTemplate
-                .replace(/{eventTitle}/g, event.get("title"));
+                const unsubscribeToken = `p=${profile.id}&s=${$security.hs256(`p=${profile.id}`, secret)}`;
+                unsubscribeLink = `${baseUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
+            }
 
             const bodyHtml = commSettings.reminderBodyTemplate
                 .replace(/{singerName}/g, profile.get("name"))
@@ -319,7 +398,7 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
                 .replace(/{rsvpLinks}/g, rsvpLinksText)
                 .replace(/\n/g, "<br>");
 
-            // Generate a generic body template for logging
+            // Generate a generic body template for logging (only once)
             if (!bodyHtmlGeneric) {
                 bodyHtmlGeneric = commSettings.reminderBodyTemplate
                     .replace(/{singerName}/g, "Singer")
@@ -330,17 +409,30 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
                     .replace(/{eventDetails}/g, event.get("details") || "")
                     .replace(/{rsvpLinks}/g, rsvpLinksText)
                     .replace(/\n/g, "<br>");
+
+                bodyHtmlGeneric += `
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-size: 12px; color: #94a3b8; text-align: center;">
+                        <p style="margin: 0 0 10px 0;">${mailingAddress}</p>
+                        <p style="margin: 0;">
+                            You are receiving this because you are an active member of the choir. 
+                            <br>
+                            <a href="{{UNSUBSCRIBE_LINK}}" style="color: #4a7c59; text-decoration: underline;">Unsubscribe from these emails</a>
+                        </p>
+                    </div>
+                `;
             }
 
             const finalBody = `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
                     ${bodyHtml}
-                    <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
-                    <p style="font-size: 12px; color: #94a3b8; text-align: center;">
-                        This is an automated reminder generated before the event.
-                        <br />
-                        Choir Management Tool
-                    </p>
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-size: 12px; color: #94a3b8; text-align: center;">
+                        <p style="margin: 0 0 10px 0;">${mailingAddress}</p>
+                        <p style="margin: 0;">
+                            You are receiving this because you are an active member of the choir. 
+                            <br>
+                            <a href="${unsubscribeLink}" style="color: #4a7c59; text-decoration: underline;">Unsubscribe from these emails</a>
+                        </p>
+                    </div>
                 </div>
             `;
 
@@ -374,12 +466,6 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
                 const finalBodyGeneric = `
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
                         ${bodyHtmlGeneric}
-                        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
-                        <p style="font-size: 12px; color: #94a3b8; text-align: center;">
-                            This is an automated reminder generated before the event.
-                            <br />
-                            Choir Management Tool
-                        </p>
                     </div>
                 `;
                 const record = new Record(messageCollection, {
@@ -399,6 +485,36 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
 
 // Automated Server-Side Email Delivery on Message Creation
 onRecordAfterCreateSuccess((e) => {
+    // Helper to safely convert Go byte slices to JS strings
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        try {
+            if (typeof val === 'object') {
+                let str = "";
+                const len = val.length;
+                if (typeof len === 'number') {
+                    for (let i = 0; i < len; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+            }
+        } catch (err) {}
+        return JSON.stringify(val);
+    }
+
+    function parseJsonField(val) {
+        if (!val) return null;
+        const str = decodeGoBytes(val);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (err) {
+            return null;
+        }
+    }
+
     const record = e.record;
     const type = record.get("type");
     if (type !== "Email" && type !== "Both") {
@@ -406,14 +522,7 @@ onRecordAfterCreateSuccess((e) => {
     }
 
     const filtersRaw = record.get("filters");
-    let filters = {};
-    if (typeof filtersRaw === 'string' && filtersRaw.trim() !== '') {
-        try {
-            filters = JSON.parse(filtersRaw);
-        } catch (err) {}
-    } else if (filtersRaw) {
-        filters = filtersRaw;
-    }
+    const filters = parseJsonField(filtersRaw) || {};
 
     if (filters && filters.alreadySent === true) {
         return;
@@ -423,14 +532,7 @@ onRecordAfterCreateSuccess((e) => {
     const content = record.get("content") || "";
 
     const recipientsRaw = record.get("recipients");
-    let recipients = [];
-    if (typeof recipientsRaw === 'string') {
-        try {
-            recipients = JSON.parse(recipientsRaw);
-        } catch (err) {}
-    } else {
-        recipients = recipientsRaw;
-    }
+    const recipients = parseJsonField(recipientsRaw) || [];
 
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
         return;
@@ -439,15 +541,54 @@ onRecordAfterCreateSuccess((e) => {
     let smtpConfig = null;
     try {
         const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
-        const value = setting.get("value");
-        smtpConfig = (typeof value === 'string' ? JSON.parse(value) : value).smtp;
+        const parsed = parseJsonField(setting.get("value"));
+        smtpConfig = parsed ? parsed.smtp : null;
     } catch (err) {}
 
     const fromAddress = (smtpConfig && (smtpConfig.from || smtpConfig.user)) || "no-reply@choir.management";
 
+    // Fetch Secret for HMAC
+    let secret = "";
+    try {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(record.get("value"));
+        secret = parsed ? parsed.secret : "";
+    } catch (err) {}
+
     recipients.forEach(r => {
         const email = r.email;
         if (!email) return;
+
+        let finalContent = content;
+
+        // Resolve Mailing Address
+        if (finalContent.includes("{{MAILING_ADDRESS}}")) {
+            let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+            try {
+                const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+                const p = parseJsonField(setting.get("value"));
+                if (p && p.mailingAddress) mailingAddress = p.mailingAddress;
+            } catch (e) {}
+            finalContent = finalContent.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
+        }
+        
+        // Personalized Unsubscribe Link
+        if (finalContent.includes("{{UNSUBSCRIBE_LINK}}") && secret) {
+            const payload = `p=${r.id}`;
+            const signature = $security.hs256(payload, secret);
+            const token = `${payload}&s=${signature}`;
+            
+            // Resolve Base URL from settings
+            let baseUrl = "http://localhost:5173";
+            try {
+                const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+                const p = parseJsonField(setting.get("value"));
+                if (p && p.frontendUrl) baseUrl = p.frontendUrl;
+            } catch (e) {}
+
+            const link = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+            finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, link);
+        }
 
         try {
             const message = new MailerMessage({
@@ -457,7 +598,7 @@ onRecordAfterCreateSuccess((e) => {
                 },
                 to:      [{ address: email }],
                 subject: subject,
-                html:    content.replace(/\n/g, "<br>"),
+                html:    finalContent.replace(/\n/g, "<br>"),
             });
 
             $app.newMailClient().send(message);
