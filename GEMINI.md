@@ -42,6 +42,12 @@ These foundational mandates MUST be followed by all agents working on this codeb
     *   `src/services/`: Pure PocketBase API calls.
     *   `src/hooks/`: State coordination and business logic.
     *   `src/components/`: Pure presentational "dumb" components.
+*   **Settings-Driven Logic (Voice Parts & Sections):** NEVER hardcode voice part labels (e.g., `'S1'`, `'A2'`) or section names in components, hooks, or utilities.
+    *   *Frontend:* Always use the `useVoiceParts` hook to retrieve the current choir configuration.
+    *   *UX (Dropdowns):* For required voice part selections (e.g., Singer Roster), use a placeholder option (e.g., `"-- Please Select Voice Part --"`) with an empty value (`""`) and mark the field as required.
+    *   *Auditions:* Explicitly allow an "unknown" or "Not sure" state (empty value `""`) for audition requests to handle unclassified singers.
+    *   *Services/Backend:* Use `settingsService.getVoicePartsAndSections()` to resolve defaults or validate inputs.
+    *   *Defaulting (Conversion):* During conversion (e.g., Audition to Singer), allow the voice part to remain empty if not yet determined, rather than forcing a default from settings.
 *   **Type Safety:** Use shared TypeScript interfaces for all PocketBase records to ensure consistency between the backend schema and frontend state.
 *   **No Explicit `any`:** Do not introduce explicit `any` in TypeScript or TSX files. Use `unknown` first, then narrow with type guards, schema validation, or local helper types.
 *   **Safe Error Handling:** Type `catch` block errors as `unknown` and normalize them safely, for example: `const message = err instanceof Error ? err.message : String(err)`.

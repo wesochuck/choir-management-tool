@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import type { AttendanceItem } from '../../hooks/useAttendance';
-import { getVoiceParts } from '../../services/settingsService';
 
 interface CheckInListProps {
   items: AttendanceItem[];
@@ -300,25 +299,18 @@ const compareLastNames = (a: string, b: string): number => {
   return a.localeCompare(b);
 };
 
-export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance, onUpdateFolder, onEdit, sortBy }) => {
-  const [voicePartOrder, setVoicePartOrder] = useState<Record<string, number>>({
-    'S1': 1, 'S2': 2, 'A1': 3, 'A2': 4,
-    'T1': 5, 'T2': 6, 'B1': 7, 'B2': 8
-  });
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 
-  useEffect(() => {
-    getVoiceParts().then(parts => {
-      if (parts && parts.length > 0) {
-        const order: Record<string, number> = {};
-        parts.forEach((p, index) => {
-          order[p.label] = index + 1;
-        });
-        setVoicePartOrder(order);
-      }
-    }).catch(err => {
-      console.error('Failed to load voice parts for check-in sorting', err);
+export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance, onUpdateFolder, onEdit, sortBy }) => {
+  const { voiceParts } = useVoiceParts();
+
+  const voicePartOrder = useMemo(() => {
+    const order: Record<string, number> = {};
+    voiceParts.forEach((p, index) => {
+      order[p.label] = index + 1;
     });
-  }, []);
+    return order;
+  }, [voiceParts]);
 
   // Partition items into checked-in and not-checked-in subsets
   const notCheckedIn = useMemo(() => {

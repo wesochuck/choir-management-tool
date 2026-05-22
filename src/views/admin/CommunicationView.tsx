@@ -15,11 +15,12 @@ import type { Event } from '../../services/eventService';
 import {
   DEFAULT_COMMUNICATION_SETTINGS,
   settingsService,
-  getVoiceParts,
+  renderCommunicationTemplate,
   type CommunicationSettings,
 } from '../../services/settingsService';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 
-type Tab = 'compose' | 'history' | 'settings';
+type Tab = 'compose' | 'automated' | 'history' | 'settings';
 
 const DEFAULT_FILTERS: CommunicationFilters = {
   eventId: '',
@@ -30,18 +31,32 @@ const DEFAULT_FILTERS: CommunicationFilters = {
 
 const DEFAULT_CONFIG = communicationService.defaultConfig;
 
+interface AutomatedTask {
+  id: string;
+  type: 'Reminder' | 'Report';
+  event: Event;
+  scheduledTime: Date;
+  status: 'Scheduled' | 'Sent';
+  recipientCount?: number;
+}
+
 export default function CommunicationView() {
   const dialog = useDialog();
   const location = useLocation();
+  const { labels: voicePartLabels } = useVoiceParts();
   const routeState = location.state as {
     initialRecipients?: CommunicationRecipient[];
     initialSubject?: string;
     initialContent?: string;
+    initialEventId?: string;
   } | null;
 
-  const [tab, setTab] = useState<Tab>('compose');
+  const [tab, setTab] = useState<Tab>(routeState?.initialEventId ? 'compose' : 'compose');
   const [events, setEvents] = useState<Event[]>([]);
-  const [filters, setFilters] = useState<CommunicationFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<CommunicationFilters>({
+    ...DEFAULT_FILTERS,
+    eventId: routeState?.initialEventId || '',
+  });
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
     routeState?.initialRecipients || []
   );
@@ -61,21 +76,81 @@ export default function CommunicationView() {
   const [isSending, setIsSending] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const skipNextRecipientResolveRef = useRef(Boolean(routeState?.initialRecipients));
-  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+  const [recipientPreviewList, setRecipientPreviewList] = useState<{ isOpen: boolean; recipients: CommunicationRecipient[]; title: string }>({
+    isOpen: false,
+    recipients: [],
+    title: '',
+  });
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
     [recipients, selectedIds],
   );
 
+  const upcomingTasks = useMemo(() => {
+    const tasks: AutomatedTask[] = [];
+    const now = new Date();
+
+    events.forEach(event => {
+      const eventDate = new Date(event.date);
+      
+      // Reminders
+      if (templates.reminderEnabled) {
+        const scheduledTime = new Date(eventDate.getTime() - templates.reminderHoursBefore * 60 * 60 * 1000);
+        if (scheduledTime > now) {
+          const alreadySent = history.some(m => {
+            const mFilters = m.filters as Record<string, unknown>;
+            return mFilters?.type === 'Automated Reminder' && mFilters?.eventId === event.id;
+          });
+          tasks.push({
+            id: `reminder-${event.id}`,
+            type: 'Reminder',
+            event,
+            scheduledTime,
+            status: alreadySent ? 'Sent' : 'Scheduled'
+          });
+        }
+      }
+
+      // Reports
+      if (templates.reportEnabled) {
+        const scheduledTime = new Date(eventDate.getTime() + templates.reportHoursAfter * 60 * 60 * 1000);
+        const alreadySent = history.some(m => {
+          const mFilters = m.filters as Record<string, unknown>;
+          return (mFilters?.type === 'Automated Report' || mFilters?.type === 'Attendance Report') && mFilters?.eventId === event.id;
+        });
+        
+        if (scheduledTime > now || alreadySent) {
+          tasks.push({
+            id: `report-${event.id}`,
+            type: 'Report',
+            event,
+            scheduledTime,
+            status: alreadySent ? 'Sent' : 'Scheduled'
+          });
+        } else if (eventDate < now) {
+          // If event is in the past but report time is also in the past and not sent, still show as overdue/pending
+          tasks.push({
+            id: `report-${event.id}`,
+            type: 'Report',
+            event,
+            scheduledTime,
+            status: 'Scheduled'
+          });
+        }
+      }
+    });
+
+    return tasks.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
+  }, [events, templates, history]);
+
   useEffect(() => {
     const load = async () => {
-      const [loadedEvents, loadedHistory, loadedConfig, loadedTemplates, loadedVoiceParts] = await Promise.all([
+      const [loadedEvents, loadedHistory, loadedConfig, loadedTemplates] = await Promise.all([
         communicationService.getEvents(),
         communicationService.getMessages(),
         communicationService.getConfig(),
         settingsService.getCommunicationSettings(),
-        getVoiceParts().catch(() => []),
       ]);
       setEvents(loadedEvents);
       setHistory(loadedHistory);
@@ -83,9 +158,6 @@ export default function CommunicationView() {
       setTemplates(loadedTemplates);
       setSubject((current) => current || loadedTemplates.emailSubject);
       setContent((current) => current || loadedTemplates.emailBody);
-      if (loadedVoiceParts && loadedVoiceParts.length > 0) {
-        setVoiceParts(loadedVoiceParts.map(vp => vp.label));
-      }
       setIsLoading(false);
     };
 
@@ -166,7 +238,7 @@ export default function CommunicationView() {
         content,
         type: messageType,
         recipients: selectedRecipients,
-        filters,
+        filters: filters as unknown as Record<string, unknown>,
       });
       setDeliveryLinks({ mailtoUrl: result.mailtoUrl, smsUrl: result.smsUrl });
       setHistory(await communicationService.getMessages());
@@ -202,7 +274,17 @@ export default function CommunicationView() {
     setSubject(message.subject || '');
     setContent(message.content);
     setMessageType(message.type);
-    setFilters(message.filters || DEFAULT_FILTERS);
+    const mFilters = message.filters as Record<string, unknown>;
+    if (mFilters?.eventId) {
+      setFilters({
+        eventId: (mFilters.eventId as string) || '',
+        rsvp: (mFilters.rsvp as CommunicationFilters['rsvp']) || 'All',
+        voicePart: (mFilters.voicePart as string) || '',
+        globalStatus: (mFilters.globalStatus as string) || 'Active (Current)',
+      });
+    } else {
+      setFilters(DEFAULT_FILTERS);
+    }
     setTab('compose');
     setSelectedMessage(null);
   };
@@ -236,7 +318,7 @@ export default function CommunicationView() {
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Communications</h1>
         <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-          {(['compose', 'history', 'settings'] as Tab[]).map((item) => (
+          {(['compose', 'automated', 'history', 'settings'] as Tab[]).map((item) => (
             <button
               key={item}
               type="button"
@@ -248,6 +330,121 @@ export default function CommunicationView() {
           ))}
         </div>
       </div>
+
+      {tab === 'automated' && (
+        <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          <AppCard title="Upcoming & Recently Scheduled Automated Tasks">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <p className="text-muted text-sm">
+                These tasks are managed by the system based on your settings. You can trigger them manually below.
+              </p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
+                {upcomingTasks.length === 0 && (
+                  <p className="text-muted" style={{ padding: 'var(--space-xl)', textAlign: 'center', gridColumn: '1 / -1' }}>
+                    No automated tasks found for upcoming events.
+                  </p>
+                )}
+                
+                {upcomingTasks.map(task => {
+                  const isReport = task.type === 'Report';
+                  return (
+                    <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                      <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span className={`badge ${isReport ? 'badge-concert' : 'badge-rehearsal'}`}>
+                          {task.type} {task.status === 'Sent' ? '(Sent)' : ''}
+                        </span>
+                        <span className="text-muted text-xs">
+                          {isReport ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}
+                        </span>
+                      </div>
+                      
+                      <div className="flex-col" style={{ gap: '2px' }}>
+                        <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
+                        <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
+                      </div>
+                      
+                      <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
+                        {!isReport && (
+                          <button 
+                            className="btn btn-ghost btn-sm"
+                            onClick={async () => {
+                              const r = await communicationService.resolveRecipients({ 
+                                eventId: task.event.id, 
+                                rsvp: 'All', 
+                                voicePart: '', 
+                                globalStatus: 'Active (Current)' 
+                              });
+                              setRecipientPreviewList({ 
+                                isOpen: true, 
+                                recipients: r, 
+                                title: `Expected Recipients for ${task.event.title || task.event.type}` 
+                              });
+                            }}
+                          >
+                            View Recipients
+                          </button>
+                        )}
+                        {isReport && (
+                          <div className="text-muted text-xs" style={{ display: 'flex', alignItems: 'center' }}>
+                            Target: All Admins
+                          </div>
+                        )}
+                        
+                        <button 
+                          className="btn btn-primary btn-sm"
+                          disabled={isSending}
+                          onClick={async () => {
+                            if (isReport) {
+                              const confirmed = await dialog.confirm({
+                                title: 'Send Report Now?',
+                                message: `Generate and send the attendance report for "${task.event.title || task.event.type}" to all admins immediately?`,
+                                confirmLabel: 'Send Now',
+                              });
+                              if (confirmed) {
+                                setIsSending(true);
+                                try {
+                                  await communicationService.triggerAttendanceReport(task.event.id);
+                                  await dialog.showMessage({ title: 'Report Sent', message: 'The report has been generated and emailed to admins.', variant: 'info' });
+                                  setHistory(await communicationService.getMessages());
+                                } catch (err: unknown) {
+                                  const msg = err instanceof Error ? err.message : String(err);
+                                  await dialog.showMessage({ title: 'Error', message: msg || 'Failed to send report.', variant: 'danger' });
+                                } finally {
+                                  setIsSending(false);
+                                }
+                              }
+                            } else {
+                              // Open Compose pre-filled
+                              const values = {
+                                eventTitle: task.event.title || task.event.type,
+                                eventType: task.event.type,
+                                eventDate: new Date(task.event.date).toLocaleString(),
+                                eventLocation: task.event.expand?.venue?.name || 'TBD',
+                                eventDetails: task.event.details || '',
+                                singerName: '{singerName}',
+                                rsvpLinks: '{{RSVP_LINKS}}',
+                              };
+                              
+                              setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id });
+                              setSubject(renderCommunicationTemplate(templates.reminderSubjectTemplate, values));
+                              setContent(renderCommunicationTemplate(templates.reminderBodyTemplate, values));
+                              setMessageType('Email');
+                              setTab('compose');
+                            }
+                          }}
+                        >
+                          {isReport ? 'Send Now' : 'Open Compose'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </AppCard>
+        </div>
+      )}
 
       {tab === 'compose' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 360px) 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
@@ -274,7 +471,7 @@ export default function CommunicationView() {
                 <label className="text-label">Voice Part</label>
                 <select className="card" value={filters.voicePart} onChange={(event) => updateFilter('voicePart', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
                   <option value="">All Voice Parts</option>
-                  {voiceParts.map((part) => <option key={part} value={part}>{part}</option>)}
+                  {voicePartLabels.map((part) => <option key={part} value={part}>{part}</option>)}
                 </select>
               </div>
 
@@ -373,22 +570,28 @@ export default function CommunicationView() {
 
       {tab === 'history' && (
         <AppCard noPadding>
-          {history.map((message) => (
-            <div key={message.id} className="flex-responsive" style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)', justifyContent: 'space-between' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-                  <span className="badge badge-rehearsal">{message.type}</span>
-                  <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
+          {history.map((message) => {
+            const mFilters = message.filters as Record<string, unknown>;
+            const mType = mFilters?.type as string | undefined;
+            const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+            return (
+              <div key={message.id} className="flex-responsive" style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)', justifyContent: 'space-between' }}>
+                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                  <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                    <span className="badge badge-rehearsal">{message.type}</span>
+                    {isAutomated && <span className="badge badge-concert" style={{ opacity: 0.8 }}>{mType}</span>}
+                    <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
+                  </div>
+                  <h3 style={{ margin: 0 }}>{message.subject || 'SMS message'}</h3>
+                  <p className="text-muted" style={{ margin: 0 }}>{message.recipients.length} recipients</p>
                 </div>
-                <h3 style={{ margin: 0 }}>{message.subject || 'SMS message'}</h3>
-                <p className="text-muted" style={{ margin: 0 }}>{message.recipients.length} recipients</p>
+                <div className="flex-row">
+                  <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMessage(message)}>Details</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => copyToDraft(message)}>Copy to Draft</button>
+                </div>
               </div>
-              <div className="flex-row">
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMessage(message)}>Details</button>
-                <button className="btn btn-secondary btn-sm" onClick={() => copyToDraft(message)}>Copy to Draft</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {history.length === 0 && (
             <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
               <p className="text-muted">No messages logged yet.</p>
@@ -396,6 +599,25 @@ export default function CommunicationView() {
           )}
         </AppCard>
       )}
+
+      {/* Settings tab unchanged ... */}
+
+      <BaseModal
+        isOpen={recipientPreviewList.isOpen}
+        onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
+        title={recipientPreviewList.title}
+        maxWidth="500px"
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
+          {recipientPreviewList.recipients.map(r => (
+            <div key={r.id} className="flex-row card" style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}>
+              <strong>{r.name}</strong>
+              <span className="text-muted text-xs">{r.voicePart}</span>
+            </div>
+          ))}
+          {recipientPreviewList.recipients.length === 0 && <p className="text-muted">No recipients found.</p>}
+        </div>
+      </BaseModal>
 
       {tab === 'settings' && (
         <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>

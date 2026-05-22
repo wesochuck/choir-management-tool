@@ -1,7 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 
-
 import { type Event } from './eventService';
 import type { Profile } from './profileService';
 
@@ -92,7 +91,7 @@ export async function convertAuditionToSinger(audition: ConvertibleAudition): Pr
     name: audition.name,
     email: email || '',
     phone: phone || '',
-    voicePart: audition.voicePart || 'S1',
+    voicePart: audition.voicePart || '',
     globalStatus: 'Active (Current)',
     notes: [
       audition.experience ? `Audition experience: ${audition.experience}` : '',

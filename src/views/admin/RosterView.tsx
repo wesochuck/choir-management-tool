@@ -8,7 +8,6 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
 import { 
-  getVoiceParts, 
   settingsService, 
   getVoicePartsAndSections, 
   saveVoicePartsAndSections,
@@ -66,18 +65,20 @@ interface RosterConfigState {
   voiceParts: VoicePartDef[];
 }
 
+import { useVoiceParts } from '../../hooks/useVoiceParts';
+
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
   const { profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
   const { currentSeason, duesMap, toggleDues } = useDues();
   const [searchParams] = useSearchParams();
   const initialVoicePart = searchParams.get('voicePart') || '';
+  const { labels: voicePartLabels, sections: configSectionsHook, refresh: refreshVoiceParts } = useVoiceParts();
   
   const [activeTab, setActiveTab] = useState<'roster' | 'config'>('roster');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
-  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Roster Sort user preference & fallback
@@ -124,12 +125,6 @@ export default function RosterView() {
   };
 
   useEffect(() => {
-    getVoiceParts().then(parts => {
-      if (parts && parts.length > 0) {
-        setVoiceParts(parts.map(p => p.label));
-      }
-    });
-
     settingsService.getRosterSettings().then(settings => {
       if (settings) {
         if (settings.defaultStatus !== undefined) {
@@ -167,8 +162,8 @@ export default function RosterView() {
   const sortedProfiles = useMemo(() => {
     return [...profiles].sort((a, b) => {
       if (sortBy === 'voicePart') {
-        const idxA = voiceParts.indexOf(a.voicePart);
-        const idxB = voiceParts.indexOf(b.voicePart);
+        const idxA = voicePartLabels.indexOf(a.voicePart);
+        const idxB = voicePartLabels.indexOf(b.voicePart);
         const orderA = idxA === -1 ? 999 : idxA;
         const orderB = idxB === -1 ? 999 : idxB;
         if (orderA !== orderB) {
@@ -182,7 +177,7 @@ export default function RosterView() {
       if (cmp !== 0) return cmp;
       return a.name.localeCompare(b.name);
     });
-  }, [profiles, sortBy, voiceParts]);
+  }, [profiles, sortBy, voicePartLabels]);
 
   const handleVoicePartToggle = (part: string) => {
     const active = filters.voiceParts || [];
@@ -290,9 +285,7 @@ export default function RosterView() {
 
       // Refresh roster data & sections
       await refresh();
-      
-      // Update voice parts list in view
-      setVoiceParts(configVoiceParts.map(p => p.label));
+      await refreshVoiceParts();
 
       // Reload config state
       await loadConfig();
@@ -559,12 +552,7 @@ export default function RosterView() {
                   }}>
                     Sections
                   </div>
-                  {[
-                    { code: 'S', label: 'Sopranos (S1, S2)' },
-                    { code: 'A', label: 'Altos (A1, A2)' },
-                    { code: 'T', label: 'Tenors (T1, T2)' },
-                    { code: 'B', label: 'Basses (B1, B2)' }
-                  ].map(sec => {
+                  {configSectionsHook.map(sec => {
                     const isChecked = (filters.voiceParts || []).includes(sec.code);
                     return (
                       <label
@@ -593,7 +581,7 @@ export default function RosterView() {
                             height: '15px'
                           }}
                         />
-                        <span style={{ fontWeight: isChecked ? 600 : 400 }}>{sec.label}</span>
+                        <span style={{ fontWeight: isChecked ? 600 : 400 }}>{sec.name}</span>
                       </label>
                     );
                   })}
@@ -610,7 +598,7 @@ export default function RosterView() {
                   }}>
                     Individual Parts
                   </div>
-                  {voiceParts.map(part => {
+                  {voicePartLabels.map(part => {
                     const isChecked = (filters.voiceParts || []).includes(part);
                     return (
                       <label

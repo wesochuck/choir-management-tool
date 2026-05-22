@@ -11,6 +11,7 @@ import {
   type MappedSinger,
   type RosterField,
 } from '../../lib/rosterImportUtils';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 
 interface RosterImportModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 }) => {
   const dialog = useDialog();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { labels: voicePartLabels } = useVoiceParts();
 
   // Wizard state
   const [step, setStep] = useState<ImportStep>('UPLOAD');
@@ -104,7 +106,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       return;
     }
 
-    const singers = validateAndMapSingers(csvData, mapping);
+    const singers = validateAndMapSingers(csvData, mapping, voicePartLabels);
     setMappedSingers(singers);
     setStep('PREVIEW');
   };
@@ -281,7 +283,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     { key: 'name', label: 'Name', desc: 'Full name of the singer', required: true },
     { key: 'email', label: 'Email', desc: 'Enables user login if provided' },
     { key: 'phone', label: 'Phone', desc: 'Contact phone number' },
-    { key: 'voicePart', label: 'Voice Part', desc: 'S1, S2, A1, A2, T1, T2, B1, or B2' },
+    { key: 'voicePart', label: 'Voice Part', desc: 'S1, A2, etc. (should match your configured parts)' },
     { key: 'globalStatus', label: 'Global Status', desc: 'Active (Current), Active (Future), or Inactive' },
     { key: 'notes', label: 'Notes', desc: 'Administrative notes' },
   ];

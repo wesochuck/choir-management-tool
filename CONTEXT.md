@@ -39,3 +39,12 @@ A horizontal tier of seats on a stage layout arranged sequentially from front to
 ## Distinct Section Palette
 A predefined set of high-contrast color values assigned to section definitions to guarantee clear visual separation on seating charts and grid layouts.
 
+## Automated Reminder
+A scheduled outbound message (Email or SMS) automatically triggered before an event starts, based on a configurable lead time. It targets active choir members with event details and personalized RSVP links.
+
+## Attendance Report
+A post-event summary automatically generated and sent to administrators after a rehearsal or performance. It provides attendance rates, absentee lists, and threshold warnings based on the recorded roster.
+
+## Communication History
+A central log of all dispatched messages, including manual bulk emails/SMS and those triggered by automated system tasks.
+

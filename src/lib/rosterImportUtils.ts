@@ -92,7 +92,7 @@ export function suggestFieldMapping(headers: string[]): FieldMapping {
   return mapping;
 }
 
-export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping): MappedSinger[] {
+export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping, validVoiceParts?: string[]): MappedSinger[] {
   const result: MappedSinger[] = [];
 
   csvData.rows.forEach((row, rowIndex) => {
@@ -129,23 +129,45 @@ export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping): 
     let voicePart: MappedSinger['data']['voicePart'] = '';
     if (rawVoicePart) {
       const cleanVP = rawVoicePart.toLowerCase().replace(/\s+/g, '');
-      if (cleanVP === 's1' || cleanVP === 'soprano1' || cleanVP === 'sopranoi' || cleanVP === 'sop1') {
-        voicePart = 'S1';
-      } else if (cleanVP === 's2' || cleanVP === 'soprano2' || cleanVP === 'sopranoii' || cleanVP === 'sop2') {
-        voicePart = 'S2';
-      } else if (cleanVP === 'a1' || cleanVP === 'alto1' || cleanVP === 'altoi' || cleanVP === 'alt1') {
-        voicePart = 'A1';
-      } else if (cleanVP === 'a2' || cleanVP === 'alto2' || cleanVP === 'altoii' || cleanVP === 'alt2') {
-        voicePart = 'A2';
-      } else if (cleanVP === 't1' || cleanVP === 'tenor1' || cleanVP === 'tenori' || cleanVP === 'ten1') {
-        voicePart = 'T1';
-      } else if (cleanVP === 't2' || cleanVP === 'tenor2' || cleanVP === 'tenorii' || cleanVP === 'ten2') {
-        voicePart = 'T2';
-      } else if (cleanVP === 'b1' || cleanVP === 'bass1' || cleanVP === 'bassi' || cleanVP === 'bas1') {
-        voicePart = 'B1';
-      } else if (cleanVP === 'b2' || cleanVP === 'bass2' || cleanVP === 'bassii' || cleanVP === 'bas2') {
-        voicePart = 'B2';
-      } else {
+      
+      // If valid parts are provided, try an exact match first
+      if (validVoiceParts && validVoiceParts.length > 0) {
+        const match = validVoiceParts.find(p => p.toLowerCase() === cleanVP);
+        if (match) {
+          voicePart = match;
+        }
+      }
+
+      // If no match found yet, try common abbreviations/long names
+      if (!voicePart) {
+        if (/^(s1|soprano1|sopranoi|sop1)$/i.test(cleanVP)) {
+          voicePart = 'S1';
+        } else if (/^(s2|soprano2|sopranoii|sop2)$/i.test(cleanVP)) {
+          voicePart = 'S2';
+        } else if (/^(a1|alto1|altoi|alt1)$/i.test(cleanVP)) {
+          voicePart = 'A1';
+        } else if (/^(a2|alto2|altoii|alt2)$/i.test(cleanVP)) {
+          voicePart = 'A2';
+        } else if (/^(t1|tenor1|tenori|ten1)$/i.test(cleanVP)) {
+          voicePart = 'T1';
+        } else if (/^(t2|tenor2|tenorii|ten2)$/i.test(cleanVP)) {
+          voicePart = 'T2';
+        } else if (/^(b1|bass1|bassi|bas1)$/i.test(cleanVP)) {
+          voicePart = 'B1';
+        } else if (/^(b2|bass2|bassii|bas2)$/i.test(cleanVP)) {
+          voicePart = 'B2';
+        }
+      }
+
+      // If we STILL don't have a match, and we have valid parts, just use the raw value if it exists in parts (case insensitive)
+      if (!voicePart && validVoiceParts && validVoiceParts.length > 0) {
+        const match = validVoiceParts.find(p => p.toLowerCase().includes(cleanVP) || cleanVP.includes(p.toLowerCase()));
+        if (match) {
+          voicePart = match;
+        }
+      }
+
+      if (!voicePart) {
         warnings.push(`Unrecognized voice part "${rawVoicePart}", leaving blank.`);
       }
     }

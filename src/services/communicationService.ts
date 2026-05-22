@@ -35,7 +35,7 @@ export interface MessageRecord extends RecordModel {
   content: string;
   type: MessageType;
   recipients: CommunicationRecipient[];
-  filters: CommunicationFilters;
+  filters: Record<string, unknown>; // Allow flexible structure for automated messages
   sender?: string;
   created: string;
 }
@@ -45,7 +45,7 @@ export interface SendMessageInput {
   content: string;
   type: MessageType;
   recipients: CommunicationRecipient[];
-  filters: CommunicationFilters;
+  filters: Record<string, unknown>;
 }
 
 export interface SendMessageResult {
@@ -157,8 +157,9 @@ export const communicationService = {
   async sendBulkMessage(data: SendMessageInput): Promise<SendMessageResult> {
     let finalContent = data.content;
     
-    if (data.content.includes('{{RSVP_LINKS}}') && data.filters.eventId) {
-      const resolved = await this.resolveRsvpPlaceholders(data.content, data.filters.eventId, data.recipients);
+    const eventId = data.filters.eventId as string | undefined;
+    if (data.content.includes('{{RSVP_LINKS}}') && eventId) {
+      const resolved = await this.resolveRsvpPlaceholders(data.content, eventId, data.recipients);
       finalContent = resolved.previewContent;
       console.log('--- RSVP Links Generated ---');
       resolved.logs.forEach(log => console.log(log));
@@ -176,8 +177,78 @@ export const communicationService = {
     return { message, mailtoUrl, smsUrl };
   },
 
+  async triggerAttendanceReport(eventId: string) {
+    const event = await pb.collection('events').getOne<Event>(eventId, { expand: 'venue' });
+    const commSettings = await settingsService.getCommunicationSettings();
+    const admins = await pb.collection('users').getFullList({ filter: 'role = "admin"' });
+    
+    if (admins.length === 0) throw new Error('No admins found to receive the report.');
+
+    // Aggregate Attendance
+    const rosters = await rosterService.getEventRoster(eventId);
+    if (rosters.length === 0) throw new Error('No roster data found for this event.');
+
+    const total = rosters.length;
+    const present = rosters.filter(r => r.attendance === 'Present').length;
+    const absentees = rosters.filter(r => r.attendance === 'Absent');
+    
+    // Fetch profile names for absentees
+    const profiles = await profileService.getProfiles();
+    const profileMap = new Map(profiles.map(p => [p.id, p]));
+
+    const absenteeNames = absentees.map(r => profileMap.get(r.profile)?.name || 'Unknown Singer');
+
+    const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : '0';
+
+    // Build Email Content
+    const eventDateStr = new Date(event.date).toLocaleDateString();
+    const subject = commSettings.reportSubjectTemplate
+        .replace(/{eventTitle}/g, event.title || event.type)
+        .replace(/{eventDate}/g, eventDateStr);
+
+    const templateBody = commSettings.reportBodyTemplate
+        .replace(/{eventTitle}/g, event.title || event.type)
+        .replace(/{eventDate}/g, eventDateStr)
+        .replace(/{attendanceRate}/g, attendanceRate)
+        .replace(/{presentCount}/g, String(present))
+        .replace(/{totalCount}/g, String(total))
+        .replace(/{absenteesList}/g, absenteeNames.length > 0 ? absenteeNames.map(name => `<li style="margin-bottom: 4px;">${name}</li>`).join('') : '<li>None</li>')
+        .replace(/{thresholdWarningsSection}/g, ''); // Simplified for manual trigger
+
+    const body = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
+            ${templateBody}
+            <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
+            <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+                This is a manually triggered attendance report.
+                <br />
+                Choir Management Tool
+            </p>
+        </div>
+    `;
+
+    const recipients = admins.map(admin => {
+        const adminData = admin as RecordModel;
+        return {
+            id: admin.id,
+            name: adminData.name || admin.email || 'Admin',
+            email: admin.email,
+            phone: '',
+            voicePart: '',
+            globalStatus: 'Admin'
+        };
+    });
+
+    return await this.saveMessage({
+        subject,
+        content: body,
+        type: 'Email',
+        recipients,
+        filters: { alreadySent: false, type: 'Automated Report', eventId: event.id }
+    });
+  },
+
   defaultConfig: DEFAULT_COMMUNICATION_CONFIG,
-  voiceParts: ['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2'],
   statuses: ['Active (Current)', 'Active (Future)', 'Inactive'],
 } satisfies {
   getMessages: () => Promise<MessageRecord[]>;
@@ -188,7 +259,7 @@ export const communicationService = {
   resolveRsvpPlaceholders: (content: string, eventId: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   sendBulkMessage: (data: SendMessageInput) => Promise<SendMessageResult>;
+  triggerAttendanceReport: (eventId: string) => Promise<MessageRecord>;
   defaultConfig: CommunicationConfig;
-  voiceParts: string[];
   statuses: string[];
 };

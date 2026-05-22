@@ -8,9 +8,10 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
 import type { Profile, ProfileInput } from '../../services/profileService';
-import { settingsService, getVoiceParts } from '../../services/settingsService';
+import { settingsService } from '../../services/settingsService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useAuth } from '../../contexts/AuthContext';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 
@@ -39,7 +40,7 @@ export default function AttendanceView() {
   
   const [isPendingExpanded, setIsPendingExpanded] = useState(false);
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
-  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+  const { labels: voicePartLabels } = useVoiceParts();
 
   useEffect(() => {
     settingsService.getAttendanceSettings()
@@ -49,14 +50,6 @@ export default function AttendanceView() {
       .catch((err) => {
         console.error('Failed to load attendance settings', err);
       });
-
-    getVoiceParts().then(parts => {
-      if (parts && parts.length > 0) {
-        setVoiceParts(parts.map(p => p.label));
-      }
-    }).catch(err => {
-      console.error('Failed to load voice parts', err);
-    });
   }, []);
 
   useEffect(() => {
@@ -463,7 +456,7 @@ export default function AttendanceView() {
               style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
             >
               <option value="">All Parts</option>
-              {voiceParts.map(part => (
+              {voicePartLabels.map(part => (
                 <option key={part} value={part}>{part}</option>
               ))}
             </select>

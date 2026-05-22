@@ -4,7 +4,6 @@ import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
-import { getVoiceParts, type VoicePartDef } from '../../services/settingsService';
 import { eventService, type Event } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
 
@@ -16,15 +15,17 @@ interface SingerModalProps {
   initialData?: Profile | null;
 }
 
+import { useVoiceParts } from '../../hooks/useVoiceParts';
+
 export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData }) => {
   const dialog = useDialog();
-  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+  const { voiceParts } = useVoiceParts();
   const [formData, setFormData] = useState<ProfileInput>({
     name: '',
     email: '',
     password: '',
     phone: '',
-    voicePart: 'S1',
+    voicePart: '',
     globalStatus: 'Active (Current)',
     notes: '',
     doNotEmail: false,
@@ -42,18 +43,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   const [savingRsvpId, setSavingRsvpId] = useState<string | null>(null);
 
   useEffect(() => {
-    getVoiceParts().then(parts => {
-      setVoiceParts(parts);
-      if (!initialData && parts.length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          voicePart: parts[0].label
-        }));
-      }
-    });
-  }, [isOpen, initialData]);
-
-  useEffect(() => {
     if (initialData) {
       setFormData({
         ...initialData,
@@ -68,14 +57,14 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         email: '',
         password: '',
         phone: '',
-        voicePart: voiceParts[0]?.label || 'S1',
+        voicePart: '',
         globalStatus: 'Active (Current)',
         notes: '',
         doNotEmail: false,
         statusIsManual: false,
       });
     }
-  }, [initialData, isOpen, voiceParts]);
+  }, [initialData, isOpen]);
 
   // Reset tab when modal closes/opens
   useEffect(() => {
@@ -526,9 +515,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <select 
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
+                required
                 className="card"
                 style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
               >
+                <option value="" disabled>-- Please Select --</option>
                 {voiceParts.map(v => (
                   <option key={v.label} value={v.label}>
                     {v.label} {v.fullName ? `(${v.fullName})` : ''}

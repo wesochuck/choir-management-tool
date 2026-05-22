@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { BaseModal } from '../common/BaseModal';
 import type { Audition } from '../../services/auditionService';
 import { eventService, type Event } from '../../services/eventService';
-import { settingsService, getVoiceParts, type AuditionSettings } from '../../services/settingsService';
+import { settingsService, type AuditionSettings } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { formatInTimezone } from '../../lib/timezone';
 
 const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
@@ -34,18 +35,13 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
   const [performances, setPerformances] = useState<Event[]>([]);
   const [settings, setSettings] = useState<AuditionSettings | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+  const { labels: voicePartLabels } = useVoiceParts();
 
   useEffect(() => {
     eventService.getEvents().then(events => {
       setPerformances(events.filter(e => e.type === 'Performance'));
     });
     settingsService.getAuditionSettings().then(setSettings);
-    getVoiceParts().then(parts => {
-      if (parts && parts.length > 0) {
-        setVoiceParts(parts.map(p => p.label));
-      }
-    }).catch(err => console.error('Failed to load voice parts', err));
   }, []);
 
   useEffect(() => {
@@ -223,7 +219,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
               style={{ height: '44px', padding: '0 12px' }}
             >
               <option value="">Not sure yet</option>
-              {voiceParts.map((part) => (
+              {voicePartLabels.map((part) => (
                 <option key={part} value={part}>{part}</option>
               ))}
             </select>

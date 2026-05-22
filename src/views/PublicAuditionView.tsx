@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import { auditionService, type Audition } from '../services/auditionService';
-import { DEFAULT_AUDITION_SETTINGS, settingsService, getVoiceParts, type AuditionSettings } from '../services/settingsService';
+import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useVoiceParts } from '../hooks/useVoiceParts';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 
 export default function PublicAuditionView() {
@@ -23,22 +24,18 @@ export default function PublicAuditionView() {
   const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
+  const { labels: voicePartLabels } = useVoiceParts();
 
   useEffect(() => {
     const init = async () => {
       try {
-        const [loaded, loadedParts, tz] = await Promise.all([
+        const [loaded, tz] = await Promise.all([
           settingsService.getAuditionSettings(),
-          getVoiceParts().catch(() => []),
           fetchChoirTimezone().catch(() => 'America/New_York'),
         ]);
         setSettings(loaded);
         setTimezone(tz);
         setTimeSlot(loaded.slots[0] || '');
-        if (loadedParts && loadedParts.length > 0) {
-          setVoiceParts(loadedParts.map(p => p.label));
-        }
 
         if (loaded.defaultPerformanceId) {
           try {
@@ -192,7 +189,7 @@ export default function PublicAuditionView() {
                   <label className="text-label">Voice Part</label>
                   <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px' }}>
                     <option value="">Not sure yet</option>
-                    {voiceParts.map((part) => (
+                    {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>
                     ))}
                   </select>
