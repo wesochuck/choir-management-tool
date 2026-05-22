@@ -143,11 +143,23 @@ export const communicationService = {
 
     if (filters.eventId) {
       const roster = await rosterService.getEventRoster(filters.eventId);
-      allowedProfileIds = new Set(
-        roster
-          .filter((item) => filters.rsvp === 'All' || item.rsvp === filters.rsvp)
-          .map((item) => item.profile),
-      );
+      if (filters.rsvp === 'Pending') {
+        // "Pending" includes profiles without an eventRosters row; those are implicitly pending.
+        const rosterByProfileId = new Map<string, 'Yes' | 'No' | 'Pending'>(
+          roster.map((item) => [item.profile, item.rsvp]),
+        );
+        allowedProfileIds = new Set(
+          profiles
+            .filter((profile) => (rosterByProfileId.get(profile.id) ?? 'Pending') === 'Pending')
+            .map((profile) => profile.id),
+        );
+      } else {
+        allowedProfileIds = new Set(
+          roster
+            .filter((item) => filters.rsvp === 'All' || item.rsvp === filters.rsvp)
+            .map((item) => item.profile),
+        );
+      }
     }
 
     // Resolve voiceParts filter: Expand any section codes to their constituent parts
