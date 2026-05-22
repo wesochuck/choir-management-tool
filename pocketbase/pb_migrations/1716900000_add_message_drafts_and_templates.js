@@ -1,86 +1,82 @@
-migrate((db) => {
-  const dao = new Dao(db);
-
+/// <reference path="../pb_data/types.d.ts" />
+migrate((app) => {
   // 1. Update messages collection with status field
-  const messages = dao.findCollectionByNameOrId("pbc_messages_001");
-  messages.schema.addField(new SchemaField({
-    "name": "status",
-    "type": "select",
-    "required": true,
-    "presentable": false,
-    "unique": false,
-    "options": {
-      "maxSelect": 1,
-      "values": ["Draft", "Sent", "Failed"]
-    }
+  const messages = app.findCollectionByNameOrId("pbc_messages_001");
+  messages.fields.push(new SelectField({
+    name: "status",
+    id: "select_messages_status_001",
+    required: true,
+    presentable: false,
+    unique: false,
+    values: ["Draft", "Sent", "Failed"],
+    maxSelect: 1
   }));
+  app.save(messages);
 
   // Update existing messages to "Sent"
-  db.newQuery("UPDATE messages SET status = 'Sent' WHERE status = '' OR status IS NULL").execute();
-
-  dao.saveCollection(messages);
+  try {
+    const records = app.findRecordsByFilter("messages", "status = '' || status = null", "", 10000, 0);
+    records.forEach((record) => {
+      record.set("status", "Sent");
+      app.saveNoValidate(record);
+    });
+  } catch (e) {
+    console.log("Failed to backfill message status:", e);
+  }
 
   // 2. Create messageTemplates collection
   const templates = new Collection({
-    "id": "pbc_templates_001",
-    "name": "messageTemplates",
-    "type": "base",
-    "system": false,
-    "schema": [
-      {
-        "name": "title",
-        "type": "text",
-        "required": true,
-        "presentable": true,
-        "unique": true,
-        "options": { "min": null, "max": null, "pattern": "" }
-      },
-      {
-        "name": "subject",
-        "type": "text",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": { "min": null, "max": null, "pattern": "" }
-      },
-      {
-        "name": "content",
-        "type": "text",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": { "min": null, "max": null, "pattern": "" }
-      },
-      {
-        "name": "type",
-        "type": "select",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "maxSelect": 1,
-          "values": ["Email", "SMS", "Both"]
-        }
-      },
-      {
-        "name": "isSystem",
-        "type": "bool",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {}
-      }
+    id: "pbc_templates_001",
+    name: "messageTemplates",
+    type: "base",
+    system: false,
+    fields: [
+      new TextField({
+        name: "id",
+        primaryKey: true,
+        required: true,
+        system: true,
+        pattern: "^[a-z0-9]+$"
+      }),
+      new TextField({
+        name: "title",
+        id: "text_templates_title_001",
+        required: true,
+        presentable: true,
+        unique: true
+      }),
+      new TextField({
+        name: "subject",
+        id: "text_templates_subject_001",
+        required: false,
+      }),
+      new TextField({
+        name: "content",
+        id: "text_templates_content_001",
+        required: true,
+      }),
+      new SelectField({
+        name: "type",
+        id: "select_templates_type_001",
+        required: true,
+        values: ["Email", "SMS", "Both"],
+        maxSelect: 1
+      }),
+      new BoolField({
+        name: "isSystem",
+        id: "bool_templates_isSystem_001",
+        required: false,
+      })
     ],
-    "indexes": [],
-    "listRule": "@request.auth.id != '' && @request.auth.role = 'admin'",
-    "viewRule": "@request.auth.id != '' && @request.auth.role = 'admin'",
-    "createRule": "@request.auth.id != '' && @request.auth.role = 'admin'",
-    "updateRule": "@request.auth.id != '' && @request.auth.role = 'admin'",
-    "deleteRule": "@request.auth.id != '' && @request.auth.role = 'admin' && isSystem = false",
-    "options": {}
+    indexes: [],
+    listRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
+    viewRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
+    createRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
+    updateRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
+    deleteRule: "@request.auth.id != '' && @request.auth.role = 'admin' && isSystem = false",
   });
 
-  dao.saveCollection(templates);
+  app.save(templates);
 
   // 3. Seed core templates
   const seeds = [
@@ -122,27 +118,29 @@ migrate((db) => {
   ];
 
   seeds.forEach(seed => {
-    const record = new Record(templates);
-    record.set("title", seed.title);
-    record.set("subject", seed.subject);
-    record.set("content", seed.content);
-    record.set("type", seed.type);
-    record.set("isSystem", seed.isSystem);
-    dao.saveRecord(record);
+    const record = new Record(templates, {
+      "title": seed.title,
+      "subject": seed.subject,
+      "content": seed.content,
+      "type": seed.type,
+      "isSystem": seed.isSystem
+    });
+    app.save(record);
   });
 
-}, (db) => {
-  const dao = new Dao(db);
-  
+}, (app) => {
   // Down migration
   try {
-    const templates = dao.findCollectionByNameOrId("pbc_templates_001");
-    dao.deleteCollection(templates);
+    const templates = app.findCollectionByNameOrId("pbc_templates_001");
+    app.delete(templates);
   } catch (e) {}
 
   try {
-    const messages = dao.findCollectionByNameOrId("pbc_messages_001");
-    messages.schema.removeField("status");
-    dao.saveCollection(messages);
+    const messages = app.findCollectionByNameOrId("pbc_messages_001");
+    const index = messages.fields.findIndex(f => f.name === "status");
+    if (index !== -1) {
+      messages.fields.splice(index, 1);
+    }
+    app.save(messages);
   } catch (e) {}
 });
