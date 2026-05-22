@@ -137,78 +137,90 @@ export default function EventsView() {
   };
 
   const handleSave = async (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig, openAuditions?: boolean) => {
-    let savedEvent: Event | undefined;
-    if (editingEvent) {
-      savedEvent = await editEvent(editingEvent.id, data);
-    } else {
-      const newEvent = await addEvent(data);
-      savedEvent = newEvent;
-      if (bulkConfig && newEvent) {
-        await bulkAddRehearsals(newEvent, bulkConfig);
-      }
-    }
-
-    if (openAuditions && savedEvent && savedEvent.type === 'Performance') {
-      const currentSettings = await settingsService.getAuditionSettings();
-      const updatedSettings = {
-        ...currentSettings,
-        enabled: true,
-        defaultPerformanceId: savedEvent.id
-      };
-      await settingsService.saveAuditionSettings(updatedSettings);
-      setAuditionSettings(updatedSettings);
-      await dialog.showMessage({
-        title: 'Auditions Opened',
-        message: `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
-      });
-    } else if (!openAuditions && savedEvent && savedEvent.type === 'Performance') {
-        const currentSettings = await settingsService.getAuditionSettings();
-        if (currentSettings.defaultPerformanceId === savedEvent.id && currentSettings.enabled) {
-            const updatedSettings = {
-                ...currentSettings,
-                enabled: false
-            };
-            await settingsService.saveAuditionSettings(updatedSettings);
-            setAuditionSettings(updatedSettings);
+    let resultEvent: Event | undefined;
+    try {
+      if (editingEvent) {
+        resultEvent = await editEvent(editingEvent.id, data);
+      } else {
+        resultEvent = await addEvent(data);
+        if (bulkConfig && resultEvent) {
+          await bulkAddRehearsals(resultEvent, bulkConfig);
         }
-    }
-
-    // Check if RSVP was newly opened (true now, but not before, or new event with RSVP open)
-    const isNewRsvpOpen = savedEvent && savedEvent.isOpenForRSVP && (!editingEvent || !editingEvent.isOpenForRSVP);
-    if (isNewRsvpOpen) {
-      const confirmed = await dialog.confirm({
-        title: 'RSVP Opened',
-        message: `RSVP is now open for "${savedEvent.title || savedEvent.type}"! Would you like to draft and compose the RSVP invitation email to active choir members now?`,
-        confirmLabel: 'Draft Invitation',
-        cancelLabel: 'Later',
-        variant: 'info'
-      });
-      if (confirmed) {
-        const venueName = savedEvent.venue 
-          ? (venues.find(v => v.id === savedEvent.venue)?.name || 'TBD')
-          : 'TBD';
-
-        const values = {
-          eventTitle: savedEvent.title || savedEvent.type,
-          eventType: savedEvent.type,
-          eventDate: formatInTimezone(savedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
-          eventLocation: venueName,
-          eventDetails: savedEvent.details || '',
-          singerName: '{singerName}',
-          rsvpLinks: '{{RSVP_LINKS}}',
-        };
-
-        const initialSubject = renderCommunicationTemplate(communicationSettings.reminderSubjectTemplate, values);
-        const initialContent = renderCommunicationTemplate(communicationSettings.reminderBodyTemplate, values);
-
-        navigate('/admin/communications', {
-          state: {
-            initialEventId: savedEvent.id,
-            initialSubject,
-            initialContent,
-          }
-        });
       }
+
+      // Close modal immediately after successful save to ensure data integrity
+      // and update the list view state.
+      setIsModalOpen(false);
+
+      if (!resultEvent) return;
+      const savedEvent = resultEvent;
+
+      if (openAuditions && savedEvent.type === 'Performance') {
+        const currentSettings = await settingsService.getAuditionSettings();
+        const updatedSettings = {
+          ...currentSettings,
+          enabled: true,
+          defaultPerformanceId: savedEvent.id
+        };
+        await settingsService.saveAuditionSettings(updatedSettings);
+        setAuditionSettings(updatedSettings);
+        await dialog.showMessage({
+          title: 'Auditions Opened',
+          message: `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
+        });
+      } else if (!openAuditions && savedEvent.type === 'Performance') {
+          const currentSettings = await settingsService.getAuditionSettings();
+          if (currentSettings.defaultPerformanceId === savedEvent.id && currentSettings.enabled) {
+              const updatedSettings = {
+                  ...currentSettings,
+                  enabled: false
+              };
+              await settingsService.saveAuditionSettings(updatedSettings);
+              setAuditionSettings(updatedSettings);
+          }
+      }
+
+      // Check if RSVP was newly opened (true now, but not before, or new event with RSVP open)
+      const isNewRsvpOpen = savedEvent.isOpenForRSVP && (!editingEvent || !editingEvent.isOpenForRSVP);
+      if (isNewRsvpOpen) {
+        const confirmed = await dialog.confirm({
+          title: 'RSVP Opened',
+          message: `RSVP is now open for "${savedEvent.title || savedEvent.type}"! Would you like to draft and compose the RSVP invitation email to active choir members now?`,
+          confirmLabel: 'Draft Invitation',
+          cancelLabel: 'Later',
+          variant: 'info'
+        });
+        if (confirmed) {
+          const venueName = savedEvent.venue 
+            ? (venues.find(v => v.id === savedEvent.venue)?.name || 'TBD')
+            : 'TBD';
+
+          const values = {
+            eventTitle: savedEvent.title || savedEvent.type,
+            eventType: savedEvent.type,
+            eventDate: formatInTimezone(savedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+            eventLocation: venueName,
+            eventDetails: savedEvent.details || '',
+            singerName: '{singerName}',
+            rsvpLinks: '{{RSVP_LINKS}}',
+          };
+
+          const initialSubject = renderCommunicationTemplate(communicationSettings.reminderSubjectTemplate, values);
+          const initialContent = renderCommunicationTemplate(communicationSettings.reminderBodyTemplate, values);
+
+          navigate('/admin/communications', {
+            state: {
+              initialEventId: savedEvent.id,
+              initialSubject,
+              initialContent,
+            }
+          });
+        }
+      }
+    } catch (err: unknown) {
+      console.error('Save failed', err);
+      // Re-throw to be caught by the modal's error handler
+      throw err;
     }
   };
 

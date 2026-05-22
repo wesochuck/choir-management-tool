@@ -42,6 +42,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
   const [isOpenAuditions, setIsOpenAuditions] = useState(false);
+  const [initialOpenAuditions, setInitialOpenAuditions] = useState(false);
   const [bulkCount, setBulkCount] = useState(8);
   const [bulkDay, setBulkDay] = useState(2); // Tuesday
   const [bulkTime, setBulkTime] = useState('19:00');
@@ -109,14 +110,13 @@ export const EventModal: React.FC<EventModalProps> = ({
   useEffect(() => {
     if (isOpen && initialData && initialData.type === 'Performance') {
       settingsService.getAuditionSettings().then(settings => {
-        if (settings.enabled && settings.defaultPerformanceId === initialData.id) {
-          setIsOpenAuditions(true);
-        } else {
-          setIsOpenAuditions(false);
-        }
+        const isActive = settings.enabled && settings.defaultPerformanceId === initialData.id;
+        setIsOpenAuditions(isActive);
+        setInitialOpenAuditions(isActive);
       });
     } else if (isOpen) {
       setIsOpenAuditions(false);
+      setInitialOpenAuditions(false);
     }
   }, [initialData, isOpen]);
 
@@ -184,6 +184,51 @@ export const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
+  const isDirty = useMemo(() => {
+    if (initialData) {
+      const formattedDate = utcToZonedInputValue(initialData.date, timezone);
+      
+      const titleChanged = (formData.title || '') !== (initialData.title || '');
+      const dateChanged = formData.date !== formattedDate;
+      const typeChanged = formData.type !== initialData.type;
+      const detailsChanged = (formData.details || '') !== (initialData.details || '');
+      const parentChanged = (formData.parentPerformanceId || '') !== (initialData.parentPerformanceId || '');
+      const venueChanged = (formData.venue || '') !== (initialData.venue || '');
+      const rsvpChanged = Boolean(formData.isOpenForRSVP) !== Boolean(initialData.isOpenForRSVP);
+      const auditionsChanged = isOpenAuditions !== initialOpenAuditions;
+      
+      return titleChanged || dateChanged || typeChanged || detailsChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged;
+    } else {
+      const hasTitle = Boolean(formData.title?.trim());
+      const hasDetails = Boolean(formData.details?.trim());
+      const hasVenue = Boolean(formData.venue);
+      const hasParent = Boolean(formData.parentPerformanceId);
+      const hasRsvp = Boolean(formData.isOpenForRSVP);
+      const isTypeChanged = formData.type !== 'Rehearsal';
+      const hasBulkAdd = shouldBulkAdd;
+      
+      const hasInlineVenue = Boolean(newVenueName.trim() || newVenueRows.trim() || newVenueAddress.trim());
+
+      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || isTypeChanged || hasBulkAdd || hasInlineVenue;
+    }
+  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, isOpenAuditions, initialOpenAuditions]);
+
+  const handleClose = async () => {
+    if (isDirty) {
+      const confirmDiscard = await dialog.confirm({
+        title: 'Unsaved Changes',
+        message: initialData 
+          ? 'You have unsaved changes to this event. Do you want to discard them?' 
+          : 'You are scheduling a new event with unsaved details. Do you want to discard this event?',
+        confirmLabel: 'Discard Changes',
+        cancelLabel: 'Keep Editing',
+        variant: 'warning',
+      });
+      if (!confirmDiscard) return;
+    }
+    onClose();
+  };
+
   const handleDelete = async () => {
     if (!initialData || !onDelete) return;
     const shouldDelete = await dialog.confirm({
@@ -201,7 +246,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={initialData ? 'Edit Event' : 'Schedule Event'}
       footer={
         <>
@@ -215,7 +260,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               Delete
             </button>
           )}
-          <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
+          <button type="button" onClick={handleClose} className="btn btn-ghost">Cancel</button>
           <button 
             type="submit" 
             form="event-form"

@@ -145,3 +145,21 @@ select:focus {
 * {
   box-sizing: border-box;
 }
+
+/* Message Preview Rendering */
+.message-preview-content p {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+.message-preview-content ul, .message-preview-content ol {
+  margin-bottom: 16px;
+}
+.message-preview-content li {
+  margin-bottom: 4px;
+}
+.message-preview-content strong {
+  font-weight: 700;
+}
+.message-preview-content em {
+  font-style: italic;
+}

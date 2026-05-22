@@ -19,6 +19,7 @@ import {
   type CommunicationSettings,
 } from '../../services/settingsService';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import { renderMarkdown, resolvePreviewContent, COMPLIANT_FOOTER_HTML } from '../../lib/communicationUtils';
 
 type Tab = 'compose' | 'automated' | 'history' | 'settings';
 
@@ -33,7 +34,7 @@ const DEFAULT_CONFIG = communicationService.defaultConfig;
 
 interface AutomatedTask {
   id: string;
-  type: 'Reminder' | 'Report';
+  type: 'Reminder' | 'Report' | 'RSVP Request';
   event: Event;
   scheduledTime: Date;
   status: 'Scheduled' | 'Sent';
@@ -101,6 +102,32 @@ export default function CommunicationView() {
     [recipients, selectedIds],
   );
 
+  const previewHtml = useMemo(() => {
+    if (!content) return '';
+    
+    const sampleRecipient = selectedRecipients[0] || null;
+    const selectedEvent = events.find(e => e.id === filters.eventId) || null;
+    
+    // 1. Render markdown on the user's drafted message content first.
+    // This is safe because user-provided input is escaped from XSS/injection.
+    let renderedBody = renderMarkdown(content);
+    
+    // 2. Append the trusted compliant footer HTML.
+    if (messageType === 'Email' || messageType === 'Both') {
+      renderedBody += COMPLIANT_FOOTER_HTML;
+    }
+    
+    // 3. Resolve all placeholders (which might inject HTML blocks like RSVP links and buttons).
+    const resolved = resolvePreviewContent(
+      renderedBody,
+      selectedEvent,
+      sampleRecipient,
+      templates.mailingAddress
+    );
+    
+    return resolved;
+  }, [content, events, filters.eventId, selectedRecipients, messageType, templates.mailingAddress]);
+
   const { upcomingTasks, pastTasks } = useMemo(() => {
     const upcoming: AutomatedTask[] = [];
     const past: AutomatedTask[] = [];
@@ -109,6 +136,24 @@ export default function CommunicationView() {
     events.forEach(event => {
       const eventDate = new Date(event.date);
       
+      // RSVP Requests (Initial Invitation)
+      if (event.isOpenForRSVP && eventDate > now) {
+        const alreadySent = history.some(m => {
+          const mFilters = m.filters as Record<string, unknown>;
+          return (mFilters?.type === 'RSVP Invitation' || mFilters?.rsvp === 'Pending') && mFilters?.eventId === event.id;
+        });
+
+        if (!alreadySent) {
+          upcoming.push({
+            id: `rsvp-${event.id}`,
+            type: 'RSVP Request',
+            event,
+            scheduledTime: new Date(event.created), // Priority based on when it was opened
+            status: 'Scheduled'
+          });
+        }
+      }
+
       // Reminders
       if (templates.reminderEnabled) {
         const scheduledTime = new Date(eventDate.getTime() - templates.reminderHoursBefore * 60 * 60 * 1000);
@@ -388,22 +433,23 @@ export default function CommunicationView() {
               
               {upcomingTasks.map(task => {
                 const isReport = task.type === 'Report';
+                const isRsvp = task.type === 'RSVP Request';
                 return (
                   <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                     <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span className={`badge ${isReport ? 'badge-concert' : 'badge-rehearsal'}`}>
+                      <span className={`badge ${isReport ? 'badge-concert' : isRsvp ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: isRsvp ? '#3b82f6' : undefined, color: isRsvp ? 'white' : undefined }}>
                         {task.type}
                       </span>
                       <span className="text-muted text-xs">
-                        {isReport ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}
+                        {isRsvp ? 'Pending since:' : isReport ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}
                       </span>
                     </div>
-                    
+
                     <div className="flex-col" style={{ gap: '2px' }}>
                       <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
                       <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
                     </div>
-                    
+
                     <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
                       {!isReport && (
                         <button 
@@ -411,11 +457,10 @@ export default function CommunicationView() {
                           onClick={async () => {
                             const r = await communicationService.resolveRecipients({ 
                               eventId: task.event.id, 
-                              rsvp: 'All', 
+                              rsvp: isRsvp ? 'Pending' : 'All', 
                               voiceParts: [], 
                               globalStatus: 'Active (Current)' 
                             });
-
                             setRecipientPreviewList({ 
                               isOpen: true, 
                               recipients: r, 
@@ -431,7 +476,7 @@ export default function CommunicationView() {
                           Target: All Admins
                         </div>
                       )}
-                      
+
                       <button 
                         className="btn btn-primary btn-sm"
                         disabled={isSending}
@@ -466,14 +511,15 @@ export default function CommunicationView() {
                               singerName: '{singerName}',
                               rsvpLinks: '{{RSVP_LINKS}}',
                             };
-                            
-                            setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id });
+
+                            setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id, rsvp: isRsvp ? 'Pending' : 'All' });
                             setSubject(renderCommunicationTemplate(templates.reminderSubjectTemplate, values));
                             setContent(renderCommunicationTemplate(templates.reminderBodyTemplate, values));
                             setMessageType('Email');
                             setTab('compose');
                           }
                         }}
+
                       >
                         {isReport ? 'Send Now' : 'Open Compose'}
                       </button>
@@ -481,6 +527,7 @@ export default function CommunicationView() {
                   </div>
                 );
               })}
+
             </div>
           </div>
 
@@ -777,11 +824,17 @@ export default function CommunicationView() {
             </AppCard>
 
             <AppCard title="Preview">
-              <div className="card" style={{ boxShadow: 'none', backgroundColor: 'var(--bg)' }}>
+              <div className="card" style={{ boxShadow: 'none', backgroundColor: 'var(--bg)', padding: 'var(--space-md)' }}>
                 {(messageType === 'Email' || messageType === 'Both') && (
-                  <h3 style={{ marginTop: 0 }}>{subject || 'No subject'}</h3>
+                  <h3 style={{ marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
+                    {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null) || 'No subject'}
+                  </h3>
                 )}
-                <p className="text-body" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{content || 'No message content.'}</p>
+                <div 
+                  className="text-body message-preview-content" 
+                  style={{ margin: 0 }}
+                  dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-muted">No message content.</p>' }}
+                />
               </div>
 
               {deliveryLinks && (

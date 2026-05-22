@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
@@ -153,14 +153,37 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
     }
   };
 
+  const isDirty = useMemo(() => {
+    const hasPerformance = Boolean(selectedPerformanceId !== (initialPerformance?.id || ''));
+    const hasVenue = Boolean(venue !== (initialPerformance?.venue || ''));
+    const isCountChanged = count !== 8;
+    const isDayChanged = dayOfWeek !== 2;
+    const isTimeChanged = time !== '19:00';
+    return hasPerformance || hasVenue || isCountChanged || isDayChanged || isTimeChanged;
+  }, [selectedPerformanceId, venue, count, dayOfWeek, time, initialPerformance]);
+
+  const handleClose = async () => {
+    if (isDirty) {
+      const confirmDiscard = await dialog.confirm({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved selections in this bulk generator. Do you want to discard them?',
+        confirmLabel: 'Discard Changes',
+        cancelLabel: 'Keep Editing',
+        variant: 'warning',
+      });
+      if (!confirmDiscard) return;
+    }
+    onClose();
+  };
+
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Bulk Add Rehearsals"
       footer={
         <>
-          <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
+          <button type="button" onClick={handleClose} className="btn btn-ghost">Cancel</button>
           <button 
             type="submit" 
             form="bulk-event-form"
