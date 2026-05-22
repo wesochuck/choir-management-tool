@@ -63,14 +63,23 @@ migrate((app) => {
       })
     ],
     indexes: [],
-    listRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
-    viewRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
-    createRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
-    updateRule: "@request.auth.id != '' && @request.auth.role = 'admin'",
-    deleteRule: "@request.auth.id != '' && @request.auth.role = 'admin' && isSystemTemplate = false",
+    listRule: null,
+    viewRule: null,
+    createRule: null,
+    updateRule: null,
+    deleteRule: null,
   });
 
   app.save(templates);
+
+  // Hydrate rules after fields are successfully created and assigned IDs by PocketBase
+  const savedTemplates = app.findCollectionByNameOrId("pbc_templates_001");
+  savedTemplates.listRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
+  savedTemplates.viewRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
+  savedTemplates.createRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
+  savedTemplates.updateRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
+  savedTemplates.deleteRule = "@request.auth.id != '' && @request.auth.role = 'admin' && isSystemTemplate = false";
+  app.save(savedTemplates);
 
   // 3. Seed core templates
   const seeds = [
