@@ -1,11 +1,14 @@
 import React from 'react';
-import type { SectionDef } from '../../../services/settingsService';
+import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
     onSearchChange: (value: string) => void;
     sectionFilter: string;
     onSectionFilterChange: (value: string) => void;
+    genreFilter: string;
+    onGenreFilterChange: (value: string) => void;
+    genres: MusicGenreDef[];
     sections: SectionDef[];
     showMovements: boolean;
     onShowMovementsChange: (value: boolean) => void;
@@ -22,6 +25,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     onSearchChange,
     sectionFilter,
     onSectionFilterChange,
+    genreFilter,
+    onGenreFilterChange,
+    genres,
     sections,
     showMovements,
     onShowMovementsChange,
@@ -53,6 +59,21 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     <option value="">All Pieces</option>
                     {sections.map(s => (
                         <option key={s.code} value={s.code}>{s.name}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+                <span className="text-sm text-muted">Filter by Genre:</span>
+                <select
+                    className="card"
+                    value={genreFilter}
+                    onChange={(e) => onGenreFilterChange(e.target.value)}
+                    style={{ height: '40px', padding: '0 8px', minWidth: '140px', cursor: 'pointer' }}
+                >
+                    <option value="">All Genres</option>
+                    {genres.map(g => (
+                        <option key={g.id} value={g.id}>{g.label}</option>
                     ))}
                 </select>
             </div>

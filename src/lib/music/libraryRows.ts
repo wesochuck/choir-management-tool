@@ -1,5 +1,6 @@
 import type { MusicPiece } from '../../types/musicLibrary';
 import { filterPiecesBySectionBucket } from './applicability';
+import { filterPiecesByGenre } from './genres';
 
 export interface BuildVisibleMusicLibraryRowsOptions {
   searchTerm?: string;
@@ -7,6 +8,7 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   showMovements?: boolean;
   duplicateIds?: Set<string>;
   sectionFilter?: string;
+  genreFilter?: string;
 }
 
 /**
@@ -22,7 +24,8 @@ export function buildVisibleMusicLibraryRows(
     showDuplicatesOnly = false, 
     showMovements = false, 
     duplicateIds = new Set<string>(),
-    sectionFilter = ''
+    sectionFilter = '',
+    genreFilter = ''
   } = options;
 
   let result = [...pieces];
@@ -49,6 +52,11 @@ export function buildVisibleMusicLibraryRows(
   // 3. Section Bucket Applicability
   if (sectionFilter) {
     result = filterPiecesBySectionBucket(result, sectionFilter);
+  }
+
+  // 3b. Genre Filtering
+  if (genreFilter) {
+    result = filterPiecesByGenre(result, genreFilter);
   }
 
   // 4. Hierarchical Sorting & Grouping

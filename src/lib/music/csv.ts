@@ -1,4 +1,5 @@
 import type { MusicPiece, MusicPieceInput } from '../../types/musicLibrary';
+import type { MusicGenreDef } from '../../services/settingsService';
 
 /**
  * Parses a CSV file into Partial<MusicPieceInput> elements.
@@ -62,18 +63,23 @@ export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[
   return pieces;
 }
 
-export function exportMusicToCSV(pieces: MusicPiece[]): string {
-  const header = ['Title', 'Composer', 'Voicing', 'Applies To'].join(',');
+export function exportMusicToCSV(pieces: MusicPiece[], options?: { genres?: MusicGenreDef[] }): string {
+  const header = ['Title', 'Composer', 'Voicing', 'Applies To', 'Genres'].join(',');
   const rows = pieces.map(p => {
     const applicability = (!p.sectionBuckets || p.sectionBuckets.length === 0) 
       ? 'All' 
       : p.sectionBuckets.join(';');
       
+    const genreList = options?.genres 
+      ? p.genres?.map(id => options.genres!.find(g => g.id === id)?.label || id).join(';') || ''
+      : p.genres?.join(';') || '';
+
     return [
       `"${p.title || ''}"`,
       `"${p.composer || ''}"`,
       `"${p.voicing || ''}"`,
-      `"${applicability}"`
+      `"${applicability}"`,
+      `"${genreList}"`
     ].join(',');
   });
   return [header, ...rows].join('\n');

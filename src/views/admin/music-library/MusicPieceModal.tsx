@@ -4,7 +4,7 @@ import { useDialog } from '../../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../../services/musicLibraryService';
 import { eventService, type Event } from '../../../services/eventService';
 import { venueService, type Venue } from '../../../services/venueService';
-import { getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../../services/settingsService';
+import { getVoicePartsAndSections, type VoicePartDef, type SectionDef, type MusicGenreDef } from '../../../services/settingsService';
 import { pb } from '../../../lib/pocketbase';
 import { formatSecondsToDuration, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../../lib/musicPieceUtils';
 import { LearningTracksEditor } from './LearningTracksEditor';
@@ -21,6 +21,7 @@ export interface MusicPieceModalProps {
     catalogLookupTemplate?: string;
     onRefresh?: () => Promise<void>;
     allPieces?: MusicPiece[];
+    allGenres: MusicGenreDef[];
 }
 
 export function MusicPieceModal({ 
@@ -31,7 +32,8 @@ export function MusicPieceModal({
     onDelete, 
     catalogLookupTemplate, 
     onRefresh, 
-    allPieces 
+    allPieces,
+    allGenres
 }: MusicPieceModalProps) {
     const dialog = useDialog();
     const [title, setTitle] = useState('');
@@ -40,6 +42,7 @@ export function MusicPieceModal({
     const [copies, setCopies] = useState<string>('');
     const [catalogId, setCatalogId] = useState('');
     const [sectionBuckets, setSectionBuckets] = useState<string[]>([]);
+    const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -138,6 +141,7 @@ export function MusicPieceModal({
             setCopies(piece.copies?.toString() || '');
             setCatalogId(piece.catalogId || '');
             setSectionBuckets(piece.sectionBuckets || []);
+            setSelectedGenres(piece.genres || []);
             setSelectedPerformanceIds(piece.performances || []);
             setNotes(piece.notes || '');
             loadMovements();
@@ -154,6 +158,7 @@ export function MusicPieceModal({
             setCopies('');
             setCatalogId('');
             setSectionBuckets([]);
+            setSelectedGenres([]);
             setSelectedPerformanceIds([]);
             setNotes('');
             setMovements([]);
@@ -485,6 +490,7 @@ export function MusicPieceModal({
                 copies: copies ? parseInt(copies, 10) : undefined,
                 catalogId,
                 sectionBuckets,
+                genres: selectedGenres,
                 performances: selectedPerformanceIds,
                 notes,
                 tuttiFile: !piece ? tuttiFile : undefined,
@@ -843,6 +849,29 @@ export function MusicPieceModal({
                                     : `Applies to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
                                 }
                             </span>
+                        </div>
+
+                        <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+                            <label className="text-label">Genres</label>
+                            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: 'var(--space-sm)', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                {allGenres.map(genre => (
+                                    <label key={genre.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedGenres.includes(genre.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedGenres(prev => [...prev, genre.id]);
+                                                } else {
+                                                    setSelectedGenres(prev => prev.filter(id => id !== genre.id));
+                                                }
+                                            }}
+                                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                                        />
+                                        <span className="text-sm">{genre.label}</span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                         {!piece && (
                             <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>

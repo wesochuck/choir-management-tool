@@ -208,15 +208,88 @@ export default function SettingsView() {
           <label className="text-label">Catalog Lookup URL Template</label>
           <input
             type="url"
-            value={musicLibrarySettings.catalogLookupUrlTemplate}
-            onChange={(event) => setMusicLibrarySettings({ catalogLookupUrlTemplate: event.target.value })}
-            placeholder="https://www.jwpepper.com/s?q={catalogId}"
+            value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
+            onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
+            placeholder="https://example.com/catalog/{catalogId}"
             className="card"
-            style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
           />
           <p className="text-muted" style={{ margin: 0 }}>
             Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
           </p>
+        </div>
+      </AppCard>
+
+      <AppCard title="Music Library Genres">
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <p className="text-muted" style={{ margin: 0 }}>
+            Configure standard genre tags used for library organization and advanced layout filtering.
+          </p>
+          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            {musicLibrarySettings.genres?.map((genre, index) => (
+              <div key={genre.id} style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center' }}>
+                <input
+                  className="card"
+                  style={{ height: '40px', padding: '0 12px', width: '250px' }}
+                  value={genre.label}
+                  onChange={(e) => {
+                    const updated = [...musicLibrarySettings.genres];
+                    updated[index] = { ...updated[index], label: e.target.value };
+                    setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => {
+                    const updated = musicLibrarySettings.genres.filter((_, i) => i !== index);
+                    setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+            <input
+              id="new-genre-input"
+              placeholder="New Genre Name (e.g. Sacred)"
+              className="card"
+              style={{ height: '40px', padding: '0 12px', maxWidth: '250px' }}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                const inputEl = document.getElementById('new-genre-input') as HTMLInputElement;
+                const label = inputEl?.value?.trim();
+                if (!label) return;
+                
+                const normalized = label;
+                const currentList = musicLibrarySettings.genres || [];
+                if (currentList.some(g => g.label.toLowerCase() === normalized.toLowerCase())) {
+                  alert('Genre label already exists.');
+                  return;
+                }
+                
+                const generatedId = normalized.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                let finalId = generatedId;
+                let counter = 2;
+                while (currentList.some(g => g.id === finalId)) {
+                  finalId = `${generatedId}-${counter}`;
+                  counter++;
+                }
+                
+                const updated = [...currentList, { id: finalId, label: normalized }];
+                setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                inputEl.value = '';
+              }}
+            >
+              Add Genre
+            </button>
+          </div>
         </div>
       </AppCard>
 

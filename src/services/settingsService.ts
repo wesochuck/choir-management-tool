@@ -40,8 +40,14 @@ export interface RosterSettings {
   currentSeason?: string;
 }
 
+export interface MusicGenreDef {
+  id: string;
+  label: string;
+}
+
 export interface MusicLibrarySettings {
   catalogLookupUrlTemplate: string;
+  genres: MusicGenreDef[];
 }
 
 export interface CommunicationConfig {
@@ -136,6 +142,10 @@ export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
 
 export const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
   catalogLookupUrlTemplate: '',
+  genres: [
+    { id: 'christmas', label: 'Christmas' },
+    { id: 'patriotic', label: 'Patriotic' },
+  ],
 };
 
 export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
@@ -228,7 +238,12 @@ export const settingsService = {
 
   async getMusicLibrarySettings() {
     const setting = await getSetting<MusicLibrarySettings>('music_library');
-    return { ...DEFAULT_MUSIC_LIBRARY_SETTINGS, ...setting?.value };
+    const value = setting?.value;
+    return {
+      ...DEFAULT_MUSIC_LIBRARY_SETTINGS,
+      ...value,
+      genres: value?.genres || DEFAULT_MUSIC_LIBRARY_SETTINGS.genres,
+    };
   },
 
   async saveMusicLibrarySettings(value: MusicLibrarySettings) {

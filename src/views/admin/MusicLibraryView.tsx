@@ -4,7 +4,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { eventService } from '../../services/eventService';
-import { settingsService, getVoicePartsAndSections, type SectionDef } from '../../services/settingsService';
+import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicGenreDef } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
 import { buildVisibleMusicLibraryRows } from '../../lib/music/libraryRows';
@@ -22,6 +22,8 @@ export default function MusicLibraryView() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
+  const [genreFilter, setGenreFilter] = useState('');
+  const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
 
   // Audio player state
@@ -56,7 +58,7 @@ export default function MusicLibraryView() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
-    const csvContent = exportMusicToCSV(pieces);
+    const csvContent = exportMusicToCSV(pieces, { genres: configuredGenres });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -79,6 +81,7 @@ export default function MusicLibraryView() {
       setPieces(data);
       setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
       setSections(sectionsData.sections);
+      setConfiguredGenres(settings.genres || []);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'isAbort' in err && err.isAbort) return;
       dialog.showMessage({ title: 'Error', message: 'Could not load music library.', variant: 'danger' });
@@ -195,9 +198,10 @@ export default function MusicLibraryView() {
       showDuplicatesOnly,
       showMovements,
       duplicateIds,
-      sectionFilter
+      sectionFilter,
+      genreFilter
     });
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements, sectionFilter]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements, sectionFilter, genreFilter]);
 
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
@@ -252,6 +256,9 @@ export default function MusicLibraryView() {
           onSearchChange={setSearchTerm}
           sectionFilter={sectionFilter}
           onSectionFilterChange={setSectionFilter}
+          genreFilter={genreFilter}
+          onGenreFilterChange={setGenreFilter}
+          genres={configuredGenres}
           sections={sections}
           showMovements={showMovements}
           onShowMovementsChange={setShowMovements}
@@ -267,6 +274,7 @@ export default function MusicLibraryView() {
           pieces={pieces}
           filteredPieces={filteredPieces}
           sections={sections}
+          genres={configuredGenres}
           isLoading={isLoading}
           duplicateIds={duplicateIds}
           selectedIds={selectedIds}
@@ -293,6 +301,7 @@ export default function MusicLibraryView() {
         catalogLookupTemplate={catalogLookupTemplate}
         onRefresh={loadData}
         allPieces={pieces}
+        allGenres={configuredGenres}
       />
 
       <MusicImportModal

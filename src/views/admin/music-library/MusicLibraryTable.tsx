@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MusicPiece } from '../../../types/musicLibrary';
-import type { SectionDef } from '../../../services/settingsService';
+import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
 import { 
     formatPerformanceHistory, 
     parseDurationToSeconds, 
@@ -12,6 +12,7 @@ export interface MusicLibraryTableProps {
     pieces: MusicPiece[];
     filteredPieces: MusicPiece[];
     sections: SectionDef[];
+    genres: MusicGenreDef[];
     isLoading: boolean;
     duplicateIds: Set<string>;
     selectedIds: Set<string>;
@@ -26,6 +27,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     pieces,
     filteredPieces,
     sections,
+    genres,
     isLoading,
     duplicateIds,
     selectedIds,
@@ -168,6 +170,28 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                                                     {piece.performances.length} historical performances
                                                 </span>
                                             )}
+                                            <div className="flex-row" style={{ gap: '4px', marginTop: '2px', flexWrap: 'wrap' }}>
+                                                {piece.genres?.map(id => {
+                                                    const found = genres.find(g => g.id === id);
+                                                    return (
+                                                        <span 
+                                                            key={id}
+                                                            style={{ 
+                                                                display: 'inline-flex',
+                                                                padding: '1px 5px',
+                                                                borderRadius: '4px',
+                                                                backgroundColor: 'rgba(100, 116, 139, 0.06)',
+                                                                border: '1px solid rgba(100, 116, 139, 0.15)',
+                                                                fontSize: '9px',
+                                                                fontWeight: 500,
+                                                                color: 'var(--text-muted)'
+                                                            }}
+                                                        >
+                                                            {found ? found.label : id}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
                                             <div className="flex-row" style={{ gap: 'var(--space-xs)', marginTop: '2px', flexWrap: 'wrap' }}>
                                                 {!piece.sectionBuckets || piece.sectionBuckets.length === 0 ? (
                                                     <span className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.6, fontSize: '10px' }}>

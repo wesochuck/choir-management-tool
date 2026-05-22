@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import test, { describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
   pieceHasGenre, 
@@ -7,7 +7,6 @@ import {
   getGenreLabelsForPiece, 
   normalizeGenreLabel, 
   createGenreId 
-// @ts-ignore - helpers don't exist yet
 } from '../src/lib/music/genres.ts';
 import type { MusicPiece } from '../src/types/musicLibrary.ts';
 import type { MusicGenreDef } from '../src/services/settingsService.ts';
