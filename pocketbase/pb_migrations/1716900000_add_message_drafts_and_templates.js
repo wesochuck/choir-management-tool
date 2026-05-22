@@ -72,13 +72,15 @@ migrate((app) => {
 
   app.save(templates);
 
-  // Hydrate rules after fields are successfully created and assigned IDs by PocketBase
+  // Hydrate rules after fields are successfully created and assigned IDs by PocketBase.
+  // The isSystemTemplate-dependent delete rule is applied in the next migration,
+  // after PocketBase has committed and reloaded this new collection schema.
   const savedTemplates = app.findCollectionByNameOrId("pbc_templates_001");
   savedTemplates.listRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
   savedTemplates.viewRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
   savedTemplates.createRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
   savedTemplates.updateRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
-  savedTemplates.deleteRule = "@request.auth.id != '' && @request.auth.role = 'admin' && isSystemTemplate = false";
+  savedTemplates.deleteRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
   app.save(savedTemplates);
 
   // 3. Seed core templates
@@ -121,7 +123,7 @@ migrate((app) => {
   ];
 
   seeds.forEach(seed => {
-    const record = new Record(templates, {
+    const record = new Record(savedTemplates, {
       "title": seed.title,
       "subject": seed.subject,
       "content": seed.content,
