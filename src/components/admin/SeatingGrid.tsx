@@ -54,6 +54,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const isCompact = maxSeats > 12;
   const seatSize = isCompact ? 68 : 100;
   const gridGap = isCompact ? 6 : 12;
+  const rowGap = isCompact ? 'var(--space-xs)' : 'var(--space-sm)';
+  const containerPadding = isCompact ? 'var(--space-xs)' : 'var(--space-md)';
   const fontSize = isCompact ? 'var(--font-size-xs)' : 'var(--font-size-sm)';
 
   const getInitials = (name: string) => {
@@ -91,7 +93,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   };
 
   return (
-    <div className="flex-col grid-print" style={{ gap: 'var(--space-lg)', alignItems: 'center', width: '100%', overflowX: 'auto', padding: 'var(--space-md)' }}>
+    <div className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
       {/* Warning banner if not enough seats */}
       {activeProfiles.length > totalSeats && onUpdateRowCounts && (
         <div className="no-print" style={{

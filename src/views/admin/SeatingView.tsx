@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
@@ -298,19 +298,67 @@ export default function SeatingView() {
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
-      <div className="no-print flex-responsive seating-header">
-        <h1 className="text-headline seating-header-title">
-          Seating Chart Creator
-        </h1>
+      <div className="no-print flex-responsive seating-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-sm)', flexWrap: 'wrap' }}>
+        <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+          <h1 className="text-headline seating-header-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
+            Seating Chart
+          </h1>
+          
+          <div className="flex-row" style={{ display: 'flex', backgroundColor: 'var(--surface-muted, #f1f5f9)', padding: '3px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', gap: '2px' }}>
+            <button
+              onClick={() => setActiveTab('chart')}
+              style={{
+                height: '28px',
+                minHeight: '28px',
+                padding: '0 12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                borderRadius: 'calc(var(--radius-md) - 2px)',
+                backgroundColor: activeTab === 'chart' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'chart' ? 'var(--bg, white)' : 'var(--text-muted)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              Chart
+            </button>
+            <button
+              onClick={() => setActiveTab('templates')}
+              style={{
+                height: '28px',
+                minHeight: '28px',
+                padding: '0 12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                borderRadius: 'calc(var(--radius-md) - 2px)',
+                backgroundColor: activeTab === 'templates' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'templates' ? 'var(--bg, white)' : 'var(--text-muted)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              Formations
+            </button>
+          </div>
+        </div>
         
         {activeTab === 'chart' && (
-          <div className="flex-row seating-controls-group">
-            <div className="flex-row seating-control-item">
-              <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance:</span>
+          <div className="flex-row seating-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+            <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
+              <span className="text-label text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Perf:</span>
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
                 className="seating-select-perf"
+                style={{ height: '32px', minHeight: '32px', padding: '0 24px 0 8px', fontSize: '0.75rem', width: '180px' }}
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
@@ -319,12 +367,13 @@ export default function SeatingView() {
               </select>
             </div>
 
-            <div className="flex-row seating-control-item">
-              <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
+            <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
+              <span className="text-label text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
                 className="seating-select-venue"
+                style={{ height: '32px', minHeight: '32px', padding: '0 24px 0 8px', fontSize: '0.75rem', width: '140px' }}
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -359,14 +408,15 @@ export default function SeatingView() {
                   }}
                   className="btn btn-sm btn-ghost no-print seating-update-venue-btn" 
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
+                  style={{ height: '32px', minHeight: '32px', padding: '0 var(--space-xs)', fontSize: '0.75rem' }}
                 >
-                  💾 Update Venue
+                  💾 Update
                 </button>
               )}
             </div>
 
-            <div className="flex-row seating-control-item">
-              <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formation:</span>
+            <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
+              <span className="text-label text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Format:</span>
               <div className="flex-row" style={{ gap: '4px' }}>
                 <select 
                   value={chart?.formationId || seatingSettings.defaultFormationId} 
@@ -386,6 +436,7 @@ export default function SeatingView() {
                     await updateChart({ formationId: selectedId, assignments: {} });
                   }}
                   className="seating-select-pattern"
+                  style={{ height: '32px', minHeight: '32px', padding: '0 24px 0 8px', fontSize: '0.75rem', width: '130px' }}
                 >
                   {seatingSettings.formations?.map(formation => (
                     <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -395,44 +446,6 @@ export default function SeatingView() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Segmented Tab Navigation */}
-      <div className="flex-row no-print" style={{ gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
-        <button
-          onClick={() => setActiveTab('chart')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'chart' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'chart' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'chart' ? '600' : '500',
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
-          }}
-        >
-          Seating Chart
-        </button>
-        <button
-          onClick={() => setActiveTab('templates')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'templates' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'templates' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'templates' ? '600' : '500',
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
-          }}
-        >
-          Formations Templates
-        </button>
       </div>
 
       {activeTab === 'templates' ? (
@@ -477,9 +490,26 @@ export default function SeatingView() {
 
               <AppCard title="Seating Formations">
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                  <p className="text-muted" style={{ margin: 0 }}>
-                    Define reusable seating formations for your choir.
-                  </p>
+                  <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
+                    <p className="text-muted" style={{ margin: 0 }}>
+                      Define reusable seating formations for your choir.
+                    </p>
+                    <Link 
+                      to="/admin/roster" 
+                      className="btn btn-ghost btn-sm"
+                      style={{ 
+                        fontSize: '0.8125rem', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        color: 'var(--primary)',
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                      }}
+                    >
+                      🎨 Edit Section Colors in Roster
+                    </Link>
+                  </div>
 
                   {customSeatingSettings.formations?.map((formation, index) => {
                     return (
