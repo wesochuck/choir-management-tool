@@ -28,8 +28,8 @@ interface SeatingGridProps {
   onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<void>;
 }
 
-export const SeatingGrid: React.FC<SeatingGridProps> = ({ 
-  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts 
+export const SeatingGrid: React.FC<SeatingGridProps> = ({
+  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts
 }) => {
   const dialog = useDialog();
   const formatNameLastFirst = React.useCallback((fullName: string): string => {
@@ -158,13 +158,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         const rowLabel = `Row ${rowIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
 
         return (
-          <div key={rowIndex} className="row-print" style={{ 
-            display: 'flex', 
-            flexDirection: 'row', 
+          <div key={rowIndex} className="row-print" style={{
+            display: 'flex',
+            flexDirection: 'row',
             alignItems: 'center',
-            gap: `${gridGap}px`, 
-            justifyContent: 'center', 
-            minWidth: 'max-content' 
+            gap: `${gridGap}px`,
+            justifyContent: 'center',
+            minWidth: 'max-content'
           }}>
             <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
               {rowLabel}
@@ -186,7 +186,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       variant: 'danger'
                     });
                   }
-                  
+
                   if (shouldRemove) {
                     const result = removeRowAndShiftAssignments(rowCounts, rowIndex, assignments);
                     onUpdateRowCounts(result.rowCounts, result.assignments);
@@ -217,289 +217,289 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 🗑️
               </button>
             )}
-          {Array.from({ length: seatCount }).map((_, seatIndex) => {
-            const seatKey = `${rowIndex}-${seatIndex}`;
-            const suggestion = suggestions[seatKey];
-            const profileId = assignments[seatKey];
-            const assignedProfile = profileId ? profileMap[profileId] : null;
-            
-            const isMismatch = isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
+            {Array.from({ length: seatCount }).map((_, seatIndex) => {
+              const seatKey = `${rowIndex}-${seatIndex}`;
+              const suggestion = suggestions[seatKey];
+              const profileId = assignments[seatKey];
+              const assignedProfile = profileId ? profileMap[profileId] : null;
 
-            const sectionDef = suggestion ? sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase()) : null;
-            const secColor = sectionDef?.color || sectionDef?.colorBg;
-            const colors = secColor
-              ? { bg: secColor, text: getContrastColor(secColor) }
-              : { bg: 'var(--surface)', text: 'var(--text-muted)' };
+              const isMismatch = isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
 
-            const isAssigned = !!profileId;
-            const seatBg = isAssigned ? colors.bg : 'var(--surface)';
-            const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--text-muted)');
-            const borderStyle = isAssigned ? 'solid' : 'dashed';
-            const borderColor = isAssigned ? colors.text : (secColor || 'var(--border)');
+              const sectionDef = suggestion ? sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase()) : null;
+              const secColor = sectionDef?.color || sectionDef?.colorBg;
+              const colors = secColor
+                ? { bg: secColor, text: getContrastColor(secColor) }
+                : { bg: 'var(--surface)', text: 'var(--text-muted)' };
 
-            // Wedge Outline Logic
-            const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
-            const rightSuggestion = seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
-            
-            const hasLeftBorder = suggestion !== leftSuggestion;
-            const hasRightBorder = suggestion !== rightSuggestion;
+              const isAssigned = !!profileId;
+              const seatBg = isAssigned ? colors.bg : 'var(--surface)';
+              const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--text-muted)');
+              const borderStyle = isAssigned ? 'solid' : 'dashed';
+              const borderColor = isAssigned ? colors.text : (secColor || 'var(--border)');
 
-            const activeHoverOrDrag = hoveredSeat || activeDragOver;
-            const isHovered = seatKey === activeHoverOrDrag;
-            const isNeighbor = getIsNeighbor(activeHoverOrDrag, seatKey);
-            
-            const scale = isHovered ? 1.45 : (isNeighbor ? 1.22 : 1.0);
-            const translateY = isHovered ? -8 : (isNeighbor ? -4 : 0);
-            const zIndex = isHovered ? 10 : (isNeighbor ? 5 : 1);
-            const boxShadow = isHovered ? 'var(--shadow-lg)' : (isNeighbor ? 'var(--shadow-sm)' : 'none');
+              // Wedge Outline Logic
+              const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
+              const rightSuggestion = seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
 
-            return (
-              <div 
-                key={seatKey} 
-                onDragOver={(e) => {
-                  if (!isReadOnly) {
-                    e.preventDefault();
-                  }
-                }}
-                onDragEnter={() => !isReadOnly && setActiveDragOver(seatKey)}
-                onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
-                onMouseEnter={() => !isReadOnly && setHoveredSeat(seatKey)}
-                onMouseLeave={() => !isReadOnly && setHoveredSeat(null)}
-                onDrop={(e) => {
-                  if (!isReadOnly) {
-                    e.preventDefault();
-                    setActiveDragOver(null);
-                    setHoveredSeat(null);
-                    handleDrop(e, seatKey);
-                  }
-                }}
-                draggable={!isReadOnly && !!assignedProfile}
-                onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
-                title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
-                className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''}`}
-                style={{ 
-                  width: `${seatSize}px`, 
-                  height: `${seatSize}px`, 
-                  backgroundColor: seatBg,
-                  borderTop: `1px ${borderStyle} ${borderColor}`,
-                  borderBottom: `1px ${borderStyle} ${borderColor}`,
-                  borderLeft: hasLeftBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
-                  borderRight: hasRightBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
-                  borderRadius: 'var(--radius-md)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  fontSize: fontSize,
-                  position: 'relative',
-                  cursor: isReadOnly ? 'default' : (assignedProfile ? 'grab' : 'pointer'),
-                  boxShadow: boxShadow,
-                  flexShrink: 0,
-                  gap: 0,
-                  transform: `scale(${scale}) translateY(${translateY}px)`,
-                  zIndex: zIndex,
-                  transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s'
-                }}
-              >
-                 {!isReadOnly && (
-                  <select 
-                    value={profileId || ''} 
-                    onChange={(e) => onAssign(seatKey, e.target.value)}
-                    style={{ 
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                      opacity: 0, cursor: 'pointer' 
-                    }}
-                  >
-                    <option value="">-- Assign --</option>
-                    <option value="">(Empty)</option>
-                    
-                    {suggestion && sectionDef && (
-                      <optgroup label={`Recommended (${sectionDef.name})`}>
+              const hasLeftBorder = suggestion !== leftSuggestion;
+              const hasRightBorder = suggestion !== rightSuggestion;
+
+              const activeHoverOrDrag = hoveredSeat || activeDragOver;
+              const isHovered = seatKey === activeHoverOrDrag;
+              const isNeighbor = getIsNeighbor(activeHoverOrDrag, seatKey);
+
+              const scale = isHovered ? 1.45 : (isNeighbor ? 1.22 : 1.0);
+              const translateY = isHovered ? -8 : (isNeighbor ? -4 : 0);
+              const zIndex = isHovered ? 10 : (isNeighbor ? 5 : 1);
+              const boxShadow = isHovered ? 'var(--shadow-lg)' : (isNeighbor ? 'var(--shadow-sm)' : 'none');
+
+              return (
+                <div
+                  key={seatKey}
+                  onDragOver={(e) => {
+                    if (!isReadOnly) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onDragEnter={() => !isReadOnly && setActiveDragOver(seatKey)}
+                  onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
+                  onMouseEnter={() => !isReadOnly && setHoveredSeat(seatKey)}
+                  onMouseLeave={() => !isReadOnly && setHoveredSeat(null)}
+                  onDrop={(e) => {
+                    if (!isReadOnly) {
+                      e.preventDefault();
+                      setActiveDragOver(null);
+                      setHoveredSeat(null);
+                      handleDrop(e, seatKey);
+                    }
+                  }}
+                  draggable={!isReadOnly && !!assignedProfile}
+                  onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
+                  title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
+                  className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''}`}
+                  style={{
+                    width: `${seatSize}px`,
+                    height: `${seatSize}px`,
+                    backgroundColor: seatBg,
+                    borderTop: `1px ${borderStyle} ${borderColor}`,
+                    borderBottom: `1px ${borderStyle} ${borderColor}`,
+                    borderLeft: hasLeftBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
+                    borderRight: hasRightBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
+                    borderRadius: 'var(--radius-md)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    fontSize: fontSize,
+                    position: 'relative',
+                    cursor: isReadOnly ? 'default' : (assignedProfile ? 'grab' : 'pointer'),
+                    boxShadow: boxShadow,
+                    flexShrink: 0,
+                    gap: 0,
+                    transform: `scale(${scale}) translateY(${translateY}px)`,
+                    zIndex: zIndex,
+                    transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s'
+                  }}
+                >
+                  {!isReadOnly && (
+                    <select
+                      value={profileId || ''}
+                      onChange={(e) => onAssign(seatKey, e.target.value)}
+                      style={{
+                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                        opacity: 0, cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">-- Assign --</option>
+                      <option value="">(Empty)</option>
+
+                      {suggestion && sectionDef && (
+                        <optgroup label={`Recommended (${sectionDef.name})`}>
+                          {activeProfiles
+                            .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
+                            .filter(p => {
+                              const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+                              return vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase();
+                            })
+                            .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
+                            .map(p => (
+                              <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
+                            ))
+                          }
+                        </optgroup>
+                      )}
+                      <optgroup label="Other Sections">
                         {activeProfiles
                           .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                           .filter(p => {
                             const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                            return vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase();
+                            return vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase();
                           })
-                          .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
+                          .sort((a, b) => {
+                            const vpCompare = a.voicePart.localeCompare(b.voicePart);
+                            if (vpCompare !== 0) return vpCompare;
+                            return formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name));
+                          })
                           .map(p => (
                             <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
                           ))
                         }
                       </optgroup>
-                    )}
-                    <optgroup label="Other Sections">
-                      {activeProfiles
-                        .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
-                        .filter(p => {
-                          const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                          return vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase();
-                        })
-                        .sort((a, b) => {
-                          const vpCompare = a.voicePart.localeCompare(b.voicePart);
-                          if (vpCompare !== 0) return vpCompare;
-                          return formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name));
-                        })
-                        .map(p => (
-                          <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
-                        ))
-                      }
-                    </optgroup>
-                  </select>
-                )}
-                
-                {!isReadOnly && onUpdateRowCounts && (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      
-                      const seatHasAssignment = !!assignments[seatKey];
-                      if (seatHasAssignment) {
-                        await onAssign(seatKey, '');
-                      } else {
-                        const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
-                        onUpdateRowCounts(result.rowCounts, result.assignments);
-                      }
-                    }}
-                    className="no-print seat-remove-btn"
-                    data-action={assignments[seatKey] ? "unassign" : "delete"}
-                    title={assignments[seatKey] ? "Unassign singer" : "Delete empty seat"}
-                    style={{
-                      position: 'absolute',
-                      top: '2px',
-                      right: '2px',
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%',
-                      backgroundColor: assignments[seatKey] ? 'var(--bg-muted, #e2e8f0)' : 'var(--color-danger-bg)',
-                      color: assignments[seatKey] ? 'var(--text-muted, #475569)' : 'var(--color-danger-text)',
-                      border: 'none',
-                      fontSize: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      zIndex: 12,
-                      padding: 0,
-                      lineHeight: 1,
-                      fontWeight: 'bold',
-                      boxShadow: 'var(--shadow-xs)',
-                    }}
-                  >
-                    ×
-                  </button>
-                )}
-                
-                <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                  {sectionDef?.name[0] || suggestion}{seatIndex + 1}
-                </div>
-                {assignedProfile ? (
-                  <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: isCompact ? '1.375rem' : '1.25rem', color: colors.text, lineHeight: 1.1 }}>
-                      {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
-                    </div>
-                    <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                      {assignedProfile.voicePart}
-                    </div>
-                    <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'}`}>
-                      {assignedProfile.name} ({assignedProfile.voicePart})
-                    </div>
+                    </select>
+                  )}
+
+                  {!isReadOnly && onUpdateRowCounts && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+
+                        const seatHasAssignment = !!assignments[seatKey];
+                        if (seatHasAssignment) {
+                          await onAssign(seatKey, '');
+                        } else {
+                          const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
+                          onUpdateRowCounts(result.rowCounts, result.assignments);
+                        }
+                      }}
+                      className="no-print seat-remove-btn"
+                      data-action={assignments[seatKey] ? "unassign" : "delete"}
+                      title={assignments[seatKey] ? "Unassign singer" : "Delete empty seat"}
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        backgroundColor: assignments[seatKey] ? 'var(--bg-muted, #e2e8f0)' : 'var(--color-danger-bg)',
+                        color: assignments[seatKey] ? 'var(--text-muted, #475569)' : 'var(--color-danger-text)',
+                        border: 'none',
+                        fontSize: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        zIndex: 12,
+                        padding: 0,
+                        lineHeight: 1,
+                        fontWeight: 'bold',
+                        boxShadow: 'var(--shadow-xs)',
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+
+                  <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
+                    {sectionDef?.name[0] || suggestion}{seatIndex + 1}
                   </div>
-                ) : (
-                  <div style={{ fontWeight: 600, color: seatTextColor, fontSize: isCompact ? '1rem' : '1.125rem' }}>{isCompact ? '—' : 'Empty'}</div>
-                )}
-              </div>
-            );
-          })}
+                  {assignedProfile ? (
+                    <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 800, fontSize: isCompact ? '1.375rem' : '1.25rem', color: colors.text, lineHeight: 1.1 }}>
+                        {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
+                      </div>
+                      <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
+                        {assignedProfile.voicePart}
+                      </div>
+                      <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'}`}>
+                        {assignedProfile.name} ({assignedProfile.voicePart})
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontWeight: 600, color: seatTextColor, fontSize: isCompact ? '1rem' : '1.125rem' }}>{isCompact ? '—' : 'Empty'}</div>
+                  )}
+                </div>
+              );
+            })}
 
-          {/* "+" add seat button */}
-          {!isReadOnly && onUpdateRowCounts && (
-            <button
-              className="no-print btn btn-ghost"
-              onClick={() => {
-                const newRowCounts = [...rowCounts];
-                newRowCounts[rowIndex] += 1;
-                onUpdateRowCounts(newRowCounts);
-              }}
-              style={{
-                minHeight: '28px',
-                height: '28px',
-                width: '28px',
-                minWidth: '28px',
-                padding: 0,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'var(--primary-light)',
-                border: '1px dashed var(--primary)',
-                color: 'var(--primary-deep)',
-                marginLeft: '12px',
-                fontWeight: 'bold',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-              title="Add seat to this row"
-            >
-              +
-            </button>
-          )}
+            {/* "+" add seat button */}
+            {!isReadOnly && onUpdateRowCounts && (
+              <button
+                className="no-print btn btn-ghost"
+                onClick={() => {
+                  const newRowCounts = [...rowCounts];
+                  newRowCounts[rowIndex] += 1;
+                  onUpdateRowCounts(newRowCounts);
+                }}
+                style={{
+                  minHeight: '28px',
+                  height: '28px',
+                  width: '28px',
+                  minWidth: '28px',
+                  padding: 0,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'var(--primary-light)',
+                  border: '1px dashed var(--primary)',
+                  color: 'var(--primary-deep)',
+                  marginLeft: '12px',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+                title="Add seat to this row"
+              >
+                +
+              </button>
+            )}
 
-          {/* "-" remove seat button */}
-          {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
-            <button
-              className="no-print btn btn-ghost"
-              onClick={async () => {
-                const seatIndex = seatCount - 1;
-                const seatKey = `${rowIndex}-${seatIndex}`;
-                const seatHasAssignment = !!assignments[seatKey];
-                let shouldRemove = true;
-                if (seatHasAssignment) {
-                  const profile = profileMap[assignments[seatKey]];
-                  const singerName = profile ? profile.name : 'A singer';
-                  shouldRemove = await dialog.confirm({
-                    title: 'Remove Seat?',
-                    message: `The last seat of Row ${rowIndex + 1} is assigned to ${singerName}. Removing this seat will unassign them. Proceed?`,
-                    confirmLabel: 'Remove Seat',
-                    cancelLabel: 'Cancel',
-                    variant: 'danger'
-                  });
-                }
-                
-                if (shouldRemove) {
-                  const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
-                  onUpdateRowCounts(result.rowCounts, result.assignments);
-                }
-              }}
-              style={{
-                minHeight: '28px',
-                height: '28px',
-                width: '28px',
-                minWidth: '28px',
-                padding: 0,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'var(--color-danger-bg)',
-                border: '1px dashed var(--color-danger-text)',
-                color: 'var(--color-danger-text)',
-                marginLeft: '6px',
-                fontWeight: 'bold',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-              title="Remove last seat from this row"
-            >
-              -
-            </button>
-          )}
-        </div>
-      );
+            {/* "-" remove seat button */}
+            {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
+              <button
+                className="no-print btn btn-ghost"
+                onClick={async () => {
+                  const seatIndex = seatCount - 1;
+                  const seatKey = `${rowIndex}-${seatIndex}`;
+                  const seatHasAssignment = !!assignments[seatKey];
+                  let shouldRemove = true;
+                  if (seatHasAssignment) {
+                    const profile = profileMap[assignments[seatKey]];
+                    const singerName = profile ? profile.name : 'A singer';
+                    shouldRemove = await dialog.confirm({
+                      title: 'Remove Seat?',
+                      message: `The last seat of Row ${rowIndex + 1} is assigned to ${singerName}. Removing this seat will unassign them. Proceed?`,
+                      confirmLabel: 'Remove Seat',
+                      cancelLabel: 'Cancel',
+                      variant: 'danger'
+                    });
+                  }
+
+                  if (shouldRemove) {
+                    const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
+                    onUpdateRowCounts(result.rowCounts, result.assignments);
+                  }
+                }}
+                style={{
+                  minHeight: '28px',
+                  height: '28px',
+                  width: '28px',
+                  minWidth: '28px',
+                  padding: 0,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'var(--color-danger-bg)',
+                  border: '1px dashed var(--color-danger-text)',
+                  color: 'var(--color-danger-text)',
+                  marginLeft: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+                title="Remove last seat from this row"
+              >
+                -
+              </button>
+            )}
+          </div>
+        );
       })}
 
       {/* Add Row to Front Button */}
@@ -556,7 +556,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         width: 'fit-content'
       }}>
         <span>🎼</span>
-        <span>Director / Stage</span>
+        <span>Director</span>
       </div>
     </div>
   );
