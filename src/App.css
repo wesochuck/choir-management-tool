@@ -471,11 +471,10 @@ body:has(.seating-chart-wide-active) .container {
 }
 
 /* Instantly visible custom tooltips on seat hover */
-.seat-tooltip {
+.seat-tooltip,
+.seat-tooltip-bottom {
   position: absolute;
-  bottom: 112%;
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
   background-color: var(--primary-deep);
   color: var(--surface);
   padding: 6px 12px;
@@ -490,18 +489,38 @@ body:has(.seating-chart-wide-active) .container {
   transition: opacity 0.15s ease-in-out, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.seat-tooltip::after {
+.seat-tooltip {
+  bottom: 112%;
+  transform: translateX(-50%) translateY(6px);
+}
+
+.seat-tooltip-bottom {
+  top: 112%;
+  transform: translateX(-50%) translateY(-6px);
+}
+
+.seat-tooltip::after,
+.seat-tooltip-bottom::after {
   content: '';
   position: absolute;
-  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   border-width: 5px;
   border-style: solid;
+}
+
+.seat-tooltip::after {
+  top: 100%;
   border-color: var(--primary-deep) transparent transparent transparent;
 }
 
-.seat-cell:hover .seat-tooltip {
+.seat-tooltip-bottom::after {
+  bottom: 100%;
+  border-color: transparent transparent var(--primary-deep) transparent;
+}
+
+.seat-cell:hover .seat-tooltip,
+.seat-cell:hover .seat-tooltip-bottom {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }

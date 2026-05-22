@@ -60,3 +60,18 @@ export function matchesVoiceParts(
     return false;
   });
 }
+
+/**
+ * Checks if a singer's voice part matches the suggested section for a seat.
+ * Returns true only if the voice part is known and belongs to a different section.
+ */
+export function isSectionMismatch(
+  profilePart: string | undefined,
+  suggestedSection: string | undefined,
+  voiceParts: VoicePartDef[]
+): boolean {
+  if (!profilePart || !suggestedSection) return false;
+  const vpDef = voiceParts.find(vp => vp.label === profilePart);
+  if (!vpDef) return false;
+  return vpDef.sectionCode.toUpperCase() !== suggestedSection.toUpperCase();
+}

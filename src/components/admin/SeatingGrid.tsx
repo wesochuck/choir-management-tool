@@ -4,6 +4,7 @@ import { type SectionDef, type VoicePartDef } from '../../services/settingsServi
 import { getUniqueDisplayNames, getLastName, getFirstName } from '../../lib/stringUtils';
 import { useDialog } from '../../contexts/DialogContext';
 import { removeSeatFromRow, removeRowAndShiftAssignments } from '../../lib/seatingSync';
+import { isSectionMismatch } from '../../lib/voicePartUtils';
 
 function getContrastColor(hex: string): string {
   if (!hex || hex.length < 6) return '#000000';
@@ -121,19 +122,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         </div>
       )}
 
-      {/* Add Row to Front Button */}
+      {/* Add Row to Back Button */}
       {!isReadOnly && onUpdateRowCounts && (
         <button
           onClick={() => {
             const defaultSeats = 10;
-            const newRowCounts = [defaultSeats, ...rowCounts];
-            const shiftedAssignments: Record<string, string> = {};
-            Object.entries(assignments).forEach(([key, profileId]) => {
-              const [rStr, sStr] = key.split('-');
-              const r = parseInt(rStr, 10);
-              shiftedAssignments[`${r + 1}-${sStr}`] = profileId;
-            });
-            onUpdateRowCounts(newRowCounts, shiftedAssignments);
+            const newRowCounts = [...rowCounts, defaultSeats];
+            onUpdateRowCounts(newRowCounts);
           }}
           className="btn btn-sm btn-ghost no-print"
           style={{
@@ -149,13 +144,15 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             gap: '6px',
             marginBottom: 'var(--space-xs)'
           }}
-          title="Add a new row with 10 seats at the front"
+          title="Add a new row with 10 seats at the back"
         >
-          ➕ Add Row to Front
+          ➕ Add Row to Back
         </button>
       )}
 
-      {rowCounts.map((seatCount, rowIndex) => {
+      {rowCounts.map((_, index) => {
+        const rowIndex = rowCounts.length - 1 - index;
+        const seatCount = rowCounts[rowIndex];
         const isFront = rowIndex === 0;
         const isBack = rowIndex === rowCounts.length - 1;
         const rowLabel = `Row ${rowIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
@@ -226,6 +223,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const profileId = assignments[seatKey];
             const assignedProfile = profileId ? profileMap[profileId] : null;
             
+            const isMismatch = isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
+
             const sectionDef = suggestion ? sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase()) : null;
             const secColor = sectionDef?.color || sectionDef?.colorBg;
             const colors = secColor
@@ -277,7 +276,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 draggable={!isReadOnly && !!assignedProfile}
                 onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                 title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
-                className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'}`}
+                className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''}`}
                 style={{ 
                   width: `${seatSize}px`, 
                   height: `${seatSize}px`, 
@@ -402,7 +401,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                       {assignedProfile.voicePart}
                     </div>
-                    <div className="no-print seat-tooltip">
+                    <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'}`}>
                       {assignedProfile.name} ({assignedProfile.voicePart})
                     </div>
                   </div>
@@ -503,13 +502,19 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       );
       })}
 
-      {/* Add Row to Back Button */}
+      {/* Add Row to Front Button */}
       {!isReadOnly && onUpdateRowCounts && (
         <button
           onClick={() => {
             const defaultSeats = 10;
-            const newRowCounts = [...rowCounts, defaultSeats];
-            onUpdateRowCounts(newRowCounts);
+            const newRowCounts = [defaultSeats, ...rowCounts];
+            const shiftedAssignments: Record<string, string> = {};
+            Object.entries(assignments).forEach(([key, profileId]) => {
+              const [rStr, sStr] = key.split('-');
+              const r = parseInt(rStr, 10);
+              shiftedAssignments[`${r + 1}-${sStr}`] = profileId;
+            });
+            onUpdateRowCounts(newRowCounts, shiftedAssignments);
           }}
           className="btn btn-sm btn-ghost no-print"
           style={{
@@ -525,11 +530,34 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             gap: '6px',
             marginTop: 'var(--space-xs)'
           }}
-          title="Add a new row with 10 seats at the back"
+          title="Add a new row with 10 seats at the front"
         >
-          ➕ Add Row to Back
+          ➕ Add Row to Front
         </button>
       )}
+
+      {/* Director Stage Indicator */}
+      <div className="no-print director-stage-indicator" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        marginTop: 'var(--space-md)',
+        padding: 'var(--space-xs) var(--space-xl)',
+        backgroundColor: 'var(--primary-light, #e2e8f0)',
+        color: 'var(--primary-deep, #1e293b)',
+        border: '1px solid var(--primary, #cbd5e1)',
+        borderRadius: 'var(--radius-full, 9999px)',
+        fontSize: '0.8125rem',
+        fontWeight: 700,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        boxShadow: 'var(--shadow-xs)',
+        width: 'fit-content'
+      }}>
+        <span>🎼</span>
+        <span>Director / Stage</span>
+      </div>
     </div>
   );
 };
