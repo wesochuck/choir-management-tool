@@ -62,18 +62,18 @@ export const auditionService = {
           filter: pb.filter('id = {:performanceId} || parentPerformanceId = {:performanceId}', { performanceId: audition.performance }),
         });
 
-        // 2. Create roster entries for each
-        const rosterPromises = relatedEvents.map(event => 
-          pb.collection('eventRosters').create({
+        // 2. Create roster entries for each using batch to avoid N+1 requests
+        const batch = pb.createBatch();
+        for (const event of relatedEvents) {
+          batch.collection('eventRosters').create({
             profile: newProfile.id,
             event: event.id,
             rsvp: 'Pending',
             attendance: 'Pending',
             folderReturned: false,
-          }).catch(() => undefined) // Ignore duplicates or individual failures
-        );
-
-        await Promise.all(rosterPromises);
+          });
+        }
+        await batch.send();
       } catch (e) {
         console.error('Failed to link converted singer to performance rosters', e);
       }
