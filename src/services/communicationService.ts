@@ -57,7 +57,7 @@ export interface TemplateRecord extends RecordModel {
   subject: string;
   content: string;
   type: MessageType;
-  isSystem: boolean;
+  isSystemTemplate: boolean;
 }
 
 export interface SendMessageResult {
