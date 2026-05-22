@@ -10,6 +10,7 @@ export interface SetListItem {
   notes?: string;
   pieceId?: string; // Links to musicLibrary
   type?: 'song' | 'intermission';
+  soloSmallGroup?: boolean;
 }
 
 export interface Event extends RecordModel {

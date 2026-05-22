@@ -20,6 +20,13 @@ export interface SetListDurationTotals {
   total: string;
 }
 
+export function getPerformanceIdForSetListLibraryLink(event: {
+  id: string;
+  type?: string;
+} | null | undefined): string | undefined {
+  return event?.type === 'Performance' ? event.id : undefined;
+}
+
 /**
  * Creates a SetListItem from custom input.
  */

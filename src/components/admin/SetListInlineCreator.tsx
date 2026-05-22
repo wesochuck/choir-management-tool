@@ -7,12 +7,14 @@ interface SetListInlineCreatorProps {
   library: MusicPiece[];
   disabled?: boolean;
   onAddItem: (item: SetListItem) => void;
+  onCreateNewPiece?: (title: string) => void;
 }
 
 export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
   library,
   disabled = false,
-  onAddItem
+  onAddItem,
+  onCreateNewPiece
 }) => {
   const [type, setType] = useState<'song' | 'intermission'>('song');
   const [query, setQuery] = useState('');
@@ -39,17 +41,27 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
     try {
       if (piece) {
         onAddItem(createSetListItemFromMusicPiece(piece));
+        setQuery('');
+        setDuration('');
+        setShowSuggestions(false);
       } else {
         if (!query.trim()) return;
-        onAddItem(createSetListItemFromCustomInput({
-          title: query.trim(),
-          type,
-          duration: duration.trim() || undefined
-        }));
+        if (type === 'song' && onCreateNewPiece) {
+          onCreateNewPiece(query.trim());
+          setQuery('');
+          setDuration('');
+          setShowSuggestions(false);
+        } else {
+          onAddItem(createSetListItemFromCustomInput({
+            title: query.trim(),
+            type,
+            duration: duration.trim() || undefined
+          }));
+          setQuery('');
+          setDuration('');
+          setShowSuggestions(false);
+        }
       }
-      setQuery('');
-      setDuration('');
-      setShowSuggestions(false);
     } catch (err) {
       // Logic errors (like invalid duration) should be handled by the caller or UI
       console.error(err);
@@ -229,7 +241,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
       </div>
       {type === 'song' && (
         <span className="text-xs text-muted" style={{ paddingLeft: 'var(--space-md)' }}>
-          Tip: Press Enter or select the "(create new)" option to add as a custom song without library link.
+          Tip: Select the "(create new)" option or press Enter to add a new piece to the music library.
         </span>
       )}
     </div>

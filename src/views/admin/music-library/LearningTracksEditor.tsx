@@ -123,8 +123,8 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                     controls 
                                     style={{ 
                                         height: isMovement ? '24px' : '28px', 
-                                        maxWidth: isMovement ? '160px' : '220px', 
-                                        flex: 1 
+                                        flex: 1,
+                                        width: '100%'
                                     }} 
                                 />
                                 <button 

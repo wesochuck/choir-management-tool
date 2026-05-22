@@ -49,7 +49,7 @@ export const FloatingAudioPlayer: React.FC<FloatingAudioPlayerProps> = ({
                 src={url} 
                 controls 
                 autoPlay
-                style={{ height: '32px', flex: '2 1 240px', maxWidth: '360px', minWidth: '160px' }} 
+                style={{ height: '32px', flex: '2 1 240px', maxWidth: '480px', minWidth: '160px', width: '100%' }} 
             />
             
             <button 

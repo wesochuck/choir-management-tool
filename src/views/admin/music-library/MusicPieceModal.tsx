@@ -22,6 +22,7 @@ export interface MusicPieceModalProps {
     onRefresh?: () => Promise<void>;
     allPieces?: MusicPiece[];
     allGenres: MusicGenreDef[];
+    initialTitle?: string;
 }
 
 export function MusicPieceModal({ 
@@ -33,7 +34,8 @@ export function MusicPieceModal({
     catalogLookupTemplate, 
     onRefresh, 
     allPieces,
-    allGenres
+    allGenres,
+    initialTitle
 }: MusicPieceModalProps) {
     const dialog = useDialog();
     const [title, setTitle] = useState('');
@@ -155,7 +157,7 @@ export function MusicPieceModal({
             setStagingMovTitle('');
             setStagingMovDuration('');
         } else {
-            setTitle('');
+            setTitle(initialTitle || '');
             setComposer('');
             setDuration('');
             setCopies('');
@@ -183,7 +185,7 @@ export function MusicPieceModal({
         setExpandedMovementId(null);
         setSuggestedDuration(null);
         setManuallyAddedParts({});
-    }, [piece, isOpen, loadMovements]);
+    }, [piece, isOpen, loadMovements, initialTitle]);
 
     const handleAddStagingMovement = (e?: React.SyntheticEvent | React.KeyboardEvent) => {
         e?.preventDefault();
@@ -579,7 +581,7 @@ export function MusicPieceModal({
                 </>
             }
         >
-            {(piece || isMultiMovementInput) && (
+            {piece && (
                 <div className="flex-row" style={{ borderBottom: '1px solid var(--border)', marginBottom: 'var(--space-md)', gap: 'var(--space-md)' }}>
                     <button
                         type="button"
@@ -598,45 +600,41 @@ export function MusicPieceModal({
                     >
                         Piece Details
                     </button>
-                    {piece && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('tracks')}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    borderBottom: activeTab === 'tracks' ? '2px solid var(--primary)' : '2px solid transparent',
-                                    color: activeTab === 'tracks' ? 'var(--primary)' : 'var(--text-muted)',
-                                    padding: '8px 16px',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    fontWeight: activeTab === 'tracks' ? 600 : 500,
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                Learning Tracks
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('performances')}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    borderBottom: activeTab === 'performances' ? '2px solid var(--primary)' : '2px solid transparent',
-                                    color: activeTab === 'performances' ? 'var(--primary)' : 'var(--text-muted)',
-                                    padding: '8px 16px',
-                                    cursor: 'pointer',
-                                    fontSize: '15px',
-                                    fontWeight: activeTab === 'performances' ? 600 : 500,
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                Linked Performances
-                            </button>
-                        </>
-                    )}
-                    {piece && isMultiMovement && (
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('tracks')}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'tracks' ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: activeTab === 'tracks' ? 'var(--primary)' : 'var(--text-muted)',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '15px',
+                            fontWeight: activeTab === 'tracks' ? 600 : 500,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        Learning Tracks
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('performances')}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'performances' ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: activeTab === 'performances' ? 'var(--primary)' : 'var(--text-muted)',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontSize: '15px',
+                            fontWeight: activeTab === 'performances' ? 600 : 500,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        Linked Performances
+                    </button>
+                    {isMultiMovement && (
                         <button
                             type="button"
                             onClick={() => setActiveTab('movements')}
@@ -653,53 +651,6 @@ export function MusicPieceModal({
                             }}
                         >
                             Movements ({movements.length})
-                        </button>
-                    )}
-                    {!piece && isMultiMovementInput && (
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('movements')}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'movements' ? '2px solid var(--primary)' : '2px solid transparent',
-                                color: activeTab === 'movements' ? 'var(--primary)' : 'var(--text-muted)',
-                                padding: '8px 16px',
-                                cursor: 'pointer',
-                                fontSize: '15px',
-                                fontWeight: activeTab === 'movements' ? 600 : 500,
-                                transition: 'all 0.2s',
-                                display: 'inline-flex',
-                                alignItems: 'center'
-                            }}
-                        >
-                            Movements
-                            <span 
-                                title={`${localMovementsList.length} staged movements`}
-                                style={{ 
-                                    fontSize: '11px', 
-                                    backgroundColor: 'var(--primary, #1b4d3e)', 
-                                    color: '#ffffff', 
-                                    padding: '2px 6px', 
-                                    borderRadius: '10px', 
-                                    marginLeft: '6px',
-                                    fontWeight: 600,
-                                    lineHeight: 1
-                                }}
-                            >
-                                {localMovementsList.length}
-                            </span>
-                            <span 
-                                style={{
-                                    width: '6px',
-                                    height: '6px',
-                                    borderRadius: '50%',
-                                    backgroundColor: '#4caf50',
-                                    marginLeft: '6px',
-                                    display: 'inline-block'
-                                }}
-                                title="Tab Available"
-                            />
                         </button>
                     )}
                 </div>
@@ -730,26 +681,89 @@ export function MusicPieceModal({
                                 </label>
                             </div>
                         ) : (
-                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', margin: '4px 0' }}>
-                                <input 
-                                    type="checkbox" 
-                                    id="is-multi-movement-input"
-                                    checked={isMultiMovementInput} 
-                                    onChange={e => {
-                                        const checked = e.target.checked;
-                                        setIsMultiMovementInput(checked);
-                                        if (checked) {
-                                            setActiveTab('movements');
-                                        }
-                                    }}
-                                    style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                                />
-                                <label htmlFor="is-multi-movement-input" className="text-label" style={{ margin: 0, cursor: 'pointer', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                    This piece has multiple movements
-                                    <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600, backgroundColor: 'var(--primary-light)', padding: '1px 5px', borderRadius: '4px' }}>
-                                        Movements Tab Enabled
-                                    </span>
-                                </label>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)', margin: '4px 0' }}>
+                                <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="is-multi-movement-input"
+                                        checked={isMultiMovementInput} 
+                                        onChange={e => {
+                                            setIsMultiMovementInput(e.target.checked);
+                                        }}
+                                        style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                                    />
+                                    <label htmlFor="is-multi-movement-input" className="text-label" style={{ margin: 0, cursor: 'pointer', fontWeight: 500 }}>
+                                        This piece has multiple movements
+                                    </label>
+                                </div>
+                                {isMultiMovementInput && (
+                                    <div className="flex-col" style={{ 
+                                        gap: 'var(--space-xs)', 
+                                        padding: '10px 14px', 
+                                        border: '1px solid var(--border)', 
+                                        borderRadius: 'var(--radius)', 
+                                        backgroundColor: 'var(--bg-card-hover)',
+                                        marginTop: '4px'
+                                    }}>
+                                        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)' }}>Staged Movements ({localMovementsList.length})</span>
+                                        </div>
+                                        
+                                        {localMovementsList.length > 0 && (
+                                            <div className="flex-col" style={{ gap: '4px', maxHeight: '120px', overflowY: 'auto', paddingRight: '4px' }}>
+                                                {localMovementsList.map((m, idx) => (
+                                                    <div key={m.id} className="flex-row animate-fade-in" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+                                                        <span style={{ fontSize: '12px', fontWeight: 500 }}>{idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}</span>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => handleRemoveStagingMovement(m.id)}
+                                                            style={{ border: 'none', background: 'none', color: 'var(--danger)', fontSize: '11px', cursor: 'pointer', padding: '2px 4px' }}
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className="flex-row" style={{ gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                                            <input 
+                                                type="text" 
+                                                placeholder={`Name (e.g. Movement ${localMovementsList.length + 1})`}
+                                                value={stagingMovTitle}
+                                                onChange={e => setStagingMovTitle(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') {
+                                                        handleAddStagingMovement(e);
+                                                    }
+                                                }}
+                                                className="card"
+                                                style={{ padding: '0 8px', height: '30px', fontSize: '12px', flex: 2 }}
+                                            />
+                                            <input 
+                                                type="text" 
+                                                placeholder="e.g. 2:45"
+                                                value={stagingMovDuration}
+                                                onChange={e => setStagingMovDuration(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') {
+                                                        handleAddStagingMovement(e);
+                                                    }
+                                                }}
+                                                className="card"
+                                                style={{ padding: '0 8px', height: '30px', fontSize: '12px', flex: 1 }}
+                                            />
+                                            <button 
+                                                type="button" 
+                                                className="btn btn-primary"
+                                                onClick={() => handleAddStagingMovement()}
+                                                style={{ height: '30px', minHeight: '30px', padding: '0 12px', fontSize: '12px' }}
+                                            >
+                                                + Stage
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-md)' }}>
@@ -825,55 +839,57 @@ export function MusicPieceModal({
                             </span>
                         </div>
 
-                        <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
-                            <label className="text-label">Applies to Sections</label>
-                            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: 'var(--space-sm)', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                {sections.map(section => (
-                                    <label key={section.code} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={sectionBuckets.includes(section.code)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSectionBuckets(prev => [...prev, section.code]);
-                                                } else {
-                                                    setSectionBuckets(prev => prev.filter(code => code !== section.code));
-                                                }
-                                            }}
-                                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                                        />
-                                        <span className="text-sm">{section.name}</span>
-                                    </label>
-                                ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Applies to Sections</label>
+                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                    {sections.map(section => (
+                                        <label key={section.code} className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={sectionBuckets.includes(section.code)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSectionBuckets(prev => [...prev, section.code]);
+                                                    } else {
+                                                        setSectionBuckets(prev => prev.filter(code => code !== section.code));
+                                                    }
+                                                }}
+                                                style={{ width: '15px', height: '15px', accentColor: 'var(--primary)' }}
+                                            />
+                                            <span className="text-sm" style={{ fontSize: '13px' }}>{section.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                <span className="text-xs text-muted" style={{ fontSize: '11px' }}>
+                                    {sectionBuckets.length === 0 
+                                        ? "Applies to all sections. Check to restrict." 
+                                        : `Restricted to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
+                                    }
+                                </span>
                             </div>
-                            <span className="text-xs text-muted">
-                                {sectionBuckets.length === 0 
-                                    ? "Currently applies to all sections. Select one or more to restrict." 
-                                    : `Applies to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
-                                }
-                            </span>
-                        </div>
 
-                        <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
-                            <label className="text-label">Genres</label>
-                            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: 'var(--space-sm)', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                {allGenres.map(genre => (
-                                    <label key={genre.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedGenres.includes(genre.id)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSelectedGenres(prev => [...prev, genre.id]);
-                                                } else {
-                                                    setSelectedGenres(prev => prev.filter(id => id !== genre.id));
-                                                }
-                                            }}
-                                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                                        />
-                                        <span className="text-sm">{genre.label}</span>
-                                    </label>
-                                ))}
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Genres</label>
+                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                    {allGenres.map(genre => (
+                                        <label key={genre.id} className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedGenres.includes(genre.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedGenres(prev => [...prev, genre.id]);
+                                                    } else {
+                                                        setSelectedGenres(prev => prev.filter(id => id !== genre.id));
+                                                    }
+                                                }}
+                                                style={{ width: '15px', height: '15px', accentColor: 'var(--primary)' }}
+                                            />
+                                            <span className="text-sm" style={{ fontSize: '13px' }}>{genre.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                         {!piece && (
@@ -936,20 +952,16 @@ export function MusicPieceModal({
                                         style={{
                                             border: isTuttiDraggedOver ? '2px dashed var(--primary)' : '2px dashed var(--border)',
                                             borderRadius: 'var(--radius)',
-                                            padding: '20px',
-                                            textAlign: 'center',
+                                            padding: '12px 16px',
                                             backgroundColor: isTuttiDraggedOver ? 'rgba(27, 77, 62, 0.04)' : 'transparent',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease-in-out'
                                         }}
                                     >
-                                        <label style={{ cursor: 'pointer', display: 'block', width: '100%', height: '100%' }}>
-                                            <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>📤</span>
-                                            <span style={{ fontSize: '13px', fontWeight: 600, display: 'block', color: 'var(--text-color)' }}>
-                                                Drag and drop a Tutti MP3 track here, or <span style={{ color: 'var(--primary)', textDecoration: 'underline' }}>browse</span>
-                                            </span>
-                                            <span className="text-xs text-muted" style={{ display: 'block', marginTop: '4px' }}>
-                                                Supported formats: MP3, M4A, WAV (Max 20MB)
+                                        <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-sm)', margin: 0, width: '100%' }}>
+                                            <span style={{ fontSize: '20px' }}>📤</span>
+                                            <span style={{ fontSize: '13px', color: 'var(--text-color)', fontWeight: 500 }}>
+                                                Drag and drop a Tutti MP3 track here, or <span style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: 600 }}>browse</span>
                                             </span>
                                             <input 
                                                 type="file" 
@@ -1308,101 +1320,6 @@ export function MusicPieceModal({
                                     style={{ height: '36px', minHeight: '36px', padding: '0 16px', fontSize: '13px' }}
                                 >
                                     + Add
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {!piece && activeTab === 'movements' && isMultiMovementInput && (
-                    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                        <div className="flex-row animate-fade-in" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 className="text-md" style={{ margin: 0, color: 'var(--primary)' }}>Staged Movements ({localMovementsList.length})</h3>
-                        </div>
-
-                        {localMovementsList.length === 0 ? (
-                            <div className="card" style={{ padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                No movements staged yet. Add your first movement below.
-                            </div>
-                        ) : (
-                            <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                                {localMovementsList.map((m, idx) => (
-                                    <div 
-                                        key={m.id} 
-                                        className="card" 
-                                        style={{ 
-                                            padding: 'var(--space-sm)', 
-                                            backgroundColor: 'var(--bg-card-hover)', 
-                                            border: '1px solid var(--border)' 
-                                        }}
-                                    >
-                                        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
-                                            <div className="flex-col">
-                                                <strong style={{ fontSize: '14px' }}>
-                                                    {idx + 1}. {m.title}
-                                                </strong>
-                                                {m.duration && (
-                                                    <span className="text-xs text-muted">
-                                                        Duration: {m.duration}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={() => handleRemoveStagingMovement(m.id)}
-                                                style={{ color: 'var(--danger)', fontSize: '12px', padding: '4px 8px', height: '28px', minHeight: 'auto' }}
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="card" style={{ padding: 'var(--space-md)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', backgroundColor: 'var(--bg-card-hover)' }}>
-                            <h4 className="text-sm" style={{ marginTop: 0, marginBottom: 'var(--space-sm)', color: 'var(--primary)' }}>Stage New Movement</h4>
-                            <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                                <div className="flex-col" style={{ gap: '4px', flex: '2 1 200px' }}>
-                                    <label className="text-xs text-muted">Movement Name</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder={`e.g. Movement ${localMovementsList.length + 1}`}
-                                        value={stagingMovTitle}
-                                        onChange={e => setStagingMovTitle(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') {
-                                                handleAddStagingMovement(e);
-                                            }
-                                        }}
-                                        className="card"
-                                        style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
-                                    />
-                                </div>
-                                <div className="flex-col" style={{ gap: '4px', flex: '1 1 100px' }}>
-                                    <label className="text-xs text-muted">Duration (optional)</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g. 2:45"
-                                        value={stagingMovDuration}
-                                        onChange={e => setStagingMovDuration(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') {
-                                                handleAddStagingMovement(e);
-                                            }
-                                        }}
-                                        className="card"
-                                        style={{ padding: '0 12px', height: '36px', fontSize: '14px', width: '100%' }}
-                                    />
-                                </div>
-                                <button 
-                                    type="button" 
-                                    className="btn btn-primary"
-                                    onClick={() => handleAddStagingMovement()}
-                                    style={{ height: '36px', minHeight: '36px', padding: '0 16px', fontSize: '13px' }}
-                                >
-                                    + Stage
                                 </button>
                             </div>
                         </div>

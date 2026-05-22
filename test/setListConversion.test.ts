@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { linkSetListItemToPiece, validatePieceForLibrary, parseDurationToSeconds, formatSecondsToDuration } from '../src/lib/musicPieceUtils.ts';
+import { getPerformanceIdForSetListLibraryLink } from '../src/lib/setList/setListItems.ts';
 import type { SetListItem } from '../src/services/eventService.ts';
 
 test('linkSetListItemToPiece links the correct set list item to the given pieceId', () => {
@@ -46,4 +47,10 @@ test('formatSecondsToDuration formats seconds to human-readable strings correctl
   assert.equal(formatSecondsToDuration(900), '15:00');
   assert.equal(formatSecondsToDuration(4530), '1:15:30');
   assert.equal(formatSecondsToDuration(5400), '1:30:00');
+});
+
+test('auto-linking rule: only auto-links if event type is Performance', () => {
+  assert.equal(getPerformanceIdForSetListLibraryLink({ type: 'Performance', id: 'evt_1' }), 'evt_1');
+  assert.equal(getPerformanceIdForSetListLibraryLink({ type: 'Rehearsal', id: 'evt_2' }), undefined);
+  assert.equal(getPerformanceIdForSetListLibraryLink(null), undefined);
 });

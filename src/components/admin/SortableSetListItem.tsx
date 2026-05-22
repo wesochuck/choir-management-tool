@@ -139,6 +139,25 @@ export const SortableSetListItem: React.FC<Props> = ({
                 {item.pieceId && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
               </span>
             )}
+            {item.soloSmallGroup && (
+              <span 
+                className="badge" 
+                style={{ 
+                  fontSize: '0.75rem', 
+                  padding: '2px 8px', 
+                  backgroundColor: 'rgba(74, 124, 89, 0.08)',
+                  color: 'var(--primary-deep)',
+                  border: '1px solid rgba(74, 124, 89, 0.15)',
+                  borderRadius: '12px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                🎤 Solo / Small Group
+              </span>
+            )}
             {cumulativeStart && cumulativeEnd && (
               <span className="text-xs text-muted" style={{ fontWeight: 'normal', marginLeft: '4px' }}>
                 ({cumulativeStart} - {cumulativeEnd})

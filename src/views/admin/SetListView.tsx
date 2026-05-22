@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
-import { validatePieceForLibrary } from '../../lib/musicPieceUtils';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { settingsService, type MusicGenreDef } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
@@ -15,7 +14,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { findNearestEvent } from '../../lib/eventUtils';
-import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
+import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
@@ -48,6 +47,8 @@ export default function SetListView() {
   const [libraryEditingPiece, setLibraryEditingPiece] = useState<MusicPiece | null>(null);
   const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
+  const [pendingSetListAdd, setPendingSetListAdd] = useState(false);
+  const [prefilledTitleForSetList, setPrefilledTitleForSetList] = useState<string | null>(null);
 
   // Custom Item Modal state
   const [isItemEditModalOpen, setIsItemEditModalOpen] = useState(false);
@@ -92,40 +93,11 @@ export default function SetListView() {
     updateItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
   };
 
-  const handlePromoteToLibrary = async (item: SetListItem) => {
-    if (!validatePieceForLibrary(item.title)) {
-      await dialog.showMessage({ title: 'Validation Error', message: 'Please enter a valid title for the library piece.', variant: 'danger' });
-      return;
-    }
-
-    try {
-      const performanceIdToLink = selectedEvent?.type === 'Rehearsal'
-        ? (parentPerformance?.id || selectedEvent.parentPerformanceId || selectedEventId)
-        : selectedEventId;
-
-      const newPiece = await musicLibraryService.createPiece({
-        title: item.title.trim(),
-        composer: item.composer?.trim() || undefined,
-        duration: item.duration?.trim() || undefined,
-        performances: [performanceIdToLink]
-      });
-
-      // Reload library to get the new piece
-      const updatedLib = await musicLibraryService.getLibrary();
-      setLibrary(updatedLib);
-
-      // Update the item in the set list to be linked
-      const updatedItem: SetListItem = {
-        ...item,
-        pieceId: newPiece.id
-      };
-      updateItems(items.map(i => i.id === item.id ? updatedItem : i));
-      
-      dialog.showToast('Converted to library piece successfully.');
-    } catch (err) {
-      console.error(err);
-      dialog.showMessage({ title: 'Error', message: 'Could not convert to library piece.', variant: 'danger' });
-    }
+  const handleCreateNewPieceFromSetList = (title: string) => {
+    setLibraryEditingPiece(null);
+    setPrefilledTitleForSetList(title);
+    setPendingSetListAdd(true);
+    setIsLibraryModalOpen(true);
   };
 
   const handleSaveLibraryPiece = async (data: Partial<MusicPieceInput> & { 
@@ -133,16 +105,26 @@ export default function SetListView() {
     movements?: { title: string; duration?: string }[] 
   }) => {
     try {
+      let savedPiece: MusicPiece;
       if (libraryEditingPiece) {
         const updateData = { ...data };
         delete updateData.movements;
-        await musicLibraryService.updatePiece(libraryEditingPiece.id, updateData);
+        savedPiece = await musicLibraryService.updatePiece(libraryEditingPiece.id, updateData);
       } else {
         const { tuttiFile, movements, ...rest } = data;
+        const performanceIdToLink = getPerformanceIdForSetListLibraryLink(selectedEvent);
+        
+        const pieceData = {
+          ...rest,
+          performances: rest.performances && rest.performances.length > 0 
+            ? rest.performances 
+            : (performanceIdToLink ? [performanceIdToLink] : [])
+        };
+
         if (tuttiFile || (movements && movements.length > 0)) {
-          await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, { tuttiFile, movements });
+          savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(pieceData, { tuttiFile, movements });
         } else {
-          await musicLibraryService.createPiece(rest);
+          savedPiece = await musicLibraryService.createPiece(pieceData);
         }
       }
 
@@ -150,6 +132,13 @@ export default function SetListView() {
       // Refresh library to reflect changes
       const updatedLib = await musicLibraryService.getLibrary();
       setLibrary(updatedLib);
+
+      if (pendingSetListAdd) {
+        const newItem = createSetListItemFromMusicPiece(savedPiece);
+        updateItems([...items, newItem]);
+      }
+      setPendingSetListAdd(false);
+      setPrefilledTitleForSetList(null);
     } catch (err) {
       console.error(err);
       dialog.showMessage({ title: 'Error', message: 'Could not save the library piece.', variant: 'danger' });
@@ -213,15 +202,17 @@ export default function SetListView() {
     saveSetList(newItems);
   };
 
-  const saveSetList = async (newItems: SetListItem[]) => {
-    if (!selectedEventId) return;
+  const saveSetList = async (newItems: SetListItem[]): Promise<boolean> => {
+    if (!selectedEventId) return false;
     setSaveStatus('saving');
     try {
       await eventService.updateEvent(selectedEventId, { setList: newItems });
       setSaveStatus('saved');
+      return true;
     } catch (error) {
       console.error('Failed to save set list:', error);
       setSaveStatus('error');
+      return false;
     }
   };
 
@@ -240,8 +231,29 @@ export default function SetListView() {
     }
   };
 
-  const handleInlineAddItem = (item: SetListItem) => {
-    updateItems([...items, item]);
+  const handleInlineAddItem = async (item: SetListItem) => {
+    const nextItems = [...items, item];
+    setItems(nextItems);
+    const savedSetList = await saveSetList(nextItems);
+    if (!savedSetList) return;
+
+    const performanceIdToLink = getPerformanceIdForSetListLibraryLink(selectedEvent);
+    if (item.pieceId && performanceIdToLink) {
+      try {
+        const piece = library.find(p => p.id === item.pieceId);
+        if (piece) {
+          const currentPerfs = piece.performances || [];
+          if (!currentPerfs.includes(performanceIdToLink)) {
+            const updatedPerfs = [...currentPerfs, performanceIdToLink];
+            await musicLibraryService.updatePiece(piece.id, { performances: updatedPerfs });
+            const updatedLib = await musicLibraryService.getLibrary();
+            setLibrary(updatedLib);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to auto-link performance on inline add:', err);
+      }
+    }
   };
 
   const handleCopyFrom = async (sourceEventId: string) => {
@@ -492,6 +504,7 @@ export default function SetListView() {
                 <SetListInlineCreator 
                   library={library}
                   onAddItem={handleInlineAddItem}
+                  onCreateNewPiece={handleCreateNewPieceFromSetList}
                   disabled={isLoading}
                 />
               </div>
@@ -536,12 +549,17 @@ export default function SetListView() {
       <MusicPieceModal
         isOpen={isLibraryModalOpen}
         piece={libraryEditingPiece}
-        onClose={() => setIsLibraryModalOpen(false)}
+        onClose={() => {
+          setIsLibraryModalOpen(false);
+          setPendingSetListAdd(false);
+          setPrefilledTitleForSetList(null);
+        }}
         onSave={handleSaveLibraryPiece}
         onDelete={libraryEditingPiece ? () => musicLibraryService.deletePiece(libraryEditingPiece.id).then(() => { setIsLibraryModalOpen(false); return musicLibraryService.getLibrary(); }).then(setLibrary).then(() => {}) : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
         allPieces={library}
         allGenres={configuredGenres}
+        initialTitle={prefilledTitleForSetList || undefined}
       />
 
       <SetListItemEditModal 
@@ -549,7 +567,6 @@ export default function SetListView() {
         item={itemEditing}
         onClose={() => setIsItemEditModalOpen(false)}
         onSave={handleSaveItem}
-        onConvertToLibrary={handlePromoteToLibrary}
       />
 
       <MusicImportModal

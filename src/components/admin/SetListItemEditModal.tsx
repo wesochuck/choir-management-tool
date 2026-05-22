@@ -9,15 +9,13 @@ interface SetListItemEditModalProps {
   item: SetListItem | null;
   onClose: () => void;
   onSave: (updatedItem: SetListItem) => void;
-  onConvertToLibrary?: (item: SetListItem) => Promise<void>;
 }
 
 export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   isOpen,
   item,
   onClose,
-  onSave,
-  onConvertToLibrary
+  onSave
 }) => {
   const dialog = useDialog();
   const [title, setTitle] = useState('');
@@ -25,7 +23,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   const [duration, setDuration] = useState('');
   const [notes, setNotes] = useState('');
   const [type, setType] = useState<'song' | 'intermission'>('song');
-  const [isPromoting, setIsPromoting] = useState(false);
+  const [soloSmallGroup, setSoloSmallGroup] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -34,6 +32,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       setDuration(item.duration || '');
       setNotes(item.notes || '');
       setType(item.type || 'song');
+      setSoloSmallGroup(!!item.soloSmallGroup);
     }
   }, [item, isOpen]);
 
@@ -58,31 +57,10 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       composer: type === 'song' ? (composer.trim() || undefined) : undefined,
       duration: normalizedDuration || undefined,
       notes: notes.trim() || undefined,
-      type
+      type,
+      soloSmallGroup: type === 'song' ? soloSmallGroup : false
     });
     onClose();
-  };
-
-  const handlePromote = async () => {
-    if (!item || !onConvertToLibrary) return;
-    
-    // Create a temporary updated item for promotion
-    const tempItem = {
-        ...item,
-        title: title.trim(),
-        composer: type === 'song' ? (composer.trim() || undefined) : undefined,
-        duration: duration.trim() || undefined,
-        notes: notes.trim() || undefined,
-        type
-    };
-
-    setIsPromoting(true);
-    try {
-      await onConvertToLibrary(tempItem);
-      onClose();
-    } finally {
-      setIsPromoting(false);
-    }
   };
 
   return (
@@ -144,6 +122,27 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         )}
 
+        {type === 'song' && (
+          <div className="flex-row card" style={{ 
+            alignItems: 'center', 
+            gap: '10px', 
+            padding: '12px',
+            backgroundColor: soloSmallGroup ? 'rgba(74, 124, 89, 0.08)' : 'var(--surface)',
+            border: soloSmallGroup ? '1px solid var(--primary)' : '1px solid var(--border)',
+            cursor: 'pointer',
+            userSelect: 'none'
+          }} onClick={() => setSoloSmallGroup(!soloSmallGroup)}>
+            <input
+              type="checkbox"
+              checked={soloSmallGroup}
+              onChange={(e) => setSoloSmallGroup(e.target.checked)}
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>🎤 Mark as Solo / Small Group</span>
+          </div>
+        )}
+
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <label className="text-label">Duration</label>
           <input
@@ -164,20 +163,6 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             style={{ padding: '12px', minHeight: '80px', resize: 'vertical' }}
           />
         </div>
-
-        {type === 'song' && !item?.pieceId && onConvertToLibrary && (
-          <div style={{ marginTop: 'var(--space-xs)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ width: '100%', justifyContent: 'center' }}
-              onClick={handlePromote}
-              disabled={isPromoting}
-            >
-              {isPromoting ? 'Converting...' : '✨ Convert to Library Piece'}
-            </button>
-          </div>
-        )}
       </form>
     </BaseModal>
   );
