@@ -56,6 +56,19 @@ function getContrastColor(hex: string): string {
   return (yiq >= 128) ? '#000000' : '#ffffff';
 }
 
+const PALETTE_COLORS = [
+  '#EF4444', // Red
+  '#F97316', // Orange
+  '#F59E0B', // Amber
+  '#10B981', // Green
+  '#06B6D4', // Cyan
+  '#3B82F6', // Blue
+  '#6366F1', // Indigo
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#64748B', // Slate
+];
+
 export default function SettingsView() {
   const navigate = useNavigate();
   const dialog = useDialog();
@@ -533,46 +546,46 @@ export default function SettingsView() {
                     style={{ width: '100%', padding: '0 8px', height: '40px' }}
                   />
                   
-                  <div className="flex-col" style={{ gap: '2px' }}>
-                    <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
-                      <input 
-                        type="color" 
-                        value={hexBg} 
-                        onChange={(e) => {
-                          const newSecs = [...sections];
-                          const val = e.target.value;
-                          newSecs[index] = { 
-                            ...newSecs[index], 
-                            color: val,
-                            colorBg: val,
-                            colorText: getContrastColor(val)
-                          };
-                          setSections(newSecs);
-                        }}
-                        style={{ width: '32px', height: '32px', border: 'none', borderRadius: '50%', cursor: 'pointer', padding: 0 }}
-                      />
-                      <input 
-                        type="text" 
-                        value={sec.color || sec.colorBg || ''} 
-                        placeholder="#FFFFFF"
-                        onChange={(e) => {
-                          const newSecs = [...sections];
-                          const val = e.target.value;
-                          newSecs[index] = { 
-                            ...newSecs[index], 
-                            color: val,
-                            colorBg: val,
-                            colorText: getContrastColor(val)
-                          };
-                          setSections(newSecs);
-                        }}
-                        className="card"
-                        style={{ width: '90px', padding: '4px 8px', fontSize: '0.85rem', height: '32px' }}
-                      />
-                      {tooClose && (
-                        <span title="Warning: This color lacks adequate visual contrast with another section color." style={{ color: 'var(--color-danger-text)', cursor: 'help' }}>⚠️</span>
-                      )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', width: '130px' }}>
+                      {PALETTE_COLORS.map(c => {
+                        const isSelected = hexBg.toUpperCase() === c.toUpperCase();
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => {
+                              const newSecs = [...sections];
+                              newSecs[index] = { 
+                                ...newSecs[index], 
+                                color: c,
+                                colorBg: c,
+                                colorText: getContrastColor(c)
+                              };
+                              setSections(newSecs);
+                            }}
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              borderRadius: '50%',
+                              backgroundColor: c,
+                              border: isSelected ? '2px solid var(--text-main, #000000)' : '1px solid var(--border)',
+                              cursor: 'pointer',
+                              padding: 0,
+                              outline: isSelected ? '2px solid var(--primary, #3b82f6)' : 'none',
+                              outlineOffset: '1px',
+                              boxShadow: 'var(--shadow-sm)',
+                              transition: 'transform 0.1s ease',
+                              transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                            }}
+                            title={c}
+                          />
+                        );
+                      })}
                     </div>
+                    {tooClose && (
+                      <span title="Warning: This color lacks adequate visual contrast with another section color." style={{ color: 'var(--color-danger-text)', cursor: 'help', fontSize: '14px' }}>⚠️</span>
+                    )}
                   </div>
 
                   <div style={{ fontSize: 'var(--font-size-label)', color: 'var(--text-light)', textAlign: 'center' }}>

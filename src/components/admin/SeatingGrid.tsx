@@ -224,7 +224,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const profileId = assignments[seatKey];
             const assignedProfile = profileId ? profileMap[profileId] : null;
             
-            const sectionDef = suggestion ? sections.find(s => s.code === suggestion) : null;
+            const sectionDef = suggestion ? sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase()) : null;
             const secColor = sectionDef?.color || sectionDef?.colorBg;
             const colors = secColor
               ? { bg: secColor, text: getContrastColor(secColor) }
@@ -276,8 +276,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   backgroundColor: profileId ? colors.bg : 'var(--surface)',
                   borderTop: `1px solid ${profileId ? colors.text : colors.bg}`,
                   borderBottom: `1px solid ${profileId ? colors.text : colors.bg}`,
-                  borderLeft: hasLeftBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : colors.bg}`,
-                  borderRight: hasRightBorder ? `3px solid ${colors.text}` : `1px solid ${profileId ? colors.text : colors.bg}`,
+                  borderLeft: hasLeftBorder ? `3px solid ${profileId ? colors.text : colors.bg}` : `1px solid ${profileId ? colors.text : colors.bg}`,
+                  borderRight: hasRightBorder ? `3px solid ${profileId ? colors.text : colors.bg}` : `1px solid ${profileId ? colors.text : colors.bg}`,
                   borderRadius: 'var(--radius-md)',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -311,7 +311,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                           .filter(p => {
                             const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                            return vpDef?.sectionCode === suggestion;
+                            return vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase();
                           })
                           .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
                           .map(p => (
@@ -325,7 +325,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                         .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                         .filter(p => {
                           const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                          return vpDef?.sectionCode !== suggestion;
+                          return vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase();
                         })
                         .sort((a, b) => {
                           const vpCompare = a.voicePart.localeCompare(b.voicePart);
