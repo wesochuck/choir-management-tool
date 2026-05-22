@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import {
@@ -18,6 +18,20 @@ import {
 } from '../../services/settingsService';
 import { profileService, type Profile } from '../../services/profileService';
 import { useChoirName } from '../../hooks/useDocumentTitle';
+import { useDialog } from '../../contexts/DialogContext';
+import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
+import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
+
+interface SettingsState {
+  choirName: string;
+  attendance: AttendanceSettings;
+  roster: RosterSettings;
+  musicLibrary: MusicLibrarySettings;
+  seating: SeatingSettings;
+  sections: SectionDef[];
+  voiceParts: VoicePartDef[];
+}
+
 
 function isColorTooClose(hex1: string, hex2: string): boolean {
   if (!hex1 || !hex2 || !hex1.startsWith('#') || !hex2.startsWith('#')) return false;
@@ -44,6 +58,7 @@ function getContrastColor(hex: string): string {
 
 export default function SettingsView() {
   const navigate = useNavigate();
+  const dialog = useDialog();
   const { setChoirName: setContextChoirName } = useChoirName();
   const [choirName, setChoirName] = useState('');
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
@@ -56,6 +71,7 @@ export default function SettingsView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [initialSettings, setInitialSettings] = useState<SettingsState | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -74,6 +90,18 @@ export default function SettingsView() {
       setSections(settings.sections);
       const allProfiles = await profileService.getProfiles();
       setProfiles(allProfiles);
+
+      const state: SettingsState = {
+        choirName: loadedChoirName,
+        attendance,
+        roster,
+        musicLibrary: musicLib,
+        seating,
+        sections: settings.sections,
+        voiceParts: settings.voiceParts,
+      };
+      setInitialSettings(JSON.parse(JSON.stringify(state)));
+
       setIsLoading(false);
     };
 
@@ -82,6 +110,30 @@ export default function SettingsView() {
       setIsLoading(false);
     });
   }, []);
+
+  const isDirty = useMemo(() => {
+    if (!initialSettings) return false;
+    return calculateSettingsDirty(initialSettings, {
+      choirName,
+      attendance: attendanceSettings,
+      roster: rosterSettings,
+      musicLibrary: musicLibrarySettings,
+      seating: seatingSettings,
+      sections,
+      voiceParts,
+    });
+  }, [initialSettings, choirName, attendanceSettings, rosterSettings, musicLibrarySettings, seatingSettings, sections, voiceParts]);
+
+  const handleGlobalDiscard = () => {
+    if (!initialSettings) return;
+    setChoirName(initialSettings.choirName);
+    setAttendanceSettings(initialSettings.attendance);
+    setRosterSettings(initialSettings.roster);
+    setMusicLibrarySettings(initialSettings.musicLibrary);
+    setSeatingSettings(initialSettings.seating);
+    setSections(initialSettings.sections);
+    setVoiceParts(initialSettings.voiceParts);
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -199,9 +251,23 @@ export default function SettingsView() {
       await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
       await settingsService.saveSeatingSettings(seatingSettings);
       await saveVoicePartsAndSections(voiceParts, sections);
+
+      const state: SettingsState = {
+        choirName,
+        attendance: attendanceSettings,
+        roster: rosterSettings,
+        musicLibrary: musicLibrarySettings,
+        seating: seatingSettings,
+        sections,
+        voiceParts,
+      };
+      setInitialSettings(JSON.parse(JSON.stringify(state)));
+
       setMessage('Settings saved.');
+      await dialog.showMessage({ title: 'Success', message: 'All settings saved successfully.' });
     } catch {
       setMessage('Settings could not be saved.');
+      await dialog.showMessage({ title: 'Error', message: 'Failed to save settings modifications.', variant: 'danger' });
     } finally {
       setIsSaving(false);
     }
@@ -222,9 +288,6 @@ export default function SettingsView() {
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Settings</h1>
-        <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Settings'}
-        </button>
       </div>
 
       {message && <div className="badge badge-rehearsal" style={{ alignSelf: 'flex-start' }}>{message}</div>}
@@ -897,6 +960,13 @@ export default function SettingsView() {
           </button>
         </div>
       </AppCard>
+
+      <FloatingSaveBar 
+        isDirty={isDirty} 
+        isSaving={isSaving} 
+        onSave={handleSave} 
+        onDiscard={handleGlobalDiscard} 
+      />
     </div>
   );
 }
