@@ -3,13 +3,28 @@ import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { profileService, type Profile } from '../../services/profileService';
 import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
+import { AppCard } from '../../components/common/AppCard';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ProfileView() {
+  const { user, updatePreferences } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [prefSuccess, setPrefSuccess] = useState(false);
+
+  const handlePreferenceChange = async (key: 'rosterSort' | 'attendanceSort' | 'rsvpSort', value: 'lastName' | 'voicePart') => {
+    try {
+      setError(null);
+      await updatePreferences({ [key]: value });
+      setPrefSuccess(true);
+      setTimeout(() => setPrefSuccess(false), 2000);
+    } catch {
+      setError('Failed to save preferences.');
+    }
+  };
 
   // Editable fields
   const [name, setName] = useState('');
@@ -150,6 +165,61 @@ export default function ProfileView() {
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+
+        {user?.role === 'admin' && (
+          <AppCard title="View Preferences" style={{ width: '100%' }}>
+            <p className="text-xs text-muted" style={{ margin: 0 }}>
+              These settings customize how directories and rosters are ordered for your account across all your devices.
+            </p>
+
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Directory Sort</label>
+                <select
+                  value={user?.preferences?.rosterSort || 'lastName'}
+                  onChange={(e) => handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')}
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                >
+                  <option value="lastName">Last Name</option>
+                  <option value="voicePart">Voice Part</option>
+                </select>
+              </div>
+
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Attendance Sort</label>
+                <select
+                  value={user?.preferences?.attendanceSort || 'lastName'}
+                  onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart')}
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                >
+                  <option value="lastName">Last Name</option>
+                  <option value="voicePart">Voice Part + Last Name</option>
+                </select>
+              </div>
+
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Event RSVP Sort</label>
+                <select
+                  value={user?.preferences?.rsvpSort || 'lastName'}
+                  onChange={(e) => handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')}
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                >
+                  <option value="lastName">Last Name</option>
+                  <option value="voicePart">Voice Part + Last Name</option>
+                </select>
+              </div>
+
+              {prefSuccess && (
+                <div style={{ color: 'var(--color-success-text)', backgroundColor: 'var(--color-success-bg)', padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}>
+                  Preferences updated!
+                </div>
+              )}
+            </div>
+          </AppCard>
+        )}
       </div>
     </PageLayout>
   );

@@ -490,15 +490,10 @@ export default function AttendanceView() {
               onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-              title="Saved to user preferences (only affects your view)"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
             </select>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', height: '40px', alignSelf: 'flex-end' }}>
-            <span>👤 User Preference</span>
           </div>
 
           {/* Reset Action */}

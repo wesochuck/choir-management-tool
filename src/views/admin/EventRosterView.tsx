@@ -501,15 +501,10 @@ export default function EventRosterView() {
               borderRadius: 'var(--radius-md)',
               fontSize: '15px'
             }}
-            title="Saved to user preferences (only affects your view)"
           >
             <option value="lastName">Last Name</option>
             <option value="voicePart">Voice Part + Last Name</option>
           </select>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', height: '44px', alignSelf: 'center' }}>
-            <span>👤 User Preference</span>
-          </div>
 
           {/* Reset Filters */}
           {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (

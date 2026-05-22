@@ -694,11 +694,6 @@ export default function RosterView() {
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '14px', width: 'fit-content' }}>
-            <span>👤</span>
-            <span><strong>Sort Preference:</strong> This choice only affects your view on this device (saved to your user preferences).</span>
-          </div>
-
           <RosterTable 
             profiles={sortedProfiles} 
             onEdit={handleEdit} 

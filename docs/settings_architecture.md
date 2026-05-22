@@ -27,6 +27,12 @@ Settings are split into two categories to prevent the "monolithic configuration 
 
 User preferences (sorting selections, view states, personal filters) must **never** clutter the administrative system settings database. Instead, they are stored directly on the individual `users` collection record inside a flexible JSON field named `preferences`.
 
+### Centralized Management & UI Cleanliness
+
+To maintain a clean, premium, and clutter-free user interface:
+1. **No On-Page Verbose Banners**: Feature views (like Roster, Attendance, and Event RSVP lists) must **not** display verbose alert banners or "User Preference" indicators explaining that a sort order is saved locally/personally. Keep these lists clean and focused on action.
+2. **Central Profile Hub (`ProfileView.tsx`)**: All personal view configurations must be exposed and configured in a single, dedicated **"View Preferences"** section within the user's Profile View. This allows both singer and admin accounts to modify and review all device-spanning view behaviors in one unified hub.
+
 ### Schema & Merge Engine
 
 - **Database Column**: `preferences` (JSON column in `users` collection).
@@ -36,7 +42,7 @@ User preferences (sorting selections, view states, personal filters) must **neve
 
 ### Usage in Product Views
 
-Sorting preferences (e.g., sorting the Singer Directory, Attendance grids, Event RSVPs) must load user-specific preferences with appropriate local defaults.
+Sorting preferences (e.g., sorting the Singer Directory, Attendance grids, Event RSVPs) must load user-specific preferences with appropriate local defaults. Direct modifications of sorting dropdowns on the views also trigger immediate, seamless persistence to the server database.
 
 Example code pattern for personal view preferences:
 ```typescript

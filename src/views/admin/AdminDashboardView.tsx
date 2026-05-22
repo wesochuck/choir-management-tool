@@ -11,7 +11,12 @@ export default function AdminDashboardView() {
     <PageLayout 
       title="Choir Admin" 
       subtitle={`Welcome back, ${user?.email}`}
-      actions={<button onClick={handleLogout} className="btn btn-ghost">Logout</button>}
+      actions={
+        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <Link to="/profile" className="btn btn-ghost">My Profile</Link>
+          <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
+        </div>
+      }
     >
       <div style={{ 
         display: 'grid', 
