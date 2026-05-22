@@ -79,20 +79,16 @@ describe('Set List Form Utilities (Phase 2)', () => {
   });
 
   describe('shouldSyncDurationToLibrary', () => {
-    it('returns true for linked song with duration', () => {
-      assert.strictEqual(shouldSyncDurationToLibrary('song', 'p1', '3:00'), true);
+    it('returns true for linked song', () => {
+      assert.strictEqual(shouldSyncDurationToLibrary('song', 'p1'), true);
     });
 
     it('returns false if not a song', () => {
-      assert.strictEqual(shouldSyncDurationToLibrary('intermission', 'p1', '3:00'), false);
+      assert.strictEqual(shouldSyncDurationToLibrary('intermission', 'p1'), false);
     });
 
     it('returns false if no pieceId', () => {
-      assert.strictEqual(shouldSyncDurationToLibrary('song', '', '3:00'), false);
-    });
-
-    it('returns true even if duration is blank (to clear library duration)', () => {
-      assert.strictEqual(shouldSyncDurationToLibrary('song', 'p1', ''), true);
+      assert.strictEqual(shouldSyncDurationToLibrary('song', ''), false);
     });
   });
 });
