@@ -1,15 +1,23 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
-import { findPieceDetails, formatPerformanceHistory, linkSetListItemToPiece, validatePieceForLibrary, parseDurationToSeconds, formatSecondsToDuration, isValidDurationString } from '../../lib/musicPieceUtils';
-import { BaseModal } from '../../components/common/BaseModal';
-import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
+import { validatePieceForLibrary } from '../../lib/musicPieceUtils';
+import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
+import { settingsService, type MusicGenreDef } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
 import { SortableSetListItem } from '../../components/admin/SortableSetListItem';
+import { SetListInlineCreator } from '../../components/admin/SetListInlineCreator';
+import { SetListItemEditModal } from '../../components/admin/SetListItemEditModal';
+import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
+import { MusicPieceModal } from './music-library/MusicPieceModal';
+import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { useDialog } from '../../contexts/DialogContext';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { findNearestEvent } from '../../lib/eventUtils';
+import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
+import { pb } from '../../lib/pocketbase';
+import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function SetListView() {
   const { events, refresh } = useEvents();
@@ -29,16 +37,122 @@ export default function SetListView() {
     return events.find(e => e.id === parentId) || selectedEvent.expand?.parentPerformanceId;
   }, [selectedEvent, events]);
 
-  const handleToggleApproved = async (checked: boolean) => {
-    if (!selectedEventId) return;
-    setSaveStatus('saving');
+  const [items, setItems] = useState<SetListItem[]>([]);
+  const [library, setLibrary] = useState<MusicPiece[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  
+  // Library Piece Modal state
+  const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  const [libraryEditingPiece, setLibraryEditingPiece] = useState<MusicPiece | null>(null);
+  const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
+  const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
+
+  // Custom Item Modal state
+  const [isItemEditModalOpen, setIsItemEditModalOpen] = useState(false);
+  const [itemEditing, setItemEditing] = useState<SetListItem | null>(null);
+
+  // Audio player state
+  const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
+  const [activeAudioTitle, setActiveAudioTitle] = useState('');
+  const [activeAudioPart, setActiveAudioPart] = useState('');
+
+  const handlePlayRowTrack = (piece: MusicPiece) => {
+    const key = getDefaultPlayableTrackKey(piece);
+    if (!key) return;
+
+    const filename = piece.audioTrackMapping?.[key];
+    if (!filename) return;
+
+    setActiveAudioUrl(pb.files.getURL(piece, filename));
+    setActiveAudioTitle(piece.title);
+    setActiveAudioPart(key === 'tutti' ? 'Tutti' : key);
+  };
+
+  const handleEditLinkedPiece = (item: SetListItem) => {
+    if (!item.pieceId) return;
+    const piece = library.find(p => p.id === item.pieceId);
+    if (!piece) return;
+
+    setLibraryEditingPiece(piece);
+    setIsLibraryModalOpen(true);
+  };
+
+  const handleEdit = (item: SetListItem) => {
+    if (item.pieceId) {
+      handleEditLinkedPiece(item);
+    } else {
+      setItemEditing(item);
+      setIsItemEditModalOpen(true);
+    }
+  };
+
+  const handleSaveItem = (updatedItem: SetListItem) => {
+    updateItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
+  };
+
+  const handlePromoteToLibrary = async (item: SetListItem) => {
+    if (!validatePieceForLibrary(item.title)) {
+      await dialog.showMessage({ title: 'Validation Error', message: 'Please enter a valid title for the library piece.', variant: 'danger' });
+      return;
+    }
+
     try {
-      await eventService.updateEvent(selectedEventId, { setListApproved: checked });
-      await refresh();
-      setSaveStatus('saved');
-    } catch (error) {
-      console.error('Failed to update set list approval status:', error);
-      setSaveStatus('error');
+      const performanceIdToLink = selectedEvent?.type === 'Rehearsal'
+        ? (parentPerformance?.id || selectedEvent.parentPerformanceId || selectedEventId)
+        : selectedEventId;
+
+      const newPiece = await musicLibraryService.createPiece({
+        title: item.title.trim(),
+        composer: item.composer?.trim() || undefined,
+        duration: item.duration?.trim() || undefined,
+        performances: [performanceIdToLink]
+      });
+
+      // Reload library to get the new piece
+      const updatedLib = await musicLibraryService.getLibrary();
+      setLibrary(updatedLib);
+
+      // Update the item in the set list to be linked
+      const updatedItem: SetListItem = {
+        ...item,
+        pieceId: newPiece.id
+      };
+      updateItems(items.map(i => i.id === item.id ? updatedItem : i));
+      
+      dialog.showToast('Converted to library piece successfully.');
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({ title: 'Error', message: 'Could not convert to library piece.', variant: 'danger' });
+    }
+  };
+
+  const handleSaveLibraryPiece = async (data: Partial<MusicPieceInput> & { 
+    tuttiFile?: File | null; 
+    movements?: { title: string; duration?: string }[] 
+  }) => {
+    try {
+      if (libraryEditingPiece) {
+        const updateData = { ...data };
+        delete updateData.movements;
+        await musicLibraryService.updatePiece(libraryEditingPiece.id, updateData);
+      } else {
+        const { tuttiFile, movements, ...rest } = data;
+        if (tuttiFile || (movements && movements.length > 0)) {
+          await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, { tuttiFile, movements });
+        } else {
+          await musicLibraryService.createPiece(rest);
+        }
+      }
+
+      setIsLibraryModalOpen(false);
+      // Refresh library to reflect changes
+      const updatedLib = await musicLibraryService.getLibrary();
+      setLibrary(updatedLib);
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({ title: 'Error', message: 'Could not save the library piece.', variant: 'danger' });
     }
   };
 
@@ -55,65 +169,41 @@ export default function SetListView() {
       }
     }
   }, [events, selectedEventId]);
-  const [items, setItems] = useState<SetListItem[]>([]);
-  const [library, setLibrary] = useState<MusicPiece[]>([]);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
-  const [isPromoting, setIsPromoting] = useState(false);
-  const [isHoveredVisibility, setIsHoveredVisibility] = useState(false);
-  
-  // Form state
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [composer, setComposer] = useState('');
-  const [duration, setDuration] = useState('');
-  const [notes, setNotes] = useState('');
-  const [pieceId, setPieceId] = useState('');
-  const [librarySearch, setLibrarySearch] = useState('');
-  const [selectedPieceForDetail, setSelectedPieceForDetail] = useState<MusicPiece | null>(null);
-  const [type, setType] = useState<'song' | 'intermission'>('song');
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor)
-  );
+  useEffect(() => {
+    setIsLoading(true);
+    musicLibraryService.getLibrary()
+      .then(setLibrary)
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  const resetForm = () => {
-    setEditingId(null);
-    setTitle('');
-    setComposer('');
-    setDuration('');
-    setNotes('');
-    setPieceId('');
-    setLibrarySearch('');
-    setType('song');
-  };
+  useEffect(() => {
+    settingsService.getMusicLibrarySettings().then(settings => {
+      setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
+      setConfiguredGenres(settings.genres || []);
+    }).catch(console.error);
+  }, []);
 
-  const handleTypeChange = (newType: 'song' | 'intermission') => {
-    setType(newType);
-    if (newType === 'intermission') {
-      if (!title.trim() || title === '') {
-        setTitle('Intermission');
-      }
-      setComposer('');
-      setPieceId('');
-      setLibrarySearch('');
+  // Load event items ONLY when selectedEventId changes
+  useEffect(() => {
+    if (selectedEventId) {
+      const ev = eventsRef.current.find(e => e.id === selectedEventId);
+      setItems(ev?.setList || []);
     } else {
-      if (title === 'Intermission') {
-        setTitle('');
-      }
+      setItems([]);
     }
-  };
+    setSaveStatus(null);
+  }, [selectedEventId]);
 
-  // Auto-saves any modifications to pocketbase
-  const saveSetList = async (newItems: SetListItem[]) => {
+  const handleToggleApproved = async (checked: boolean) => {
     if (!selectedEventId) return;
     setSaveStatus('saving');
     try {
-      await eventService.updateEvent(selectedEventId, { setList: newItems });
+      await eventService.updateEvent(selectedEventId, { setListApproved: checked });
       await refresh();
       setSaveStatus('saved');
     } catch (error) {
-      console.error('Failed to save set list:', error);
+      console.error('Failed to update set list approval status:', error);
       setSaveStatus('error');
     }
   };
@@ -123,211 +213,16 @@ export default function SetListView() {
     saveSetList(newItems);
   };
 
-  // Cumulative duration totals incorporating resolved library pieces
-  const durationTotals = useMemo(() => {
-    let songsSeconds = 0;
-    let intermissionSeconds = 0;
-    items.forEach(item => {
-      const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
-      const rawDuration = item.duration || linkedPiece?.duration || '';
-      const sec = parseDurationToSeconds(rawDuration);
-      if (item.type === 'intermission') {
-        intermissionSeconds += sec;
-      } else {
-        songsSeconds += sec;
-      }
-    });
-    return {
-      songs: formatSecondsToDuration(songsSeconds),
-      intermissions: formatSecondsToDuration(intermissionSeconds),
-      total: formatSecondsToDuration(songsSeconds + intermissionSeconds)
-    };
-  }, [items, library]);
-
-  // Resolves linked music library piece info and computes running timestamps
-  const itemsWithDetails = useMemo(() => {
-    return items.reduce<Array<typeof items[number] & {
-      displayTitle: string;
-      displayComposer: string;
-      displayDuration: string;
-      cumulativeStart: string;
-      cumulativeEnd: string;
-    }>>((acc, item) => {
-      const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
-      
-      const displayTitle = item.title || linkedPiece?.title || '';
-      const displayComposer = item.type === 'song' ? (item.composer || linkedPiece?.composer || '') : '';
-      const rawDuration = item.duration || linkedPiece?.duration || '';
-      const durationSeconds = parseDurationToSeconds(rawDuration);
-      
-      const previousEnd = acc.length > 0 ? parseDurationToSeconds(acc[acc.length - 1].cumulativeEnd) : 0;
-      const endSec = previousEnd + durationSeconds;
-
-      acc.push({
-        ...item,
-        displayTitle,
-        displayComposer,
-        displayDuration: rawDuration ? formatSecondsToDuration(durationSeconds) : '',
-        cumulativeStart: formatSecondsToDuration(previousEnd),
-        cumulativeEnd: formatSecondsToDuration(endSec)
-      });
-      return acc;
-    }, []);
-  }, [items, library]);
-
-  const filteredLibrary = useMemo(() => {
-    return library
-      .filter(p => {
-        if (p.id === pieceId) return true;
-        const query = librarySearch.toLowerCase();
-        return p.title.toLowerCase().includes(query) || (p.composer && p.composer.toLowerCase().includes(query));
-      })
-      .sort((a, b) => a.title.localeCompare(b.title));
-  }, [library, librarySearch, pieceId]);
-
-  // Auto-select first matching piece when user filters the library
-  useEffect(() => {
-    const query = librarySearch.trim().toLowerCase();
-    if (query && filteredLibrary.length > 0) {
-      const firstMatch = filteredLibrary.find(p => 
-        p.title.toLowerCase().includes(query) || 
-        (p.composer && p.composer.toLowerCase().includes(query))
-      );
-      if (firstMatch && pieceId !== firstMatch.id) {
-        setPieceId(firstMatch.id);
-        setTitle(firstMatch.title);
-        if (firstMatch.composer) setComposer(firstMatch.composer);
-        if (firstMatch.duration) setDuration(firstMatch.duration);
-      }
-    }
-  }, [librarySearch, filteredLibrary, pieceId]);
-
-  useEffect(() => {
-    musicLibraryService.getLibrary().then(setLibrary).catch(() => {});
-  }, []);
-
-  // Load event items ONLY when selectedEventId changes (NOT when global events state changes, to prevent resetting active edits)
-  useEffect(() => {
-    if (selectedEventId) {
-      const ev = eventsRef.current.find(e => e.id === selectedEventId);
-      setItems(ev?.setList || []);
-    } else {
-      setItems([]);
-    }
-    resetForm();
-    setSaveStatus(null);
-  }, [selectedEventId]);
-
-  const handleEdit = (item: SetListItem) => {
-    setEditingId(item.id);
-    setTitle(item.title);
-    setComposer(item.composer || '');
-    setDuration(item.duration || '');
-    setNotes(item.notes || '');
-    setPieceId(item.pieceId || '');
-    setType(item.type || 'song');
-  };
-
-  const handleConvertToLibraryPiece = async () => {
-    if (!editingId) return;
-    if (!validatePieceForLibrary(title)) {
-      await dialog.showMessage({ title: 'Validation Error', message: 'Please enter a valid title for the library piece.', variant: 'danger' });
-      return;
-    }
-
-    setIsPromoting(true);
+  const saveSetList = async (newItems: SetListItem[]) => {
+    if (!selectedEventId) return;
+    setSaveStatus('saving');
     try {
-      const performanceIdToLink = selectedEvent?.type === 'Rehearsal'
-        ? (parentPerformance?.id || selectedEvent.parentPerformanceId || selectedEventId)
-        : selectedEventId;
-
-      const newPiece = await musicLibraryService.createPiece({
-        title: title.trim(),
-        composer: composer.trim() || undefined,
-        duration: duration.trim() || undefined,
-        notes: notes.trim() || undefined,
-        performances: performanceIdToLink ? [performanceIdToLink] : undefined,
-      });
-
-      const freshLibrary = await musicLibraryService.getLibrary();
-      setLibrary(freshLibrary);
-      setPieceId(newPiece.id);
-
-      const updatedItems = linkSetListItemToPiece(items, editingId, newPiece.id);
-      updateItems(updatedItems);
-
-      await dialog.showMessage({
-        title: 'Success',
-        message: `"${title}" has been successfully added to the Music Library and linked to this set list item.`,
-        variant: 'info'
-      });
+      await eventService.updateEvent(selectedEventId, { setList: newItems });
+      setSaveStatus('saved');
     } catch (error) {
-      console.error('Failed to promote set list piece to library:', error);
-      await dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to create the music library piece.',
-        variant: 'danger'
-      });
-    } finally {
-      setIsPromoting(false);
+      console.error('Failed to save set list:', error);
+      setSaveStatus('error');
     }
-  };
-
-  const handleLibrarySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedId = e.target.value;
-    setPieceId(selectedId);
-    
-    if (selectedId) {
-        const piece = library.find(p => p.id === selectedId);
-        if (piece) {
-            setTitle(piece.title);
-            if (piece.composer) setComposer(piece.composer);
-            if (piece.duration) setDuration(piece.duration);
-        }
-    }
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    const normalizedDuration = duration.trim();
-
-    if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
-      dialog.showMessage({
-        title: 'Invalid Duration',
-        message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
-        variant: 'danger'
-      });
-      return;
-    }
-
-    let newItems: SetListItem[];
-    const itemData: SetListItem = {
-      id: editingId || crypto.randomUUID(),
-      title: title.trim(),
-      composer: type === 'song' ? (composer.trim() || undefined) : undefined,
-      duration: normalizedDuration || undefined,
-      notes: notes.trim() || undefined,
-      pieceId: type === 'song' ? (pieceId || undefined) : undefined,
-      type
-    };
-
-    if (editingId) {
-      newItems = items.map(i => i.id === editingId ? itemData : i);
-    } else {
-      newItems = [...items, itemData];
-    }
-
-    // Sync duration changes to the Music Library if it is a linked song
-    if (type === 'song' && pieceId) {
-      musicLibraryService.updatePiece(pieceId, { duration: normalizedDuration || undefined })
-        .then(() => musicLibraryService.getLibrary())
-        .then(setLibrary)
-        .catch(err => console.error('Failed to update music library duration:', err));
-    }
-
-    updateItems(newItems);
-    resetForm();
   };
 
   const handleDelete = (id: string) => {
@@ -345,6 +240,10 @@ export default function SetListView() {
     }
   };
 
+  const handleInlineAddItem = (item: SetListItem) => {
+    updateItems([...items, item]);
+  };
+
   const handleCopyFrom = async (sourceEventId: string) => {
       const sourceEvent = events.find(e => e.id === sourceEventId);
       if (!sourceEvent || !sourceEvent.setList) return;
@@ -359,6 +258,21 @@ export default function SetListView() {
           updateItems(copied);
       }
   };
+
+  // Cumulative duration totals incorporating resolved library pieces
+  const durationTotals = useMemo(() => {
+    return calculateSetListDurationTotals(items, library);
+  }, [items, library]);
+
+  // Resolves linked music library piece info and computes running timestamps
+  const itemsWithDetails = useMemo(() => {
+    return resolveSetListDisplayRows(items, library);
+  }, [items, library]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
 
   return (
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
@@ -388,8 +302,8 @@ export default function SetListView() {
         </div>
       </div>
 
-      <div className="setlist-grid">
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+      <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'flex-end' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1 }}>
             <label className="text-label">Select Event</label>
             <select 
               value={selectedEventId} 
@@ -398,26 +312,30 @@ export default function SetListView() {
               style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
             >
               <option value="">-- Choose Event --</option>
-              {events.map(e => (
-                <option key={e.id} value={e.id}>{e.title || new Date(e.date).toLocaleDateString()} - {e.type}</option>
+              {events.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.date.split(' ')[0]} - {e.title || e.type}
+                </option>
               ))}
             </select>
           </div>
-          
-          {selectedEventId && (
+
+          {selectedEvent && (
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-               <label className="text-label">Copy From Previous</label>
-               <select 
-                  value=""
-                  onChange={(e) => handleCopyFrom(e.target.value)}
-                  className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
-                >
-                  <option value="">-- Select Source --</option>
-                  {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map(e => (
-                    <option key={e.id} value={e.id}>{e.title || new Date(e.date).toLocaleDateString()}</option>
-                  ))}
-                </select>
+              <label className="text-label">Copy from Previous</label>
+              <select 
+                value="" 
+                onChange={(e) => handleCopyFrom(e.target.value)}
+                className="card"
+                style={{ width: '240px', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
+              >
+                <option value="">-- Copy Set List --</option>
+                {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.date.split(' ')[0]} - {e.title || e.type}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -425,20 +343,15 @@ export default function SetListView() {
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
               <label className="text-label">Singer Visibility</label>
               <div 
-                onMouseEnter={() => setIsHoveredVisibility(true)}
-                onMouseLeave={() => setIsHoveredVisibility(false)}
+                className="card"
                 style={{ 
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center', 
-                  gap: 'var(--space-md)', 
                   height: '48px', 
-                  padding: '0 16px', 
-                  border: isHoveredVisibility ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: isHoveredVisibility ? 'var(--primary-light)' : 'var(--surface)',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '0 16px',
+                  backgroundColor: selectedEvent.setListApproved !== false ? 'rgba(74, 124, 89, 0.1)' : 'var(--surface)',
+                  border: selectedEvent.setListApproved !== false ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  transition: 'all 0.2s'
                 }}
               >
                 <label 
@@ -446,7 +359,7 @@ export default function SetListView() {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '10px', 
-                    cursor: 'pointer', 
+                    cursor: 'pointer',
                     width: '100%',
                     fontWeight: 500,
                     fontSize: 'var(--font-size-label)'
@@ -549,9 +462,7 @@ export default function SetListView() {
             </div>
           )}
 
-          <div className="setlist-grid" style={{ alignItems: 'flex-start' }}>
-          
-          <AppCard title="Current Set List" className="setlist-col-span-2">
+          <AppCard title="Current Set List">
             <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
               {items.length > 0 && (
                 <div className="flex-responsive" style={{ 
@@ -586,6 +497,7 @@ export default function SetListView() {
                       <SortableSetListItem 
                         key={item.id} 
                         item={item} 
+                        linkedPiece={item.pieceId ? library.find(p => p.id === item.pieceId) : undefined}
                         displayTitle={item.displayTitle}
                         displayComposer={item.displayComposer}
                         displayDuration={item.displayDuration}
@@ -593,267 +505,64 @@ export default function SetListView() {
                         cumulativeEnd={item.cumulativeEnd}
                         onEdit={handleEdit} 
                         onDelete={handleDelete} 
-                        onPieceClick={(id) => {
-                          const piece = findPieceDetails(id, library);
-                          if (piece) setSelectedPieceForDetail(piece);
-                        }}
+                        onPlayTrack={handlePlayRowTrack}
+                        onPieceClick={() => handleEditLinkedPiece(item)}
                       />
                     ))}
                   </SortableContext>
                 </DndContext>
               )}
+
+              <div style={{ marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
+                <SetListInlineCreator 
+                  library={library}
+                  onAddItem={handleInlineAddItem}
+                  disabled={isLoading}
+                />
+              </div>
             </div>
+            <p className="text-muted text-sm" style={{ marginTop: 'var(--space-md)', padding: '0 var(--space-md) var(--space-md)' }}>
+                Tip: Drag the ⣿ handle to reorder items. Changes are saved automatically.
+            </p>
           </AppCard>
-
-          <AppCard title={editingId ? "Edit Item" : "Add Item"} className="setlist-col-span-1">
-            <form onSubmit={handleFormSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Item Type</label>
-                <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-                  <button
-                    type="button"
-                    className={`btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
-                    style={{ flex: 1, minHeight: '38px', height: '38px', padding: 0 }}
-                    onClick={() => handleTypeChange('song')}
-                  >
-                    🎼 Song
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
-                    style={{ flex: 1, minHeight: '38px', height: '38px', padding: 0 }}
-                    onClick={() => handleTypeChange('intermission')}
-                  >
-                    ⏸️ Intermission
-                  </button>
-                </div>
-              </div>
-
-              {type === 'song' && library.length > 0 && (
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <label className="text-label text-muted">Link to Music Library</label>
-                  <div className="flex-col" style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      placeholder="Search music library..."
-                      value={librarySearch}
-                      onChange={(e) => setLibrarySearch(e.target.value)}
-                      className="card"
-                      style={{ padding: '8px 32px 8px 8px', fontSize: '14px', width: '100%', height: '40px', border: '1px solid var(--border)' }}
-                    />
-                    {librarySearch && (
-                      <button 
-                        type="button" 
-                        onClick={() => setLibrarySearch('')} 
-                        style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--text-muted)',
-                          fontSize: '14px',
-                          padding: '4px'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  <select 
-                    className="card" 
-                    value={pieceId} 
-                    onChange={handleLibrarySelect}
-                    style={{ padding: '0 8px', height: '40px' }}
-                  >
-                    <option value="">
-                      {librarySearch && filteredLibrary.filter(p => p.id !== pieceId).length === 0 
-                        ? '-- No matches found --' 
-                        : '-- Custom (No link) --'}
-                    </option>
-                    {filteredLibrary.map(p => (
-                      <option key={p.id} value={p.id}>{p.title} {p.composer ? `(${p.composer})` : ''}</option>
-                    ))}
-                  </select>
-                  {librarySearch && (
-                    <span className="text-xs text-muted" style={{ marginTop: '2px' }}>
-                      Showing {filteredLibrary.length} of {library.length} items
-                    </span>
-                  )}
-                </div>
-              )}
-              
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">{type === 'song' ? 'Title' : 'Intermission Title'}</label>
-                <input required value={title} onChange={e => setTitle(e.target.value)} className="card" style={{ padding: '8px' }} />
-              </div>
-              
-              {type === 'song' && (
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <label className="text-label">Composer/Arranger (Optional)</label>
-                  <input value={composer} onChange={e => setComposer(e.target.value)} className="card" style={{ padding: '8px' }} />
-                </div>
-              )}
-
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Duration {type === 'song' ? '(Optional)' : '(e.g. 15 mins)'}</label>
-                <input 
-                  value={duration} 
-                  onChange={e => setDuration(e.target.value)} 
-                  placeholder={type === 'song' ? 'e.g. 3:30' : 'e.g. 15:00 or 15'} 
-                  className="card" 
-                  style={{ padding: '8px' }} 
-                />
-              </div>
-
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Notes (Optional)</label>
-                <input 
-                  value={notes} 
-                  onChange={e => setNotes(e.target.value)} 
-                  placeholder={type === 'song' ? 'e.g. A cappella, or medley titles' : 'e.g. Audience stretch, announcements'} 
-                  className="card" 
-                  style={{ padding: '8px' }} 
-                />
-                <span className="text-xs text-muted" style={{ marginTop: '2px' }}>
-                  {type === 'song' 
-                    ? 'If this is a medley, please list the names of the different pieces here.'
-                    : 'Any announcements or details for the intermission.'}
-                </span>
-              </div>
-              {editingId && !pieceId && (
-                <div className="flex-col" style={{ gap: 'var(--space-xs)', padding: 'var(--space-xs) 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', margin: 'var(--space-xs) 0' }}>
-                  <span className="text-xs text-muted" style={{ fontWeight: 500 }}>This piece is not linked to the Music Library:</span>
-                  <button
-                    type="button"
-                    onClick={handleConvertToLibraryPiece}
-                    disabled={isPromoting}
-                    className="btn btn-secondary"
-                    style={{
-                      width: '100%',
-                      backgroundColor: 'var(--primary-light)',
-                      color: 'var(--primary-deep)',
-                      border: '1px solid rgba(74, 124, 89, 0.2)',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {isPromoting ? 'Converting...' : '✨ Convert to Library Piece'}
-                  </button>
-                </div>
-              )}
-              <div className="flex-row" style={{ gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{editingId ? 'Update' : 'Add'}</button>
-                {editingId && <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>}
-              </div>
-            </form>
-          </AppCard>
-
         </div>
-      </div>
       ) : (
         <AppCard style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
           <p className="text-muted">Select an event above to manage its set list.</p>
         </AppCard>
       )}
 
-      <BaseModal
-        isOpen={selectedPieceForDetail !== null}
-        onClose={() => setSelectedPieceForDetail(null)}
-        title="Music Piece Details"
-        footer={
-          <button className="btn btn-primary" onClick={() => setSelectedPieceForDetail(null)}>
-            Close
-          </button>
-        }
-        maxWidth="500px"
-      >
-        {selectedPieceForDetail && (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-            <div>
-              <h2 className="text-display" style={{ margin: 0, fontSize: '1.5rem', color: 'var(--primary)' }}>
-                {selectedPieceForDetail.title}
-              </h2>
-              {selectedPieceForDetail.composer && (
-                <div style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '4px' }}>
-                  by {selectedPieceForDetail.composer}
-                </div>
-              )}
-            </div>
+      <MusicPieceModal
+        isOpen={isLibraryModalOpen}
+        piece={libraryEditingPiece}
+        onClose={() => setIsLibraryModalOpen(false)}
+        onSave={handleSaveLibraryPiece}
+        onDelete={libraryEditingPiece ? () => musicLibraryService.deletePiece(libraryEditingPiece.id).then(() => { setIsLibraryModalOpen(false); return musicLibraryService.getLibrary(); }).then(setLibrary).then(() => {}) : undefined}
+        catalogLookupTemplate={catalogLookupTemplate}
+        allPieces={library}
+        allGenres={configuredGenres}
+      />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 'var(--space-md)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
-              <div className="flex-col" style={{ gap: '4px' }}>
-                <span className="text-xs text-muted" style={{ textTransform: 'uppercase', fontWeight: 600 }}>Catalog ID</span>
-                <span className="text-body" style={{ fontWeight: 500 }}>{selectedPieceForDetail.catalogId || 'N/A'}</span>
-              </div>
-              <div className="flex-col" style={{ gap: '4px' }}>
-                <span className="text-xs text-muted" style={{ textTransform: 'uppercase', fontWeight: 600 }}>Duration</span>
-                <span className="text-body" style={{ fontWeight: 500 }}>{selectedPieceForDetail.duration || 'N/A'}</span>
-              </div>
-              <div className="flex-col" style={{ gap: '4px' }}>
-                <span className="text-xs text-muted" style={{ textTransform: 'uppercase', fontWeight: 600 }}>Physical Copies</span>
-                <span className="text-body" style={{ fontWeight: 500 }}>
-                  {selectedPieceForDetail.copies !== undefined ? selectedPieceForDetail.copies : 'N/A'}
-                </span>
-              </div>
-            </div>
+      <SetListItemEditModal 
+        isOpen={isItemEditModalOpen}
+        item={itemEditing}
+        onClose={() => setIsItemEditModalOpen(false)}
+        onSave={handleSaveItem}
+        onConvertToLibrary={handlePromoteToLibrary}
+      />
 
-            {selectedPieceForDetail.notes && (
-              <div className="flex-col" style={{ gap: 'var(--space-xs)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
-                <span className="text-xs text-muted" style={{ textTransform: 'uppercase', fontWeight: 600 }}>Notes & Details</span>
-                <div 
-                  className="card" 
-                  style={{ 
-                    padding: 'var(--space-sm) var(--space-md)', 
-                    backgroundColor: 'rgba(74, 124, 89, 0.05)', 
-                    borderLeft: '4px solid var(--primary)', 
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.9rem',
-                    lineHeight: '1.4',
-                    whiteSpace: 'pre-wrap'
-                  }}
-                >
-                  {selectedPieceForDetail.notes}
-                </div>
-              </div>
-            )}
+      <MusicImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={refresh}
+      />
 
-            {formatPerformanceHistory(selectedPieceForDetail).length > 0 && (
-              <div className="flex-col" style={{ gap: 'var(--space-xs)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
-                <span className="text-xs text-muted" style={{ textTransform: 'uppercase', fontWeight: 600 }}>Performance History</span>
-                <div className="flex-row" style={{ gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                  {formatPerformanceHistory(selectedPieceForDetail).map((perfStr, idx) => {
-                    return (
-                      <span 
-                        key={idx} 
-                        className="badge badge-performance" 
-                        style={{ 
-                          padding: '4px 10px', 
-                          borderRadius: '12px', 
-                          fontSize: '0.8rem', 
-                          fontWeight: 500,
-                          backgroundColor: 'var(--primary-light)',
-                          color: 'var(--primary-deep)',
-                          border: '1px solid rgba(74, 124, 89, 0.15)'
-                        }}
-                      >
-                        {perfStr}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </BaseModal>
+      <FloatingAudioPlayer 
+        url={activeAudioUrl}
+        title={activeAudioTitle}
+        part={activeAudioPart}
+        onClose={() => setActiveAudioUrl(null)}
+      />
     </div>
   );
 }

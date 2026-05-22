@@ -2,12 +2,16 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SetListItem } from '../../services/eventService';
+import type { MusicPiece } from '../../types/musicLibrary';
+import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
 
 interface Props {
   item: SetListItem;
+  linkedPiece?: MusicPiece;
   onEdit: (item: SetListItem) => void;
   onDelete: (id: string) => void;
   onPieceClick?: (pieceId: string) => void;
+  onPlayTrack?: (piece: MusicPiece) => void;
   displayTitle?: string;
   displayComposer?: string;
   displayDuration?: string;
@@ -17,9 +21,11 @@ interface Props {
 
 export const SortableSetListItem: React.FC<Props> = ({
   item,
+  linkedPiece,
   onEdit,
   onDelete,
   onPieceClick,
+  onPlayTrack,
   displayTitle,
   displayComposer,
   displayDuration,
@@ -44,6 +50,7 @@ export const SortableSetListItem: React.FC<Props> = ({
   };
 
   const titleText = displayTitle || item.title;
+  const hasAudio = linkedPiece ? !!getDefaultPlayableTrackKey(linkedPiece) : false;
 
   return (
     <div 
@@ -103,10 +110,31 @@ export const SortableSetListItem: React.FC<Props> = ({
                 <span title="Linked to Music Library" style={{ fontSize: '0.85rem', textDecoration: 'none', display: 'inline-block' }}>🎼</span>
               </button>
             ) : (
-              <>
-                {titleText}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                {onEdit ? (
+                    <button
+                        type="button"
+                        onClick={() => onEdit(item)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            textAlign: 'left',
+                            color: 'inherit',
+                            font: 'inherit',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textDecoration: 'underline dotted var(--primary)',
+                            textUnderlineOffset: '3px'
+                        }}
+                    >
+                        {titleText}
+                    </button>
+                ) : (
+                    <span style={{ fontWeight: 600 }}>{titleText}</span>
+                )}
                 {item.pieceId && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
-              </>
+              </span>
             )}
             {cumulativeStart && cumulativeEnd && (
               <span className="text-xs text-muted" style={{ fontWeight: 'normal', marginLeft: '4px' }}>
@@ -128,6 +156,19 @@ export const SortableSetListItem: React.FC<Props> = ({
       </div>
 
       <button onClick={() => onEdit(item)} className="btn btn-ghost btn-sm">Edit</button>
+      {hasAudio && onPlayTrack && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (linkedPiece) onPlayTrack(linkedPiece);
+          }} 
+          className="btn btn-secondary btn-sm"
+          title="Play default track"
+          style={{ padding: '0 8px', minHeight: 'auto', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          🎵
+        </button>
+      )}
       <button onClick={() => onDelete(item.id)} className="btn btn-danger btn-sm">X</button>
     </div>
   );

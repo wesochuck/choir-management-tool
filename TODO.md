@@ -19,7 +19,8 @@
 [x] you should be able to add a tutti track easily when adding something to library.
 [ ] make adding something from the library to the set list a first class experience. also when adding something to the set list for a performance it should then be added as linked performance for that piece automatically.
 [ ] the edit piece music player should have a longer track scrubber also on the floating one.
-[] music library section filter should be multi select.
+[ ] music library section filter should be multi select. refactor the UI to fit more.
+[ ] handle and warn on dirty saves in the choir settings.
 [ ] add on the music player for choir members maybe an encouragement to "install" this as a PWA app on their phone, but think about how it will work for members who return and it is a diff set list.
 [ ] Twilio SMS Integration: Add admin UI credentials settings card and server-side PocketBase dispatch hook in pb_hooks to route SMS messages directly via Twilio.
 [?] make sure all communication history from the various parts of the platform are visible in the communication history section

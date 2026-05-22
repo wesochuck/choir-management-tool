@@ -1,0 +1,185 @@
+import type { MusicPiece } from '../../types/musicLibrary';
+import type { SetListItem } from '../../services/eventService';
+import { 
+  isValidDurationString, 
+  parseDurationToSeconds, 
+  formatSecondsToDuration 
+} from '../music/duration';
+
+export interface SetListDisplayRow extends SetListItem {
+  displayTitle: string;
+  displayComposer: string;
+  displayDuration: string;
+  cumulativeStart: string;
+  cumulativeEnd: string;
+}
+
+export interface SetListDurationTotals {
+  songs: string;
+  intermissions: string;
+  total: string;
+}
+
+/**
+ * Creates a SetListItem from custom input.
+ */
+export function createSetListItemFromCustomInput(input: {
+  title: string;
+  composer?: string;
+  duration?: string;
+  type: 'song' | 'intermission';
+  notes?: string;
+}): SetListItem {
+  const { title, type, duration, composer, notes } = input;
+  
+  if (!title || !title.trim()) {
+    throw new Error('Title is required');
+  }
+
+  if (duration && !isValidDurationString(duration)) {
+    throw new Error('Invalid duration format');
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    title: title.trim(),
+    composer: type === 'song' ? (composer?.trim() || undefined) : undefined,
+    duration: duration?.trim() || undefined,
+    notes: notes?.trim() || undefined,
+    type
+  };
+}
+
+/**
+ * Creates a SetListItem from a Music Library piece.
+ */
+export function createSetListItemFromMusicPiece(
+  piece: MusicPiece,
+  overrides: Partial<SetListItem> = {}
+): SetListItem {
+  return {
+    id: crypto.randomUUID(),
+    pieceId: piece.id,
+    title: overrides.title?.trim() || piece.title,
+    composer: overrides.composer?.trim() || piece.composer || '',
+    duration: overrides.duration?.trim() || piece.duration || '',
+    notes: overrides.notes?.trim() || '',
+    type: 'song',
+    ...overrides
+  };
+}
+
+/**
+ * Updates an existing SetListItem with a patch.
+ */
+export function updateSetListItem(
+  existingItem: SetListItem,
+  patch: Partial<Omit<SetListItem, 'id'>>
+): SetListItem {
+  const updated = { ...existingItem, ...patch };
+  
+  if (updated.title !== undefined && (!updated.title || !updated.title.trim())) {
+    throw new Error('Title is required');
+  }
+
+  if (updated.duration !== undefined && updated.duration && !isValidDurationString(updated.duration)) {
+    throw new Error('Invalid duration format');
+  }
+
+  // Clean up fields based on type
+  if (updated.type === 'intermission') {
+    updated.composer = undefined;
+    updated.pieceId = undefined;
+  }
+
+  return updated;
+}
+
+/**
+ * Resolves linked music library piece info and computes running timestamps.
+ */
+export function resolveSetListDisplayRows(
+  items: SetListItem[],
+  library: MusicPiece[]
+): SetListDisplayRow[] {
+  return items.reduce<SetListDisplayRow[]>((acc, item) => {
+    const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
+    
+    const displayTitle = item.title || linkedPiece?.title || '';
+    const displayComposer = item.type === 'song' ? (item.composer || linkedPiece?.composer || '') : '';
+    const rawDuration = item.duration || linkedPiece?.duration || '';
+    const durationSeconds = parseDurationToSeconds(rawDuration);
+    
+    const previousEndSeconds = acc.length > 0 ? parseDurationToSeconds(acc[acc.length - 1].cumulativeEnd) : 0;
+    const endSec = previousEndSeconds + durationSeconds;
+
+    acc.push({
+      ...item,
+      displayTitle,
+      displayComposer,
+      displayDuration: rawDuration ? formatSecondsToDuration(durationSeconds) : '',
+      cumulativeStart: formatSecondsToDuration(previousEndSeconds),
+      cumulativeEnd: formatSecondsToDuration(endSec)
+    });
+    return acc;
+  }, []);
+}
+
+/**
+ * Calculates cumulative duration totals splitting songs and intermissions.
+ */
+export function calculateSetListDurationTotals(
+  items: SetListItem[],
+  library: MusicPiece[]
+): SetListDurationTotals {
+  let songsSeconds = 0;
+  let intermissionSeconds = 0;
+
+  items.forEach(item => {
+    const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
+    const rawDuration = item.duration || linkedPiece?.duration || '';
+    const sec = parseDurationToSeconds(rawDuration);
+    
+    if (item.type === 'intermission') {
+      intermissionSeconds += sec;
+    } else {
+      songsSeconds += sec;
+    }
+  });
+
+  return {
+    songs: formatSecondsToDuration(songsSeconds),
+    intermissions: formatSecondsToDuration(intermissionSeconds),
+    total: formatSecondsToDuration(songsSeconds + intermissionSeconds)
+  };
+}
+
+/**
+ * Determines the default track key to play for a piece.
+ * Prefers 'tutti', then first available track.
+ */
+export function getDefaultPlayableTrackKey(piece: MusicPiece): string | null {
+  const mapping = piece.audioTrackMapping;
+  if (!mapping) return null;
+  
+  const keys = Object.keys(mapping).filter(k => mapping[k]);
+  if (keys.length === 0) return null;
+  
+  if (keys.includes('tutti')) return 'tutti';
+  return keys[0];
+}
+
+/**
+ * Filters the music library for suggestions based on a query.
+ */
+export function filterMusicLibrarySuggestions(
+  library: MusicPiece[],
+  query: string
+): MusicPiece[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return library
+    .filter(p => p.title.toLowerCase().includes(q) || p.composer?.toLowerCase().includes(q))
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .slice(0, 10);
+}
