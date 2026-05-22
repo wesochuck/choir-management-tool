@@ -420,7 +420,15 @@ onRecordAfterCreateSuccess((e) => {
     }
 
     const subject = record.get("subject") || "Message from Choir Management";
-    const content = record.get("content") || "";
+    let content = record.get("content") || "";
+
+    // Sanitize user-provided content to prevent HTML injection / XSS
+    content = String(content)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 
     const recipientsRaw = record.get("recipients");
     let recipients = [];
