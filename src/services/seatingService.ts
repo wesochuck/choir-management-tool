@@ -9,8 +9,6 @@ export interface SeatingChart extends RecordModel {
   layoutOverride: number[] | null;
   formationId: string; // Replaces text-based sectionOrder field
   assignments: Record<string, string>; // Seat index string -> Profile id string
-  formationType?: 'Column' | 'Row';
-  sectionOrder?: string | null;
 }
 
 export const seatingService = {

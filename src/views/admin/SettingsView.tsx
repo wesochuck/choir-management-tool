@@ -87,6 +87,110 @@ export default function SettingsView() {
     setIsSaving(true);
     setMessage('');
 
+    // Validate Sections
+    const seenSectionCodes = new Set<string>();
+    for (let i = 0; i < sections.length; i++) {
+      const sec = sections[i];
+      const code = sec.code.trim().toUpperCase();
+      const name = sec.name.trim();
+      
+      if (!code) {
+        setMessage('Error: Section bucket code cannot be empty.');
+        setIsSaving(false);
+        return;
+      }
+      if (seenSectionCodes.has(code)) {
+        setMessage(`Error: Duplicate section bucket code "${code}".`);
+        setIsSaving(false);
+        return;
+      }
+      seenSectionCodes.add(code);
+      if (!name) {
+        setMessage(`Error: Section bucket "${code}" name cannot be empty.`);
+        setIsSaving(false);
+        return;
+      }
+    }
+
+    // Validate Seating Formations
+    const formations = seatingSettings.formations || [];
+    if (formations.length === 0) {
+      setMessage('Error: At least one seating formation must be defined.');
+      setIsSaving(false);
+      return;
+    }
+
+    const seenFormationNames = new Set<string>();
+    for (let i = 0; i < formations.length; i++) {
+      const form = formations[i];
+      const name = form.name.trim();
+      if (!name) {
+        setMessage(`Error: Seating formation name at position ${i + 1} cannot be empty.`);
+        setIsSaving(false);
+        return;
+      }
+      const lowerName = name.toLowerCase();
+      if (seenFormationNames.has(lowerName)) {
+        setMessage(`Error: Seating formation name "${name}" is duplicated.`);
+        setIsSaving(false);
+        return;
+      }
+      seenFormationNames.add(lowerName);
+
+      // Clean/sanitize sectionOrder: split, trim, filter empty
+      const codes = form.sectionOrder.map(c => c.trim().toUpperCase()).filter(Boolean);
+      if (codes.length === 0) {
+        setMessage(`Error: Seating formation "${name}" must have at least one section code.`);
+        setIsSaving(false);
+        return;
+      }
+
+      // Check if codes exist in the active sections list
+      for (const code of codes) {
+        if (!seenSectionCodes.has(code)) {
+          setMessage(`Error: Seating formation "${name}" contains unknown section code "${code}". Valid codes: ${Array.from(seenSectionCodes).join(', ')}`);
+          setIsSaving(false);
+          return;
+        }
+      }
+    }
+
+    // Validate Voice Parts
+    const seenPartLabels = new Set<string>();
+    for (let i = 0; i < voiceParts.length; i++) {
+      const vp = voiceParts[i];
+      const label = vp.label.trim();
+      const fullName = vp.fullName.trim();
+      const secCode = vp.sectionCode.trim().toUpperCase();
+
+      if (!label) {
+        setMessage('Error: Voice part label cannot be empty.');
+        setIsSaving(false);
+        return;
+      }
+      if (seenPartLabels.has(label)) {
+        setMessage(`Error: Duplicate voice part label "${label}".`);
+        setIsSaving(false);
+        return;
+      }
+      seenPartLabels.add(label);
+      if (!fullName) {
+        setMessage(`Error: Voice part "${label}" full name cannot be empty.`);
+        setIsSaving(false);
+        return;
+      }
+      if (!secCode) {
+        setMessage(`Error: Voice part "${label}" must belong to a section bucket.`);
+        setIsSaving(false);
+        return;
+      }
+      if (!seenSectionCodes.has(secCode)) {
+        setMessage(`Error: Voice part "${label}" belongs to unknown section bucket "${secCode}".`);
+        setIsSaving(false);
+        return;
+      }
+    }
+
     try {
       await settingsService.saveChoirName(choirName);
       setContextChoirName(choirName);
