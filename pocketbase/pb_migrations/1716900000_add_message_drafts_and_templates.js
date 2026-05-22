@@ -29,39 +29,6 @@ migrate((app) => {
     name: "messageTemplates",
     type: "base",
     system: false,
-    fields: [
-      new TextField({
-        name: "id",
-        primaryKey: true,
-        required: true,
-        system: true,
-        pattern: "^[a-z0-9]+$"
-      }),
-      new TextField({
-        name: "title",
-        required: true,
-        presentable: true,
-        unique: true
-      }),
-      new TextField({
-        name: "subject",
-        required: false,
-      }),
-      new TextField({
-        name: "content",
-        required: true,
-      }),
-      new SelectField({
-        name: "type",
-        required: true,
-        values: ["Email", "SMS", "Both"],
-        maxSelect: 1
-      }),
-      new BoolField({
-        name: "isSystemTemplate",
-        required: false,
-      })
-    ],
     indexes: [],
     listRule: null,
     viewRule: null,
@@ -69,6 +36,33 @@ migrate((app) => {
     updateRule: null,
     deleteRule: null,
   });
+
+  templates.fields.add(
+    new TextField({
+      name: "title",
+      required: true,
+      presentable: true,
+      unique: true
+    }),
+    new TextField({
+      name: "subject",
+      required: false,
+    }),
+    new TextField({
+      name: "content",
+      required: true,
+    }),
+    new SelectField({
+      name: "type",
+      required: true,
+      values: ["Email", "SMS", "Both"],
+      maxSelect: 1
+    }),
+    new BoolField({
+      name: "isSystemTemplate",
+      required: false,
+    })
+  );
 
   app.save(templates);
 
