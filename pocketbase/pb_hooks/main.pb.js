@@ -1,5 +1,20 @@
 // PocketBase Backend Hooks - Automated Attendance Reports
 
+/**
+ * Escapes HTML characters in a string to prevent XSS.
+ * @param {string} str The string to escape.
+ * @returns {string} The escaped string.
+ */
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 cronAdd("post_event_report", "0 * * * *", () => {
     // Helper to safely convert Go byte slices to JS strings
     function decodeGoBytes(val) {
@@ -142,22 +157,22 @@ cronAdd("post_event_report", "0 * * * *", () => {
         // Build Email Content
         const eventDateStr = new Date(event.get("date")).toLocaleDateString();
         const subject = commSettings.reportSubjectTemplate
-            .replace(/{eventTitle}/g, event.get("title"))
+            .replace(/{eventTitle}/g, event.get("title")) // Subject is plain text, doesn't strictly need HTML escaping
             .replace(/{eventDate}/g, eventDateStr);
 
         let templateBody = commSettings.reportBodyTemplate
-            .replace(/{eventTitle}/g, event.get("title"))
-            .replace(/{eventDate}/g, eventDateStr)
+            .replace(/{eventTitle}/g, escapeHtml(event.get("title")))
+            .replace(/{eventDate}/g, escapeHtml(eventDateStr))
             .replace(/{attendanceRate}/g, attendanceRate)
             .replace(/{presentCount}/g, present)
             .replace(/{totalCount}/g, total)
-            .replace(/{absenteesList}/g, absentees.length > 0 ? absentees.map(name => `<li style="margin-bottom: 4px;">${name}</li>`).join('') : '<li>None</li>')
+            .replace(/{absenteesList}/g, absentees.length > 0 ? absentees.map(name => `<li style="margin-bottom: 4px;">${escapeHtml(name)}</li>`).join('') : '<li>None</li>')
             .replace(/{thresholdWarningsSection}/g, thresholdWarnings.length > 0 ? `
                 <div style="margin-top: 30px; padding: 15px; background-color: #fff1f2; border: 1px solid #fecaca; border-radius: 6px;">
                     <h3 style="color: #991b1b; margin-top: 0;">⚠️ Threshold Warnings (2+ Misses)</h3>
                     <p style="font-size: 14px; color: #7f1d1d;">The following singers have reached or exceeded 2 absences for this concert series:</p>
                     <ul style="padding-left: 20px; color: #991b1b;">
-                        ${thresholdWarnings.map(msg => `<li style="margin-bottom: 4px;">${msg}</li>`).join('')}
+                        ${thresholdWarnings.map(msg => `<li style="margin-bottom: 4px;">${escapeHtml(msg)}</li>`).join('')}
                     </ul>
                 </div>
             ` : '');
@@ -393,25 +408,25 @@ cronAdd("automated_event_reminders", "30 * * * *", () => {
             }
 
             const bodyHtml = commSettings.reminderBodyTemplate
-                .replace(/{singerName}/g, profile.get("name"))
-                .replace(/{eventTitle}/g, event.get("title"))
-                .replace(/{eventType}/g, event.get("type"))
-                .replace(/{eventDate}/g, eventDateStr)
-                .replace(/{eventLocation}/g, venueName)
-                .replace(/{eventDetails}/g, event.get("details") || "")
-                .replace(/{rsvpLinks}/g, rsvpLinksText)
+                .replace(/{singerName}/g, escapeHtml(profile.get("name")))
+                .replace(/{eventTitle}/g, escapeHtml(event.get("title")))
+                .replace(/{eventType}/g, escapeHtml(event.get("type")))
+                .replace(/{eventDate}/g, escapeHtml(eventDateStr))
+                .replace(/{eventLocation}/g, escapeHtml(venueName))
+                .replace(/{eventDetails}/g, escapeHtml(event.get("details") || ""))
+                .replace(/{rsvpLinks}/g, escapeHtml(rsvpLinksText))
                 .replace(/\n/g, "<br>");
 
             // Generate a generic body template for logging (only once)
             if (!bodyHtmlGeneric) {
                 bodyHtmlGeneric = commSettings.reminderBodyTemplate
                     .replace(/{singerName}/g, "Singer")
-                    .replace(/{eventTitle}/g, event.get("title"))
-                    .replace(/{eventType}/g, event.get("type"))
-                    .replace(/{eventDate}/g, eventDateStr)
-                    .replace(/{eventLocation}/g, venueName)
-                    .replace(/{eventDetails}/g, event.get("details") || "")
-                    .replace(/{rsvpLinks}/g, rsvpLinksText)
+                    .replace(/{eventTitle}/g, escapeHtml(event.get("title")))
+                    .replace(/{eventType}/g, escapeHtml(event.get("type")))
+                    .replace(/{eventDate}/g, escapeHtml(eventDateStr))
+                    .replace(/{eventLocation}/g, escapeHtml(venueName))
+                    .replace(/{eventDetails}/g, escapeHtml(event.get("details") || ""))
+                    .replace(/{rsvpLinks}/g, escapeHtml(rsvpLinksText))
                     .replace(/\n/g, "<br>");
 
                 bodyHtmlGeneric += `
@@ -533,7 +548,10 @@ onRecordAfterCreateSuccess((e) => {
     }
 
     const subject = record.get("subject") || "Message from Choir Management";
-    const content = record.get("content") || "";
+    let content = record.get("content") || "";
+
+    // Sanitize user-provided content to prevent HTML injection / XSS
+    content = escapeHtml(content);
 
     const recipientsRaw = record.get("recipients");
     const recipients = parseJsonField(recipientsRaw) || [];
