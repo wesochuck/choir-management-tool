@@ -548,58 +548,242 @@ export default function SettingsView() {
             Define reusable seating formations for your choir.
           </p>
 
-          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-            {seatingSettings.formations?.map((formation, index) => (
-              <div key={formation.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 2fr 80px', gap: 'var(--space-sm)', alignItems: 'center', width: '100%', padding: 'var(--space-sm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg)' }}>
-                <input
-                  value={formation.name}
-                  onChange={(e) => {
-                    const newFormations = [...seatingSettings.formations];
-                    newFormations[index] = { ...newFormations[index], name: e.target.value };
-                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
-                  }}
-                  placeholder="Formation Name"
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                />
-                <select
-                  value={formation.strategy}
-                  onChange={(e) => {
-                    const newFormations = [...seatingSettings.formations];
-                    newFormations[index] = { ...newFormations[index], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
-                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
-                  }}
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                >
-                  <option value="vertical_column">Vertical Columns</option>
-                  <option value="horizontal_row">Horizontal Rows</option>
-                </select>
-                <input
-                  value={formation.sectionOrder.join(', ')}
-                  onChange={(e) => {
-                    const newFormations = [...seatingSettings.formations];
-                    newFormations[index] = { ...newFormations[index], sectionOrder: e.target.value.split(',').map(s => s.trim().toUpperCase()) };
-                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
-                  }}
-                  placeholder="Order (e.g. S, A, T, B)"
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newFormations = seatingSettings.formations.filter((_, idx) => idx !== index);
-                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
-                  }}
-                  className="btn btn-danger btn-sm"
-                  style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
+            {seatingSettings.formations?.map((formation, index) => {
+              return (
+                <div key={formation.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 2fr 80px', gap: 'var(--space-sm)', alignItems: 'center', width: '100%', padding: 'var(--space-sm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg)' }}>
+                  <input
+                    value={formation.name}
+                    onChange={(e) => {
+                      const newFormations = [...seatingSettings.formations];
+                      newFormations[index] = { ...newFormations[index], name: e.target.value };
+                      setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                    }}
+                    placeholder="Formation Name"
+                    className="card"
+                    style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                  />
+                  <select
+                    value={formation.strategy}
+                    onChange={(e) => {
+                      const newFormations = [...seatingSettings.formations];
+                      newFormations[index] = { ...newFormations[index], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
+                      setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                    }}
+                    className="card"
+                    style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                  >
+                    <option value="vertical_column">Vertical Columns</option>
+                    <option value="horizontal_row">Horizontal Rows</option>
+                  </select>
+                  <div 
+                    className="flex-row" 
+                    style={{ 
+                      alignItems: 'center', 
+                      gap: 'var(--space-xs)', 
+                      flexWrap: 'wrap', 
+                      width: '100%', 
+                      minHeight: '40px', 
+                      padding: '4px var(--space-sm)', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: 'var(--radius-md)', 
+                      backgroundColor: 'var(--card-bg)' 
+                    }}
+                  >
+                    {formation.sectionOrder.map((code, secIdx) => {
+                      const sec = sections.find(s => s.code.toUpperCase() === code.toUpperCase());
+                      const hasSec = !!sec;
+                      
+                      // Fallback colors for unknown codes
+                      const bgColor = hasSec ? (sec.color || sec.colorBg || 'var(--border)') : '#fee2e2';
+                      const textColor = hasSec ? (sec.colorText || '#000000') : '#991b1b';
+                      const borderStyle = hasSec ? '1px solid rgba(0,0,0,0.1)' : '1px solid #ef4444';
+
+                      return (
+                        <div
+                          key={secIdx}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: bgColor,
+                            color: textColor,
+                            border: borderStyle,
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            boxShadow: 'var(--shadow-sm)',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {!hasSec && <span title="Unknown section bucket! Click 'x' to remove." style={{ cursor: 'help' }}>⚠️</span>}
+                            {code}
+                          </span>
+                          
+                          {/* Reordering and removal controls */}
+                          <div 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '2px', 
+                              marginLeft: '4px', 
+                              borderLeft: '1px solid rgba(0,0,0,0.15)', 
+                              paddingLeft: '4px' 
+                            }}
+                          >
+                            {secIdx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newFormations = [...seatingSettings.formations];
+                                  const order = [...newFormations[index].sectionOrder];
+                                  const temp = order[secIdx];
+                                  order[secIdx] = order[secIdx - 1];
+                                  order[secIdx - 1] = temp;
+                                  newFormations[index] = { ...newFormations[index], sectionOrder: order };
+                                  setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'inherit',
+                                  cursor: 'pointer',
+                                  padding: '0 2px',
+                                  fontSize: '0.8rem',
+                                  opacity: 0.7,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                }}
+                                title="Move Left"
+                              >
+                                ◀
+                              </button>
+                            )}
+                            {secIdx < formation.sectionOrder.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newFormations = [...seatingSettings.formations];
+                                  const order = [...newFormations[index].sectionOrder];
+                                  const temp = order[secIdx];
+                                  order[secIdx] = order[secIdx + 1];
+                                  order[secIdx + 1] = temp;
+                                  newFormations[index] = { ...newFormations[index], sectionOrder: order };
+                                  setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'inherit',
+                                  cursor: 'pointer',
+                                  padding: '0 2px',
+                                  fontSize: '0.8rem',
+                                  opacity: 0.7,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                }}
+                                title="Move Right"
+                              >
+                                ▶
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newFormations = [...seatingSettings.formations];
+                                const order = newFormations[index].sectionOrder.filter((_, sIdx) => sIdx !== secIdx);
+                                newFormations[index] = { ...newFormations[index], sectionOrder: order };
+                                setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'inherit',
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                opacity: 0.7,
+                                display: 'flex',
+                                alignItems: 'center',
+                                marginLeft: '2px',
+                              }}
+                              title="Remove"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Add dropdown styled beautifully */}
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          const newFormations = [...seatingSettings.formations];
+                          newFormations[index] = {
+                            ...newFormations[index],
+                            sectionOrder: [...newFormations[index].sectionOrder, val]
+                          };
+                          setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                        }}
+                        style={{
+                          opacity: 0,
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          cursor: 'pointer',
+                          zIndex: 2,
+                        }}
+                        title="Add section to order"
+                      >
+                        <option value="" disabled>+ Add Section</option>
+                        {sections.filter(s => s.code).map(s => (
+                          <option key={s.code} value={s.code}>
+                            {s.name ? `${s.name} (${s.code})` : s.code}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{
+                          padding: '2px 8px',
+                          height: '28px',
+                          fontSize: '0.8rem',
+                          border: '1px dashed var(--border)',
+                          backgroundColor: 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        + Add Section
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newFormations = seatingSettings.formations.filter((_, idx) => idx !== index);
+                      setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              );
+            })}
 
           <button
             type="button"
