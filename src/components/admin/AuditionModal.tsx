@@ -4,6 +4,8 @@ import { BaseModal } from '../common/BaseModal';
 import type { Audition } from '../../services/auditionService';
 import { eventService, type Event } from '../../services/eventService';
 import { settingsService, getVoiceParts, type AuditionSettings } from '../../services/settingsService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
 
@@ -16,6 +18,7 @@ interface AuditionModalProps {
 
 export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, onClose, onSave }) => {
   const navigate = useNavigate();
+  const { timezone } = useChoirSettings();
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [status, setStatus] = useState<Audition['status']>('New');
@@ -264,7 +267,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
             >
               <option value="">-- No performance assigned --</option>
               {performances.map(p => (
-                <option key={p.id} value={p.id}>{new Date(p.date).toLocaleDateString()} - {p.title}</option>
+                <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
               ))}
             </select>
           </div>

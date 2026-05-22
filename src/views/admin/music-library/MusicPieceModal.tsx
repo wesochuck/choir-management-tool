@@ -8,6 +8,8 @@ import { getVoicePartsAndSections, type VoicePartDef, type SectionDef, type Musi
 import { pb } from '../../../lib/pocketbase';
 import { formatSecondsToDuration, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../../lib/musicPieceUtils';
 import { LearningTracksEditor } from './LearningTracksEditor';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { zonedInputValueToUtc } from '../../../lib/timezone';
 
 export interface MusicPieceModalProps {
     isOpen: boolean;
@@ -38,6 +40,7 @@ export function MusicPieceModal({
     initialTitle
 }: MusicPieceModalProps) {
     const dialog = useDialog();
+    const { timezone } = useChoirSettings();
     const [title, setTitle] = useState('');
     const [composer, setComposer] = useState('');
     const [duration, setDuration] = useState('');
@@ -524,9 +527,10 @@ export function MusicPieceModal({
 
         setIsQuickAdding(true);
         try {
+            const utcDate = zonedInputValueToUtc(quickDate, timezone);
             const newPerf = await eventService.createEvent({
                 title: quickTitle,
-                date: quickDate,
+                date: utcDate,
                 type: 'Performance',
                 venue: quickVenue,
                 details: 'Quick added from music library historic logs'

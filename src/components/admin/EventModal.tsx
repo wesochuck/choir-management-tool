@@ -5,6 +5,8 @@ import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -28,9 +30,10 @@ export const EventModal: React.FC<EventModalProps> = ({
   onAddVenue
 }) => {
   const dialog = useDialog();
+  const { timezone } = useChoirSettings();
   const [formData, setFormData] = useState<Partial<Event>>({
     title: '',
-    date: new Date().toISOString().slice(0, 16),
+    date: utcToZonedInputValue(new Date(), timezone),
     type: 'Rehearsal',
     details: '',
     parentPerformanceId: '',
@@ -55,13 +58,13 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      const formattedDate = new Date(initialData.date).toISOString().slice(0, 16);
+      const formattedDate = utcToZonedInputValue(initialData.date, timezone);
       setFormData({ ...initialData, date: formattedDate });
       setShouldBulkAdd(false);
     } else {
       setFormData({
         title: '',
-        date: new Date().toISOString().slice(0, 16),
+        date: utcToZonedInputValue(new Date(), timezone),
         type: 'Rehearsal',
         details: '',
         parentPerformanceId: '',
@@ -70,7 +73,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       setBulkVenue('');
       setShouldBulkAdd(false);
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, timezone]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -167,7 +170,8 @@ export const EventModal: React.FC<EventModalProps> = ({
         ? { count: bulkCount, dayOfWeek: bulkDay, time: bulkTime, venue: bulkVenue }
         : undefined;
 
-      await onSave(formData, bulkConfig, isOpenAuditions);
+      const utcDate = zonedInputValueToUtc(formData.date || '', timezone);
+      await onSave({ ...formData, date: utcDate }, bulkConfig, isOpenAuditions);
       onClose();
     } catch (err: unknown) {
       await dialog.showMessage({

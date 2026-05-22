@@ -11,10 +11,13 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { settingsService, getVoiceParts } from '../../services/settingsService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useAuth } from '../../contexts/AuthContext';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 export default function AttendanceView() {
   const dialog = useDialog();
   const [searchParams] = useSearchParams();
+  const { timezone } = useChoirSettings();
   const { events } = useEvents();
   const { profiles, editProfile } = useProfiles();
   const { user, updatePreferences } = useAuth();
@@ -204,7 +207,7 @@ export default function AttendanceView() {
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
-                <option key={e.id} value={e.id}>{new Date(e.date).toLocaleDateString()} - {e.title || e.expand?.venue?.name || ''} ({e.type})</option>
+                <option key={e.id} value={e.id}>{formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.expand?.venue?.name || ''} ({e.type})</option>
               ))}
             </select>
           </div>
@@ -246,7 +249,7 @@ export default function AttendanceView() {
               📍 {selectedEvent.expand?.venue?.name || ''}
             </a>
             <span className="text-muted text-sm" style={{ fontWeight: 500 }}>
-              📅 {new Date(selectedEvent.date).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              📅 {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
         </div>

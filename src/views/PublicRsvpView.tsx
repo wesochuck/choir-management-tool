@@ -4,6 +4,7 @@ import { AppCard } from '../components/common/AppCard';
 import { pb } from '../lib/pocketbase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { calendarUtils } from '../lib/calendar';
+import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 
 interface EventDetails {
   id: string;
@@ -47,6 +48,7 @@ export default function PublicRsvpView() {
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [rehearsals, setRehearsals] = useState<EventDetails[]>([]);
+  const [timezone, setTimezone] = useState('America/New_York');
 
   const rsvpTitle = event?.title ? `RSVP for ${event.title}` : 'RSVP';
   useDocumentTitle(rsvpTitle);
@@ -77,14 +79,16 @@ export default function PublicRsvpView() {
           body: { token, rsvp: initialRsvp }
         });
 
-        // 2. Fetch Event and Profile Details for rich display
-        const [eventData, profileData] = await Promise.all([
+        // 2. Fetch Event, Profile, and Timezone Details for rich display
+        const [eventData, profileData, tz] = await Promise.all([
           pb.collection('events').getOne<EventDetails>(eventId, { expand: 'venue' }),
-          pb.collection('profiles').getOne<ProfileDetails>(profileId)
+          pb.collection('profiles').getOne<ProfileDetails>(profileId),
+          fetchChoirTimezone()
         ]);
 
         setEvent(eventData);
         setProfile(profileData);
+        setTimezone(tz);
         setCurrentRsvp(initialRsvp);
 
         // 3. If Performance, fetch linked Rehearsals
@@ -179,7 +183,6 @@ export default function PublicRsvpView() {
   }
 
   const isAttending = currentRsvp === 'Yes';
-  const eventDate = new Date(event.date);
 
   return (
     <div className="flex-col" style={{ minHeight: '100vh', width: '100vw', backgroundColor: 'var(--primary-light)', padding: 'var(--space-lg) var(--space-md)' }}>
@@ -225,11 +228,11 @@ export default function PublicRsvpView() {
             <div className="flex-col" style={{ gap: '6px', fontSize: '0.9rem', color: 'var(--neutral-text)', marginTop: '4px' }}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span>📅</span>
-                <strong>{eventDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span>⏰</span>
-                <span>{eventDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>
+                <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                 <span>📍</span>
@@ -255,19 +258,18 @@ export default function PublicRsvpView() {
               </h3>
               <div className="flex-col" style={{ gap: '8px', marginTop: '4px' }}>
                 {rehearsals.map((reh) => {
-                  const rehDate = new Date(reh.date);
                   return (
                     <div key={reh.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}>
                       <div className="flex-col" style={{ gap: '2px' }}>
                         <span style={{ fontWeight: 700 }}>
-                          {rehDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', weekday: 'short' })}
+                          {formatInTimezone(reh.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })}
                         </span>
                         <span className="text-muted" style={{ fontSize: '0.75rem' }}>
                           📍 {reh.expand?.venue?.name || 'Rehearsal Venue'}
                         </span>
                       </div>
                       <span className="text-muted" style={{ fontWeight: 500 }}>
-                        {rehDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                        {formatInTimezone(reh.date, timezone, { hour: 'numeric', minute: '2-digit' })}
                       </span>
                     </div>
                   );

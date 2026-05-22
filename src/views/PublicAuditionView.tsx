@@ -5,10 +5,12 @@ import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, getVoiceParts, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 
 export default function PublicAuditionView() {
   useDocumentTitle('Auditions');
   const [settings, setSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
+  const [timezone, setTimezone] = useState('America/New_York');
   const [targetPerformance, setTargetPerformance] = useState<Event | null>(null);
   const [rehearsals, setRehearsals] = useState<Event[]>([]);
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(window.innerWidth > 640);
@@ -26,11 +28,13 @@ export default function PublicAuditionView() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [loaded, loadedParts] = await Promise.all([
+        const [loaded, loadedParts, tz] = await Promise.all([
           settingsService.getAuditionSettings(),
           getVoiceParts().catch(() => []),
+          fetchChoirTimezone().catch(() => 'America/New_York'),
         ]);
         setSettings(loaded);
+        setTimezone(tz);
         setTimeSlot(loaded.slots[0] || '');
         if (loadedParts && loadedParts.length > 0) {
           setVoiceParts(loadedParts.map(p => p.label));
@@ -152,7 +156,7 @@ export default function PublicAuditionView() {
                     <div>
                       <h3 style={{ margin: 0, color: 'var(--primary-deep)' }}>{targetPerformance.title}</h3>
                       <p className="text-sm" style={{ margin: 0 }}>
-                        Performance: <strong>{new Date(targetPerformance.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                        Performance: <strong>{formatInTimezone(targetPerformance.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
                       </p>
                     </div>
 
@@ -161,7 +165,7 @@ export default function PublicAuditionView() {
                       <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                         {rehearsals.length > 0 ? rehearsals.map((rehearsal) => (
                           <div key={rehearsal.id} className="flex-responsive" style={{ fontSize: '0.8125rem', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
-                            <span>{new Date(rehearsal.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {new Date(rehearsal.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>
+                            <span>{formatInTimezone(rehearsal.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })} - {formatInTimezone(rehearsal.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
                             <span className="text-muted">{rehearsal.title}</span>
                           </div>
                         )) : (

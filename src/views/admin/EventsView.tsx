@@ -21,10 +21,13 @@ import {
   type CommunicationRecipient,
 } from '../../services/communicationService';
 import { playerService } from '../../services/playerService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 export default function EventsView() {
   const dialog = useDialog();
   const navigate = useNavigate();
+  const { timezone } = useChoirSettings();
   const { events, performances, isLoading, error, addEvent, editEvent, removeEvent, bulkAddRehearsals } = useEvents();
   const { venues, addVenue } = useVenues();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -173,7 +176,7 @@ export default function EventsView() {
 
   const getTemplateValues = (event: Event) => ({
     eventTitle: event.title || event.type,
-    eventDate: new Date(event.date).toLocaleString(),
+    eventDate: formatInTimezone(event.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
     eventLocation: event.expand?.venue?.name || '',
     eventDetails: event.details || '',
   });

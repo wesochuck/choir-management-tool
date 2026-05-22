@@ -1,6 +1,8 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import type { Venue } from './venueService';
+import { zonedInputValueToUtc } from '../lib/timezone';
+import { settingsService } from './settingsService';
 
 export interface SetListItem {
   id: string; // Used for dnd-kit key
@@ -64,9 +66,6 @@ export const eventService = {
       setListApproved: true,
       ...data 
     };
-    if (payload.date) {
-      payload.date = new Date(payload.date).toISOString();
-    }
     if (payload.parentPerformanceId === '') {
       payload.parentPerformanceId = null as unknown as string;
     }
@@ -78,9 +77,6 @@ export const eventService = {
 
   async updateEvent(id: string, data: Partial<Event>) {
     const payload = { ...data };
-    if (payload.date) {
-      payload.date = new Date(payload.date).toISOString();
-    }
     if (payload.parentPerformanceId === '') {
       payload.parentPerformanceId = null as unknown as string;
     }
@@ -100,19 +96,33 @@ export const eventService = {
       throw new Error("Invalid day of week selected.");
     }
 
-    const performanceDate = new Date(parentPerformance.date);
-    if (isNaN(performanceDate.getTime())) {
+    if (!parentPerformance.date || isNaN(new Date(parentPerformance.date).getTime())) {
       throw new Error("Invalid performance date.");
     }
 
-    const [hours, minutes] = time.split(':').map(n => parseInt(n));
-    const rehearsals = [];
+    const timezone = await settingsService.getTimezone();
 
-    // Start from the performance date at the rehearsal time
-    const current = new Date(performanceDate);
-    current.setHours(hours || 19, minutes || 0, 0, 0);
+    // 1. Get local performance date representation in the choir timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(new Date(parentPerformance.date));
+    const getPart = (type: string) => Number(parts.find(p => p.type === type)?.value || '0');
 
-    // Roll back to the first rehearsal date
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+
+    // Construct a safe, timezone-agnostic Date object representing the performance day
+    const localPerfDate = new Date(year, month - 1, day);
+
+    // Roll back to the first rehearsal date (using the local Date object)
+    const current = new Date(localPerfDate);
+    
     // If performance is on the same day, first rehearsal is 1 week before
     if (current.getDay() === dayOfWeek) {
       current.setDate(current.getDate() - 7);
@@ -124,22 +134,32 @@ export const eventService = {
       }
     }
 
+    const rehearsals = [];
+
+    // Loop backwards to create scheduled dates
     for (let i = 0; i < count; i++) {
-      const rehearsalDate = new Date(current);
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const d = String(current.getDate()).padStart(2, '0');
+      
+      // Local input value in the target timezone
+      const localString = `${y}-${m}-${d}T${time}`;
+      // Safely convert this to the correct UTC timestamp accounting for DST at that date
+      const utcString = zonedInputValueToUtc(localString, timezone);
+
       rehearsals.push({
         title: `Rehearsal ${count - i}`,
-        date: rehearsalDate.toISOString(),
+        date: utcString,
         type: 'Rehearsal' as const,
         parentPerformanceId: parentPerformance.id,
         venue: venue || parentPerformance.venue || null,
         details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`
       });
-      // Move back one week for the previous rehearsal
+
+      // Move back one week
       current.setDate(current.getDate() - 7);
     }
 
-    // Use Promise.all to avoid N+1 query issue.
-    // For large numbers of rehearsals, this parallelizes the network requests.
     const createPromises = rehearsals.reverse().map(r =>
       pb.collection('events').create<Event>(r)
     );

@@ -15,12 +15,15 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 import './SeatingView.css';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
 export default function SeatingView() {
   const dialog = useDialog();
+  const { timezone } = useChoirSettings();
   const [searchParams] = useSearchParams();
   const { performances } = useEvents();
   const { venues, editVenue } = useVenues();
@@ -267,7 +270,7 @@ export default function SeatingView() {
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
-                  <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()}</option>
+                  <option key={p.id} value={p.id}>{p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })}</option>
                 ))}
               </select>
             </div>

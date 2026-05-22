@@ -1,5 +1,7 @@
 import React from 'react';
 import type { Event } from '../../services/eventService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 interface EventListProps {
   events: Event[];
@@ -27,6 +29,7 @@ export const EventList: React.FC<EventListProps> = ({
   openAuditionEventId,
   sendingEmailEventId
 }) => {
+  const { timezone } = useChoirSettings();
   return (
     <AppCard noPadding style={{ gap: 0 }}>
       {events.map((e) => (
@@ -54,7 +57,7 @@ export const EventList: React.FC<EventListProps> = ({
                 </span>
               )}
               <span className="text-label" style={{ color: 'var(--primary)' }}>
-                {new Date(e.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                {formatInTimezone(e.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
             {e.title && <div className="text-headline">{e.title}</div>}

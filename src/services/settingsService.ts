@@ -285,6 +285,15 @@ export const settingsService = {
   async saveChoirName(name: string) {
     return await upsertSetting('choir_name', name, true);
   },
+
+  async getTimezone(): Promise<string> {
+    const setting = await getSetting<string>('timezone');
+    return setting?.value || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York';
+  },
+
+  async saveTimezone(timezone: string) {
+    return await upsertSetting('timezone', timezone, true);
+  },
 };
 
 export interface SectionDef {

@@ -8,6 +8,8 @@ import { AppCard } from '../common/AppCard';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { resolveRecommendedTracks } from '../../lib/musicPieceUtils';
 import { pb } from '../../lib/pocketbase';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 interface EventCardProps {
   event: Event;
@@ -26,6 +28,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   myRosters = {},
   voicePart
 }) => {
+  const { timezone } = useChoirSettings();
   const isPerformance = event.type === 'Performance';
   const { showSetList, setList, headerLabel } = getSetListVisibility(event, myRosters, allEvents);
 
@@ -88,7 +91,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <h3 className="text-label" style={{ margin: 0, color: 'var(--primary)' }}>
-            {new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            {formatInTimezone(event.date, timezone)}
           </h3>
           {event.title && <div className="text-headline">{event.title}</div>}
           <div className="text-label">

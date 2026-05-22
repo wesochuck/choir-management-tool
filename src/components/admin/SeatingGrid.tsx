@@ -545,8 +545,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         </button>
       )}
 
-      {/* Director Stage Indicator */}
-      <div className="no-print director-stage-indicator" style={{
+      {/* Director Indicator */}
+      <div className="no-print director-indicator" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

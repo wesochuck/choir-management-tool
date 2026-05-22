@@ -20,8 +20,11 @@ import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPl
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { BaseModal } from '../../components/common/BaseModal';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 export default function SetListView() {
+  const { timezone } = useChoirSettings();
   const { events, refresh } = useEvents();
   const [searchParams] = useSearchParams();
   const dialog = useDialog();
@@ -64,13 +67,13 @@ export default function SetListView() {
 
   const getPlainText = () => {
     if (!selectedEvent) return '';
-    const dateStr = new Date(selectedEvent.date).toLocaleDateString(undefined, { 
+    const dateStr = formatInTimezone(selectedEvent.date, timezone, { 
       weekday: 'long', 
       month: 'long', 
       day: 'numeric', 
       year: 'numeric' 
     });
-    const timeStr = new Date(selectedEvent.date).toLocaleTimeString(undefined, {
+    const timeStr = formatInTimezone(selectedEvent.date, timezone, {
       hour: 'numeric',
       minute: '2-digit'
     });
@@ -464,7 +467,7 @@ export default function SetListView() {
               <option value="">-- Choose Event --</option>
               {events.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.date.split(' ')[0]} - {e.title || e.type}
+                  {formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.type}
                 </option>
               ))}
             </select>
@@ -482,7 +485,7 @@ export default function SetListView() {
                 <option value="">-- Copy Set List --</option>
                 {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.date.split(' ')[0]} - {e.title || e.type}
+                    {formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.type}
                   </option>
                 ))}
               </select>
@@ -768,8 +771,8 @@ export default function SetListView() {
               {selectedEvent?.title || selectedEvent?.type}
             </h3>
             <div style={{ fontSize: '0.85rem', color: '#666', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
-              {selectedEvent && new Date(selectedEvent.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-              {selectedEvent && ` at ${new Date(selectedEvent.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`}
+              {selectedEvent && formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
             </div>
           </div>
@@ -872,8 +875,8 @@ export default function SetListView() {
           <div className="printable-setlist">
             <h2>Set List: {selectedEvent.title || selectedEvent.type}</h2>
             <p>
-              Date: {new Date(selectedEvent.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-              {selectedEvent && ` at ${new Date(selectedEvent.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`}
+              Date: {formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent.expand?.venue?.name && ` | Venue: ${selectedEvent.expand.venue.name}`}
             </p>
             <div style={{ borderBottom: '2px solid black', marginBottom: '20px' }}></div>

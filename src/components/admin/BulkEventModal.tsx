@@ -3,6 +3,8 @@ import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone, zonedInputValueToUtc } from '../../lib/timezone';
 
 interface BulkEventModalProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
   initialPerformance 
 }) => {
   const dialog = useDialog();
+  const { timezone } = useChoirSettings();
   const [selectedPerformanceId, setSelectedPerformanceId] = useState(initialPerformance?.id || '');
   const [count, setCount] = useState(8);
   const [dayOfWeek, setDayOfWeek] = useState(2); // Tuesday default
@@ -31,16 +34,39 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
 
   const selectedPerformance = performances.find(p => p.id === selectedPerformanceId);
 
-  const calculateRehearsalRange = (): { first: Date; last: Date } | null => {
+  const calculateRehearsalRange = (): { first: string; last: string } | null => {
     if (!selectedPerformance || !selectedPerformance.date) return null;
-    const performanceDate = new Date(selectedPerformance.date);
-    if (isNaN(performanceDate.getTime())) return null;
+    let dateObj: Date;
+    try {
+      dateObj = new Date(selectedPerformance.date);
+      if (isNaN(dateObj.getTime())) return null;
+    } catch {
+      return null;
+    }
 
-    const [hours, minutes] = (time || '19:00').split(':').map(n => parseInt(n));
-    const current = new Date(performanceDate);
-    current.setHours(isNaN(hours) ? 19 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour12: false
+    });
+    let parts;
+    try {
+      parts = formatter.formatToParts(dateObj);
+    } catch {
+      return null;
+    }
+    const getPart = (type: string) => Number(parts.find(p => p.type === type)?.value || '0');
+
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+
+    const localPerfDate = new Date(year, month - 1, day);
 
     // Roll back to the last rehearsal date
+    const current = new Date(localPerfDate);
     if (current.getDay() === dayOfWeek) {
       current.setDate(current.getDate() - 7);
     } else {
@@ -51,16 +77,22 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
       }
     }
 
-    const last = new Date(current);
+    const lastYear = current.getFullYear();
+    const lastMonth = String(current.getMonth() + 1).padStart(2, '0');
+    const lastDay = String(current.getDate()).padStart(2, '0');
+    const lastUtc = zonedInputValueToUtc(`${lastYear}-${lastMonth}-${lastDay}T${time}`, timezone);
 
     // Now roll back count - 1 weeks to find the first rehearsal
     const validCount = isNaN(count) ? 1 : count;
     if (validCount > 1) {
       current.setDate(current.getDate() - (validCount - 1) * 7);
     }
-    const first = new Date(current);
+    const firstYear = current.getFullYear();
+    const firstMonth = String(current.getMonth() + 1).padStart(2, '0');
+    const firstDay = String(current.getDate()).padStart(2, '0');
+    const firstUtc = zonedInputValueToUtc(`${firstYear}-${firstMonth}-${firstDay}T${time}`, timezone);
 
-    return { first, last };
+    return { first: firstUtc, last: lastUtc };
   };
 
   const range = calculateRehearsalRange();
@@ -157,7 +189,9 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           >
             <option value="">-- Select Performance --</option>
             {performances.map(p => (
-              <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} ({p.expand?.venue?.name || ''})</option>
+              <option key={p.id} value={p.id}>
+                {p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} ({p.expand?.venue?.name || ''})
+              </option>
             ))}
           </select>
         </div>
@@ -240,13 +274,13 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
               <span style={{ fontSize: '1.1rem' }}>📅</span> Rehearsal Schedule Preview
             </div>
             <div style={{ fontSize: '0.8125rem', color: 'var(--text)', lineHeight: 1.4 }}>
-              First Rehearsal: <strong style={{ color: 'var(--primary-deep)' }}>{range.first.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+              First Rehearsal: <strong style={{ color: 'var(--primary-deep)' }}>{formatInTimezone(range.first, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
             </div>
             <div style={{ fontSize: '0.8125rem', color: 'var(--text)', lineHeight: 1.4 }}>
-              Last Rehearsal: <strong style={{ color: 'var(--primary-deep)' }}>{range.last.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+              Last Rehearsal: <strong style={{ color: 'var(--primary-deep)' }}>{formatInTimezone(range.last, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
             </div>
             <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic' }}>
-              Generates {count} weekly rehearsals leading up to the performance on {new Date(selectedPerformance.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}.
+              Generates {count} weekly rehearsals leading up to the performance on {formatInTimezone(selectedPerformance.date, timezone, { year: 'numeric', month: 'long', day: 'numeric' })}.
             </div>
           </div>
         )}

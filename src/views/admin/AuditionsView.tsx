@@ -6,12 +6,15 @@ import { useDialog } from '../../contexts/DialogContext';
 import { auditionService, type Audition, type AuditionInput } from '../../services/auditionService';
 import { settingsService, type AuditionSettings } from '../../services/settingsService';
 import { eventService, type Event } from '../../services/eventService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { formatInTimezone } from '../../lib/timezone';
 
 const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
 
 export default function AuditionsView() {
   const dialog = useDialog();
   const navigate = useNavigate();
+  const { timezone } = useChoirSettings();
 
   const handleEmailClick = (email: string, name: string, voicePart: string) => {
     navigate('/admin/communications', {
@@ -245,7 +248,7 @@ export default function AuditionsView() {
               >
                 <option value="">-- No performance assigned --</option>
                 {performances.map(p => (
-                  <option key={p.id} value={p.id}>{new Date(p.date).toLocaleDateString()} - {p.title}</option>
+                  <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
                 ))}
               </select>
               <p className="text-muted" style={{ margin: 0 }}>
@@ -310,7 +313,7 @@ export default function AuditionsView() {
           >
             <option value="all">All Auditions</option>
             {performances.map(p => (
-              <option key={p.id} value={p.id}>{new Date(p.date).toLocaleDateString()} - {p.title}</option>
+              <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
             ))}
           </select>
         </div>
