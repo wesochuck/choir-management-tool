@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { flushSync } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
@@ -8,13 +9,12 @@ import { SavingIndicator } from '../../components/admin/SavingIndicator';
 import { SeatingTextList } from '../../components/admin/SeatingTextList';
 import { UnassignedPrintSection } from '../../components/admin/UnassignedPrintSection';
 import { SeatingBottomDock } from '../../components/admin/SeatingBottomDock';
+import { SeatingFormationsEditor } from '../../components/admin/SeatingFormationsEditor';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
-import { settingsService, getVoicePartsAndSections, type SectionDef, type SeatingSettings } from '../../services/settingsService';
-import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import './SeatingView.css';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
@@ -29,53 +29,6 @@ export default function SeatingView() {
   const [performanceId, setPerformanceId] = useState('');
   const [activeTab, setActiveTab] = useState<'chart' | 'templates'>('chart');
 
-  // Templates Independent Settings State
-  const [customSeatingSettings, setCustomSeatingSettings] = useState<SeatingSettings>({
-    defaultFormationId: 'columns-standard',
-    formations: []
-  });
-  const [initialSeatingSettings, setInitialSeatingSettings] = useState<SeatingSettings | null>(null);
-  const [allSections, setAllSections] = useState<SectionDef[]>([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
-  const [isSavingTemplates, setIsSavingTemplates] = useState(false);
-  const [templateMessage, setTemplateMessage] = useState('');
-
-  const loadTemplates = useCallback(async () => {
-    setIsLoadingTemplates(true);
-    setTemplateMessage('');
-    try {
-      const [seating, voiceData] = await Promise.all([
-        settingsService.getSeatingSettings(),
-        getVoicePartsAndSections(),
-      ]);
-      setCustomSeatingSettings(JSON.parse(JSON.stringify(seating)));
-      setInitialSeatingSettings(JSON.parse(JSON.stringify(seating)));
-      setAllSections(voiceData.sections);
-    } catch {
-      setTemplateMessage('Could not load seating templates.');
-    } finally {
-      setIsLoadingTemplates(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'templates') {
-      void loadTemplates();
-    }
-  }, [activeTab, loadTemplates]);
-
-  const isTemplatesDirty = useMemo(() => {
-    if (!initialSeatingSettings || !customSeatingSettings) return false;
-    return JSON.stringify(customSeatingSettings) !== JSON.stringify(initialSeatingSettings);
-  }, [initialSeatingSettings, customSeatingSettings]);
-
-  const handleDiscardTemplates = () => {
-    if (initialSeatingSettings) {
-      setCustomSeatingSettings(JSON.parse(JSON.stringify(initialSeatingSettings)));
-      setTemplateMessage('');
-    }
-  };
-
   useEffect(() => {
     if (performances.length > 0 && !performanceId && !hasDefaultedRef.current) {
       const urlEventId = searchParams.get('eventId');
@@ -86,7 +39,7 @@ export default function SeatingView() {
       }
     }
   }, [performances, performanceId, searchParams]);
-  
+
   const [venueId, setVenueId] = useState('');
   const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
@@ -182,13 +135,14 @@ export default function SeatingView() {
   const handlePrint = () => {
     const originalMode = printMode;
     if (originalMode !== 'text') {
-      setPrintMode('text');
-      setTimeout(() => {
-        window.print();
-        setTimeout(() => {
-          setPrintMode(originalMode);
-        }, 100);
-      }, 50);
+      // flushSync forces React to commit printMode='text' to the DOM
+      // synchronously before window.print() is called, preventing the
+      // grid artifact from appearing in the print output.
+      flushSync(() => {
+        setPrintMode('text');
+      });
+      window.print();
+      setPrintMode(originalMode);
     } else {
       window.print();
     }
@@ -241,68 +195,6 @@ export default function SeatingView() {
     if (!shouldCopy) return;
 
     await copyFromPerformance(source);
-  };
-
-  const handleSaveTemplates = async () => {
-    setIsSavingTemplates(true);
-    setTemplateMessage('');
-    try {
-      const formations = customSeatingSettings.formations || [];
-      if (formations.length === 0) {
-        setTemplateMessage('Error: At least one seating formation must be defined.');
-        setIsSavingTemplates(false);
-        return;
-      }
-
-      const seenFormationNames = new Set<string>();
-      const sectionCodes = new Set(allSections.map(s => s.code.toUpperCase()));
-      
-      for (let i = 0; i < formations.length; i++) {
-        const form = formations[i];
-        const name = form.name.trim();
-        if (!name) {
-          setTemplateMessage(`Error: Seating formation name at position ${i + 1} cannot be empty.`);
-          setIsSavingTemplates(false);
-          return;
-        }
-        const lowerName = name.toLowerCase();
-        if (seenFormationNames.has(lowerName)) {
-          setTemplateMessage(`Error: Seating formation name "${name}" is duplicated.`);
-          setIsSavingTemplates(false);
-          return;
-        }
-        seenFormationNames.add(lowerName);
-
-        const codes = form.sectionOrder.map(c => c.trim().toUpperCase()).filter(Boolean);
-        if (codes.length === 0) {
-          setTemplateMessage(`Error: Seating formation "${name}" must have at least one section code.`);
-          setIsSavingTemplates(false);
-          return;
-        }
-
-        for (const code of codes) {
-          if (!sectionCodes.has(code)) {
-            setTemplateMessage(`Error: Seating formation "${name}" contains unknown section code "${code}".`);
-            setIsSavingTemplates(false);
-            return;
-          }
-        }
-      }
-
-      await settingsService.saveSeatingSettings(customSeatingSettings);
-      setInitialSeatingSettings(JSON.parse(JSON.stringify(customSeatingSettings)));
-      setTemplateMessage('Templates saved successfully.');
-      
-      refresh();
-      
-      await dialog.showMessage({ title: 'Success', message: 'Seating templates saved successfully.' });
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setTemplateMessage(`Error saving templates: ${errMsg}`);
-      await dialog.showMessage({ title: 'Error', message: 'Failed to save seating templates.', variant: 'danger' });
-    } finally {
-      setIsSavingTemplates(false);
-    }
   };
 
   return (
@@ -462,331 +354,7 @@ export default function SeatingView() {
       </div>
 
       {activeTab === 'templates' ? (
-        <div className="flex-col" style={{ gap: 'var(--space-xl)', paddingBottom: 'var(--space-2xl)' }}>
-          {templateMessage && (
-            <div 
-              className="badge" 
-              style={{ 
-                alignSelf: 'flex-start',
-                backgroundColor: templateMessage.startsWith('Error') ? '#fee2e2' : '#e0f2fe',
-                color: templateMessage.startsWith('Error') ? '#991b1b' : '#0369a1',
-                border: templateMessage.startsWith('Error') ? '1px solid #fecaca' : '1px solid #bae6fd',
-                padding: 'var(--space-xs) var(--space-sm)'
-              }}
-            >
-              {templateMessage}
-            </div>
-          )}
-
-          {isLoadingTemplates ? (
-            <div style={{ padding: 'var(--space-xl)' }}>Loading seating templates...</div>
-          ) : (
-            <>
-              <AppCard title="Default Seating Formation">
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <label className="text-label">Default Seating Formation</label>
-                  <select
-                    value={customSeatingSettings.defaultFormationId}
-                    onChange={(e) => setCustomSeatingSettings({ ...customSeatingSettings, defaultFormationId: e.target.value })}
-                    className="card"
-                    style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-                  >
-                    {customSeatingSettings.formations?.map(form => (
-                      <option key={form.id} value={form.id}>{form.name}</option>
-                    ))}
-                  </select>
-                  <p className="text-muted" style={{ margin: 0 }}>
-                    This formation logic will be used by default for newly created seating charts.
-                  </p>
-                </div>
-              </AppCard>
-
-              <AppCard title="Seating Formations">
-                <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                  <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
-                    <p className="text-muted" style={{ margin: 0 }}>
-                      Define reusable seating formations for your choir.
-                    </p>
-                    <Link 
-                      to="/admin/roster" 
-                      className="btn btn-ghost btn-sm"
-                      style={{ 
-                        fontSize: '0.8125rem', 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '6px',
-                        color: 'var(--primary)',
-                        fontWeight: 600,
-                        padding: '4px 8px',
-                      }}
-                    >
-                      🎨 Edit Section Colors in Roster
-                    </Link>
-                  </div>
-
-                  {customSeatingSettings.formations?.map((formation, index) => {
-                    return (
-                      <div key={formation.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 2fr 80px', gap: 'var(--space-sm)', alignItems: 'center', width: '100%', padding: 'var(--space-sm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg)' }}>
-                        <input
-                          value={formation.name}
-                          onChange={(e) => {
-                            const newFormations = [...customSeatingSettings.formations];
-                            newFormations[index] = { ...newFormations[index], name: e.target.value };
-                            setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                          }}
-                          placeholder="Formation Name"
-                          className="card"
-                          style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                        />
-                        <select
-                          value={formation.strategy}
-                          onChange={(e) => {
-                            const newFormations = [...customSeatingSettings.formations];
-                            newFormations[index] = { ...newFormations[index], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
-                            setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                          }}
-                          className="card"
-                          style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                        >
-                          <option value="vertical_column">Vertical Columns</option>
-                          <option value="horizontal_row">Horizontal Rows</option>
-                        </select>
-                        <div 
-                          className="flex-row" 
-                          style={{ 
-                            alignItems: 'center', 
-                            gap: 'var(--space-xs)', 
-                            flexWrap: 'wrap', 
-                            width: '100%', 
-                            minHeight: '40px', 
-                            padding: '4px var(--space-sm)', 
-                            border: '1px solid var(--border)', 
-                            borderRadius: 'var(--radius-md)', 
-                            backgroundColor: 'var(--card-bg)' 
-                          }}
-                        >
-                          {formation.sectionOrder.map((code, secIdx) => {
-                            const sec = allSections.find(s => s.code.toUpperCase() === code.toUpperCase());
-                            const hasSec = !!sec;
-                            
-                            const bgColor = hasSec ? (sec.color || sec.colorBg || 'var(--border)') : '#fee2e2';
-                            const textColor = hasSec ? (sec.colorText || '#000000') : '#991b1b';
-                            const borderStyle = hasSec ? '1px solid rgba(0,0,0,0.1)' : '1px solid #ef4444';
-
-                            return (
-                              <div
-                                key={secIdx}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 8px',
-                                  borderRadius: 'var(--radius-sm)',
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                  border: borderStyle,
-                                  fontSize: '0.85rem',
-                                  fontWeight: '600',
-                                  boxShadow: 'var(--shadow-sm)',
-                                  transition: 'all 0.2s ease',
-                                }}
-                              >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  {!hasSec && <span title="Unknown section bucket! Click 'x' to remove." style={{ cursor: 'help' }}>⚠️</span>}
-                                  {code}
-                                </span>
-                                
-                                <div 
-                                  style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '2px', 
-                                    marginLeft: '4px', 
-                                    borderLeft: '1px solid rgba(0,0,0,0.15)', 
-                                    paddingLeft: '4px' 
-                                  }}
-                                >
-                                  {secIdx > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newFormations = [...customSeatingSettings.formations];
-                                        const order = [...newFormations[index].sectionOrder];
-                                        const temp = order[secIdx];
-                                        order[secIdx] = order[secIdx - 1];
-                                        order[secIdx - 1] = temp;
-                                        newFormations[index] = { ...newFormations[index], sectionOrder: order };
-                                        setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                                      }}
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: 'inherit',
-                                        cursor: 'pointer',
-                                        padding: '0 2px',
-                                        fontSize: '0.8rem',
-                                        opacity: 0.7,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                      }}
-                                      title="Move Left"
-                                    >
-                                      ◀
-                                    </button>
-                                  )}
-                                  {secIdx < formation.sectionOrder.length - 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newFormations = [...customSeatingSettings.formations];
-                                        const order = [...newFormations[index].sectionOrder];
-                                        const temp = order[secIdx];
-                                        order[secIdx] = order[secIdx + 1];
-                                        order[secIdx + 1] = temp;
-                                        newFormations[index] = { ...newFormations[index], sectionOrder: order };
-                                        setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                                      }}
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: 'inherit',
-                                        cursor: 'pointer',
-                                        padding: '0 2px',
-                                        fontSize: '0.8rem',
-                                        opacity: 0.7,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                      }}
-                                      title="Move Right"
-                                    >
-                                      ▶
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newFormations = [...customSeatingSettings.formations];
-                                      const order = newFormations[index].sectionOrder.filter((_, sIdx) => sIdx !== secIdx);
-                                      newFormations[index] = { ...newFormations[index], sectionOrder: order };
-                                      setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                                    }}
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      color: 'inherit',
-                                      cursor: 'pointer',
-                                      padding: '0 2px',
-                                      fontSize: '0.9rem',
-                                      fontWeight: 'bold',
-                                      opacity: 0.7,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      marginLeft: '2px',
-                                    }}
-                                    title="Remove"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <select
-                              value=""
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (!val) return;
-                                const newFormations = [...customSeatingSettings.formations];
-                                newFormations[index] = {
-                                  ...newFormations[index],
-                                  sectionOrder: [...newFormations[index].sectionOrder, val]
-                                };
-                                setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                              }}
-                              style={{
-                                opacity: 0,
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                cursor: 'pointer',
-                                zIndex: 2,
-                              }}
-                              title="Add section to order"
-                            >
-                              <option value="" disabled>+ Add Section</option>
-                              {allSections.filter(s => s.code).map(s => (
-                                <option key={s.code} value={s.code}>
-                                  {s.name ? `${s.name} (${s.code})` : s.code}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              style={{
-                                padding: '2px 8px',
-                                height: '28px',
-                                fontSize: '0.8rem',
-                                border: '1px dashed var(--border)',
-                                backgroundColor: 'transparent',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                pointerEvents: 'none',
-                              }}
-                            >
-                              + Add Section
-                            </button>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newFormations = customSeatingSettings.formations.filter((_, idx) => idx !== index);
-                            setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
-                          }}
-                          className="btn btn-danger btn-sm"
-                          style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newId = `preset-${Date.now()}`;
-                      setCustomSeatingSettings({
-                        ...customSeatingSettings,
-                        formations: [
-                          ...(customSeatingSettings.formations || []),
-                          { id: newId, name: 'New Formation', strategy: 'vertical_column', sectionOrder: allSections.map(s => s.code) }
-                        ]
-                      });
-                    }}
-                    className="btn btn-secondary"
-                    style={{ alignSelf: 'flex-start' }}
-                  >
-                    + Add Formation Preset
-                  </button>
-                </div>
-              </AppCard>
-
-              <FloatingSaveBar 
-                isDirty={isTemplatesDirty} 
-                isSaving={isSavingTemplates} 
-                onSave={handleSaveTemplates} 
-                onDiscard={handleDiscardTemplates} 
-              />
-            </>
-          )}
-        </div>
+        <SeatingFormationsEditor onSaveSuccess={refresh} />
       ) : performanceId && venueId ? (
         <div className="flex-responsive seating-main-layout">
           <AppCard className="flex-col seating-card-editor">
