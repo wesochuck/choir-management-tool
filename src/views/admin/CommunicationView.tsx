@@ -3,13 +3,15 @@ import { useLocation } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
+import { useEvents } from '../../hooks/useEvents';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 import {
   communicationService,
-  type CommunicationConfig,
   type CommunicationFilters,
   type CommunicationRecipient,
   type MessageRecord,
   type MessageType,
+  type TemplateRecord,
 } from '../../services/communicationService';
 import type { Event } from '../../services/eventService';
 import {
@@ -18,10 +20,11 @@ import {
   renderCommunicationTemplate,
   type CommunicationSettings,
 } from '../../services/settingsService';
-import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { renderMarkdown, resolvePreviewContent, COMPLIANT_FOOTER_HTML } from '../../lib/communicationUtils';
+import { PlaceholderPanel } from '../../components/admin/PlaceholderPanel';
 
-type Tab = 'compose' | 'automated' | 'history' | 'settings';
+type Tab = 'compose' | 'automated' | 'drafts' | 'history' | 'settings';
+type WizardStep = 'TARGETS' | 'COMPOSE' | 'REVIEW';
 
 const DEFAULT_FILTERS: CommunicationFilters = {
   eventId: '',
@@ -29,8 +32,6 @@ const DEFAULT_FILTERS: CommunicationFilters = {
   voiceParts: [],
   globalStatus: 'Active (Current)',
 };
-
-const DEFAULT_CONFIG = communicationService.defaultConfig;
 
 interface AutomatedTask {
   id: string;
@@ -45,6 +46,8 @@ export default function CommunicationView() {
   const dialog = useDialog();
   const location = useLocation();
   const { labels: voicePartLabels, sections: configSections } = useVoiceParts();
+  const { events } = useEvents();
+
   const routeState = location.state as {
     initialRecipients?: CommunicationRecipient[];
     initialSubject?: string;
@@ -52,45 +55,37 @@ export default function CommunicationView() {
     initialEventId?: string;
   } | null;
 
+  // Global UI state
   const [tab, setTab] = useState<Tab>(routeState?.initialEventId ? 'compose' : 'compose');
-  const [events, setEvents] = useState<Event[]>([]);
+  const [wizardStep, setWizardStep] = useState<WizardStep>('TARGETS');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  // Core drafting state
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [filters, setFilters] = useState<CommunicationFilters>({
     ...DEFAULT_FILTERS,
     eventId: routeState?.initialEventId || '',
   });
-  const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
-    routeState?.initialRecipients || []
-  );
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(routeState?.initialRecipients?.map((r) => r.id) || [])
-  );
+  const [recipients, setRecipients] = useState<CommunicationRecipient[]>(routeState?.initialRecipients || []);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(routeState?.initialRecipients?.map(r => r.id) || []));
   const [subject, setSubject] = useState(routeState?.initialSubject || '');
   const [content, setContent] = useState(routeState?.initialContent || '');
   const [messageType, setMessageType] = useState<MessageType>('Email');
+
+  // Library state
   const [history, setHistory] = useState<MessageRecord[]>([]);
-  const [config, setConfig] = useState<CommunicationConfig>(DEFAULT_CONFIG);
-  const [templates, setTemplates] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
-  const [selectedMessage, setSelectedMessage] = useState<MessageRecord | null>(null);
-  const [deliveryLinks, setDeliveryLinks] = useState<{ mailtoUrl: string; smsUrl: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isResolving, setIsResolving] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [drafts, setDrafts] = useState<MessageRecord[]>([]);
+  const [templates, setTemplates] = useState<TemplateRecord[]>([]);
+  const [commSettings, setCommSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
+
+  // Secondary UI state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const skipNextRecipientResolveRef = useRef(Boolean(routeState?.initialRecipients));
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const [selectedMessage, setSelectedMessage] = useState<MessageRecord | null>(null);
   const [recipientPreviewList, setRecipientPreviewList] = useState<{ isOpen: boolean; recipients: CommunicationRecipient[]; title: string }>({
     isOpen: false,
     recipients: [],
@@ -104,29 +99,15 @@ export default function CommunicationView() {
 
   const previewHtml = useMemo(() => {
     if (!content) return '';
-    
     const sampleRecipient = selectedRecipients[0] || null;
     const selectedEvent = events.find(e => e.id === filters.eventId) || null;
-    
-    // 1. Render markdown on the user's drafted message content first.
-    // This is safe because user-provided input is escaped from XSS/injection.
-    let renderedBody = renderMarkdown(content);
-    
-    // 2. Append the trusted compliant footer HTML.
+    let baseContent = content;
     if (messageType === 'Email' || messageType === 'Both') {
-      renderedBody += COMPLIANT_FOOTER_HTML;
+      baseContent += COMPLIANT_FOOTER_HTML;
     }
-    
-    // 3. Resolve all placeholders (which might inject HTML blocks like RSVP links and buttons).
-    const resolved = resolvePreviewContent(
-      renderedBody,
-      selectedEvent,
-      sampleRecipient,
-      templates.mailingAddress
-    );
-    
-    return resolved;
-  }, [content, events, filters.eventId, selectedRecipients, messageType, templates.mailingAddress]);
+    const resolved = resolvePreviewContent(baseContent, selectedEvent, sampleRecipient, commSettings.mailingAddress);
+    return renderMarkdown(resolved);
+  }, [content, events, filters.eventId, selectedRecipients, messageType, commSettings.mailingAddress]);
 
   const { upcomingTasks, pastTasks } = useMemo(() => {
     const upcoming: AutomatedTask[] = [];
@@ -148,15 +129,15 @@ export default function CommunicationView() {
             id: `rsvp-${event.id}`,
             type: 'RSVP Request',
             event,
-            scheduledTime: new Date(event.created), // Priority based on when it was opened
+            scheduledTime: new Date(event.created),
             status: 'Scheduled'
           });
         }
       }
 
       // Reminders
-      if (templates.reminderEnabled) {
-        const scheduledTime = new Date(eventDate.getTime() - templates.reminderHoursBefore * 60 * 60 * 1000);
+      if (commSettings.reminderEnabled) {
+        const scheduledTime = new Date(eventDate.getTime() - commSettings.reminderHoursBefore * 60 * 60 * 1000);
         const alreadySent = history.some(m => {
           const mFilters = m.filters as Record<string, unknown>;
           return mFilters?.type === 'Automated Reminder' && mFilters?.eventId === event.id;
@@ -170,16 +151,13 @@ export default function CommunicationView() {
           status: alreadySent ? 'Sent' : 'Scheduled'
         };
 
-        if (alreadySent || scheduledTime < now) {
-          past.push(task);
-        } else {
-          upcoming.push(task);
-        }
+        if (alreadySent || scheduledTime < now) past.push(task);
+        else upcoming.push(task);
       }
 
       // Reports
-      if (templates.reportEnabled) {
-        const scheduledTime = new Date(eventDate.getTime() + templates.reportHoursAfter * 60 * 60 * 1000);
+      if (commSettings.reportEnabled) {
+        const scheduledTime = new Date(eventDate.getTime() + commSettings.reportHoursAfter * 60 * 60 * 1000);
         const alreadySent = history.some(m => {
           const mFilters = m.filters as Record<string, unknown>;
           return (mFilters?.type === 'Automated Report' || mFilters?.type === 'Attendance Report') && mFilters?.eventId === event.id;
@@ -193,11 +171,8 @@ export default function CommunicationView() {
           status: alreadySent ? 'Sent' : 'Scheduled'
         };
 
-        if (alreadySent || scheduledTime < now) {
-          past.push(task);
-        } else {
-          upcoming.push(task);
-        }
+        if (alreadySent || scheduledTime < now) past.push(task);
+        else upcoming.push(task);
       }
     });
 
@@ -205,53 +180,50 @@ export default function CommunicationView() {
       upcomingTasks: upcoming.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime()),
       pastTasks: past.sort((a, b) => b.scheduledTime.getTime() - a.scheduledTime.getTime())
     };
-  }, [events, templates, history]);
+  }, [events, commSettings, history]);
 
   useEffect(() => {
     const load = async () => {
-      const [loadedEvents, loadedHistory, loadedConfig, loadedTemplates] = await Promise.all([
-        communicationService.getEvents(),
-        communicationService.getMessages(),
-        communicationService.getConfig(),
-        settingsService.getCommunicationSettings(),
-      ]);
-      setEvents(loadedEvents);
-      setHistory(loadedHistory);
-      setConfig(loadedConfig);
-      setTemplates(loadedTemplates);
-      setSubject((current) => {
-        if (routeState?.initialSubject) return routeState.initialSubject;
-        return current || loadedTemplates.emailSubject;
-      });
-      setContent((current) => {
-        if (routeState?.initialContent) return routeState.initialContent;
-        return current || loadedTemplates.emailBody;
-      });
-      setIsLoading(false);
+      try {
+        const [loadedHistory, loadedDrafts, loadedTemplates, loadedSettings] = await Promise.all([
+          communicationService.getMessages(),
+          communicationService.getDrafts(),
+          communicationService.getTemplates(),
+          settingsService.getCommunicationSettings(),
+        ]);
+        setHistory(loadedHistory);
+        setDrafts(loadedDrafts);
+        setTemplates(loadedTemplates);
+        setCommSettings(loadedSettings);
+        setIsLoading(false);
+      } catch (err) {
+        setIsLoading(false);
+        console.error('Failed to load initial communication data', err);
+      }
     };
+    void load();
+  }, []);
 
-    load().catch(() => {
-      setIsLoading(false);
-      void dialog.showMessage({
-        title: 'Could Not Load Communications',
-        message: 'Communication data could not be loaded.',
-        variant: 'danger',
-      });
-    });
-  }, [dialog, routeState?.initialSubject, routeState?.initialContent]);
-
+  // Dropdown outside click handler
   useEffect(() => {
-    if (skipNextRecipientResolveRef.current) {
-      skipNextRecipientResolveRef.current = false;
-      return;
-    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDropdownOpen]);
+
+  // Recipient resolution logic
+  useEffect(() => {
+    if (tab !== 'compose') return;
     let isCurrent = true;
-    setIsResolving(true);
     communicationService.resolveRecipients(filters)
       .then((resolved) => {
         if (!isCurrent) return;
         setRecipients(resolved);
-        setSelectedIds(new Set(resolved.map((recipient: CommunicationRecipient) => recipient.id)));
+        setSelectedIds(new Set(resolved.map((r) => r.id)));
       })
       .catch(() => {
         if (!isCurrent) return;
@@ -259,593 +231,498 @@ export default function CommunicationView() {
         setSelectedIds(new Set());
       })
       .finally(() => {
-        if (isCurrent) setIsResolving(false);
+        if (isCurrent) setIsLoading(false);
       });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [filters]);
+    return () => { isCurrent = false; };
+  }, [filters, tab]);
 
   const updateFilter = <K extends keyof CommunicationFilters>(key: K, value: CommunicationFilters[K]) => {
-    setFilters((current) => ({ ...current, [key]: value }));
-  };
-
-  const toggleRecipient = (recipientId: string) => {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(recipientId)) {
-        next.delete(recipientId);
-      } else {
-        next.add(recipientId);
-      }
-      return next;
-    });
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const handleVoicePartToggle = (token: string) => {
     const active = filters.voiceParts || [];
-    const next = active.includes(token)
-      ? active.filter((p) => p !== token)
-      : [...active, token];
+    const next = active.includes(token) ? active.filter((p) => p !== token) : [...active, token];
     updateFilter('voiceParts', next);
   };
 
-  const sendMessage = async () => {
-    if (selectedRecipients.length === 0) {
-      await dialog.showMessage({
-        title: 'No Recipients',
-        message: 'Select at least one recipient before sending.',
-      });
-      return;
-    }
+  const insertPlaceholder = (tag: string) => {
+    if (!textAreaRef.current) return;
+    const { selectionStart, selectionEnd } = textAreaRef.current;
+    const newContent = content.substring(0, selectionStart) + tag + content.substring(selectionEnd);
+    setContent(newContent);
+    // Move focus back and place cursor after inserted tag
+    setTimeout(() => {
+      if (textAreaRef.current) {
+        textAreaRef.current.focus();
+        textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = selectionStart + tag.length;
+      }
+    }, 0);
+  };
 
-    if (!content.trim()) {
-      await dialog.showMessage({
-        title: 'No Message',
-        message: 'Enter message content before sending.',
-      });
-      return;
-    }
-
-    setIsSending(true);
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
     try {
-      const result = await communicationService.sendBulkMessage({
+      const input = {
         subject,
         content,
         type: messageType,
         recipients: selectedRecipients,
         filters: filters as unknown as Record<string, unknown>,
-      });
-      setDeliveryLinks({ mailtoUrl: result.mailtoUrl, smsUrl: result.smsUrl });
+      };
+      const record = await communicationService.saveDraft(input, activeDraftId || undefined);
+      setActiveDraftId(record.id);
+      setDrafts(await communicationService.getDrafts());
+      await dialog.showMessage({ title: 'Draft Saved', message: 'Your message has been saved as a draft.', variant: 'info' });
+    } catch (err: unknown) {
+      console.error(err);
+      await dialog.showMessage({ title: 'Error', message: 'Failed to save draft.', variant: 'danger' });
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleResumeDraft = (draft: MessageRecord) => {
+    setActiveDraftId(draft.id);
+    setSubject(draft.subject);
+    setContent(draft.content);
+    setMessageType(draft.type);
+    
+    // Process filters
+    const mFilters = draft.filters as Record<string, unknown>;
+    const vpArray: string[] = Array.isArray(mFilters?.voiceParts) ? (mFilters.voiceParts as string[]) : (mFilters?.voicePart ? [mFilters.voicePart as string] : []);
+    setFilters({
+      eventId: (mFilters?.eventId as string) || '',
+      rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
+      voiceParts: vpArray,
+      globalStatus: (mFilters?.globalStatus as string) || 'Active (Current)',
+    });
+    
+    setWizardStep('COMPOSE');
+    setTab('compose');
+  };
+
+  const sendMessage = async () => {
+    if (selectedRecipients.length === 0) {
+      await dialog.showMessage({ title: 'No Recipients', message: 'Select at least one recipient before sending.' });
+      return;
+    }
+    
+    const confirmSend = await dialog.confirm({
+      title: 'Confirm Send',
+      message: `Send this message to ${selectedRecipients.length} recipients?`,
+      confirmLabel: 'Send Now',
+    });
+    if (!confirmSend) return;
+
+    setIsSending(true);
+    try {
+      const input = {
+        subject,
+        content,
+        type: messageType,
+        recipients: selectedRecipients,
+        filters: filters as unknown as Record<string, unknown>,
+      };
+      await communicationService.sendBulkMessage(input, activeDraftId || undefined);
       setHistory(await communicationService.getMessages());
-
-      if (messageType === 'SMS' && result.smsUrl) {
-        window.location.assign(result.smsUrl);
-      }
-
-      await dialog.showMessage({
-        title: 'Message Dispatched',
-        message: messageType === 'SMS'
-          ? 'The message has been logged and the SMS draft opened locally.'
-          : 'The message has been queued and is being sent to all recipients via the communications backend service.',
-        variant: 'info',
-      });
-
-      // Clear/Reset Compose fields
-      setSubject(templates.emailSubject);
-      setContent(templates.emailBody);
-      setDeliveryLinks(null);
-    } catch {
-      await dialog.showMessage({
-        title: 'Could Not Send Message',
-        message: 'The message could not be logged or prepared for delivery.',
-        variant: 'danger',
-      });
+      setDrafts(await communicationService.getDrafts());
+      setActiveDraftId(null);
+      
+      await dialog.showMessage({ title: 'Success', message: 'Message sent successfully!', variant: 'info' });
+      setWizardStep('TARGETS');
+    } catch (err: unknown) {
+      console.error(err);
+      await dialog.showMessage({ title: 'Error', message: 'Failed to send message.', variant: 'danger' });
     } finally {
       setIsSending(false);
     }
   };
 
-  const copyToDraft = (message: MessageRecord) => {
-    setSubject(message.subject || '');
-    setContent(message.content);
-    setMessageType(message.type);
-    const mFilters = message.filters as Record<string, unknown>;
-    if (mFilters?.eventId) {
-      // Handle legacy single voicePart string vs new voiceParts array
-      let vpArray: string[] = [];
-      if (Array.isArray(mFilters.voiceParts)) {
-        vpArray = mFilters.voiceParts as string[];
-      } else if (typeof mFilters.voicePart === 'string' && mFilters.voicePart) {
-        vpArray = [mFilters.voicePart];
-      }
-
-      setFilters({
-        eventId: (mFilters.eventId as string) || '',
-        rsvp: (mFilters.rsvp as CommunicationFilters['rsvp']) || 'All',
-        voiceParts: vpArray,
-        globalStatus: (mFilters.globalStatus as string) || 'Active (Current)',
-      });
-    } else {
-      setFilters(DEFAULT_FILTERS);
-    }
-    setTab('compose');
-    setSelectedMessage(null);
-  };
-
-  const saveConfig = async () => {
-    setIsSavingConfig(true);
-    try {
-      await Promise.all([
-        communicationService.saveConfig(config),
-        settingsService.saveCommunicationSettings(templates),
-      ]);
-      await dialog.showMessage({
-        title: 'Settings Saved',
-        message: 'Communication delivery settings were saved.',
-      });
-    } catch {
-      await dialog.showMessage({
-        title: 'Could Not Save Settings',
-        message: 'Communication delivery settings could not be saved.',
-        variant: 'danger',
-      });
-    } finally {
-      setIsSavingConfig(false);
-    }
-  };
-
-  if (isLoading) return <div style={{ padding: 'var(--space-xl)' }}>Loading communications...</div>;
+  if (isLoading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Communications...</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Communications</h1>
         <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-          {(['compose', 'automated', 'history', 'settings'] as Tab[]).map((item) => (
+          {(['compose', 'automated', 'drafts', 'history', 'settings'] as Tab[]).map((item) => (
             <button
               key={item}
               type="button"
               className={`btn ${tab === item ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setTab(item)}
+              onClick={() => {
+                setTab(item);
+                if (item === 'compose' && wizardStep === 'REVIEW') setWizardStep('TARGETS');
+              }}
             >
-              {item[0].toUpperCase() + item.slice(1)}
+              {item === 'compose' ? 'Send Wizard' : item[0].toUpperCase() + item.slice(1)}
+              {item === 'drafts' && drafts.length > 0 && <span className="badge" style={{ marginLeft: '8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary-deep)' }}>{drafts.length}</span>}
             </button>
           ))}
         </div>
       </div>
 
+      {tab === 'compose' && (
+        <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          {/* Wizard Progress Bar */}
+          <div className="flex-row" style={{ gap: 'var(--space-sm)', justifyContent: 'center', marginBottom: 'var(--space-md)' }}>
+            {[
+              { id: 'TARGETS', label: '1. Targets & Template' },
+              { id: 'COMPOSE', label: '2. Compose & Preview' },
+              { id: 'REVIEW', label: '3. Review & Send' }
+            ].map((step, idx) => (
+              <div key={step.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+                <span 
+                  style={{ 
+                    fontWeight: 700, 
+                    fontSize: '0.85rem',
+                    color: wizardStep === step.id ? 'var(--primary)' : 'var(--text-muted)',
+                    borderBottom: wizardStep === step.id ? '2px solid var(--primary)' : 'none',
+                    padding: '4px 8px'
+                  }}
+                >
+                  {step.label}
+                </span>
+                {idx < 2 && <span className="text-muted">→</span>}
+              </div>
+            ))}
+          </div>
+
+          {wizardStep === 'TARGETS' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
+              <AppCard title="Target Audience">
+                <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Event Context</label>
+                    <select className="card" value={filters.eventId} onChange={(event) => updateFilter('eventId', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
+                      <option value="">No Specific Event</option>
+                      {events.map((event) => (
+                        <option key={event.id} value={event.id}>{event.title || event.expand?.venue?.name || ''}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">RSVP Status</label>
+                    <select className="card" value={filters.rsvp} onChange={(event) => updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])} style={{ height: '44px', padding: '0 12px' }}>
+                      <option value="All">All Members</option>
+                      <option value="Yes">Attending Only</option>
+                      <option value="No">Declined Only</option>
+                      <option value="Pending">No Response (Pending)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)', position: 'relative' }} ref={dropdownRef}>
+                    <label className="text-label">Voice Part / Section</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="card flex-row"
+                      style={{ height: '44px', padding: '0 12px', width: '100%', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', backgroundColor: 'var(--bg)' }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400 }}>
+                        {filters.voiceParts.length === 0 ? 'All Voice Parts' : `${filters.voiceParts.length} selected`}
+                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-muted)' }}>
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    {isDropdownOpen && (
+                      <div className="card shadow-lg" style={{ position: 'absolute', top: '68px', left: 0, right: 0, zIndex: 100, maxHeight: '300px', overflowY: 'auto', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 0' }}>
+                        <div style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sections</div>
+                        {configSections.map(sec => (
+                          <label key={sec.code} className="flex-row" style={{ padding: '8px 12px', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '13px' }}>
+                            <input type="checkbox" checked={filters.voiceParts.includes(sec.code)} onChange={() => handleVoicePartToggle(sec.code)} style={{ accentColor: 'var(--primary)' }} />
+                            {sec.name}
+                          </label>
+                        ))}
+                        <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
+                        <div style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Individual Parts</div>
+                        {voicePartLabels.map(part => (
+                          <label key={part} className="flex-row" style={{ padding: '8px 12px', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '13px' }}>
+                            <input type="checkbox" checked={filters.voiceParts.includes(part)} onChange={() => handleVoicePartToggle(part)} style={{ accentColor: 'var(--primary)' }} />
+                            {part}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </AppCard>
+
+              <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+                <AppCard title="Templates & Quick Starts">
+                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                    <p className="text-muted text-sm">Select a template to pre-fill your message, or start with a blank canvas.</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-sm)' }}>
+                      <button 
+                        className="btn btn-ghost" 
+                        style={{ height: 'auto', padding: '16px', textAlign: 'center', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}
+                        onClick={() => {
+                          setSubject('');
+                          setContent('');
+                          setWizardStep('COMPOSE');
+                        }}
+                      >
+                        <div style={{ fontSize: '1.5rem' }}>📄</div>
+                        <div style={{ fontWeight: 600 }}>Blank Message</div>
+                      </button>
+                      {templates.map(tpl => (
+                        <button 
+                          key={tpl.id}
+                          className="btn btn-ghost" 
+                          style={{ height: 'auto', padding: '16px', textAlign: 'center', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}
+                          onClick={() => {
+                            setSubject(tpl.subject);
+                            setContent(tpl.content);
+                            setMessageType(tpl.type);
+                            setWizardStep('COMPOSE');
+                          }}
+                        >
+                          <div style={{ fontSize: '1.5rem' }}>{tpl.type === 'SMS' ? '📱' : '✉️'}</div>
+                          <div style={{ fontWeight: 600 }}>{tpl.title}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </AppCard>
+
+                <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
+                  <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
+                    Next: Compose Message →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 'COMPOSE' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 'var(--space-lg)', alignItems: 'start' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+                <AppCard title="Composer">
+                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                    <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+                      <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                        <label className="text-label">Subject</label>
+                        <input className="card" value={subject} onChange={(e) => setSubject(e.target.value)} style={{ height: '44px', padding: '0 12px' }} disabled={messageType === 'SMS'} />
+                      </div>
+                      <div className="flex-col" style={{ width: '180px', gap: 'var(--space-xs)' }}>
+                        <label className="text-label">Channel</label>
+                        <select className="card" value={messageType} onChange={(e) => setMessageType(e.target.value as MessageType)} style={{ height: '44px', padding: '0 12px' }}>
+                          <option value="Email">Email</option>
+                          <option value="SMS">SMS</option>
+                          <option value="Both">Both</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                      <label className="text-label">Message Body (Markdown Supported)</label>
+                      <textarea 
+                        ref={textAreaRef}
+                        className="card" 
+                        value={content} 
+                        onChange={(e) => setContent(e.target.value)} 
+                        style={{ minHeight: '350px', padding: '12px', resize: 'vertical', fontFamily: 'var(--font-sans)', fontSize: '1rem' }} 
+                      />
+                    </div>
+                  </div>
+                </AppCard>
+                
+                <AppCard title="Live Preview">
+                  <div className="card" style={{ boxShadow: 'none', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', minHeight: '100px' }}>
+                    {(messageType === 'Email' || messageType === 'Both') && (
+                      <h3 style={{ marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
+                        {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                      </h3>
+                    )}
+                    <div className="text-body message-preview-content" dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-muted">No message content.</p>' }} />
+                  </div>
+                </AppCard>
+
+                <div className="flex-row" style={{ justifyContent: 'space-between' }}>
+                  <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>← Back to Targets</button>
+                  <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                    <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                      {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
+                      Next: Review & Send →
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <PlaceholderPanel onInsert={insertPlaceholder} />
+            </div>
+          )}
+
+          {wizardStep === 'REVIEW' && (
+            <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+              <AppCard title="Pre-Flight Review">
+                <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                    <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
+                    <div className="flex-row" style={{ gap: 'var(--space-lg)' }}>
+                      <div className="flex-col">
+                        <span style={{ fontSize: '2rem', fontWeight: 800 }}>{selectedRecipients.length}</span>
+                        <span className="text-muted text-sm">Total Targeted</span>
+                      </div>
+                      <div className="flex-col" style={{ borderLeft: '1px solid var(--border)', paddingLeft: 'var(--space-lg)' }}>
+                        <span style={{ fontSize: '2rem', fontWeight: 800 }}>{selectedRecipients.filter(r => r.email).length}</span>
+                        <span className="text-muted text-sm">Via Email</span>
+                      </div>
+                      <div className="flex-col" style={{ borderLeft: '1px solid var(--border)', paddingLeft: 'var(--space-lg)' }}>
+                        <span style={{ fontSize: '2rem', fontWeight: 800 }}>{selectedRecipients.filter(r => r.phone).length}</span>
+                        <span className="text-muted text-sm">Via SMS</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                    <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Checklist</h4>
+                    <div className="flex-col card" style={{ gap: 'var(--space-sm)', padding: 'var(--space-md)', backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}>
+                      {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
+                        <div className="flex-row" style={{ color: '#991b1b', alignItems: 'center', gap: '8px' }}>
+                          <span>⚠️</span> <strong>Subject is empty.</strong> It's better to add a subject for higher open rates.
+                        </div>
+                      )}
+                      {content.length < 10 && (
+                        <div className="flex-row" style={{ color: '#991b1b', alignItems: 'center', gap: '8px' }}>
+                          <span>⚠️</span> <strong>Message is very short.</strong>
+                        </div>
+                      )}
+                      {selectedRecipients.length === 0 && (
+                        <div className="flex-row" style={{ color: '#991b1b', alignItems: 'center', gap: '8px' }}>
+                          <span>❌</span> <strong>No recipients selected.</strong> You cannot send this message.
+                        </div>
+                      )}
+                      {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
+                        <div className="flex-row" style={{ color: '#92400e', alignItems: 'center', gap: '8px' }}>
+                          <span>ℹ️</span> {selectedRecipients.filter(r => !r.email).length} singers have no email address and will skip Email.
+                        </div>
+                      )}
+                      {selectedRecipients.some(r => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
+                        <div className="flex-row" style={{ color: '#92400e', alignItems: 'center', gap: '8px' }}>
+                          <span>ℹ️</span> {selectedRecipients.filter(r => !r.phone).length} singers have no phone number and will skip SMS.
+                        </div>
+                      )}
+                      <div className="flex-row" style={{ color: '#166534', alignItems: 'center', gap: '8px' }}>
+                        <span>✅</span> Compliance footer will be automatically attached.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-row" style={{ justifyContent: 'space-between', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border)' }}>
+                    <button className="btn btn-ghost" onClick={() => setWizardStep('COMPOSE')}>← Back to Compose</button>
+                    <button className="btn btn-primary" onClick={sendMessage} disabled={isSending || selectedRecipients.length === 0}>
+                      {isSending ? 'Dispatching...' : '🚀 Final Send'}
+                    </button>
+                  </div>
+                </div>
+              </AppCard>
+            </div>
+          )}
+        </div>
+      )}
+
       {tab === 'automated' && (
         <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <h3 className="text-headline" style={{ fontSize: '1.1rem', color: 'var(--primary-deep)' }}>Upcoming Automated Tasks</h3>
-            <p className="text-muted text-sm" style={{ marginTop: '-8px' }}>
-              These messages are scheduled to be sent automatically. You can trigger them early below.
-            </p>
-            
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
-              {upcomingTasks.length === 0 && (
-                <div className="card" style={{ padding: 'var(--space-xl)', textAlign: 'center', gridColumn: '1 / -1', border: '1px dashed var(--border)' }}>
-                  <p className="text-muted">No upcoming automated tasks found.</p>
-                </div>
-              )}
-              
-              {upcomingTasks.map(task => {
-                const isReport = task.type === 'Report';
-                const isRsvp = task.type === 'RSVP Request';
-                return (
-                  <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span className={`badge ${isReport ? 'badge-concert' : isRsvp ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: isRsvp ? '#3b82f6' : undefined, color: isRsvp ? 'white' : undefined }}>
-                        {task.type}
-                      </span>
-                      <span className="text-muted text-xs">
-                        {isRsvp ? 'Pending since:' : isReport ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div className="flex-col" style={{ gap: '2px' }}>
-                      <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
-                      <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
-                    </div>
-
-                    <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
-                      {!isReport && (
-                        <button 
-                          className="btn btn-ghost btn-sm"
-                          onClick={async () => {
-                            const r = await communicationService.resolveRecipients({ 
-                              eventId: task.event.id, 
-                              rsvp: isRsvp ? 'Pending' : 'All', 
-                              voiceParts: [], 
-                              globalStatus: 'Active (Current)' 
-                            });
-                            setRecipientPreviewList({ 
-                              isOpen: true, 
-                              recipients: r, 
-                              title: `Expected Recipients for ${task.event.title || task.event.type}` 
-                            });
-                          }}
-                        >
-                          View Recipients
-                        </button>
-                      )}
-                      {isReport && (
-                        <div className="text-muted text-xs" style={{ display: 'flex', alignItems: 'center' }}>
-                          Target: All Admins
-                        </div>
-                      )}
-
-                      <button 
-                        className="btn btn-primary btn-sm"
-                        disabled={isSending}
-                        onClick={async () => {
-                          if (isReport) {
-                            const confirmed = await dialog.confirm({
-                              title: 'Send Report Now?',
-                              message: `Generate and send the attendance report for "${task.event.title || task.event.type}" to all admins immediately?`,
-                              confirmLabel: 'Send Now',
-                            });
-                            if (confirmed) {
-                              setIsSending(true);
-                              try {
-                                await communicationService.triggerAttendanceReport(task.event.id);
-                                await dialog.showMessage({ title: 'Report Sent', message: 'The report has been generated and emailed to admins.', variant: 'info' });
-                                setHistory(await communicationService.getMessages());
-                              } catch (err: unknown) {
-                                const msg = err instanceof Error ? err.message : String(err);
-                                await dialog.showMessage({ title: 'Error', message: msg || 'Failed to send report.', variant: 'danger' });
-                              } finally {
-                                setIsSending(false);
-                              }
-                            }
-                          } else {
-                            // Open Compose pre-filled
-                            const values = {
-                              eventTitle: task.event.title || task.event.type,
-                              eventType: task.event.type,
-                              eventDate: new Date(task.event.date).toLocaleString(),
-                              eventLocation: task.event.expand?.venue?.name || 'TBD',
-                              eventDetails: task.event.details || '',
-                              singerName: '{singerName}',
-                              rsvpLinks: '{{RSVP_LINKS}}',
-                            };
-
-                            setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id, rsvp: isRsvp ? 'Pending' : 'All' });
-                            setSubject(renderCommunicationTemplate(templates.reminderSubjectTemplate, values));
-                            setContent(renderCommunicationTemplate(templates.reminderBodyTemplate, values));
-                            setMessageType('Email');
-                            setTab('compose');
-                          }
-                        }}
-
-                      >
-                        {isReport ? 'Send Now' : 'Open Compose'}
-                      </button>
-                    </div>
+              {upcomingTasks.length === 0 && <div className="card" style={{ padding: 'var(--space-xl)', textAlign: 'center', gridColumn: '1 / -1', border: '1px dashed var(--border)' }}><p className="text-muted">No upcoming automated tasks found.</p></div>}
+              {upcomingTasks.map(task => (
+                <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span className={`badge ${task.type === 'Report' ? 'badge-concert' : task.type === 'RSVP Request' ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: task.type === 'RSVP Request' ? '#3b82f6' : undefined, color: task.type === 'RSVP Request' ? 'white' : undefined }}>{task.type}</span>
+                    <span className="text-muted text-xs">{task.type === 'RSVP Request' ? 'Pending since:' : task.type === 'Report' ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}</span>
                   </div>
-                );
-              })}
-
+                  <div className="flex-col" style={{ gap: '2px' }}>
+                    <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
+                    <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
+                  </div>
+                  <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={async () => {
+                      const r = await communicationService.resolveRecipients({ eventId: task.event.id, rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All', voiceParts: [], globalStatus: 'Active (Current)' });
+                      setRecipientPreviewList({ isOpen: true, recipients: r, title: `Expected Recipients for ${task.event.title || task.event.type}` });
+                    }}>View Recipients</button>
+                    <button className="btn btn-primary btn-sm" disabled={isSending} onClick={async () => {
+                      if (task.type === 'Report') {
+                        const confirmed = await dialog.confirm({ title: 'Send Report Now?', message: `Generate and send the attendance report for "${task.event.title || task.event.type}" immediately?`, confirmLabel: 'Send Now' });
+                        if (confirmed) { 
+                          setIsSending(true); 
+                          try { 
+                            await communicationService.triggerAttendanceReport(task.event.id); 
+                            setHistory(await communicationService.getMessages()); 
+                          } catch (err: unknown) { 
+                            const msg = err instanceof Error ? err.message : String(err);
+                            await dialog.showMessage({ title: 'Error', message: msg, variant: 'danger' }); 
+                          } finally { 
+                            setIsSending(false); 
+                          } 
+                        }
+                      } else {
+                        const values = { eventTitle: task.event.title || task.event.type, eventType: task.event.type, eventDate: new Date(task.event.date).toLocaleString(), eventLocation: task.event.expand?.venue?.name || 'TBD', eventDetails: task.event.details || '', singerName: '{singerName}', rsvpLinks: '{{RSVP_LINKS}}' };
+                        setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id, rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All' });
+                        setSubject(renderCommunicationTemplate(commSettings.reminderSubjectTemplate, values));
+                        setContent(renderCommunicationTemplate(commSettings.reminderBodyTemplate, values));
+                        setMessageType('Email');
+                        setWizardStep('COMPOSE');
+                        setTab('compose');
+                      }
+                    }}>{task.type === 'Report' ? 'Send Now' : 'Open Compose'}</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <h3 className="text-headline" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Sent / Past Automated Tasks</h3>
-            
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
-              {pastTasks.length === 0 && (
-                <p className="text-muted text-sm" style={{ gridColumn: '1 / -1' }}>No past automated tasks found in the logs.</p>
-              )}
-              
-              {pastTasks.map(task => {
-                const isSent = task.status === 'Sent';
-                return (
-                  <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', opacity: 0.8 }}>
-                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span className={`badge ${isSent ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: isSent ? undefined : 'var(--border)' }}>
-                        {task.type} {isSent ? '(Sent)' : '(Passed)'}
-                      </span>
-                      <span className="text-muted text-xs">
-                        {isSent ? 'Processed at:' : 'Scheduled for:'} {task.scheduledTime.toLocaleString()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex-col" style={{ gap: '2px' }}>
-                      <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
-                      <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
-                    </div>
-
-                    <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
-                      {isSent ? (
-                        <span className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 600 }}>✓ Logged in History</span>
-                      ) : (
-                        <span className="text-xs text-muted">No log entry found</span>
-                      )}
-                    </div>
+              {pastTasks.length === 0 && <p className="text-muted text-sm" style={{ gridColumn: '1 / -1' }}>No past automated tasks found in the logs.</p>}
+              {pastTasks.map(task => (
+                <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', opacity: 0.8 }}>
+                  <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span className={`badge ${task.status === 'Sent' ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: task.status === 'Sent' ? undefined : 'var(--border)' }}>{task.type} {task.status === 'Sent' ? '(Sent)' : '(Passed)'}</span>
+                    <span className="text-muted text-xs">{task.status === 'Sent' ? 'Processed at:' : 'Scheduled for:'} {task.scheduledTime.toLocaleString()}</span>
                   </div>
-                );
-              })}
+                  <div className="flex-col" style={{ gap: '2px' }}>
+                    <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
+                    <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {tab === 'compose' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 360px) 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
-          <AppCard title="Recipients">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+      {tab === 'drafts' && (
+        <AppCard noPadding>
+          {drafts.map((draft) => (
+            <div key={draft.id} className="flex-responsive" style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)', justifyContent: 'space-between' }}>
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Event</label>
-                <select className="card" value={filters.eventId} onChange={(event) => updateFilter('eventId', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
-                  <option value="">All Events</option>
-                  {events.map((event) => (
-                    <option key={event.id} value={event.id}>{event.title || event.expand?.venue?.name || ''}</option>
-                  ))}
-                </select>
+                <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                  <span className="badge badge-rehearsal">{draft.type}</span>
+                  <span className="text-muted text-xs">Last updated: {new Date(draft.updated).toLocaleString()}</span>
+                </div>
+                <h3 style={{ margin: 0 }}>{draft.subject || '(No Subject)'}</h3>
+                <p className="text-muted text-sm">{draft.content.substring(0, 100)}...</p>
               </div>
-
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">RSVP</label>
-                <select className="card" value={filters.rsvp} onChange={(event) => updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])} disabled={!filters.eventId} style={{ height: '44px', padding: '0 12px' }}>
-                  {['All', 'Yes', 'No', 'Pending'].map((rsvp) => <option key={rsvp} value={rsvp}>{rsvp}</option>)}
-                </select>
-              </div>
-
-              <div className="flex-col" style={{ gap: 'var(--space-xs)', position: 'relative' }} ref={dropdownRef}>
-                <label className="text-label">Voice Part / Section</label>
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="card flex-row"
-                  style={{
-                    height: '44px',
-                    padding: '0 12px',
-                    width: '100%',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    backgroundColor: 'var(--bg)'
-                  }}
-                >
-                  <span style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    fontSize: '0.9rem',
-                    fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400
-                  }}>
-                    {(() => {
-                      const active = filters.voiceParts || [];
-                      if (active.length === 0) return 'All Voice Parts';
-                      if (active.length === 1) {
-                        const token = active[0];
-                        const sec = configSections.find(s => s.code === token);
-                        return sec ? sec.name : token;
-                      }
-                      return `${active.length} selected`;
-                    })()}
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    style={{
-                      transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s',
-                      color: 'var(--text-muted)'
-                    }}
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-
-                {isDropdownOpen && (
-                  <div
-                    className="card"
-                    style={{
-                      position: 'absolute',
-                      top: '68px',
-                      left: 0,
-                      right: 0,
-                      zIndex: 100,
-                      maxHeight: '300px',
-                      overflowY: 'auto',
-                      padding: 'var(--space-xs) 0',
-                      boxShadow: 'var(--shadow-lg)',
-                      backgroundColor: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px'
-                    }}
-                  >
-                    <div style={{
-                      padding: '6px 12px 2px 12px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: 'var(--text-muted)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Sections
-                    </div>
-                    {configSections.map(sec => {
-                      const isChecked = (filters.voiceParts || []).includes(sec.code);
-                      return (
-                        <label
-                          key={sec.code}
-                          className="flex-row"
-                          style={{
-                            padding: '8px 12px',
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            cursor: 'pointer',
-                            fontSize: '13px',
-                            userSelect: 'none',
-                            transition: 'background-color 0.15s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleVoicePartToggle(sec.code)}
-                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '15px', height: '15px' }}
-                          />
-                          <span style={{ fontWeight: isChecked ? 600 : 400 }}>{sec.name}</span>
-                        </label>
-                      );
-                    })}
-
-                    <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
-
-                    <div style={{
-                      padding: '6px 12px 2px 12px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: 'var(--text-muted)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Individual Parts
-                    </div>
-                    {voicePartLabels.map(part => {
-                      const isChecked = (filters.voiceParts || []).includes(part);
-                      return (
-                        <label
-                          key={part}
-                          className="flex-row"
-                          style={{
-                            padding: '8px 12px',
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            cursor: 'pointer',
-                            fontSize: '13px',
-                            userSelect: 'none',
-                            transition: 'background-color 0.15s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleVoicePartToggle(part)}
-                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '15px', height: '15px' }}
-                          />
-                          <span style={{ fontWeight: isChecked ? 600 : 400 }}>{part}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Global Status</label>
-                <select className="card" value={filters.globalStatus} onChange={(event) => updateFilter('globalStatus', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
-                  <option value="">All Statuses</option>
-                  {communicationService.statuses.map((status) => <option key={status} value={status}>{status}</option>)}
-                </select>
-              </div>
-
-              <div className="flex-row" style={{ justifyContent: 'space-between' }}>
-                <span className="text-label">{selectedRecipients.length} selected</span>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSelectedIds(new Set(recipients.map((recipient) => recipient.id)))}>
-                  Select All
-                </button>
-              </div>
-
-              <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '380px', overflowY: 'auto' }}>
-                {isResolving ? (
-                  <p className="text-muted">Loading recipients...</p>
-                ) : recipients.map((recipient) => (
-                  <label key={recipient.id} className="flex-row card" style={{ padding: 'var(--space-sm)', boxShadow: 'none', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(recipient.id)}
-                      onChange={() => toggleRecipient(recipient.id)}
-                      style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
-                    />
-                    <span className="flex-col" style={{ gap: 0 }}>
-                      <strong>{recipient.name}</strong>
-                      <span className="text-muted text-xs">{recipient.voicePart} · {recipient.email || recipient.phone || 'No contact'}</span>
-                    </span>
-                  </label>
-                ))}
-                {!isResolving && recipients.length === 0 && <p className="text-muted">No matching recipients.</p>}
+              <div className="flex-row">
+                <button className="btn btn-ghost btn-sm" onClick={async () => {
+                  if (await dialog.confirm({ title: 'Delete Draft', message: 'Are you sure you want to delete this draft?', variant: 'danger' })) {
+                    await communicationService.deleteDraft(draft.id);
+                    setDrafts(await communicationService.getDrafts());
+                  }
+                }}>Delete</button>
+                <button className="btn btn-primary btn-sm" onClick={() => handleResumeDraft(draft)}>Resume Draft</button>
               </div>
             </div>
-          </AppCard>
-
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-            <AppCard title="Compose">
-              <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
-                {(['Email', 'SMS', 'Both'] as MessageType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    className={`btn ${messageType === type ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => setMessageType(type)}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-
-              {(messageType === 'Email' || messageType === 'Both') && (
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <label className="text-label">Subject</label>
-                  <input className="card" value={subject} onChange={(event) => setSubject(event.target.value)} style={{ height: '44px', padding: '0 12px' }} />
-                </div>
-              )}
-
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Message</label>
-                <textarea className="card" value={content} onChange={(event) => setContent(event.target.value)} style={{ minHeight: '220px', padding: '12px', resize: 'vertical' }} />
-                <p className="text-muted text-xs" style={{ margin: 0 }}>
-                  Hint: Use <code>{'{{RSVP_LINKS}}'}</code> to insert personalized RSVP buttons (requires Event to be selected). Personalized links will be printed to the developer console when sending via Mailto.
-                </p>
-              </div>
-
-              <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-primary" onClick={sendMessage} disabled={isSending}>
-                  {isSending ? 'Preparing...' : 'Send Message'}
-                </button>
-              </div>
-            </AppCard>
-
-            <AppCard title="Preview">
-              <div className="card" style={{ boxShadow: 'none', backgroundColor: 'var(--bg)', padding: 'var(--space-md)' }}>
-                {(messageType === 'Email' || messageType === 'Both') && (
-                  <h3 style={{ marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
-                    {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null) || 'No subject'}
-                  </h3>
-                )}
-                <div 
-                  className="text-body message-preview-content" 
-                  style={{ margin: 0 }}
-                  dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-muted">No message content.</p>' }}
-                />
-              </div>
-
-              {deliveryLinks && (
-                <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
-                  {deliveryLinks.mailtoUrl && <a className="btn btn-secondary" href={deliveryLinks.mailtoUrl}>Open Email Draft</a>}
-                  {deliveryLinks.smsUrl && <a className="btn btn-secondary" href={deliveryLinks.smsUrl}>Open Text Draft</a>}
-                </div>
-              )}
-            </AppCard>
-          </div>
-        </div>
+          ))}
+          {drafts.length === 0 && <div style={{ padding: '40px', textAlign: 'center' }}><p className="text-muted">No saved drafts.</p></div>}
+        </AppCard>
       )}
 
       {tab === 'history' && (
@@ -867,27 +744,66 @@ export default function CommunicationView() {
                 </div>
                 <div className="flex-row">
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMessage(message)}>Details</button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => copyToDraft(message)}>Copy to Draft</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handleResumeDraft(message)}>Copy to Draft</button>
                 </div>
               </div>
             );
           })}
-          {history.length === 0 && (
-            <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-              <p className="text-muted">No messages logged yet.</p>
-            </div>
-          )}
+          {history.length === 0 && <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}><p className="text-muted">No messages logged yet.</p></div>}
         </AppCard>
       )}
 
-      {/* Settings tab unchanged ... */}
+      {tab === 'settings' && (
+        <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          <AppCard title="Application & Footer Compliance">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <SettingsGrid>
+                <Field label="Physical Mailing Address" value={commSettings.mailingAddress} onChange={(v) => setCommSettings({ ...commSettings, mailingAddress: v })} />
+                <Field label="Application Base URL" value={commSettings.frontendUrl} onChange={(v) => setCommSettings({ ...commSettings, frontendUrl: v })} />
+              </SettingsGrid>
+              <div className="text-muted text-xs">Note: These values are used for legal compliance (footer) and link generation.</div>
+            </div>
+          </AppCard>
 
-      <BaseModal
-        isOpen={recipientPreviewList.isOpen}
-        onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
-        title={recipientPreviewList.title}
-        maxWidth="500px"
-      >
+          <AppCard title="Delivery Credentials">
+            <SettingsGrid>
+              <div className="flex-col" style={{ gap: '4px' }}>
+                <label className="text-label">SMTP Config</label>
+                <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setTab('settings')}>Configure Securely in PB Admin</button>
+              </div>
+            </SettingsGrid>
+          </AppCard>
+
+          <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
+            <button className="btn btn-primary" onClick={async () => {
+              setIsSavingConfig(true);
+              try { await settingsService.saveCommunicationSettings(commSettings); await dialog.showMessage({ title: 'Saved', message: 'Settings updated successfully.', variant: 'info' }); }
+              finally { setIsSavingConfig(false); }
+            }} disabled={isSavingConfig}>{isSavingConfig ? 'Saving...' : 'Save Settings'}</button>
+          </div>
+        </div>
+      )}
+
+      <BaseModal isOpen={!!selectedMessage} onClose={() => setSelectedMessage(null)} title="Message Details" maxWidth="600px">
+        {selectedMessage && (
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div className="flex-col" style={{ gap: '2px' }}>
+              <label className="text-label text-muted">Subject</label>
+              <strong>{selectedMessage.subject || '(SMS)'}</strong>
+            </div>
+            <div className="flex-col" style={{ gap: '2px' }}>
+              <label className="text-label text-muted">Sent To</label>
+              <span>{selectedMessage.recipients.length} recipients</span>
+            </div>
+            <div className="flex-col" style={{ gap: '2px' }}>
+              <label className="text-label text-muted">Content</label>
+              <div className="card" style={{ padding: '12px', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', whiteSpace: 'pre-wrap' }}>{selectedMessage.content}</div>
+            </div>
+          </div>
+        )}
+      </BaseModal>
+
+      <BaseModal isOpen={recipientPreviewList.isOpen} onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })} title={recipientPreviewList.title} maxWidth="500px">
         <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
           {recipientPreviewList.recipients.map(r => (
             <div key={r.id} className="flex-row card" style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}>
@@ -895,258 +811,21 @@ export default function CommunicationView() {
               <span className="text-muted text-xs">{r.voicePart}</span>
             </div>
           ))}
-          {recipientPreviewList.recipients.length === 0 && <p className="text-muted">No recipients found.</p>}
         </div>
-      </BaseModal>
-
-      {tab === 'settings' && (
-        <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-          <AppCard title="Delivery Mechanisms">
-            <div className="text-muted text-sm">
-              Note: Automated SMS and email delivery are handled securely on the server side via PocketBase integrations. Email delivery is dispatched entirely on the backend, ensuring a secure, professional, and consistent experience without spawning local email clients. Twilio SMS credentials can be configured directly below.
-            </div>
-          </AppCard>
-
-          <AppCard title="Templates (Manual)">
-            <SettingsGrid>
-              <Field label="Email Subject" value={templates.emailSubject} onChange={(value) => setTemplates({ ...templates, emailSubject: value })} />
-              <Field label="SMS Body" value={templates.smsBody} onChange={(value) => setTemplates({ ...templates, smsBody: value })} />
-            </SettingsGrid>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Email Body</label>
-              <textarea
-                className="card"
-                value={templates.emailBody}
-                onChange={(event) => setTemplates({ ...templates, emailBody: event.target.value })}
-                style={{ minHeight: '140px', padding: '12px', resize: 'vertical' }}
-              />
-            </div>
-          </AppCard>
-
-          <AppCard title="Compliance & Footers">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <p className="text-muted text-sm">
-                For legal compliance (e.g. CAN-SPAM), all outgoing emails will automatically include a physical mailing address and an unsubscribe link in the footer.
-              </p>
-              <Field 
-                label="Physical Mailing Address" 
-                value={templates.mailingAddress} 
-                onChange={(value) => setTemplates({ ...templates, mailingAddress: value })} 
-              />
-              <Field 
-                label="Application Base URL" 
-                value={templates.frontendUrl} 
-                onChange={(value) => setTemplates({ ...templates, frontendUrl: value })} 
-              />
-            </div>
-          </AppCard>
-
-          <AppCard title="Singer Event Reminders (Automated)">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <div className="flex-col" style={{ gap: 'var(--space-xxs)' }}>
-                  <span style={{ fontWeight: 600 }}>Enable Automated Reminders</span>
-                  <span className="text-muted text-sm">Send automatic reminder emails to active singers before event starts.</span>
-                </div>
-                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
-                  <input
-                    type="checkbox"
-                    checked={templates.reminderEnabled}
-                    onChange={(e) => setTemplates({ ...templates, reminderEnabled: e.target.checked })}
-                    style={{ opacity: 0, width: 0, height: 0 }}
-                  />
-                  <span className="slider" style={{
-                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: templates.reminderEnabled ? 'var(--primary)' : '#ccc',
-                    transition: '.4s', borderRadius: '34px',
-                    boxShadow: templates.reminderEnabled ? '0 0 8px var(--primary)' : 'none'
-                  }}>
-                    <span style={{
-                      position: 'absolute', height: '18px', width: '18px', left: '4px', bottom: '4px',
-                      backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
-                      transform: templates.reminderEnabled ? 'translateX(24px)' : 'none'
-                    }} />
-                  </span>
-                </label>
-              </div>
-
-              {templates.reminderEnabled && (
-                <>
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Send Timing (Hours Before Event)</label>
-                    <input
-                      type="number"
-                      className="card"
-                      value={templates.reminderHoursBefore}
-                      onChange={(e) => setTemplates({ ...templates, reminderHoursBefore: Number(e.target.value) })}
-                      style={{ height: '44px', padding: '0 12px', width: '120px' }}
-                      min="1"
-                    />
-                  </div>
-
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Reminder Email Subject</label>
-                    <input
-                      type="text"
-                      className="card"
-                      value={templates.reminderSubjectTemplate}
-                      onChange={(e) => setTemplates({ ...templates, reminderSubjectTemplate: e.target.value })}
-                      style={{ height: '44px', padding: '0 12px' }}
-                    />
-                  </div>
-
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Reminder Email Body Template</label>
-                    <textarea
-                      className="card"
-                      value={templates.reminderBodyTemplate}
-                      onChange={(e) => setTemplates({ ...templates, reminderBodyTemplate: e.target.value })}
-                      style={{ minHeight: '160px', padding: '12px', resize: 'vertical' }}
-                    />
-                    <div className="text-muted text-xs" style={{ marginTop: 'var(--space-xxs)' }}>
-                      Available placeholders: <code>{'{singerName}'}</code>, <code>{'{eventTitle}'}</code>, <code>{'{eventType}'}</code>, <code>{'{eventDate}'}</code>, <code>{'{eventLocation}'}</code>, <code>{'{eventDetails}'}</code>, <code>{'{rsvpLinks}'}</code>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </AppCard>
-
-          <AppCard title="Admin Attendance Reports (Automated)">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <div className="flex-col" style={{ gap: 'var(--space-xxs)' }}>
-                  <span style={{ fontWeight: 600 }}>Enable Automated Post-Event Reports</span>
-                  <span className="text-muted text-sm">Send event attendance summary reports to admins after event concludes.</span>
-                </div>
-                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
-                  <input
-                    type="checkbox"
-                    checked={templates.reportEnabled}
-                    onChange={(e) => setTemplates({ ...templates, reportEnabled: e.target.checked })}
-                    style={{ opacity: 0, width: 0, height: 0 }}
-                  />
-                  <span className="slider" style={{
-                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: templates.reportEnabled ? 'var(--primary)' : '#ccc',
-                    transition: '.4s', borderRadius: '34px',
-                    boxShadow: templates.reportEnabled ? '0 0 8px var(--primary)' : 'none'
-                  }}>
-                    <span style={{
-                      position: 'absolute', height: '18px', width: '18px', left: '4px', bottom: '4px',
-                      backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
-                      transform: templates.reportEnabled ? 'translateX(24px)' : 'none'
-                    }} />
-                  </span>
-                </label>
-              </div>
-
-              {templates.reportEnabled && (
-                <>
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Send Timing (Hours After Event)</label>
-                    <input
-                      type="number"
-                      className="card"
-                      value={templates.reportHoursAfter}
-                      onChange={(e) => setTemplates({ ...templates, reportHoursAfter: Number(e.target.value) })}
-                      style={{ height: '44px', padding: '0 12px', width: '120px' }}
-                      min="1"
-                    />
-                  </div>
-
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Report Email Subject</label>
-                    <input
-                      type="text"
-                      className="card"
-                      value={templates.reportSubjectTemplate}
-                      onChange={(e) => setTemplates({ ...templates, reportSubjectTemplate: e.target.value })}
-                      style={{ height: '44px', padding: '0 12px' }}
-                    />
-                  </div>
-
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Report Email Body Template</label>
-                    <textarea
-                      className="card"
-                      value={templates.reportBodyTemplate}
-                      onChange={(e) => setTemplates({ ...templates, reportBodyTemplate: e.target.value })}
-                      style={{ minHeight: '160px', padding: '12px', resize: 'vertical' }}
-                    />
-                    <div className="text-muted text-xs" style={{ marginTop: 'var(--space-xxs)' }}>
-                      Available placeholders: <code>{'{eventTitle}'}</code>, <code>{'{eventDate}'}</code>, <code>{'{attendanceRate}'}</code>, <code>{'{presentCount}'}</code>, <code>{'{totalCount}'}</code>, <code>{'{absenteesList}'}</code>, <code>{'{thresholdWarningsSection}'}</code>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </AppCard>
-
-          <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" onClick={saveConfig} disabled={isSavingConfig}>
-              {isSavingConfig ? 'Saving...' : 'Save Communication Settings'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <BaseModal
-        isOpen={Boolean(selectedMessage)}
-        onClose={() => setSelectedMessage(null)}
-        title={selectedMessage?.subject || 'Message Details'}
-        maxWidth="640px"
-        footer={selectedMessage && (
-          <>
-            <button className="btn btn-ghost" onClick={() => setSelectedMessage(null)}>Close</button>
-            <button className="btn btn-primary" onClick={() => copyToDraft(selectedMessage)}>Copy to Draft</button>
-          </>
-        )}
-      >
-        {selectedMessage && (
-          <div className="flex-col">
-            <p className="text-body" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{selectedMessage.content}</p>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <span className="text-label">Recipients</span>
-              <div className="card" style={{ boxShadow: 'none', maxHeight: '220px', overflowY: 'auto' }}>
-                {selectedMessage.recipients.map((recipient) => (
-                  <div key={recipient.id} className="flex-responsive" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: 'var(--space-xs) 0' }}>
-                    <strong>{recipient.name}</strong>
-                    <span className="text-muted text-xs">{recipient.email || recipient.phone}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </BaseModal>
     </div>
   );
 }
 
 function SettingsGrid({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-md)' }}>
-      {children}
-    </div>
-  );
+  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>{children}</div>;
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  type = 'text',
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-}) {
+function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (val: string) => void; type?: string }) {
   return (
     <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
       <label className="text-label">{label}</label>
-      <input className="card" type={type} value={value} onChange={(event) => onChange(event.target.value)} style={{ height: '44px', padding: '0 12px' }} />
+      <input className="card" type={type} value={value} onChange={(e) => onChange(e.target.value)} style={{ height: '44px', padding: '0 12px' }} />
     </div>
   );
 }

@@ -14,6 +14,7 @@ export type { CommunicationConfig } from './settingsService';
 
 export type MessageType = 'Email' | 'SMS' | 'Both';
 export type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
+export type MessageStatus = 'Draft' | 'Sent' | 'Failed';
 
 export interface CommunicationRecipient {
   id: string;
@@ -37,6 +38,7 @@ export interface MessageRecord extends RecordModel {
   type: MessageType;
   recipients: CommunicationRecipient[];
   filters: Record<string, unknown>; // Allow flexible structure for automated messages
+  status: MessageStatus;
   sender?: string;
   created: string;
 }
@@ -47,6 +49,15 @@ export interface SendMessageInput {
   type: MessageType;
   recipients: CommunicationRecipient[];
   filters: Record<string, unknown>;
+  status?: MessageStatus;
+}
+
+export interface TemplateRecord extends RecordModel {
+  title: string;
+  subject: string;
+  content: string;
+  type: MessageType;
+  isSystem: boolean;
 }
 
 export interface SendMessageResult {
@@ -70,7 +81,44 @@ export const communicationService = {
   async getMessages() {
     return await pb.collection('messages').getFullList<MessageRecord>({
       sort: '-created',
+      filter: 'status = "Sent"',
     });
+  },
+
+  async getDrafts() {
+    return await pb.collection('messages').getFullList<MessageRecord>({
+      sort: '-created',
+      filter: 'status = "Draft"',
+    });
+  },
+
+  async saveDraft(data: SendMessageInput, id?: string) {
+    const payload = { ...data, status: 'Draft' as const };
+    if (id) {
+      return await pb.collection('messages').update<MessageRecord>(id, payload);
+    }
+    return await pb.collection('messages').create<MessageRecord>(payload);
+  },
+
+  async deleteDraft(id: string) {
+    return await pb.collection('messages').delete(id);
+  },
+
+  async getTemplates() {
+    return await pb.collection('messageTemplates').getFullList<TemplateRecord>({
+      sort: 'title',
+    });
+  },
+
+  async saveTemplate(data: Partial<TemplateRecord>) {
+    if (data.id) {
+      return await pb.collection('messageTemplates').update<TemplateRecord>(data.id, data);
+    }
+    return await pb.collection('messageTemplates').create<TemplateRecord>(data as TemplateRecord);
+  },
+
+  async deleteTemplate(id: string) {
+    return await pb.collection('messageTemplates').delete(id);
   },
 
   async getEvents() {
@@ -95,15 +143,10 @@ export const communicationService = {
 
     if (filters.eventId) {
       const roster = await rosterService.getEventRoster(filters.eventId);
-      const rosterMap = new Map(roster.map((item) => [item.profile, item.rsvp]));
       allowedProfileIds = new Set(
-        profiles
-          .filter((profile: Profile) => {
-            const rsvp = rosterMap.get(profile.id) || 'Pending';
-            if (filters.rsvp === 'All') return true;
-            return rsvp === filters.rsvp;
-          })
-          .map((profile: Profile) => profile.id)
+        roster
+          .filter((item) => filters.rsvp === 'All' || item.rsvp === filters.rsvp)
+          .map((item) => item.profile),
       );
     }
 
@@ -138,52 +181,39 @@ export const communicationService = {
       return { previewContent: content, logs: [] };
     }
 
-    const profileIds = recipients.map(r => r.id);
-    const response = await pb.send('/api/generate-rsvp-tokens', {
-      method: 'POST',
-      body: { eventId, profileIds }
-    });
+    try {
+      const { tokens } = await pb.send('/api/generate-rsvp-tokens', {
+        method: 'POST',
+        body: { eventId, profileIds: recipients.map(r => r.id) }
+      });
 
-    const tokens = response.tokens;
-    const baseUrl = window.location.origin;
-    const logs: string[] = [];
+      const commSettings = await settingsService.getCommunicationSettings();
+      const baseUrl = commSettings.frontendUrl || window.location.origin;
 
-    let previewLink = '';
-    
-    recipients.forEach(r => {
-      const token = tokens[r.id];
-      if (token) {
-        const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-        const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
-        const text = `Yes: ${yesLink}\nNo: ${noLink}`;
-        logs.push(`RSVP Links for ${r.name}:\n${text}`);
-        
-        if (!previewLink) previewLink = text;
-      }
-    });
+      const firstRecipient = recipients[0];
+      const token = tokens[firstRecipient.id];
+      const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+      const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
 
-    const previewContent = content.replace(/{{RSVP_LINKS}}/g, previewLink || '[RSVP Links will appear here]');
-    return { previewContent, logs };
+      const previewContent = content.replace('{{RSVP_LINKS}}', `(RSVP Links for ${firstRecipient.name})\nYes: ${yesLink}\nNo: ${noLink}`);
+      
+      const logs = recipients.map(r => {
+        const t = tokens[r.id];
+        return `Personalized Link for ${r.name}: ${baseUrl}/rsvp?token=${encodeURIComponent(t)}`;
+      });
+
+      return { previewContent, logs };
+    } catch (err) {
+      console.error('Failed to generate RSVP tokens', err);
+      return { previewContent: content.replace('{{RSVP_LINKS}}', '(Error generating RSVP links)'), logs: [] };
+    }
   },
 
   async saveMessage(data: SendMessageInput) {
-    const currentUser = pb.authStore.model;
-    const payload: Partial<MessageRecord> & { sender?: string } = {
-      subject: data.subject,
-      content: data.content,
-      type: data.type,
-      recipients: data.recipients,
-      filters: data.filters,
-    };
-
-    if (currentUser?.collectionName === 'users') {
-      payload.sender = currentUser.id;
-    }
-
-    return await pb.collection('messages').create<MessageRecord>(payload);
+    return await pb.collection('messages').create<MessageRecord>(data);
   },
 
-  async sendBulkMessage(data: SendMessageInput): Promise<SendMessageResult> {
+  async sendBulkMessage(data: SendMessageInput, draftId?: string): Promise<SendMessageResult> {
     let finalContent = data.content;
     
     const eventId = data.filters.eventId as string | undefined;
@@ -197,7 +227,19 @@ export const communicationService = {
 
     // Decision: For now, I will append a GENERIC footer to the message record,
     // and if the backend hook sees an email, it will wrap the content with the compliant footer.
-    const message = await this.saveMessage({ ...data, content: finalContent + COMPLIANT_FOOTER_HTML });
+    const payload = { 
+      ...data, 
+      content: finalContent + COMPLIANT_FOOTER_HTML,
+      status: 'Sent' as const
+    };
+
+    let message: MessageRecord;
+    if (draftId) {
+      message = await pb.collection('messages').update<MessageRecord>(draftId, payload);
+    } else {
+      message = await pb.collection('messages').create<MessageRecord>(payload);
+    }
+
     const phoneRecipients = data.recipients.map((recipient) => recipient.phone.replace(/[^\d+]/g, '')).filter(Boolean);
 
     const mailtoUrl = ''; // Intentionally left blank. Email is dispatched securely on the server side.
@@ -226,9 +268,8 @@ export const communicationService = {
     // Fetch profile names for absentees
     const profiles = await profileService.getProfiles();
     const profileMap = new Map(profiles.map(p => [p.id, p]));
-
+    
     const absenteeNames = absentees.map(r => profileMap.get(r.profile)?.name || 'Unknown Singer');
-
     const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : '0';
 
     // Build Email Content
@@ -278,7 +319,8 @@ export const communicationService = {
         content: body,
         type: 'Email',
         recipients,
-        filters: { alreadySent: false, type: 'Automated Report', eventId: event.id }
+        filters: { alreadySent: false, type: 'Attendance Report', eventId: event.id },
+        status: 'Sent' as const
     });
   },
 
@@ -286,13 +328,19 @@ export const communicationService = {
   statuses: ['Active (Current)', 'Active (Future)', 'Inactive'],
 } satisfies {
   getMessages: () => Promise<MessageRecord[]>;
+  getDrafts: () => Promise<MessageRecord[]>;
+  saveDraft: (data: SendMessageInput, id?: string) => Promise<MessageRecord>;
+  deleteDraft: (id: string) => Promise<unknown>;
+  getTemplates: () => Promise<TemplateRecord[]>;
+  saveTemplate: (data: Partial<TemplateRecord>) => Promise<TemplateRecord>;
+  deleteTemplate: (id: string) => Promise<unknown>;
   getEvents: () => Promise<Event[]>;
   getConfig: () => Promise<CommunicationConfig>;
   saveConfig: (value: CommunicationConfig) => Promise<unknown>;
   resolveRecipients: (filters: CommunicationFilters) => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (content: string, eventId: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
-  sendBulkMessage: (data: SendMessageInput) => Promise<SendMessageResult>;
+  sendBulkMessage: (data: SendMessageInput, draftId?: string) => Promise<SendMessageResult>;
   triggerAttendanceReport: (eventId: string) => Promise<MessageRecord>;
   defaultConfig: CommunicationConfig;
   statuses: string[];

@@ -87,6 +87,16 @@ export const eventService = {
   },
 
   async deleteEvent(id: string) {
+    try {
+      const rehearsals = await pb.collection('events').getFullList<Event>({
+        filter: pb.filter('parentPerformanceId = {:id}', { id }),
+      });
+      if (rehearsals.length > 0) {
+        await Promise.all(rehearsals.map((r) => pb.collection('events').delete(r.id)));
+      }
+    } catch (err) {
+      console.warn('Failed to cascade delete rehearsals client-side:', err);
+    }
     return await pb.collection('events').delete(id);
   },
 

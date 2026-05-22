@@ -535,6 +535,15 @@ onRecordAfterCreateSuccess((e) => {
     }
 
     const record = e.record;
+    if (!record) return;
+
+    // 1. Check status. If it's a Draft, DO NOT send.
+    // Default to 'Sent' if status is missing (for legacy or external creation)
+    const status = record.get("status") || "Sent";
+    if (status === "Draft") {
+        return;
+    }
+
     const type = record.get("type");
     if (type !== "Email" && type !== "Both") {
         return;
@@ -548,10 +557,7 @@ onRecordAfterCreateSuccess((e) => {
     }
 
     const subject = record.get("subject") || "Message from Choir Management";
-    let content = record.get("content") || "";
-
-    // Sanitize user-provided content to prevent HTML injection / XSS
-    content = escapeHtml(content);
+    const content = record.get("content") || "";
 
     const recipientsRaw = record.get("recipients");
     const recipients = parseJsonField(recipientsRaw) || [];
@@ -567,13 +573,15 @@ onRecordAfterCreateSuccess((e) => {
         smtpConfig = parsed ? parsed.smtp : null;
     } catch (err) {}
 
+    if (!smtpConfig || !smtpConfig.host) return;
+
     const fromAddress = (smtpConfig && (smtpConfig.from || smtpConfig.user)) || "no-reply@choir.management";
 
     // Fetch Secret for HMAC
     let secret = "";
     try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
+        const secretRecord = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(secretRecord.get("value"));
         secret = parsed ? parsed.secret : "";
     } catch (err) {}
 
@@ -628,4 +636,138 @@ onRecordAfterCreateSuccess((e) => {
             // Log or ignore sending error
         }
     });
+}, "messages");
+
+// Handle status transitions (Draft -> Sent)
+onRecordAfterUpdateSuccess((e) => {
+    // Helper to safely convert Go byte slices to JS strings
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        try {
+            if (typeof val === 'object') {
+                let str = "";
+                const len = val.length;
+                if (typeof len === 'number') {
+                    for (let i = 0; i < len; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+            }
+        } catch (err) {}
+        return JSON.stringify(val);
+    }
+
+    function parseJsonField(val) {
+        if (!val) return null;
+        const str = decodeGoBytes(val);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    const record = e.record;
+    if (!record) return;
+
+    const status = record.get("status");
+    const original = e.originalCopy;
+    const oldStatus = original ? original.get("status") : "";
+
+    // Trigger delivery ONLY if status transitioned to "Sent"
+    if (status === "Sent" && oldStatus === "Draft") {
+        try {
+            const type = record.get("type");
+            if (type !== "Email" && type !== "Both") {
+                return;
+            }
+
+            const subject = record.get("subject") || "Message from Choir Management";
+            const content = record.get("content") || "";
+
+            const recipientsRaw = record.get("recipients");
+            const recipients = parseJsonField(recipientsRaw) || [];
+
+            if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+                return;
+            }
+
+            // 1. Fetch SMTP Config
+            let smtpConfig = null;
+            try {
+                const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
+                const parsed = parseJsonField(setting.get("value"));
+                smtpConfig = parsed ? parsed.smtp : null;
+            } catch (err) {}
+
+            if (!smtpConfig || !smtpConfig.host) return;
+
+            const fromAddress = (smtpConfig && (smtpConfig.from || smtpConfig.user)) || "no-reply@choir.management";
+
+            // Fetch Secret for HMAC
+            let secret = "";
+            try {
+                const secretRecord = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+                const parsed = parseJsonField(secretRecord.get("value"));
+                secret = parsed ? parsed.secret : "";
+            } catch (err) {}
+
+            recipients.forEach(r => {
+                const email = r.email;
+                if (!email) return;
+
+                let finalContent = content;
+                
+                // Resolve Mailing Address
+                if (finalContent.includes("{{MAILING_ADDRESS}}")) {
+                    let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+                    try {
+                        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+                        const p = parseJsonField(setting.get("value"));
+                        if (p && p.mailingAddress) mailingAddress = p.mailingAddress;
+                    } catch (e) {}
+                    finalContent = finalContent.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
+                }
+                
+                // Personalized Unsubscribe Link
+                if (finalContent.includes("{{UNSUBSCRIBE_LINK}}") && secret) {
+                    const payload = `p=${r.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    
+                    // Resolve Base URL from settings
+                    let baseUrl = "http://localhost:5173";
+                    try {
+                        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+                        const p = parseJsonField(setting.get("value"));
+                        if (p && p.frontendUrl) baseUrl = p.frontendUrl;
+                    } catch (e) {}
+
+                    const link = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                    finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, link);
+                }
+
+                try {
+                    const message = new MailerMessage({
+                        from: {
+                            address: fromAddress,
+                            name:    "Choir Management Tool",
+                        },
+                        to:      [{ address: email }],
+                        subject: subject,
+                        html:    finalContent.replace(/\n/g, "<br>"),
+                    });
+
+                    $app.newMailClient().send(message);
+                } catch (err) {
+                    // Log or ignore sending error
+                }
+            });
+        } catch (e) {
+            console.log("Global message update delivery hook error: " + e);
+        }
+    }
 }, "messages");

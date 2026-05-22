@@ -48,3 +48,11 @@ A post-event summary automatically generated and sent to administrators after a 
 ## Communication History
 A central log of all dispatched messages, including manual bulk emails/SMS and those triggered by automated system tasks.
 
+## Message Draft
+A partially composed or unsent message that is saved to the database (with a status of "Draft") for future refinement, recipient filtering, and dispatch.
+
+## Message Template
+A reusable layout or pre-written text block containing placeholders that can be loaded instantly in the compose editor to simplify bulk messaging for common scenarios (e.g. event reminders, weather delays, dues alerts).
+
+
+
