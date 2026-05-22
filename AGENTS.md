@@ -28,6 +28,8 @@
 
 - The `pocketbase/pb_migrations` directory must ONLY contain standard JavaScript migration files (`.js`). Never place or commit utility, configuration, or declaration files (such as `types.d.ts`) in the migrations folder, as PocketBase will attempt to execute them and crash. Keep `types.d.ts` in the parent `pocketbase/` directory.
 - Always use correct SDK class names in JavaScript migrations. Specifically, use all-uppercase `JSONField` (not `JsonField`) when defining or appending JSON fields in collection schemas, otherwise PocketBase will throw a ReferenceError at startup.
+- **Never specify custom field IDs** (`id` property in field builders like `new TextField({ name: 'x', id: 'my_id' })`) in programmatic JavaScript migrations. PocketBase field IDs must be exactly 10 alphanumeric characters (`^[a-z0-9]+$`). Providing custom IDs that are longer or contain underscores will cause field parsing/validation to silently or explicitly fail. Omit `id` to let PocketBase auto-generate them.
+- **Never name a collection field `isSystem` or other reserved rule system keywords**. The PocketBase expression rule parser intercepts `isSystem` as a system property/method, causing rule evaluation (e.g. `deleteRule: "isSystem = false"`) to throw "invalid left operand 'isSystem' - unknown field 'isSystem'". Use a distinct name like `isSystemTemplate` or `isDefaultPreset`.
 
 ## Hosted PocketBase Workflow
 
