@@ -33,13 +33,47 @@ export default function ProfileView() {
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const p = await profileService.getMyProfile();
-      setProfile(p);
-      setName(p.name || '');
-      setPhone(p.phone || '');
-      // Get email from auth store
-      setEmail(pb.authStore.record?.email || '');
+      const currentUser = pb.authStore.record;
+      if (currentUser?.role === 'admin') {
+        let p: Profile | null = null;
+        try {
+          p = await profileService.getMyProfile();
+        } catch {
+          // Admins don't always have a row in profiles
+        }
+
+        if (p) {
+          setProfile(p);
+          setName(p.name || currentUser.name || '');
+          setPhone(p.phone || '');
+        } else {
+          setProfile({
+            id: '',
+            user: currentUser.id,
+            name: currentUser.name || '',
+            phone: '',
+            photo: '',
+            voicePart: 'Administrator',
+            globalStatus: 'Active (Current)',
+            notes: '',
+            collectionId: '',
+            collectionName: 'profiles',
+            created: '',
+            updated: ''
+          });
+          setName(currentUser.name || '');
+          setPhone('');
+        }
+        setEmail(currentUser.email || '');
+      } else {
+        const p = await profileService.getMyProfile();
+        setProfile(p);
+        setName(p.name || '');
+        setPhone(p.phone || '');
+        setEmail(pb.authStore.record?.email || '');
+      }
     } catch {
       setError('Could not load your profile.');
     } finally {
@@ -58,12 +92,23 @@ export default function ProfileView() {
     setError(null);
     setSuccess(false);
     try {
-      // Update profile fields
-      await pb.collection('profiles').update(profile.id, { name, phone });
-      // Update user email if changed
-      const currentEmail = pb.authStore.record?.email;
-      if (email && email !== currentEmail && pb.authStore.record?.id) {
-        await pb.collection('users').update(pb.authStore.record.id, { email });
+      const currentUser = pb.authStore.record;
+      if (currentUser?.role === 'admin') {
+        // Update user record directly
+        await pb.collection('users').update(currentUser.id, { name, email });
+        
+        // If there's an associated profile, update it too
+        if (profile.id) {
+          await pb.collection('profiles').update(profile.id, { name });
+        }
+      } else {
+        // Update profile fields
+        await pb.collection('profiles').update(profile.id, { name, phone });
+        // Update user email if changed
+        const currentEmail = pb.authStore.record?.email;
+        if (email && email !== currentEmail && pb.authStore.record?.id) {
+          await pb.collection('users').update(pb.authStore.record.id, { email });
+        }
       }
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -86,15 +131,32 @@ export default function ProfileView() {
     <PageLayout title="My Profile" backTo="/" maxWidth="500px">
       <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0', alignItems: 'center' }}>
 
-        {/* Photo */}
+        {/* Photo / Avatar */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-sm)' }}>
-          <PhotoUploader
-            profileId={profile.id}
-            profileName={profile.name}
-            currentPhotoUrl={profile.photo ? pb.files.getURL(profile, profile.photo) : undefined}
-            size="lg"
-            onSuccess={handlePhotoSuccess}
-          />
+          {profile.id ? (
+            <PhotoUploader
+              profileId={profile.id}
+              profileName={profile.name}
+              currentPhotoUrl={profile.photo ? pb.files.getURL(profile, profile.photo) : undefined}
+              size="lg"
+              onSuccess={handlePhotoSuccess}
+            />
+          ) : (
+            <div style={{ 
+              width: '96px', 
+              height: '96px', 
+              borderRadius: '50%', 
+              backgroundColor: 'var(--primary-light)', 
+              color: 'var(--primary)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '3rem',
+              border: '2px solid var(--border)'
+            }}>
+              👤
+            </div>
+          )}
         </div>
 
         {/* Form */}
@@ -122,32 +184,51 @@ export default function ProfileView() {
             />
           </div>
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Phone</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-            />
-          </div>
+          {profile.id ? (
+            <>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Phone</label>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                />
+              </div>
 
-          {/* Voice Part — read-only */}
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Voice Part</label>
-            <div
-              className="card"
-              style={{
-                width: '100%', padding: '0 12px', height: '44px',
-                border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center',
-                color: 'var(--text-muted)', backgroundColor: 'var(--bg)',
-              }}
-            >
-              {profile.voicePart}
+              {/* Voice Part — read-only */}
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Voice Part</label>
+                <div
+                  className="card"
+                  style={{
+                    width: '100%', padding: '0 12px', height: '44px',
+                    border: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center',
+                    color: 'var(--text-muted)', backgroundColor: 'var(--bg)',
+                  }}
+                >
+                  {profile.voicePart}
+                </div>
+                <span className="text-xs text-muted">Contact your director to change voice part</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Role</label>
+              <div
+                className="card"
+                style={{
+                  width: '100%', padding: '0 12px', height: '44px',
+                  border: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center',
+                  color: 'var(--text-muted)', backgroundColor: 'var(--bg)',
+                }}
+              >
+                Administrator
+              </div>
             </div>
-            <span className="text-xs text-muted">Contact your director to change voice part</span>
-          </div>
+          )}
 
           {error && (
             <div style={{ color: 'var(--color-danger-text)', backgroundColor: 'var(--color-danger-bg)', padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)' }}>
