@@ -415,6 +415,16 @@ export default function CommunicationView() {
                     </select>
                   </div>
 
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Global Status</label>
+                    <select className="card" value={filters.globalStatus} onChange={(event) => updateFilter('globalStatus', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
+                      <option value="Active (Current)">Active (Current)</option>
+                      <option value="Active (Future)">Active (Future)</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="">All Statuses</option>
+                    </select>
+                  </div>
+
                   <div className="flex-col" style={{ gap: 'var(--space-xs)', position: 'relative' }} ref={dropdownRef}>
                     <label className="text-label">Voice Part / Section</label>
                     <button
