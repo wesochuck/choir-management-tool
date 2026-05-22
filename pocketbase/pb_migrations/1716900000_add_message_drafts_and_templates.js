@@ -4,7 +4,6 @@ migrate((app) => {
   const messages = app.findCollectionByNameOrId("pbc_messages_001");
   messages.fields.push(new SelectField({
     name: "status",
-    id: "select_messages_status_001",
     required: true,
     presentable: false,
     unique: false,
@@ -40,31 +39,26 @@ migrate((app) => {
       }),
       new TextField({
         name: "title",
-        id: "text_templates_title_001",
         required: true,
         presentable: true,
         unique: true
       }),
       new TextField({
         name: "subject",
-        id: "text_templates_subject_001",
         required: false,
       }),
       new TextField({
         name: "content",
-        id: "text_templates_content_001",
         required: true,
       }),
       new SelectField({
         name: "type",
-        id: "select_templates_type_001",
         required: true,
         values: ["Email", "SMS", "Both"],
         maxSelect: 1
       }),
       new BoolField({
         name: "isSystem",
-        id: "bool_templates_isSystem_001",
         required: false,
       })
     ],
