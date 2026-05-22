@@ -131,9 +131,9 @@ migrate((app) => {
 
   try {
     const messages = app.findCollectionByNameOrId("pbc_messages_001");
-    const index = messages.fields.findIndex(f => f.name === "status");
-    if (index !== -1) {
-      messages.fields.splice(index, 1);
+    const field = messages.fields.getByName("status");
+    if (field) {
+      messages.fields.removeById(field.id);
     }
     app.save(messages);
   } catch (e) {}
