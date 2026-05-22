@@ -70,10 +70,15 @@ export default function SetListView() {
       day: 'numeric', 
       year: 'numeric' 
     });
+    const timeStr = new Date(selectedEvent.date).toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
     const venueStr = selectedEvent.expand?.venue?.name || '';
     
     let text = `Set List: ${selectedEvent.title || selectedEvent.type}\n`;
     text += `Date: ${dateStr}\n`;
+    text += `Time: ${timeStr}\n`;
     if (venueStr) text += `Venue: ${venueStr}\n`;
     text += `\n`;
     
@@ -398,7 +403,8 @@ export default function SetListView() {
 
   return (
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="no-print flex-col" style={{ gap: 'var(--space-xl)', width: '100%' }}>
+        <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)' }}>
           <h1 className="text-display" style={{ margin: 0 }}>Set Lists</h1>
           {selectedEventId && (
@@ -440,7 +446,7 @@ export default function SetListView() {
               style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '42px' }}
               title="View printable set list"
             >
-              🖨️ Printable List
+              🖨️ Print & Copy
             </button>
           </div>
         )}
@@ -677,6 +683,7 @@ export default function SetListView() {
           <p className="text-muted">Select an event above to manage its set list.</p>
         </AppCard>
       )}
+      </div>
 
       <MusicPieceModal
         isOpen={isLibraryModalOpen}
@@ -762,6 +769,7 @@ export default function SetListView() {
             </h3>
             <div style={{ fontSize: '0.85rem', color: '#666', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
               {selectedEvent && new Date(selectedEvent.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {selectedEvent && ` at ${new Date(selectedEvent.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
             </div>
           </div>
@@ -813,45 +821,50 @@ export default function SetListView() {
                 background: white !important;
                 color: black !important;
               }
-              .printable-setlist {
+              body .printable-setlist.printable-setlist {
                 font-family: Georgia, serif;
                 max-width: 600px;
-                margin: 0 auto;
-                padding: 20px;
-                background: white;
-                color: black;
+                margin: 0 auto !important;
+                padding: 20px !important;
+                background: white !important;
+                color: black !important;
+                border: 1px solid #ccc !important;
+                border-radius: 8px !important;
               }
-              .printable-setlist h2 {
-                font-size: 24px;
-                margin-bottom: 5px;
-                text-align: center;
+              body .printable-setlist.printable-setlist h2 {
+                font-size: 24px !important;
+                margin-bottom: 5px !important;
+                text-align: center !important;
+                font-family: var(--font-sans), sans-serif !important;
+                font-weight: 700 !important;
               }
-              .printable-setlist p {
-                font-size: 14px;
-                margin-top: 0;
-                margin-bottom: 20px;
-                text-align: center;
-                color: #555;
+              body .printable-setlist.printable-setlist p {
+                font-size: 14px !important;
+                margin-top: 0 !important;
+                margin-bottom: 20px !important;
+                text-align: center !important;
+                color: #555 !important;
+                font-family: var(--font-sans), sans-serif !important;
               }
-              .printable-setlist-items {
-                list-style: none;
-                padding: 0;
-                margin: 0;
+              body .printable-setlist-items.printable-setlist-items {
+                list-style: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
               }
-              .printable-setlist-item {
-                font-size: 18px;
-                padding: 8px 0;
-                border-bottom: 1px solid #eee;
+              body .printable-setlist-item.printable-setlist-item {
+                font-size: 18px !important;
+                padding: 8px 0 !important;
+                border-bottom: 1px solid #eee !important;
               }
-              .printable-setlist-intermission {
-                font-size: 18px;
-                font-weight: bold;
-                padding: 12px 0;
-                color: #444;
-                text-align: center;
-                border-top: 1px dashed #ccc;
-                border-bottom: 1px dashed #ccc;
-                margin: 15px 0;
+              body .printable-setlist-intermission.printable-setlist-intermission {
+                font-size: 18px !important;
+                font-weight: bold !important;
+                padding: 12px 0 !important;
+                color: #444 !important;
+                text-align: center !important;
+                border-top: 1px dashed #ccc !important;
+                border-bottom: 1px dashed #ccc !important;
+                margin: 15px 0 !important;
               }
             }
           `}</style>
@@ -859,6 +872,7 @@ export default function SetListView() {
             <h2>Set List: {selectedEvent.title || selectedEvent.type}</h2>
             <p>
               Date: {new Date(selectedEvent.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {selectedEvent && ` at ${new Date(selectedEvent.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent.expand?.venue?.name && ` | Venue: ${selectedEvent.expand.venue.name}`}
             </p>
             <div style={{ borderBottom: '2px solid black', marginBottom: '20px' }}></div>
