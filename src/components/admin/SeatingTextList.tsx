@@ -25,12 +25,17 @@ export function SeatingTextList({
     return getUniqueDisplayNames(allAssigned);
   }, [allAssigned]);
 
+  const reversedRows = useMemo(() => {
+    return [...rows].reverse();
+  }, [rows]);
+
   return (
     <div className="seating-text-list flex-col text-list-container">
-      {rows.map((row, i) => {
-        const isFront = i === 0;
-        const isBack = i === rows.length - 1;
-        const label = `Row ${i + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
+      {reversedRows.map((row, index) => {
+        const originalIndex = rows.length - 1 - index;
+        const isFront = originalIndex === 0;
+        const isBack = originalIndex === rows.length - 1;
+        const label = `Row ${originalIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
 
         const assignedSingers = row.filter((p): p is Profile => !!p);
         const namesString = assignedSingers.length > 0 
@@ -41,7 +46,7 @@ export function SeatingTextList({
           : 'No singers assigned';
 
         return (
-          <div key={i} className="flex-col row-text-entry">
+          <div key={originalIndex} className="flex-col row-text-entry">
             <h3 className="text-label row-text-header">
               {label}
             </h3>
