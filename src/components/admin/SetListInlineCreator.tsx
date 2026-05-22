@@ -95,10 +95,10 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </button>
         </div>
 
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
           <input
             type="text"
-            placeholder={type === 'song' ? "Add song (search library or type new)..." : "Intermission title..."}
+            placeholder={type === 'song' ? "Search music library..." : "Intermission title..."}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -108,11 +108,36 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onKeyDown={onKeyDown}
             disabled={disabled}
             className="card"
-            style={{ width: '100%', padding: '0 12px', height: '36px', border: '1px solid var(--border)', fontSize: '14px' }}
+            style={{ 
+              width: '100%', 
+              padding: '0 36px 0 12px', 
+              height: '36px', 
+              border: '1px solid var(--border)', 
+              fontSize: '14px' 
+            }}
           />
-
-          {showSuggestions && filteredLibrary.length > 0 && (
-            <div className="card shadow-lg" style={{ 
+          <svg 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            style={{ 
+              position: 'absolute', 
+              right: '12px', 
+              width: '16px', 
+              height: '16px', 
+              color: 'var(--text-muted)',
+              pointerEvents: 'none'
+            }}
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+ 
+          {showSuggestions && query.trim().length > 0 && (
+            <div className="card shadow-md" style={{ 
               position: 'absolute', 
               top: '100%', 
               left: 0, 
@@ -121,7 +146,11 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
               marginTop: '4px', 
               maxHeight: '300px', 
               overflowY: 'auto',
-              padding: '4px'
+              padding: '4px',
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-md)'
             }}>
               {filteredLibrary.map(p => (
                 <button
@@ -137,17 +166,44 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                     alignItems: 'flex-start',
                     padding: '8px 12px',
                     borderRadius: 'var(--radius-sm)',
-                    gap: '2px'
+                    gap: '2px',
+                    minHeight: 'auto'
                   }}
                 >
                   <span style={{ fontWeight: 600, fontSize: '14px' }}>{p.title}</span>
                   {p.composer && <span style={{ fontSize: '12px', opacity: 0.7 }}>by {p.composer}</span>}
                 </button>
               ))}
+              
+              <button
+                type="button"
+                onClick={() => handleAddItem()}
+                className="btn btn-ghost"
+                style={{ 
+                  width: '100%', 
+                  textAlign: 'left', 
+                  display: 'flex', 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  gap: '4px',
+                  color: 'var(--primary-deep)',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  minHeight: 'auto',
+                  borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
+                }}
+              >
+                <span>"{query.trim()}"</span>
+                <span style={{ fontWeight: 400, opacity: 0.7, fontSize: '13px' }}>
+                  ({type === 'song' ? 'create new' : 'create new intermission'})
+                </span>
+              </button>
             </div>
           )}
         </div>
-
+ 
         <div style={{ width: '100px' }}>
           <input
             type="text"
@@ -160,7 +216,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             style={{ width: '100%', padding: '0 12px', height: '36px', border: '1px solid var(--border)', fontSize: '14px' }}
           />
         </div>
-
+ 
         <button
           type="button"
           onClick={() => handleAddItem()}
@@ -173,7 +229,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
       </div>
       {type === 'song' && (
         <span className="text-xs text-muted" style={{ paddingLeft: 'var(--space-md)' }}>
-          Tip: Press Enter to add as a custom song without linking to the library.
+          Tip: Press Enter or select the "(create new)" option to add as a custom song without library link.
         </span>
       )}
     </div>

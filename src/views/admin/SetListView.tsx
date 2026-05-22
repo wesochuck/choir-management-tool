@@ -488,6 +488,14 @@ export default function SetListView() {
                 </div>
               )}
 
+              <div style={{ marginBottom: 'var(--space-md)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
+                <SetListInlineCreator 
+                  library={library}
+                  onAddItem={handleInlineAddItem}
+                  disabled={isLoading}
+                />
+              </div>
+
               {items.length === 0 ? (
                 <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>No items in set list.</div>
               ) : (
@@ -512,14 +520,6 @@ export default function SetListView() {
                   </SortableContext>
                 </DndContext>
               )}
-
-              <div style={{ marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
-                <SetListInlineCreator 
-                  library={library}
-                  onAddItem={handleInlineAddItem}
-                  disabled={isLoading}
-                />
-              </div>
             </div>
             <p className="text-muted text-sm" style={{ marginTop: 'var(--space-md)', padding: '0 var(--space-md) var(--space-md)' }}>
                 Tip: Drag the ⣿ handle to reorder items. Changes are saved automatically.
