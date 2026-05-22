@@ -2,7 +2,7 @@ import { pb } from '../lib/pocketbase';
 import { eventService, type Event } from './eventService';
 import { profileService, type Profile } from './profileService';
 import { rosterService } from './rosterService';
-import { settingsService } from './settingsService';
+import { settingsService, getVoicePartsAndSections } from './settingsService';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
   type CommunicationConfig,
@@ -26,7 +26,7 @@ export interface CommunicationRecipient {
 export interface CommunicationFilters {
   eventId: string;
   rsvp: RsvpFilter;
-  voicePart: string;
+  voiceParts: string[]; // Supports both individual part labels and section codes
   globalStatus: string;
 }
 
@@ -85,22 +85,50 @@ export const communicationService = {
   },
 
   async resolveRecipients(filters: CommunicationFilters) {
-    const profiles = await profileService.getProfiles();
+    const [profiles, voiceData] = await Promise.all([
+      profileService.getProfiles(),
+      getVoicePartsAndSections(),
+    ]);
+
     let allowedProfileIds: Set<string> | null = null;
 
     if (filters.eventId) {
       const roster = await rosterService.getEventRoster(filters.eventId);
+      const rosterMap = new Map(roster.map((item) => [item.profile, item.rsvp]));
       allowedProfileIds = new Set(
-        roster
-          .filter((item) => filters.rsvp === 'All' || item.rsvp === filters.rsvp)
-          .map((item) => item.profile),
+        profiles
+          .filter((profile: Profile) => {
+            const rsvp = rosterMap.get(profile.id) || 'Pending';
+            if (filters.rsvp === 'All') return true;
+            return rsvp === filters.rsvp;
+          })
+          .map((profile: Profile) => profile.id)
       );
     }
 
+    // Resolve voiceParts filter: Expand any section codes to their constituent parts
+    let targetParts: Set<string> | null = null;
+    if (filters.voiceParts && filters.voiceParts.length > 0) {
+      targetParts = new Set();
+      const sections = new Set(voiceData.sections.map((s) => s.code));
+      
+      filters.voiceParts.forEach(token => {
+        if (sections.has(token)) {
+          // It's a bucket/section code, add all parts in this section
+          voiceData.voiceParts
+            .filter((vp) => vp.sectionCode === token)
+            .forEach((vp) => targetParts?.add(vp.label));
+        } else {
+          // It's an individual part label
+          targetParts?.add(token);
+        }
+      });
+    }
+
     return profiles
-      .filter((profile) => !allowedProfileIds || allowedProfileIds.has(profile.id))
-      .filter((profile) => !filters.voicePart || profile.voicePart === filters.voicePart)
-      .filter((profile) => !filters.globalStatus || profile.globalStatus === filters.globalStatus)
+      .filter((profile: Profile) => !allowedProfileIds || allowedProfileIds.has(profile.id))
+      .filter((profile: Profile) => !targetParts || targetParts.has(profile.voicePart))
+      .filter((profile: Profile) => !filters.globalStatus || profile.globalStatus === filters.globalStatus)
       .map(profileToRecipient);
   },
 

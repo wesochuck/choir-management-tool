@@ -36,7 +36,7 @@ export default function EventsView() {
   const [reminderConfig, setReminderConfig] = useState<{ event: Event; type: 'Email' | 'SMS' } | null>(null);
   const [reminderRoster, setReminderRoster] = useState<EventRoster[]>([]);
   const [isReminderLoading, setIsReminderLoading] = useState(false);
-  const [reminderTarget, setReminderTarget] = useState<'Yes' | 'YesPending' | 'All'>('YesPending');
+  const [reminderTarget, setReminderTarget] = useState<'Yes' | 'Pending' | 'YesPending' | 'All'>('YesPending');
   const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [auditionSettings, setAuditionSettings] = useState<AuditionSettings | null>(null);
@@ -172,6 +172,44 @@ export default function EventsView() {
             setAuditionSettings(updatedSettings);
         }
     }
+
+    // Check if RSVP was newly opened (true now, but not before, or new event with RSVP open)
+    const isNewRsvpOpen = savedEvent && savedEvent.isOpenForRSVP && (!editingEvent || !editingEvent.isOpenForRSVP);
+    if (isNewRsvpOpen) {
+      const confirmed = await dialog.confirm({
+        title: 'RSVP Opened',
+        message: `RSVP is now open for "${savedEvent.title || savedEvent.type}"! Would you like to draft and compose the RSVP invitation email to active choir members now?`,
+        confirmLabel: 'Draft Invitation',
+        cancelLabel: 'Later',
+        variant: 'info'
+      });
+      if (confirmed) {
+        const venueName = savedEvent.venue 
+          ? (venues.find(v => v.id === savedEvent.venue)?.name || 'TBD')
+          : 'TBD';
+
+        const values = {
+          eventTitle: savedEvent.title || savedEvent.type,
+          eventType: savedEvent.type,
+          eventDate: formatInTimezone(savedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+          eventLocation: venueName,
+          eventDetails: savedEvent.details || '',
+          singerName: '{singerName}',
+          rsvpLinks: '{{RSVP_LINKS}}',
+        };
+
+        const initialSubject = renderCommunicationTemplate(communicationSettings.reminderSubjectTemplate, values);
+        const initialContent = renderCommunicationTemplate(communicationSettings.reminderBodyTemplate, values);
+
+        navigate('/admin/communications', {
+          state: {
+            initialEventId: savedEvent.id,
+            initialSubject,
+            initialContent,
+          }
+        });
+      }
+    }
   };
 
   const getTemplateValues = (event: Event) => ({
@@ -191,6 +229,9 @@ export default function EventsView() {
         
         if (reminderTarget === 'Yes') {
           return item.rsvp === 'Yes';
+        }
+        if (reminderTarget === 'Pending') {
+          return item.rsvp === 'Pending';
         }
         if (reminderTarget === 'YesPending') {
           return item.rsvp !== 'No';
@@ -240,7 +281,7 @@ export default function EventsView() {
         filters: {
           eventId: event.id,
           rsvp: reminderTarget === 'Yes' ? 'Yes' : reminderTarget === 'YesPending' ? 'Pending' : 'All',
-          voicePart: '',
+          voiceParts: [],
           globalStatus: 'Active (Current)',
         },
       });
@@ -341,7 +382,21 @@ export default function EventsView() {
                     fontWeight: 700,
                   }}
                 >
-                  🟢 Attending Only ({reminderRoster.filter(r => r.expand?.profile?.globalStatus !== 'Inactive' && r.rsvp === 'Yes').length})
+                  🟢 Attending ({reminderRoster.filter(r => r.expand?.profile?.globalStatus !== 'Inactive' && r.rsvp === 'Yes').length})
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setReminderTarget('Pending')}
+                  style={{
+                    height: '38px',
+                    backgroundColor: reminderTarget === 'Pending' ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
+                    color: '#b45309',
+                    border: `1px solid ${reminderTarget === 'Pending' ? 'rgba(245, 158, 11, 0.3)' : 'var(--border)'}`,
+                    fontWeight: 700,
+                  }}
+                >
+                  ⏳ Pending ({reminderRoster.filter(r => r.expand?.profile?.globalStatus !== 'Inactive' && r.rsvp === 'Pending').length})
                 </button>
                 <button
                   type="button"
@@ -350,7 +405,7 @@ export default function EventsView() {
                   style={{
                     height: '38px',
                     backgroundColor: reminderTarget === 'YesPending' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                    color: reminderTarget === 'YesPending' ? '#1d4ed8' : 'var(--text-muted)',
+                    color: '#1d4ed8',
                     border: `1px solid ${reminderTarget === 'YesPending' ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)'}`,
                     fontWeight: 700,
                   }}

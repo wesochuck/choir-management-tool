@@ -228,6 +228,10 @@ cronAdd("post_event_report", "0 * * * *", () => {
 });
 
 cronAdd("automated_event_reminders", "30 * * * *", () => {
+    // Disabled: Automated background reminders are disabled.
+    // The admin now proactively drafts and sends RSVP invites directly from the Communications pane on save.
+    return;
+
     // Helper to safely convert Go byte slices to JS strings
     function decodeGoBytes(val) {
         if (!val) return "";

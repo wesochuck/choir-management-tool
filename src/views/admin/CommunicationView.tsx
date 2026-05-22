@@ -25,7 +25,7 @@ type Tab = 'compose' | 'automated' | 'history' | 'settings';
 const DEFAULT_FILTERS: CommunicationFilters = {
   eventId: '',
   rsvp: 'All',
-  voicePart: '',
+  voiceParts: [],
   globalStatus: 'Active (Current)',
 };
 
@@ -43,7 +43,7 @@ interface AutomatedTask {
 export default function CommunicationView() {
   const dialog = useDialog();
   const location = useLocation();
-  const { labels: voicePartLabels } = useVoiceParts();
+  const { labels: voicePartLabels, sections: configSections } = useVoiceParts();
   const routeState = location.state as {
     initialRecipients?: CommunicationRecipient[];
     initialSubject?: string;
@@ -75,7 +75,21 @@ export default function CommunicationView() {
   const [isResolving, setIsResolving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const skipNextRecipientResolveRef = useRef(Boolean(routeState?.initialRecipients));
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDropdownOpen]);
   const [recipientPreviewList, setRecipientPreviewList] = useState<{ isOpen: boolean; recipients: CommunicationRecipient[]; title: string }>({
     isOpen: false,
     recipients: [],
@@ -160,8 +174,14 @@ export default function CommunicationView() {
       setHistory(loadedHistory);
       setConfig(loadedConfig);
       setTemplates(loadedTemplates);
-      setSubject((current) => current || loadedTemplates.emailSubject);
-      setContent((current) => current || loadedTemplates.emailBody);
+      setSubject((current) => {
+        if (routeState?.initialSubject) return routeState.initialSubject;
+        return current || loadedTemplates.emailSubject;
+      });
+      setContent((current) => {
+        if (routeState?.initialContent) return routeState.initialContent;
+        return current || loadedTemplates.emailBody;
+      });
       setIsLoading(false);
     };
 
@@ -173,7 +193,7 @@ export default function CommunicationView() {
         variant: 'danger',
       });
     });
-  }, [dialog]);
+  }, [dialog, routeState?.initialSubject, routeState?.initialContent]);
 
   useEffect(() => {
     if (skipNextRecipientResolveRef.current) {
@@ -186,7 +206,7 @@ export default function CommunicationView() {
       .then((resolved) => {
         if (!isCurrent) return;
         setRecipients(resolved);
-        setSelectedIds(new Set(resolved.map((recipient) => recipient.id)));
+        setSelectedIds(new Set(resolved.map((recipient: CommunicationRecipient) => recipient.id)));
       })
       .catch(() => {
         if (!isCurrent) return;
@@ -216,6 +236,14 @@ export default function CommunicationView() {
       }
       return next;
     });
+  };
+
+  const handleVoicePartToggle = (token: string) => {
+    const active = filters.voiceParts || [];
+    const next = active.includes(token)
+      ? active.filter((p) => p !== token)
+      : [...active, token];
+    updateFilter('voiceParts', next);
   };
 
   const sendMessage = async () => {
@@ -280,10 +308,18 @@ export default function CommunicationView() {
     setMessageType(message.type);
     const mFilters = message.filters as Record<string, unknown>;
     if (mFilters?.eventId) {
+      // Handle legacy single voicePart string vs new voiceParts array
+      let vpArray: string[] = [];
+      if (Array.isArray(mFilters.voiceParts)) {
+        vpArray = mFilters.voiceParts as string[];
+      } else if (typeof mFilters.voicePart === 'string' && mFilters.voicePart) {
+        vpArray = [mFilters.voicePart];
+      }
+
       setFilters({
         eventId: (mFilters.eventId as string) || '',
         rsvp: (mFilters.rsvp as CommunicationFilters['rsvp']) || 'All',
-        voicePart: (mFilters.voicePart as string) || '',
+        voiceParts: vpArray,
         globalStatus: (mFilters.globalStatus as string) || 'Active (Current)',
       });
     } else {
@@ -376,9 +412,10 @@ export default function CommunicationView() {
                             const r = await communicationService.resolveRecipients({ 
                               eventId: task.event.id, 
                               rsvp: 'All', 
-                              voicePart: '', 
+                              voiceParts: [], 
                               globalStatus: 'Active (Current)' 
                             });
+
                             setRecipientPreviewList({ 
                               isOpen: true, 
                               recipients: r, 
@@ -509,12 +546,160 @@ export default function CommunicationView() {
                 </select>
               </div>
 
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Voice Part</label>
-                <select className="card" value={filters.voicePart} onChange={(event) => updateFilter('voicePart', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
-                  <option value="">All Voice Parts</option>
-                  {voicePartLabels.map((part) => <option key={part} value={part}>{part}</option>)}
-                </select>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)', position: 'relative' }} ref={dropdownRef}>
+                <label className="text-label">Voice Part / Section</label>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="card flex-row"
+                  style={{
+                    height: '44px',
+                    padding: '0 12px',
+                    width: '100%',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    backgroundColor: 'var(--bg)'
+                  }}
+                >
+                  <span style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontSize: '0.9rem',
+                    fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400
+                  }}>
+                    {(() => {
+                      const active = filters.voiceParts || [];
+                      if (active.length === 0) return 'All Voice Parts';
+                      if (active.length === 1) {
+                        const token = active[0];
+                        const sec = configSections.find(s => s.code === token);
+                        return sec ? sec.name : token;
+                      }
+                      return `${active.length} selected`;
+                    })()}
+                  </span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    style={{
+                      transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s',
+                      color: 'var(--text-muted)'
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div
+                    className="card"
+                    style={{
+                      position: 'absolute',
+                      top: '68px',
+                      left: 0,
+                      right: 0,
+                      zIndex: 100,
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      padding: 'var(--space-xs) 0',
+                      boxShadow: 'var(--shadow-lg)',
+                      backgroundColor: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px'
+                    }}
+                  >
+                    <div style={{
+                      padding: '6px 12px 2px 12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      Sections
+                    </div>
+                    {configSections.map(sec => {
+                      const isChecked = (filters.voiceParts || []).includes(sec.code);
+                      return (
+                        <label
+                          key={sec.code}
+                          className="flex-row"
+                          style={{
+                            padding: '8px 12px',
+                            alignItems: 'center',
+                            gap: 'var(--space-sm)',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            userSelect: 'none',
+                            transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleVoicePartToggle(sec.code)}
+                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '15px', height: '15px' }}
+                          />
+                          <span style={{ fontWeight: isChecked ? 600 : 400 }}>{sec.name}</span>
+                        </label>
+                      );
+                    })}
+
+                    <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
+
+                    <div style={{
+                      padding: '6px 12px 2px 12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      Individual Parts
+                    </div>
+                    {voicePartLabels.map(part => {
+                      const isChecked = (filters.voiceParts || []).includes(part);
+                      return (
+                        <label
+                          key={part}
+                          className="flex-row"
+                          style={{
+                            padding: '8px 12px',
+                            alignItems: 'center',
+                            gap: 'var(--space-sm)',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            userSelect: 'none',
+                            transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleVoicePartToggle(part)}
+                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '15px', height: '15px' }}
+                          />
+                          <span style={{ fontWeight: isChecked ? 600 : 400 }}>{part}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
