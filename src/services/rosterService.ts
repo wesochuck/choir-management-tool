@@ -85,9 +85,38 @@ export const rosterService = {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
         pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
       );
+
+      // If we are resetting the RSVP to 'Pending', check if there is other useful data.
+      // If not, we can safely delete the record to keep the DB clean and avoid stale entries.
+      const hasOtherData = existing.attendance !== 'Pending' ||
+                           Boolean(existing.folderNumber && existing.folderNumber.trim() !== '') ||
+                           existing.folderReturned ||
+                           Boolean(existing.seatId && existing.seatId.trim() !== '');
+
+      if (rsvp === 'Pending' && !hasOtherData) {
+        await pb.collection('eventRosters').delete(existing.id);
+        return {
+          ...existing,
+          rsvp: 'Pending',
+        } as EventRoster;
+      }
+
       return await pb.collection('eventRosters').update<EventRoster>(existing.id, { rsvp });
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
+        // If it doesn't exist and we want to set it to Pending, no need to create a database record
+        if (rsvp === 'Pending') {
+          return {
+            id: '',
+            event: eventId,
+            profile: profileId,
+            rsvp: 'Pending',
+            attendance: 'Pending',
+            folderNumber: '',
+            folderReturned: false,
+            seatId: '',
+          } as unknown as EventRoster;
+        }
         return await pb.collection('eventRosters').create<EventRoster>({
           event: eventId,
           profile: profileId,

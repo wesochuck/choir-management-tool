@@ -76,7 +76,7 @@ export const useAttendance = (eventId: string) => {
     fetchAttendance();
   }, [fetchAttendance]);
 
-  const setRSVP = async (profileId: string, nextRsvp: 'Yes' | 'No') => {
+  const setRSVP = async (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => {
     const originalItem = items.find(item => item.profileId === profileId);
     if (!originalItem) return;
 

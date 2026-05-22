@@ -647,7 +647,10 @@ export default function AttendanceView() {
 
       <SingerModal
         isOpen={Boolean(editingProfile)}
-        onClose={() => setEditingProfile(null)}
+        onClose={() => {
+          setEditingProfile(null);
+          refresh();
+        }}
         onSave={handleSaveProfile}
         initialData={editingProfile}
       />

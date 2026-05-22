@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { rosterService } from '../src/services/rosterService.ts';
+import { rosterService, type EventRoster } from '../src/services/rosterService.ts';
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
@@ -117,9 +117,133 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
     assert.equal(result[0].id, 'roster_1');
     assert.equal(getFullList.mock.callCount(), 1);
 
-    const callArgs = getFullList.mock.calls[0].arguments[0];
-    assert.ok(callArgs.filter.includes('profile_1'));
-    assert.equal(callArgs.expand, 'event,event.venue');
+    const firstCall = getFullList.mock.calls[0] as unknown as { arguments: [{ filter: string; expand?: string }] } | undefined;
+    const callArgs = firstCall?.arguments?.[0];
+    assert.ok(callArgs?.filter.includes('profile_1'));
+    assert.equal(callArgs?.expand, 'event,event.venue');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('updateRSVP deletes record if set to Pending and no other important data exists', async (t) => {
+  const originalCollection = pb.collection;
+  const getFirstListItem = t.mock.fn(async () => ({
+    id: 'roster_1',
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: 'Yes',
+    attendance: 'Pending',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+  const deleteMock = t.mock.fn(async () => {});
+  const update = t.mock.fn(async () => {
+    throw new Error('Should not update');
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'eventRosters') {
+      return { getFirstListItem, delete: deleteMock, update } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Pending');
+    assert.equal(result.rsvp, 'Pending');
+    assert.equal(getFirstListItem.mock.callCount(), 1);
+    assert.equal(deleteMock.mock.callCount(), 1);
+    assert.equal(update.mock.callCount(), 0);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('updateRSVP updates record (does not delete) if set to Pending but other important data exists', async (t) => {
+  const originalCollection = pb.collection;
+  const getFirstListItem = t.mock.fn(async () => ({
+    id: 'roster_1',
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: 'Yes',
+    attendance: 'Present',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+  const deleteMock = t.mock.fn(async () => {
+    throw new Error('Should not delete');
+  });
+  const update = t.mock.fn(async (id: string, data: Partial<EventRoster>) => ({
+    id,
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: data.rsvp,
+    attendance: 'Present',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+
+  pb.collection = function (name: string) {
+    if (name === 'eventRosters') {
+      return { getFirstListItem, delete: deleteMock, update } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Pending');
+    assert.equal(result.rsvp, 'Pending');
+    assert.equal(getFirstListItem.mock.callCount(), 1);
+    assert.equal(deleteMock.mock.callCount(), 0);
+    assert.equal(update.mock.callCount(), 1);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('updateRSVP updates record normally if set to Yes or No', async (t) => {
+  const originalCollection = pb.collection;
+  const getFirstListItem = t.mock.fn(async () => ({
+    id: 'roster_1',
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: 'Pending',
+    attendance: 'Pending',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+  const deleteMock = t.mock.fn(async () => {
+    throw new Error('Should not delete');
+  });
+  const update = t.mock.fn(async (id: string, data: Partial<EventRoster>) => ({
+    id,
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: data.rsvp,
+    attendance: 'Pending',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+
+  pb.collection = function (name: string) {
+    if (name === 'eventRosters') {
+      return { getFirstListItem, delete: deleteMock, update } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Yes');
+    assert.equal(result.rsvp, 'Yes');
+    assert.equal(getFirstListItem.mock.callCount(), 1);
+    assert.equal(deleteMock.mock.callCount(), 0);
+    assert.equal(update.mock.callCount(), 1);
   } finally {
     pb.collection = originalCollection;
   }
