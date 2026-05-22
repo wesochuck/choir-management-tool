@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem } from '../../services/eventService';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
@@ -13,13 +14,14 @@ import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { useDialog } from '../../contexts/DialogContext';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { findNearestEvent } from '../../lib/eventUtils';
+import { resolveInitialEventId } from '../../lib/eventUtils';
 import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 
 export default function SetListView() {
   const { events, refresh } = useEvents();
+  const [searchParams] = useSearchParams();
   const dialog = useDialog();
   const hasDefaultedRef = useRef(false);
   const eventsRef = useRef(events);
@@ -71,13 +73,28 @@ export default function SetListView() {
     setActiveAudioPart(key === 'tutti' ? 'Tutti' : key);
   };
 
+  const handleOpenPieceEditor = (pieceId: string) => {
+    const selectedPiece = library.find(p => p.id === pieceId);
+    if (!selectedPiece) return;
+
+    // Resolve to top-level parent work if clicked item is a child movement
+    if (selectedPiece.parentId) {
+      const parentPiece = library.find(p => p.id === selectedPiece.parentId);
+      if (parentPiece) {
+        setLibraryEditingPiece(parentPiece);
+        setIsLibraryModalOpen(true);
+        return;
+      }
+    }
+
+    // Fallback for standalone standard pieces
+    setLibraryEditingPiece(selectedPiece);
+    setIsLibraryModalOpen(true);
+  };
+
   const handleEditLinkedPiece = (item: SetListItem) => {
     if (!item.pieceId) return;
-    const piece = library.find(p => p.id === item.pieceId);
-    if (!piece) return;
-
-    setLibraryEditingPiece(piece);
-    setIsLibraryModalOpen(true);
+    handleOpenPieceEditor(item.pieceId);
   };
 
   const handleEdit = (item: SetListItem) => {
@@ -151,13 +168,18 @@ export default function SetListView() {
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
-      const nearest = findNearestEvent(events);
-      if (nearest) {
-        setSelectedEventId(nearest.id);
+      const urlEventId = searchParams.get('eventId');
+      const resolved = resolveInitialEventId(events, urlEventId, {
+        futureOnly: true,
+        type: 'Performance'
+      });
+      
+      if (resolved) {
+        setSelectedEventId(resolved);
         hasDefaultedRef.current = true;
       }
     }
-  }, [events, selectedEventId]);
+  }, [events, selectedEventId, searchParams]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -527,7 +549,7 @@ export default function SetListView() {
                         onEdit={handleEdit} 
                         onDelete={handleDelete} 
                         onPlayTrack={handlePlayRowTrack}
-                        onPieceClick={() => handleEditLinkedPiece(item)}
+                        onPieceClick={handleOpenPieceEditor}
                         genres={configuredGenres}
                       />
                     ))}

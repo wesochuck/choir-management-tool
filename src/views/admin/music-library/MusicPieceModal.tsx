@@ -86,6 +86,10 @@ export function MusicPieceModal({
     const [stagingMovTitle, setStagingMovTitle] = useState('');
     const [stagingMovDuration, setStagingMovDuration] = useState('');
 
+    const parentPiece = piece?.parentId && allPieces
+        ? allPieces.find(p => p.id === piece.parentId)
+        : undefined;
+
     useEffect(() => {
         if (piece) {
             setNewMovementTitle(`Movement ${movements.length + 1}`);
@@ -659,6 +663,28 @@ export function MusicPieceModal({
             <form id="music-piece-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
                 {(!piece || activeTab === 'details') && (
                     <>
+                        {/* NEW LINKED PARENT BANNER NOTICE */}
+                        {parentPiece && (
+                            <div 
+                                style={{
+                                    backgroundColor: 'rgba(74, 124, 89, 0.05)',
+                                    borderLeft: '4px solid var(--primary)',
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    fontSize: '0.875rem',
+                                    color: 'var(--text-main)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    marginBottom: 'var(--space-xs)'
+                                }}
+                            >
+                                <span>
+                                    🔗 <strong>Multi-Movement Link:</strong> This piece is configured as a movement of <strong>{parentPiece.title}</strong>.
+                                </span>
+                            </div>
+                        )}
+
                         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                             <label className="text-label">Title</label>
                             <input required value={title} onChange={e => setTitle(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />

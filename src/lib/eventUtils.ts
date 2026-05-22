@@ -7,21 +7,58 @@ export interface EventLike {
   [key: string]: unknown;
 }
 
+export interface FindNearestEventOptions {
+  relativeTo?: Date;
+  futureOnly?: boolean;
+  type?: string;
+}
+
 /**
  * Finds the event closest in time to relativeTo (defaulting to today's date/time).
+ * Supports both options object and backward-compatible Date parameter.
  */
-export function findNearestEvent<T extends EventLike>(events: T[], relativeTo: Date = new Date()): T | null {
+export function findNearestEvent<T extends EventLike>(
+  events: T[],
+  optionsOrRelativeTo?: FindNearestEventOptions | Date
+): T | null {
   if (!events || events.length === 0) return null;
-  
+
+  let options: FindNearestEventOptions = {};
+  if (optionsOrRelativeTo instanceof Date) {
+    options = { relativeTo: optionsOrRelativeTo };
+  } else if (optionsOrRelativeTo) {
+    options = optionsOrRelativeTo;
+  }
+
+  const { relativeTo = new Date(), futureOnly = false, type } = options;
   const targetTime = relativeTo.getTime();
-  let nearest = events[0];
+
+  let filtered = events;
+
+  // Apply filters if provided
+  if (type) {
+    filtered = filtered.filter(e => e.type === type);
+  }
+  if (futureOnly) {
+    filtered = filtered.filter(e => new Date(e.date).getTime() >= targetTime);
+  }
+
+  // Fallback mechanism to ensure a selection if strict filtering yields no results
+  if (filtered.length === 0) {
+    if (futureOnly || type) {
+      return findNearestEvent(events, { relativeTo });
+    }
+    return null;
+  }
+
+  let nearest = filtered[0];
   let minDiff = Math.abs(new Date(nearest.date).getTime() - targetTime);
 
-  for (let i = 1; i < events.length; i++) {
-    const diff = Math.abs(new Date(events[i].date).getTime() - targetTime);
+  for (let i = 1; i < filtered.length; i++) {
+    const diff = Math.abs(new Date(filtered[i].date).getTime() - targetTime);
     if (diff < minDiff) {
       minDiff = diff;
-      nearest = events[i];
+      nearest = filtered[i];
     }
   }
 
@@ -35,12 +72,13 @@ export function findNearestEvent<T extends EventLike>(events: T[], relativeTo: D
  */
 export function resolveInitialEventId<T extends EventLike>(
   events: T[],
-  urlEventId?: string | null
+  urlEventId?: string | null,
+  options: FindNearestEventOptions = {}
 ): string | null {
   if (urlEventId && events.some(e => e.id === urlEventId)) {
     return urlEventId;
   }
-  const nearest = findNearestEvent(events);
+  const nearest = findNearestEvent(events, options);
   return nearest ? nearest.id : null;
 }
 
