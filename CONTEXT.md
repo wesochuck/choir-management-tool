@@ -24,5 +24,18 @@ A configurable outbound messaging service that allows administrators to input Tw
 ## Multi-Work Piece
 A sheet music catalog record representing a compound musical work consisting of multiple distinct sections or movements (e.g. masses, cantatas, or oratorios).
 
-## Movement
-An individual, named section of a Multi-Work Piece. Each movement possesses its own specific duration and voice-part-specific learning tracks, while inheriting general metadata (like composer, catalog ID, voicing, and physical copies) from its parent piece.
+## Section Bucket
+A top-level classification used to group related voice parts (e.g., "Sopranos" as a bucket for "S1" and "S2"). These buckets are defined in settings and serve as the primary units for automated seating distribution, filtering, and visual identification throughout the application.
+
+## Seating Formation
+A global, immutable configuration template managed in system settings that defines the layout strategy (Columns or Rows) and the section sequence used by the auto-paint engine to fill stage layouts.
+
+## Seating Column
+A vertical slice of a seating layout extending from the front row to the back row across all tiers.
+
+## Seating Row
+A horizontal tier of seats on a stage layout arranged sequentially from front to back.
+
+## Distinct Section Palette
+A predefined set of high-contrast color values assigned to section definitions to guarantee clear visual separation on seating charts and grid layouts.
+

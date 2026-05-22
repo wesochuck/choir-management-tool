@@ -1,15 +1,16 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
-import { calculateAutoPaint, type VoicePart } from '../lib/seatingAlgorithm';
-
-export type { VoicePart } from '../lib/seatingAlgorithm';
+import { calculateAutoPaint } from '../lib/seatingAlgorithm';
+import { type FormationStrategyType } from './settingsService';
 
 export interface SeatingChart extends RecordModel {
   performance: string;
   venue: string;
   layoutOverride: number[] | null;
-  sectionOrder: string | null;
-  assignments: Record<string, string>; // SeatIndex (e.g. "0-5") -> ProfileID
+  formationId: string; // Replaces text-based sectionOrder field
+  assignments: Record<string, string>; // Seat index string -> Profile id string
+  formationType?: 'Column' | 'Row';
+  sectionOrder?: string | null;
 }
 
 export const seatingService = {
@@ -43,9 +44,15 @@ export const seatingService = {
   },
 
   /**
-   * Vertical Wedge Algorithm
+   * Proportional Seating Algorithm
    */
-  calculateAutoPaint(rowCounts: number[], partCounts: Record<VoicePart, number>, sections: VoicePart[]): Record<string, VoicePart> {
-    return calculateAutoPaint(rowCounts, partCounts, sections);
+  calculateAutoPaint(
+    rowCounts: number[], 
+    sectionCounts: Record<string, number>, 
+    sectionOrder: string[],
+    strategy: FormationStrategyType
+  ): Record<string, string> {
+    return calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, strategy);
   }
 };
+

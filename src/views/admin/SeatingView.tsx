@@ -68,7 +68,7 @@ export default function SeatingView() {
 
   const selectedVenue = venues.find(v => v.id === venueId) || null;
   const { 
-    chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, isLoading,
+    chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
     isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave
   } = useSeatingChart(performanceId, selectedVenue);
 
@@ -155,13 +155,13 @@ export default function SeatingView() {
   const handleReset = async () => {
     const shouldReset = await dialog.confirm({
       title: 'Reset Seating Chart',
-      message: 'REALLY RESET EVERYTHING? This will clear assignments, custom row counts, and section orders.',
+      message: 'REALLY RESET EVERYTHING? This will clear assignments, custom row counts, and formations.',
       confirmLabel: 'Reset',
       variant: 'danger',
     });
     if (!shouldReset) return;
 
-    await updateChart({ assignments: {}, layoutOverride: null, sectionOrder: null });
+    await updateChart({ assignments: {}, layoutOverride: null, formationId: seatingSettings.defaultFormationId });
   };
 
   const handleCopy = async (sourceChartId: string) => {
@@ -177,31 +177,6 @@ export default function SeatingView() {
 
     await copyFromPerformance(source);
   };
-
-  const handlePatternChange = async (val: string) => {
-    const msg = "Changing the formation will clear all current seating assignments. Do you want to proceed?";
-    const shouldChange = await dialog.confirm({
-      title: 'Change Formation',
-      message: msg,
-      confirmLabel: 'Change',
-      variant: 'danger',
-    });
-    if (!shouldChange) return;
-
-    if (val === 'SATB') {
-      await updateChart({ sectionOrder: 'S,A,T,B', assignments: {} });
-    } else if (val === 'SBTA') {
-      await updateChart({ sectionOrder: 'S,B,T,A', assignments: {} });
-    } else if (val === 'Custom') {
-      await updateChart({ sectionOrder: '', assignments: {} });
-    }
-  };
-
-  const [localCustomPattern, setLocalCustomPattern] = useState('');
-
-  useEffect(() => {
-    if (chart?.sectionOrder) setLocalCustomPattern(chart.sectionOrder);
-  }, [chart?.sectionOrder]);
 
   return (
     <div 
@@ -278,36 +253,28 @@ export default function SeatingView() {
             <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formation:</span>
             <div className="flex-row" style={{ gap: '4px' }}>
               <select 
-                value={
-                  (!chart?.sectionOrder || chart?.sectionOrder?.toUpperCase() === 'S,A,T,B') ? 'SATB' : 
-                  chart?.sectionOrder?.toUpperCase() === 'S,B,T,A' ? 'SBTA' : 
-                  'Custom'
-                } 
-                onChange={(e) => handlePatternChange(e.target.value)}
+                value={chart?.formationId || seatingSettings.defaultFormationId} 
+                onChange={async (e) => {
+                  const selectedId = e.target.value;
+                  const formation = seatingSettings.formations.find(f => f.id === selectedId);
+                  if (!formation) return;
+                  
+                  const shouldChange = await dialog.confirm({
+                    title: 'Change Formation',
+                    message: 'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
+                    confirmLabel: 'Change',
+                    variant: 'danger',
+                  });
+                  if (!shouldChange) return;
+
+                  await updateChart({ formationId: selectedId, assignments: {} });
+                }}
                 className="seating-select-pattern"
               >
-                <option value="SATB">SATB (Standard)</option>
-                <option value="SBTA">SBTA (Wedge Mix)</option>
-                <option value="Custom">Custom...</option>
+                {seatingSettings.formations?.map(formation => (
+                  <option key={formation.id} value={formation.id}>{formation.name}</option>
+                ))}
               </select>
-              {(chart?.sectionOrder !== 'S,A,T,B' && chart?.sectionOrder !== 'S,B,T,A') && (
-                <div className="flex-row" style={{ gap: '4px' }}>
-                  <input 
-                    value={localCustomPattern}
-                    onChange={(e) => setLocalCustomPattern(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && updateChart({ sectionOrder: localCustomPattern })}
-                    onBlur={() => updateChart({ sectionOrder: localCustomPattern })}
-                    placeholder="S,B,T,A"
-                    className="seating-pattern-input"
-                  />
-                  <button 
-                    onClick={() => updateChart({ sectionOrder: localCustomPattern })} 
-                    className="btn btn-primary seating-pattern-btn"
-                  >
-                    Apply
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -442,6 +409,8 @@ export default function SeatingView() {
                   assignments={optimisticAssignments}
                   suggestions={suggestions}
                   activeProfiles={activeProfiles}
+                  sections={sections}
+                  voiceParts={voiceParts}
                   onAssign={assignSinger}
                   onUpdateRowCounts={async (newRowCounts, newAssignments) => {
                     const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
@@ -457,6 +426,8 @@ export default function SeatingView() {
                   <SeatingBottomDock 
                     activeProfiles={activeProfiles}
                     assignments={optimisticAssignments}
+                    sections={sections}
+                    voiceParts={voiceParts}
                     assignSinger={assignSinger}
                   />
                 )}

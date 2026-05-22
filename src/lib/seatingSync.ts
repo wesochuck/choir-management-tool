@@ -33,42 +33,40 @@ export const mergeSeatingResponseWithDirtyState = (
   assignments: optimisticAssignments,
 }) as SeatingChart;
 
+import { DEFAULT_SECTIONS, DEFAULT_VOICE_PARTS, type SectionDef, type VoicePartDef } from '../services/settingsService';
+
 export function groupSingersBySection<T extends { id: string; name: string; voicePart: string }>(
   profiles: T[],
-  assignedIds: Set<string>
+  assignedIds: Set<string>,
+  sections: SectionDef[] = DEFAULT_SECTIONS,
+  voicePartDefs: VoicePartDef[] = DEFAULT_VOICE_PARTS
 ) {
   const unassigned = profiles.filter(p => !assignedIds.has(p.id));
   
-  const groups: {
-    S: T[];
-    A: T[];
-    T: T[];
-    B: T[];
-    Other: T[];
-  } = {
-    S: [],
-    A: [],
-    T: [],
-    B: [],
-    Other: []
-  };
+  const groups: Record<string, T[]> = {};
+  sections.forEach(s => {
+    groups[s.code] = [];
+  });
+  groups.Other = [];
 
   unassigned.forEach(p => {
-    const part = p.voicePart ? p.voicePart.trim() : '';
-    
-    const isSoprano = /^(soprano|s)(\s*\d+)?$/i.test(part);
-    const isAlto = /^(alto|a)(\s*\d+)?$/i.test(part);
-    const isTenor = /^(tenor|t)(\s*\d+)?$/i.test(part);
-    const isBass = /^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part);
+    const vpDef = voicePartDefs.find(vp => 
+      vp.label === p.voicePart || 
+      vp.fullName === p.voicePart || 
+      vp.label.toLowerCase() === p.voicePart.toLowerCase() ||
+      vp.fullName.toLowerCase() === p.voicePart.toLowerCase()
+    );
+    let sectionCode = vpDef?.sectionCode;
+    if (!sectionCode) {
+      const part = p.voicePart ? p.voicePart.trim() : '';
+      if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+      else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+      else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+      else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+    }
 
-    if (isSoprano) {
-      groups.S.push(p);
-    } else if (isAlto) {
-      groups.A.push(p);
-    } else if (isTenor) {
-      groups.T.push(p);
-    } else if (isBass) {
-      groups.B.push(p);
+    if (sectionCode && groups[sectionCode]) {
+      groups[sectionCode].push(p);
     } else {
       groups.Other.push(p);
     }

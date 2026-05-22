@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
-import { seatingService, type SeatingChart, type VoicePart } from '../services/seatingService';
+import { seatingService, type SeatingChart } from '../services/seatingService';
 import { profileService, type Profile } from '../services/profileService';
 import { type Venue } from '../services/venueService';
 import {
@@ -11,6 +11,7 @@ import {
   filterProfilesByRsvpYes,
 } from '../lib/seatingSync';
 import { rosterService } from '../services/rosterService';
+import { settingsService, getVoicePartsAndSections, type SeatingSettings, DEFAULT_SEATING_SETTINGS, DEFAULT_SECTIONS, DEFAULT_VOICE_PARTS, type VoicePartSettings, type SeatingFormationDef } from '../services/settingsService';
 
 interface SyncOptions {
   performanceId?: string;
@@ -28,6 +29,8 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   const [chart, setChart] = useState<SeatingChart | null>(null);
   const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
+  const [seatingSettings, setSeatingSettings] = useState<SeatingSettings>(DEFAULT_SEATING_SETTINGS);
+  const [voicePartSettings, setVoicePartSettings] = useState<VoicePartSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSyncPending, setIsSyncPending] = useState(false);
@@ -219,10 +222,12 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     }
 
     try {
-      const [existingChart, profiles, roster] = await Promise.all([
+      const [existingChart, profiles, roster, sSettings, vpSettings] = await Promise.all([
         seatingService.getChartForPerformance(performanceId, venueId || null),
         profileService.getActiveProfiles(), // Filtered for Active (Current/Future)
         rosterService.getEventRoster(performanceId),
+        settingsService.getSeatingSettings(),
+        getVoicePartsAndSections(),
       ]);
 
       // Strictly filter for Active (Current) and RSVP'd Yes as per user request for seating chart
@@ -245,6 +250,8 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       optimisticAssignmentsRef.current = assignments;
       setOptimisticAssignments(assignments);
       setActiveProfiles(activeCurrent);
+      setSeatingSettings(sSettings);
+      setVoicePartSettings(vpSettings);
       setError(null);
       loadedContextKeyRef.current = contextKey;
     } catch (err: unknown) {
@@ -262,31 +269,41 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     fetchData();
   }, [fetchData]);
 
-  const partCounts = useMemo(() => {
-    const counts: Record<VoicePart, number> = { S: 0, A: 0, T: 0, B: 0 };
+  const sectionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const sections = voicePartSettings?.sections || DEFAULT_SECTIONS;
+    sections.forEach(s => counts[s.code] = 0);
+    
     activeProfiles.forEach(p => {
-      const section = p.voicePart[0] as VoicePart;
-      if (counts[section] !== undefined) counts[section]++;
+      const voicePart = voicePartSettings?.voiceParts.find(vp => vp.label === p.voicePart);
+      const sectionCode = voicePart?.sectionCode || p.voicePart[0];
+      if (counts[sectionCode] !== undefined) counts[sectionCode]++;
+      else counts[sectionCode] = 1;
     });
     return counts;
-  }, [activeProfiles]);
+  }, [activeProfiles, voicePartSettings]);
 
   const rowCounts = useMemo(() => {
     return chart?.layoutOverride || venue?.rowCounts || [];
   }, [chart, venue]);
 
-  const sections = useMemo(() => {
-    const order = chart?.sectionOrder;
-    if (order && order.trim()) {
-      return order.split(',').map(s => s.trim().toUpperCase()) as VoicePart[];
-    }
-    // Default formation
-    return ['S', 'A', 'T', 'B'] as VoicePart[];
-  }, [chart]);
+  const currentFormation = useMemo((): SeatingFormationDef => {
+    const fId = chart?.formationId || seatingSettings.defaultFormationId;
+    const found = seatingSettings.formations.find((f: SeatingFormationDef) => f.id === fId);
+    return found || seatingSettings.formations[0] || DEFAULT_SEATING_SETTINGS.formations[0];
+  }, [chart?.formationId, seatingSettings]);
+
+  const formationType = useMemo((): 'Column' | 'Row' => {
+    return currentFormation.strategy === 'horizontal_row' ? 'Row' : 'Column';
+  }, [currentFormation]);
+
+  const sectionOrder = useMemo((): string[] => {
+    return currentFormation.sectionOrder;
+  }, [currentFormation]);
 
   const suggestions = useMemo(() => {
-    return seatingService.calculateAutoPaint(rowCounts, partCounts, sections);
-  }, [rowCounts, partCounts, sections]);
+    return seatingService.calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, currentFormation.strategy);
+  }, [rowCounts, sectionCounts, sectionOrder, currentFormation.strategy]);
 
   const queueChartSave = useCallback((updates: Partial<SeatingChart>) => {
     if (!venue || !performanceId) return undefined;
@@ -360,7 +377,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     return updateChart({
       assignments: sourceChart.assignments,
       layoutOverride: sourceChart.layoutOverride,
-      sectionOrder: sourceChart.sectionOrder,
+      formationId: sourceChart.formationId,
     });
   };
 
@@ -380,10 +397,15 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     chart,
     optimisticAssignments,
     activeProfiles,
-    partCounts,
+    sectionCounts,
     rowCounts,
     suggestions,
-    sections,
+    formationType,
+    sectionOrder,
+    currentFormation,
+    sections: voicePartSettings?.sections || DEFAULT_SECTIONS,
+    voiceParts: voicePartSettings?.voiceParts || DEFAULT_VOICE_PARTS,
+    seatingSettings,
     isLoading,
     isSaving,
     isDirty,

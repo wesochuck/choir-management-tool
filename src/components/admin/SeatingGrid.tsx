@@ -1,29 +1,34 @@
 import React from 'react';
 import { type Profile } from '../../services/profileService';
-import { type VoicePart } from '../../services/seatingService';
+import { type SectionDef, type VoicePartDef } from '../../services/settingsService';
 import { getUniqueDisplayNames, getLastName, getFirstName } from '../../lib/stringUtils';
 import { useDialog } from '../../contexts/DialogContext';
 import { removeSeatFromRow, removeRowAndShiftAssignments } from '../../lib/seatingSync';
 
+function getContrastColor(hex: string): string {
+  if (!hex || hex.length < 6) return '#000000';
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#000000' : '#FFFFFF';
+}
+
 interface SeatingGridProps {
   rowCounts: number[];
   assignments: Record<string, string>;
-  suggestions: Record<string, VoicePart>;
+  suggestions: Record<string, string>;
   activeProfiles: Profile[];
+  sections: SectionDef[];
+  voiceParts: VoicePartDef[];
   onAssign: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   isReadOnly?: boolean;
   onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<void>;
 }
 
-const SECTION_COLORS: Record<string, { bg: string, text: string }> = {
-  'S': { bg: 'var(--color-performance-bg)', text: 'var(--color-performance-text)' },
-  'A': { bg: 'var(--primary-light)', text: 'var(--primary-deep)' }, 
-  'T': { bg: '#fef3c7', text: '#92400e' }, 
-  'B': { bg: '#e0f2fe', text: '#075985' }, 
-};
-
 export const SeatingGrid: React.FC<SeatingGridProps> = ({ 
-  rowCounts, assignments, suggestions, activeProfiles, onAssign, isReadOnly = false, onUpdateRowCounts 
+  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts 
 }) => {
   const dialog = useDialog();
   const formatNameLastFirst = React.useCallback((fullName: string): string => {
@@ -218,7 +223,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const suggestion = suggestions[seatKey];
             const profileId = assignments[seatKey];
             const assignedProfile = profileId ? profileMap[profileId] : null;
-            const colors = suggestion ? SECTION_COLORS[suggestion] : { bg: 'var(--bg)', text: 'var(--text-muted)' };
+            
+            const sectionDef = suggestion ? sections.find(s => s.code === suggestion) : null;
+            const secColor = sectionDef?.color || sectionDef?.colorBg;
+            const colors = secColor
+              ? { bg: secColor, text: getContrastColor(secColor) }
+              : { bg: 'var(--surface)', text: 'var(--text-muted)' };
 
             // Wedge Outline Logic
             const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
@@ -295,11 +305,14 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <option value="">-- Assign --</option>
                     <option value="">(Empty)</option>
                     
-                    {suggestion && (
-                      <optgroup label={`Recommended (${suggestion})`}>
+                    {suggestion && sectionDef && (
+                      <optgroup label={`Recommended (${sectionDef.name})`}>
                         {activeProfiles
                           .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
-                          .filter(p => p.voicePart[0] === suggestion)
+                          .filter(p => {
+                            const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+                            return vpDef?.sectionCode === suggestion;
+                          })
                           .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
                           .map(p => (
                             <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
@@ -307,11 +320,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                         }
                       </optgroup>
                     )}
-
                     <optgroup label="Other Sections">
                       {activeProfiles
                         .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
-                        .filter(p => p.voicePart[0] !== suggestion)
+                        .filter(p => {
+                          const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+                          return vpDef?.sectionCode !== suggestion;
+                        })
                         .sort((a, b) => {
                           const vpCompare = a.voicePart.localeCompare(b.voicePart);
                           if (vpCompare !== 0) return vpCompare;
@@ -369,7 +384,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 )}
                 
                 <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                  {suggestion}{seatIndex + 1}
+                  {sectionDef?.name[0] || suggestion}{seatIndex + 1}
                 </div>
                 {assignedProfile ? (
                   <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>

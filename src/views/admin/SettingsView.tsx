@@ -5,10 +5,12 @@ import {
   DEFAULT_ATTENDANCE_SETTINGS,
   DEFAULT_ROSTER_SETTINGS,
   DEFAULT_MUSIC_LIBRARY_SETTINGS,
+  DEFAULT_SEATING_SETTINGS,
   settingsService,
   type AttendanceSettings,
   type RosterSettings,
   type MusicLibrarySettings,
+  type SeatingSettings,
   getVoicePartsAndSections,
   saveVoicePartsAndSections,
   type VoicePartDef,
@@ -17,6 +19,29 @@ import {
 import { profileService, type Profile } from '../../services/profileService';
 import { useChoirName } from '../../hooks/useDocumentTitle';
 
+function isColorTooClose(hex1: string, hex2: string): boolean {
+  if (!hex1 || !hex2 || !hex1.startsWith('#') || !hex2.startsWith('#')) return false;
+  const r1 = parseInt(hex1.substring(1, 3), 16);
+  const g1 = parseInt(hex1.substring(3, 5), 16);
+  const b1 = parseInt(hex1.substring(5, 7), 16);
+  
+  const r2 = parseInt(hex2.substring(1, 3), 16);
+  const g2 = parseInt(hex2.substring(3, 5), 16);
+  const b2 = parseInt(hex2.substring(5, 7), 16);
+  
+  const distance = Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+  return distance < 60; // Returns true if colors lack adequate visual contrast
+}
+
+function getContrastColor(hex: string): string {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return 'var(--text)';
+  const r = parseInt(hex.substring(1, 3), 16);
+  const g = parseInt(hex.substring(3, 5), 16);
+  const b = parseInt(hex.substring(5, 7), 16);
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return (yiq >= 128) ? '#000000' : '#ffffff';
+}
+
 export default function SettingsView() {
   const navigate = useNavigate();
   const { setChoirName: setContextChoirName } = useChoirName();
@@ -24,6 +49,7 @@ export default function SettingsView() {
   const [attendanceSettings, setAttendanceSettings] = useState<AttendanceSettings>(DEFAULT_ATTENDANCE_SETTINGS);
   const [rosterSettings, setRosterSettings] = useState<RosterSettings>(DEFAULT_ROSTER_SETTINGS);
   const [musicLibrarySettings, setMusicLibrarySettings] = useState<MusicLibrarySettings>(DEFAULT_MUSIC_LIBRARY_SETTINGS);
+  const [seatingSettings, setSeatingSettings] = useState<SeatingSettings>(DEFAULT_SEATING_SETTINGS);
   const [sections, setSections] = useState<SectionDef[]>([]);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -41,6 +67,8 @@ export default function SettingsView() {
       setRosterSettings(roster);
       const musicLib = await settingsService.getMusicLibrarySettings();
       setMusicLibrarySettings(musicLib);
+      const seating = await settingsService.getSeatingSettings();
+      setSeatingSettings(seating);
       const settings = await getVoicePartsAndSections();
       setVoiceParts(settings.voiceParts);
       setSections(settings.sections);
@@ -65,6 +93,7 @@ export default function SettingsView() {
       await settingsService.saveAttendanceSettings(attendanceSettings);
       await settingsService.saveRosterSettings(rosterSettings);
       await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
+      await settingsService.saveSeatingSettings(seatingSettings);
       await saveVoicePartsAndSections(voiceParts, sections);
       setMessage('Settings saved.');
     } catch {
@@ -296,15 +325,23 @@ export default function SettingsView() {
       <AppCard title="Section Bucket Configurations">
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
           <p className="text-muted" style={{ margin: 0 }}>
-            Configure the section buckets for your choir (e.g. S, Sopranos).
+            Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity on the seating chart.
           </p>
 
           <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
             {sections.map((sec, index) => {
               const count = voiceParts.filter(vp => vp.sectionCode === sec.code).length;
               const isTied = isSectionReferenced(sec.code);
+              
+              const hexBg = sec.color || sec.colorBg || '#e0e0e0';
+              const tooClose = sections.some((other, idx) => {
+                if (idx === index) return false;
+                const otherHex = other.color || other.colorBg;
+                return isColorTooClose(hexBg, otherHex || '');
+              });
+
               return (
-                <div key={index} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 200px 100px 80px', gap: 'var(--space-sm)', alignItems: 'center', width: '100%' }}>
                   <input
                     value={sec.code}
                     onChange={(e) => {
@@ -312,11 +349,10 @@ export default function SettingsView() {
                       newSecs[index] = { ...newSecs[index], code: e.target.value };
                       setSections(newSecs);
                     }}
-                    placeholder="Code (e.g. S)"
+                    placeholder="Code"
                     disabled={isTied}
                     className="card"
-                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
-                    title={isTied ? "Cannot change code of a section bucket referenced by voice parts" : undefined}
+                    style={{ width: '100%', padding: '0 8px', height: '40px' }}
                   />
                   <input
                     value={sec.name}
@@ -325,12 +361,55 @@ export default function SettingsView() {
                       newSecs[index] = { ...newSecs[index], name: e.target.value };
                       setSections(newSecs);
                     }}
-                    placeholder="Name (e.g. Sopranos)"
+                    placeholder="Name"
                     className="card"
-                    style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                    style={{ width: '100%', padding: '0 8px', height: '40px' }}
                   />
+                  
+                  <div className="flex-col" style={{ gap: '2px' }}>
+                    <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+                      <input 
+                        type="color" 
+                        value={hexBg} 
+                        onChange={(e) => {
+                          const newSecs = [...sections];
+                          const val = e.target.value;
+                          newSecs[index] = { 
+                            ...newSecs[index], 
+                            color: val,
+                            colorBg: val,
+                            colorText: getContrastColor(val)
+                          };
+                          setSections(newSecs);
+                        }}
+                        style={{ width: '32px', height: '32px', border: 'none', borderRadius: '50%', cursor: 'pointer', padding: 0 }}
+                      />
+                      <input 
+                        type="text" 
+                        value={sec.color || sec.colorBg || ''} 
+                        placeholder="#FFFFFF"
+                        onChange={(e) => {
+                          const newSecs = [...sections];
+                          const val = e.target.value;
+                          newSecs[index] = { 
+                            ...newSecs[index], 
+                            color: val,
+                            colorBg: val,
+                            colorText: getContrastColor(val)
+                          };
+                          setSections(newSecs);
+                        }}
+                        className="card"
+                        style={{ width: '90px', padding: '4px 8px', fontSize: '0.85rem', height: '32px' }}
+                      />
+                      {tooClose && (
+                        <span title="Warning: This color lacks adequate visual contrast with another section color." style={{ color: 'var(--color-danger-text)', cursor: 'help' }}>⚠️</span>
+                      )}
+                    </div>
+                  </div>
+
                   <div style={{ fontSize: 'var(--font-size-label)', color: 'var(--text-light)', textAlign: 'center' }}>
-                    {count} voice part{count === 1 ? '' : 's'}
+                    {count} part{count === 1 ? '' : 's'}
                   </div>
                   <button
                     type="button"
@@ -340,7 +419,6 @@ export default function SettingsView() {
                     disabled={isTied}
                     className="btn btn-danger btn-sm"
                     style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    title={isTied ? "Cannot delete section referenced by voice parts" : undefined}
                   >
                     Delete
                   </button>
@@ -351,11 +429,90 @@ export default function SettingsView() {
 
           <button
             type="button"
-            onClick={() => setSections([...sections, { code: '', name: '' }])}
+            onClick={() => setSections([...sections, { code: '', name: '', color: '', colorBg: '', colorText: '' }])}
             className="btn btn-secondary"
             style={{ alignSelf: 'flex-start' }}
           >
             + Add Section Bucket
+          </button>
+        </div>
+      </AppCard>
+
+      <AppCard title="Seating Formations">
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <p className="text-muted" style={{ margin: 0 }}>
+            Define reusable seating formations for your choir.
+          </p>
+
+          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            {seatingSettings.formations?.map((formation, index) => (
+              <div key={formation.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 2fr 80px', gap: 'var(--space-sm)', alignItems: 'center', width: '100%', padding: 'var(--space-sm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg)' }}>
+                <input
+                  value={formation.name}
+                  onChange={(e) => {
+                    const newFormations = [...seatingSettings.formations];
+                    newFormations[index] = { ...newFormations[index], name: e.target.value };
+                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                  }}
+                  placeholder="Formation Name"
+                  className="card"
+                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                />
+                <select
+                  value={formation.strategy}
+                  onChange={(e) => {
+                    const newFormations = [...seatingSettings.formations];
+                    newFormations[index] = { ...newFormations[index], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
+                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                  }}
+                  className="card"
+                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                >
+                  <option value="vertical_column">Vertical Columns</option>
+                  <option value="horizontal_row">Horizontal Rows</option>
+                </select>
+                <input
+                  value={formation.sectionOrder.join(', ')}
+                  onChange={(e) => {
+                    const newFormations = [...seatingSettings.formations];
+                    newFormations[index] = { ...newFormations[index], sectionOrder: e.target.value.split(',').map(s => s.trim().toUpperCase()) };
+                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                  }}
+                  placeholder="Order (e.g. S, A, T, B)"
+                  className="card"
+                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newFormations = seatingSettings.formations.filter((_, idx) => idx !== index);
+                    setSeatingSettings({ ...seatingSettings, formations: newFormations });
+                  }}
+                  className="btn btn-danger btn-sm"
+                  style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const newId = `preset-${Date.now()}`;
+              setSeatingSettings({
+                ...seatingSettings,
+                formations: [
+                  ...(seatingSettings.formations || []),
+                  { id: newId, name: 'New Formation', strategy: 'vertical_column', sectionOrder: sections.map(s => s.code) }
+                ]
+              });
+            }}
+            className="btn btn-secondary"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            + Add Formation Preset
           </button>
         </div>
       </AppCard>

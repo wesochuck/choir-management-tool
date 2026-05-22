@@ -2,32 +2,47 @@ import { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { groupSingersBySection } from '../../lib/seatingSync';
 import { getUniqueDisplayNames } from '../../lib/stringUtils';
+import type { SectionDef, VoicePartDef } from '../../services/settingsService';
+
+function getContrastColor(hex: string): string {
+  if (!hex || hex.length < 6) return '#000000';
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#000000' : '#FFFFFF';
+}
 
 interface SeatingBottomDockProps {
   activeProfiles: Profile[];
   assignments: Record<string, string>;
+  sections: SectionDef[];
+  voiceParts: VoicePartDef[];
   assignSinger: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
 }
 
 export function SeatingBottomDock({
   activeProfiles,
   assignments,
+  sections,
+  voiceParts,
   assignSinger
 }: SeatingBottomDockProps) {
   const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
-  const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds), [activeProfiles, assignedIds]);
+  const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds, sections, voiceParts), [activeProfiles, assignedIds, sections, voiceParts]);
 
   const uniqueDisplayNames = useMemo(() => {
     return getUniqueDisplayNames(activeProfiles);
   }, [activeProfiles]);
 
-  const sections: { key: 'S' | 'A' | 'T' | 'B' | 'Other'; label: string }[] = [
-    { key: 'S', label: 'Sopranos' },
-    { key: 'A', label: 'Altos' },
-    { key: 'T', label: 'Tenors' },
-    { key: 'B', label: 'Basses' },
-    { key: 'Other', label: 'Other' },
-  ];
+  const displaySections = useMemo(() => {
+    const list = sections.map(s => ({ key: s.code, label: s.name }));
+    if (grouped.Other && grouped.Other.length > 0) {
+      list.push({ key: 'Other', label: 'Other' });
+    }
+    return list;
+  }, [sections, grouped.Other]);
 
   return (
     <div className="no-print seating-bottom-dock">
@@ -51,16 +66,28 @@ export function SeatingBottomDock({
           <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
         </div>
 
-        <div className="bottom-dock-grid">
-          {sections.map(({ key, label }) => {
-            const list = grouped[key];
+        <div className="bottom-dock-grid" style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}>
+          {displaySections.map(({ key, label }) => {
+            const list = grouped[key] || [];
+            const sectionDef = sections.find(s => s.code === key);
+            const secColor = sectionDef?.color || sectionDef?.colorBg;
+            const badgeStyle = secColor ? {
+              backgroundColor: secColor,
+              color: getContrastColor(secColor),
+              border: `1px solid ${secColor}`
+            } : undefined;
+            const labelStyle = secColor ? {
+              color: secColor,
+              fontWeight: 700
+            } : undefined;
+
             return (
               <div key={key} className="flex-col bottom-dock-lane">
                 <div className="flex-row bottom-dock-lane-header">
-                  <span className="text-label lane-label">
+                  <span className="text-label lane-label" style={labelStyle}>
                     {label}
                   </span>
-                  <span className="badge badge-rehearsal lane-badge">
+                  <span className="badge badge-rehearsal lane-badge" style={badgeStyle}>
                     {list.length}
                   </span>
                 </div>

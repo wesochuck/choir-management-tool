@@ -250,6 +250,33 @@ export const settingsService = {
     return await upsertSetting('music_library', value, true);
   },
 
+  async getSeatingSettings(): Promise<SeatingSettings> {
+    const setting = await getSetting<SeatingSettings>('seating_config');
+    const value = setting?.value;
+    const voiceSettings = await getVoicePartsAndSections();
+    const activeCodes = voiceSettings.sections.map(s => s.code);
+
+    const baseFormations = value?.formations || DEFAULT_SEATING_SETTINGS.formations;
+
+    // Sanitize sequence paths: filter missing sections, append new ones
+    const sanitizedFormations = baseFormations.map(form => {
+      const order = form.sectionOrder.filter(code => activeCodes.includes(code));
+      activeCodes.forEach(code => {
+        if (!order.includes(code)) order.push(code);
+      });
+      return { ...form, sectionOrder: order };
+    });
+
+    return {
+      defaultFormationId: value?.defaultFormationId || DEFAULT_SEATING_SETTINGS.defaultFormationId,
+      formations: sanitizedFormations
+    };
+  },
+
+  async saveSeatingSettings(value: SeatingSettings) {
+    return await upsertSetting('seating_config', value, true);
+  },
+
   async getChoirName(): Promise<string> {
     const setting = await getSetting<string>('choir_name');
     return setting?.value || '';
@@ -263,6 +290,9 @@ export const settingsService = {
 export interface SectionDef {
   code: string;
   name: string;
+  color?: string; // High-contrast hex value code selection
+  colorBg?: string;
+  colorText?: string;
 }
 
 export interface VoicePartDef {
@@ -276,11 +306,25 @@ export interface VoicePartSettings {
   voiceParts: VoicePartDef[];
 }
 
+export type FormationStrategyType = 'vertical_column' | 'horizontal_row';
+
+export interface SeatingFormationDef {
+  id: string;
+  name: string;
+  strategy: FormationStrategyType;
+  sectionOrder: string[]; // Sequential array of active SectionDef codes
+}
+
+export interface SeatingSettings {
+  defaultFormationId: string;
+  formations: SeatingFormationDef[];
+}
+
 export const DEFAULT_SECTIONS: SectionDef[] = [
-  { code: 'S', name: 'Sopranos' },
-  { code: 'A', name: 'Altos' },
-  { code: 'T', name: 'Tenors' },
-  { code: 'B', name: 'Basses' },
+  { code: 'S', name: 'Sopranos', color: '#1b4d3e', colorBg: 'var(--color-performance-bg)', colorText: 'var(--color-performance-text)' },
+  { code: 'A', name: 'Altos', color: '#4a7c59', colorBg: 'var(--primary-light)', colorText: 'var(--primary-deep)' },
+  { code: 'T', name: 'Tenors', color: '#92400e', colorBg: '#fef3c7', colorText: '#92400e' },
+  { code: 'B', name: 'Basses', color: '#075985', colorBg: '#e0f2fe', colorText: '#075985' },
 ];
 
 export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
@@ -293,6 +337,14 @@ export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
   { label: 'B1', fullName: 'Bass 1', sectionCode: 'B' },
   { label: 'B2', fullName: 'Bass 2', sectionCode: 'B' },
 ];
+
+export const DEFAULT_SEATING_SETTINGS: SeatingSettings = {
+  defaultFormationId: 'columns-standard',
+  formations: [
+    { id: 'columns-standard', name: 'Standard Columns (S-A-T-B Left to Right)', strategy: 'vertical_column', sectionOrder: ['S', 'A', 'T', 'B'] },
+    { id: 'rows-standard', name: 'Standard Rows (S-A-T-B Front to Back)', strategy: 'horizontal_row', sectionOrder: ['S', 'A', 'T', 'B'] }
+  ]
+};
 
 export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
   try {
