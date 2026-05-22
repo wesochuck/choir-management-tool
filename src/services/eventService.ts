@@ -175,5 +175,19 @@ export const eventService = {
     );
 
     return await Promise.all(createPromises);
+  },
+
+  async createEventWithRehearsals(data: Partial<Event>, bulkConfig?: BulkRehearsalConfig) {
+    const createdEvent = await this.createEvent(data);
+    if (bulkConfig) {
+      try {
+        await this.bulkCreateRehearsals(createdEvent, bulkConfig);
+      } catch (err) {
+        // Rollback created event
+        await this.deleteEvent(createdEvent.id);
+        throw err;
+      }
+    }
+    return createdEvent;
   }
 };

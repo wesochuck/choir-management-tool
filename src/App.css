@@ -600,3 +600,19 @@ body:has(.seating-chart-wide-active) .container {
   opacity: 1 !important;
 }
 
+/* Event List Styling */
+.event-row {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-md);
+  cursor: pointer;
+  outline: none;
+}
+
+.event-row:focus-visible {
+  outline: 3px solid var(--primary) !important;
+  outline-offset: -3px !important;
+  background-color: var(--primary-light) !important;
+}

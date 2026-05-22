@@ -103,3 +103,47 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
   }
 });
 
+test('eventService.createEventWithRehearsals rolls back event creation on bulk rehearsals error', async (t) => {
+  const originalCollection = pb.collection;
+  
+  const mockCreate = t.mock.fn(async (data: unknown) => {
+    return { id: 'new_perf_123', ...(data as Record<string, unknown>) };
+  });
+
+  const mockDelete = t.mock.fn(async () => {
+    return true;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'events') {
+      return {
+        create: mockCreate,
+        delete: mockDelete,
+        getFullList: async () => []
+      } as unknown as ReturnType<typeof pb.collection>;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    // Force bulkCreateRehearsals to throw by providing invalid dayOfWeek
+    await assert.rejects(
+      async () => {
+        await eventService.createEventWithRehearsals(
+          { title: 'Test Performance', type: 'Performance', date: '2026-05-20T23:00:00.000Z' },
+          { count: 4, dayOfWeek: 9, time: '19:00', venue: '' }
+        );
+      },
+      /Invalid day of week selected\./
+    );
+
+    // Should create the event first
+    assert.equal(mockCreate.mock.callCount(), 1);
+    // Should rollback (delete) the created event 'new_perf_123'
+    assert.equal(mockDelete.mock.callCount(), 1);
+    assert.equal(mockDelete.mock.calls[0].arguments[0], 'new_perf_123');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+

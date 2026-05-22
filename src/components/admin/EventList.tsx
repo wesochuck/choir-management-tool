@@ -6,28 +6,24 @@ import { formatInTimezone } from '../../lib/timezone';
 interface EventListProps {
   events: Event[];
   onEdit: (event: Event) => void;
-  onEmailReminder: (event: Event) => void;
-  onTextReminder: (event: Event) => void;
+  onSendMessage: (event: Event) => void;
   onViewRoster: (event: Event) => void;
   onCheckAttendance?: (event: Event) => void;
   onViewSeating?: (event: Event) => void;
   onOpenPlayer?: (event: Event) => void;
   openAuditionEventId?: string;
-  sendingEmailEventId?: string | null;
 }
 import { AppCard } from '../common/AppCard';
 
 export const EventList: React.FC<EventListProps> = ({ 
   events, 
   onEdit, 
-  onEmailReminder, 
-  onTextReminder, 
+  onSendMessage, 
   onViewRoster, 
   onCheckAttendance,
   onViewSeating,
   onOpenPlayer,
-  openAuditionEventId,
-  sendingEmailEventId
+  openAuditionEventId
 }) => {
   const { timezone } = useChoirSettings();
   return (
@@ -35,15 +31,16 @@ export const EventList: React.FC<EventListProps> = ({
       {events.map((e) => (
         <div 
           key={e.id} 
-          className="flex-responsive relative-row clickable-row" 
+          className="flex-responsive relative-row clickable-row event-row" 
           onClick={() => onEdit(e)}
-          style={{ 
-            padding: 'var(--space-md) var(--space-lg)', 
-            borderBottom: '1px solid var(--border)', 
-            justifyContent: 'space-between', 
-            width: '100%',
-            gap: 'var(--space-md)',
-            cursor: 'pointer'
+          role="button"
+          tabIndex={0}
+          aria-label={`Edit ${e.title || e.type} event`}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onEdit(e);
+            }
           }}
         >
           <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
@@ -126,9 +123,8 @@ export const EventList: React.FC<EventListProps> = ({
             <button 
               onClick={(event) => {
                 event.stopPropagation();
-                onEmailReminder(e);
+                onSendMessage(e);
               }}
-              disabled={sendingEmailEventId === e.id}
               className="btn btn-secondary btn-sm"
               style={{
                 display: 'inline-flex',
@@ -136,23 +132,7 @@ export const EventList: React.FC<EventListProps> = ({
                 gap: '6px'
               }}
             >
-              {sendingEmailEventId === e.id ? (
-                <>
-                  <span className="spinner-small" style={{ margin: 0, width: '12px', height: '12px' }} />
-                  <span>Sending...</span>
-                </>
-              ) : (
-                '✉️ Email Reminder'
-              )}
-            </button>
-            <button
-              onClick={(event) => {
-                event.stopPropagation();
-                onTextReminder(e);
-              }}
-              className="btn btn-secondary btn-sm"
-            >
-              💬 Text Reminder
+              ✉️ Send Message
             </button>
             <button 
               onClick={(event) => {

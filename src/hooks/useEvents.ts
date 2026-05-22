@@ -23,9 +23,9 @@ export const useEvents = () => {
     fetchEvents();
   }, []);
 
-  const addEvent = async (data: Partial<Event>) => {
+  const addEvent = async (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig) => {
     try {
-      const record = await eventService.createEvent(data);
+      const record = await eventService.createEventWithRehearsals(data, bulkConfig);
       await fetchEvents();
       return record;
     } catch (err: unknown) {
