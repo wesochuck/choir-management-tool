@@ -9,12 +9,14 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
 import { getLastName } from '../../lib/stringUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function EventRosterView() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const dialog = useDialog();
 
+  const { user, updatePreferences } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
   const [eventRoster, setEventRoster] = useState<EventRoster[]>([]);
@@ -26,7 +28,13 @@ export default function EventRosterView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
   const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
-  const [sortBy, setSortBy] = useState<'lastName' | 'voicePart'>('lastName');
+  
+  // Sorting preference state
+  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
+  const sortBy = user?.preferences?.rsvpSort || defaultSort;
+  const handleSortChange = (val: 'lastName' | 'voicePart') => {
+    updatePreferences({ rsvpSort: val });
+  };
 
   useEffect(() => {
     if (!eventId) {
@@ -52,7 +60,7 @@ export default function EventRosterView() {
           setVoiceParts(settings.voiceParts);
           setSections(settings.sections);
           if (rosterSettings && rosterSettings.defaultRsvpSort) {
-            setSortBy(rosterSettings.defaultRsvpSort);
+            setDefaultSort(rosterSettings.defaultRsvpSort);
           }
           setIsLoading(false);
         }
@@ -483,7 +491,7 @@ export default function EventRosterView() {
           {/* Sort By Select */}
           <select 
             value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+            onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
             className="card"
             style={{ 
               padding: '0 12px', 
@@ -493,10 +501,15 @@ export default function EventRosterView() {
               borderRadius: 'var(--radius-md)',
               fontSize: '15px'
             }}
+            title="Saved to user preferences (only affects your view)"
           >
             <option value="lastName">Last Name</option>
             <option value="voicePart">Voice Part + Last Name</option>
           </select>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', height: '44px', alignSelf: 'center' }}>
+            <span>👤 User Preference</span>
+          </div>
 
           {/* Reset Filters */}
           {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -13,6 +13,8 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
+import { settingsService, getVoicePartsAndSections, type SectionDef, type SeatingSettings } from '../../services/settingsService';
+import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import './SeatingView.css';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
@@ -25,6 +27,54 @@ export default function SeatingView() {
   const hasDefaultedRef = useRef(false);
   
   const [performanceId, setPerformanceId] = useState('');
+  const [activeTab, setActiveTab] = useState<'chart' | 'templates'>('chart');
+
+  // Templates Independent Settings State
+  const [customSeatingSettings, setCustomSeatingSettings] = useState<SeatingSettings>({
+    defaultFormationId: 'columns-standard',
+    formations: []
+  });
+  const [initialSeatingSettings, setInitialSeatingSettings] = useState<SeatingSettings | null>(null);
+  const [allSections, setAllSections] = useState<SectionDef[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isSavingTemplates, setIsSavingTemplates] = useState(false);
+  const [templateMessage, setTemplateMessage] = useState('');
+
+  const loadTemplates = useCallback(async () => {
+    setIsLoadingTemplates(true);
+    setTemplateMessage('');
+    try {
+      const [seating, voiceData] = await Promise.all([
+        settingsService.getSeatingSettings(),
+        getVoicePartsAndSections(),
+      ]);
+      setCustomSeatingSettings(JSON.parse(JSON.stringify(seating)));
+      setInitialSeatingSettings(JSON.parse(JSON.stringify(seating)));
+      setAllSections(voiceData.sections);
+    } catch {
+      setTemplateMessage('Could not load seating templates.');
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'templates') {
+      void loadTemplates();
+    }
+  }, [activeTab, loadTemplates]);
+
+  const isTemplatesDirty = useMemo(() => {
+    if (!initialSeatingSettings || !customSeatingSettings) return false;
+    return JSON.stringify(customSeatingSettings) !== JSON.stringify(initialSeatingSettings);
+  }, [initialSeatingSettings, customSeatingSettings]);
+
+  const handleDiscardTemplates = () => {
+    if (initialSeatingSettings) {
+      setCustomSeatingSettings(JSON.parse(JSON.stringify(initialSeatingSettings)));
+      setTemplateMessage('');
+    }
+  };
 
   useEffect(() => {
     if (performances.length > 0 && !performanceId && !hasDefaultedRef.current) {
@@ -36,6 +86,7 @@ export default function SeatingView() {
       }
     }
   }, [performances, performanceId, searchParams]);
+  
   const [venueId, setVenueId] = useState('');
   const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
@@ -50,11 +101,12 @@ export default function SeatingView() {
   const toggleFullscreen = () => {
     if (!workspaceRef.current) return;
     if (!document.fullscreenElement) {
-      workspaceRef.current.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      workspaceRef.current.requestFullscreen().catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error attempting to enable fullscreen: ${msg}`);
       });
     } else {
-      document.exitFullscreen();
+      document.exitFullscreen().catch(console.error);
     }
   };
 
@@ -69,7 +121,7 @@ export default function SeatingView() {
   const selectedVenue = venues.find(v => v.id === venueId) || null;
   const { 
     chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
-    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave
+    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh
   } = useSeatingChart(performanceId, selectedVenue);
 
   const hasLayoutOverride = (() => {
@@ -178,6 +230,68 @@ export default function SeatingView() {
     await copyFromPerformance(source);
   };
 
+  const handleSaveTemplates = async () => {
+    setIsSavingTemplates(true);
+    setTemplateMessage('');
+    try {
+      const formations = customSeatingSettings.formations || [];
+      if (formations.length === 0) {
+        setTemplateMessage('Error: At least one seating formation must be defined.');
+        setIsSavingTemplates(false);
+        return;
+      }
+
+      const seenFormationNames = new Set<string>();
+      const sectionCodes = new Set(allSections.map(s => s.code.toUpperCase()));
+      
+      for (let i = 0; i < formations.length; i++) {
+        const form = formations[i];
+        const name = form.name.trim();
+        if (!name) {
+          setTemplateMessage(`Error: Seating formation name at position ${i + 1} cannot be empty.`);
+          setIsSavingTemplates(false);
+          return;
+        }
+        const lowerName = name.toLowerCase();
+        if (seenFormationNames.has(lowerName)) {
+          setTemplateMessage(`Error: Seating formation name "${name}" is duplicated.`);
+          setIsSavingTemplates(false);
+          return;
+        }
+        seenFormationNames.add(lowerName);
+
+        const codes = form.sectionOrder.map(c => c.trim().toUpperCase()).filter(Boolean);
+        if (codes.length === 0) {
+          setTemplateMessage(`Error: Seating formation "${name}" must have at least one section code.`);
+          setIsSavingTemplates(false);
+          return;
+        }
+
+        for (const code of codes) {
+          if (!sectionCodes.has(code)) {
+            setTemplateMessage(`Error: Seating formation "${name}" contains unknown section code "${code}".`);
+            setIsSavingTemplates(false);
+            return;
+          }
+        }
+      }
+
+      await settingsService.saveSeatingSettings(customSeatingSettings);
+      setInitialSeatingSettings(JSON.parse(JSON.stringify(customSeatingSettings)));
+      setTemplateMessage('Templates saved successfully.');
+      
+      refresh();
+      
+      await dialog.showMessage({ title: 'Success', message: 'Seating templates saved successfully.' });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setTemplateMessage(`Error saving templates: ${errMsg}`);
+      await dialog.showMessage({ title: 'Error', message: 'Failed to save seating templates.', variant: 'danger' });
+    } finally {
+      setIsSavingTemplates(false);
+    }
+  };
+
   return (
     <div 
       className={`flex-col seating-view-container ${isWideLayout ? 'seating-chart-wide-active' : ''} ${isFullscreen ? 'seating-fullscreen-active' : ''}`} 
@@ -189,98 +303,448 @@ export default function SeatingView() {
           Seating Chart Creator
         </h1>
         
-        <div className="flex-row seating-controls-group">
-          <div className="flex-row seating-control-item">
-            <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance:</span>
-            <select 
-              value={performanceId} 
-              onChange={(e) => setPerformanceId(e.target.value)}
-              className="seating-select-perf"
-            >
-              <option value="">-- Select Performance --</option>
-              {performances.map(p => (
-                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-row seating-control-item">
-            <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
-            <select 
-              value={venueId} 
-              onChange={(e) => setVenueId(e.target.value)}
-              className="seating-select-venue"
-            >
-              <option value="">-- Select Venue --</option>
-              {venues.map(v => (
-                <option key={v.id} value={v.id}>{v.name}</option>
-              ))}
-            </select>
-            {hasLayoutOverride && (
-              <button 
-                onClick={async () => {
-                  const confirmed = await dialog.confirm({
-                    title: 'Update Master Venue Template?',
-                    message: `Would you like to overwrite the master template for "${selectedVenue?.name}" with this performance's row configuration (${chart?.layoutOverride?.join(', ')})? This will affect new seating charts for this venue.`,
-                    confirmLabel: 'Yes, Update Template',
-                    cancelLabel: 'Cancel'
-                  });
-                  if (confirmed && selectedVenue) {
-                    try {
-                      await editVenue(selectedVenue.id, { rowCounts: chart?.layoutOverride || undefined });
-                      dialog.showMessage({
-                        title: 'Success',
-                        message: `Successfully updated the master template for "${selectedVenue.name}".`
-                      });
-                    } catch (err) {
-                      console.error('Failed to update venue', err);
-                      dialog.showMessage({
-                        title: 'Error',
-                        message: err instanceof Error ? err.message : 'Failed to update venue template.'
-                      });
-                    }
-                  }
-                }}
-                className="btn btn-sm btn-ghost no-print seating-update-venue-btn" 
-                title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
-              >
-                💾 Update Venue
-              </button>
-            )}
-          </div>
-
-          <div className="flex-row seating-control-item">
-            <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formation:</span>
-            <div className="flex-row" style={{ gap: '4px' }}>
+        {activeTab === 'chart' && (
+          <div className="flex-row seating-controls-group">
+            <div className="flex-row seating-control-item">
+              <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance:</span>
               <select 
-                value={chart?.formationId || seatingSettings.defaultFormationId} 
-                onChange={async (e) => {
-                  const selectedId = e.target.value;
-                  const formation = seatingSettings.formations.find(f => f.id === selectedId);
-                  if (!formation) return;
-                  
-                  const shouldChange = await dialog.confirm({
-                    title: 'Change Formation',
-                    message: 'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
-                    confirmLabel: 'Change',
-                    variant: 'danger',
-                  });
-                  if (!shouldChange) return;
-
-                  await updateChart({ formationId: selectedId, assignments: {} });
-                }}
-                className="seating-select-pattern"
+                value={performanceId} 
+                onChange={(e) => setPerformanceId(e.target.value)}
+                className="seating-select-perf"
               >
-                {seatingSettings.formations?.map(formation => (
-                  <option key={formation.id} value={formation.id}>{formation.name}</option>
+                <option value="">-- Select Performance --</option>
+                {performances.map(p => (
+                  <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()}</option>
                 ))}
               </select>
             </div>
+
+            <div className="flex-row seating-control-item">
+              <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
+              <select 
+                value={venueId} 
+                onChange={(e) => setVenueId(e.target.value)}
+                className="seating-select-venue"
+              >
+                <option value="">-- Select Venue --</option>
+                {venues.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+              {hasLayoutOverride && (
+                <button 
+                  onClick={async () => {
+                    const confirmed = await dialog.confirm({
+                      title: 'Update Master Venue Template?',
+                      message: `Would you like to overwrite the master template for "${selectedVenue?.name}" with this performance's row configuration (${chart?.layoutOverride?.join(', ')})? This will affect new seating charts for this venue.`,
+                      confirmLabel: 'Yes, Update Template',
+                      cancelLabel: 'Cancel'
+                    });
+                    if (confirmed && selectedVenue) {
+                      try {
+                        await editVenue(selectedVenue.id, { rowCounts: chart?.layoutOverride || undefined });
+                        await dialog.showMessage({
+                          title: 'Success',
+                          message: `Successfully updated the master template for "${selectedVenue.name}".`
+                        });
+                      } catch (err: unknown) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        console.error('Failed to update venue', err);
+                        await dialog.showMessage({
+                          title: 'Error',
+                          message: msg
+                        });
+                      }
+                    }
+                  }}
+                  className="btn btn-sm btn-ghost no-print seating-update-venue-btn" 
+                  title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
+                >
+                  💾 Update Venue
+                </button>
+              )}
+            </div>
+
+            <div className="flex-row seating-control-item">
+              <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formation:</span>
+              <div className="flex-row" style={{ gap: '4px' }}>
+                <select 
+                  value={chart?.formationId || seatingSettings.defaultFormationId} 
+                  onChange={async (e) => {
+                    const selectedId = e.target.value;
+                    const formation = seatingSettings.formations.find(f => f.id === selectedId);
+                    if (!formation) return;
+                    
+                    const shouldChange = await dialog.confirm({
+                      title: 'Change Formation',
+                      message: 'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
+                      confirmLabel: 'Change',
+                      variant: 'danger',
+                    });
+                    if (!shouldChange) return;
+
+                    await updateChart({ formationId: selectedId, assignments: {} });
+                  }}
+                  className="seating-select-pattern"
+                >
+                  {seatingSettings.formations?.map(formation => (
+                    <option key={formation.id} value={formation.id}>{formation.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {performanceId && venueId ? (
+      {/* Segmented Tab Navigation */}
+      <div className="flex-row no-print" style={{ gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
+        <button
+          onClick={() => setActiveTab('chart')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'chart' ? '3px solid var(--primary)' : '3px solid transparent',
+            color: activeTab === 'chart' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'chart' ? '600' : '500',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            transition: 'all 0.2s ease',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
+          }}
+        >
+          Seating Chart
+        </button>
+        <button
+          onClick={() => setActiveTab('templates')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'templates' ? '3px solid var(--primary)' : '3px solid transparent',
+            color: activeTab === 'templates' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'templates' ? '600' : '500',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            transition: 'all 0.2s ease',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
+          }}
+        >
+          Formations Templates
+        </button>
+      </div>
+
+      {activeTab === 'templates' ? (
+        <div className="flex-col" style={{ gap: 'var(--space-xl)', paddingBottom: 'var(--space-2xl)' }}>
+          {templateMessage && (
+            <div 
+              className="badge" 
+              style={{ 
+                alignSelf: 'flex-start',
+                backgroundColor: templateMessage.startsWith('Error') ? '#fee2e2' : '#e0f2fe',
+                color: templateMessage.startsWith('Error') ? '#991b1b' : '#0369a1',
+                border: templateMessage.startsWith('Error') ? '1px solid #fecaca' : '1px solid #bae6fd',
+                padding: 'var(--space-xs) var(--space-sm)'
+              }}
+            >
+              {templateMessage}
+            </div>
+          )}
+
+          {isLoadingTemplates ? (
+            <div style={{ padding: 'var(--space-xl)' }}>Loading seating templates...</div>
+          ) : (
+            <>
+              <AppCard title="Default Seating Formation">
+                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                  <label className="text-label">Default Seating Formation</label>
+                  <select
+                    value={customSeatingSettings.defaultFormationId}
+                    onChange={(e) => setCustomSeatingSettings({ ...customSeatingSettings, defaultFormationId: e.target.value })}
+                    className="card"
+                    style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  >
+                    {customSeatingSettings.formations?.map(form => (
+                      <option key={form.id} value={form.id}>{form.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-muted" style={{ margin: 0 }}>
+                    This formation logic will be used by default for newly created seating charts.
+                  </p>
+                </div>
+              </AppCard>
+
+              <AppCard title="Seating Formations">
+                <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                  <p className="text-muted" style={{ margin: 0 }}>
+                    Define reusable seating formations for your choir.
+                  </p>
+
+                  {customSeatingSettings.formations?.map((formation, index) => {
+                    return (
+                      <div key={formation.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 2fr 80px', gap: 'var(--space-sm)', alignItems: 'center', width: '100%', padding: 'var(--space-sm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg)' }}>
+                        <input
+                          value={formation.name}
+                          onChange={(e) => {
+                            const newFormations = [...customSeatingSettings.formations];
+                            newFormations[index] = { ...newFormations[index], name: e.target.value };
+                            setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                          }}
+                          placeholder="Formation Name"
+                          className="card"
+                          style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                        />
+                        <select
+                          value={formation.strategy}
+                          onChange={(e) => {
+                            const newFormations = [...customSeatingSettings.formations];
+                            newFormations[index] = { ...newFormations[index], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
+                            setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                          }}
+                          className="card"
+                          style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                        >
+                          <option value="vertical_column">Vertical Columns</option>
+                          <option value="horizontal_row">Horizontal Rows</option>
+                        </select>
+                        <div 
+                          className="flex-row" 
+                          style={{ 
+                            alignItems: 'center', 
+                            gap: 'var(--space-xs)', 
+                            flexWrap: 'wrap', 
+                            width: '100%', 
+                            minHeight: '40px', 
+                            padding: '4px var(--space-sm)', 
+                            border: '1px solid var(--border)', 
+                            borderRadius: 'var(--radius-md)', 
+                            backgroundColor: 'var(--card-bg)' 
+                          }}
+                        >
+                          {formation.sectionOrder.map((code, secIdx) => {
+                            const sec = allSections.find(s => s.code.toUpperCase() === code.toUpperCase());
+                            const hasSec = !!sec;
+                            
+                            const bgColor = hasSec ? (sec.color || sec.colorBg || 'var(--border)') : '#fee2e2';
+                            const textColor = hasSec ? (sec.colorText || '#000000') : '#991b1b';
+                            const borderStyle = hasSec ? '1px solid rgba(0,0,0,0.1)' : '1px solid #ef4444';
+
+                            return (
+                              <div
+                                key={secIdx}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 8px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  backgroundColor: bgColor,
+                                  color: textColor,
+                                  border: borderStyle,
+                                  fontSize: '0.85rem',
+                                  fontWeight: '600',
+                                  boxShadow: 'var(--shadow-sm)',
+                                  transition: 'all 0.2s ease',
+                                }}
+                              >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  {!hasSec && <span title="Unknown section bucket! Click 'x' to remove." style={{ cursor: 'help' }}>⚠️</span>}
+                                  {code}
+                                </span>
+                                
+                                <div 
+                                  style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '2px', 
+                                    marginLeft: '4px', 
+                                    borderLeft: '1px solid rgba(0,0,0,0.15)', 
+                                    paddingLeft: '4px' 
+                                  }}
+                                >
+                                  {secIdx > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newFormations = [...customSeatingSettings.formations];
+                                        const order = [...newFormations[index].sectionOrder];
+                                        const temp = order[secIdx];
+                                        order[secIdx] = order[secIdx - 1];
+                                        order[secIdx - 1] = temp;
+                                        newFormations[index] = { ...newFormations[index], sectionOrder: order };
+                                        setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'inherit',
+                                        cursor: 'pointer',
+                                        padding: '0 2px',
+                                        fontSize: '0.8rem',
+                                        opacity: 0.7,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                      title="Move Left"
+                                    >
+                                      ◀
+                                    </button>
+                                  )}
+                                  {secIdx < formation.sectionOrder.length - 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newFormations = [...customSeatingSettings.formations];
+                                        const order = [...newFormations[index].sectionOrder];
+                                        const temp = order[secIdx];
+                                        order[secIdx] = order[secIdx + 1];
+                                        order[secIdx + 1] = temp;
+                                        newFormations[index] = { ...newFormations[index], sectionOrder: order };
+                                        setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                                      }}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'inherit',
+                                        cursor: 'pointer',
+                                        padding: '0 2px',
+                                        fontSize: '0.8rem',
+                                        opacity: 0.7,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                      title="Move Right"
+                                    >
+                                      ▶
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newFormations = [...customSeatingSettings.formations];
+                                      const order = newFormations[index].sectionOrder.filter((_, sIdx) => sIdx !== secIdx);
+                                      newFormations[index] = { ...newFormations[index], sectionOrder: order };
+                                      setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: 'inherit',
+                                      cursor: 'pointer',
+                                      padding: '0 2px',
+                                      fontSize: '0.9rem',
+                                      fontWeight: 'bold',
+                                      opacity: 0.7,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      marginLeft: '2px',
+                                    }}
+                                    title="Remove"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!val) return;
+                                const newFormations = [...customSeatingSettings.formations];
+                                newFormations[index] = {
+                                  ...newFormations[index],
+                                  sectionOrder: [...newFormations[index].sectionOrder, val]
+                                };
+                                setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                              }}
+                              style={{
+                                opacity: 0,
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                cursor: 'pointer',
+                                zIndex: 2,
+                              }}
+                              title="Add section to order"
+                            >
+                              <option value="" disabled>+ Add Section</option>
+                              {allSections.filter(s => s.code).map(s => (
+                                <option key={s.code} value={s.code}>
+                                  {s.name ? `${s.name} (${s.code})` : s.code}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                padding: '2px 8px',
+                                height: '28px',
+                                fontSize: '0.8rem',
+                                border: '1px dashed var(--border)',
+                                backgroundColor: 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                pointerEvents: 'none',
+                              }}
+                            >
+                              + Add Section
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFormations = customSeatingSettings.formations.filter((_, idx) => idx !== index);
+                            setCustomSeatingSettings({ ...customSeatingSettings, formations: newFormations });
+                          }}
+                          className="btn btn-danger btn-sm"
+                          style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newId = `preset-${Date.now()}`;
+                      setCustomSeatingSettings({
+                        ...customSeatingSettings,
+                        formations: [
+                          ...(customSeatingSettings.formations || []),
+                          { id: newId, name: 'New Formation', strategy: 'vertical_column', sectionOrder: allSections.map(s => s.code) }
+                        ]
+                      });
+                    }}
+                    className="btn btn-secondary"
+                    style={{ alignSelf: 'flex-start' }}
+                  >
+                    + Add Formation Preset
+                  </button>
+                </div>
+              </AppCard>
+
+              <FloatingSaveBar 
+                isDirty={isTemplatesDirty} 
+                isSaving={isSavingTemplates} 
+                onSave={handleSaveTemplates} 
+                onDiscard={handleDiscardTemplates} 
+              />
+            </>
+          )}
+        </div>
+      ) : performanceId && venueId ? (
         <div className="flex-responsive seating-main-layout">
           <AppCard className="flex-col seating-card-editor">
             <div className="no-print flex-responsive seating-toolbar">
@@ -308,9 +772,7 @@ export default function SeatingView() {
                 </button>
                </div>
 
-               {/* Workspace Options (A1 Style segmented control) */}
                <div className="flex-row no-print seating-segmented-control-wrap">
-
                  <button
                    type="button"
                    onClick={toggleFullscreen}
@@ -352,21 +814,21 @@ export default function SeatingView() {
                <button onClick={handlePrint} className="btn btn-sm btn-primary seating-toolbar-btn-print">
                   🖨️ Print
                </button>
-                 <div className="flex-row seating-save-feedback-wrap" style={{ alignItems: 'center' }}>
-                   <SavingIndicator isSaving={isSaving} error={saveError} />
-                   <span className="text-muted seating-autosave-tag">
-                     Auto-saved
-                   </span>
-                   <button
-                     onClick={handleManualSave}
-                     className="btn btn-sm btn-ghost seating-toolbar-btn-save"
-                     style={{ 
-                       color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
-                     }}
-                   >
-                     {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
-                   </button>
-                 </div>
+               <div className="flex-row seating-save-feedback-wrap" style={{ alignItems: 'center' }}>
+                 <SavingIndicator isSaving={isSaving} error={saveError} />
+                 <span className="text-muted seating-autosave-tag">
+                   Auto-saved
+                 </span>
+                 <button
+                   onClick={handleManualSave}
+                   className="btn btn-sm btn-ghost seating-toolbar-btn-save"
+                   style={{ 
+                     color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
+                   }}
+                 >
+                   {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
+                 </button>
+               </div>
             </div>
 
             {isLoading ? (
@@ -421,7 +883,6 @@ export default function SeatingView() {
                   }}
                 />
                 
-                {/* Bottom Dock horizontal lanes */}
                 {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
                   <SeatingBottomDock 
                     activeProfiles={activeProfiles}

@@ -10,12 +10,14 @@ import { SingerModal } from '../../components/admin/SingerModal';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { settingsService, getVoiceParts } from '../../services/settingsService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AttendanceView() {
   const dialog = useDialog();
   const [searchParams] = useSearchParams();
   const { events } = useEvents();
   const { profiles, editProfile } = useProfiles();
+  const { user, updatePreferences } = useAuth();
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const hasDefaultedRef = useRef(false);
@@ -24,7 +26,14 @@ export default function AttendanceView() {
   const [filterName, setFilterName] = useState('');
   const [filterVoicePart, setFilterVoicePart] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [sortBy, setSortBy] = useState<'lastName' | 'voicePart'>('lastName');
+  
+  // Sorting preference state
+  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
+  const sortBy = user?.preferences?.attendanceSort || defaultSort;
+  const handleSortChange = (val: 'lastName' | 'voicePart') => {
+    updatePreferences({ attendanceSort: val });
+  };
+  
   const [isPendingExpanded, setIsPendingExpanded] = useState(false);
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
   const [voiceParts, setVoiceParts] = useState<string[]>(['S1', 'S2', 'A1', 'A2', 'T1', 'T2', 'B1', 'B2']);
@@ -32,7 +41,7 @@ export default function AttendanceView() {
   useEffect(() => {
     settingsService.getAttendanceSettings()
       .then((settings) => {
-        setSortBy(settings.defaultSort);
+        setDefaultSort(settings.defaultSort);
       })
       .catch((err) => {
         console.error('Failed to load attendance settings', err);
@@ -478,13 +487,18 @@ export default function AttendanceView() {
             <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Sort By</label>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+              onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              title="Saved to user preferences (only affects your view)"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
             </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', height: '40px', alignSelf: 'flex-end' }}>
+            <span>👤 User Preference</span>
           </div>
 
           {/* Reset Action */}

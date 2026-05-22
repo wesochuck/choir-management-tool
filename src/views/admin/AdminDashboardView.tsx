@@ -30,7 +30,7 @@ export default function AdminDashboardView() {
           { to: '/admin/reports', icon: '📈', label: 'Reports & Insights', desc: 'Attendance trends and concert summaries' },
           { to: '/admin/auditions', icon: '🎵', label: 'Auditions', desc: 'Review public audition requests' },
           { to: '/admin/communications', icon: '✉️', label: 'Communications', desc: 'Send announcements and review history' },
-          { to: '/admin/settings', icon: '⚙️', label: 'Settings', desc: 'System-wide preferences and defaults' }
+          { to: '/admin/settings', icon: '⚙️', label: 'System Settings', desc: 'SMTP, Twilio, and organization name' }
         ].map((item) => (
           <Link key={item.to} to={item.to} className="card flex-col" style={{ textDecoration: 'none', alignItems: 'flex-start' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>{item.icon}</div>

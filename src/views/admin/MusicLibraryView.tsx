@@ -4,7 +4,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { eventService } from '../../services/eventService';
-import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicGenreDef } from '../../services/settingsService';
+import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicGenreDef, type MusicLibrarySettings } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
 import { buildVisibleMusicLibraryRows } from '../../lib/music/libraryRows';
@@ -13,6 +13,7 @@ import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
+import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
@@ -25,6 +26,25 @@ export default function MusicLibraryView() {
   const [genreFilter, setGenreFilter] = useState('');
   const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
+
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'catalog' | 'config'>('catalog');
+
+  // Music library settings configuration state
+  const [initialSettings, setInitialSettings] = useState<MusicLibrarySettings | null>(null);
+  const [musicLibrarySettings, setMusicLibrarySettings] = useState<MusicLibrarySettings>({
+    catalogLookupUrlTemplate: '',
+    genres: [],
+  });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  const isConfigDirty = useMemo(() => {
+    if (!initialSettings) return false;
+    return (
+      musicLibrarySettings.catalogLookupUrlTemplate !== initialSettings.catalogLookupUrlTemplate ||
+      JSON.stringify(musicLibrarySettings.genres) !== JSON.stringify(initialSettings.genres)
+    );
+  }, [initialSettings, musicLibrarySettings]);
 
   // Audio player state
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
@@ -81,6 +101,13 @@ export default function MusicLibraryView() {
       setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
       setSections(sectionsData.sections);
       setConfiguredGenres(settings.genres || []);
+
+      const settingsState = {
+        catalogLookupUrlTemplate: settings.catalogLookupUrlTemplate || '',
+        genres: settings.genres || []
+      };
+      setMusicLibrarySettings(JSON.parse(JSON.stringify(settingsState)));
+      setInitialSettings(JSON.parse(JSON.stringify(settingsState)));
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'isAbort' in err && err.isAbort) return;
       dialog.showMessage({ title: 'Error', message: 'Could not load music library.', variant: 'danger' });
@@ -92,6 +119,27 @@ export default function MusicLibraryView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleConfigSave = async () => {
+    setIsSavingConfig(true);
+    try {
+      await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
+      setInitialSettings(JSON.parse(JSON.stringify(musicLibrarySettings)));
+      setCatalogLookupTemplate(musicLibrarySettings.catalogLookupUrlTemplate || '');
+      setConfiguredGenres(musicLibrarySettings.genres || []);
+      dialog.showMessage({ title: 'Success', message: 'Music Library settings saved successfully.' });
+    } catch {
+      dialog.showMessage({ title: 'Error', message: 'Failed to save Music Library settings.', variant: 'danger' });
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
+  const handleConfigDiscard = () => {
+    if (initialSettings) {
+      setMusicLibrarySettings(JSON.parse(JSON.stringify(initialSettings)));
+    }
+  };
 
   const handleSavePiece = async (data: Partial<MusicPieceInput> & {
     tuttiFile?: File | null;
@@ -236,58 +284,199 @@ export default function MusicLibraryView() {
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="text-display" style={{ margin: 0 }}>Music Library</h1>
-        <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-          <button className="btn btn-secondary" onClick={handleExportCSV}>
-            Export CSV
-          </button>
-          <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(true)}>
-            Import CSV
-          </button>
-          <button className="btn btn-primary" onClick={() => { setEditingPiece(null); setIsModalOpen(true); }}>
-            Add Piece
-          </button>
-        </div>
+        {activeTab === 'catalog' && (
+          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+            <button className="btn btn-secondary" onClick={handleExportCSV}>
+              Export CSV
+            </button>
+            <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(true)}>
+              Import CSV
+            </button>
+            <button className="btn btn-primary" onClick={() => { setEditingPiece(null); setIsModalOpen(true); }}>
+              Add Piece
+            </button>
+          </div>
+        )}
       </div>
 
-      <AppCard noPadding>
-        <MusicLibraryFilters 
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          sectionFilter={sectionFilter}
-          onSectionFilterChange={setSectionFilter}
-          genreFilter={genreFilter}
-          onGenreFilterChange={setGenreFilter}
-          genres={configuredGenres}
-          sections={sections}
-          showDuplicatesOnly={showDuplicatesOnly}
-          onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
-          duplicateCount={duplicateIds.size}
-          selectedCount={selectedIds.size}
-          isBulkDeleting={isBulkDeleting}
-          onBulkDelete={handleBulkDelete}
-        />
-
-        <MusicLibraryTable 
-          pieces={pieces}
-          filteredPieces={filteredPieces}
-          sections={sections}
-          genres={configuredGenres}
-          isLoading={isLoading}
-          duplicateIds={duplicateIds}
-          selectedIds={selectedIds}
-          onToggleSelection={toggleSelection}
-          onSelectAll={(checked) => {
-            if (checked) {
-                setSelectedIds(new Set(filteredPieces.map(p => p.id)));
-            } else {
-                setSelectedIds(new Set());
-            }
+      {/* Segmented Tab Navigation */}
+      <div className="flex-row no-print" style={{ gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
+        <button
+          onClick={() => setActiveTab('catalog')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'catalog' ? '3px solid var(--primary)' : '3px solid transparent',
+            color: activeTab === 'catalog' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'catalog' ? '600' : '500',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            transition: 'all 0.2s ease',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
           }}
-          onEditPiece={(piece) => { setEditingPiece(piece); setIsModalOpen(true); }}
-          onPlayTrack={handlePlayDefaultTrack}
-          catalogLookupTemplate={catalogLookupTemplate}
-        />
-      </AppCard>
+        >
+          Music Catalog
+        </button>
+        <button
+          onClick={() => setActiveTab('config')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'config' ? '3px solid var(--primary)' : '3px solid transparent',
+            color: activeTab === 'config' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'config' ? '600' : '500',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            transition: 'all 0.2s ease',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
+          }}
+        >
+          Library Settings
+        </button>
+      </div>
+
+      {activeTab === 'catalog' ? (
+        <AppCard noPadding>
+          <MusicLibraryFilters 
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            sectionFilter={sectionFilter}
+            onSectionFilterChange={setSectionFilter}
+            genreFilter={genreFilter}
+            onGenreFilterChange={setGenreFilter}
+            genres={configuredGenres}
+            sections={sections}
+            showDuplicatesOnly={showDuplicatesOnly}
+            onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
+            duplicateCount={duplicateIds.size}
+            selectedCount={selectedIds.size}
+            isBulkDeleting={isBulkDeleting}
+            onBulkDelete={handleBulkDelete}
+          />
+
+          <MusicLibraryTable 
+            pieces={pieces}
+            filteredPieces={filteredPieces}
+            sections={sections}
+            genres={configuredGenres}
+            isLoading={isLoading}
+            duplicateIds={duplicateIds}
+            selectedIds={selectedIds}
+            onToggleSelection={toggleSelection}
+            onSelectAll={(checked) => {
+              if (checked) {
+                  setSelectedIds(new Set(filteredPieces.map(p => p.id)));
+              } else {
+                  setSelectedIds(new Set());
+              }
+            }}
+            onEditPiece={(piece) => { setEditingPiece(piece); setIsModalOpen(true); }}
+            onPlayTrack={handlePlayDefaultTrack}
+            catalogLookupTemplate={catalogLookupTemplate}
+          />
+        </AppCard>
+      ) : (
+        <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+          <AppCard title="Music Library Settings">
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Catalog Lookup URL Template</label>
+              <input
+                type="url"
+                value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
+                onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
+                placeholder="https://example.com/catalog/{catalogId}"
+                className="card"
+                style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              />
+              <p className="text-muted" style={{ margin: 0 }}>
+                Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
+              </p>
+            </div>
+          </AppCard>
+
+          <AppCard title="Music Library Genres">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <p className="text-muted" style={{ margin: 0 }}>
+                Configure standard genre tags used for library organization and advanced layout filtering.
+              </p>
+              <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+                {musicLibrarySettings.genres?.map((genre, index) => (
+                  <div key={genre.id} style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center' }}>
+                    <input
+                      className="card"
+                      style={{ height: '40px', padding: '0 12px', width: '250px' }}
+                      value={genre.label}
+                      onChange={(e) => {
+                        const updated = [...musicLibrarySettings.genres];
+                        updated[index] = { ...updated[index], label: e.target.value };
+                        setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => {
+                        const updated = musicLibrarySettings.genres.filter((_, i) => i !== index);
+                        setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                <input
+                  id="new-genre-input"
+                  placeholder="New Genre Name (e.g. Sacred)"
+                  className="card"
+                  style={{ height: '40px', padding: '0 12px', maxWidth: '250px' }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    const inputEl = document.getElementById('new-genre-input') as HTMLInputElement;
+                    const label = inputEl?.value?.trim();
+                    if (!label) return;
+                    
+                    const normalized = label;
+                    const currentList = musicLibrarySettings.genres || [];
+                    if (currentList.some(g => g.label.toLowerCase() === normalized.toLowerCase())) {
+                      alert('Genre label already exists.');
+                      return;
+                    }
+                    
+                    const generatedId = normalized.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    let finalId = generatedId;
+                    let counter = 2;
+                    while (currentList.some(g => g.id === finalId)) {
+                      finalId = `${generatedId}-${counter}`;
+                      counter++;
+                    }
+                    
+                    const updated = [...currentList, { id: finalId, label: normalized }];
+                    setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                    inputEl.value = '';
+                  }}
+                >
+                  Add Genre
+                </button>
+              </div>
+            </div>
+          </AppCard>
+
+          <FloatingSaveBar 
+            isDirty={isConfigDirty} 
+            isSaving={isSavingConfig} 
+            onSave={handleConfigSave} 
+            onDiscard={handleConfigDiscard} 
+          />
+        </div>
+      )}
 
       <MusicPieceModal
         isOpen={isModalOpen}

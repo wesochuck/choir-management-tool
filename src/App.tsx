@@ -135,7 +135,7 @@ export default function App() {
 
           <Route path="/admin/settings" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Settings" backTo="/">
+              <PageLayout title="System Settings" backTo="/">
                 <SettingsView />
               </PageLayout>
             </ProtectedRoute>
