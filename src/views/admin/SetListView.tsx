@@ -817,6 +817,7 @@ export default function SetListView() {
             @media print {
               .print-only { display: block !important; }
               .no-print { display: none !important; }
+              .modal-overlay, .modal-overlay * { display: none !important; }
               body {
                 background: white !important;
                 color: black !important;
