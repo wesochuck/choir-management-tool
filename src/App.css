@@ -519,6 +519,21 @@ body:has(.seating-chart-wide-active) .container {
   border-color: transparent transparent var(--primary-deep) transparent;
 }
 
+.seat-tooltip-mismatch {
+  background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.35) !important;
+}
+
+.seat-tooltip-mismatch.seat-tooltip::after {
+  border-color: #b91c1c transparent transparent transparent !important;
+}
+
+.seat-tooltip-mismatch.seat-tooltip-bottom::after {
+  border-color: transparent transparent #b91c1c transparent !important;
+}
+
 .seat-cell:hover .seat-tooltip,
 .seat-cell:hover .seat-tooltip-bottom {
   opacity: 1;

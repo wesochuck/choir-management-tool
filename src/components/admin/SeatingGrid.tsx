@@ -401,8 +401,17 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                         {assignedProfile.voicePart}
                       </div>
-                      <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'}`}>
-                        {assignedProfile.name} ({assignedProfile.voicePart})
+                      <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'} ${isMismatch ? 'seat-tooltip-mismatch' : ''}`}>
+                        {isMismatch ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800 }}>⚠️ {assignedProfile.name}</span>
+                            <span style={{ fontSize: '0.6875rem', opacity: 0.95, fontWeight: 600, letterSpacing: '0.01em' }}>
+                              Not recommended voice type ({assignedProfile.voicePart}) for this {sectionDef?.name || suggestion} seat
+                            </span>
+                          </div>
+                        ) : (
+                          `${assignedProfile.name} (${assignedProfile.voicePart})`
+                        )}
                       </div>
                     </div>
                   ) : (
