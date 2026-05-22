@@ -270,6 +270,16 @@ tr.relative-row:active {
     display: none !important;
   }
 
+  [data-print-mode="visual"] .seating-text-list {
+    display: block !important;
+  }
+  [data-print-mode="visual"] .grid-print {
+    display: none !important;
+  }
+  [data-print-mode="visual"] .seating-print-shell > :not(.seating-text-list) {
+    display: none !important;
+  }
+
   /* Seating Text List Print Styles */
   .seating-text-list {
     display: block !important;

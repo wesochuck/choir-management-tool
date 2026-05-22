@@ -179,7 +179,20 @@ export default function SeatingView() {
     return activeProfiles.filter(p => !assignedIds.has(p.id)).length;
   }, [activeProfiles, optimisticAssignments]);
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    const originalMode = printMode;
+    if (originalMode !== 'text') {
+      setPrintMode('text');
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          setPrintMode(originalMode);
+        }, 100);
+      }, 50);
+    } else {
+      window.print();
+    }
+  };
 
   const handleManualSave = async () => {
     if (isSaving || isDirty || saveError) {
