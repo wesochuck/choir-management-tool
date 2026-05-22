@@ -230,6 +230,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               ? { bg: secColor, text: getContrastColor(secColor) }
               : { bg: 'var(--surface)', text: 'var(--text-muted)' };
 
+            const isAssigned = !!profileId;
+            const seatBg = isAssigned ? colors.bg : 'var(--surface)';
+            const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--text-muted)');
+            const borderStyle = isAssigned ? 'solid' : 'dashed';
+            const borderColor = isAssigned ? colors.text : (secColor || 'var(--border)');
+
             // Wedge Outline Logic
             const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
             const rightSuggestion = seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
@@ -273,11 +279,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 style={{ 
                   width: `${seatSize}px`, 
                   height: `${seatSize}px`, 
-                  backgroundColor: profileId ? colors.bg : 'var(--surface)',
-                  borderTop: `1px solid ${profileId ? colors.text : colors.bg}`,
-                  borderBottom: `1px solid ${profileId ? colors.text : colors.bg}`,
-                  borderLeft: hasLeftBorder ? `3px solid ${profileId ? colors.text : colors.bg}` : `1px solid ${profileId ? colors.text : colors.bg}`,
-                  borderRight: hasRightBorder ? `3px solid ${profileId ? colors.text : colors.bg}` : `1px solid ${profileId ? colors.text : colors.bg}`,
+                  backgroundColor: seatBg,
+                  borderTop: `1px ${borderStyle} ${borderColor}`,
+                  borderBottom: `1px ${borderStyle} ${borderColor}`,
+                  borderLeft: hasLeftBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
+                  borderRight: hasRightBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
                   borderRadius: 'var(--radius-md)',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -383,7 +389,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   </button>
                 )}
                 
-                <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
+                <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                   {sectionDef?.name[0] || suggestion}{seatIndex + 1}
                 </div>
                 {assignedProfile ? (
@@ -399,7 +405,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: isCompact ? '1rem' : '1.125rem' }}>{isCompact ? '—' : 'Empty'}</div>
+                  <div style={{ fontWeight: 600, color: seatTextColor, fontSize: isCompact ? '1rem' : '1.125rem' }}>{isCompact ? '—' : 'Empty'}</div>
                 )}
               </div>
             );
