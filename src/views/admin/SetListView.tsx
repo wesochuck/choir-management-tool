@@ -515,6 +515,7 @@ export default function SetListView() {
                         onDelete={handleDelete} 
                         onPlayTrack={handlePlayRowTrack}
                         onPieceClick={() => handleEditLinkedPiece(item)}
+                        genres={configuredGenres}
                       />
                     ))}
                   </SortableContext>

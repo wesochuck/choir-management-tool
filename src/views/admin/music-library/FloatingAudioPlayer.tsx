@@ -21,8 +21,8 @@ export const FloatingAudioPlayer: React.FC<FloatingAudioPlayerProps> = ({
             bottom: 'var(--space-md)',
             left: '50%',
             transform: 'translateX(-50%)',
-            width: '90%',
-            maxWidth: '500px',
+            width: '95%',
+            maxWidth: '650px',
             backgroundColor: 'rgba(27, 77, 62, 0.95)',
             color: '#ffffff',
             padding: '12px 18px',
@@ -36,7 +36,7 @@ export const FloatingAudioPlayer: React.FC<FloatingAudioPlayerProps> = ({
             justifyContent: 'space-between',
             gap: 'var(--space-md)'
         }}>
-            <div className="flex-col" style={{ minWidth: '0', flex: 1, gap: '2px' }}>
+            <div className="flex-col" style={{ minWidth: '0', flex: '1 1 180px', gap: '2px' }}>
                 <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255, 255, 255, 0.7)' }}>
                     Playing Learning Track ({part})
                 </span>
@@ -49,7 +49,7 @@ export const FloatingAudioPlayer: React.FC<FloatingAudioPlayerProps> = ({
                 src={url} 
                 controls 
                 autoPlay
-                style={{ height: '30px', maxWidth: '170px' }} 
+                style={{ height: '32px', flex: '2 1 240px', maxWidth: '360px', minWidth: '160px' }} 
             />
             
             <button 

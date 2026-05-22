@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { SetListItem } from '../../services/eventService';
 import type { MusicPiece } from '../../types/musicLibrary';
 import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
+import type { MusicGenreDef } from '../../services/settingsService';
 
 interface Props {
   item: SetListItem;
@@ -17,6 +18,7 @@ interface Props {
   displayDuration?: string;
   cumulativeStart?: string;
   cumulativeEnd?: string;
+  genres?: MusicGenreDef[];
 }
 
 export const SortableSetListItem: React.FC<Props> = ({
@@ -30,7 +32,8 @@ export const SortableSetListItem: React.FC<Props> = ({
   displayComposer,
   displayDuration,
   cumulativeStart,
-  cumulativeEnd
+  cumulativeEnd,
+  genres
 }) => {
   const {
     attributes,
@@ -143,9 +146,34 @@ export const SortableSetListItem: React.FC<Props> = ({
             )}
           </div>
         )}
-        {item.type !== 'intermission' && (displayComposer || displayDuration) && (
-          <div className="text-xs text-muted">
-            {displayComposer}{displayComposer && displayDuration ? ' • ' : ''}{displayDuration}
+        {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
+          <div className="text-xs text-muted flex-row" style={{ alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
+            <span>{displayComposer}{displayComposer && displayDuration ? ' • ' : ''}{displayDuration}</span>
+            {linkedPiece?.genres && linkedPiece.genres.length > 0 && genres && (
+              <div className="flex-row" style={{ gap: '4px', display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center' }}>
+                {linkedPiece.genres.map(id => {
+                  const found = genres.find(g => g.id === id);
+                  return (
+                    <span 
+                      key={id}
+                      style={{ 
+                        display: 'inline-flex',
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        backgroundColor: 'rgba(74, 124, 89, 0.08)',
+                        border: '1px solid rgba(74, 124, 89, 0.15)',
+                        fontSize: '9px',
+                        fontWeight: 600,
+                        color: 'var(--primary-deep)',
+                        lineHeight: 1
+                      }}
+                    >
+                      {found ? found.label : id}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
         {item.notes && (

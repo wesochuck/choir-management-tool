@@ -108,6 +108,8 @@ export function MusicPieceModal({
             setMovements(list);
             if (list.length > 0) {
                 setIsMultiMovement(true);
+            } else {
+                setIsMultiMovement(false);
             }
         } catch (err) {
             console.error('Failed to load movements', err);
@@ -144,6 +146,7 @@ export function MusicPieceModal({
             setSelectedGenres(piece.genres || []);
             setSelectedPerformanceIds(piece.performances || []);
             setNotes(piece.notes || '');
+            setIsMultiMovement(false);
             loadMovements();
             setIsMultiMovementInput(false);
             setLocalMovementsList([]);
