@@ -168,7 +168,7 @@ export default function MusicLibraryView() {
 
       if (newlyLinkedIds.length > 0) {
         const failedTitles: string[] = [];
-        for (const perfId of newlyLinkedIds) {
+        await Promise.all(newlyLinkedIds.map(async (perfId: string) => {
           let eventTitle = perfId;
           try {
             const event = await eventService.getEventById(perfId);
@@ -181,7 +181,7 @@ export default function MusicLibraryView() {
             console.error(`Failed to update set list for performance ${perfId}:`, err);
             failedTitles.push(eventTitle);
           }
-        }
+        }));
 
         if (failedTitles.length > 0) {
           dialog.showMessage({
