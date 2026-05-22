@@ -46,9 +46,9 @@ export const SortableSetListItem: React.FC<Props> = ({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? 'none' : (transition || 'none'),
     opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1 : 0,
+    zIndex: isDragging ? 100 : 0,
     position: 'relative' as const,
   };
 

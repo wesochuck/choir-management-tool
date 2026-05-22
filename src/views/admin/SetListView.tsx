@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
-import { eventService, type SetListItem } from '../../services/eventService';
+import { eventService, type SetListItem, type Event } from '../../services/eventService';
+import { playerService } from '../../services/playerService';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { settingsService, type MusicGenreDef } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
@@ -18,6 +19,7 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
+import { BaseModal } from '../../components/common/BaseModal';
 
 export default function SetListView() {
   const { events, refresh } = useEvents();
@@ -56,6 +58,49 @@ export default function SetListView() {
   const [isItemEditModalOpen, setIsItemEditModalOpen] = useState(false);
   const [itemEditing, setItemEditing] = useState<SetListItem | null>(null);
 
+  // Print Modal state
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const getPlainText = () => {
+    if (!selectedEvent) return '';
+    const dateStr = new Date(selectedEvent.date).toLocaleDateString(undefined, { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    const venueStr = selectedEvent.expand?.venue?.name || '';
+    
+    let text = `Set List: ${selectedEvent.title || selectedEvent.type}\n`;
+    text += `Date: ${dateStr}\n`;
+    if (venueStr) text += `Venue: ${venueStr}\n`;
+    text += `\n`;
+    
+    let songIndex = 1;
+    items.forEach((item) => {
+      if (item.type === 'intermission') {
+        text += `${item.title || 'Intermission'}\n`;
+      } else {
+        text += `${songIndex}. ${item.title}\n`;
+        songIndex++;
+      }
+    });
+    
+    return text;
+  };
+
+  const handleCopyList = async () => {
+    const text = getPlainText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err: unknown) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   // Audio player state
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
   const [activeAudioTitle, setActiveAudioTitle] = useState('');
@@ -71,6 +116,49 @@ export default function SetListView() {
     setActiveAudioUrl(pb.files.getURL(piece, filename));
     setActiveAudioTitle(piece.title);
     setActiveAudioPart(key === 'tutti' ? 'Tutti' : key);
+  };
+
+  const handleOpenPlayer = async (event: Event) => {
+    try {
+      const token = await playerService.generateToken(event.id);
+      const url = `${window.location.origin}/player?token=${encodeURIComponent(token)}`;
+      
+      await dialog.showMessage({
+        title: 'Player Link Generated',
+        message: (
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
+            <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', wordBreak: 'break-all', fontSize: '0.85rem' }}>
+              {url}
+            </div>
+            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(url);
+                }}
+              >
+                Copy Link
+              </button>
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={() => window.open(url, '_blank')}
+              >
+                Open Player
+              </button>
+            </div>
+          </div>
+        )
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'Error',
+        message: `Could not generate player link: ${message}`,
+        variant: 'danger'
+      });
+    }
   };
 
   const handleOpenPieceEditor = (pieceId: string) => {
@@ -334,6 +422,28 @@ export default function SetListView() {
             </div>
           )}
         </div>
+        {selectedEvent && (
+          <div className="flex-row no-print" style={{ gap: 'var(--space-sm)' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => handleOpenPlayer(selectedEvent)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '42px' }}
+              title="Open practice player link generator"
+            >
+              🎧 Practice Player
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsPrintModalOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '42px' }}
+              title="View printable set list"
+            >
+              🖨️ Printable List
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'flex-end' }}>
@@ -535,7 +645,7 @@ export default function SetListView() {
                 <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>No items in set list.</div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={items} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
                     {itemsWithDetails.map((item) => (
                       <SortableSetListItem 
                         key={item.id} 
@@ -603,6 +713,180 @@ export default function SetListView() {
         part={activeAudioPart}
         onClose={() => setActiveAudioUrl(null)}
       />
+
+      <BaseModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        title="Printable Set List"
+        maxWidth="600px"
+        footer={
+          <>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => setIsPrintModalOpen(false)}
+            >
+              Close
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleCopyList}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {copied ? '✓ Copied!' : '📋 Copy Plain Text'}
+            </button>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => window.print()}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              🖨️ Print List
+            </button>
+          </>
+        }
+      >
+        <div 
+          className="card" 
+          style={{ 
+            backgroundColor: '#fff', 
+            color: '#333', 
+            border: '1px solid var(--border)', 
+            borderRadius: 'var(--radius-md)', 
+            padding: 'var(--space-lg)', 
+            fontFamily: 'Georgia, serif',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-md)' }}>
+            <h3 style={{ margin: '0 0 var(--space-xxs) 0', fontSize: '1.4rem', color: '#111', fontFamily: 'var(--font-sans)', fontWeight: 700 }}>
+              {selectedEvent?.title || selectedEvent?.type}
+            </h3>
+            <div style={{ fontSize: '0.85rem', color: '#666', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+              {selectedEvent && new Date(selectedEvent.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
+            </div>
+          </div>
+          <div style={{ borderBottom: '1px solid #eee', marginBottom: 'var(--space-md)' }}></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(() => {
+              let songIndex = 1;
+              return items.map((item) => {
+                if (item.type === 'intermission') {
+                  return (
+                    <div 
+                      key={item.id} 
+                      style={{ 
+                        fontWeight: 'bold', 
+                        color: '#666', 
+                        textAlign: 'center', 
+                        padding: '6px 0', 
+                        borderTop: '1px dashed #eee', 
+                        borderBottom: '1px dashed #eee',
+                        margin: '8px 0',
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      ⏸️ {item.title || 'Intermission'}
+                    </div>
+                  );
+                } else {
+                  const el = (
+                    <div key={item.id} style={{ fontSize: '1.05rem', padding: '2px 0', borderBottom: '1px solid #fafafa' }}>
+                      {songIndex}. {item.title}
+                    </div>
+                  );
+                  songIndex++;
+                  return el;
+                }
+              });
+            })()}
+          </div>
+        </div>
+      </BaseModal>
+
+      {selectedEvent && (
+        <div style={{ display: 'none' }} className="print-only">
+          <style>{`
+            @media print {
+              .print-only { display: block !important; }
+              .no-print { display: none !important; }
+              body {
+                background: white !important;
+                color: black !important;
+              }
+              .printable-setlist {
+                font-family: Georgia, serif;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background: white;
+                color: black;
+              }
+              .printable-setlist h2 {
+                font-size: 24px;
+                margin-bottom: 5px;
+                text-align: center;
+              }
+              .printable-setlist p {
+                font-size: 14px;
+                margin-top: 0;
+                margin-bottom: 20px;
+                text-align: center;
+                color: #555;
+              }
+              .printable-setlist-items {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+              }
+              .printable-setlist-item {
+                font-size: 18px;
+                padding: 8px 0;
+                border-bottom: 1px solid #eee;
+              }
+              .printable-setlist-intermission {
+                font-size: 18px;
+                font-weight: bold;
+                padding: 12px 0;
+                color: #444;
+                text-align: center;
+                border-top: 1px dashed #ccc;
+                border-bottom: 1px dashed #ccc;
+                margin: 15px 0;
+              }
+            }
+          `}</style>
+          <div className="printable-setlist">
+            <h2>Set List: {selectedEvent.title || selectedEvent.type}</h2>
+            <p>
+              Date: {new Date(selectedEvent.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              {selectedEvent.expand?.venue?.name && ` | Venue: ${selectedEvent.expand.venue.name}`}
+            </p>
+            <div style={{ borderBottom: '2px solid black', marginBottom: '20px' }}></div>
+            <div className="printable-setlist-items">
+              {(() => {
+                let songIndex = 1;
+                return items.map((item) => {
+                  if (item.type === 'intermission') {
+                    return (
+                      <div key={item.id} className="printable-setlist-intermission">
+                        ⏸️ {item.title || 'Intermission'}
+                      </div>
+                    );
+                  } else {
+                    const el = (
+                      <div key={item.id} className="printable-setlist-item">
+                        {songIndex}. {item.title}
+                      </div>
+                    );
+                    songIndex++;
+                    return el;
+                  }
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
