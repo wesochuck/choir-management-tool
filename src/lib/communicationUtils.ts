@@ -15,6 +15,7 @@ export const COMPLIANT_FOOTER_HTML = `
 /**
  * Renders a basic subset of Markdown to HTML.
  * Supports: Bold, Italic, Links, Unordered Lists, Line Breaks.
+ * Note: This escapes raw HTML tags within the content for security.
  */
 export function renderMarkdown(text: string): string {
   if (!text) return '';
@@ -62,7 +63,7 @@ export function renderMarkdown(text: string): string {
   const blocks = html.split(/\n\s*\n/);
   html = blocks.map(block => {
     if (block.trim().startsWith('<ul')) return block;
-    return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+    return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, '<br>')}</p>`;
   }).join('\n');
 
   return html;
@@ -70,16 +71,17 @@ export function renderMarkdown(text: string): string {
 
 /**
  * Resolves placeholders for message preview.
+ * This can handle both raw text (for subjects) and rendered HTML (for body).
  */
 export function resolvePreviewContent(
-  template: string,
+  content: string,
   event: Event | null,
   recipient: CommunicationRecipient | null,
   mailingAddress: string = '123 Choir St, Harmony City, HC 12345'
 ): string {
-  if (!template) return '';
+  if (!content) return '';
 
-  let result = template;
+  let result = content;
 
   // Recipient Placeholders
   const name = recipient?.name || 'Sample Singer';
@@ -98,11 +100,11 @@ export function resolvePreviewContent(
   result = result.replace(/{eventLocation}/g, location);
   result = result.replace(/{eventDetails}/g, details);
 
-  // RSVP Links
+  // RSVP Links - Injected as literal HTML
   const rsvpText = `
     <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
-      <span style="display: inline-block; padding: 8px 16px; background-color: #4a7c59; color: white; border-radius: 4px; font-weight: bold; cursor: pointer;">Yes, I'm attending</span>
-      <span style="display: inline-block; padding: 8px 16px; background-color: #ef4444; color: white; border-radius: 4px; font-weight: bold; cursor: pointer;">No, I can't make it</span>
+      <span style="display: inline-block; padding: 8px 16px; background-color: #4a7c59; color: white; border-radius: 4px; font-weight: bold;">Yes, I'm attending</span>
+      <span style="display: inline-block; padding: 8px 16px; background-color: #ef4444; color: white; border-radius: 4px; font-weight: bold;">No, I can't make it</span>
     </div>
   `;
   result = result.replace(/{{RSVP_LINKS}}/g, rsvpText);
@@ -113,4 +115,29 @@ export function resolvePreviewContent(
   result = result.replace(/{{UNSUBSCRIBE_LINK}}/g, '#');
 
   return result;
+}
+
+/**
+ * Orchestrates the full rendering pipeline for the preview.
+ * 1. Renders Markdown to HTML (and escapes raw HTML)
+ * 2. Appends Compliance Footer
+ * 3. Resolves Placeholders (including those that inject trusted HTML)
+ */
+export function getRenderedPreview(
+  userContent: string,
+  messageType: 'Email' | 'SMS' | 'Both',
+  event: Event | null,
+  recipient: CommunicationRecipient | null,
+  mailingAddress: string
+): string {
+  // 1. Render Markdown first (escapes user input)
+  let html = renderMarkdown(userContent);
+
+  // 2. Append compliance footer if email
+  if (messageType === 'Email' || messageType === 'Both') {
+    html += COMPLIANT_FOOTER_HTML;
+  }
+
+  // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
+  return resolvePreviewContent(html, event, recipient, mailingAddress);
 }

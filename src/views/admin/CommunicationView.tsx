@@ -20,7 +20,7 @@ import {
   renderCommunicationTemplate,
   type CommunicationSettings,
 } from '../../services/settingsService';
-import { renderMarkdown, resolvePreviewContent, COMPLIANT_FOOTER_HTML } from '../../lib/communicationUtils';
+import { getRenderedPreview, resolvePreviewContent } from '../../lib/communicationUtils';
 import { PlaceholderPanel } from '../../components/admin/PlaceholderPanel';
 
 type Tab = 'compose' | 'automated' | 'drafts' | 'history' | 'settings';
@@ -101,12 +101,14 @@ export default function CommunicationView() {
     if (!content) return '';
     const sampleRecipient = selectedRecipients[0] || null;
     const selectedEvent = events.find(e => e.id === filters.eventId) || null;
-    let baseContent = content;
-    if (messageType === 'Email' || messageType === 'Both') {
-      baseContent += COMPLIANT_FOOTER_HTML;
-    }
-    const resolved = resolvePreviewContent(baseContent, selectedEvent, sampleRecipient, commSettings.mailingAddress);
-    return renderMarkdown(resolved);
+    
+    return getRenderedPreview(
+      content,
+      messageType,
+      selectedEvent,
+      sampleRecipient,
+      commSettings.mailingAddress
+    );
   }, [content, events, filters.eventId, selectedRecipients, messageType, commSettings.mailingAddress]);
 
   const { upcomingTasks, pastTasks } = useMemo(() => {
