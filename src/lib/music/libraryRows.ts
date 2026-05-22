@@ -102,3 +102,17 @@ export function buildVisibleMusicLibraryRows(
 
   return sorted;
 }
+
+/**
+ * Pure helper function to toggle an ID in a Set, returning a new Set.
+ */
+export function toggleIdInSet(set: Set<string>, id: string): Set<string> {
+  const next = new Set(set);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+}
+

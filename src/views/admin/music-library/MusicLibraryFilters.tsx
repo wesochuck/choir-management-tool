@@ -10,8 +10,6 @@ export interface MusicLibraryFiltersProps {
     onGenreFilterChange: (value: string) => void;
     genres: MusicGenreDef[];
     sections: SectionDef[];
-    showMovements: boolean;
-    onShowMovementsChange: (value: boolean) => void;
     showDuplicatesOnly: boolean;
     onShowDuplicatesOnlyChange: (value: boolean) => void;
     duplicateCount: number;
@@ -29,8 +27,6 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     onGenreFilterChange,
     genres,
     sections,
-    showMovements,
-    onShowMovementsChange,
     showDuplicatesOnly,
     onShowDuplicatesOnlyChange,
     duplicateCount,
@@ -79,16 +75,6 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
             </div>
             
             <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
-                    <input 
-                        type="checkbox" 
-                        checked={showMovements} 
-                        onChange={(e) => onShowMovementsChange(e.target.checked)}
-                        style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    <span className="text-sm">Show individual movements</span>
-                </label>
-
                 <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
                     <input 
                         type="checkbox" 

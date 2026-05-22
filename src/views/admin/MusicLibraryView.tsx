@@ -53,7 +53,6 @@ export default function MusicLibraryView() {
   
   // Duplicates & Bulk Delete state
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
-  const [showMovements, setShowMovements] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
@@ -196,12 +195,12 @@ export default function MusicLibraryView() {
     return buildVisibleMusicLibraryRows(pieces, {
       searchTerm,
       showDuplicatesOnly,
-      showMovements,
+      showMovements: false,
       duplicateIds,
       sectionFilter,
       genreFilter
     });
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, showMovements, sectionFilter, genreFilter]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilter, genreFilter]);
 
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
@@ -260,8 +259,6 @@ export default function MusicLibraryView() {
           onGenreFilterChange={setGenreFilter}
           genres={configuredGenres}
           sections={sections}
-          showMovements={showMovements}
-          onShowMovementsChange={setShowMovements}
           showDuplicatesOnly={showDuplicatesOnly}
           onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
           duplicateCount={duplicateIds.size}

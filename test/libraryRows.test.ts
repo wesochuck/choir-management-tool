@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildVisibleMusicLibraryRows } from '../src/lib/music/libraryRows.ts';
+import { buildVisibleMusicLibraryRows, toggleIdInSet } from '../src/lib/music/libraryRows.ts';
 import { createMusicPieceFixture } from './helpers.ts';
 
 describe('Music Library Row Building (P5)', () => {
@@ -77,4 +77,37 @@ describe('Music Library Row Building (P5)', () => {
     const rowsA = buildVisibleMusicLibraryRows(pieces, { sectionFilter: 'A' });
     assert.ok(!rowsA.find(r => r.id === 'res'));
   });
+
+  it('excludes pieces that possess a non-empty parentId when showMovements is false', () => {
+    const pieces = [
+      createMusicPieceFixture({ id: 'parent1', title: 'Parent 1' }),
+      createMusicPieceFixture({ id: 'child1', title: 'Child 1', parentId: 'parent1' }),
+      createMusicPieceFixture({ id: 'child2', title: 'Child 2', parentId: 'parent1' }),
+      createMusicPieceFixture({ id: 'standalone', title: 'Standalone' })
+    ];
+    const rows = buildVisibleMusicLibraryRows(pieces, { showMovements: false });
+    assert.strictEqual(rows.length, 2);
+    assert.ok(rows.find(r => r.id === 'parent1'));
+    assert.ok(rows.find(r => r.id === 'standalone'));
+    assert.ok(!rows.find(r => r.id === 'child1'));
+    assert.ok(!rows.find(r => r.id === 'child2'));
+  });
+
+  it('toggleIdInSet correctly adds a missing ID and removes an existing ID', () => {
+    const initialSet = new Set(['id1', 'id2']);
+    
+    // Test adding missing ID
+    const addedSet = toggleIdInSet(initialSet, 'id3');
+    assert.ok(addedSet.has('id3'));
+    assert.ok(addedSet.has('id1'));
+    assert.ok(addedSet.has('id2'));
+    assert.strictEqual(addedSet.size, 3);
+
+    // Test removing existing ID
+    const removedSet = toggleIdInSet(initialSet, 'id1');
+    assert.ok(!removedSet.has('id1'));
+    assert.ok(removedSet.has('id2'));
+    assert.strictEqual(removedSet.size, 1);
+  });
 });
+
