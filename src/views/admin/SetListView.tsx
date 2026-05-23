@@ -854,23 +854,30 @@ export default function SetListView() {
               }
               body .printable-setlist.printable-setlist h2 {
                 font-size: 24px !important;
-                margin-bottom: 5px !important;
+                margin: 0 0 10px 0 !important;
                 text-align: center !important;
                 font-family: var(--font-sans), sans-serif !important;
                 font-weight: 700 !important;
               }
               body .printable-setlist.printable-setlist p {
                 font-size: 14px !important;
-                margin-top: 0 !important;
-                margin-bottom: 20px !important;
+                margin: 0 0 25px 0 !important;
                 text-align: center !important;
                 color: #555 !important;
                 font-family: var(--font-sans), sans-serif !important;
               }
+              body .printable-setlist.printable-setlist hr.printable-divider {
+                border: none !important;
+                border-bottom: 2px solid black !important;
+                margin: 25px 0 !important;
+                display: block !important;
+                height: 0 !important;
+              }
               body .printable-setlist-items.printable-setlist-items {
                 list-style: none !important;
                 padding: 0 !important;
-                margin: 0 !important;
+                margin: 20px 0 0 0 !important;
+                display: block !important;
               }
               body .printable-setlist-item.printable-setlist-item {
                 font-size: 18px !important;
@@ -899,7 +906,7 @@ export default function SetListView() {
               {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent.expand?.venue?.name && ` | Venue: ${selectedEvent.expand.venue.name}`}
             </p>
-            <div style={{ borderBottom: '2px solid black', marginBottom: '20px' }}></div>
+            <hr style={{ border: 'none', borderBottom: '2px solid black', margin: '25px 0', display: 'block', height: 0 }} className="printable-divider" />
             <div className="printable-setlist-items">
               {(() => {
                 let songIndex = 1;

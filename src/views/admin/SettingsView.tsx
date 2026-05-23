@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppCard } from '../../components/common/AppCard';
-import { settingsService } from '../../services/settingsService';
+import { settingsService, queueSettingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
@@ -173,6 +173,8 @@ export default function SettingsView() {
         </div>
       </AppCard>
 
+      <QueueWebhookSettings />
+
       <FloatingSaveBar 
         isDirty={isDirty} 
         isSaving={isSaving} 
@@ -180,5 +182,106 @@ export default function SettingsView() {
         onDiscard={handleGlobalDiscard} 
       />
     </div>
+  );
+}
+
+function QueueWebhookSettings() {
+  const [token, setToken] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const data = await queueSettingsService.getSettings();
+      setToken(data.secret);
+    } catch (err) {
+      console.error('Failed to load webhook settings', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!window.confirm('Generating a new token revokes the old one. Update the PocketHost configuration immediately.')) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const data = await queueSettingsService.generateToken();
+      setToken(data.secret);
+    } catch (err) {
+      alert('Failed to generate token');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const webhookUrl = `${window.location.origin}/api/queue/process?token=${token}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (isLoading) return <div style={{ padding: 'var(--space-md) 0' }} className="text-muted">Loading queue configurations...</div>;
+
+  return (
+    <AppCard title="Email Queue Webhook">
+      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        <p className="text-muted" style={{ margin: 0 }}>
+          PocketHost triggers this URL to process single-recipient messages sequentially in the background.
+        </p>
+
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label" htmlFor="webhook-url">Target Webhook URL</label>
+          <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
+            <input
+              id="webhook-url"
+              type="text"
+              readOnly
+              value={token ? webhookUrl : 'No token generated yet.'}
+              className="card"
+              style={{
+                flex: 1,
+                padding: '0 12px',
+                height: '40px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--border-light, #f8fafc)',
+                color: 'var(--text-muted)',
+                fontSize: '14px'
+              }}
+            />
+            <button
+              type="button"
+              disabled={!token}
+              onClick={handleCopy}
+              className="btn btn-secondary"
+              style={{ height: '40px', whiteSpace: 'nowrap' }}
+            >
+              {copied ? 'Copied!' : 'Copy Link'}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--border-light, #f8fafc)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+          <div className="text-muted" style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+            <strong>Status:</strong> {token ? `Active (${token.substring(0, 8)}...)` : 'Unassigned'}
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            className="btn btn-primary"
+          >
+            {token ? 'Regenerate Token' : 'Generate Token'}
+          </button>
+        </div>
+      </div>
+    </AppCard>
   );
 }

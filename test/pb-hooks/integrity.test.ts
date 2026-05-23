@@ -10,11 +10,13 @@ test('Generated main.pb.js integrity', () => {
 
     // 1. Functional markers
     assert.ok(content.includes('cronAdd("post_event_report"'), 'Should contain post_event_report cron');
+    assert.ok(content.includes('cronAdd("process_email_queue_job"'), 'Should contain process_email_queue_job cron');
     assert.ok(content.includes('onRecordAfterCreateSuccess'), 'Should contain create hook');
     assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
+    assert.ok(content.includes('routerAdd("POST", "/api/queue/process"'), 'Should contain queue process route');
     assert.ok(content.includes('routerAdd("POST", "/api/test-smtp"'), 'Should contain test-smtp route');
-    assert.ok(content.includes('filters.alreadySent === true'), 'Should check alreadySent filter');
-    assert.ok(content.includes('oldStatus === "Draft"'), 'Should check oldStatus transition');
+    assert.ok(content.includes('shouldQueueMessage'), 'Should utilize shouldQueueMessage check');
+    assert.ok(content.includes('enqueueBulkMessage'), 'Should utilize enqueueBulkMessage explosion');
     assert.ok(content.includes('role") !== "admin"'), 'Should preserve admin-only route protection');
     assert.ok(!content.includes('"/api/generate-player-token"'), 'Should not duplicate player endpoint route');
     assert.ok(!content.includes('"/api/player-playlist"'), 'Should not duplicate player playlist route');

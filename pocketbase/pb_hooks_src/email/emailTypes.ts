@@ -32,3 +32,18 @@ export interface MessageRecord {
     recipients: EmailRecipient[];
     filters: EmailFilters;
 }
+
+// Strong type helpers to avoid using explicit 'any' in hook files
+export interface PocketBaseRecord {
+    id: string;
+    get(field: string): unknown;
+    set(field: string, value: unknown): void;
+}
+
+export interface PocketBaseApp {
+    findCollectionByNameOrId(nameOrId: string): unknown;
+    findFirstRecordByFilter(collection: string, filter: string): PocketBaseRecord;
+    findRecordsByFilter(collection: string, filter: string, sort?: string, limit?: number, offset?: number, params?: unknown): PocketBaseRecord[];
+    findRecordById(collection: string, id: string): PocketBaseRecord;
+    save(record: PocketBaseRecord): void;
+}
