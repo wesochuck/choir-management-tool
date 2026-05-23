@@ -44,22 +44,67 @@ function fmtUtc(date: Date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
+function getChoirTimezoneLocal(app: PocketBaseApp): string {
+    let timezone = "America/New_York";
+    try {
+        const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+        const parsed = parseJsonField<string | Record<string, string>>(tzSetting.get("value"));
+        if (parsed) {
+            if (typeof parsed === "string") timezone = parsed;
+            else if (typeof parsed === "object" && parsed.timezone) timezone = parsed.timezone;
+        }
+    } catch {}
+    return timezone;
+}
+
 /**
  * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
- * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
  */
-function parseSafeUtcDate(dateStr: string): Date {
+function parseSafeUtcDate(dateStr: string, timezone: string): Date {
     if (!dateStr) return new Date();
-    let normalized = dateStr.trim().replace(" ", "T");
+    let normalized = dateStr.trim();
     if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
-        if (!normalized.includes("T")) {
-            normalized = normalized.replace(" ", "T");
-        }
+        normalized = normalized.replace(" ", "T");
         if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
             normalized += "Z";
         }
+        return new Date(normalized);
     }
-    return new Date(normalized);
+    
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+        if (d.getFullYear() === 2001) {
+            d.setFullYear(new Date().getFullYear());
+        }
+        
+        let offsetHours = -4; // default Eastern
+        const tz = String(timezone || "").toLowerCase();
+        const year = d.getUTCFullYear();
+        
+        const march1 = new Date(Date.UTC(year, 2, 1));
+        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+        const nov1 = new Date(Date.UTC(year, 10, 1));
+        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
+        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            offsetHours = isDst ? -5 : -6;
+        } else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            offsetHours = isDst ? -6 : -7;
+        } else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+            offsetHours = isDst ? -7 : -8;
+        } else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            offsetHours = -7;
+        } else {
+            offsetHours = isDst ? -4 : -5;
+        }
+        
+        return new Date(d.getTime() - offsetHours * 60 * 60 * 1000);
+    }
+    return d;
 }
 
 export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
@@ -97,6 +142,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
     }
 
     try {
+        const timezone = getChoirTimezoneLocal(app);
         let venueName = "";
         let venueAddress = "";
         let locationStr = "";
@@ -121,13 +167,13 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             }
 
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : ((event.get("location") as string) || "");
-            start = parseSafeUtcDate(event.get("date") as string);
+            start = parseSafeUtcDate(event.get("date") as string, timezone);
             title = (event.get("title") as string) || (event.get("type") as string) || "Choir Event";
             details = (event.get("details") as string) || "";
             uid = `event-${event.id}@choir-management.local`;
         } else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = parseSafeUtcDate(audition.get("scheduledTimeSlot") as string);
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot") as string, timezone);
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;

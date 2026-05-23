@@ -52,6 +52,10 @@ export function formatInTimezone(date: string | Date, timezone: string, options:
     if (isNaN(d.getTime())) return "";
 
     try {
+        // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+        if (typeof process === 'undefined' && typeof window === 'undefined') {
+            throw new Error("Goja VM: use custom formatting");
+        }
         // Try native Intl first (V8 / browser / Node.js)
         return new Intl.DateTimeFormat("en-US", {
             ...options,

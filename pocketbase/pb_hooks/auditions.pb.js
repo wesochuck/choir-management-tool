@@ -55,6 +55,9 @@ onRecordAfterCreateSuccess((e) => {
         if (isNaN(d.getTime())) return "";
 
         try {
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
             var formatter = new Intl.DateTimeFormat("en-US", {
                 weekday: options.weekday || undefined,
                 year: options.year || undefined,
@@ -266,6 +269,9 @@ onRecordAfterUpdateSuccess((e) => {
         if (isNaN(d.getTime())) return "";
 
         try {
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
             var formatter = new Intl.DateTimeFormat("en-US", {
                 weekday: options.weekday || undefined,
                 year: options.year || undefined,
