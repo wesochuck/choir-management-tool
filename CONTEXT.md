@@ -18,6 +18,9 @@ A configurable URL format defined in settings that enables automatic linking of 
 ## Reference Recording
 An audio track (typically MP3) attached to a piece in the Music Library. Used by administrators for archive management and made available to singers for practice and learning when the piece is included in their set list.
 
+## Set List
+A curated sequence of music pieces and intermissions scheduled to be performed or rehearsed at a specific event. It displays song titles, composers, durations, running timestamps, and linked practice audio, and can be approved by administrators to be visible to singers on their dashboard.
+
 ## Twilio SMS Integration
 A configurable outbound messaging service that allows administrators to input Twilio credentials (Account SID, Auth Token, and From Number) to securely route bulk text message alerts and reminders directly through the server, replacing or bypassing local device-based SMS client handoffs.
 

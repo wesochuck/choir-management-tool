@@ -86,11 +86,12 @@ export default function SetListView() {
     text += `\n`;
     
     let songIndex = 1;
-    items.forEach((item) => {
+    itemsWithDetails.forEach((item) => {
       if (item.type === 'intermission') {
-        text += `${item.title || 'Intermission'}\n`;
+        text += `${item.displayTitle || 'Intermission'}\n`;
       } else {
-        text += `${songIndex}. ${item.title}\n`;
+        const composerSuffix = item.displayComposer ? ` ~ ${item.displayComposer}` : '';
+        text += `${songIndex}. ${item.displayTitle}${composerSuffix}\n`;
         songIndex++;
       }
     });
@@ -780,7 +781,7 @@ export default function SetListView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {(() => {
               let songIndex = 1;
-              return items.map((item) => {
+              return itemsWithDetails.map((item) => {
                 if (item.type === 'intermission') {
                   return (
                     <div 
@@ -796,13 +797,29 @@ export default function SetListView() {
                         fontSize: '0.95rem'
                       }}
                     >
-                      ⏸️ {item.title || 'Intermission'}
+                      ⏸️ {item.displayTitle || 'Intermission'}
                     </div>
                   );
                 } else {
                   const el = (
-                    <div key={item.id} style={{ fontSize: '1.05rem', padding: '2px 0', borderBottom: '1px solid #fafafa' }}>
-                      {songIndex}. {item.title}
+                    <div 
+                      key={item.id} 
+                      style={{ 
+                        fontSize: '1.05rem', 
+                        padding: '2px 0', 
+                        borderBottom: '1px solid #fafafa',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'baseline',
+                        gap: 'var(--space-md)'
+                      }}
+                    >
+                      <span style={{ fontWeight: 500 }}>{songIndex}. {item.displayTitle}</span>
+                      {item.displayComposer && (
+                        <span style={{ fontSize: '0.9rem', color: '#666', fontStyle: 'italic', textAlign: 'right' }}>
+                          {item.displayComposer}
+                        </span>
+                      )}
                     </div>
                   );
                   songIndex++;
@@ -859,6 +876,9 @@ export default function SetListView() {
                 font-size: 18px !important;
                 padding: 8px 0 !important;
                 border-bottom: 1px solid #eee !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: baseline !important;
               }
               body .printable-setlist-intermission.printable-setlist-intermission {
                 font-size: 18px !important;
@@ -883,17 +903,31 @@ export default function SetListView() {
             <div className="printable-setlist-items">
               {(() => {
                 let songIndex = 1;
-                return items.map((item) => {
+                return itemsWithDetails.map((item) => {
                   if (item.type === 'intermission') {
                     return (
                       <div key={item.id} className="printable-setlist-intermission">
-                        ⏸️ {item.title || 'Intermission'}
+                        ⏸️ {item.displayTitle || 'Intermission'}
                       </div>
                     );
                   } else {
                     const el = (
-                      <div key={item.id} className="printable-setlist-item">
-                        {songIndex}. {item.title}
+                      <div 
+                        key={item.id} 
+                        className="printable-setlist-item"
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'baseline',
+                          gap: '15px'
+                        }}
+                      >
+                        <span>{songIndex}. {item.displayTitle}</span>
+                        {item.displayComposer && (
+                          <span style={{ fontSize: '14px', color: '#555', fontStyle: 'italic', textAlign: 'right' }}>
+                            {item.displayComposer}
+                          </span>
+                        )}
                       </div>
                     );
                     songIndex++;
