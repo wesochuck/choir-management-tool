@@ -102,7 +102,13 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
     try {
         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
         const tzP = parseJsonField(tzSetting.get("value"));
-        if (tzP && tzP.timezone) timezone = tzP.timezone;
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            } else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
     } catch (e) {}
 
     let event = null;

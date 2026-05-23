@@ -3,7 +3,6 @@ import { eventService, type Event } from './eventService';
 import { profileService, type Profile } from './profileService';
 import { rosterService } from './rosterService';
 import { settingsService, getVoicePartsAndSections } from './settingsService';
-import { COMPLIANT_FOOTER_HTML } from '../lib/communicationUtils';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
   type CommunicationConfig,
@@ -226,11 +225,10 @@ export const communicationService = {
   },
 
   async sendBulkMessage(data: SendMessageInput, draftId?: string): Promise<SendMessageResult> {
-    // Decision: For now, I will append a GENERIC footer to the message record,
-    // and if the backend hook sees an email, it will wrap the content with the compliant footer.
+    // The backend email dispatch hook automatically appends the compliant footer HTML dynamically.
     const payload = { 
       ...data, 
-      content: data.content + COMPLIANT_FOOTER_HTML,
+      content: data.content,
       status: 'Sent' as const
     };
 

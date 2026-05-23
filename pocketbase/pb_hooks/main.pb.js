@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T06:00:22.769Z
+// Generated on: 2026-05-23T06:08:52.496Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -50,18 +50,88 @@ function normalizeBaseUrl(url) {
 function formatInTimezone(date, timezone, options) {
     if (!date)
         return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
     try {
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
+        // Try native Intl first (V8 / browser / Node.js)
         return new Intl.DateTimeFormat("en-US", {
             ...options,
             timeZone: timezone
         }).format(d);
     }
     catch {
-        // Fallback if Intl fails
-        return new Date(date).toLocaleString();
+        // Fallback for Goja VM (PocketBase backend)
+        let offsetHours = -5; // Default to America/New_York (EST)
+        const tz = String(timezone || "").toLowerCase();
+        const year = d.getUTCFullYear();
+        // Determine if DST (Daylight Saving Time) is active in the US
+        // DST starts 2nd Sunday of March, ends 1st Sunday of November
+        const march1 = new Date(Date.UTC(year, 2, 1));
+        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+        const nov1 = new Date(Date.UTC(year, 10, 1));
+        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
+        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+        if (tz.includes("chicago") || tz.includes("central")) {
+            offsetHours = isDst ? -5 : -6;
+        }
+        else if (tz.includes("denver") || tz.includes("mountain")) {
+            offsetHours = isDst ? -6 : -7;
+        }
+        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
+            offsetHours = isDst ? -7 : -8;
+        }
+        else if (tz.includes("phoenix") || tz.includes("arizona")) {
+            offsetHours = -7; // Arizona does not observe DST
+        }
+        else {
+            // Default: America/New_York (Eastern)
+            offsetHours = isDst ? -4 : -5;
+        }
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+        }
+        // Case 4: Date only: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
     }
 }
 
@@ -269,7 +339,13 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
     try {
         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
         const tzP = parseJsonField(tzSetting.get("value"));
-        if (tzP && tzP.timezone) timezone = tzP.timezone;
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            } else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
     } catch (e) {}
 
     let event = null;
@@ -463,18 +539,88 @@ function normalizeBaseUrl(url) {
 function formatInTimezone(date, timezone, options) {
     if (!date)
         return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
     try {
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
+        // Try native Intl first (V8 / browser / Node.js)
         return new Intl.DateTimeFormat("en-US", {
             ...options,
             timeZone: timezone
         }).format(d);
     }
     catch {
-        // Fallback if Intl fails
-        return new Date(date).toLocaleString();
+        // Fallback for Goja VM (PocketBase backend)
+        let offsetHours = -5; // Default to America/New_York (EST)
+        const tz = String(timezone || "").toLowerCase();
+        const year = d.getUTCFullYear();
+        // Determine if DST (Daylight Saving Time) is active in the US
+        // DST starts 2nd Sunday of March, ends 1st Sunday of November
+        const march1 = new Date(Date.UTC(year, 2, 1));
+        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+        const nov1 = new Date(Date.UTC(year, 10, 1));
+        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
+        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+        if (tz.includes("chicago") || tz.includes("central")) {
+            offsetHours = isDst ? -5 : -6;
+        }
+        else if (tz.includes("denver") || tz.includes("mountain")) {
+            offsetHours = isDst ? -6 : -7;
+        }
+        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
+            offsetHours = isDst ? -7 : -8;
+        }
+        else if (tz.includes("phoenix") || tz.includes("arizona")) {
+            offsetHours = -7; // Arizona does not observe DST
+        }
+        else {
+            // Default: America/New_York (Eastern)
+            offsetHours = isDst ? -4 : -5;
+        }
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+        }
+        // Case 4: Date only: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
     }
 }
 
@@ -779,18 +925,88 @@ function normalizeBaseUrl(url) {
 function formatInTimezone(date, timezone, options) {
     if (!date)
         return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
     try {
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
+        // Try native Intl first (V8 / browser / Node.js)
         return new Intl.DateTimeFormat("en-US", {
             ...options,
             timeZone: timezone
         }).format(d);
     }
     catch {
-        // Fallback if Intl fails
-        return new Date(date).toLocaleString();
+        // Fallback for Goja VM (PocketBase backend)
+        let offsetHours = -5; // Default to America/New_York (EST)
+        const tz = String(timezone || "").toLowerCase();
+        const year = d.getUTCFullYear();
+        // Determine if DST (Daylight Saving Time) is active in the US
+        // DST starts 2nd Sunday of March, ends 1st Sunday of November
+        const march1 = new Date(Date.UTC(year, 2, 1));
+        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+        const nov1 = new Date(Date.UTC(year, 10, 1));
+        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
+        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+        if (tz.includes("chicago") || tz.includes("central")) {
+            offsetHours = isDst ? -5 : -6;
+        }
+        else if (tz.includes("denver") || tz.includes("mountain")) {
+            offsetHours = isDst ? -6 : -7;
+        }
+        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
+            offsetHours = isDst ? -7 : -8;
+        }
+        else if (tz.includes("phoenix") || tz.includes("arizona")) {
+            offsetHours = -7; // Arizona does not observe DST
+        }
+        else {
+            // Default: America/New_York (Eastern)
+            offsetHours = isDst ? -4 : -5;
+        }
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+        }
+        // Case 4: Date only: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
     }
 }
 
@@ -998,7 +1214,13 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
     try {
         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
         const tzP = parseJsonField(tzSetting.get("value"));
-        if (tzP && tzP.timezone) timezone = tzP.timezone;
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            } else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
     } catch (e) {}
 
     let event = null;
@@ -1212,18 +1434,88 @@ function normalizeBaseUrl(url) {
 function formatInTimezone(date, timezone, options) {
     if (!date)
         return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
     try {
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
+        // Try native Intl first (V8 / browser / Node.js)
         return new Intl.DateTimeFormat("en-US", {
             ...options,
             timeZone: timezone
         }).format(d);
     }
     catch {
-        // Fallback if Intl fails
-        return new Date(date).toLocaleString();
+        // Fallback for Goja VM (PocketBase backend)
+        let offsetHours = -5; // Default to America/New_York (EST)
+        const tz = String(timezone || "").toLowerCase();
+        const year = d.getUTCFullYear();
+        // Determine if DST (Daylight Saving Time) is active in the US
+        // DST starts 2nd Sunday of March, ends 1st Sunday of November
+        const march1 = new Date(Date.UTC(year, 2, 1));
+        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+        const nov1 = new Date(Date.UTC(year, 10, 1));
+        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
+        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+        if (tz.includes("chicago") || tz.includes("central")) {
+            offsetHours = isDst ? -5 : -6;
+        }
+        else if (tz.includes("denver") || tz.includes("mountain")) {
+            offsetHours = isDst ? -6 : -7;
+        }
+        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
+            offsetHours = isDst ? -7 : -8;
+        }
+        else if (tz.includes("phoenix") || tz.includes("arizona")) {
+            offsetHours = -7; // Arizona does not observe DST
+        }
+        else {
+            // Default: America/New_York (Eastern)
+            offsetHours = isDst ? -4 : -5;
+        }
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+        }
+        // Case 4: Date only: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
     }
 }
 
@@ -1431,7 +1723,13 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
     try {
         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
         const tzP = parseJsonField(tzSetting.get("value"));
-        if (tzP && tzP.timezone) timezone = tzP.timezone;
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            } else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
     } catch (e) {}
 
     let event = null;
@@ -1654,18 +1952,88 @@ function normalizeBaseUrl(url) {
 function formatInTimezone(date, timezone, options) {
     if (!date)
         return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
     try {
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
+        // Try native Intl first (V8 / browser / Node.js)
         return new Intl.DateTimeFormat("en-US", {
             ...options,
             timeZone: timezone
         }).format(d);
     }
     catch {
-        // Fallback if Intl fails
-        return new Date(date).toLocaleString();
+        // Fallback for Goja VM (PocketBase backend)
+        let offsetHours = -5; // Default to America/New_York (EST)
+        const tz = String(timezone || "").toLowerCase();
+        const year = d.getUTCFullYear();
+        // Determine if DST (Daylight Saving Time) is active in the US
+        // DST starts 2nd Sunday of March, ends 1st Sunday of November
+        const march1 = new Date(Date.UTC(year, 2, 1));
+        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+        const nov1 = new Date(Date.UTC(year, 10, 1));
+        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
+        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+        if (tz.includes("chicago") || tz.includes("central")) {
+            offsetHours = isDst ? -5 : -6;
+        }
+        else if (tz.includes("denver") || tz.includes("mountain")) {
+            offsetHours = isDst ? -6 : -7;
+        }
+        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
+            offsetHours = isDst ? -7 : -8;
+        }
+        else if (tz.includes("phoenix") || tz.includes("arizona")) {
+            offsetHours = -7; // Arizona does not observe DST
+        }
+        else {
+            // Default: America/New_York (Eastern)
+            offsetHours = isDst ? -4 : -5;
+        }
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+        }
+        // Case 4: Date only: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
     }
 }
 
