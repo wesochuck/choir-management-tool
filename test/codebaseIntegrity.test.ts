@@ -177,4 +177,16 @@ test('codebase integrity: player integration consistency', () => {
   assert.ok(playerContent.includes('parentTitle'), 'Player must support rendering parent piece titles');
 });
 
+test('codebase integrity: no JSX IIFE anti-patterns in CommunicationView', () => {
+  const commViewFile = resolveProjectPath('src/views/admin/CommunicationView.tsx');
+  const content = fs.readFileSync(commViewFile, 'utf8');
+  
+  // Look for the specific IIFE pattern {tab === 'history' && (() => {
+  const hasHistoryIIFE = content.includes("{tab === 'history' && (() => {");
+  assert.ok(!hasHistoryIIFE, 'CommunicationView history tab must use a sub-component instead of an IIFE');
+  
+  // Verify MessageHistory component is used
+  assert.ok(content.includes('<MessageHistory'), 'CommunicationView should use the MessageHistory component');
+});
+
 
