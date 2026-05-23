@@ -40,7 +40,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
     const records = app.findRecordsByFilter(
         "emailQueue", 
         "status = 'Pending' && attempts < 3", 
-        "created", 
+        "", 
         50, // Process in controlled batches of 50
         0
     );

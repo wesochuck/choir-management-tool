@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T14:29:31.749Z
+// Generated on: 2026-05-23T14:34:19.225Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -367,7 +367,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -924,7 +924,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -1540,7 +1540,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -2101,7 +2101,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -2666,7 +2666,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -3235,7 +3235,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -3816,7 +3816,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -4386,7 +4386,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
@@ -4963,7 +4963,7 @@ function processEmailQueue(app) {
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
-    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "created", 50, // Process in controlled batches of 50
+    const records = app.findRecordsByFilter("emailQueue", "status = 'Pending' && attempts < 3", "", 50, // Process in controlled batches of 50
     0);
     if (!records || records.length === 0)
         return;
