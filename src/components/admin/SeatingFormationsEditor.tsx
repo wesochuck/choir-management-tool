@@ -386,7 +386,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       
       onSaveSuccess?.();
       
-      await dialog.showMessage({ title: 'Success', message: 'Seating templates saved successfully.' });
+      dialog.showToast('Seating templates saved successfully.');
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setMessage(`Error saving templates: ${errMsg}`);

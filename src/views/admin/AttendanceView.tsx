@@ -116,11 +116,7 @@ export default function AttendanceView() {
     try {
       await setRSVP(profileId, 'Yes');
       setSelectedDeclinedProfileId('');
-      await dialog.showMessage({
-        title: 'Singer Added Back',
-        message: 'The singer has been successfully set to Attending and added to the check-in list.',
-        variant: 'info'
-      });
+      dialog.showToast('The singer has been successfully set to Attending and added to the check-in list.');
     } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Error Adding Singer',

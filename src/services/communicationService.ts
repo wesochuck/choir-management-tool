@@ -226,22 +226,11 @@ export const communicationService = {
   },
 
   async sendBulkMessage(data: SendMessageInput, draftId?: string): Promise<SendMessageResult> {
-    let finalContent = data.content;
-    
-    const eventId = data.filters.eventId as string | undefined;
-    if (data.content.includes('{{RSVP_LINKS}}') && eventId) {
-      const resolved = await this.resolveRsvpPlaceholders(data.content, eventId, data.recipients);
-      finalContent = resolved.previewContent;
-      console.log('--- RSVP Links Generated ---');
-      resolved.logs.forEach(log => console.log(log));
-      console.log('----------------------------');
-    }
-
     // Decision: For now, I will append a GENERIC footer to the message record,
     // and if the backend hook sees an email, it will wrap the content with the compliant footer.
     const payload = { 
       ...data, 
-      content: finalContent + COMPLIANT_FOOTER_HTML,
+      content: data.content + COMPLIANT_FOOTER_HTML,
       status: 'Sent' as const
     };
 
@@ -256,7 +245,7 @@ export const communicationService = {
 
     const mailtoUrl = ''; // Intentionally left blank. Email is dispatched securely on the server side.
     const smsUrl = phoneRecipients.length
-      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(finalContent)}`
+      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(data.content)}`
       : '';
 
     return { message, mailtoUrl, smsUrl };

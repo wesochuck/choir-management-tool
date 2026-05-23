@@ -55,7 +55,7 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({ onInsert }) 
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', overflowY: 'auto', paddingRight: '4px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', overflowY: 'auto', overflowX: 'hidden', paddingRight: '4px', boxSizing: 'border-box' }}>
         {categories.map(cat => {
           const items = PLACEHOLDERS.filter(p => p.category === cat);
           return (

@@ -15,6 +15,18 @@ function escapeHtml(str) {
         .replace(/'/g, "&#39;");
 }
 
+/**
+ * Sanitizes email subject text to prevent header injection.
+ * @param {string} str The subject string to sanitize.
+ * @returns {string} A safe, single-line subject.
+ */
+function sanitizeEmailSubject(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/[\r\n]+/g, " ")
+        .trim();
+}
+
 cronAdd("post_event_report", "0 * * * *", () => {
     // Helper to safely convert Go byte slices to JS strings
     function decodeGoBytes(val) {
@@ -48,6 +60,19 @@ cronAdd("post_event_report", "0 * * * *", () => {
 
     const settings = $app.settings();
     if (!settings.smtp.enabled) return;
+
+    // Fetch Active Profiles once to avoid N+1 queries in loops
+    let profileMap = {};
+    try {
+        const activeProfiles = $app.findRecordsByFilter("profiles", "status = 'Active (Current)'", "", 1000);
+        if (activeProfiles) {
+            activeProfiles.forEach(p => {
+                profileMap[p.id] = p;
+            });
+        }
+    } catch (e) {
+        console.log("[Cron Error] Failed to build profile map: " + e);
+    }
 
     // 2. Fetch Communication Settings for templates & configuration
     let commSettings = {
@@ -110,7 +135,8 @@ cronAdd("post_event_report", "0 * * * *", () => {
         const present = rosters.filter(r => r.get("attendance") === "Present").length;
         const absentees = rosters.filter(r => r.get("attendance") === "Absent").map(r => {
             try {
-                const profile = $app.findRecordById("profiles", r.get("profile"));
+                const profileId = r.get("profile");
+                const profile = profileMap[profileId] || $app.findRecordById("profiles", profileId);
                 return profile.get("name");
             } catch (e) {
                 return "Unknown Singer";
@@ -126,32 +152,50 @@ cronAdd("post_event_report", "0 * * * *", () => {
             const otherRehearsals = $app.findRecordsByFilter("events", "parentPerformanceId = {:parentId} && type = 'Rehearsal'", "date", 100, 0, { parentId });
             const rehearsalIds = otherRehearsals.map(r => r.id);
             
-            const absenteeRecords = rosters.filter(r => r.get("attendance") === "Absent");
-            absenteeRecords.forEach(r => {
-                const profileId = r.get("profile");
-                let totalMisses = 0;
-                rehearsalIds.forEach(rid => {
-                    try {
-                        const pastRoster = $app.findFirstRecordByFilter("eventRosters", "profile = {:profileId} && event = {:rid} && attendance = 'Absent'", { profileId, rid });
-                        if (pastRoster) totalMisses++;
-                    } catch (e) {}
+            if (rehearsalIds.length > 0) {
+                // Fetch all absent rosters for all of these rehearsal events in one query
+                const filterString = rehearsalIds.map((_, i) => `event = {:rid${i}}`).join(" || ") + " && attendance = 'Absent'";
+                const params = rehearsalIds.reduce((acc, rid, i) => { acc[`rid${i}`] = rid; return acc; }, {});
+                
+                let pastAbsentRosters = [];
+                try {
+                    pastAbsentRosters = $app.findRecordsByFilter("eventRosters", filterString, "", 1000, 0, params);
+                } catch (e) {
+                    console.log("[Cron Error] Failed to fetch past absent rosters: " + e);
+                }
+
+                // Count misses per profile in memory
+                const missCounts = {};
+                pastAbsentRosters.forEach(pr => {
+                    const pid = pr.get("profile");
+                    if (pid) {
+                        missCounts[pid] = (missCounts[pid] || 0) + 1;
+                    }
                 });
 
-                if (totalMisses >= 2) {
-                    try {
-                        const profile = $app.findRecordById("profiles", profileId);
-                        thresholdWarnings.push(`${escapeHtml(profile.get("name"))} (${totalMisses} total misses for this concert series)`);
-                    } catch (e) {}
-                }
-            });
+                const absenteeRecords = rosters.filter(r => r.get("attendance") === "Absent");
+                absenteeRecords.forEach(r => {
+                    const profileId = r.get("profile");
+                    const totalMisses = missCounts[profileId] || 0;
+
+                    if (totalMisses >= 2) {
+                        try {
+                            const profile = profileMap[profileId] || $app.findRecordById("profiles", profileId);
+                            thresholdWarnings.push(`${escapeHtml(profile.get("name"))} (${totalMisses} total misses for this concert series)`);
+                        } catch (e) {}
+                    }
+                });
+            }
         }
 
         // Build Email Content
         const eventDateObj = new Date(event.get("date"));
         const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear();
-        const subject = commSettings.reportSubjectTemplate
-            .replace(/{eventTitle}/g, event.get("title")) // Subject is plain text, doesn't strictly need HTML escaping
-            .replace(/{eventDate}/g, eventDateStr);
+        const subject = sanitizeEmailSubject(
+            commSettings.reportSubjectTemplate
+                .replace(/{eventTitle}/g, event.get("title"))
+                .replace(/{eventDate}/g, eventDateStr)
+        );
 
         let templateBody = commSettings.reportBodyTemplate
             .replace(/{eventTitle}/g, escapeHtml(event.get("title")))
@@ -204,7 +248,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
                     to:      [{ address: admin.get("email") }],
                     subject: subject,
                     html:    body,
-                });
+                    });
 
                 $app.newMailClient().send(message);
             } catch (e) {
@@ -279,7 +323,25 @@ onRecordAfterCreateSuccess((e) => {
         /**
          * Dispatches emails to recipients using system SMTP or custom override.
          */
-        function dispatchEmails(subject, content, recipients, recordId) {
+        /**
+         * Dispatches emails to recipients using system SMTP or custom override.
+         */
+        function dispatchEmails(subject, content, recipients, recordId, filters) {
+            function escapeHtml(str) {
+                if (!str) return "";
+                return String(str)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+            function sanitizeEmailSubject(str) {
+                if (!str) return "";
+                return String(str)
+                    .replace(/[\r\n]+/g, " ")
+                    .trim();
+            }
             console.log("[Email] Attempting to dispatch message " + recordId + " to " + recipients.length + " recipients");
             
             // 1. Resolve 'From' Address
@@ -307,6 +369,14 @@ onRecordAfterCreateSuccess((e) => {
                 if (p && p.frontendUrl) baseUrl = p.frontendUrl;
             } catch (e) {}
 
+            // 4. Fetch Event details for placeholder resolution
+            let event = null;
+            if (filters && filters.eventId) {
+                try {
+                    event = $app.findRecordById("events", filters.eventId);
+                } catch (e) {}
+            }
+
             let successCount = 0;
             let errorCount = 0;
 
@@ -314,7 +384,46 @@ onRecordAfterCreateSuccess((e) => {
                 const email = r.email;
                 if (!email) return;
 
+                let finalSubject = subject;
                 let finalContent = content;
+
+                // Resolve Recipient name placeholder
+                const singerName = r.name || "Singer";
+                finalSubject = finalSubject.replace(/{singerName}/g, sanitizeEmailSubject(singerName));
+                finalContent = finalContent.replace(/{singerName}/g, escapeHtml(singerName));
+
+                // Resolve Event Placeholders
+                if (event) {
+                    const eventDateObj = new Date(event.get("date"));
+                    // Format Date cleanly: MM/DD/YYYY, H:MM AM/PM
+                    const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear() + ", " + eventDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const eventTitle = event.get("title") || event.get("type") || "Event";
+                    const eventType = event.get("type") || "Performance";
+                    const eventDetails = event.get("details") || "";
+
+                    // Resolve Venue Location
+                    let eventLocation = "TBD";
+                    try {
+                        const venueRecord = $app.findRecordById("venues", event.get("venue"));
+                        eventLocation = venueRecord.get("name") || "TBD";
+                    } catch (e) {}
+
+                    finalSubject = finalSubject.replace(/{eventTitle}/g, sanitizeEmailSubject(eventTitle))
+                                             .replace(/{eventType}/g, sanitizeEmailSubject(eventType))
+                                             .replace(/{eventDate}/g, sanitizeEmailSubject(eventDateStr))
+                                             .replace(/{eventLocation}/g, sanitizeEmailSubject(eventLocation))
+                                             .replace(/{eventDetails}/g, sanitizeEmailSubject(eventDetails));
+
+                    finalContent = finalContent.replace(/{eventTitle}/g, escapeHtml(eventTitle))
+                                             .replace(/{eventType}/g, escapeHtml(eventType))
+                                             .replace(/{eventDate}/g, escapeHtml(eventDateStr))
+                                             .replace(/{eventLocation}/g, escapeHtml(eventLocation))
+                                             .replace(/{eventDetails}/g, escapeHtml(eventDetails));
+                } else {
+                    // Cleanup if no event context
+                    finalSubject = finalSubject.replace(/{eventTitle}/g, "").replace(/{eventType}/g, "").replace(/{eventDate}/g, "").replace(/{eventLocation}/g, "").replace(/{eventDetails}/g, "");
+                    finalContent = finalContent.replace(/{eventTitle}/g, "").replace(/{eventType}/g, "").replace(/{eventDate}/g, "").replace(/{eventLocation}/g, "").replace(/{eventDetails}/g, "");
+                }
 
                 // Resolve Mailing Address
                 if (finalContent.includes("{{MAILING_ADDRESS}}")) {
@@ -336,6 +445,25 @@ onRecordAfterCreateSuccess((e) => {
                     finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, link);
                 }
 
+                // Personalized RSVP Buttons Link Generation
+                if ((finalContent.includes("{{RSVP_LINKS}}") || finalContent.includes("{rsvpLinks}")) && secret && event) {
+                    const payload = `e=${event.id}&p=${r.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    
+                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    
+                    const rsvpText = `
+                        <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
+                            <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
+                            <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+                        </div>
+                    `;
+                    
+                    finalContent = finalContent.replace(/{{RSVP_LINKS}}/g, rsvpText).replace(/{rsvpLinks}/g, rsvpText);
+                }
+
                 try {
                     const message = new MailerMessage({
                         from: {
@@ -343,7 +471,7 @@ onRecordAfterCreateSuccess((e) => {
                             name:    fromName,
                         },
                         to:      [{ address: email }],
-                        subject: subject,
+                        subject: finalSubject,
                         html:    finalContent.replace(/\n/g, "<br>"),
                     });
 
@@ -376,7 +504,7 @@ onRecordAfterCreateSuccess((e) => {
 
         if (!recipients || !Array.isArray(recipients) || recipients.length === 0) return;
 
-        dispatchEmails(subject, content, recipients, record.id);
+        dispatchEmails(subject, content, recipients, record.id, filters);
     } catch (hookErr) {
         console.log("[Hook Error] onRecordAfterCreateSuccess failed: " + hookErr);
     }
@@ -421,7 +549,25 @@ onRecordAfterUpdateSuccess((e) => {
         /**
          * Dispatches emails to recipients using system SMTP or custom override.
          */
-        function dispatchEmails(subject, content, recipients, recordId) {
+        /**
+         * Dispatches emails to recipients using system SMTP or custom override.
+         */
+        function dispatchEmails(subject, content, recipients, recordId, filters) {
+            function escapeHtml(str) {
+                if (!str) return "";
+                return String(str)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+            function sanitizeEmailSubject(str) {
+                if (!str) return "";
+                return String(str)
+                    .replace(/[\r\n]+/g, " ")
+                    .trim();
+            }
             console.log("[Email] Attempting to dispatch message " + recordId + " to " + recipients.length + " recipients");
             
             // 1. Resolve 'From' Address
@@ -449,6 +595,14 @@ onRecordAfterUpdateSuccess((e) => {
                 if (p && p.frontendUrl) baseUrl = p.frontendUrl;
             } catch (e) {}
 
+            // 4. Fetch Event details for placeholder resolution
+            let event = null;
+            if (filters && filters.eventId) {
+                try {
+                    event = $app.findRecordById("events", filters.eventId);
+                } catch (e) {}
+            }
+
             let successCount = 0;
             let errorCount = 0;
 
@@ -456,7 +610,46 @@ onRecordAfterUpdateSuccess((e) => {
                 const email = r.email;
                 if (!email) return;
 
+                let finalSubject = subject;
                 let finalContent = content;
+
+                // Resolve Recipient name placeholder
+                const singerName = r.name || "Singer";
+                finalSubject = finalSubject.replace(/{singerName}/g, sanitizeEmailSubject(singerName));
+                finalContent = finalContent.replace(/{singerName}/g, escapeHtml(singerName));
+
+                // Resolve Event Placeholders
+                if (event) {
+                    const eventDateObj = new Date(event.get("date"));
+                    // Format Date cleanly: MM/DD/YYYY, H:MM AM/PM
+                    const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear() + ", " + eventDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const eventTitle = event.get("title") || event.get("type") || "Event";
+                    const eventType = event.get("type") || "Performance";
+                    const eventDetails = event.get("details") || "";
+
+                    // Resolve Venue Location
+                    let eventLocation = "TBD";
+                    try {
+                        const venueRecord = $app.findRecordById("venues", event.get("venue"));
+                        eventLocation = venueRecord.get("name") || "TBD";
+                    } catch (e) {}
+
+                    finalSubject = finalSubject.replace(/{eventTitle}/g, sanitizeEmailSubject(eventTitle))
+                                             .replace(/{eventType}/g, sanitizeEmailSubject(eventType))
+                                             .replace(/{eventDate}/g, sanitizeEmailSubject(eventDateStr))
+                                             .replace(/{eventLocation}/g, sanitizeEmailSubject(eventLocation))
+                                             .replace(/{eventDetails}/g, sanitizeEmailSubject(eventDetails));
+
+                    finalContent = finalContent.replace(/{eventTitle}/g, escapeHtml(eventTitle))
+                                             .replace(/{eventType}/g, escapeHtml(eventType))
+                                             .replace(/{eventDate}/g, escapeHtml(eventDateStr))
+                                             .replace(/{eventLocation}/g, escapeHtml(eventLocation))
+                                             .replace(/{eventDetails}/g, escapeHtml(eventDetails));
+                } else {
+                    // Cleanup if no event context
+                    finalSubject = finalSubject.replace(/{eventTitle}/g, "").replace(/{eventType}/g, "").replace(/{eventDate}/g, "").replace(/{eventLocation}/g, "").replace(/{eventDetails}/g, "");
+                    finalContent = finalContent.replace(/{eventTitle}/g, "").replace(/{eventType}/g, "").replace(/{eventDate}/g, "").replace(/{eventLocation}/g, "").replace(/{eventDetails}/g, "");
+                }
 
                 // Resolve Mailing Address
                 if (finalContent.includes("{{MAILING_ADDRESS}}")) {
@@ -478,6 +671,25 @@ onRecordAfterUpdateSuccess((e) => {
                     finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, link);
                 }
 
+                // Personalized RSVP Buttons Link Generation
+                if ((finalContent.includes("{{RSVP_LINKS}}") || finalContent.includes("{rsvpLinks}")) && secret && event) {
+                    const payload = `e=${event.id}&p=${r.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    
+                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    
+                    const rsvpText = `
+                        <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
+                            <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
+                            <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+                        </div>
+                    `;
+                    
+                    finalContent = finalContent.replace(/{{RSVP_LINKS}}/g, rsvpText).replace(/{rsvpLinks}/g, rsvpText);
+                }
+
                 try {
                     const message = new MailerMessage({
                         from: {
@@ -485,7 +697,7 @@ onRecordAfterUpdateSuccess((e) => {
                             name:    fromName,
                         },
                         to:      [{ address: email }],
-                        subject: subject,
+                        subject: finalSubject,
                         html:    finalContent.replace(/\n/g, "<br>"),
                     });
 
@@ -516,7 +728,9 @@ onRecordAfterUpdateSuccess((e) => {
 
             if (!recipients || !Array.isArray(recipients) || recipients.length === 0) return;
 
-            dispatchEmails(subject, content, recipients, record.id);
+            const filtersRaw = record.get("filters");
+            const filters = parseJsonField(filtersRaw) || {};
+            dispatchEmails(subject, content, recipients, record.id, filters);
         }
     } catch (hookErr) {
         console.log("[Hook Error] onRecordAfterUpdateSuccess failed: " + hookErr);

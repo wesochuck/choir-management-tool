@@ -69,6 +69,8 @@ export default function CommunicationView() {
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Partial<TemplateRecord> | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
 
   // Core drafting state
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
@@ -286,7 +288,7 @@ export default function CommunicationView() {
       const record = await communicationService.saveDraft(input, activeDraftId || undefined);
       setActiveDraftId(record.id);
       setDrafts(await communicationService.getDrafts());
-      await dialog.showMessage({ title: 'Draft Saved', message: 'Your message has been saved as a draft.', variant: 'info' });
+      dialog.showToast('Your message has been saved as a draft.');
     } catch (err: unknown) {
       console.error(err);
       await dialog.showMessage({ title: 'Error', message: 'Failed to save draft.', variant: 'danger' });
@@ -353,7 +355,7 @@ export default function CommunicationView() {
       };
 
       await communicationService.sendBulkMessage(input);
-      await dialog.showMessage({ title: 'Test Sent', message: `A test email has been sent to ${user.email}.`, variant: 'info' });
+      dialog.showToast(`A test email has been sent to ${user.email}.`);
     } catch (err: unknown) {
       console.error(err);
       await dialog.showMessage({ title: 'Error', message: 'Failed to send test message.', variant: 'danger' });
@@ -389,7 +391,7 @@ export default function CommunicationView() {
       setDrafts(await communicationService.getDrafts());
       setActiveDraftId(null);
       
-      await dialog.showMessage({ title: 'Success', message: 'Message sent successfully!', variant: 'info' });
+      dialog.showToast('Message sent successfully!');
       setWizardStep('TARGETS');
     } catch (err: unknown) {
       console.error(err);
@@ -414,7 +416,7 @@ export default function CommunicationView() {
       });
       
       if (response && response.success) {
-        await dialog.showMessage({ title: 'Success', message: `Test email successfully sent to ${testEmailAddress}!`, variant: 'info' });
+        dialog.showToast(`Test email successfully sent to ${testEmailAddress}!`);
       } else {
         throw new Error(response?.error || 'Unknown error occurred.');
       }
@@ -920,33 +922,78 @@ export default function CommunicationView() {
         </AppCard>
       )}
 
-      {tab === 'history' && (
-        <AppCard noPadding>
-          {history.map((message) => {
-            const mFilters = message.filters as Record<string, unknown>;
-            const mType = mFilters?.type as string | undefined;
-            const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-            return (
-              <div key={message.id} className="message-list-item flex-responsive">
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-                    <span className="badge badge-rehearsal">{message.type}</span>
-                    {isAutomated && <span className="badge badge-concert" style={{ opacity: 0.8 }}>{mType}</span>}
-                    <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
+      {tab === 'history' && (() => {
+        const pageSize = 5;
+        const totalPages = Math.ceil(history.length / pageSize) || 1;
+        const currentPage = historyPage > totalPages ? 1 : historyPage;
+        const startIdx = (currentPage - 1) * pageSize;
+        const paginatedHistory = history.slice(startIdx, startIdx + pageSize);
+
+        return (
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <AppCard noPadding>
+              {paginatedHistory.map((message) => {
+                const mFilters = message.filters as Record<string, unknown>;
+                const mType = mFilters?.type as string | undefined;
+                const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+                
+                // Resolve placeholders for subject preview
+                const eventId = mFilters?.eventId as string | undefined;
+                const linkedEvent = events.find(e => e.id === eventId) || null;
+                const resolvedSubject = resolvePreviewContent(
+                  message.subject || 'SMS message',
+                  linkedEvent,
+                  null,
+                  commSettings.mailingAddress
+                );
+
+                return (
+                  <div key={message.id} className="message-list-item flex-responsive" style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
+                    <div className="flex-col" style={{ gap: '4px' }}>
+                      <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'center' }}>
+                        <span className="badge badge-rehearsal" style={{ fontSize: '10px', padding: '2px 6px' }}>{message.type}</span>
+                        {isAutomated && <span className="badge badge-concert" style={{ fontSize: '10px', padding: '2px 6px', opacity: 0.8 }}>{mType}</span>}
+                        <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{resolvedSubject}</h3>
+                      <p className="text-muted text-xs" style={{ margin: 0 }}>{message.recipients.length} recipients</p>
+                    </div>
+                    <div className="flex-row" style={{ gap: '6px' }}>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSelectedMessage(message)}>Details</button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleResumeDraft(message)}>Copy to Draft</button>
+                    </div>
                   </div>
-                  <h3 style={{ margin: 0 }}>{message.subject || 'SMS message'}</h3>
-                  <p className="text-muted" style={{ margin: 0 }}>{message.recipients.length} recipients</p>
-                </div>
-                <div className="flex-row">
-                  <button className="btn btn-ghost btn-sm" onClick={() => setSelectedMessage(message)}>Details</button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => handleResumeDraft(message)}>Copy to Draft</button>
-                </div>
+                );
+              })}
+              {history.length === 0 && <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}><p className="text-muted">No messages logged yet.</p></div>}
+            </AppCard>
+
+            {history.length > pageSize && (
+              <div className="flex-row" style={{ justifyContent: 'center', alignItems: 'center', gap: 'var(--space-md)', marginTop: '4px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-ghost btn-sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setHistoryPage(currentPage - 1)}
+                >
+                  ◀ Previous
+                </button>
+                <span className="text-muted text-sm" style={{ fontWeight: 600 }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button 
+                  type="button" 
+                  className="btn btn-ghost btn-sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setHistoryPage(currentPage + 1)}
+                >
+                  Next ▶
+                </button>
               </div>
-            );
-          })}
-          {history.length === 0 && <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}><p className="text-muted">No messages logged yet.</p></div>}
-        </AppCard>
-      )}
+            )}
+          </div>
+        );
+      })()}
 
       {tab === 'settings' && (
         <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
@@ -957,6 +1004,83 @@ export default function CommunicationView() {
                 <Field label="Application Base URL" value={commSettings.frontendUrl} onChange={(v) => setCommSettings({ ...commSettings, frontendUrl: v })} />
               </SettingsGrid>
               <div className="text-muted text-xs">Note: These values are used for legal compliance (footer) and link generation.</div>
+            </div>
+          </AppCard>
+
+          <AppCard 
+            title="Message Templates"
+            actions={
+              <button 
+                type="button"
+                className="btn btn-primary btn-sm"
+                style={{ height: '32px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => setEditingTemplate({ title: '', subject: '', content: '', type: 'Email', isSystemTemplate: false })}
+              >
+                ➕ Add Custom Template
+              </button>
+            }
+          >
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <p className="text-muted text-sm" style={{ margin: 0 }}>
+                Manage message templates. Custom templates can be added, edited, or deleted. System-defined templates cannot be deleted.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {templates.map(tpl => (
+                  <div 
+                    key={tpl.id} 
+                    className="card flex-responsive" 
+                    style={{ 
+                      padding: 'var(--space-sm) var(--space-md)', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      boxShadow: 'none',
+                      border: '1px solid var(--border)',
+                      margin: 0
+                    }}
+                  >
+                    <div className="flex-col" style={{ gap: '2px' }}>
+                      <div className="flex-row" style={{ gap: '6px', alignItems: 'center' }}>
+                        <strong style={{ fontSize: '0.95rem' }}>{tpl.title}</strong>
+                        <span className="badge badge-rehearsal" style={{ fontSize: '10px', padding: '2px 6px' }}>{tpl.type}</span>
+                        {tpl.isSystemTemplate && <span className="badge badge-concert" style={{ fontSize: '10px', padding: '2px 6px', opacity: 0.8 }}>System</span>}
+                      </div>
+                      <span className="text-muted text-xs" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '350px' }}>
+                        {tpl.subject ? `Subject: ${tpl.subject}` : 'No Subject'} • {tpl.content.substring(0, 60)}...
+                      </span>
+                    </div>
+                    <div className="flex-row" style={{ gap: '6px' }}>
+                      <button 
+                        type="button" 
+                        className="btn btn-ghost btn-sm" 
+                        onClick={() => setEditingTemplate(tpl)}
+                      >
+                        Edit
+                      </button>
+                      {!tpl.isSystemTemplate && (
+                        <button 
+                          type="button" 
+                          className="btn btn-ghost btn-sm" 
+                          style={{ color: '#ef4444' }}
+                          onClick={async () => {
+                            if (await dialog.confirm({ title: 'Delete Template', message: `Are you sure you want to delete the template "${tpl.title}"?`, variant: 'danger' })) {
+                              try {
+                                await communicationService.deleteTemplate(tpl.id!);
+                                setTemplates(await communicationService.getTemplates());
+                              } catch (e: unknown) {
+                                const msg = e instanceof Error ? e.message : String(e);
+                                await dialog.showMessage({ title: 'Error', message: 'Failed to delete template: ' + msg, variant: 'danger' });
+                              }
+                            }
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {templates.length === 0 && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No templates found.</div>}
+              </div>
             </div>
           </AppCard>
 
@@ -993,7 +1117,7 @@ export default function CommunicationView() {
                 setIsSavingConfig(true);
                 try { 
                   await settingsService.saveCommunicationSettings(commSettings);
-                  await dialog.showMessage({ title: 'Saved', message: 'Settings updated successfully.', variant: 'info' }); 
+                  dialog.showToast('Settings updated successfully.'); 
                 } catch (err: unknown) {
                   const message = err instanceof Error ? err.message : String(err);
                   await dialog.showMessage({ title: 'Error', message: 'Failed to save settings: ' + message, variant: 'danger' });
@@ -1014,7 +1138,19 @@ export default function CommunicationView() {
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ gap: '2px' }}>
               <label className="text-label text-muted">Subject</label>
-              <strong>{selectedMessage.subject || '(SMS)'}</strong>
+              <strong>
+                {(() => {
+                  const mFilters = selectedMessage.filters as Record<string, unknown>;
+                  const eventId = mFilters?.eventId as string | undefined;
+                  const linkedEvent = events.find(e => e.id === eventId) || null;
+                  return resolvePreviewContent(
+                    selectedMessage.subject || '(SMS)',
+                    linkedEvent,
+                    null,
+                    commSettings.mailingAddress
+                  );
+                })()}
+              </strong>
             </div>
             <div className="flex-col" style={{ gap: '2px' }}>
               <label className="text-label text-muted">Sent To</label>
@@ -1037,6 +1173,90 @@ export default function CommunicationView() {
             </div>
           ))}
         </div>
+      </BaseModal>
+
+      <BaseModal 
+        isOpen={!!editingTemplate} 
+        onClose={() => setEditingTemplate(null)} 
+        title={editingTemplate?.id ? 'Edit Message Template' : 'Add Message Template'} 
+        maxWidth="600px"
+      >
+        {editingTemplate && (
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await communicationService.saveTemplate(editingTemplate);
+                setTemplates(await communicationService.getTemplates());
+                setEditingTemplate(null);
+                dialog.showToast('Template saved successfully.');
+              } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                await dialog.showMessage({ title: 'Error', message: 'Failed to save template: ' + msg, variant: 'danger' });
+              }
+            }}
+            className="flex-col" 
+            style={{ gap: 'var(--space-md)' }}
+          >
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Template Title</label>
+              <input 
+                className="card" 
+                value={editingTemplate.title || ''} 
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, title: e.target.value })} 
+                placeholder="e.g. Performance Call Time"
+                style={{ height: '44px', padding: '0 12px' }}
+                required
+              />
+            </div>
+            
+            <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1 }}>
+                <label className="text-label">Channel</label>
+                <select 
+                  className="card" 
+                  value={editingTemplate.type || 'Email'} 
+                  onChange={(e) => setEditingTemplate({ ...editingTemplate, type: e.target.value as MessageType, subject: e.target.value === 'SMS' ? '' : editingTemplate.subject })} 
+                  style={{ height: '44px', padding: '0 12px' }}
+                >
+                  <option value="Email">Email</option>
+                  <option value="SMS">SMS</option>
+                  <option value="Both">Both</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Subject</label>
+              <input 
+                className="card" 
+                value={editingTemplate.subject || ''} 
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, subject: e.target.value })} 
+                placeholder="e.g. Schedule for {eventTitle}"
+                style={{ height: '44px', padding: '0 12px' }}
+                disabled={editingTemplate.type === 'SMS'}
+                required={editingTemplate.type !== 'SMS'}
+              />
+            </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Template Body (Markdown Supported)</label>
+              <textarea 
+                className="card" 
+                value={editingTemplate.content || ''} 
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })} 
+                placeholder="Hello {singerName},&#10;&#10;Details: {eventDetails}"
+                style={{ minHeight: '200px', padding: '12px', resize: 'vertical' }}
+                required
+              />
+            </div>
+
+            <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditingTemplate(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary">Save Template</button>
+            </div>
+          </form>
+        )}
       </BaseModal>
     </div>
   );

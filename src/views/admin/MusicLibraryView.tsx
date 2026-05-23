@@ -127,7 +127,7 @@ export default function MusicLibraryView() {
       setInitialSettings(JSON.parse(JSON.stringify(musicLibrarySettings)));
       setCatalogLookupTemplate(musicLibrarySettings.catalogLookupUrlTemplate || '');
       setConfiguredGenres(musicLibrarySettings.genres || []);
-      dialog.showMessage({ title: 'Success', message: 'Music Library settings saved successfully.' });
+      dialog.showToast('Music Library settings saved successfully.');
     } catch {
       dialog.showMessage({ title: 'Error', message: 'Failed to save Music Library settings.', variant: 'danger' });
     } finally {

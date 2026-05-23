@@ -151,10 +151,7 @@ export default function EventsView() {
         };
         await settingsService.saveAuditionSettings(updatedSettings);
         setAuditionSettings(updatedSettings);
-        await dialog.showMessage({
-          title: 'Auditions Opened',
-          message: `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
-        });
+        dialog.showToast(`Public auditions are now active for "${savedEvent.title || 'this performance'}".`);
       } else if (!openAuditions && savedEvent.type === 'Performance') {
           const currentSettings = await settingsService.getAuditionSettings();
           if (currentSettings.defaultPerformanceId === savedEvent.id && currentSettings.enabled) {

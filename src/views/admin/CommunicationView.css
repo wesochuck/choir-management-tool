@@ -215,9 +215,10 @@
 /* History & Drafts */
 .message-list-item {
   display: flex;
-  padding: var(--space-lg);
+  padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   justify-content: space-between;
+  align-items: center;
 }
 
 /* Voice Part Multi-select */

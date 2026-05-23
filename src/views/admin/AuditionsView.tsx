@@ -77,7 +77,7 @@ export default function AuditionsView() {
     try {
       await settingsService.saveAuditionSettings(settings);
       setShowSettings(false);
-      dialog.showMessage({ title: 'Success', message: 'Audition settings updated.' });
+      dialog.showToast('Audition settings updated.');
     } catch {
       dialog.showMessage({ title: 'Error', message: 'Failed to save settings.', variant: 'danger' });
     } finally {
@@ -100,7 +100,7 @@ export default function AuditionsView() {
       if (id) {
         const updated = await auditionService.updateAudition(id, data);
         setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
-        dialog.showMessage({ title: 'Success', message: 'Audition updated.' });
+        dialog.showToast('Audition updated.');
       } else {
         const payload: AuditionInput = {
           name: data.name!,
@@ -114,7 +114,7 @@ export default function AuditionsView() {
         };
         const created = await auditionService.createAudition(payload);
         setAuditions((current) => [created, ...current]);
-        dialog.showMessage({ title: 'Success', message: 'Audition created successfully.' });
+        dialog.showToast('Audition created successfully.');
       }
       setIsModalOpen(false);
     } catch (err: unknown) {

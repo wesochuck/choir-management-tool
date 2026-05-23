@@ -433,11 +433,7 @@ export function MusicPieceModal({
         try {
             await musicLibraryService.deletePiece(mId);
             await loadMovements();
-            dialog.showMessage({
-                title: 'Success',
-                message: 'Movement deleted successfully.',
-                variant: 'info'
-            });
+            dialog.showToast('Movement deleted successfully.');
         } catch (err) {
             console.error(err);
             dialog.showMessage({
