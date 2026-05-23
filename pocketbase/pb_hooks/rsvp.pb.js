@@ -1,18 +1,23 @@
 // RSVP Automation Hooks
 
+function logRsvp(msg) {
+    console.log("[RSVP Debug] " + msg);
+}
+
 function decodeGoBytes(val) {
     if (!val) return "";
     if (typeof val === "string") return val;
     try {
         if (typeof val === "object") {
-            let str = "";
-            const len = val.length;
-            if (typeof len === "number") {
-                for (let i = 0; i < len; i++) {
+            // Check if it's a byte array
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                let str = "";
+                for (let i = 0; i < val.length; i++) {
                     str += String.fromCharCode(val[i]);
                 }
                 return str;
             }
+            return val;
         }
     } catch (err) {}
     return "";
@@ -20,23 +25,36 @@ function decodeGoBytes(val) {
 
 function parseJsonField(val) {
     if (!val) return null;
-    const str = decodeGoBytes(val);
-    if (!str) return null;
+    const decoded = decodeGoBytes(val);
+    if (!decoded) return null;
+    if (typeof decoded === 'object') return decoded;
     try {
-        return JSON.parse(str);
+        return JSON.parse(decoded);
     } catch (err) {
         return null;
     }
 }
 
 function getHmacSecret() {
-    const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-    const parsed = parseJsonField(record.get("value"));
-    return parsed && typeof parsed.secret === "string" ? parsed.secret : "";
+    try {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(record.get("value"));
+        if (parsed && typeof parsed.secret === "string") {
+            return parsed.secret;
+        }
+        logRsvp("HMAC_SECRET found but secret key is missing or invalid in JSON.");
+    } catch (err) {
+        logRsvp("HMAC_SECRET record not found in appSettings collection.");
+    }
+    return "";
 }
 
 function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string") return null;
+    if (!token || typeof token !== "string") {
+        logRsvp("Token is missing or not a string.");
+        return null;
+    }
+    logRsvp("Parsing token: " + token);
     const parts = {};
     const allowed = {};
     requiredKeys.forEach(k => {
@@ -54,7 +72,10 @@ function parseSignedToken(token, requiredKeys) {
 
     for (let i = 0; i < requiredKeys.length; i++) {
         const key = requiredKeys[i];
-        if (!parts[key]) return null;
+        if (!parts[key]) {
+            logRsvp("Missing required key in token: " + key);
+            return null;
+        }
     }
     return parts;
 }
@@ -116,6 +137,8 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
+        logRsvp("Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
+        logRsvp("Expected: " + expectedSignature + ", Received: " + parts.s);
         return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
 
@@ -248,6 +271,8 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
+        logRsvp("Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
+        logRsvp("Expected: " + expectedSignature + ", Received: " + parts.s);
         return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
 
