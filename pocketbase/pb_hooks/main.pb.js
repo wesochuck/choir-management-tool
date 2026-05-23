@@ -28,26 +28,32 @@ function sanitizeEmailSubject(str) {
  */
 function normalizeBaseUrl(url) {
     if (!url) return "http://localhost:5173";
-    let cleaned = url.trim();
-    return cleaned.endsWith("/") ? cleaned.slice(0, -1) : cleaned;
+    return String(url).trim().replace(/\/+$/g, "");
 }
 
 /**
  * Safely converts Go byte slices (uint8 arrays) to JS strings.
+ * Defensive against already-parsed JS objects or arrays.
  */
 function decodeGoBytes(val) {
     if (!val) return "";
     if (typeof val === 'string') return val;
-    try {
-        if (typeof val === 'object' && val.length !== undefined) {
-            let str = "";
-            for (let i = 0; i < val.length; i++) {
-                str += String.fromCharCode(val[i]);
-            }
-            return str;
+
+    if (typeof val === 'object') {
+        // Check if it's a byte array (only numbers)
+        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+            try {
+                let str = "";
+                for (let i = 0; i < val.length; i++) {
+                    str += String.fromCharCode(val[i]);
+                }
+                return str;
+            } catch (err) {}
         }
-    } catch (err) {}
-    return JSON.stringify(val);
+        return val;
+    }
+
+    return String(val);
 }
 
 /**
@@ -55,10 +61,13 @@ function decodeGoBytes(val) {
  */
 function parseJsonField(val) {
     if (!val) return null;
-    const str = decodeGoBytes(val);
-    if (!str) return null;
+    const decoded = decodeGoBytes(val);
+    if (!decoded) return null;
+
+    if (typeof decoded === 'object') return decoded;
+
     try {
-        return JSON.parse(str);
+        return JSON.parse(decoded);
     } catch (err) {
         return null;
     }
@@ -70,24 +79,19 @@ function parseJsonField(val) {
  * Dispatches emails to recipients using system SMTP.
  */
 function dispatchEmails(subject, content, recipients, recordId, filters) {
-    console.log("[Email] Attempting dispatch for " + recordId + " to " + recipients.length + " recipients");
+    console.log("[Email] Starting dispatch for " + recordId + ". Recipients: " + recipients.length);
     
-    // 1. Resolve 'From' Address & Name from System Settings
-    const systemSettings = $app.settings();
-    const fromAddress = systemSettings.meta.senderAddress || "no-reply@choir.management";
-    const fromName = systemSettings.meta.senderName || "Choir Management Tool";
+    const settings = $app.settings();
+    const fromAddress = settings.meta.senderAddress || "no-reply@choir.management";
+    const fromName = settings.meta.senderName || "Choir Management Tool";
 
-    // 2. Fetch Secret for HMAC
     let secret = "";
     try {
         const secretRecord = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(secretRecord.get("value"));
         secret = parsed ? parsed.secret : "";
-    } catch (err) {
-        console.log("[Email Warning] HMAC_SECRET not found, links may be limited.");
-    }
+    } catch (err) {}
 
-    // 3. Resolve Base URL & Mailing Address from App Settings
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
     try {
@@ -100,14 +104,11 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
     } catch (e) {}
     baseUrl = normalizeBaseUrl(baseUrl);
 
-    // 4. Fetch Event details for placeholder resolution (if eventId is in filters)
     let event = null;
     if (filters && filters.eventId) {
         try {
             event = $app.findRecordById("events", filters.eventId);
-        } catch (e) {
-            console.log("[Email Warning] Event " + filters.eventId + " not found for placeholder resolution.");
-        }
+        } catch (e) {}
     }
 
     let successCount = 0;
@@ -116,7 +117,7 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
     recipients.forEach((r, idx) => {
         const email = r.email;
         if (!email) {
-            console.log("[Email Skip] Recipient at index " + idx + " has no email address.");
+            console.log("[Email Skip] No email for " + (r.name || idx));
             return;
         }
 
@@ -124,11 +125,8 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
         let finalContent = content;
 
         // --- PLACEHOLDER RESOLUTION ---
-
-        // Recipient Name
         const singerName = r.name || "Singer";
         finalSubject = finalSubject.replace(/{singerName}/g, sanitizeEmailSubject(singerName));
-        finalContent = finalContent.replace(/{singerName}/g, escapeHtml(singerName));
 
         // Event Context
         if (event) {
@@ -137,7 +135,6 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
             const eventTitle = event.get("title") || event.get("type") || "Event";
             const eventType = event.get("type") || "Performance";
             const eventDetails = event.get("details") || "";
-
             let eventLocation = "TBD";
             try {
                 const venueRecord = $app.findRecordById("venues", event.get("venue"));
@@ -157,26 +154,20 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
                                      .replace(/{eventDetails}/g, escapeHtml(eventDetails));
         }
 
-        // Compliance: Mailing Address
+        // Compliance & Buttons
         finalContent = finalContent.replace(/{{MAILING_ADDRESS}}/g, escapeHtml(mailingAddress));
-
-        // Compliance: Personalized Unsubscribe Link
         if (finalContent.includes("{{UNSUBSCRIBE_LINK}}") && secret) {
             const payload = `p=${r.id}`;
             const signature = $security.hs256(payload, secret);
             const token = `${payload}&s=${signature}`;
-            const link = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
-            finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, link);
+            finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`);
         }
-
-        // RSVP Buttons
         if ((finalContent.includes("{{RSVP_LINKS}}") || finalContent.includes("{rsvpLinks}")) && secret && event) {
             const payload = `e=${event.id}&p=${r.id}`;
             const signature = $security.hs256(payload, secret);
             const token = `${payload}&s=${signature}`;
             const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
             const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
-            
             const rsvpHtml = `
                 <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
                     <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
@@ -186,13 +177,16 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
             finalContent = finalContent.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
         }
 
-        // Final delivery
+        const htmlBody = finalContent
+            .replace(/{singerName}/g, escapeHtml(singerName))
+            .replace(/\n/g, "<br>");
+
         try {
             const message = new MailerMessage({
                 from: { address: fromAddress, name: fromName },
-                to:      [{ address: email }],
+                to: [{ address: email }],
                 subject: finalSubject,
-                html:    finalContent.replace(/\n/g, "<br>"),
+                html: htmlBody
             });
             $app.newMailClient().send(message);
             successCount++;
@@ -202,12 +196,11 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
         }
     });
 
-    console.log("[Email] Dispatch complete for " + recordId + ". Success: " + successCount + ", Fail: " + errorCount);
+    console.log("[Email] Finished dispatch. Success: " + successCount + ", Fail: " + errorCount);
 }
 
 // --- CRON JOBS ---
 
-// Post-Event Attendance Reports
 cronAdd("post_event_report", "0 * * * *", () => {
     const hoursAfter = 12;
     const now = new Date();
@@ -224,7 +217,11 @@ cronAdd("post_event_report", "0 * * * *", () => {
     try {
         const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const parsed = parseJsonField(setting.get("value"));
-        if (parsed) commSettings = { ...commSettings, ...parsed };
+        if (parsed) {
+            if (parsed.mailingAddress) commSettings.mailingAddress = parsed.mailingAddress;
+            if (parsed.reportSubjectTemplate) commSettings.reportSubjectTemplate = parsed.reportSubjectTemplate;
+            if (parsed.reportBodyTemplate) commSettings.reportBodyTemplate = parsed.reportBodyTemplate;
+        }
     } catch (e) {}
 
     events.forEach(event => {
@@ -264,7 +261,6 @@ cronAdd("post_event_report", "0 * * * *", () => {
             } catch (e) {}
         });
 
-        // Save log
         try {
             const messageCollection = $app.findCollectionByNameOrId("messages");
             const record = new Record(messageCollection, {
@@ -282,57 +278,366 @@ cronAdd("post_event_report", "0 * * * *", () => {
 
 // --- RECORD HOOKS ---
 
-// Automated Email Delivery on Message Creation
 onRecordAfterCreateSuccess((e) => {
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                } catch (err) {}
+            }
+            return val;
+        }
+        return String(val);
+    }
+
+    function parseJsonField(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded) return null;
+        if (typeof decoded === 'object') return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function sanitizeEmailSubject(str) {
+        if (!str) return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+
+    function normalizeBaseUrl(url) {
+        if (!url) return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+
+    function dispatchEmails(subject, content, recipients, recordId, filters) {
+        console.log("[Email] Starting dispatch for " + recordId + ". Recipients: " + recipients.length);
+        const settings = $app.settings();
+        const fromAddress = settings.meta.senderAddress || "no-reply@choir.management";
+        const fromName = settings.meta.senderName || "Choir Management Tool";
+        let secret = "";
+        try {
+            const secretRecord = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(secretRecord.get("value"));
+            secret = parsed ? parsed.secret : "";
+        } catch (err) {}
+
+        let baseUrl = "http://localhost:5173";
+        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+        try {
+            const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const p = parseJsonField(setting.get("value"));
+            if (p) {
+                if (p.frontendUrl) baseUrl = p.frontendUrl;
+                if (p.mailingAddress) mailingAddress = p.mailingAddress;
+            }
+        } catch (settingsErr) {}
+        baseUrl = normalizeBaseUrl(baseUrl);
+
+        let event = null;
+        if (filters && filters.eventId) {
+            try {
+                event = $app.findRecordById("events", filters.eventId);
+            } catch (eventErr) {}
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+        recipients.forEach((r, idx) => {
+            const email = r.email;
+            if (!email) {
+                console.log("[Email Skip] No email for " + (r.name || idx));
+                return;
+            }
+
+            let finalSubject = subject;
+            let finalContent = content;
+            const singerName = r.name || "Singer";
+            finalSubject = finalSubject.replace(/{singerName}/g, sanitizeEmailSubject(singerName));
+
+            if (event) {
+                const eventDateObj = new Date(event.get("date"));
+                const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear() + ", " + eventDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const eventTitle = event.get("title") || event.get("type") || "Event";
+                const eventType = event.get("type") || "Performance";
+                const eventDetails = event.get("details") || "";
+                let eventLocation = "TBD";
+                try {
+                    const venueRecord = $app.findRecordById("venues", event.get("venue"));
+                    eventLocation = venueRecord.get("name") || "TBD";
+                } catch (venueErr) {}
+
+                finalSubject = finalSubject.replace(/{eventTitle}/g, sanitizeEmailSubject(eventTitle))
+                    .replace(/{eventType}/g, sanitizeEmailSubject(eventType))
+                    .replace(/{eventDate}/g, sanitizeEmailSubject(eventDateStr))
+                    .replace(/{eventLocation}/g, sanitizeEmailSubject(eventLocation))
+                    .replace(/{eventDetails}/g, sanitizeEmailSubject(eventDetails));
+
+                finalContent = finalContent.replace(/{eventTitle}/g, escapeHtml(eventTitle))
+                    .replace(/{eventType}/g, escapeHtml(eventType))
+                    .replace(/{eventDate}/g, escapeHtml(eventDateStr))
+                    .replace(/{eventLocation}/g, escapeHtml(eventLocation))
+                    .replace(/{eventDetails}/g, escapeHtml(eventDetails));
+            }
+
+            finalContent = finalContent.replace(/{{MAILING_ADDRESS}}/g, escapeHtml(mailingAddress));
+            if (finalContent.includes("{{UNSUBSCRIBE_LINK}}") && secret) {
+                const payload = `p=${r.id}`;
+                const signature = $security.hs256(payload, secret);
+                const token = `${payload}&s=${signature}`;
+                finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`);
+            }
+            if ((finalContent.includes("{{RSVP_LINKS}}") || finalContent.includes("{rsvpLinks}")) && secret && event) {
+                const payload = `e=${event.id}&p=${r.id}`;
+                const signature = $security.hs256(payload, secret);
+                const token = `${payload}&s=${signature}`;
+                const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+                const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                const rsvpHtml = `
+                    <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
+                        <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
+                        <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+                    </div>
+                `;
+                finalContent = finalContent.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
+            }
+
+            const htmlBody = finalContent
+                .replace(/{singerName}/g, escapeHtml(singerName))
+                .replace(/\n/g, "<br>");
+
+            try {
+                const message = new MailerMessage({
+                    from: { address: fromAddress, name: fromName },
+                    to: [{ address: email }],
+                    subject: finalSubject,
+                    html: htmlBody
+                });
+                $app.newMailClient().send(message);
+                successCount++;
+            } catch (sendErr) {
+                console.log("[Email Error] Failed to send to " + email + ": " + sendErr);
+                errorCount++;
+            }
+        });
+        console.log("[Email] Finished dispatch. Success: " + successCount + ", Fail: " + errorCount);
+    }
+
     try {
-        const record = e?.record;
+        const record = e && e.record;
         if (!record) return;
 
         const status = record.get("status") || "Sent";
-        console.log("[Hook] onRecordAfterCreateSuccess for " + record.id + " with status: " + status);
-        
-        if (status === "Draft") {
-            console.log("[Hook] Message " + record.id + " is a draft. Skipping dispatch.");
-            return;
-        }
+        if (status === "Draft") return;
 
         const type = record.get("type");
-        if (type !== "Email" && type !== "Both") {
-            console.log("[Hook] Message " + record.id + " type is " + type + ". Skipping email dispatch.");
-            return;
-        }
+        if (type !== "Email" && type !== "Both") return;
 
         const filters = parseJsonField(record.get("filters")) || {};
-        if (filters.alreadySent === true) {
-            console.log("[Hook] Message " + record.id + " already marked as sent in filters. Skipping.");
-            return;
-        }
+        if (filters.alreadySent === true) return;
 
         const subject = record.get("subject") || "Message from Choir Management";
         const content = record.get("content") || "";
         const recipients = parseJsonField(record.get("recipients")) || [];
 
-        if (recipients.length > 0) {
+        if (recipients && recipients.length > 0) {
             dispatchEmails(subject, content, recipients, record.id, filters);
-        } else {
-            console.log("[Hook Error] Message " + record.id + " has no recipients.");
         }
     } catch (hookErr) {
-        console.log("[Hook Error] onRecordAfterCreateSuccess failed: " + hookErr);
+        console.log("[Hook Error] onRecordAfterCreateSuccess: " + hookErr);
     }
 }, "messages");
 
-// Handle status transitions (Draft -> Sent)
 onRecordAfterUpdateSuccess((e) => {
+    function decodeGoBytes(val) {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                } catch (err) {}
+            }
+            return val;
+        }
+        return String(val);
+    }
+
+    function parseJsonField(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded) return null;
+        if (typeof decoded === 'object') return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function sanitizeEmailSubject(str) {
+        if (!str) return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+
+    function normalizeBaseUrl(url) {
+        if (!url) return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+
+    function dispatchEmails(subject, content, recipients, recordId, filters) {
+        console.log("[Email] Starting dispatch for " + recordId + ". Recipients: " + recipients.length);
+        const settings = $app.settings();
+        const fromAddress = settings.meta.senderAddress || "no-reply@choir.management";
+        const fromName = settings.meta.senderName || "Choir Management Tool";
+        let secret = "";
+        try {
+            const secretRecord = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(secretRecord.get("value"));
+            secret = parsed ? parsed.secret : "";
+        } catch (err) {}
+
+        let baseUrl = "http://localhost:5173";
+        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+        try {
+            const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const p = parseJsonField(setting.get("value"));
+            if (p) {
+                if (p.frontendUrl) baseUrl = p.frontendUrl;
+                if (p.mailingAddress) mailingAddress = p.mailingAddress;
+            }
+        } catch (settingsErr) {}
+        baseUrl = normalizeBaseUrl(baseUrl);
+
+        let event = null;
+        if (filters && filters.eventId) {
+            try {
+                event = $app.findRecordById("events", filters.eventId);
+            } catch (eventErr) {}
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+        recipients.forEach((r, idx) => {
+            const email = r.email;
+            if (!email) {
+                console.log("[Email Skip] No email for " + (r.name || idx));
+                return;
+            }
+
+            let finalSubject = subject;
+            let finalContent = content;
+            const singerName = r.name || "Singer";
+            finalSubject = finalSubject.replace(/{singerName}/g, sanitizeEmailSubject(singerName));
+
+            if (event) {
+                const eventDateObj = new Date(event.get("date"));
+                const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear() + ", " + eventDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const eventTitle = event.get("title") || event.get("type") || "Event";
+                const eventType = event.get("type") || "Performance";
+                const eventDetails = event.get("details") || "";
+                let eventLocation = "TBD";
+                try {
+                    const venueRecord = $app.findRecordById("venues", event.get("venue"));
+                    eventLocation = venueRecord.get("name") || "TBD";
+                } catch (venueErr) {}
+
+                finalSubject = finalSubject.replace(/{eventTitle}/g, sanitizeEmailSubject(eventTitle))
+                    .replace(/{eventType}/g, sanitizeEmailSubject(eventType))
+                    .replace(/{eventDate}/g, sanitizeEmailSubject(eventDateStr))
+                    .replace(/{eventLocation}/g, sanitizeEmailSubject(eventLocation))
+                    .replace(/{eventDetails}/g, sanitizeEmailSubject(eventDetails));
+
+                finalContent = finalContent.replace(/{eventTitle}/g, escapeHtml(eventTitle))
+                    .replace(/{eventType}/g, escapeHtml(eventType))
+                    .replace(/{eventDate}/g, escapeHtml(eventDateStr))
+                    .replace(/{eventLocation}/g, escapeHtml(eventLocation))
+                    .replace(/{eventDetails}/g, escapeHtml(eventDetails));
+            }
+
+            finalContent = finalContent.replace(/{{MAILING_ADDRESS}}/g, escapeHtml(mailingAddress));
+            if (finalContent.includes("{{UNSUBSCRIBE_LINK}}") && secret) {
+                const payload = `p=${r.id}`;
+                const signature = $security.hs256(payload, secret);
+                const token = `${payload}&s=${signature}`;
+                finalContent = finalContent.replace(/{{UNSUBSCRIBE_LINK}}/g, `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`);
+            }
+            if ((finalContent.includes("{{RSVP_LINKS}}") || finalContent.includes("{rsvpLinks}")) && secret && event) {
+                const payload = `e=${event.id}&p=${r.id}`;
+                const signature = $security.hs256(payload, secret);
+                const token = `${payload}&s=${signature}`;
+                const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
+                const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                const rsvpHtml = `
+                    <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
+                        <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
+                        <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+                    </div>
+                `;
+                finalContent = finalContent.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
+            }
+
+            const htmlBody = finalContent
+                .replace(/{singerName}/g, escapeHtml(singerName))
+                .replace(/\n/g, "<br>");
+
+            try {
+                const message = new MailerMessage({
+                    from: { address: fromAddress, name: fromName },
+                    to: [{ address: email }],
+                    subject: finalSubject,
+                    html: htmlBody
+                });
+                $app.newMailClient().send(message);
+                successCount++;
+            } catch (sendErr) {
+                console.log("[Email Error] Failed to send to " + email + ": " + sendErr);
+                errorCount++;
+            }
+        });
+        console.log("[Email] Finished dispatch. Success: " + successCount + ", Fail: " + errorCount);
+    }
+
     try {
-        const record = e?.record;
+        const record = e && e.record;
         if (!record) return;
 
         const status = record.get("status");
         const original = e.originalCopy;
         const oldStatus = original ? original.get("status") : "";
-
-        console.log("[Hook] onRecordAfterUpdateSuccess for " + record.id + ". Status transition: " + oldStatus + " -> " + status);
 
         if (status === "Sent" && oldStatus === "Draft") {
             const type = record.get("type");
@@ -343,18 +648,15 @@ onRecordAfterUpdateSuccess((e) => {
             const recipients = parseJsonField(record.get("recipients")) || [];
             const filters = parseJsonField(record.get("filters")) || {};
 
-            if (recipients.length > 0) {
+            if (recipients && recipients.length > 0) {
                 dispatchEmails(subject, content, recipients, record.id, filters);
-            } else {
-                console.log("[Hook Error] Updated message " + record.id + " has no recipients.");
             }
         }
     } catch (hookErr) {
-        console.log("[Hook Error] onRecordAfterUpdateSuccess failed: " + hookErr);
+        console.log("[Hook Error] onRecordAfterUpdateSuccess: " + hookErr);
     }
 }, "messages");
 
-// SMTP Connection Test Custom Endpoint
 routerAdd("POST", "/api/test-smtp", (e) => {
     try {
         const authRecord = e.auth;
