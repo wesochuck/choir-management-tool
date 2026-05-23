@@ -12,6 +12,16 @@ export const COMPLIANT_FOOTER_HTML = `
 </div>
 `;
 
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /**
  * Renders a basic subset of Markdown to HTML.
  * Supports: Bold, Italic, Links, Unordered Lists, Line Breaks.
@@ -77,15 +87,17 @@ export function resolvePreviewContent(
   content: string,
   event: Event | null,
   recipient: CommunicationRecipient | null,
-  mailingAddress: string = '123 Choir St, Harmony City, HC 12345'
+  mailingAddress: string = '123 Choir St, Harmony City, HC 12345',
+  escapeValues: boolean = false
 ): string {
   if (!content) return '';
 
   let result = content;
+  const processVal = (val: string) => escapeValues ? escapeHtml(val) : val;
 
   // Recipient Placeholders
   const name = recipient?.name || 'Sample Singer';
-  result = result.replace(/{singerName}/g, name);
+  result = result.replace(/{singerName}/g, processVal(name));
 
   // Event Placeholders
   const title = event?.title || event?.type || 'Sample Performance';
@@ -94,11 +106,11 @@ export function resolvePreviewContent(
   const location = event?.expand?.venue?.name || 'Main Concert Hall';
   const details = event?.details || 'Join us for an amazing evening of music and harmony!';
 
-  result = result.replace(/{eventTitle}/g, title);
-  result = result.replace(/{eventType}/g, type);
-  result = result.replace(/{eventDate}/g, date);
-  result = result.replace(/{eventLocation}/g, location);
-  result = result.replace(/{eventDetails}/g, details);
+  result = result.replace(/{eventTitle}/g, processVal(title));
+  result = result.replace(/{eventType}/g, processVal(type));
+  result = result.replace(/{eventDate}/g, processVal(date));
+  result = result.replace(/{eventLocation}/g, processVal(location));
+  result = result.replace(/{eventDetails}/g, processVal(details));
 
   // RSVP Links - Injected as literal HTML
   const rsvpText = `
@@ -139,5 +151,6 @@ export function getRenderedPreview(
   }
 
   // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
-  return resolvePreviewContent(html, event, recipient, mailingAddress);
+  // We pass escapeValues = true here because the output is going into dangerouslySetInnerHTML
+  return resolvePreviewContent(html, event, recipient, mailingAddress, true);
 }
