@@ -67,3 +67,24 @@ export interface PocketBaseApp {
     settings(): PocketBaseSettings;
     newMailClient(): PocketBaseMailClient;
 }
+
+export interface PocketBaseResponseHeader {
+    set(key: string, value: string): void;
+}
+
+export interface PocketBaseResponse {
+    header(): PocketBaseResponseHeader;
+}
+
+export interface PocketBaseRequestInfo {
+    query: Record<string, unknown>;
+    body: Record<string, unknown>;
+}
+
+export interface PocketBaseRequestEvent {
+    requestInfo(): PocketBaseRequestInfo;
+    response: PocketBaseResponse;
+    json(code: number, data: unknown): unknown;
+    string(code: number, content: string): unknown;
+}
+

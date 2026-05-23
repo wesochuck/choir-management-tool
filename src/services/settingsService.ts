@@ -70,12 +70,7 @@ export interface CommunicationConfig {
 
 export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
   enabled: true,
-  slots: [
-    'Saturday, May 23, 10:00 AM',
-    'Saturday, May 23, 11:00 AM',
-    'Saturday, May 30, 10:00 AM',
-    'Saturday, May 30, 11:00 AM',
-  ],
+  slots: [],
   confirmationMessage: 'Thank you. A choir administrator will follow up with details.',
   defaultPerformanceId: '',
 };

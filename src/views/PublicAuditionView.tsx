@@ -197,7 +197,11 @@ export default function PublicAuditionView() {
                 <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
                   <label className="text-label">Audition Time</label>
                   <select className="card" value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} required style={{ padding: '0 12px' }}>
-                    {(settings.slots || []).map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+                    {(settings.slots || []).map((slot) => (
+                      <option key={slot} value={slot}>
+                        {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

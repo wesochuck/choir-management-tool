@@ -6,7 +6,7 @@ import { eventService, type Event } from '../../services/eventService';
 import { settingsService, type AuditionSettings } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
-import { formatInTimezone } from '../../lib/timezone';
+import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 
 const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
 
@@ -204,7 +204,9 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
               style={{ height: '44px', padding: '0 12px' }}
             >
               {(settings?.slots || []).map((slot) => (
-                <option key={slot} value={slot}>{slot}</option>
+                <option key={slot} value={slot}>
+                  {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                </option>
               ))}
               <option value="__custom__">Custom time slot...</option>
             </select>
@@ -230,11 +232,11 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
           <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
             <label className="text-label">Custom Time Slot</label>
             <input
+              type="datetime-local"
               className="card"
-              value={customTimeVal}
-              onChange={(e) => setCustomTimeVal(e.target.value)}
+              value={customTimeVal ? utcToZonedInputValue(customTimeVal, timezone) : ''}
+              onChange={(e) => setCustomTimeVal(zonedInputValueToUtc(e.target.value, timezone))}
               required
-              placeholder="e.g. Monday 5:30 PM"
               style={{ padding: '0 12px', height: '44px' }}
             />
           </div>

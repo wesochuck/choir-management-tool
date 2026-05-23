@@ -378,9 +378,41 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
             roster.set("folderReturned", false);
         }
 
+        const oldRsvp = roster.get("rsvp");
         const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
         roster.set("rsvp", normalizedRsvp);
         $app.save(roster);
+
+        // Enqueue confirmation email if RSVP changed to Yes
+        if (normalizedRsvp === "Yes" && oldRsvp !== "Yes") {
+            try {
+                const profile = $app.findRecordById("profiles", parts.p);
+                const recipientEmail = profile.get("email");
+                
+                if (recipientEmail && !profile.get("doNotEmail")) {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
+                    const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    
+                    const queueRecord = new Record(queueCollection, {
+                        recipientId: profile.id,
+                        recipientEmail: recipientEmail,
+                        recipientName: profile.get("name") || "Singer",
+                        subject: template.get("subject") || "",
+                        rawContent: template.get("content") || "",
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ 
+                            eventId: parts.e, 
+                            type: "Automated Confirmation" 
+                        })
+                    });
+                    
+                    $app.save(queueRecord);
+                }
+            } catch (emailErr) {
+                console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+            }
+        }
     } catch (err) {
         let errDetails = "";
         try {

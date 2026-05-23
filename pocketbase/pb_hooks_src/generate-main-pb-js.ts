@@ -37,6 +37,10 @@ function generate() {
     const emailStyles = readSrc('emailStyles.ts');
     const mailjetRenderer = readSrc('mailjetRenderer.ts');
     const queueProcessor = readSrc('queueProcessor.ts');
+    
+    // Read root hooks
+    const calendarEndpoint = fs.readFileSync(path.join(SRC_DIR, 'calendarEndpoint.ts'), 'utf8');
+    const calendarJs = ts.transpileModule(calendarEndpoint, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ESNext, removeComments: false } }).outputText.replace(/^import .* from .*$/gm, '').replace(/^export /gm, '').replace(/export\s+\{[^}]*\};/g, '').trim();
 
     const sharedUtils = `
 // --- SHARED UTILITIES ---
@@ -58,6 +62,8 @@ ${mailjetRenderer}
 
 ${queueProcessor}
 
+${calendarJs}
+
 function getHmacSecret() {
     try {
         const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
@@ -69,8 +75,7 @@ function getHmacSecret() {
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string") return null;
     const parts = {};
-    const allowed = {};
-    requiredKeys.forEach(k => { allowed[k] = true; });
+    const allowed = { s: true, e: true, p: true, a: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0) return;
@@ -289,6 +294,11 @@ routerAdd("POST", "/api/test-smtp", (e) => {
         $app.newMailClient().send(message);
         return e.json(200, { success: true });
     } catch (err) { return e.json(500, { error: "SMTP failed" }); }
+});
+
+routerAdd("GET", "/api/calendar/download", (e) => {
+    ${sharedUtils}
+    return handleCalendarDownload(e);
 });
 `.trim();
 

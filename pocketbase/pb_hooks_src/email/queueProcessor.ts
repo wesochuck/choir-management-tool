@@ -171,13 +171,80 @@ export function processEmailQueue(app: PocketBaseApp): void {
 </div>
 `;
 
+                // Optionally generate an "Add to Calendar" link for the first rehearsal
+                let firstRehearsalHtml = "";
+                if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                    try {
+                        const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                        if (rehearsals && rehearsals.length > 0) {
+                            const firstReh = rehearsals[0];
+                            const rehDate = firstReh.get("date") as string;
+                            const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
+                            const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                            
+                            // Generate a direct link to the backend ICS download route
+                            let icsLink = "";
+                            if (secret) {
+                                const payload = `e=${firstReh.id}&p=${recipientId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            }
+
+                            firstRehearsalHtml = `
+<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+        ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+    </div>
+    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
+</div>
+                            `.trim();
+                        }
+                    } catch {
+                        // Ignore rehearsals fetching or formatting errors
+                    }
+                }
+
+                // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                let eventCalendarHtml = "";
+                if (htmlBody.includes("{eventCalendarLink}")) {
+                    let icsLink = "";
+                    if (secret) {
+                        const auditionId = filters.auditionId as string | undefined;
+                        if (auditionId) {
+                            const payload = `a=${auditionId}`;
+                            const signature = $security.hs256(payload, secret);
+                            const token = `${payload}&s=${signature}`;
+                            icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                        } else {
+                            const payload = `e=${event.id}&p=${recipientId}`;
+                            const signature = $security.hs256(payload, secret);
+                            const token = `${payload}&s=${signature}`;
+                            icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                        }
+                    }
+
+                    eventCalendarHtml = `
+<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <strong style="color: #4a7c59;">Save the Date:</strong><br>
+        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+    </div>
+    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
+</div>
+                    `.trim();
+                }
+
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
                                  .replace(/{eventType}/g, escapeHtml(eventType))
                                  .replace(/{eventDate}/g, escapeHtml(dateShort))
                                  .replace(/{eventLocation}/g, escapeHtml(venueName))
                                  .replace(/{eventDetails}/g, escapeHtml(eventDetails))
                                  .replace(/{{EVENT_INFO}}/g, eventInfoHtml)
-                                 .replace(/{eventInfo}/g, eventInfoHtml);
+                                 .replace(/{eventInfo}/g, eventInfoHtml)
+                                 .replace(/{firstRehearsalCalendarLink}/g, firstRehearsalHtml)
+                                 .replace(/{eventCalendarLink}/g, eventCalendarHtml);
 
                 if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
                     const payload = `e=${event.id}&p=${recipientId}`;
