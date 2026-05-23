@@ -44,6 +44,7 @@ export default function PublicRsvpView() {
   const [selectedRsvp, setSelectedRsvp] = useState<'Yes' | 'No'>('Yes');
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showRehearsals, setShowRehearsals] = useState(false);
 
   // Loaded Details
   const [event, setEvent] = useState<EventDetails | null>(null);
@@ -142,6 +143,58 @@ export default function PublicRsvpView() {
     }
   };
 
+  const renderRehearsalsList = () => {
+    if (rehearsals.length === 0) return null;
+
+    return (
+      <div className="flex-col" style={{ gap: 'var(--space-xs)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginTop: 'var(--space-xs)' }}>
+        <button 
+          onClick={() => setShowRehearsals(!showRehearsals)}
+          style={{ 
+            width: '100%', 
+            padding: '12px 16px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            background: 'var(--neutral-bg)', 
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'left'
+          }}
+        >
+          <h3 className="text-label" style={{ fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary-deep)', fontSize: '0.75rem', letterSpacing: '0.05em', margin: 0 }}>
+            📅 Rehearsal Schedule ({rehearsals.length})
+          </h3>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', transform: showRehearsals ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+            ▼
+          </span>
+        </button>
+
+        {showRehearsals && (
+          <div className="flex-col" style={{ gap: '8px', padding: '12px 16px', backgroundColor: '#ffffff', borderTop: '1px solid var(--border)' }}>
+            {rehearsals.map((reh) => {
+              return (
+                <div key={reh.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
+                  <div className="flex-col" style={{ gap: '2px' }}>
+                    <span style={{ fontWeight: 700 }}>
+                      {formatInTimezone(reh.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })}
+                    </span>
+                    <span className="text-muted" style={{ fontSize: '0.7rem' }}>
+                      📍 {reh.expand?.venue?.name || 'Rehearsal Venue'}
+                    </span>
+                  </div>
+                  <span className="text-muted" style={{ fontWeight: 500 }}>
+                    {formatInTimezone(reh.date, timezone, { hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (status === 'loading') {
     return (
       <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', backgroundColor: 'var(--primary-light)', padding: 'var(--space-md)' }}>
@@ -236,6 +289,8 @@ export default function PublicRsvpView() {
                   </div>
                 </div>
               </div>
+
+              {renderRehearsalsList()}
 
               {/* Interactive Buttons */}
               <div className="flex-col" style={{ gap: '12px' }}>
@@ -350,33 +405,7 @@ export default function PublicRsvpView() {
                 )}
               </div>
 
-              {/* Connected Rehearsals List */}
-              {isAttending && rehearsals.length > 0 && (
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <h3 className="text-label" style={{ fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary-deep)', fontSize: '0.75rem', letterSpacing: '0.05em', margin: 0 }}>
-                    📅 Expected Rehearsal Schedule
-                  </h3>
-                  <div className="flex-col" style={{ gap: '8px', marginTop: '4px' }}>
-                    {rehearsals.map((reh) => {
-                      return (
-                        <div key={reh.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}>
-                          <div className="flex-col" style={{ gap: '2px' }}>
-                            <span style={{ fontWeight: 700 }}>
-                              {formatInTimezone(reh.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })}
-                            </span>
-                            <span className="text-muted" style={{ fontSize: '0.75rem' }}>
-                              📍 {reh.expand?.venue?.name || 'Rehearsal Venue'}
-                            </span>
-                          </div>
-                          <span className="text-muted" style={{ fontWeight: 500 }}>
-                            {formatInTimezone(reh.date, timezone, { hour: 'numeric', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {renderRehearsalsList()}
 
               {/* Modify State & Actions */}
               <div className="flex-col" style={{ gap: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
