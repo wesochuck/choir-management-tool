@@ -113,7 +113,7 @@ export function resolveSetListDisplayRows(
     const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
     
     const displayTitle = item.title || linkedPiece?.title || '';
-    const displayComposer = item.type === 'song' ? (item.composer || linkedPiece?.composer || '') : '';
+    const displayComposer = item.type !== 'intermission' ? (item.composer || linkedPiece?.composer || '') : '';
     const rawDuration = item.duration || linkedPiece?.duration || '';
     const durationSeconds = parseDurationToSeconds(rawDuration);
     

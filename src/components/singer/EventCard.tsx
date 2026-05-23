@@ -123,13 +123,14 @@ export const EventCard: React.FC<EventCardProps> = ({
                   
                   const piece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
                   const movements = piece ? library.filter(p => p.parentId === piece.id).sort((a, b) => (a.created || '').localeCompare(b.created || '')) : [];
+                  const resolvedComposer = item.composer || piece?.composer || '';
 
                   if (movements.length > 0) {
                     return (
                       <li key={item.id} className="text-body text-sm" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div>
                           <strong>{item.title}</strong>
-                          {(item.composer) && <span className="text-muted"> ({item.composer})</span>}
+                          {resolvedComposer && <span className="text-muted"> ({resolvedComposer})</span>}
                           {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
                         </div>
                         
@@ -238,7 +239,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                       <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
                         <div>
                           <strong>{item.title}</strong>
-                          {(item.composer || item.duration) && <span className="text-muted"> ({item.composer}{item.composer && item.duration ? ' • ' : ''}{item.duration})</span>}
+                          {(resolvedComposer || item.duration) && <span className="text-muted"> ({resolvedComposer}{resolvedComposer && item.duration ? ' • ' : ''}{item.duration})</span>}
                           {item.notes && <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>{item.notes}</div>}
                         </div>
                         
