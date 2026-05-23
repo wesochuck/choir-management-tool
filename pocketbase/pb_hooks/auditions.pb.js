@@ -51,11 +51,11 @@ onRecordAfterCreateSuccess((e) => {
 
     function formatInTimezoneLocal(date, timezone, options) {
         if (!date) return "";
+        var d = new Date(date);
+        if (isNaN(d.getTime())) return "";
+
         try {
-            const d = typeof date === "string" ? new Date(date) : date;
-            if (isNaN(d.getTime())) return "";
-            
-            const formatter = new Intl.DateTimeFormat("en-US", {
+            var formatter = new Intl.DateTimeFormat("en-US", {
                 weekday: options.weekday || undefined,
                 year: options.year || undefined,
                 month: options.month || undefined,
@@ -67,7 +67,72 @@ onRecordAfterCreateSuccess((e) => {
             });
             return formatter.format(d);
         } catch (err) {
-            return String(date);
+            var offsetHours = 0;
+            var tz = String(timezone || "").toLowerCase();
+            var year = d.getUTCFullYear();
+            
+            var march1 = new Date(Date.UTC(year, 2, 1));
+            var dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+            
+            var nov1 = new Date(Date.UTC(year, 10, 1));
+            var dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+            
+            var dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
+            var dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
+            
+            var isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+
+            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+                offsetHours = isDst ? -5 : -6;
+            } else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+                offsetHours = isDst ? -6 : -7;
+            } else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+                offsetHours = isDst ? -7 : -8;
+            } else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+                offsetHours = -7;
+            } else {
+                offsetHours = isDst ? -4 : -5;
+            }
+
+            var localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+            var localDate = new Date(localTimeMs);
+
+            var weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            var weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            var monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            var wday = weekdays[localDate.getUTCDay()];
+            var wdayFull = weekdaysFull[localDate.getUTCDay()];
+            var mon = months[localDate.getUTCMonth()];
+            var monFull = monthsFull[localDate.getUTCMonth()];
+            var day = localDate.getUTCDate();
+            var yr = localDate.getUTCFullYear();
+            
+            var hr = localDate.getUTCHours();
+            var ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0) hr = 12;
+            
+            var minVal = localDate.getUTCMinutes();
+            var min = minVal < 10 ? "0" + minVal : String(minVal);
+
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm;
+            }
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            }
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+
+            var doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            var doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
         }
     }
 
@@ -193,11 +258,11 @@ onRecordAfterUpdateSuccess((e) => {
 
     function formatInTimezoneLocal(date, timezone, options) {
         if (!date) return "";
+        var d = new Date(date);
+        if (isNaN(d.getTime())) return "";
+
         try {
-            const d = typeof date === "string" ? new Date(date) : date;
-            if (isNaN(d.getTime())) return "";
-            
-            const formatter = new Intl.DateTimeFormat("en-US", {
+            var formatter = new Intl.DateTimeFormat("en-US", {
                 weekday: options.weekday || undefined,
                 year: options.year || undefined,
                 month: options.month || undefined,
@@ -209,7 +274,72 @@ onRecordAfterUpdateSuccess((e) => {
             });
             return formatter.format(d);
         } catch (err) {
-            return String(date);
+            var offsetHours = 0;
+            var tz = String(timezone || "").toLowerCase();
+            var year = d.getUTCFullYear();
+            
+            var march1 = new Date(Date.UTC(year, 2, 1));
+            var dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+            
+            var nov1 = new Date(Date.UTC(year, 10, 1));
+            var dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+            
+            var dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
+            var dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
+            
+            var isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
+
+            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+                offsetHours = isDst ? -5 : -6;
+            } else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+                offsetHours = isDst ? -6 : -7;
+            } else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+                offsetHours = isDst ? -7 : -8;
+            } else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+                offsetHours = -7;
+            } else {
+                offsetHours = isDst ? -4 : -5;
+            }
+
+            var localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+            var localDate = new Date(localTimeMs);
+
+            var weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            var weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            var monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            var wday = weekdays[localDate.getUTCDay()];
+            var wdayFull = weekdaysFull[localDate.getUTCDay()];
+            var mon = months[localDate.getUTCMonth()];
+            var monFull = monthsFull[localDate.getUTCMonth()];
+            var day = localDate.getUTCDate();
+            var yr = localDate.getUTCFullYear();
+            
+            var hr = localDate.getUTCHours();
+            var ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0) hr = 12;
+            
+            var minVal = localDate.getUTCMinutes();
+            var min = minVal < 10 ? "0" + minVal : String(minVal);
+
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm;
+            }
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            }
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+
+            var doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            var doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
         }
     }
 
