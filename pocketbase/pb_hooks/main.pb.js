@@ -46,17 +46,8 @@ cronAdd("post_event_report", "0 * * * *", () => {
         }
     }
 
-    // 1. Fetch SMTP Config
-    let smtpConfig = null;
-    try {
-        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
-        const parsed = parseJsonField(setting.get("value"));
-        smtpConfig = parsed ? parsed.smtp : null;
-    } catch (e) {
-        return;
-    }
-
-    if (!smtpConfig || !smtpConfig.host) return;
+    const settings = $app.settings();
+    if (!settings.smtp.enabled) return;
 
     // 2. Fetch Communication Settings for templates & configuration
     let commSettings = {
@@ -207,8 +198,8 @@ cronAdd("post_event_report", "0 * * * *", () => {
             try {
                 const message = new MailerMessage({
                     from: {
-                        address: smtpConfig.from || smtpConfig.user,
-                        name:    "Choir Management Tool",
+                        address: settings.meta.senderAddress || "no-reply@choir.management",
+                        name:    settings.meta.senderName || "Choir Management Tool",
                     },
                     to:      [{ address: admin.get("email") }],
                     subject: subject,
@@ -295,10 +286,9 @@ onRecordAfterCreateSuccess((e) => {
             let fromAddress = "no-reply@choir.management";
             let fromName = "Choir Management Tool";
             try {
-                const cfgSetting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
-                const cfg = parseJsonField(cfgSetting.get("value"));
-                const smtp = cfg ? cfg.smtp : null;
-                fromAddress = (smtp && (smtp.from || smtp.user)) || fromAddress;
+                const settings = $app.settings();
+                fromAddress = settings.meta.senderAddress || fromAddress;
+                fromName = settings.meta.senderName || fromName;
             } catch (err) {}
 
             // 2. Fetch Secret for HMAC
@@ -438,10 +428,9 @@ onRecordAfterUpdateSuccess((e) => {
             let fromAddress = "no-reply@choir.management";
             let fromName = "Choir Management Tool";
             try {
-                const cfgSetting = $app.findFirstRecordByFilter("appSettings", "key = 'communications_config'");
-                const cfg = parseJsonField(cfgSetting.get("value"));
-                const smtp = cfg ? cfg.smtp : null;
-                fromAddress = (smtp && (smtp.from || smtp.user)) || fromAddress;
+                const settings = $app.settings();
+                fromAddress = settings.meta.senderAddress || fromAddress;
+                fromName = settings.meta.senderName || fromName;
             } catch (err) {}
 
             // 2. Fetch Secret for HMAC
