@@ -203,10 +203,9 @@ export const communicationService = {
 
       const firstRecipient = recipients[0];
       const token = tokens[firstRecipient.id];
-      const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-      const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+      const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
 
-      const previewContent = content.replace('{{RSVP_LINKS}}', `(RSVP Links for ${firstRecipient.name})\nYes: ${yesLink}\nNo: ${noLink}`);
+      const previewContent = content.replace('{{RSVP_LINKS}}', `(RSVP Link for ${firstRecipient.name})\nLink: ${rsvpLink}\n(No login required)`);
       
       const logs = recipients.map(r => {
         const t = tokens[r.id];

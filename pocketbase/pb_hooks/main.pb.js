@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T14:59:14.784Z
+// Generated on: 2026-05-23T15:38:45.243Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -511,12 +511,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -1102,12 +1101,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -1752,12 +1750,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -2347,12 +2344,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -2946,12 +2942,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -3549,12 +3544,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -4164,12 +4158,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -4768,12 +4761,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
@@ -5379,12 +5371,11 @@ function processEmailQueue(app) {
                     const payload = `e=${event.id}&p=${recipientId}`;
                     const signature = $security.hs256(payload, secret);
                     const token = `${payload}&s=${signature}`;
-                    const yesLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=Yes`;
-                    const noLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}&rsvp=No`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                     const rsvpHtml = `
-<div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center; font-family: sans-serif;">
-    <a href="${yesLink}" style="display: inline-block; padding: 10px 20px; background-color: #4a7c59; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">Yes, I'm attending</a>
-    <a href="${noLink}" style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: white; border-radius: 6px; font-weight: bold; text-decoration: none;">No, I can't make it</a>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);

@@ -157,7 +157,8 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.ok(htmlPart.includes('City Chorus'), 'Should include choir name in header');
     assert.ok(htmlPart.includes('St. Mary Church'), 'Should resolve {eventLocation}');
     assert.ok(htmlPart.includes('Spring Concert'), 'Should resolve {eventTitle}');
-    assert.ok(htmlPart.includes('Yes, I\'m attending'), 'Should resolve RSVP buttons');
+    assert.ok(htmlPart.includes('Let us know if you can sing with us'), 'Should include RSVP button text');
+    assert.ok(htmlPart.includes('No login required'), 'Should include no login required hint');
     assert.ok(htmlPart.includes('/rsvp?token='), 'Should compile RSVP signed tokens');
     assert.ok(htmlPart.includes('/unsubscribe?token='), 'Should compile unsubscribe signed tokens');
     assert.ok(htmlPart.includes('123 Harmony St'), 'Should include mailing address');
