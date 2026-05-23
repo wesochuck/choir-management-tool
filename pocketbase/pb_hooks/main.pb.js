@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T05:35:55.078Z
+// Generated on: 2026-05-23T05:46:14.964Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -308,10 +308,16 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
         }
 
         // --- BODY RENDERING (Step 1: Markdown to HTML) ---
-        let htmlBody = renderMarkdown(content);
+        const contentText = String(content || "");
+        const hasExistingFooter =
+            /you are receiving this because you are an active member of the choir/i.test(contentText) ||
+            /unsubscribe from these emails/i.test(contentText) ||
+            /{{UNSUBSCRIBE_LINK}}/.test(contentText);
+        let htmlBody = renderMarkdown(contentText);
 
         // --- BODY RENDERING (Step 2: Compliance Footer) ---
-        htmlBody += `
+        if (!hasExistingFooter) {
+            htmlBody += `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
   <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
   <p style="margin: 0;">
@@ -321,6 +327,7 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
   </p>
 </div>
 `;
+        }
 
         // --- BODY RENDERING (Step 3: Placeholder Resolution - Allows HTML injection) ---
         htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(singerName));
@@ -1030,10 +1037,16 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
         }
 
         // --- BODY RENDERING (Step 1: Markdown to HTML) ---
-        let htmlBody = renderMarkdown(content);
+        const contentText = String(content || "");
+        const hasExistingFooter =
+            /you are receiving this because you are an active member of the choir/i.test(contentText) ||
+            /unsubscribe from these emails/i.test(contentText) ||
+            /{{UNSUBSCRIBE_LINK}}/.test(contentText);
+        let htmlBody = renderMarkdown(contentText);
 
         // --- BODY RENDERING (Step 2: Compliance Footer) ---
-        htmlBody += `
+        if (!hasExistingFooter) {
+            htmlBody += `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
   <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
   <p style="margin: 0;">
@@ -1043,6 +1056,7 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
   </p>
 </div>
 `;
+        }
 
         // --- BODY RENDERING (Step 3: Placeholder Resolution - Allows HTML injection) ---
         htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(singerName));
@@ -1456,10 +1470,16 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
         }
 
         // --- BODY RENDERING (Step 1: Markdown to HTML) ---
-        let htmlBody = renderMarkdown(content);
+        const contentText = String(content || "");
+        const hasExistingFooter =
+            /you are receiving this because you are an active member of the choir/i.test(contentText) ||
+            /unsubscribe from these emails/i.test(contentText) ||
+            /{{UNSUBSCRIBE_LINK}}/.test(contentText);
+        let htmlBody = renderMarkdown(contentText);
 
         // --- BODY RENDERING (Step 2: Compliance Footer) ---
-        htmlBody += `
+        if (!hasExistingFooter) {
+            htmlBody += `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
   <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
   <p style="margin: 0;">
@@ -1469,6 +1489,7 @@ function dispatchEmails(subject, content, recipients, recordId, filters) {
   </p>
 </div>
 `;
+        }
 
         // --- BODY RENDERING (Step 3: Placeholder Resolution - Allows HTML injection) ---
         htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(singerName));

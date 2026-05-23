@@ -438,21 +438,37 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     }
 
     try {
-        let roster;
-        try {
-            roster = $app.findFirstRecordByFilter("eventRosters", "event = {:e} && profile = {:p}", { e: parts.e, p: parts.p });
-        } catch (err) {
+        // Safer upsert: avoid creating duplicates when lookup fails for non-not-found reasons.
+        const matches = $app.findRecordsByFilter(
+            "eventRosters",
+            "event = {:e} && profile = {:p}",
+            "",
+            2,
+            0,
+            { e: parts.e, p: parts.p }
+        ) || [];
+
+        let roster = matches.length > 0 ? matches[0] : null;
+        if (!roster) {
             const collection = $app.findCollectionByNameOrId("eventRosters");
             roster = new Record(collection);
             roster.set("event", parts.e);
             roster.set("profile", parts.p);
             roster.set("attendance", "Pending");
+            roster.set("folderReturned", false);
         }
-        
-        roster.set("rsvp", rsvp);
+
+        const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
+        roster.set("rsvp", normalizedRsvp);
         $app.save(roster);
     } catch (err) {
-        console.log("[RSVP Quick Error] Failed to update RSVP: " + err);
+        let errDetails = "";
+        try {
+            errDetails = JSON.stringify(err);
+        } catch (jsonErr) {
+            errDetails = String(err);
+        }
+        console.log("[RSVP Quick Error] Failed to update RSVP: " + String(err) + " | details=" + errDetails);
         return e.json(500, { error: "Failed to update RSVP." });
     }
 
