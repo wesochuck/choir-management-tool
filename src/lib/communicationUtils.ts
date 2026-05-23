@@ -102,10 +102,10 @@ export function resolvePreviewContent(
 
   // RSVP Links - Injected as literal HTML
   const rsvpText = `
-    <div style="margin: 20px 0; display: flex; gap: 10px; justify-content: center;">
-      <span style="display: inline-block; padding: 8px 16px; background-color: #4a7c59; color: white; border-radius: 4px; font-weight: bold;">Yes, I'm attending</span>
-      <span style="display: inline-block; padding: 8px 16px; background-color: #ef4444; color: white; border-radius: 4px; font-weight: bold;">No, I can't make it</span>
-    </div>
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <span style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</span>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+</div>
   `;
   result = result.replace(/{{RSVP_LINKS}}/g, rsvpText);
   result = result.replace(/{rsvpLinks}/g, rsvpText);
