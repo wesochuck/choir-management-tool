@@ -138,11 +138,11 @@ test('seating sync merge preserves optimistic edits over late load data', () => 
       performance: 'perf_a',
       venue: 'venue_1',
       layoutOverride: [8],
-      sectionOrder: 'S,A,T,B',
+      formationId: 'strategy_a',
       assignments: { '0-1': 'older_singer' },
     },
     {
-      sectionOrder: 'S,B,T,A',
+      formationId: 'strategy_b',
       assignments: { '0-1': 'local_singer' },
     },
     { '0-1': 'local_singer', '0-2': 'another_local_singer' },
@@ -150,7 +150,7 @@ test('seating sync merge preserves optimistic edits over late load data', () => 
     'venue_1',
   );
 
-  assert.equal(merged.sectionOrder, 'S,B,T,A');
+  assert.equal(merged.formationId, 'strategy_b');
   assert.deepEqual(merged.assignments, {
     '0-1': 'local_singer',
     '0-2': 'another_local_singer',
@@ -231,7 +231,7 @@ test('formatPerformanceHistory returns empty array when expand or performances i
   const pieceEmptyExpand = { id: 'piece_2', title: 'Requiem', expand: {} } as MusicPiece;
   assert.deepEqual(formatPerformanceHistory(pieceEmptyExpand), []);
 
-  const pieceEmptyPerformances = { id: 'piece_2', title: 'Requiem', expand: { performances: [] } } as MusicPiece;
+  const pieceEmptyPerformances = { id: 'piece_2', title: 'Requiem', expand: { performances: [] } } as unknown as MusicPiece;
   assert.deepEqual(formatPerformanceHistory(pieceEmptyPerformances), []);
 });
 

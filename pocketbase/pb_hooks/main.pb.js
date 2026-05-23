@@ -533,3 +533,49 @@ onRecordAfterUpdateSuccess((e) => {
         console.log("[Hook Error] onRecordAfterUpdateSuccess failed: " + hookErr);
     }
 }, "messages");
+
+// SMTP Connection Test Custom Endpoint
+routerAdd("POST", "/api/test-smtp", (e) => {
+    try {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden: Admins only" });
+        }
+
+        const data = e.requestInfo().body;
+        const testEmail = data.email;
+
+        if (!testEmail) {
+            return e.json(400, { error: "Missing destination email address." });
+        }
+
+        const settings = $app.settings();
+        const fromAddress = settings.meta.senderAddress || "no-reply@choir.management";
+        const fromName = settings.meta.senderName || "Choir Management Tool";
+
+        if (!settings.smtp.enabled) {
+            return e.json(400, { error: "SMTP is not enabled on the PocketBase server. Please enable SMTP in PocketBase Admin UI first." });
+        }
+
+        // Try sending test email using PocketBase system mailer
+        try {
+            const message = new MailerMessage({
+                from: {
+                    address: fromAddress,
+                    name:    fromName,
+                },
+                to:      [{ address: testEmail }],
+                subject: "SMTP Connection Test Successful!",
+                html:    "<p>Hello!</p><p>This is a test email sent from the Choir Management Tool to verify your server's SMTP setup.</p><p>Your server SMTP configuration is working perfectly!</p>",
+            });
+
+            $app.newMailClient().send(message);
+        } catch (sendErr) {
+            return e.json(500, { error: "SMTP Connection failed: " + sendErr.message });
+        }
+
+        return e.json(200, { success: true });
+    } catch (err) {
+        return e.json(500, { error: "Internal Server Error: " + err.message });
+    }
+});

@@ -21,6 +21,7 @@ import {
   renderCommunicationTemplate,
   type CommunicationSettings,
 } from '../../services/settingsService';
+import { pb } from '../../lib/pocketbase';
 import { getRenderedPreview, resolvePreviewContent } from '../../lib/communicationUtils';
 import { PlaceholderPanel } from '../../components/admin/PlaceholderPanel';
 import './CommunicationView.css';
@@ -86,6 +87,8 @@ export default function CommunicationView() {
   const [drafts, setDrafts] = useState<MessageRecord[]>([]);
   const [templates, setTemplates] = useState<TemplateRecord[]>([]);
   const [commSettings, setCommSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
+  const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
 
   // Secondary UI state
 
@@ -392,6 +395,37 @@ export default function CommunicationView() {
       await dialog.showMessage({ title: 'Error', message: 'Failed to send message.', variant: 'danger' });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleSendConnectionTest = async () => {
+    if (!testEmailAddress) {
+      await dialog.showMessage({ title: 'Error', message: 'Please enter a destination email address.', variant: 'danger' });
+      return;
+    }
+
+    setIsTestingSmtp(true);
+    try {
+      // Call the test SMTP endpoint
+      const response = await pb.send('/api/test-smtp', {
+        method: 'POST',
+        body: { email: testEmailAddress }
+      });
+      
+      if (response && response.success) {
+        await dialog.showMessage({ title: 'Success', message: `Test email successfully sent to ${testEmailAddress}!`, variant: 'info' });
+      } else {
+        throw new Error(response?.error || 'Unknown error occurred.');
+      }
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'SMTP Connection Failed',
+        message: `Could not send test email: ${errMsg}`,
+        variant: 'danger'
+      });
+    } finally {
+      setIsTestingSmtp(false);
     }
   };
 
@@ -829,13 +863,39 @@ export default function CommunicationView() {
             </div>
           </AppCard>
 
-          <div className="flex-row" style={{ justifyContent: 'space-end' }}>
+          <AppCard title="Test Server SMTP Connection">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <p className="text-muted text-sm" style={{ margin: 0 }}>
+                Send a quick test email using the server's configured SMTP settings to verify that outgoing mail delivery is working.
+              </p>
+              <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'center', marginTop: 'var(--space-sm)' }}>
+                <input 
+                  className="card" 
+                  type="email" 
+                  value={testEmailAddress} 
+                  onChange={(e) => setTestEmailAddress(e.target.value)} 
+                  placeholder="e.g. test@example.com" 
+                  style={{ height: '44px', padding: '0 12px', flex: 1, maxWidth: '300px' }} 
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={handleSendConnectionTest} 
+                  disabled={isTestingSmtp || !testEmailAddress}
+                >
+                  {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
+                </button>
+              </div>
+            </div>
+          </AppCard>
+
+          <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
             <button 
               className="btn btn-primary" 
               onClick={async () => {
                 setIsSavingConfig(true);
                 try { 
-                  await settingsService.saveCommunicationSettings(commSettings); 
+                  await settingsService.saveCommunicationSettings(commSettings);
                   await dialog.showMessage({ title: 'Saved', message: 'Settings updated successfully.', variant: 'info' }); 
                 } catch (err: unknown) {
                   const message = err instanceof Error ? err.message : String(err);
@@ -889,11 +949,11 @@ function SettingsGrid({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>{children}</div>;
 }
 
-function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (val: string) => void; type?: string }) {
+function Field({ label, value, onChange, type = 'text', placeholder }: { label: string; value: string; onChange: (val: string) => void; type?: string; placeholder?: string }) {
   return (
     <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
       <label className="text-label">{label}</label>
-      <input className="card" type={type} value={value} onChange={(e) => onChange(e.target.value)} style={{ height: '44px', padding: '0 12px' }} />
+      <input className="card" type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: '44px', padding: '0 12px' }} />
     </div>
   );
 }
