@@ -39,6 +39,7 @@ test('processEmailQueue batched success and failure flows', () => {
     const hmacSetting = new MockRecord('appSettings', { key: 'HMAC_SECRET', value: JSON.stringify({ secret: 'test-secret' }) });
     const commSetting = new MockRecord('appSettings', { key: 'communications', value: JSON.stringify({ frontendUrl: 'http://localhost:5173', mailingAddress: '123 Harmony St' }) });
     const tzSetting = new MockRecord('appSettings', { key: 'timezone', value: JSON.stringify('America/New_York') });
+    const choirNameSetting = new MockRecord('appSettings', { key: 'choir_name', value: JSON.stringify('City Chorus') });
 
     // Mock event and venue
     const mockVenue = new MockRecord('venues', { id: 'ven-1', name: 'St. Mary Church' });
@@ -75,6 +76,7 @@ test('processEmailQueue batched success and failure flows', () => {
 
     // Mock App
     const mockApp: PocketBaseApp = {
+        findCollectionByNameOrId: (name: string) => ({ name }),
         settings: () => ({
             smtp: { enabled: true },
             meta: { senderAddress: 'choir@app.com', senderName: 'Choir Name' }
@@ -93,6 +95,7 @@ test('processEmailQueue batched success and failure flows', () => {
             if (collection === 'appSettings' && filter === "key = 'communications'") return commSetting;
             if (collection === 'appSettings' && filter === "key = 'timezone'") return tzSetting;
             if (collection === 'appSettings' && filter === "key = 'HMAC_SECRET'") return hmacSetting;
+            if (collection === 'appSettings' && filter === "key = 'choir_name'") return choirNameSetting;
             throw new Error('Not found setting');
         },
         findRecordsByFilter: (collection: string, filter: string) => {
@@ -115,7 +118,7 @@ test('processEmailQueue batched success and failure flows', () => {
     globalRef.$app = mockApp;
     globalRef.$security = {
         base64Encode: (s: string) => Buffer.from(s).toString('base64'),
-        hs256: (payload: string, secret: string) => payload + '_signed'
+        hs256: (payload: string) => payload + '_signed'
     };
 
     // Run queue processor
@@ -151,6 +154,7 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.strictEqual(config.subject, 'Invited to Concert');
 
     const htmlPart = config.html;
+    assert.ok(htmlPart.includes('City Chorus'), 'Should include choir name in header');
     assert.ok(htmlPart.includes('St. Mary Church'), 'Should resolve {eventLocation}');
     assert.ok(htmlPart.includes('Spring Concert'), 'Should resolve {eventTitle}');
     assert.ok(htmlPart.includes('Yes, I\'m attending'), 'Should resolve RSVP buttons');

@@ -52,7 +52,14 @@ test('enqueueBulkMessage explodes recipients', () => {
         findRecordById: () => new MockRecord('events', {}),
         save: (record: PocketBaseRecord) => {
             savedRecords.push(record);
-        }
+        },
+        settings: () => ({
+            smtp: { enabled: true },
+            meta: { senderAddress: 'choir@app.com', senderName: 'Choir Name' }
+        }),
+        newMailClient: () => ({
+            send: () => {}
+        })
     };
 
     const mockMessageRecord = new MockRecord('messages', {

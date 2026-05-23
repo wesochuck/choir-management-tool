@@ -59,7 +59,7 @@ export function formatInTimezone(date: string | Date, timezone: string, options:
         }).format(d);
     } catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours: number;
         const tz = String(timezone || "").toLowerCase();
 
         const year = d.getUTCFullYear();

@@ -1,5 +1,5 @@
 import { parseJsonField } from './hookJson';
-import type { EmailRecipient, PocketBaseRecord, PocketBaseApp } from './emailTypes';
+import type { PocketBaseRecord, PocketBaseApp } from './emailTypes';
 import { escapeHtml, sanitizeEmailSubject, normalizeBaseUrl, formatInTimezone } from './hookText';
 import { renderMarkdown } from './emailRendering';
 import { compileMailjetHtml } from './mailjetRenderer';
@@ -13,15 +13,19 @@ declare class MailerMessage {
     });
 }
 
+declare const $security: {
+    hs256(payload: string, secret: string): string;
+};
+
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app: PocketBaseApp): string {
+function getQueueHmacSecret(app: PocketBaseApp): string {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField<Record<string, string>>(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
-    } catch (err) {
+    } catch {
         return "";
     }
 }
@@ -54,16 +58,28 @@ export function processEmailQueue(app: PocketBaseApp): void {
     });
 
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
+
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField<Record<string, string>>(commRecord.get("value"));
         if (comms?.frontendUrl) baseUrl = comms.frontendUrl;
         if (comms?.mailingAddress) mailingAddress = comms.mailingAddress;
-    } catch (e) {}
+    } catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField<string>(choirRecord.get("value"));
+        if (val) choirName = val;
+    } catch {
+        // use default choirName
+    }
 
     let timezone = "America/New_York";
     try {
@@ -77,7 +93,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 timezone = tzP.timezone;
             }
         }
-    } catch (e) {}
+    } catch {
+        // use default timezone
+    }
 
     records.forEach((record: PocketBaseRecord) => {
         try {
@@ -111,7 +129,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
             if (filters && filters.eventId) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
-                } catch (e) {}
+                } catch {
+                    // event not found
+                }
             }
 
             // Perform template placeholder resolutions (same engine as legacy)
@@ -127,7 +147,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 try {
                     const venueRecord = app.findRecordById("venues", event.get("venue") as string);
                     venueName = (venueRecord.get("name") || "TBD") as string;
-                } catch (e) {}
+                } catch {
+                    // venue not found
+                }
 
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
@@ -185,7 +207,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
             }
 
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
 
             // Dispatch natively via PocketBase SMTP Client

@@ -45,6 +45,17 @@ export default function SetListView() {
 
   const [items, setItems] = useState<SetListItem[]>([]);
   const [library, setLibrary] = useState<MusicPiece[]>([]);
+
+  // Cumulative duration totals incorporating resolved library pieces
+  const durationTotals = useMemo(() => {
+    return calculateSetListDurationTotals(items, library);
+  }, [items, library]);
+
+  // Resolves linked music library piece info and computes running timestamps
+  const itemsWithDetails = useMemo(() => {
+    return resolveSetListDisplayRows(items, library);
+  }, [items, library]);
+
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -390,15 +401,7 @@ export default function SetListView() {
       }
   };
 
-  // Cumulative duration totals incorporating resolved library pieces
-  const durationTotals = useMemo(() => {
-    return calculateSetListDurationTotals(items, library);
-  }, [items, library]);
 
-  // Resolves linked music library piece info and computes running timestamps
-  const itemsWithDetails = useMemo(() => {
-    return resolveSetListDisplayRows(items, library);
-  }, [items, library]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

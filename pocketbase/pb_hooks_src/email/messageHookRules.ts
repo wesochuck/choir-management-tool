@@ -1,6 +1,14 @@
 import { parseJsonField } from './hookJson';
 import type { EmailRecipient, PocketBaseRecord, PocketBaseApp } from './emailTypes';
 
+declare class Collection {}
+declare class Record implements PocketBaseRecord {
+    id: string;
+    get(field: string): unknown;
+    set(field: string, value: unknown): void;
+    constructor(collection: Collection | undefined, data: { [key: string]: unknown });
+}
+
 /**
  * Validates if a created or updated message record qualifies for enqueueing.
  */
@@ -24,7 +32,7 @@ export function shouldQueueMessage(record: PocketBaseRecord | null | undefined, 
  * Explodes a bulk message into individual pending rows in the emailQueue collection.
  */
 export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord): void {
-    const queueCollection = app.findCollectionByNameOrId("emailQueue");
+    const queueCollection = app.findCollectionByNameOrId("emailQueue") as Collection;
     const recipients = parseJsonField<EmailRecipient[]>(record.get("recipients")) || [];
     const subject = record.get("subject") as string || "";
     const content = record.get("content") as string || "";

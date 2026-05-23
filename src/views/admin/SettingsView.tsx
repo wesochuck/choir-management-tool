@@ -190,10 +190,6 @@ function QueueWebhookSettings() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
   const loadSettings = async () => {
     try {
       const data = await queueSettingsService.getSettings();
@@ -205,6 +201,10 @@ function QueueWebhookSettings() {
     }
   };
 
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
   const handleGenerate = async () => {
     if (!window.confirm('Generating a new token revokes the old one. Update the PocketHost configuration immediately.')) {
       return;
@@ -213,7 +213,7 @@ function QueueWebhookSettings() {
     try {
       const data = await queueSettingsService.generateToken();
       setToken(data.secret);
-    } catch (err) {
+    } catch {
       alert('Failed to generate token');
     } finally {
       setIsLoading(false);

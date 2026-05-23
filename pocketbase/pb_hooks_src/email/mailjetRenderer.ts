@@ -3,7 +3,8 @@ import { EMAIL_CSS } from './emailStyles';
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-export function compileMailjetHtml(contentHtml: string, mailingAddress: string, unsubscribeUrl: string): string {
+export function compileMailjetHtml(contentHtml: string, mailingAddress: string, unsubscribeUrl: string, headerTitle?: string): string {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -21,7 +22,7 @@ export function compileMailjetHtml(contentHtml: string, mailingAddress: string, 
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>

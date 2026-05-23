@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T14:39:39.379Z
+// Generated on: 2026-05-23T14:59:14.784Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -62,7 +62,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -317,7 +317,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -335,7 +336,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -362,13 +363,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -392,9 +393,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -403,8 +405,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -419,7 +432,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -448,7 +463,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -463,7 +480,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -513,7 +532,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -634,7 +653,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -889,7 +908,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -907,7 +927,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -934,13 +954,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -964,9 +984,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -975,8 +996,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -991,7 +1023,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -1020,7 +1054,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -1035,7 +1071,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -1085,7 +1123,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -1265,7 +1303,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -1520,7 +1558,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -1538,7 +1577,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -1565,13 +1604,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -1595,9 +1634,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -1606,8 +1646,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -1622,7 +1673,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -1651,7 +1704,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -1666,7 +1721,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -1716,7 +1773,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -1841,7 +1898,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -2096,7 +2153,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -2114,7 +2172,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -2141,13 +2199,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -2171,9 +2229,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -2182,8 +2241,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -2198,7 +2268,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -2227,7 +2299,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -2242,7 +2316,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -2292,7 +2368,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -2421,7 +2497,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -2676,7 +2752,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -2694,7 +2771,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -2721,13 +2798,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -2751,9 +2828,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -2762,8 +2840,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -2778,7 +2867,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -2807,7 +2898,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -2822,7 +2915,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -2872,7 +2967,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -3005,7 +3100,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -3260,7 +3355,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -3278,7 +3374,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -3305,13 +3401,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -3335,9 +3431,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -3346,8 +3443,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -3362,7 +3470,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -3391,7 +3501,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -3406,7 +3518,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -3456,7 +3570,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -3601,7 +3715,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -3856,7 +3970,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -3874,7 +3989,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -3901,13 +4016,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -3931,9 +4046,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -3942,8 +4058,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -3958,7 +4085,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -3987,7 +4116,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -4002,7 +4133,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -4052,7 +4185,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -4186,7 +4319,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -4441,7 +4574,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -4459,7 +4593,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -4486,13 +4620,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -4516,9 +4650,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -4527,8 +4662,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -4543,7 +4689,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -4572,7 +4720,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -4587,7 +4737,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -4637,7 +4789,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
@@ -4778,7 +4930,7 @@ function formatInTimezone(date, timezone, options) {
     }
     catch {
         // Fallback for Goja VM (PocketBase backend)
-        let offsetHours = -5; // Default to America/New_York (EST)
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         // Determine if DST (Daylight Saving Time) is active in the US
@@ -5033,7 +5185,8 @@ a { color: #4a7c59; text-decoration: underline; }
 /**
  * Wraps Markdown-compiled text into a highly compatible, responsive transactional HTML layout.
  */
-function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
     return `
 <!DOCTYPE html>
 <html>
@@ -5051,7 +5204,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
                 <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="header">
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Choir Management Notification</h1>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
                         </td>
                     </tr>
                     <tr>
@@ -5078,13 +5231,13 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 /**
  * Retrieves HMAC secret for signature tokens.
  */
-function getHmacSecret(app) {
+function getQueueHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return (parsed && parsed.secret) ? parsed.secret : "";
     }
-    catch (err) {
+    catch {
         return "";
     }
 }
@@ -5108,9 +5261,10 @@ function processEmailQueue(app) {
         app.save(r);
     });
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getQueueHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
     try {
         const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         const comms = parseJsonField(commRecord.get("value"));
@@ -5119,8 +5273,19 @@ function processEmailQueue(app) {
         if (comms?.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (e) { }
+    catch {
+        // use default baseUrl and mailingAddress
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch {
+        // use default choirName
+    }
     let timezone = "America/New_York";
     try {
         const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -5135,7 +5300,9 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (e) { }
+    catch {
+        // use default timezone
+    }
     records.forEach((record) => {
         try {
             const rawContent = record.get("rawContent") || "";
@@ -5164,7 +5331,9 @@ function processEmailQueue(app) {
                 try {
                     event = app.findRecordById("events", filters.eventId);
                 }
-                catch (e) { }
+                catch {
+                    // event not found
+                }
             }
             // Perform template placeholder resolutions (same engine as legacy)
             htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
@@ -5179,7 +5348,9 @@ function processEmailQueue(app) {
                     const venueRecord = app.findRecordById("venues", event.get("venue"));
                     venueName = (venueRecord.get("name") || "TBD");
                 }
-                catch (e) { }
+                catch {
+                    // venue not found
+                }
                 const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -5229,7 +5400,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
             }
             // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
             record.set("htmlBody", finalHtml);
             // Dispatch natively via PocketBase SMTP Client
             const mailerMessage = new MailerMessage({
