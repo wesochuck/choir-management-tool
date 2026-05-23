@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T18:19:47.971Z
+// Generated on: 2026-05-23T18:26:51.102Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -124,9 +124,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -541,6 +546,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -548,6 +555,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -561,7 +579,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -952,9 +970,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -1369,6 +1392,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -1376,6 +1401,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -1389,7 +1425,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -1839,9 +1875,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -2256,6 +2297,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -2263,6 +2306,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -2276,7 +2330,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -2671,9 +2725,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -3088,6 +3147,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -3095,6 +3156,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -3108,7 +3180,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -3507,9 +3579,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -3924,6 +4001,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -3931,6 +4010,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -3944,7 +4034,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -4347,9 +4437,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -4764,6 +4859,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -4771,6 +4868,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -4784,7 +4892,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -5199,9 +5307,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -5616,6 +5729,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -5623,6 +5738,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -5636,7 +5762,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -6040,9 +6166,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -6457,6 +6588,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -6464,6 +6597,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -6477,7 +6621,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -6888,9 +7032,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -7305,6 +7454,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -7312,6 +7463,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -7325,7 +7487,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
@@ -7725,9 +7887,14 @@ function formatInTimezone(date, timezone, options) {
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
@@ -8142,6 +8309,8 @@ function processEmailQueue(app) {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
                     if (secret) {
                         const auditionId = filters.auditionId;
                         if (auditionId) {
@@ -8149,6 +8318,17 @@ function processEmailQueue(app) {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            }
+                            catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         }
                         else {
                             const payload = `e=${event.id}&p=${recipientId}`;
@@ -8162,7 +8342,7 @@ function processEmailQueue(app) {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}

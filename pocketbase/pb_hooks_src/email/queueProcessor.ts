@@ -214,6 +214,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 let eventCalendarHtml = "";
                 if (htmlBody.includes("{eventCalendarLink}")) {
                     let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
+
                     if (secret) {
                         const auditionId = filters.auditionId as string | undefined;
                         if (auditionId) {
@@ -221,6 +224,17 @@ export function processEmailQueue(app: PocketBaseApp): void {
                             const signature = $security.hs256(payload, secret);
                             const token = `${payload}&s=${signature}`;
                             icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot") as string;
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                }
+                            } catch {
+                                // Ignore audition record resolution/formatting errors
+                            }
                         } else {
                             const payload = `e=${event.id}&p=${recipientId}`;
                             const signature = $security.hs256(payload, secret);
@@ -234,7 +248,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
-        ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
     </td>
     <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
         ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}

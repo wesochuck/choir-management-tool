@@ -128,9 +128,14 @@ export function formatInTimezone(date: string | Date, timezone: string, options:
         if (options.weekday === "short" && options.hour) {
             return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
         }
-        // Case 4: Date only: "Sun, Jun 14"
+        // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
             return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
         }
 
         // Generic fallback: "06/14/2026, 7:00 PM"

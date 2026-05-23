@@ -129,6 +129,10 @@ onRecordAfterCreateSuccess((e) => {
             if (options.weekday === "short" && !options.hour) {
                 return wday + ", " + mon + " " + day;
             }
+            if (options.month && !options.hour) {
+                var m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
 
             var doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
             var doubleDigitDay = (day < 10) ? "0" + day : String(day);
@@ -335,6 +339,10 @@ onRecordAfterUpdateSuccess((e) => {
             }
             if (options.weekday === "short" && !options.hour) {
                 return wday + ", " + mon + " " + day;
+            }
+            if (options.month && !options.hour) {
+                var m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
             }
 
             var doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
