@@ -81,6 +81,42 @@ function parseSignedToken(token, requiredKeys) {
 }
 
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
+    function decodeGoBytesLocal(val) {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        try {
+            if (typeof val === "object") {
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                return val;
+            }
+        } catch (err) {}
+        return "";
+    }
+
+    function parseJsonFieldLocal(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytesLocal(val);
+        if (!decoded) return null;
+        if (typeof decoded === "object") return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function getHmacSecretLocal() {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonFieldLocal(record.get("value"));
+        return parsed && typeof parsed.secret === "string" ? parsed.secret : "";
+    }
+
     const authRecord = e.auth;
     if (!authRecord || authRecord.get("role") !== "admin") {
         return e.json(403, { error: "Forbidden: Admins only" });
@@ -96,7 +132,7 @@ routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
 
     let secret = "";
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecretLocal();
         if (!secret) throw new Error("Missing secret");
     } catch (err) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
@@ -113,6 +149,64 @@ routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
 });
 
 routerAdd("POST", "/api/rsvp-details", (e) => {
+    function decodeGoBytesLocal(val) {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        try {
+            if (typeof val === "object") {
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                return val;
+            }
+        } catch (err) {}
+        return "";
+    }
+
+    function parseJsonFieldLocal(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytesLocal(val);
+        if (!decoded) return null;
+        if (typeof decoded === "object") return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function getHmacSecretLocal() {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonFieldLocal(record.get("value"));
+        return parsed && typeof parsed.secret === "string" ? parsed.secret : "";
+    }
+
+    function parseSignedTokenLocal(token, requiredKeys) {
+        if (!token || typeof token !== "string") return null;
+        const parts = {};
+        const allowed = {};
+        requiredKeys.forEach(k => {
+            allowed[k] = true;
+        });
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0) return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key]) return;
+            if (typeof parts[key] !== "undefined") return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            const key = requiredKeys[i];
+            if (!parts[key]) return null;
+        }
+        return parts;
+    }
+
     const data = e.requestInfo().body;
     const token = data.token;
 
@@ -120,14 +214,14 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
         return e.json(400, { error: "Missing RSVP token. Please open full RSVP link from your email." });
     }
 
-    const parts = parseSignedToken(token, ["e", "p", "s"]);
+    const parts = parseSignedTokenLocal(token, ["e", "p", "s"]);
     if (!parts) {
         return e.json(400, { error: "This RSVP link is invalid. Please request a new RSVP link." });
     }
 
     let secret = "";
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecretLocal();
         if (!secret) throw new Error("Missing secret");
     } catch (err) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
@@ -137,8 +231,8 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
-        logRsvp("Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
-        logRsvp("Expected: " + expectedSignature + ", Received: " + parts.s);
+        console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
+        console.log("[RSVP Debug] Expected: " + expectedSignature + ", Received: " + parts.s);
         return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
 
@@ -246,6 +340,64 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
 });
 
 routerAdd("POST", "/api/quick-rsvp", (e) => {
+    function decodeGoBytesLocal(val) {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        try {
+            if (typeof val === "object") {
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                return val;
+            }
+        } catch (err) {}
+        return "";
+    }
+
+    function parseJsonFieldLocal(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytesLocal(val);
+        if (!decoded) return null;
+        if (typeof decoded === "object") return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function getHmacSecretLocal() {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonFieldLocal(record.get("value"));
+        return parsed && typeof parsed.secret === "string" ? parsed.secret : "";
+    }
+
+    function parseSignedTokenLocal(token, requiredKeys) {
+        if (!token || typeof token !== "string") return null;
+        const parts = {};
+        const allowed = {};
+        requiredKeys.forEach(k => {
+            allowed[k] = true;
+        });
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0) return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key]) return;
+            if (typeof parts[key] !== "undefined") return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            const key = requiredKeys[i];
+            if (!parts[key]) return null;
+        }
+        return parts;
+    }
+
     const data = e.requestInfo().body;
     const token = data.token; 
     const rsvp = data.rsvp;
@@ -254,14 +406,14 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
         return e.json(400, { error: "Missing RSVP details. Please use full RSVP link from your email." });
     }
 
-    const parts = parseSignedToken(token, ["e", "p", "s"]);
+    const parts = parseSignedTokenLocal(token, ["e", "p", "s"]);
     if (!parts) {
         return e.json(400, { error: "This RSVP link is invalid. Please request a new RSVP link." });
     }
 
     let secret = "";
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecretLocal();
         if (!secret) throw new Error("Missing secret");
     } catch (err) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
@@ -271,8 +423,8 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
-        logRsvp("Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
-        logRsvp("Expected: " + expectedSignature + ", Received: " + parts.s);
+        console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
+        console.log("[RSVP Debug] Expected: " + expectedSignature + ", Received: " + parts.s);
         return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
 
@@ -308,6 +460,64 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
 });
 
 routerAdd("POST", "/api/unsubscribe", (e) => {
+    function decodeGoBytesLocal(val) {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        try {
+            if (typeof val === "object") {
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                return val;
+            }
+        } catch (err) {}
+        return "";
+    }
+
+    function parseJsonFieldLocal(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytesLocal(val);
+        if (!decoded) return null;
+        if (typeof decoded === "object") return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function getHmacSecretLocal() {
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonFieldLocal(record.get("value"));
+        return parsed && typeof parsed.secret === "string" ? parsed.secret : "";
+    }
+
+    function parseSignedTokenLocal(token, requiredKeys) {
+        if (!token || typeof token !== "string") return null;
+        const parts = {};
+        const allowed = {};
+        requiredKeys.forEach(k => {
+            allowed[k] = true;
+        });
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0) return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key]) return;
+            if (typeof parts[key] !== "undefined") return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            const key = requiredKeys[i];
+            if (!parts[key]) return null;
+        }
+        return parts;
+    }
+
     const data = e.requestInfo().body;
     const token = data.token; 
 
@@ -315,14 +525,14 @@ routerAdd("POST", "/api/unsubscribe", (e) => {
         return e.json(400, { error: "Missing token" });
     }
 
-    const parts = parseSignedToken(token, ["p", "s"]);
+    const parts = parseSignedTokenLocal(token, ["p", "s"]);
     if (!parts) {
         return e.json(400, { error: "Invalid token format" });
     }
 
     let secret = "";
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecretLocal();
         if (!secret) throw new Error("Missing secret");
     } catch (err) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
