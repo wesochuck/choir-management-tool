@@ -5,6 +5,7 @@ import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { useEvents } from '../../hooks/useEvents';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   communicationService,
   type CommunicationFilters,
@@ -22,8 +23,10 @@ import {
 } from '../../services/settingsService';
 import { getRenderedPreview, resolvePreviewContent } from '../../lib/communicationUtils';
 import { PlaceholderPanel } from '../../components/admin/PlaceholderPanel';
+import './CommunicationView.css';
 
 type Tab = 'compose' | 'automated' | 'drafts' | 'history' | 'settings';
+
 type WizardStep = 'TARGETS' | 'COMPOSE' | 'REVIEW';
 
 const DEFAULT_FILTERS: CommunicationFilters = {
@@ -55,11 +58,14 @@ export default function CommunicationView() {
     initialEventId?: string;
   } | null;
 
+  const { user } = useAuth();
+
   // Global UI state
-  const [tab, setTab] = useState<Tab>(routeState?.initialEventId ? 'compose' : 'compose');
+  const [tab, setTab] = useState<Tab>('compose');
   const [wizardStep, setWizardStep] = useState<WizardStep>('TARGETS');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
@@ -82,6 +88,7 @@ export default function CommunicationView() {
   const [commSettings, setCommSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
 
   // Secondary UI state
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -304,6 +311,53 @@ export default function CommunicationView() {
     setTab('compose');
   };
 
+  const handleSendTest = async () => {
+    if (!user?.email) {
+      await dialog.showMessage({ title: 'No Email', message: 'Your administrator account has no email address configured.', variant: 'danger' });
+      return;
+    }
+
+    if (messageType === 'SMS') {
+      const switchToEmail = await dialog.confirm({
+        title: 'Email Test Only',
+        message: 'Test send delivers email only. Switch channel to Email and continue?',
+        confirmLabel: 'Switch to Email',
+      });
+      if (!switchToEmail) return;
+      setMessageType('Email');
+    }
+
+    setIsSendingTest(true);
+    try {
+      const adminName = (user as unknown as { name?: string })?.name || user.email || 'Admin';
+      const testRecipient: CommunicationRecipient = {
+        id: user.id,
+        name: adminName,
+        email: user.email,
+        phone: '',
+        voicePart: 'Admin',
+        globalStatus: 'Admin',
+      };
+
+      const input = {
+        subject: `[TEST] ${subject}`,
+        content,
+        type: 'Email' as const,
+        recipients: [testRecipient],
+        filters: { ...filters, isTest: true } as unknown as Record<string, unknown>,
+        status: 'Sent' as const,
+      };
+
+      await communicationService.sendBulkMessage(input);
+      await dialog.showMessage({ title: 'Test Sent', message: `A test email has been sent to ${user.email}.`, variant: 'info' });
+    } catch (err: unknown) {
+      console.error(err);
+      await dialog.showMessage({ title: 'Error', message: 'Failed to send test message.', variant: 'danger' });
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
   const sendMessage = async () => {
     if (selectedRecipients.length === 0) {
       await dialog.showMessage({ title: 'No Recipients', message: 'Select at least one recipient before sending.' });
@@ -344,10 +398,10 @@ export default function CommunicationView() {
   if (isLoading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Communications...</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="communication-container">
+      <div className="communication-header">
         <h1 className="text-display" style={{ margin: 0 }}>Communications</h1>
-        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+        <div className="communication-tabs">
           {(['compose', 'automated', 'drafts', 'history', 'settings'] as Tab[]).map((item) => (
             <button
               key={item}
@@ -368,22 +422,14 @@ export default function CommunicationView() {
       {tab === 'compose' && (
         <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
           {/* Wizard Progress Bar */}
-          <div className="flex-row" style={{ gap: 'var(--space-sm)', justifyContent: 'center', marginBottom: 'var(--space-md)' }}>
+          <div className="wizard-progress-bar">
             {[
               { id: 'TARGETS', label: '1. Targets & Template' },
               { id: 'COMPOSE', label: '2. Compose & Preview' },
               { id: 'REVIEW', label: '3. Review & Send' }
             ].map((step, idx) => (
-              <div key={step.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
-                <span 
-                  style={{ 
-                    fontWeight: 700, 
-                    fontSize: '0.85rem',
-                    color: wizardStep === step.id ? 'var(--primary)' : 'var(--text-muted)',
-                    borderBottom: wizardStep === step.id ? '2px solid var(--primary)' : 'none',
-                    padding: '4px 8px'
-                  }}
-                >
+              <div key={step.id} className="wizard-step-item">
+                <span className={`wizard-step-label ${wizardStep === step.id ? 'active' : 'inactive'}`}>
                   {step.label}
                 </span>
                 {idx < 2 && <span className="text-muted">→</span>}
@@ -392,7 +438,7 @@ export default function CommunicationView() {
           </div>
 
           {wizardStep === 'TARGETS' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
+            <div className="targets-grid">
               <AppCard title="Target Audience">
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
@@ -430,10 +476,9 @@ export default function CommunicationView() {
                     <button
                       type="button"
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="card flex-row"
-                      style={{ height: '44px', padding: '0 12px', width: '100%', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', backgroundColor: 'var(--bg)' }}
+                      className="card voice-part-dropdown-trigger flex-row"
                     >
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400 }}>
+                      <span className={`dropdown-item-text ${(filters.voiceParts || []).length > 0 ? 'selected' : ''}`}>
                         {filters.voiceParts.length === 0 ? 'All Voice Parts' : `${filters.voiceParts.length} selected`}
                       </span>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-muted)' }}>
@@ -441,20 +486,20 @@ export default function CommunicationView() {
                       </svg>
                     </button>
                     {isDropdownOpen && (
-                      <div className="card shadow-lg" style={{ position: 'absolute', top: '68px', left: 0, right: 0, zIndex: 100, maxHeight: '300px', overflowY: 'auto', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '8px 0' }}>
-                        <div style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sections</div>
+                      <div className="card voice-part-dropdown-panel shadow-lg">
+                        <div className="dropdown-section-header">Sections</div>
                         {configSections.map(sec => (
-                          <label key={sec.code} className="flex-row" style={{ padding: '8px 12px', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '13px' }}>
-                            <input type="checkbox" checked={filters.voiceParts.includes(sec.code)} onChange={() => handleVoicePartToggle(sec.code)} style={{ accentColor: 'var(--primary)' }} />
-                            {sec.name}
+                          <label key={sec.code} className="dropdown-item-label">
+                            <input type="checkbox" checked={filters.voiceParts.includes(sec.code)} onChange={() => handleVoicePartToggle(sec.code)} style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }} />
+                            <span className={filters.voiceParts.includes(sec.code) ? 'selected' : ''}>{sec.name}</span>
                           </label>
                         ))}
                         <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
-                        <div style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Individual Parts</div>
+                        <div className="dropdown-section-header">Individual Parts</div>
                         {voicePartLabels.map(part => (
-                          <label key={part} className="flex-row" style={{ padding: '8px 12px', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '13px' }}>
-                            <input type="checkbox" checked={filters.voiceParts.includes(part)} onChange={() => handleVoicePartToggle(part)} style={{ accentColor: 'var(--primary)' }} />
-                            {part}
+                          <label key={part} className="dropdown-item-label">
+                            <input type="checkbox" checked={filters.voiceParts.includes(part)} onChange={() => handleVoicePartToggle(part)} style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }} />
+                            <span className={filters.voiceParts.includes(part) ? 'selected' : ''}>{part}</span>
                           </label>
                         ))}
                       </div>
@@ -467,24 +512,22 @@ export default function CommunicationView() {
                 <AppCard title="Templates & Quick Starts">
                   <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                     <p className="text-muted text-sm">Select a template to pre-fill your message, or start with a blank canvas.</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-sm)' }}>
+                    <div className="template-gallery">
                       <button 
-                        className="btn btn-ghost" 
-                        style={{ height: 'auto', padding: '16px', textAlign: 'center', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}
+                        className="btn btn-ghost template-card-btn" 
                         onClick={() => {
                           setSubject('');
                           setContent('');
                           setWizardStep('COMPOSE');
                         }}
                       >
-                        <div style={{ fontSize: '1.5rem' }}>📄</div>
+                        <div className="template-card-icon">📄</div>
                         <div style={{ fontWeight: 600 }}>Blank Message</div>
                       </button>
                       {templates.map(tpl => (
                         <button 
                           key={tpl.id}
-                          className="btn btn-ghost" 
-                          style={{ height: 'auto', padding: '16px', textAlign: 'center', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}
+                          className="btn btn-ghost template-card-btn" 
                           onClick={() => {
                             setSubject(tpl.subject);
                             setContent(tpl.content);
@@ -492,7 +535,7 @@ export default function CommunicationView() {
                             setWizardStep('COMPOSE');
                           }}
                         >
-                          <div style={{ fontSize: '1.5rem' }}>{tpl.type === 'SMS' ? '📱' : '✉️'}</div>
+                          <div className="template-card-icon">{tpl.type === 'SMS' ? '📱' : '✉️'}</div>
                           <div style={{ fontWeight: 600 }}>{tpl.title}</div>
                         </button>
                       ))}
@@ -510,16 +553,16 @@ export default function CommunicationView() {
           )}
 
           {wizardStep === 'COMPOSE' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 'var(--space-lg)', alignItems: 'start' }}>
+            <div className="compose-grid">
               <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
                 <AppCard title="Composer">
-                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                    <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
-                      <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                  <div className="composer-form">
+                    <div className="composer-header-row">
+                      <div className="composer-subject-field flex-col" style={{ gap: 'var(--space-xs)' }}>
                         <label className="text-label">Subject</label>
                         <input className="card" value={subject} onChange={(e) => setSubject(e.target.value)} style={{ height: '44px', padding: '0 12px' }} disabled={messageType === 'SMS'} />
                       </div>
-                      <div className="flex-col" style={{ width: '180px', gap: 'var(--space-xs)' }}>
+                      <div className="composer-channel-field flex-col" style={{ gap: 'var(--space-xs)' }}>
                         <label className="text-label">Channel</label>
                         <select className="card" value={messageType} onChange={(e) => setMessageType(e.target.value as MessageType)} style={{ height: '44px', padding: '0 12px' }}>
                           <option value="Email">Email</option>
@@ -532,19 +575,18 @@ export default function CommunicationView() {
                       <label className="text-label">Message Body (Markdown Supported)</label>
                       <textarea 
                         ref={textAreaRef}
-                        className="card" 
+                        className="card composer-textarea" 
                         value={content} 
                         onChange={(e) => setContent(e.target.value)} 
-                        style={{ minHeight: '350px', padding: '12px', resize: 'vertical', fontFamily: 'var(--font-sans)', fontSize: '1rem' }} 
                       />
                     </div>
                   </div>
                 </AppCard>
                 
                 <AppCard title="Live Preview">
-                  <div className="card" style={{ boxShadow: 'none', backgroundColor: 'var(--bg)', padding: 'var(--space-md)', minHeight: '100px' }}>
+                  <div className="live-preview-container card">
                     {(messageType === 'Email' || messageType === 'Both') && (
-                      <h3 style={{ marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
+                      <h3 className="live-preview-subject">
                         {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
                       </h3>
                     )}
@@ -569,22 +611,22 @@ export default function CommunicationView() {
           )}
 
           {wizardStep === 'REVIEW' && (
-            <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <div className="review-container">
               <AppCard title="Pre-Flight Review">
                 <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                     <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
-                    <div className="flex-row" style={{ gap: 'var(--space-lg)' }}>
-                      <div className="flex-col">
-                        <span style={{ fontSize: '2rem', fontWeight: 800 }}>{selectedRecipients.length}</span>
+                    <div className="review-summary-row">
+                      <div className="review-summary-stat">
+                        <span className="review-stat-value">{selectedRecipients.length}</span>
                         <span className="text-muted text-sm">Total Targeted</span>
                       </div>
-                      <div className="flex-col" style={{ borderLeft: '1px solid var(--border)', paddingLeft: 'var(--space-lg)' }}>
-                        <span style={{ fontSize: '2rem', fontWeight: 800 }}>{selectedRecipients.filter(r => r.email).length}</span>
+                      <div className="review-summary-stat divider">
+                        <span className="review-stat-value">{selectedRecipients.filter(r => r.email).length}</span>
                         <span className="text-muted text-sm">Via Email</span>
                       </div>
-                      <div className="flex-col" style={{ borderLeft: '1px solid var(--border)', paddingLeft: 'var(--space-lg)' }}>
-                        <span style={{ fontSize: '2rem', fontWeight: 800 }}>{selectedRecipients.filter(r => r.phone).length}</span>
+                      <div className="review-summary-stat divider">
+                        <span className="review-stat-value">{selectedRecipients.filter(r => r.phone).length}</span>
                         <span className="text-muted text-sm">Via SMS</span>
                       </div>
                     </div>
@@ -592,33 +634,33 @@ export default function CommunicationView() {
 
                   <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                     <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Checklist</h4>
-                    <div className="flex-col card" style={{ gap: 'var(--space-sm)', padding: 'var(--space-md)', backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}>
+                    <div className="review-checklist-card card">
                       {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
-                        <div className="flex-row" style={{ color: '#991b1b', alignItems: 'center', gap: '8px' }}>
+                        <div className="checklist-item warning">
                           <span>⚠️</span> <strong>Subject is empty.</strong> It's better to add a subject for higher open rates.
                         </div>
                       )}
                       {content.length < 10 && (
-                        <div className="flex-row" style={{ color: '#991b1b', alignItems: 'center', gap: '8px' }}>
+                        <div className="checklist-item warning">
                           <span>⚠️</span> <strong>Message is very short.</strong>
                         </div>
                       )}
                       {selectedRecipients.length === 0 && (
-                        <div className="flex-row" style={{ color: '#991b1b', alignItems: 'center', gap: '8px' }}>
+                        <div className="checklist-item warning">
                           <span>❌</span> <strong>No recipients selected.</strong> You cannot send this message.
                         </div>
                       )}
                       {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
-                        <div className="flex-row" style={{ color: '#92400e', alignItems: 'center', gap: '8px' }}>
+                        <div className="checklist-item info">
                           <span>ℹ️</span> {selectedRecipients.filter(r => !r.email).length} singers have no email address and will skip Email.
                         </div>
                       )}
                       {selectedRecipients.some(r => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
-                        <div className="flex-row" style={{ color: '#92400e', alignItems: 'center', gap: '8px' }}>
+                        <div className="checklist-item info">
                           <span>ℹ️</span> {selectedRecipients.filter(r => !r.phone).length} singers have no phone number and will skip SMS.
                         </div>
                       )}
-                      <div className="flex-row" style={{ color: '#166534', alignItems: 'center', gap: '8px' }}>
+                      <div className="checklist-item success">
                         <span>✅</span> Compliance footer will be automatically attached.
                       </div>
                     </div>
@@ -626,9 +668,19 @@ export default function CommunicationView() {
 
                   <div className="flex-row" style={{ justifyContent: 'space-between', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border)' }}>
                     <button className="btn btn-ghost" onClick={() => setWizardStep('COMPOSE')}>← Back to Compose</button>
-                    <button className="btn btn-primary" onClick={sendMessage} disabled={isSending || selectedRecipients.length === 0}>
-                      {isSending ? 'Dispatching...' : '🚀 Final Send'}
-                    </button>
+                    <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                      <button 
+                        className="btn btn-secondary" 
+                        onClick={handleSendTest} 
+                        disabled={isSendingTest || isSending}
+                        title={`Send email test to ${user?.email || 'your email'}`}
+                      >
+                        {isSendingTest ? 'Sending Test...' : '🧪 Send Email Test to Me'}
+                      </button>
+                      <button className="btn btn-primary" onClick={sendMessage} disabled={isSending || selectedRecipients.length === 0}>
+                        {isSending ? 'Dispatching...' : '🚀 Final Send'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </AppCard>
@@ -641,11 +693,11 @@ export default function CommunicationView() {
         <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <h3 className="text-headline" style={{ fontSize: '1.1rem', color: 'var(--primary-deep)' }}>Upcoming Automated Tasks</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
+            <div className="automated-grid">
               {upcomingTasks.length === 0 && <div className="card" style={{ padding: 'var(--space-xl)', textAlign: 'center', gridColumn: '1 / -1', border: '1px dashed var(--border)' }}><p className="text-muted">No upcoming automated tasks found.</p></div>}
               {upcomingTasks.map(task => (
-                <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                  <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div key={task.id} className="card automated-task-card">
+                  <div className="automated-task-header">
                     <span className={`badge ${task.type === 'Report' ? 'badge-concert' : task.type === 'RSVP Request' ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: task.type === 'RSVP Request' ? '#3b82f6' : undefined, color: task.type === 'RSVP Request' ? 'white' : undefined }}>{task.type}</span>
                     <span className="text-muted text-xs">{task.type === 'RSVP Request' ? 'Pending since:' : task.type === 'Report' ? 'Scheduled for:' : 'Next run:'} {task.scheduledTime.toLocaleString()}</span>
                   </div>
@@ -653,7 +705,7 @@ export default function CommunicationView() {
                     <strong style={{ fontSize: '1rem' }}>{task.event.title || task.event.type}</strong>
                     <span className="text-muted text-xs">{new Date(task.event.date).toLocaleString()}</span>
                   </div>
-                  <div className="flex-row" style={{ justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--border)' }}>
+                  <div className="automated-task-footer">
                     <button className="btn btn-ghost btn-sm" onClick={async () => {
                       const r = await communicationService.resolveRecipients({ eventId: task.event.id, rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All', voiceParts: [], globalStatus: 'Active (Current)' });
                       setRecipientPreviewList({ isOpen: true, recipients: r, title: `Expected Recipients for ${task.event.title || task.event.type}` });
@@ -691,11 +743,11 @@ export default function CommunicationView() {
 
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <h3 className="text-headline" style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Sent / Past Automated Tasks</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-md)' }}>
+            <div className="automated-grid">
               {pastTasks.length === 0 && <p className="text-muted text-sm" style={{ gridColumn: '1 / -1' }}>No past automated tasks found in the logs.</p>}
               {pastTasks.map(task => (
-                <div key={task.id} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', opacity: 0.8 }}>
-                  <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div key={task.id} className="card automated-task-card" style={{ opacity: 0.8 }}>
+                  <div className="automated-task-header">
                     <span className={`badge ${task.status === 'Sent' ? 'badge-concert' : 'badge-rehearsal'}`} style={{ backgroundColor: task.status === 'Sent' ? undefined : 'var(--border)' }}>{task.type} {task.status === 'Sent' ? '(Sent)' : '(Passed)'}</span>
                     <span className="text-muted text-xs">{task.status === 'Sent' ? 'Processed at:' : 'Scheduled for:'} {task.scheduledTime.toLocaleString()}</span>
                   </div>
@@ -713,7 +765,7 @@ export default function CommunicationView() {
       {tab === 'drafts' && (
         <AppCard noPadding>
           {drafts.map((draft) => (
-            <div key={draft.id} className="flex-responsive" style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)', justifyContent: 'space-between' }}>
+            <div key={draft.id} className="message-list-item flex-responsive">
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
                   <span className="badge badge-rehearsal">{draft.type}</span>
@@ -744,7 +796,7 @@ export default function CommunicationView() {
             const mType = mFilters?.type as string | undefined;
             const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
             return (
-              <div key={message.id} className="flex-responsive" style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)', justifyContent: 'space-between' }}>
+              <div key={message.id} className="message-list-item flex-responsive">
                 <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                   <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
                     <span className="badge badge-rehearsal">{message.type}</span>
@@ -777,21 +829,25 @@ export default function CommunicationView() {
             </div>
           </AppCard>
 
-          <AppCard title="Delivery Credentials">
-            <SettingsGrid>
-              <div className="flex-col" style={{ gap: '4px' }}>
-                <label className="text-label">SMTP Config</label>
-                <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setTab('settings')}>Configure Securely in PB Admin</button>
-              </div>
-            </SettingsGrid>
-          </AppCard>
-
-          <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" onClick={async () => {
-              setIsSavingConfig(true);
-              try { await settingsService.saveCommunicationSettings(commSettings); await dialog.showMessage({ title: 'Saved', message: 'Settings updated successfully.', variant: 'info' }); }
-              finally { setIsSavingConfig(false); }
-            }} disabled={isSavingConfig}>{isSavingConfig ? 'Saving...' : 'Save Settings'}</button>
+          <div className="flex-row" style={{ justifyContent: 'space-end' }}>
+            <button 
+              className="btn btn-primary" 
+              onClick={async () => {
+                setIsSavingConfig(true);
+                try { 
+                  await settingsService.saveCommunicationSettings(commSettings); 
+                  await dialog.showMessage({ title: 'Saved', message: 'Settings updated successfully.', variant: 'info' }); 
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : String(err);
+                  await dialog.showMessage({ title: 'Error', message: 'Failed to save settings: ' + message, variant: 'danger' });
+                } finally { 
+                  setIsSavingConfig(false); 
+                }
+              }} 
+              disabled={isSavingConfig}
+            >
+              {isSavingConfig ? 'Saving...' : 'Save Settings'}
+            </button>
           </div>
         </div>
       )}

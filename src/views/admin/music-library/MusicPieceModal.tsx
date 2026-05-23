@@ -10,6 +10,7 @@ import { formatSecondsToDuration, resolveCatalogLookupUrl, isValidDurationString
 import { LearningTracksEditor } from './LearningTracksEditor';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { zonedInputValueToUtc } from '../../../lib/timezone';
+import './MusicPieceModal.css';
 
 export interface MusicPieceModalProps {
     isOpen: boolean;
@@ -590,55 +591,25 @@ export function MusicPieceModal({
             }
         >
             {piece && (
-                <div className="flex-row" style={{ borderBottom: '1px solid var(--border)', marginBottom: 'var(--space-md)', gap: 'var(--space-md)' }}>
+                <div className="music-piece-tabs">
                     <button
                         type="button"
                         onClick={() => setActiveTab('details')}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: activeTab === 'details' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'details' ? 'var(--primary)' : 'var(--text-muted)',
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            fontSize: '15px',
-                            fontWeight: activeTab === 'details' ? 600 : 500,
-                            transition: 'all 0.2s',
-                        }}
+                        className={`music-piece-tab-btn ${activeTab === 'details' ? 'active' : 'inactive'}`}
                     >
                         Piece Details
                     </button>
                     <button
                         type="button"
                         onClick={() => setActiveTab('tracks')}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: activeTab === 'tracks' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'tracks' ? 'var(--primary)' : 'var(--text-muted)',
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            fontSize: '15px',
-                            fontWeight: activeTab === 'tracks' ? 600 : 500,
-                            transition: 'all 0.2s',
-                        }}
+                        className={`music-piece-tab-btn ${activeTab === 'tracks' ? 'active' : 'inactive'}`}
                     >
                         Learning Tracks
                     </button>
                     <button
                         type="button"
                         onClick={() => setActiveTab('performances')}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: activeTab === 'performances' ? '2px solid var(--primary)' : '2px solid transparent',
-                            color: activeTab === 'performances' ? 'var(--primary)' : 'var(--text-muted)',
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            fontSize: '15px',
-                            fontWeight: activeTab === 'performances' ? 600 : 500,
-                            transition: 'all 0.2s',
-                        }}
+                        className={`music-piece-tab-btn ${activeTab === 'performances' ? 'active' : 'inactive'}`}
                     >
                         Linked Performances
                     </button>
@@ -646,17 +617,7 @@ export function MusicPieceModal({
                         <button
                             type="button"
                             onClick={() => setActiveTab('movements')}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'movements' ? '2px solid var(--primary)' : '2px solid transparent',
-                                color: activeTab === 'movements' ? 'var(--primary)' : 'var(--text-muted)',
-                                padding: '8px 16px',
-                                cursor: 'pointer',
-                                fontSize: '15px',
-                                fontWeight: activeTab === 'movements' ? 600 : 500,
-                                transition: 'all 0.2s',
-                            }}
+                            className={`music-piece-tab-btn ${activeTab === 'movements' ? 'active' : 'inactive'}`}
                         >
                             Movements ({movements.length})
                         </button>
@@ -664,25 +625,12 @@ export function MusicPieceModal({
                 </div>
             )}
 
-            <form id="music-piece-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <form id="music-piece-form" onSubmit={handleSubmit} className="music-piece-form">
                 {(!piece || activeTab === 'details') && (
                     <>
                         {/* NEW LINKED PARENT BANNER NOTICE */}
                         {parentPiece && (
-                            <div 
-                                style={{
-                                    backgroundColor: 'rgba(74, 124, 89, 0.05)',
-                                    borderLeft: '4px solid var(--primary)',
-                                    padding: 'var(--space-sm) var(--space-md)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    fontSize: '0.875rem',
-                                    color: 'var(--text-main)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    marginBottom: 'var(--space-xs)'
-                                }}
-                            >
+                            <div className="parent-piece-banner">
                                 <span>
                                     🔗 <strong>Multi-Movement Link:</strong> This piece is configured as a movement of <strong>{parentPiece.title}</strong>.
                                 </span>
@@ -691,11 +639,11 @@ export function MusicPieceModal({
 
                         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                             <label className="text-label">Title</label>
-                            <input required value={title} onChange={e => setTitle(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
+                            <input required value={title} onChange={e => setTitle(e.target.value)} className="card music-piece-input" />
                         </div>
                         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                             <label className="text-label">Composer/Arranger</label>
-                            <input value={composer} onChange={e => setComposer(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px' }} />
+                            <input value={composer} onChange={e => setComposer(e.target.value)} className="card music-piece-input" />
                         </div>
                         {piece ? (
                             <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', margin: '4px 0' }}>
@@ -727,27 +675,20 @@ export function MusicPieceModal({
                                     </label>
                                 </div>
                                 {isMultiMovementInput && (
-                                    <div className="flex-col" style={{ 
-                                        gap: 'var(--space-xs)', 
-                                        padding: '10px 14px', 
-                                        border: '1px solid var(--border)', 
-                                        borderRadius: 'var(--radius)', 
-                                        backgroundColor: 'var(--bg-card-hover)',
-                                        marginTop: '4px'
-                                    }}>
+                                    <div className="multi-movement-staging">
                                         <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)' }}>Staged Movements ({localMovementsList.length})</span>
+                                            <span className="staging-movements-header">Staged Movements ({localMovementsList.length})</span>
                                         </div>
                                         
                                         {localMovementsList.length > 0 && (
-                                            <div className="flex-col" style={{ gap: '4px', maxHeight: '120px', overflowY: 'auto', paddingRight: '4px' }}>
+                                            <div className="staging-movements-list">
                                                 {localMovementsList.map((m, idx) => (
-                                                    <div key={m.id} className="flex-row animate-fade-in" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '4px' }}>
-                                                        <span style={{ fontSize: '12px', fontWeight: 500 }}>{idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}</span>
+                                                    <div key={m.id} className="staged-movement-item animate-fade-in">
+                                                        <span className="staged-movement-text">{idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}</span>
                                                         <button 
                                                             type="button" 
                                                             onClick={() => handleRemoveStagingMovement(m.id)}
-                                                            style={{ border: 'none', background: 'none', color: 'var(--danger)', fontSize: '11px', cursor: 'pointer', padding: '2px 4px' }}
+                                                            className="staged-remove-btn"
                                                         >
                                                             ✕
                                                         </button>
@@ -799,18 +740,9 @@ export function MusicPieceModal({
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-md)' }}>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Duration</label>
-                                <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                                <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card music-piece-input" />
                                 {suggestedDuration && !duration.trim() && (
-                                    <div className="flex-row" style={{ 
-                                        marginTop: '6px', 
-                                        padding: '8px 12px', 
-                                        borderRadius: '6px', 
-                                        backgroundColor: 'var(--primary-light, rgba(27, 77, 62, 0.08))', 
-                                        border: '1px dashed rgba(27, 77, 62, 0.3)', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'space-between',
-                                        gap: '8px'
-                                    }}>
+                                    <div className="duration-suggestion-box">
                                         <span className="text-xs text-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary, #1b4d3e)', fontWeight: 500 }}>
                                             💡 Track length: <strong>{suggestedDuration}</strong>. Use this?
                                         </span>
@@ -830,11 +762,11 @@ export function MusicPieceModal({
                             </div>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Copies</label>
-                                <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                                <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card music-piece-input" />
                             </div>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Catalog ID</label>
-                                <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card" style={{ padding: '0 12px', height: '40px', width: '100%' }} />
+                                <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card music-piece-input" />
                                 {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
                                     <a 
                                         href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
@@ -863,7 +795,7 @@ export function MusicPieceModal({
                         </div>
                         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                             <label className="text-label">Notes</label>
-                            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card" style={{ padding: '12px', minHeight: '80px', resize: 'vertical' }} />
+                            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card music-piece-textarea" />
                             <span className="text-xs text-muted" style={{ marginTop: '2px' }}>
                                 If this is a medley, please list the names of the different pieces here.
                             </span>
@@ -872,7 +804,7 @@ export function MusicPieceModal({
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Applies to Sections</label>
-                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--surface-muted, #f8fafc)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                     {sections.map(section => (
                                         <label key={section.code} className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
                                             <input
@@ -901,7 +833,7 @@ export function MusicPieceModal({
 
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Genres</label>
-                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--bg-card-hover)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--surface-muted, #f8fafc)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                     {allGenres.map(genre => (
                                         <label key={genre.id} className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
                                             <input
@@ -926,18 +858,7 @@ export function MusicPieceModal({
                             <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
                                 <label className="text-label">Tutti Practice Track (Optional)</label>
                                 {tuttiFile ? (
-                                    <div 
-                                        className="flex-row animate-fade-in" 
-                                        style={{ 
-                                            alignItems: 'center', 
-                                            justifyContent: 'space-between',
-                                            padding: '8px 12px',
-                                            backgroundColor: 'rgba(27, 77, 62, 0.05)',
-                                            border: '1px solid var(--primary)',
-                                            borderRadius: 'var(--radius)',
-                                            gap: 'var(--space-md)'
-                                        }}
-                                    >
+                                    <div className="flex-row animate-fade-in" style={{ alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: 'rgba(74, 124, 89, 0.05)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-md)', gap: 'var(--space-md)' }}>
                                         <div className="flex-row" style={{ alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
                                             <span style={{ fontSize: '18px' }}>🎵</span>
                                             <div className="flex-col" style={{ minWidth: 0, flex: 1 }}>
@@ -979,16 +900,9 @@ export function MusicPieceModal({
                                                 setTuttiFile(file);
                                             }
                                         }}
-                                        style={{
-                                            border: isTuttiDraggedOver ? '2px dashed var(--primary)' : '2px dashed var(--border)',
-                                            borderRadius: 'var(--radius)',
-                                            padding: '12px 16px',
-                                            backgroundColor: isTuttiDraggedOver ? 'rgba(27, 77, 62, 0.04)' : 'transparent',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease-in-out'
-                                        }}
+                                        className={`tutti-upload-dropzone ${isTuttiDraggedOver ? 'active' : 'idle'}`}
                                     >
-                                        <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-sm)', margin: 0, width: '100%' }}>
+                                        <label className="tutti-upload-label">
                                             <span style={{ fontSize: '20px' }}>📤</span>
                                             <span style={{ fontSize: '13px', color: 'var(--text-color)', fontWeight: 500 }}>
                                                 Drag and drop a Tutti MP3 track here, or <span style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: 600 }}>browse</span>
@@ -1025,7 +939,7 @@ export function MusicPieceModal({
                                     selectedPerformances.map(perf => {
                                         const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
                                         return (
-                                            <div key={perf.id} className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', padding: '4px 10px', backgroundColor: 'rgba(74, 124, 89, 0.1)', border: '1px solid var(--primary)', borderRadius: '16px', color: 'var(--primary)', fontSize: '13px' }}>
+                                            <div key={perf.id} className="linked-performance-pill">
                                                 <span>{perf.title} {dateStr && `(${dateStr})`}</span>
                                                 <button type="button" onClick={() => togglePerformance(perf.id)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, fontSize: '14px', fontWeight: 'bold' }}>×</button>
                                             </div>
@@ -1068,7 +982,7 @@ export function MusicPieceModal({
 
                         {/* Quick Add Performance form */}
                         {showQuickAdd && (
-                            <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card-hover)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', marginTop: 'var(--space-xs)' }}>
+                            <div className="quick-add-performance-card card">
                                 <h4 className="text-sm" style={{ marginTop: 0, marginBottom: 'var(--space-md)', color: 'var(--primary)' }}>Quick Add Historic Performance</h4>
                                 <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
                                     <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
@@ -1147,29 +1061,11 @@ export function MusicPieceModal({
                                 parentPiece?.title
                             );
                             return (
-                                <div style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '2px',
-                                    marginBottom: 'var(--space-xs)',
-                                    paddingBottom: 'var(--space-sm)',
-                                    borderBottom: '1px solid var(--border)',
-                                }}>
-                                    <span style={{
-                                        fontSize: '11px',
-                                        fontWeight: 700,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.07em',
-                                        color: 'var(--text-muted)',
-                                    }}>
+                                <div className="learning-tracks-context-header">
+                                    <span className="learning-tracks-context-label">
                                         🎵 Learning Tracks for
                                     </span>
-                                    <span style={{
-                                        fontSize: '16px',
-                                        fontWeight: 700,
-                                        color: 'var(--primary)',
-                                        letterSpacing: '-0.01em',
-                                    }}>
+                                    <span className="learning-tracks-piece-title">
                                         {contextLabel}
                                     </span>
                                 </div>
@@ -1182,7 +1078,7 @@ export function MusicPieceModal({
                                 padding: 'var(--space-md)',
                                 backgroundColor: 'rgba(74, 124, 89, 0.03)',
                                 border: '1px dashed var(--border)',
-                                borderRadius: 'var(--radius)',
+                                borderRadius: 'var(--radius-md)',
                                 color: 'var(--text-muted)',
                                 fontSize: '14px',
                                 justifyContent: 'center'
@@ -1224,12 +1120,7 @@ export function MusicPieceModal({
                                     return (
                                         <div 
                                             key={m.id} 
-                                            className="card" 
-                                            style={{ 
-                                                padding: 'var(--space-sm)', 
-                                                backgroundColor: 'var(--bg-card-hover)', 
-                                                border: '1px solid var(--border)' 
-                                            }}
+                                            className="movement-item-card card"
                                         >
                                             <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
                                                 <div className="flex-col">
@@ -1238,19 +1129,7 @@ export function MusicPieceModal({
                                                             {idx + 1}. {m.title}
                                                         </strong>
                                                         {mTrackCount > 0 && (
-                                                            <span style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '3px',
-                                                                padding: '1px 6px',
-                                                                borderRadius: '10px',
-                                                                backgroundColor: 'rgba(27, 77, 62, 0.08)',
-                                                                color: 'var(--primary, #1b4d3e)',
-                                                                fontSize: '10px',
-                                                                fontWeight: 600,
-                                                                border: '1px solid rgba(27, 77, 62, 0.15)',
-                                                                lineHeight: '1.2'
-                                                            }}>
+                                                            <span className="movement-track-badge">
                                                                 🎧 {mTrackCount} Track{mTrackCount !== 1 ? 's' : ''}
                                                             </span>
                                                         )}
@@ -1308,7 +1187,7 @@ export function MusicPieceModal({
                             </div>
                         )}
 
-                        <div className="card" style={{ padding: 'var(--space-md)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', backgroundColor: 'var(--bg-card-hover)' }}>
+                        <div className="card" style={{ padding: 'var(--space-md)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-muted, #f8fafc)' }}>
                             <h4 className="text-sm" style={{ marginTop: 0, marginBottom: 'var(--space-sm)', color: 'var(--primary)' }}>Add New Movement</h4>
                             <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                                 <div className="flex-col" style={{ gap: '4px', flex: '2 1 200px' }}>

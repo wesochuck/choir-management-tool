@@ -1,0 +1,278 @@
+/* Communication View Layout */
+.communication-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.communication-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.communication-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+}
+
+/* Send Wizard Wizard Steps */
+.wizard-progress-bar {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+  justify-content: center;
+  marginBottom: var(--space-md);
+}
+
+.wizard-step-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.wizard-step-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  transition: all 0.2s;
+}
+
+.wizard-step-label.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+.wizard-step-label.inactive {
+  color: var(--text-muted);
+}
+
+/* Step 1: Targets */
+.targets-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.template-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-sm);
+}
+
+.template-card-btn {
+  height: auto;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--bg);
+  transition: all 0.2s;
+}
+
+.template-card-btn:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.template-card-icon {
+  font-size: 1.5rem;
+}
+
+/* Step 2: Compose */
+.compose-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.composer-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.composer-header-row {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.composer-subject-field {
+  flex: 1;
+}
+
+.composer-channel-field {
+  width: 180px;
+}
+
+.composer-textarea {
+  min-height: 350px;
+  padding: 12px;
+  resize: vertical;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
+
+.live-preview-container {
+  box-shadow: none;
+  background-color: var(--bg);
+  padding: var(--space-md);
+  min-height: 100px;
+}
+
+.live-preview-subject {
+  margin-top: 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+/* Step 3: Review */
+.review-container {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.review-summary-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-lg);
+}
+
+.review-summary-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-summary-stat.divider {
+  border-left: 1px solid var(--border);
+  padding-left: var(--space-lg);
+}
+
+.review-stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.review-checklist-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.checklist-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.checklist-item.warning { color: #991b1b; }
+.checklist-item.info { color: #92400e; }
+.checklist-item.success { color: #166534; }
+
+/* Automated Tab */
+.automated-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.automated-task-card {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.automated-task-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.automated-task-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border);
+}
+
+/* History & Drafts */
+.message-list-item {
+  display: flex;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+}
+
+/* Voice Part Multi-select */
+.voice-part-dropdown-trigger {
+  height: 44px;
+  padding: 0 12px;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
+  background-color: var(--bg);
+}
+
+.voice-part-dropdown-panel {
+  position: absolute;
+  top: 68px;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 0;
+}
+
+.dropdown-section-header {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dropdown-item-label {
+  display: flex;
+  flex-direction: row;
+  padding: 8px 12px;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s;
+}
+
+.dropdown-item-label:hover {
+  background-color: var(--primary-light);
+}
+
+.dropdown-item-text {
+  font-weight: 400;
+}
+
+.dropdown-item-text.selected {
+  font-weight: 600;
+}

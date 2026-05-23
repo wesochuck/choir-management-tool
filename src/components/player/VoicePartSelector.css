@@ -1,0 +1,42 @@
+/* ── Voice Part Selector ────────────────── */
+
+.chorus-player .voice-part-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.chorus-player .vp-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chorus-player .vp-btn:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.chorus-player .vp-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Help Text ──────────────────────────── */
+
+.chorus-player .help-text {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
+}

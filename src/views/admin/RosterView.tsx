@@ -66,6 +66,7 @@ interface RosterConfigState {
 }
 
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import './RosterView.css';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
@@ -356,11 +357,11 @@ export default function RosterView() {
   if (error) return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="roster-container">
+      <div className="roster-header">
         <h1 className="text-display" style={{ margin: 0 }}>Global Roster</h1>
         {activeTab === 'roster' && (
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <div className="roster-controls">
             <button onClick={handleExportCSV} className="btn btn-secondary">Export Roster</button>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">Import CSV</button>
             <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>
@@ -369,38 +370,18 @@ export default function RosterView() {
       </div>
 
       {/* Segmented Tab Navigation */}
-      <div className="flex-row no-print" style={{ gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
+      <div className="roster-tabs no-print" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
         <button
           onClick={() => setActiveTab('roster')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'roster' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'roster' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'roster' ? '600' : '500',
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
-          }}
+          className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '16px' }}
         >
           Singer Directory
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'config' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'config' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'config' ? '600' : '500',
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
-          }}
+          className={`btn ${activeTab === 'config' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '8px 16px', fontSize: '16px' }}
         >
           Roster Settings
         </button>
@@ -414,31 +395,17 @@ export default function RosterView() {
             onVoicePartToggle={handleVoicePartToggle}
           />
 
-          <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: '1', minWidth: '240px', maxWidth: '400px' }}>
+          <div className="roster-filters-bar">
+            <div className="search-input-wrapper">
               <input
                 type="text"
                 placeholder="Search by name..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
-                className="card"
-                style={{
-                  padding: '0 40px 0 36px',
-                  height: '44px',
-                  width: '100%',
-                  fontSize: '15px'
-                }}
+                className="card search-input"
+                style={{ fontSize: '15px' }}
               />
-              <span style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                pointerEvents: 'none'
-              }}>
+              <span className="search-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -479,21 +446,8 @@ export default function RosterView() {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="card flex-row"
-                style={{
-                  padding: '0 12px',
-                  height: '44px',
-                  width: '100%',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  backgroundColor: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '15px',
-                  color: 'var(--text)',
-                  textAlign: 'left'
-                }}
+                className="card voice-part-dropdown-trigger flex-row"
+                style={{ fontSize: '15px' }}
               >
                 <span style={{
                   whiteSpace: 'nowrap',
@@ -522,54 +476,12 @@ export default function RosterView() {
               </button>
 
               {isDropdownOpen && (
-                <div
-                  className="card"
-                  style={{
-                    position: 'absolute',
-                    top: '48px',
-                    left: 0,
-                    right: 0,
-                    zIndex: 100,
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    padding: 'var(--space-xs) 0',
-                    boxShadow: 'var(--shadow-lg)',
-                    backgroundColor: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px'
-                  }}
-                >
-                  <div style={{
-                    padding: '6px 12px 2px 12px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Sections
-                  </div>
+                <div className="card voice-part-dropdown-panel shadow-lg">
+                  <div className="dropdown-section-header">Sections</div>
                   {configSectionsHook.map(sec => {
                     const isChecked = (filters.voiceParts || []).includes(sec.code);
                     return (
-                      <label
-                        key={sec.code}
-                        className="flex-row"
-                        style={{
-                          padding: '8px 12px',
-                          alignItems: 'center',
-                          gap: 'var(--space-sm)',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          userSelect: 'none',
-                          transition: 'background-color 0.15s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
+                      <label key={sec.code} className="dropdown-item-label">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -581,41 +493,18 @@ export default function RosterView() {
                             height: '15px'
                           }}
                         />
-                        <span style={{ fontWeight: isChecked ? 600 : 400 }}>{sec.name}</span>
+                        <span className={isChecked ? 'selected' : ''}>{sec.name}</span>
                       </label>
                     );
                   })}
 
                   <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
 
-                  <div style={{
-                    padding: '6px 12px 2px 12px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Individual Parts
-                  </div>
+                  <div className="dropdown-section-header">Individual Parts</div>
                   {voicePartLabels.map(part => {
                     const isChecked = (filters.voiceParts || []).includes(part);
                     return (
-                      <label
-                        key={part}
-                        className="flex-row"
-                        style={{
-                          padding: '8px 12px',
-                          alignItems: 'center',
-                          gap: 'var(--space-sm)',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          userSelect: 'none',
-                          transition: 'background-color 0.15s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
+                      <label key={part} className="dropdown-item-label">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -627,7 +516,7 @@ export default function RosterView() {
                             height: '15px'
                           }}
                         />
-                        <span style={{ fontWeight: isChecked ? 600 : 400 }}>{part}</span>
+                        <span className={isChecked ? 'selected' : ''}>{part}</span>
                       </label>
                     );
                   })}

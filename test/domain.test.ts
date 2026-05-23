@@ -93,7 +93,7 @@ test('core color pairs meet WCAG AA contrast for normal text', () => {
 });
 
 test('button system keeps accessible minimum touch target height', () => {
-  const css = readFileSync(new URL('../src/App.css', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
   assert.match(css, /\.btn\s*\{[\s\S]*height:\s*44px;/);
 });
 

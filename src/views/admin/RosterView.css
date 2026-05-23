@@ -1,0 +1,120 @@
+/* Roster View Layout */
+.roster-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-xl);
+}
+
+.roster-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.roster-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+}
+
+.roster-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Filters & Search */
+.roster-filters-bar {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0 12px 0 36px;
+  height: 44px;
+}
+
+/* Sorting & Pagination */
+.roster-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* Configuration Tab */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+.config-section-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.config-item-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px 40px;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+/* Section Buckets */
+.section-bucket-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 1fr 40px;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.color-preview-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+/* Voice Part Sorting */
+.voice-part-sort-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: grab;
+}
+
+.voice-part-sort-item:active {
+  cursor: grabbing;
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { VoicePartDef } from '../../services/settingsService';
+import './VoicePartSelector.css';
 
 interface VoicePartSelectorProps {
   voiceParts: VoicePartDef[];

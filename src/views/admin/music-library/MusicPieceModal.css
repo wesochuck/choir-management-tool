@@ -1,0 +1,224 @@
+/* Music Piece Modal Layout & Tabs */
+.music-piece-tabs {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-md);
+  gap: var(--space-md);
+}
+
+.music-piece-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.music-piece-tab-btn.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  font-weight: 600;
+}
+
+.music-piece-tab-btn.inactive {
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+}
+
+/* Parent Banner */
+.parent-piece-banner {
+  background-color: rgba(74, 124, 89, 0.05);
+  border-left: 4px solid var(--primary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-xs);
+}
+
+/* Forms & Fields */
+.music-piece-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.music-piece-input {
+  padding: 0 12px;
+  height: 40px;
+  width: 100%;
+}
+
+.music-piece-textarea {
+  padding: 12px;
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Multi-movement Staging */
+.multi-movement-staging {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--bg-card-hover);
+  margin-top: 4px;
+}
+
+.staging-movements-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.staging-movements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.staged-movement-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.staged-movement-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.staged-remove-btn {
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+/* Duration Suggestion */
+.duration-suggestion-box {
+  display: flex;
+  flex-direction: row;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: var(--primary-light, rgba(27, 77, 62, 0.08));
+  border: 1px dashed rgba(27, 77, 62, 0.3);
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Performance Pills */
+.linked-performance-pill {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 10px;
+  background-color: rgba(74, 124, 89, 0.1);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+/* File Upload Dropzone */
+.tutti-upload-dropzone {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.tutti-upload-dropzone.idle {
+  border: 2px dashed var(--border);
+  background-color: transparent;
+}
+
+.tutti-upload-dropzone.active {
+  border: 2px dashed var(--primary);
+  background-color: rgba(27, 77, 62, 0.04);
+}
+
+.tutti-upload-label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin: 0;
+  width: 100%;
+}
+
+/* Quick Add Section */
+.quick-add-performance-card {
+  padding: var(--space-md);
+  background-color: var(--bg-card-hover);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  margin-top: var(--space-xs);
+}
+
+/* Tracks Header */
+.learning-tracks-context-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-xs);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.learning-tracks-context-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.learning-tracks-piece-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
+
+/* Movement Items */
+.movement-item-card {
+  padding: var(--space-sm);
+  background-color: var(--bg-card-hover);
+  border: 1px solid var(--border);
+}
+
+.movement-track-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background-color: rgba(27, 77, 62, 0.08);
+  color: var(--primary, #1b4d3e);
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid rgba(27, 77, 62, 0.15);
+  line-height: 1.2;
+}
