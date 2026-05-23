@@ -1,68 +1,68 @@
 // Auditions Automation Hooks
 
-function decodeGoBytesLocal(val) {
-    if (!val) return "";
-    if (typeof val === "string") return val;
-    try {
-        if (typeof val === "object") {
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
-            }
-            return val;
-        }
-    } catch (err) {}
-    return "";
-}
-
-function parseJsonFieldLocal(val) {
-    if (!val) return null;
-    const decoded = decodeGoBytesLocal(val);
-    if (!decoded) return null;
-    if (typeof decoded === "object") return decoded;
-    try {
-        return JSON.parse(decoded);
-    } catch (err) {
-        return null;
-    }
-}
-
-function formatSlotFriendly(slot) {
-    if (!slot) return "";
-    try {
-        const parts = slot.split('T');
-        if (parts.length === 2) {
-            const datePart = parts[0]; // "2026-10-15"
-            const timePart = parts[1].substring(0, 5); // "18:00"
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const dateParts = datePart.split('-');
-            if (dateParts.length === 3) {
-                const y = dateParts[0];
-                const m = months[parseInt(dateParts[1]) - 1] || dateParts[1];
-                const d = parseInt(dateParts[2]);
-                
-                let timeStr = timePart;
-                const timeParts = timePart.split(':');
-                if (timeParts.length === 2) {
-                    let hour = parseInt(timeParts[0]);
-                    const min = timeParts[1];
-                    const ampm = hour >= 12 ? 'PM' : 'AM';
-                    hour = hour % 12;
-                    hour = hour ? hour : 12;
-                    timeStr = hour + ":" + min + " " + ampm;
-                }
-                
-                return m + " " + d + ", " + y + " at " + timeStr;
-            }
-        }
-    } catch (e) {}
-    return slot;
-}
-
 onRecordAfterCreateSuccess((e) => {
+    function decodeGoBytesLocal(val) {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        try {
+            if (typeof val === "object") {
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                return val;
+            }
+        } catch (err) {}
+        return "";
+    }
+
+    function parseJsonFieldLocal(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytesLocal(val);
+        if (!decoded) return null;
+        if (typeof decoded === "object") return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function formatSlotFriendly(slot) {
+        if (!slot) return "";
+        try {
+            const parts = slot.split('T');
+            if (parts.length === 2) {
+                const datePart = parts[0];
+                const timePart = parts[1].substring(0, 5);
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const dateParts = datePart.split('-');
+                if (dateParts.length === 3) {
+                    const y = dateParts[0];
+                    const m = months[parseInt(dateParts[1]) - 1] || dateParts[1];
+                    const d = parseInt(dateParts[2]);
+                    
+                    let timeStr = timePart;
+                    const timeParts = timePart.split(':');
+                    if (timeParts.length === 2) {
+                        let hour = parseInt(timeParts[0]);
+                        const min = timeParts[1];
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        hour = hour % 12;
+                        hour = hour ? hour : 12;
+                        timeStr = hour + ":" + min + " " + ampm;
+                    }
+                    
+                    return m + " " + d + ", " + y + " at " + timeStr;
+                }
+            }
+        } catch (err) {}
+        return slot;
+    }
+
     try {
         const audition = e.record;
         if (!audition) return;
@@ -77,7 +77,6 @@ onRecordAfterCreateSuccess((e) => {
             const queueCollection = $app.findCollectionByNameOrId("emailQueue");
             const eventId = audition.get("performance") || "";
             
-            // Format multiple requested slots if they exist
             const requestedSlotsRaw = audition.get("requestedSlots");
             const requestedSlots = parseJsonFieldLocal(requestedSlotsRaw);
             
@@ -119,6 +118,38 @@ onRecordAfterCreateSuccess((e) => {
 }, "auditions");
 
 onRecordAfterUpdateSuccess((e) => {
+    function formatSlotFriendly(slot) {
+        if (!slot) return "";
+        try {
+            const parts = slot.split('T');
+            if (parts.length === 2) {
+                const datePart = parts[0];
+                const timePart = parts[1].substring(0, 5);
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const dateParts = datePart.split('-');
+                if (dateParts.length === 3) {
+                    const y = dateParts[0];
+                    const m = months[parseInt(dateParts[1]) - 1] || dateParts[1];
+                    const d = parseInt(dateParts[2]);
+                    
+                    let timeStr = timePart;
+                    const timeParts = timePart.split(':');
+                    if (timeParts.length === 2) {
+                        let hour = parseInt(timeParts[0]);
+                        const min = timeParts[1];
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        hour = hour % 12;
+                        hour = hour ? hour : 12;
+                        timeStr = hour + ":" + min + " " + ampm;
+                    }
+                    
+                    return m + " " + d + ", " + y + " at " + timeStr;
+                }
+            }
+        } catch (err) {}
+        return slot;
+    }
+
     try {
         const audition = e.record;
         if (!audition) return;
