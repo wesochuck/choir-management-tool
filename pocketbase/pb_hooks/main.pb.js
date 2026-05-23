@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T18:01:02.737Z
+// Generated on: 2026-05-23T18:11:31.643Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -519,13 +519,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -553,13 +557,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -665,6 +673,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -717,14 +743,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -1321,13 +1347,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -1355,13 +1385,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -1467,6 +1501,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -1519,14 +1571,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -2182,13 +2234,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -2216,13 +2272,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -2328,6 +2388,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -2380,14 +2458,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -2988,13 +3066,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -3022,13 +3104,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -3134,6 +3220,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -3186,14 +3290,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -3798,13 +3902,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -3832,13 +3940,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -3944,6 +4056,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -3996,14 +4126,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -4612,13 +4742,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -4646,13 +4780,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -4758,6 +4896,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -4810,14 +4966,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -5438,13 +5594,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -5472,13 +5632,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -5584,6 +5748,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -5636,14 +5818,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -6253,13 +6435,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -6287,13 +6473,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -6399,6 +6589,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -6451,14 +6659,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -7075,13 +7283,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -7109,13 +7321,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -7221,6 +7437,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -7273,14 +7507,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -7886,13 +8120,17 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     }
@@ -7920,13 +8158,17 @@ function processEmailQueue(app) {
                         }
                     }
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
                 htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
@@ -8032,6 +8274,24 @@ function escapeIcsText(value = '') {
 function fmtUtc(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr) {
+    if (!dateStr)
+        return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
 function handleCalendarDownload(e) {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -8084,14 +8344,14 @@ function handleCalendarDownload(e) {
                 // Ignore venue resolution error
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-            start = new Date(event.get("date"));
+            start = parseSafeUtcDate(event.get("date"));
             title = event.get("title") || event.get("type") || "Choir Event";
             details = event.get("details") || "";
             uid = `event-${event.id}@choir-management.local`;
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot"));
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;

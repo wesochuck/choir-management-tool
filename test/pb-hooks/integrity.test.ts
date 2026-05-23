@@ -44,3 +44,26 @@ test('Generator output matches committed file', () => {
     
     assert.strictEqual(filterTimestamp(generatedContent), filterTimestamp(originalContent), 'Generated file should match committed source (ignoring timestamp)');
 });
+
+test('Manual pb_hooks self-containment validation', () => {
+    const hooksDir = path.join(process.cwd(), 'pocketbase/pb_hooks');
+    const files = fs.readdirSync(hooksDir);
+    
+    for (const file of files) {
+        if (file === 'main.pb.js' || !file.endsWith('.pb.js')) {
+            continue;
+        }
+        
+        const content = fs.readFileSync(path.join(hooksDir, file), 'utf8');
+        const lines = content.split('\n');
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Catch top-level function declarations at column 0
+            if (line.startsWith('function ')) {
+                assert.fail(`File pocketbase/pb_hooks/${file} has top-level function declaration at line ${i + 1}. Registered callbacks must be completely self-contained to prevent PocketHost ReferenceErrors.`);
+            }
+        }
+    }
+});
+

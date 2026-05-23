@@ -192,13 +192,17 @@ export function processEmailQueue(app: PocketBaseApp): void {
                             }
 
                             firstRehearsalHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
         ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                             `.trim();
                         }
                     } catch {
@@ -226,13 +230,17 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     }
 
                     eventCalendarHtml = `
-<div style="margin: 16px 0; padding: 12px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center;">
-    <div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
         <strong style="color: #4a7c59;">Save the Date:</strong><br>
         ${escapeHtml(dateLong)} at ${escapeHtml(timeStr)}
-    </div>
-    ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 12px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1;">Add to Calendar</a>` : ''}
-</div>
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
                     `.trim();
                 }
 

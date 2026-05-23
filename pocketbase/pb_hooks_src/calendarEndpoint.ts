@@ -44,6 +44,24 @@ function fmtUtc(date: Date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
+/**
+ * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
+ * Normalizes space delimiters to strict ISO 'T' to prevent ES5 fallback issues.
+ */
+function parseSafeUtcDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    let normalized = dateStr.trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
+        if (!normalized.includes("T")) {
+            normalized = normalized.replace(" ", "T");
+        }
+        if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+            normalized += "Z";
+        }
+    }
+    return new Date(normalized);
+}
+
 export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
     const token = e.requestInfo().query["token"];
     const app = $app;
@@ -103,13 +121,13 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             }
 
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : ((event.get("location") as string) || "");
-            start = new Date(event.get("date") as string);
+            start = parseSafeUtcDate(event.get("date") as string);
             title = (event.get("title") as string) || (event.get("type") as string) || "Choir Event";
             details = (event.get("details") as string) || "";
             uid = `event-${event.id}@choir-management.local`;
         } else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("scheduledTimeSlot") as string);
+            start = parseSafeUtcDate(audition.get("scheduledTimeSlot") as string);
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;

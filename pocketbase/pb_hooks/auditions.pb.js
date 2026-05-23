@@ -31,33 +31,58 @@ onRecordAfterCreateSuccess((e) => {
         }
     }
 
+    function getChoirTimezone() {
+        let timezone = "America/New_York";
+        try {
+            const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+            if (tzSetting) {
+                const tzP = parseJsonFieldLocal(tzSetting.get("value"));
+                if (typeof tzP === "string") {
+                    timezone = tzP;
+                } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                    timezone = tzP.timezone;
+                } else if (typeof tzP === "object" && tzP && tzP.value) {
+                    timezone = tzP.value;
+                }
+            }
+        } catch (err) {}
+        return timezone;
+    }
+
+    function formatInTimezoneLocal(date, timezone, options) {
+        if (!date) return "";
+        try {
+            const d = typeof date === "string" ? new Date(date) : date;
+            if (isNaN(d.getTime())) return "";
+            
+            const formatter = new Intl.DateTimeFormat("en-US", {
+                weekday: options.weekday || undefined,
+                year: options.year || undefined,
+                month: options.month || undefined,
+                day: options.day || undefined,
+                hour: options.hour || undefined,
+                minute: options.minute || undefined,
+                hour12: options.hour12 !== undefined ? options.hour12 : true,
+                timeZone: timezone
+            });
+            return formatter.format(d);
+        } catch (err) {
+            return String(date);
+        }
+    }
+
     function formatSlotFriendly(slot) {
         if (!slot) return "";
         try {
-            const parts = slot.split('T');
-            if (parts.length === 2) {
-                const datePart = parts[0];
-                const timePart = parts[1].substring(0, 5);
-                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const dateParts = datePart.split('-');
-                if (dateParts.length === 3) {
-                    const y = dateParts[0];
-                    const m = months[parseInt(dateParts[1]) - 1] || dateParts[1];
-                    const d = parseInt(dateParts[2]);
-                    
-                    let timeStr = timePart;
-                    const timeParts = timePart.split(':');
-                    if (timeParts.length === 2) {
-                        let hour = parseInt(timeParts[0]);
-                        const min = timeParts[1];
-                        const ampm = hour >= 12 ? 'PM' : 'AM';
-                        hour = hour % 12;
-                        hour = hour ? hour : 12;
-                        timeStr = hour + ":" + min + " " + ampm;
-                    }
-                    
-                    return m + " " + d + ", " + y + " at " + timeStr;
-                }
+            const d = new Date(slot);
+            if (isNaN(d.getTime())) return slot;
+
+            const timezone = getChoirTimezone();
+            const dateStr = formatInTimezoneLocal(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+            const timeStr = formatInTimezoneLocal(d, timezone, { hour: 'numeric', minute: '2-digit' });
+            
+            if (dateStr && timeStr) {
+                return dateStr + " at " + timeStr;
             }
         } catch (err) {}
         return slot;
@@ -118,33 +143,88 @@ onRecordAfterCreateSuccess((e) => {
 }, "auditions");
 
 onRecordAfterUpdateSuccess((e) => {
+    function decodeGoBytesLocal(val) {
+        if (!val) return "";
+        if (typeof val === "string") return val;
+        try {
+            if (typeof val === "object") {
+                if (Array.isArray(val) && val.length > 0 && typeof val[0] === "number") {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                return val;
+            }
+        } catch (err) {}
+        return "";
+    }
+
+    function parseJsonFieldLocal(val) {
+        if (!val) return null;
+        const decoded = decodeGoBytesLocal(val);
+        if (!decoded) return null;
+        if (typeof decoded === "object") return decoded;
+        try {
+            return JSON.parse(decoded);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function getChoirTimezone() {
+        let timezone = "America/New_York";
+        try {
+            const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+            if (tzSetting) {
+                const tzP = parseJsonFieldLocal(tzSetting.get("value"));
+                if (typeof tzP === "string") {
+                    timezone = tzP;
+                } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                    timezone = tzP.timezone;
+                } else if (typeof tzP === "object" && tzP && tzP.value) {
+                    timezone = tzP.value;
+                }
+            }
+        } catch (err) {}
+        return timezone;
+    }
+
+    function formatInTimezoneLocal(date, timezone, options) {
+        if (!date) return "";
+        try {
+            const d = typeof date === "string" ? new Date(date) : date;
+            if (isNaN(d.getTime())) return "";
+            
+            const formatter = new Intl.DateTimeFormat("en-US", {
+                weekday: options.weekday || undefined,
+                year: options.year || undefined,
+                month: options.month || undefined,
+                day: options.day || undefined,
+                hour: options.hour || undefined,
+                minute: options.minute || undefined,
+                hour12: options.hour12 !== undefined ? options.hour12 : true,
+                timeZone: timezone
+            });
+            return formatter.format(d);
+        } catch (err) {
+            return String(date);
+        }
+    }
+
     function formatSlotFriendly(slot) {
         if (!slot) return "";
         try {
-            const parts = slot.split('T');
-            if (parts.length === 2) {
-                const datePart = parts[0];
-                const timePart = parts[1].substring(0, 5);
-                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const dateParts = datePart.split('-');
-                if (dateParts.length === 3) {
-                    const y = dateParts[0];
-                    const m = months[parseInt(dateParts[1]) - 1] || dateParts[1];
-                    const d = parseInt(dateParts[2]);
-                    
-                    let timeStr = timePart;
-                    const timeParts = timePart.split(':');
-                    if (timeParts.length === 2) {
-                        let hour = parseInt(timeParts[0]);
-                        const min = timeParts[1];
-                        const ampm = hour >= 12 ? 'PM' : 'AM';
-                        hour = hour % 12;
-                        hour = hour ? hour : 12;
-                        timeStr = hour + ":" + min + " " + ampm;
-                    }
-                    
-                    return m + " " + d + ", " + y + " at " + timeStr;
-                }
+            const d = new Date(slot);
+            if (isNaN(d.getTime())) return slot;
+
+            const timezone = getChoirTimezone();
+            const dateStr = formatInTimezoneLocal(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+            const timeStr = formatInTimezoneLocal(d, timezone, { hour: 'numeric', minute: '2-digit' });
+            
+            if (dateStr && timeStr) {
+                return dateStr + " at " + timeStr;
             }
         } catch (err) {}
         return slot;
