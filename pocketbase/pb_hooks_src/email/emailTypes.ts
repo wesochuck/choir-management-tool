@@ -33,6 +33,24 @@ export interface MessageRecord {
     filters: EmailFilters;
 }
 
+export interface PocketBaseSmtpConfig {
+    enabled: boolean;
+}
+
+export interface PocketBaseMetaConfig {
+    senderAddress?: string;
+    senderName?: string;
+}
+
+export interface PocketBaseSettings {
+    smtp: PocketBaseSmtpConfig;
+    meta: PocketBaseMetaConfig;
+}
+
+export interface PocketBaseMailClient {
+    send(message: unknown): void;
+}
+
 // Strong type helpers to avoid using explicit 'any' in hook files
 export interface PocketBaseRecord {
     id: string;
@@ -46,4 +64,6 @@ export interface PocketBaseApp {
     findRecordsByFilter(collection: string, filter: string, sort?: string, limit?: number, offset?: number, params?: unknown): PocketBaseRecord[];
     findRecordById(collection: string, id: string): PocketBaseRecord;
     save(record: PocketBaseRecord): void;
+    settings(): PocketBaseSettings;
+    newMailClient(): PocketBaseMailClient;
 }

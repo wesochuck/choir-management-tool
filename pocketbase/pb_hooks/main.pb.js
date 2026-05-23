@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T14:12:39.060Z
+// Generated on: 2026-05-23T14:29:31.749Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -345,24 +345,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -376,12 +358,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -389,7 +371,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -518,33 +500,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -930,24 +902,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -961,12 +915,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -974,7 +928,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -1103,33 +1057,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -1574,24 +1518,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -1605,12 +1531,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -1618,7 +1544,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -1747,33 +1673,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -2163,24 +2079,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -2194,12 +2092,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -2207,7 +2105,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -2336,33 +2234,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -2756,24 +2644,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -2787,12 +2657,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -2800,7 +2670,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -2929,33 +2799,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -3353,24 +3213,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -3384,12 +3226,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -3397,7 +3239,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -3526,33 +3368,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -3962,24 +3794,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -3993,12 +3807,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -4006,7 +3820,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -4135,33 +3949,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -4560,24 +4364,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -4591,12 +4377,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -4604,7 +4390,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -4733,33 +4519,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
@@ -5165,24 +4941,6 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl) {
 }
 
 /**
- * Retrieves Mailjet credentials from appSettings.
- */
-function getMailjetConfig(app) {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'mailjet'");
-        const parsed = parseJsonField(record.get("value"));
-        return {
-            apiKey: parsed?.apiKey || "",
-            apiSecret: parsed?.apiSecret || "",
-            senderEmail: parsed?.senderEmail || "no-reply@choir.management",
-            senderName: parsed?.senderName || "Choir Management Tool"
-        };
-    }
-    catch (e) {
-        return { apiKey: "", apiSecret: "", senderEmail: "", senderName: "" };
-    }
-}
-/**
  * Retrieves HMAC secret for signature tokens.
  */
 function getHmacSecret(app) {
@@ -5196,12 +4954,12 @@ function getHmacSecret(app) {
     }
 }
 /**
- * Batches and dispatches pending emails from the queue.
+ * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
  */
 function processEmailQueue(app) {
-    const config = getMailjetConfig(app);
-    if (!config.apiKey || !config.apiSecret) {
-        console.log("[Queue Error] Mailjet configuration missing API keys.");
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
         return;
     }
     // Fetch oldest pending records to guarantee sequential order delivery
@@ -5209,7 +4967,7 @@ function processEmailQueue(app) {
     0);
     if (!records || records.length === 0)
         return;
-    // Transition state immediately to prevent race conditions during async HTTP processing
+    // Transition state immediately to prevent race conditions during async sending
     records.forEach((r) => {
         r.set("status", "Processing");
         app.save(r);
@@ -5338,33 +5096,23 @@ function processEmailQueue(app) {
             // Final template layout wrap
             const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl);
             record.set("htmlBody", finalHtml);
-            // Execute raw Mailjet REST request
-            const authHeader = "Basic " + $security.base64Encode(config.apiKey + ":" + config.apiSecret);
-            const response = $http.send({
-                url: "https://api.mailjet.com/v3.1/send",
-                method: "POST",
-                headers: {
-                    "Authorization": authHeader,
-                    "Content-Type": "application/json"
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
                 },
-                body: JSON.stringify({
-                    Messages: [{
-                            From: { Email: config.senderEmail, Name: config.senderName },
-                            To: [{ Email: recipientEmail, Name: recipientName }],
-                            Subject: subject,
-                            HTMLPart: finalHtml
-                        }]
-                })
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
             });
-            if (response.statusCode === 200 || response.statusCode === 201) {
-                record.set("status", "Sent");
-            }
-            else {
-                throw new Error("API responded with code " + response.statusCode + ": " + response.text);
-            }
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
         }
         catch (err) {
-            const currentAttempts = record.get("attempts") + 1;
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);

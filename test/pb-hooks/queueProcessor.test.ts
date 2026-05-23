@@ -21,20 +21,22 @@ class MockRecord implements PocketBaseRecord {
     }
 }
 
-interface MockSendConfig {
-    url: string;
-    body: string;
-    method: string;
-    headers: Record<string, string>;
+// Mock MailerMessage class for Goja global scope simulation
+class MockMailerMessage {
+    config: unknown;
+    constructor(config: unknown) {
+        this.config = config;
+    }
 }
 
 test('processEmailQueue batched success and failure flows', () => {
     // Setup globals
-    (global as unknown as Record<string, unknown>).Record = MockRecord;
+    const globalRef = global as unknown as Record<string, unknown>;
+    globalRef.Record = MockRecord;
+    globalRef.MailerMessage = MockMailerMessage;
     
     // Mock settings records
     const hmacSetting = new MockRecord('appSettings', { key: 'HMAC_SECRET', value: JSON.stringify({ secret: 'test-secret' }) });
-    const mailjetSetting = new MockRecord('appSettings', { key: 'mailjet', value: JSON.stringify({ apiKey: 'key123', apiSecret: 'sec456', senderEmail: 'choir@app.com', senderName: 'Choir Name' }) });
     const commSetting = new MockRecord('appSettings', { key: 'communications', value: JSON.stringify({ frontendUrl: 'http://localhost:5173', mailingAddress: '123 Harmony St' }) });
     const tzSetting = new MockRecord('appSettings', { key: 'timezone', value: JSON.stringify('America/New_York') });
 
@@ -69,12 +71,25 @@ test('processEmailQueue batched success and failure flows', () => {
 
     // Tracking
     const savedRecords: PocketBaseRecord[] = [];
-    const httpDispatches: MockSendConfig[] = [];
+    const sentEmails: unknown[] = [];
 
     // Mock App
     const mockApp: PocketBaseApp = {
+        settings: () => ({
+            smtp: { enabled: true },
+            meta: { senderAddress: 'choir@app.com', senderName: 'Choir Name' }
+        }),
+        newMailClient: () => ({
+            send: (message: unknown) => {
+                sentEmails.push(message);
+                const mockMsg = message as MockMailerMessage;
+                const config = mockMsg.config as { to: { address: string }[] };
+                if (config.to[0].address === 'fail@example.com') {
+                    throw new Error('SMTP connection failed');
+                }
+            }
+        }),
         findFirstRecordByFilter: (collection: string, filter: string) => {
-            if (collection === 'appSettings' && filter === "key = 'mailjet'") return mailjetSetting;
             if (collection === 'appSettings' && filter === "key = 'communications'") return commSetting;
             if (collection === 'appSettings' && filter === "key = 'timezone'") return tzSetting;
             if (collection === 'appSettings' && filter === "key = 'HMAC_SECRET'") return hmacSetting;
@@ -96,24 +111,11 @@ test('processEmailQueue batched success and failure flows', () => {
         }
     };
 
-    // Attach mock $app
-    (global as unknown as Record<string, unknown>).$app = mockApp;
-
-    // Mock $security and $http
-    (global as unknown as Record<string, unknown>).$security = {
+    // Attach mock $app and $security
+    globalRef.$app = mockApp;
+    globalRef.$security = {
         base64Encode: (s: string) => Buffer.from(s).toString('base64'),
         hs256: (payload: string, secret: string) => payload + '_signed'
-    };
-
-    (global as unknown as Record<string, unknown>).$http = {
-        send: (config: MockSendConfig) => {
-            httpDispatches.push(config);
-            const isSuccess = config.body.includes('success@example.com');
-            return {
-                statusCode: isSuccess ? 200 : 500,
-                text: isSuccess ? 'Success' : 'Internal Server Error'
-            };
-        }
     };
 
     // Run queue processor
@@ -131,19 +133,24 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.strictEqual(recordFail.get('attempts'), 1, 'Attempts should increment');
     
     const errMessage = recordFail.get('errorMessage');
-    assert.ok(typeof errMessage === 'string' && errMessage.includes('500'), 'Error message should capture failure status code');
+    assert.ok(typeof errMessage === 'string' && errMessage.includes('SMTP connection failed'), 'Error message should capture SMTP connection failed');
 
-    // Verify HTTP REST configurations
-    assert.strictEqual(httpDispatches.length, 2, 'Should issue exactly 2 Mailjet HTTP dispatches');
-    const successDispatch = httpDispatches.find(d => d.body.includes('success@example.com'));
-    assert.ok(successDispatch, 'Should have sent to success email');
-    assert.strictEqual(successDispatch.method, 'POST');
-    assert.strictEqual(successDispatch.url, 'https://api.mailjet.com/v3.1/send');
-    assert.ok(successDispatch.headers['Authorization'].startsWith('Basic '), 'Should use basic authentication');
+    // Verify native dispatches
+    assert.strictEqual(sentEmails.length, 2, 'Should issue exactly 2 SMTP sends');
+    const successEmail = sentEmails.find(m => {
+        const mockMsg = m as MockMailerMessage;
+        const config = mockMsg.config as { to: { address: string }[] };
+        return config.to[0].address === 'success@example.com';
+    }) as MockMailerMessage;
 
-    // Verify template rendering in success dispatch HTML part
-    const parsedBody = JSON.parse(successDispatch.body) as { Messages: Array<{ HTMLPart: string }> };
-    const htmlPart = parsedBody.Messages[0].HTMLPart;
+    assert.ok(successEmail, 'Should have sent to success email');
+    
+    const config = successEmail.config as { from: { address: string; name: string }; subject: string; html: string };
+    assert.strictEqual(config.from.address, 'choir@app.com');
+    assert.strictEqual(config.from.name, 'Choir Name');
+    assert.strictEqual(config.subject, 'Invited to Concert');
+
+    const htmlPart = config.html;
     assert.ok(htmlPart.includes('St. Mary Church'), 'Should resolve {eventLocation}');
     assert.ok(htmlPart.includes('Spring Concert'), 'Should resolve {eventTitle}');
     assert.ok(htmlPart.includes('Yes, I\'m attending'), 'Should resolve RSVP buttons');
