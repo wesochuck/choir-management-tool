@@ -89,6 +89,7 @@ export default function CommunicationView() {
   const [commSettings, setCommSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   // Secondary UI state
 
@@ -617,14 +618,110 @@ export default function CommunicationView() {
                   </div>
                 </AppCard>
                 
-                <AppCard title="Live Preview">
-                  <div className="live-preview-container card">
-                    {(messageType === 'Email' || messageType === 'Both') && (
-                      <h3 className="live-preview-subject">
-                        {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
-                      </h3>
-                    )}
-                    <div className="text-body message-preview-content" dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-muted">No message content.</p>' }} />
+                <AppCard 
+                  title="Live Preview"
+                  actions={
+                    <div className="flex-row" style={{ gap: '4px', backgroundColor: 'var(--bg)', padding: '2px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'}`}
+                        style={{ padding: '4px 10px', height: '30px' }}
+                        onClick={() => setPreviewDevice('desktop')}
+                      >
+                        🖥️ Desktop
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'}`}
+                        style={{ padding: '4px 10px', height: '30px' }}
+                        onClick={() => setPreviewDevice('mobile')}
+                      >
+                        📱 Mobile
+                      </button>
+                    </div>
+                  }
+                >
+                  <div 
+                    className="email-client-mockup"
+                    style={{
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      overflow: 'hidden',
+                      backgroundColor: '#f1f5f9',
+                      padding: previewDevice === 'mobile' ? '30px 15px' : '0',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                  >
+                    <div
+                      className={`email-client-frame ${previewDevice === 'mobile' ? 'mobile-frame' : 'desktop-frame'}`}
+                      style={{
+                        width: '100%',
+                        maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
+                        backgroundColor: '#ffffff',
+                        boxShadow: 'var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1))',
+                        borderRadius: previewDevice === 'mobile' ? '20px' : '0',
+                        border: previewDevice === 'mobile' ? '8px solid #1e293b' : 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        minHeight: '400px',
+                      }}
+                    >
+                      {/* Email Header */}
+                      <div 
+                        style={{ 
+                          padding: '16px', 
+                          borderBottom: '1px solid #e2e8f0', 
+                          backgroundColor: '#f8fafc',
+                          fontSize: '13px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', color: '#64748b' }}>
+                          <span style={{ width: '60px', fontWeight: 600 }}>From:</span>
+                          <span style={{ color: '#1e293b' }}>Choir Management &lt;no-reply@choir.management&gt;</span>
+                        </div>
+                        <div style={{ display: 'flex', color: '#64748b' }}>
+                          <span style={{ width: '60px', fontWeight: 600 }}>To:</span>
+                          <span style={{ color: '#1e293b' }}>
+                            {selectedRecipients[0]?.name 
+                              ? `${selectedRecipients[0].name} <${selectedRecipients[0].email}>` 
+                              : 'Active Choir Members <singers@yourchoir.org>'}
+                          </span>
+                        </div>
+                        {(messageType === 'Email' || messageType === 'Both') && (
+                          <div style={{ display: 'flex', color: '#64748b', marginTop: '4px', borderTop: '1px dashed #e2e8f0', paddingTop: '6px' }}>
+                            <span style={{ width: '60px', fontWeight: 600 }}>Subject:</span>
+                            <strong style={{ color: '#0f172a' }}>
+                              {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                            </strong>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Email Body */}
+                      <div 
+                        className="email-client-body"
+                        style={{ 
+                          padding: previewDevice === 'mobile' ? '16px' : '24px', 
+                          overflowY: 'auto',
+                          flex: 1,
+                          fontSize: '15px',
+                          lineHeight: '1.6',
+                          color: '#334155',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        <div 
+                          className="text-body message-preview-content" 
+                          dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-muted" style="text-align: center; padding: 40px 0;">No message content drafted yet.</p>' }} 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </AppCard>
 
