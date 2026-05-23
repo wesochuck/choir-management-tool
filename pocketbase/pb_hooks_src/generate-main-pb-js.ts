@@ -388,48 +388,8 @@ onRecordAfterUpdateSuccess((e) => {
     }
 }, "messages");
 
-// Profile Status Engine Hooks (Simplified for Generation)
-function handleRosterChange(e) {
-    // This part is preserved from the original manual code
-    // It's less prone to duplication than the email logic
-    try {
-        const roster = e && e.record;
-        if (!roster) return;
-        const profileId = roster.get("profile");
-        let profile;
-        try { profile = $app.findRecordById("profiles", profileId); } catch (err) { return; }
-        if (profile.get("statusIsManual")) return;
-        const now = new Date().toISOString().replace("T", " ").split(".")[0];
-
-        let futureRosters = [];
-        try { futureRosters = $app.findRecordsByFilter("eventRosters", "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'", "-event.date", 1, 0, { profileId, now }); } catch (err) {}
-        if (futureRosters && futureRosters.length > 0) {
-            if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
-                profile.set("globalStatus", "Active (Future)");
-                profile.set("statusLastChangedAt", now);
-                profile.set("statusChangeReason", "Automated recovery via future RSVP");
-                $app.saveNoValidate(profile);
-            }
-            return;
-        }
-
-        let pastRosters = [];
-        try { pastRosters = $app.findRecordsByFilter("eventRosters", "profile = {:profileId} && event.date < {:now} && event.type = 'Performance'", "-event.date", 3, 0, { profileId, now }); } catch (err) {}
-        if (pastRosters && pastRosters.length === 3) {
-            if (pastRosters.every(r => r.get("attendance") === "Absent" || r.get("rsvp") === "No")) {
-                if (profile.get("globalStatus") !== "Inactive") {
-                    profile.set("globalStatus", "Inactive");
-                    profile.set("statusLastChangedAt", now);
-                    profile.set("statusChangeReason", "Automated deactivation (3 consecutive misses)");
-                    $app.saveNoValidate(profile);
-                }
-            }
-        }
-    } catch (err) { console.log("[Hook Error] Profile status logic failed: " + err); }
-}
-
-onRecordAfterCreateSuccess((e) => { handleRosterChange(e); }, "eventRosters");
-onRecordAfterUpdateSuccess((e) => { handleRosterChange(e); }, "eventRosters");
+// NOTE: eventRosters profile-status hooks live in pocketbase/pb_hooks/status.pb.js.
+// Do not emit them here to avoid callback-scope issues and duplicate registrations.
 
 // --- CUSTOM ENDPOINTS ---
 // NOTE: RSVP and player endpoints remain in dedicated pb_hooks files
