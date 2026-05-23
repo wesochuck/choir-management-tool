@@ -660,7 +660,7 @@ export default function SetListView() {
                       <SortableSetListItem 
                         key={item.id} 
                         item={item} 
-                        linkedPiece={item.pieceId ? library.find(p => p.id === item.pieceId) : undefined}
+                        linkedPiece={item.resolvedPiece || undefined}
                         displayTitle={item.displayTitle}
                         displayComposer={item.displayComposer}
                         displayDuration={item.displayDuration}

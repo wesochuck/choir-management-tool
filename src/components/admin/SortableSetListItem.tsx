@@ -89,10 +89,10 @@ export const SortableSetListItem: React.FC<Props> = ({
           </div>
         ) : (
           <div className="text-label flex-row" style={{ margin: 0, gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {item.pieceId && onPieceClick ? (
+            {(item.pieceId || linkedPiece?.id) && onPieceClick ? (
               <button
                 type="button"
-                onClick={() => onPieceClick(item.pieceId!)}
+                onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -136,7 +136,7 @@ export const SortableSetListItem: React.FC<Props> = ({
                 ) : (
                     <span style={{ fontWeight: 600 }}>{titleText}</span>
                 )}
-                {item.pieceId && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
+                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
               </span>
             )}
             {item.soloSmallGroup && (
@@ -167,7 +167,13 @@ export const SortableSetListItem: React.FC<Props> = ({
         )}
         {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
           <div className="text-xs text-muted flex-row" style={{ alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
-            <span>{displayComposer}{displayComposer && displayDuration ? ' • ' : ''}{displayDuration}</span>
+            {displayComposer && (
+              <span style={{ fontWeight: 600, color: 'var(--primary-deep)', fontStyle: 'italic' }}>
+                {displayComposer}
+              </span>
+            )}
+            {displayComposer && displayDuration && <span>•</span>}
+            {displayDuration && <span>{displayDuration}</span>}
             {linkedPiece?.genres && linkedPiece.genres.length > 0 && genres && (
               <div className="flex-row" style={{ gap: '4px', display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center' }}>
                 {linkedPiece.genres.map(id => {

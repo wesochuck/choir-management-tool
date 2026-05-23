@@ -12,6 +12,7 @@ export interface SetListDisplayRow extends SetListItem {
   displayDuration: string;
   cumulativeStart: string;
   cumulativeEnd: string;
+  resolvedPiece?: MusicPiece | null;
 }
 
 export interface SetListDurationTotals {
@@ -110,10 +111,25 @@ export function resolveSetListDisplayRows(
   library: MusicPiece[]
 ): SetListDisplayRow[] {
   return items.reduce<SetListDisplayRow[]>((acc, item) => {
-    const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
+    // 1. Resolve by pieceId first
+    let linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
     
+    // 2. Fallback: Resolve by title match (case-insensitive, normalized) if pieceId is missing
+    if (!linkedPiece && item.title) {
+      const normTitle = item.title.toLowerCase().replace(/[♪♫♬♩𝄞]/gu, ' ').replace(/\s+/g, ' ').trim();
+      if (normTitle) {
+        linkedPiece = library.find(p => !p.parentId && p.title.toLowerCase().replace(/[♪♫♬♩𝄞]/gu, ' ').replace(/\s+/g, ' ').trim() === normTitle) || 
+                      library.find(p => p.title.toLowerCase().replace(/[♪♫♬♩𝄞]/gu, ' ').replace(/\s+/g, ' ').trim() === normTitle) || null;
+      }
+    }
+    
+    // 3. Parent work fallback for child movements to resolve composer
+    const parentPiece = linkedPiece?.parentId ? library.find(p => p.id === linkedPiece.parentId) : null;
+
     const displayTitle = item.title || linkedPiece?.title || '';
-    const displayComposer = item.type !== 'intermission' ? (item.composer || linkedPiece?.composer || '') : '';
+    const displayComposer = item.type !== 'intermission' 
+      ? (item.composer || linkedPiece?.composer || parentPiece?.composer || '') 
+      : '';
     const rawDuration = item.duration || linkedPiece?.duration || '';
     const durationSeconds = parseDurationToSeconds(rawDuration);
     
@@ -126,7 +142,8 @@ export function resolveSetListDisplayRows(
       displayComposer,
       displayDuration: rawDuration ? formatSecondsToDuration(durationSeconds) : '',
       cumulativeStart: formatSecondsToDuration(previousEndSeconds),
-      cumulativeEnd: formatSecondsToDuration(endSec)
+      cumulativeEnd: formatSecondsToDuration(endSec),
+      resolvedPiece: linkedPiece
     });
     return acc;
   }, []);
