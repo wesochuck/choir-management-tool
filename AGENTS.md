@@ -18,11 +18,14 @@
 
 ## PocketBase Hook Safety
 
-- PocketHost/PocketBase JavaScript hook callbacks must be self-contained. Do not register `onRecordAfterCreateSuccess`, `onRecordAfterUpdateSuccess`, or other hook callbacks that call helper functions declared elsewhere in the hook file unless you have verified that exact pattern on PocketHost.
-- A thrown error in an after-create/after-update hook can return HTTP 400 to the client even after the database write has already committed. If a record appears after refresh despite `Failed to create/update record`, inspect PocketHost logs for hook errors before changing frontend payloads or collection rules.
-- For advisory hooks, wrap the whole registered callback body in `try/catch`. Logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
-- When changing `pb_hooks`, deploy and restart/wake the PocketHost instance, then confirm the expected hook startup log appears before testing.
-- When generating HTML bodies (e.g., for emails) in PocketBase JS hooks, always sanitize dynamic text data by passing it through an HTML escaping function (like the `escapeHtml` utility in `main.pb.js`) before injecting it into the HTML string to prevent HTML injection and Cross-Site Scripting (XSS).
+- **Source-Generated Hooks**: The production `pocketbase/pb_hooks/main.pb.js` file is **SOURCE-GENERATED**. Never edit this file directly. Instead, modify the TypeScript source files in `pocketbase/pb_hooks_src/` and run `npm run generate:pb-hooks`.
+- **Self-Contained Requirement**: PocketHost requires backend callbacks (hooks, crons, routers) to be self-contained. The generator handles this automatically by inlining all shared utilities into every individual callback closure. This prevents `ReferenceError` issues at runtime.
+- **Verification Workflow**: After modifying backend logic:
+    1.  Edit files in `pocketbase/pb_hooks_src/email/`.
+    2.  Run `npm run generate:pb-hooks`.
+    3.  Run `npm run check:pb-hooks` to verify integrity and pass unit tests.
+- **Defensive Hooks**: For advisory hooks, always wrap the whole registered callback body in `try/catch`. Logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
+- **Sanitization**: When generating HTML bodies (e.g., for emails), always sanitize dynamic text data by passing it through an HTML escaping function (like the `escapeHtml` utility) before injecting it into the HTML string.
 
 ## PocketBase Migration Safety
 
@@ -71,5 +74,4 @@
 - **Token & URL Parameter Safety (Ampersand Prevention & Fallback):**
   - *Encoding:* When generating links with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)`.
   - *Fallback Decoding:* When parsing from URL parameters on the frontend, check if the browser split the token by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls. Refer to [PublicPlayerView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicPlayerView.tsx) and [PublicRsvpView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicRsvpView.tsx).
-
 
