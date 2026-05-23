@@ -19,6 +19,9 @@
 ## PocketBase Hook Safety
 
 - PocketHost/PocketBase JavaScript hook callbacks must be self-contained. Do not register `onRecordAfterCreateSuccess`, `onRecordAfterUpdateSuccess`, or other hook callbacks that call helper functions declared elsewhere in the hook file unless you have verified that exact pattern on PocketHost.
+- PocketHost custom endpoint callbacks (`routerAdd`) must also be treated as self-contained. Do not call top-level helper functions from `routerAdd` handlers unless that exact deployed pattern has been verified on PocketHost. A real production failure occurred when `/api/rsvp-details` called a top-level `parseSignedToken(...)` helper and PocketHost returned `ReferenceError: parseSignedToken is not defined`.
+- The `pocketbase/pb_hooks/` files are fragile hosted-runtime code. Do not consolidate specialized hook files into `main.pb.js`, delete hook files, or perform broad "cleanup" refactors in this directory while fixing a narrow issue. Keep RSVP, player, status, and email responsibilities in their existing files unless the user explicitly approves a hook architecture change.
+- For RSVP/player token endpoints, keep token parsing and HMAC-secret JSON decoding local to the route callback, or otherwise prove the deployed PocketHost runtime can see the shared helper. Preserve `encodeURIComponent(token)` when generating links containing `&`.
 - A thrown error in an after-create/after-update hook can return HTTP 400 to the client even after the database write has already committed. If a record appears after refresh despite `Failed to create/update record`, inspect PocketHost logs for hook errors before changing frontend payloads or collection rules.
 - For advisory hooks, wrap the whole registered callback body in `try/catch`. Logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
 - When changing `pb_hooks`, deploy and restart/wake the PocketHost instance, then confirm the expected hook startup log appears before testing.
@@ -71,5 +74,4 @@
 - **Token & URL Parameter Safety (Ampersand Prevention & Fallback):**
   - *Encoding:* When generating links with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)`.
   - *Fallback Decoding:* When parsing from URL parameters on the frontend, check if the browser split the token by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls. Refer to [PublicPlayerView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicPlayerView.tsx) and [PublicRsvpView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicRsvpView.tsx).
-
 
