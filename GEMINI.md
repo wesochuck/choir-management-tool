@@ -23,6 +23,14 @@ These foundational mandates MUST be followed by all agents working on this codeb
     *   *The Safe Pattern (Backend):* In `pb_hooks/`, always decode the raw bytes using a string conversion helper (e.g. `String.fromCharCode`) or cast appropriately before standard parsing or returning in custom HTTP endpoints.
     *   *The Safe Pattern (Frontend):* In `src/services/` (e.g. `playerService.ts`), defensively decode raw numerical arrays into standard UTF-8 strings before attempting to `JSON.parse` or assign standard objects. Refer to `decodeGoBytes` and `parseJsonField` helpers.
 *   **Static Collection Metadata for Asset URLs:** When returning raw records or custom JSON payloads from custom backend endpoints (`routerAdd`), do not rely on JS VM dynamic mapping of `p.collectionId` or `p.collectionName` as they may evaluate to `null` or throw errors. Instead, return the known collection ID (e.g., `"pbc_music_library_001"`) and collection name (e.g., `"musicLibrary"`) explicitly so client-side `pb.files.getURL(...)` can construct correct URLs.
+*   **Goja VM Sorting Restrictions:** Sorting collections inside custom endpoints or registered hooks (Goja VM) by system fields (like `created` or `updated`) directly via `findRecordsByFilter` can be rejected by PocketBase's parser with an `invalid sort field` Go error. Instead, sort by primary indexed fields or pass an empty sort string `""` to let SQLite naturally fall back to row insertion order (oldest first).
+*   **Database Migration Immutability:** Never modify historical or already-executed database migrations in the `pocketbase/pb_migrations/` directory once checked into version control. Doing so causes schema drift across developer environments and hosted instances. Always apply schema modifications, relaxed constraints, or field updates via sequential forward migrations (`.js`).
+*   **Defensive Numeric & attempts Safe-Parsing:** Deferring or relaxing constraints on numeric fields (like `attempts`) can lead to null, undefined, or empty values inside hook callbacks. Using arithmetic operations directly on these values causes `NaN` evaluations that break retry limits. Always parse numeric fields defensively:
+    ```typescript
+    const rawAttempts = record.get("attempts");
+    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+    ```
 
 ## Hosted PocketBase Workflow
 *   **Required:** Add a corresponding JavaScript migration script in `pocketbase/pb_migrations/` for any database schema changes. This ensures the hosted/remote PocketBase environment can be updated through the project's normal deployment process.

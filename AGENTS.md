@@ -75,3 +75,19 @@
   - *Encoding:* When generating links with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)`.
   - *Fallback Decoding:* When parsing from URL parameters on the frontend, check if the browser split the token by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls. Refer to [PublicPlayerView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicPlayerView.tsx) and [PublicRsvpView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicRsvpView.tsx).
 
+- **PocketBase Goja VM Sorting Restrictions:**
+  - *The Failure Mode:* Sorting collections inside custom endpoints or registered hooks (Goja VM) by system fields (like `created` or `updated`) directly via `findRecordsByFilter` can be rejected by PocketBase's parser with an `invalid sort field` Go error.
+  - *The Safe Pattern:* Avoid sorting by `created` or `updated` system fields. Instead, sort by primary indexed fields or pass an empty sort string `""` to let SQLite naturally fall back to row insertion order (oldest first).
+
+- **PocketBase Migration Immutability:**
+  - *The Safe Pattern:* Never modify historical or already-executed database migrations in the `pocketbase/pb_migrations/` directory once checked into source control. Always apply schema modifications, relaxed constraints, or field updates via sequential forward migrations (`.js`) to prevent environment schema drifts.
+
+- **Defensive Numeric & attempts Safe-Parsing:**
+  - *The Failure Mode:* Deferring or relaxing constraints on numeric fields (like `attempts`) can lead to null, undefined, or empty values inside hook callbacks. Using arithmetic operations directly on these values causes `NaN` evaluations that break retry limits.
+  - *The Safe Pattern:* Always parse numeric fields defensively:
+    ```typescript
+    const rawAttempts = record.get("attempts");
+    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+    ```
+

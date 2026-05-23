@@ -34,6 +34,7 @@ function generate() {
     const emailRendering = readSrc('emailRendering.ts');
     const messageHookRules = readSrc('messageHookRules.ts');
     const attendanceReport = readSrc('attendanceReport.ts');
+    const emailStyles = readSrc('emailStyles.ts');
     const mailjetRenderer = readSrc('mailjetRenderer.ts');
     const queueProcessor = readSrc('queueProcessor.ts');
 
@@ -50,6 +51,8 @@ ${emailRendering}
 ${messageHookRules}
 
 ${attendanceReport}
+
+${emailStyles}
 
 ${mailjetRenderer}
 
