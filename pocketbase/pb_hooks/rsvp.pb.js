@@ -96,12 +96,12 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
     const token = data.token;
 
     if (!token) {
-        return e.json(400, { error: "Missing token" });
+        return e.json(400, { error: "Missing RSVP token. Please open full RSVP link from your email." });
     }
 
     const parts = parseSignedToken(token, ["e", "p", "s"]);
     if (!parts) {
-        return e.json(400, { error: "Invalid token format" });
+        return e.json(400, { error: "This RSVP link is invalid. Please request a new RSVP link." });
     }
 
     let secret = "";
@@ -116,7 +116,7 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
-        return e.json(401, { error: "Invalid signature" });
+        return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
 
     try {
@@ -134,6 +134,9 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
         }
 
         const event = $app.findRecordById("events", parts.e);
+        if (!event.get("isOpenForRSVP")) {
+            return e.json(410, { error: "This RSVP window has closed for this event. Contact choir admins if you need help." });
+        }
         let venueName = "";
         let venueAddress = "";
         try {
@@ -215,7 +218,7 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
         });
     } catch (err) {
         console.log("[RSVP Details Error] Failed to fetch details: " + err);
-        return e.json(404, { error: "Event or Profile not found." });
+        return e.json(404, { error: "We could not find this RSVP record. Link may be expired. Please request a new RSVP link." });
     }
 });
 
@@ -225,12 +228,12 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     const rsvp = data.rsvp;
 
     if (!token || !rsvp) {
-        return e.json(400, { error: "Missing token or rsvp" });
+        return e.json(400, { error: "Missing RSVP details. Please use full RSVP link from your email." });
     }
 
     const parts = parseSignedToken(token, ["e", "p", "s"]);
     if (!parts) {
-        return e.json(400, { error: "Invalid token format" });
+        return e.json(400, { error: "This RSVP link is invalid. Please request a new RSVP link." });
     }
 
     let secret = "";
@@ -245,16 +248,16 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
-        return e.json(401, { error: "Invalid signature" });
+        return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
 
     try {
         const event = $app.findRecordById("events", parts.e);
         if (!event.get("isOpenForRSVP")) {
-            return e.json(400, { error: "Event is not open for RSVP" });
+            return e.json(410, { error: "RSVP window for this event is closed. Contact choir admins for assistance." });
         }
     } catch (err) {
-        return e.json(404, { error: "Event not found" });
+        return e.json(404, { error: "Event not found. RSVP link may be expired." });
     }
 
     try {

@@ -27,6 +27,11 @@ function sanitizeEmailSubject(str) {
         .trim();
 }
 
+function normalizeBaseUrl(url) {
+    if (!url) return "http://localhost:5173";
+    return String(url).trim().replace(/\/+$/g, "");
+}
+
 cronAdd("post_event_report", "0 * * * *", () => {
     // Helper to safely convert Go byte slices to JS strings
     function decodeGoBytes(val) {
@@ -368,6 +373,7 @@ onRecordAfterCreateSuccess((e) => {
                 const p = parseJsonField(setting.get("value"));
                 if (p && p.frontendUrl) baseUrl = p.frontendUrl;
             } catch (e) {}
+            baseUrl = normalizeBaseUrl(baseUrl);
 
             // 4. Fetch Event details for placeholder resolution
             let event = null;
@@ -594,6 +600,7 @@ onRecordAfterUpdateSuccess((e) => {
                 const p = parseJsonField(setting.get("value"));
                 if (p && p.frontendUrl) baseUrl = p.frontendUrl;
             } catch (e) {}
+            baseUrl = normalizeBaseUrl(baseUrl);
 
             // 4. Fetch Event details for placeholder resolution
             let event = null;
