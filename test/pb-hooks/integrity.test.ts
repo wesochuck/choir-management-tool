@@ -13,10 +13,12 @@ test('Generated main.pb.js integrity', () => {
     assert.ok(content.includes('onRecordAfterCreateSuccess'), 'Should contain create hook');
     assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
     assert.ok(content.includes('routerAdd("POST", "/api/test-smtp"'), 'Should contain test-smtp route');
-    assert.ok(content.includes('encodeURIComponent(token)'), 'Should use encodeURIComponent for tokens');
     assert.ok(content.includes('filters.alreadySent === true'), 'Should check alreadySent filter');
     assert.ok(content.includes('oldStatus === "Draft"'), 'Should check oldStatus transition');
     assert.ok(content.includes('role") !== "admin"'), 'Should preserve admin-only route protection');
+    assert.ok(!content.includes('"/api/generate-player-token"'), 'Should not duplicate player endpoint route');
+    assert.ok(!content.includes('"/api/player-playlist"'), 'Should not duplicate player playlist route');
+    assert.ok(!content.includes('"/api/generate-rsvp-tokens"'), 'Should not duplicate RSVP endpoint routes');
 
     // 2. Self-containment markers (shared utils inlined into hooks)
     const hookMatches = content.match(/onRecordAfterCreateSuccess/g) || [];
