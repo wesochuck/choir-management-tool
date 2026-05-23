@@ -7,7 +7,8 @@ import type { Profile } from './profileService';
 export interface Audition extends RecordModel {
   name: string;
   contact: string;
-  timeSlot: string;
+  scheduledTimeSlot?: string;
+  requestedSlots?: string[];
   voicePart?: string;
   experience?: string;
   status: 'New' | 'Contacted' | 'Scheduled' | 'Closed';
@@ -20,7 +21,7 @@ export interface Audition extends RecordModel {
   };
 }
 
-export type AuditionInput = Pick<Audition, 'name' | 'contact' | 'timeSlot'> & Partial<Pick<Audition, 'voicePart' | 'experience' | 'performance' | 'status' | 'notes'>>;
+export type AuditionInput = Pick<Audition, 'name' | 'contact'> & Partial<Pick<Audition, 'scheduledTimeSlot' | 'requestedSlots' | 'voicePart' | 'experience' | 'performance' | 'status' | 'notes'>>;
 type ConvertibleAudition = Audition & Partial<{ email: string; phone: string }>;
 
 const isEmailContact = (contact: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim());

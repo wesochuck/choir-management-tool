@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -93,13 +93,28 @@ export default function AuditionsView() {
 
   const openScheduleModal = (audition: Audition) => {
     setSchedulingAudition(audition);
-    const isPredefined = settings?.slots?.includes(audition.timeSlot);
-    if (isPredefined) {
-      setSchedSlot(audition.timeSlot);
+    
+    const prefSlots = audition.requestedSlots || [];
+    const matchingSlot = prefSlots.find(s => settings?.slots?.includes(s));
+    
+    if (matchingSlot) {
+      setSchedSlot(matchingSlot);
+      setSchedCustom('');
+    } else if (audition.scheduledTimeSlot) {
+      const isPredefined = settings?.slots?.includes(audition.scheduledTimeSlot);
+      if (isPredefined) {
+        setSchedSlot(audition.scheduledTimeSlot);
+        setSchedCustom('');
+      } else {
+        setSchedSlot('__custom__');
+        setSchedCustom(audition.scheduledTimeSlot);
+      }
+    } else if (settings?.slots && settings.slots.length > 0) {
+      setSchedSlot(settings.slots[0]);
       setSchedCustom('');
     } else {
       setSchedSlot('__custom__');
-      setSchedCustom(audition.timeSlot);
+      setSchedCustom('');
     }
   };
 
@@ -112,7 +127,7 @@ export default function AuditionsView() {
     try {
       const updated = await auditionService.updateAudition(schedulingAudition.id, { 
         status: 'Scheduled', 
-        timeSlot: finalSlot 
+        scheduledTimeSlot: finalSlot 
       });
       setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
       dialog.showToast('Audition scheduled and confirmation email sent.');
@@ -178,7 +193,8 @@ export default function AuditionsView() {
         const payload: AuditionInput = {
           name: data.name!,
           contact: data.contact!,
-          timeSlot: data.timeSlot!,
+          scheduledTimeSlot: data.scheduledTimeSlot,
+          requestedSlots: data.requestedSlots,
           voicePart: data.voicePart,
           experience: data.experience,
           performance: data.performance,
@@ -236,9 +252,44 @@ export default function AuditionsView() {
     setAuditions((current) => current.filter((item) => item.id !== audition.id));
   };
 
+  const [sortField, setSortField] = useState<'scheduledTimeSlot' | 'name'>('scheduledTimeSlot');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: 'scheduledTimeSlot' | 'name') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   const filteredAuditions = auditions.filter(a => 
     performanceFilter === 'all' || a.performance === performanceFilter
   );
+
+  const sortedAuditions = useMemo(() => {
+    return [...filteredAuditions].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'scheduledTimeSlot') {
+        const timeA = a.scheduledTimeSlot ? new Date(a.scheduledTimeSlot).getTime() : 0;
+        const timeB = b.scheduledTimeSlot ? new Date(b.scheduledTimeSlot).getTime() : 0;
+        
+        if (timeA === 0 && timeB === 0) {
+          comparison = 0;
+        } else if (timeA === 0) {
+          comparison = 1; // Put unscheduled items at the end
+        } else if (timeB === 0) {
+          comparison = -1; // Put unscheduled items at the end
+        } else {
+          comparison = timeA - timeB;
+        }
+      } else if (sortField === 'name') {
+        comparison = a.name.localeCompare(b.name);
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredAuditions, sortField, sortDirection]);
 
   if (isLoading) return <div style={{ padding: 'var(--space-xl)' }}>Loading auditions...</div>;
   if (error) return <div style={{ padding: 'var(--space-xl)', color: 'var(--color-danger-text)' }}>{error}</div>;
@@ -419,18 +470,38 @@ export default function AuditionsView() {
 
       <AppCard noPadding>
         <div className="table-responsive">
-          <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
+          <table className="text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg)' }}>
-                <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Name / Contact</th>
+                <th 
+                  onClick={() => handleSort('name')}
+                  style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <div className="flex-row" style={{ alignItems: 'center', gap: '6px' }}>
+                    <span>Name / Contact</span>
+                    {sortField === 'name' && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--primary-deep)' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                    )}
+                  </div>
+                </th>
                 <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Target Performance</th>
-                <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Requested Slot</th>
+                <th 
+                  onClick={() => handleSort('scheduledTimeSlot')}
+                  style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <div className="flex-row" style={{ alignItems: 'center', gap: '6px' }}>
+                    <span>Audition Time</span>
+                    {sortField === 'scheduledTimeSlot' && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--primary-deep)' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                    )}
+                  </div>
+                </th>
                 <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', width: '120px' }}>Status</th>
                 <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredAuditions.map((audition) => (
+              {sortedAuditions.map((audition) => (
                 <tr 
                   key={audition.id} 
                   className="interactive-row" 
@@ -475,7 +546,17 @@ export default function AuditionsView() {
                     )}
                   </td>
                   <td style={{ padding: '16px', fontSize: '0.9rem', color: 'var(--neutral-text)' }}>
-                    {formatInTimezone(audition.timeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {audition.status === 'Scheduled' && audition.scheduledTimeSlot ? (
+                      <span style={{ fontWeight: 500 }}>
+                        {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ backgroundColor: '#f3f4f6', color: '#374151', padding: '4px 8px', fontSize: '0.8rem', borderRadius: 'var(--radius-sm)' }}>
+                        {audition.requestedSlots && audition.requestedSlots.length > 0
+                          ? `${audition.requestedSlots.length} slot${audition.requestedSlots.length > 1 ? 's' : ''} requested`
+                          : 'No times requested'}
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '16px' }}>
                     <span className="badge" style={{ 
@@ -488,7 +569,7 @@ export default function AuditionsView() {
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div className="flex-row" style={{ gap: '8px', justifyContent: 'flex-end' }}>
                       {audition.status === 'New' && (
-                        <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); openScheduleModal(audition); }}>Mark Scheduled</button>
+                        <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); openScheduleModal(audition); }}>Schedule</button>
                       )}
                       {audition.status === 'Scheduled' && (
                         <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); convertToSinger(audition); }}>Convert to Singer</button>
@@ -501,7 +582,7 @@ export default function AuditionsView() {
                   </td>
                 </tr>
               ))}
-              {filteredAuditions.length === 0 && (
+              {sortedAuditions.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No audition requests found for this filter.
@@ -536,8 +617,50 @@ export default function AuditionsView() {
           <p style={{ margin: 0 }}>
             Confirm the time slot for <strong>{schedulingAudition?.name}</strong>. An email will be sent to them with their scheduled time and an "Add to Calendar" link.
           </p>
+          
+          {schedulingAudition?.requestedSlots && schedulingAudition.requestedSlots.length > 0 && (
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label" style={{ color: 'var(--primary-deep)', fontWeight: 600 }}>Applicant's Preferred Times</label>
+              <div className="flex-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+                {schedulingAudition.requestedSlots.map((slot) => {
+                  const isSlotPredefined = settings?.slots?.includes(slot);
+                  const isSelected = schedSlot === slot || (schedSlot === '__custom__' && schedCustom === slot);
+                  return (
+                    <button
+                      type="button"
+                      key={slot}
+                      onClick={() => {
+                        if (isSlotPredefined) {
+                          setSchedSlot(slot);
+                          setSchedCustom('');
+                        } else {
+                          setSchedSlot('__custom__');
+                          setSchedCustom(slot);
+                        }
+                      }}
+                      className="badge"
+                      style={{ 
+                        cursor: 'pointer',
+                        padding: '8px 12px',
+                        border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                        backgroundColor: isSelected ? 'var(--primary-light)' : '#ffffff',
+                        color: isSelected ? 'var(--primary-deep)' : 'var(--text)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontWeight: isSelected ? 700 : 500,
+                        transition: 'all 0.2s',
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Time Slot</label>
+            <label className="text-label">Select Confirmed Time Slot</label>
             <select
               className="card"
               value={schedSlot}

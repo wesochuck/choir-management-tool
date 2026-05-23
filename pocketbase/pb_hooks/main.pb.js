@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T17:29:54.611Z
+// Generated on: 2026-05-23T17:57:34.657Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -724,7 +724,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -1526,7 +1526,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -2387,7 +2387,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -3193,7 +3193,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -4003,7 +4003,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -4817,7 +4817,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -5643,7 +5643,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -6458,7 +6458,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -7280,7 +7280,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
@@ -8091,7 +8091,7 @@ function handleCalendarDownload(e) {
         }
         else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot"));
+            start = new Date(audition.get("scheduledTimeSlot"));
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;

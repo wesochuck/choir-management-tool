@@ -19,7 +19,7 @@ test('convertAuditionToSinger creates profile with correct data from audition', 
   };
 
   try {
-    const audition = { id: 'a1', name: 'Singer', contact: 's@test.com', phone: '123', timeSlot: 'Monday 5:00 PM', voicePart: 'S1', status: 'New', notes: '' } as Audition & { phone: string };
+    const audition = { id: 'a1', name: 'Singer', contact: 's@test.com', phone: '123', scheduledTimeSlot: 'Monday 5:00 PM', voicePart: 'S1', status: 'New', notes: '' } as Audition & { phone: string };
     const result = await convertAuditionToSinger(audition);
 
     assert.equal(result.id, 'profile_1');
@@ -55,7 +55,7 @@ test('createAudition correctly passes status and notes fields', async (t) => {
     const data = {
       name: 'Test Singer',
       contact: 'test@singer.com',
-      timeSlot: 'Monday 5:00 PM',
+      scheduledTimeSlot: 'Monday 5:00 PM',
       voicePart: 'T1',
       experience: 'Experienced TTBB singer',
       status: 'Scheduled' as const,
@@ -71,7 +71,7 @@ test('createAudition correctly passes status and notes fields', async (t) => {
     assert.deepEqual(firstCall.arguments[0], {
       name: 'Test Singer',
       contact: 'test@singer.com',
-      timeSlot: 'Monday 5:00 PM',
+      scheduledTimeSlot: 'Monday 5:00 PM',
       voicePart: 'T1',
       experience: 'Experienced TTBB singer',
       status: 'Scheduled',

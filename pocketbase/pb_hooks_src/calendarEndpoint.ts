@@ -109,7 +109,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             uid = `event-${event.id}@choir-management.local`;
         } else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
-            start = new Date(audition.get("timeSlot") as string);
+            start = new Date(audition.get("scheduledTimeSlot") as string);
             durationHours = 0.5; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;

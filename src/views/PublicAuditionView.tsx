@@ -17,7 +17,7 @@ export default function PublicAuditionView() {
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(window.innerWidth > 640);
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
-  const [timeSlot, setTimeSlot] = useState(DEFAULT_AUDITION_SETTINGS.slots[0] || '');
+  const [requestedSlots, setRequestedSlots] = useState<string[]>([]);
   const [voicePart, setVoicePart] = useState('');
   const [experience, setExperience] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +35,6 @@ export default function PublicAuditionView() {
         ]);
         setSettings(loaded);
         setTimezone(tz);
-        setTimeSlot(loaded.slots[0] || '');
 
         if (loaded.defaultPerformanceId) {
           try {
@@ -63,16 +62,23 @@ export default function PublicAuditionView() {
     setIsSubmitting(true);
     setError('');
 
+    if (requestedSlots.length === 0) {
+      setError('Please select at least one available audition time slot.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       if (contact.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) {
         setError('Enter a valid email address or use a phone number.');
+        setIsSubmitting(false);
         return;
       }
 
       await auditionService.createAudition({
         name,
         contact,
-        timeSlot,
+        requestedSlots,
         ...(voicePart ? { voicePart: voicePart as Audition['voicePart'] } : {}),
         experience,
         performance: settings.defaultPerformanceId || undefined,
@@ -187,22 +193,72 @@ export default function PublicAuditionView() {
               <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
                 <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
                   <label className="text-label">Voice Part</label>
-                  <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px' }}>
+                  <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px', height: '44px' }}>
                     <option value="">Not sure yet</option>
                     {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>
                     ))}
                   </select>
                 </div>
-                <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                  <label className="text-label">Audition Time</label>
-                  <select className="card" value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} required style={{ padding: '0 12px' }}>
-                    {(settings.slots || []).map((slot) => (
-                      <option key={slot} value={slot}>
-                        {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                      </option>
-                    ))}
-                  </select>
+              </div>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Available Audition Times (Select all that apply)</label>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+                  gap: '12px',
+                  backgroundColor: 'var(--neutral-bg)',
+                  padding: 'var(--space-md)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)'
+                }}>
+                  {(settings.slots || []).map((slot) => {
+                    const isChecked = requestedSlots.includes(slot);
+                    return (
+                      <label 
+                        key={slot} 
+                        className="interactive-row"
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '10px', 
+                          padding: '12px', 
+                          borderRadius: 'var(--radius-sm)',
+                          border: `1px solid ${isChecked ? 'var(--primary)' : 'var(--border)'}`,
+                          backgroundColor: isChecked ? 'rgba(74, 117, 89, 0.05)' : 'var(--surface)',
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setRequestedSlots([...requestedSlots, slot]);
+                            } else {
+                              setRequestedSlots(requestedSlots.filter(s => s !== slot));
+                            }
+                          }}
+                          style={{ 
+                            width: '18px', 
+                            height: '18px', 
+                            accentColor: 'var(--primary)',
+                            cursor: 'pointer' 
+                          }}
+                        />
+                        <span style={{ fontSize: '0.875rem', fontWeight: isChecked ? 600 : 400 }}>
+                          {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {(!settings.slots || settings.slots.length === 0) && (
+                    <span className="text-muted text-sm" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '12px 0' }}>
+                      No time slots are currently configured. Please contact the administrator.
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
