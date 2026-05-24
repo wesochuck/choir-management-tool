@@ -482,7 +482,9 @@
 }
 
 .bottom-dock-singer-card {
-  padding: 2px 6px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 6px;
   background-color: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -491,7 +493,8 @@
   font-size: 0.75rem;
   align-items: center;
   box-shadow: var(--shadow-sm);
-  line-height: 1.1;
+  line-height: 1;
+  gap: 4px;
 }
 
 .bottom-dock-singer-card:active {
@@ -505,13 +508,14 @@
   white-space: nowrap;
   flex: 1;
   min-width: 0;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .singer-card-badge {
-  font-size: 8.5px;
+  font-size: 8px;
   padding: 1px 3px;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .bottom-dock-empty-lane {
