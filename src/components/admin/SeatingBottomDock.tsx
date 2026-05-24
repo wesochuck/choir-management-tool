@@ -129,18 +129,15 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print"
+                          className="no-print bottom-dock-remove-btn"
                           title="Mark as Not Attending"
                           style={{
                             background: 'none',
                             border: 'none',
                             color: 'var(--text-muted)',
                             cursor: 'pointer',
-                            width: '18px',
-                            height: '18px',
                             padding: 0,
                             marginLeft: '6px',
-                            borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
