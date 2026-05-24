@@ -6,7 +6,7 @@ import { eventService, type Event } from '../../services/eventService';
 import { settingsService, type AuditionSettings } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
-import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
+import { formatInTimezone } from '../../lib/timezone';
 
 const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
 
@@ -251,24 +251,24 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
           <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
               <label className="text-label">Confirmed Scheduled Time</label>
-              <select
-                className="card"
-                value={scheduledTimeSlot}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setScheduledTimeSlot(val);
-                  setIsCustomTime(val === '__custom__');
+              <div 
+                className="card flex-row" 
+                style={{ 
+                  height: '44px', 
+                  padding: '0 12px', 
+                  alignItems: 'center', 
+                  backgroundColor: 'var(--bg)', 
+                  border: '1px solid var(--border)',
+                  color: audition?.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
+                  fontWeight: audition?.scheduledTimeSlot ? 600 : 400
                 }}
-                style={{ height: '44px', padding: '0 12px' }}
               >
-                <option value="">-- Not scheduled yet --</option>
-                {(settings?.slots || []).map((slot) => (
-                  <option key={slot} value={slot}>
-                    {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  </option>
-                ))}
-                <option value="__custom__">Custom time slot...</option>
-              </select>
+                {audition?.scheduledTimeSlot ? (
+                  formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                ) : (
+                  'Not scheduled yet'
+                )}
+              </div>
             </div>
 
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
@@ -287,28 +287,14 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
             </div>
           </div>
 
-          {isCustomTime && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Custom Confirmed Time Slot</label>
-              <input
-                type="datetime-local"
-                className="card"
-                value={customTimeVal ? utcToZonedInputValue(customTimeVal, timezone) : ''}
-                onChange={(e) => setCustomTimeVal(zonedInputValueToUtc(e.target.value, timezone))}
-                required
-                style={{ padding: '0 12px', height: '44px' }}
-              />
-            </div>
-          )}
-
           <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
               <label className="text-label">Status</label>
               <select
                 className="card"
                 value={status}
-                onChange={(event) => setStatus(event.target.value as Audition['status'])}
-                style={{ height: '44px', padding: '0 12px' }}
+                disabled
+                style={{ height: '44px', padding: '0 12px', backgroundColor: 'var(--bg)', cursor: 'not-allowed' }}
               >
                 {statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
               </select>
