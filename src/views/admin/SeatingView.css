@@ -415,12 +415,12 @@
   margin-top: var(--space-md);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--space-md);
+  padding: var(--space-sm);
   background-color: var(--primary-light);
 }
 
 .bottom-dock-container {
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .bottom-dock-header {
@@ -450,7 +450,7 @@
   background-color: var(--surface);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  padding: var(--space-sm);
+  padding: 8px;
   height: 100%;
   overflow: hidden;
 }
@@ -474,14 +474,14 @@
 }
 
 .bottom-dock-lane-list {
-  gap: var(--space-xs);
+  gap: 6px;
   overflow-y: auto;
   flex: 1;
   padding-right: 2px;
 }
 
 .bottom-dock-singer-card {
-  padding: 6px var(--space-sm);
+  padding: 4px 8px;
   background-color: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
