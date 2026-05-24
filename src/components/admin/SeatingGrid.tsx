@@ -227,11 +227,23 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
               const sectionDef = suggestion ? sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase()) : null;
               const secColor = sectionDef?.color || sectionDef?.colorBg;
-              const colors = secColor
-                ? { bg: secColor, text: getContrastColor(secColor) }
-                : { bg: 'var(--surface)', text: 'var(--text-muted)' };
 
               const isAssigned = !!profileId;
+
+              // Resolve singer's section color for color-coding mismatches along with their section
+              let singerSecColor: string | undefined;
+              if (assignedProfile) {
+                const vpDef = voiceParts.find(vp => vp.label === assignedProfile.voicePart);
+                const singerSectionCode = vpDef?.sectionCode || (assignedProfile.voicePart ? assignedProfile.voicePart.trim()[0].toUpperCase() : '');
+                const singerSectionDef = singerSectionCode ? sections.find(s => s.code.toUpperCase() === singerSectionCode.toUpperCase()) : null;
+                singerSecColor = singerSectionDef?.color || singerSectionDef?.colorBg;
+              }
+
+              const activeColor = (isAssigned && singerSecColor) ? singerSecColor : secColor;
+              const colors = activeColor
+                ? { bg: activeColor, text: getContrastColor(activeColor) }
+                : { bg: 'var(--surface)', text: 'var(--text-muted)' };
+
               const seatBg = isAssigned ? colors.bg : 'var(--surface)';
               const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--text-muted)');
               const borderStyle = isAssigned ? 'solid' : 'dashed';
