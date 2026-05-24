@@ -249,7 +249,7 @@ export default function PublicAuditionView() {
                           }}
                         />
                         <span style={{ fontSize: '0.875rem', fontWeight: isChecked ? 600 : 400 }}>
-                          {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </span>
                       </label>
                     );

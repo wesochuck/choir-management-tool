@@ -232,7 +232,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                 const auditionSlot = audition.get("scheduledTimeSlot") as string;
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             } catch {
                                 // Ignore audition record resolution/formatting errors

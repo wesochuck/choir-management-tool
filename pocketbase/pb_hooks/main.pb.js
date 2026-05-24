@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-24T02:06:23.180Z
+// Generated on: 2026-05-24T02:27:23.024Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -44,6 +44,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -65,37 +146,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -115,10 +168,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -126,7 +180,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -140,7 +194,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -566,7 +620,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -963,6 +1017,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -984,37 +1119,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -1034,10 +1141,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -1045,7 +1153,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -1059,7 +1167,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -1485,7 +1593,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -1941,6 +2049,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -1962,37 +2151,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -2012,10 +2173,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -2023,7 +2185,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -2037,7 +2199,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -2463,7 +2625,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -2864,6 +3026,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -2885,37 +3128,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -2935,10 +3150,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -2946,7 +3162,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -2960,7 +3176,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -3386,7 +3602,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -3791,6 +4007,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -3812,37 +4109,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -3862,10 +4131,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -3873,7 +4143,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -3887,7 +4157,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -4313,7 +4583,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -4722,6 +4992,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -4743,37 +5094,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -4793,10 +5116,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -4804,7 +5128,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -4818,7 +5142,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -5244,7 +5568,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -5665,6 +5989,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -5686,37 +6091,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -5736,10 +6113,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -5747,7 +6125,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -5761,7 +6139,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -6187,7 +6565,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -6597,6 +6975,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -6618,37 +7077,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -6668,10 +7099,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -6679,7 +7111,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -6693,7 +7125,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -7119,7 +7551,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -7536,6 +7968,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -7557,37 +8070,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -7607,10 +8092,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -7618,7 +8104,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -7632,7 +8118,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -8058,7 +8544,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {
@@ -8464,6 +8950,87 @@ function normalizeBaseUrl(url) {
         return "http://localhost:5173";
     return String(url).trim().replace(/\/+$/g, "");
 }
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
 /**
  * Formats a date string in a specific timezone using Intl.
  */
@@ -8485,37 +9052,9 @@ function formatInTimezone(date, timezone, options) {
         }).format(d);
     }
     catch {
-        // Fallback for Goja VM (PocketBase backend)
-        let offsetHours;
-        const tz = String(timezone || "").toLowerCase();
-        const year = d.getUTCFullYear();
-        // Determine if DST (Daylight Saving Time) is active in the US
-        // DST starts 2nd Sunday of March, ends 1st Sunday of November
-        const march1 = new Date(Date.UTC(year, 2, 1));
-        const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
-        const nov1 = new Date(Date.UTC(year, 10, 1));
-        const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
-        const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0); // ~2 AM EST
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0); // ~2 AM EDT
-        const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-        if (tz.includes("chicago") || tz.includes("central")) {
-            offsetHours = isDst ? -5 : -6;
-        }
-        else if (tz.includes("denver") || tz.includes("mountain")) {
-            offsetHours = isDst ? -6 : -7;
-        }
-        else if (tz.includes("los_angeles") || tz.includes("pacific")) {
-            offsetHours = isDst ? -7 : -8;
-        }
-        else if (tz.includes("phoenix") || tz.includes("arizona")) {
-            offsetHours = -7; // Arizona does not observe DST
-        }
-        else {
-            // Default: America/New_York (Eastern)
-            offsetHours = isDst ? -4 : -5;
-        }
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
         // Shift date by offset to get target local time in UTC coordinates
-        const localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
         const localDate = new Date(localTimeMs);
         // Format manually using the shifted localDate components
         const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -8535,10 +9074,11 @@ function formatInTimezone(date, timezone, options) {
             hr = 12;
         const minVal = localDate.getUTCMinutes();
         const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
         // Build formats based on options requested:
         // Case 1: Just time (hour + minute)
         if (options.hour && !options.day) {
-            return hr + ":" + min + " " + ampm;
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 2: Long date format: "Sunday, June 14, 2026"
         if (options.weekday === "long" && options.year) {
@@ -8546,7 +9086,7 @@ function formatInTimezone(date, timezone, options) {
         }
         // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
         if (options.weekday === "short" && options.hour) {
-            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
         // Case 4: Date only with weekday: "Sun, Jun 14"
         if (options.weekday === "short" && !options.hour) {
@@ -8560,7 +9100,7 @@ function formatInTimezone(date, timezone, options) {
         // Generic fallback: "06/14/2026, 7:00 PM"
         const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
         const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
     }
 }
 
@@ -8986,7 +9526,7 @@ function processEmailQueue(app) {
                                 const auditionSlot = audition.get("scheduledTimeSlot");
                                 if (auditionSlot) {
                                     slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                 }
                             }
                             catch {

@@ -65,12 +65,14 @@ onRecordAfterCreateSuccess((e) => {
                 day: options.day || undefined,
                 hour: options.hour || undefined,
                 minute: options.minute || undefined,
+                timeZoneName: options.timeZoneName || undefined,
                 hour12: options.hour12 !== undefined ? options.hour12 : true,
                 timeZone: timezone
             });
             return formatter.format(d);
         } catch (err) {
             var offsetHours = 0;
+            var timezoneAbbreviation = "UTC";
             var tz = String(timezone || "").toLowerCase();
             var year = d.getUTCFullYear();
             
@@ -85,16 +87,53 @@ onRecordAfterCreateSuccess((e) => {
             
             var isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
 
-            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz === "") {
+                offsetHours = isDst ? -4 : -5;
+                timezoneAbbreviation = isDst ? "EDT" : "EST";
+            } else if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
                 offsetHours = isDst ? -5 : -6;
+                timezoneAbbreviation = isDst ? "CDT" : "CST";
             } else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
                 offsetHours = isDst ? -6 : -7;
-            } else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
-                offsetHours = isDst ? -7 : -8;
+                timezoneAbbreviation = isDst ? "MDT" : "MST";
+            } else if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+                offsetHours = isDst ? -8 : -9;
+                timezoneAbbreviation = isDst ? "AKDT" : "AKST";
             } else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
                 offsetHours = -7;
+                timezoneAbbreviation = "MST";
+            } else if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+                offsetHours = -10;
+                timezoneAbbreviation = "HST";
+            } else if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+                offsetHours = isDst ? -7 : -8;
+                timezoneAbbreviation = isDst ? "PDT" : "PST";
+            } else if (tz.indexOf("london") >= 0) {
+                var euStart = Date.UTC(year, 2, 31 - new Date(Date.UTC(year, 2, 31)).getUTCDay(), 1, 0, 0, 0);
+                var euEnd = Date.UTC(year, 9, 31 - new Date(Date.UTC(year, 9, 31)).getUTCDay(), 1, 0, 0, 0);
+                var isEuDst = d.getTime() >= euStart && d.getTime() < euEnd;
+                offsetHours = isEuDst ? 1 : 0;
+                timezoneAbbreviation = isEuDst ? "BST" : "GMT";
+            } else if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+                var cetStart = Date.UTC(year, 2, 31 - new Date(Date.UTC(year, 2, 31)).getUTCDay(), 1, 0, 0, 0);
+                var cetEnd = Date.UTC(year, 9, 31 - new Date(Date.UTC(year, 9, 31)).getUTCDay(), 1, 0, 0, 0);
+                var isCetDst = d.getTime() >= cetStart && d.getTime() < cetEnd;
+                offsetHours = isCetDst ? 2 : 1;
+                timezoneAbbreviation = isCetDst ? "CEST" : "CET";
+            } else if (tz.indexOf("tokyo") >= 0) {
+                offsetHours = 9;
+                timezoneAbbreviation = "JST";
+            } else if (tz.indexOf("sydney") >= 0) {
+                var sydStartDay = ((7 - new Date(Date.UTC(year, 9, 1)).getUTCDay()) % 7) + 1;
+                var sydEndDay = ((7 - new Date(Date.UTC(year, 3, 1)).getUTCDay()) % 7) + 1;
+                var sydStart = Date.UTC(year, 9, sydStartDay, 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+                var sydEnd = Date.UTC(year, 3, sydEndDay, 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+                var isSydDst = d.getTime() >= sydStart || d.getTime() < sydEnd;
+                offsetHours = isSydDst ? 11 : 10;
+                timezoneAbbreviation = isSydDst ? "AEDT" : "AEST";
             } else {
-                offsetHours = isDst ? -4 : -5;
+                offsetHours = 0;
+                timezoneAbbreviation = "UTC";
             }
 
             var localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
@@ -119,15 +158,16 @@ onRecordAfterCreateSuccess((e) => {
             
             var minVal = localDate.getUTCMinutes();
             var min = minVal < 10 ? "0" + minVal : String(minVal);
+            var timezoneSuffix = options.timeZoneName ? " " + timezoneAbbreviation : "";
 
             if (options.hour && !options.day) {
-                return hr + ":" + min + " " + ampm;
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
             }
             if (options.weekday === "long" && options.year) {
                 return wdayFull + ", " + monFull + " " + day + ", " + yr;
             }
             if (options.weekday === "short" && options.hour) {
-                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
             }
             if (options.weekday === "short" && !options.hour) {
                 return wday + ", " + mon + " " + day;
@@ -139,7 +179,7 @@ onRecordAfterCreateSuccess((e) => {
 
             var doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
             var doubleDigitDay = (day < 10) ? "0" + day : String(day);
-            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
     }
 
@@ -151,7 +191,7 @@ onRecordAfterCreateSuccess((e) => {
 
             const timezone = getChoirTimezone();
             const dateStr = formatInTimezoneLocal(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = formatInTimezoneLocal(d, timezone, { hour: 'numeric', minute: '2-digit' });
+            const timeStr = formatInTimezoneLocal(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
             
             if (dateStr && timeStr) {
                 return dateStr + " at " + timeStr;
@@ -279,12 +319,14 @@ onRecordAfterUpdateSuccess((e) => {
                 day: options.day || undefined,
                 hour: options.hour || undefined,
                 minute: options.minute || undefined,
+                timeZoneName: options.timeZoneName || undefined,
                 hour12: options.hour12 !== undefined ? options.hour12 : true,
                 timeZone: timezone
             });
             return formatter.format(d);
         } catch (err) {
             var offsetHours = 0;
+            var timezoneAbbreviation = "UTC";
             var tz = String(timezone || "").toLowerCase();
             var year = d.getUTCFullYear();
             
@@ -299,16 +341,53 @@ onRecordAfterUpdateSuccess((e) => {
             
             var isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
 
-            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz === "") {
+                offsetHours = isDst ? -4 : -5;
+                timezoneAbbreviation = isDst ? "EDT" : "EST";
+            } else if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
                 offsetHours = isDst ? -5 : -6;
+                timezoneAbbreviation = isDst ? "CDT" : "CST";
             } else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
                 offsetHours = isDst ? -6 : -7;
-            } else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
-                offsetHours = isDst ? -7 : -8;
+                timezoneAbbreviation = isDst ? "MDT" : "MST";
+            } else if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+                offsetHours = isDst ? -8 : -9;
+                timezoneAbbreviation = isDst ? "AKDT" : "AKST";
             } else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
                 offsetHours = -7;
+                timezoneAbbreviation = "MST";
+            } else if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+                offsetHours = -10;
+                timezoneAbbreviation = "HST";
+            } else if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+                offsetHours = isDst ? -7 : -8;
+                timezoneAbbreviation = isDst ? "PDT" : "PST";
+            } else if (tz.indexOf("london") >= 0) {
+                var euStart = Date.UTC(year, 2, 31 - new Date(Date.UTC(year, 2, 31)).getUTCDay(), 1, 0, 0, 0);
+                var euEnd = Date.UTC(year, 9, 31 - new Date(Date.UTC(year, 9, 31)).getUTCDay(), 1, 0, 0, 0);
+                var isEuDst = d.getTime() >= euStart && d.getTime() < euEnd;
+                offsetHours = isEuDst ? 1 : 0;
+                timezoneAbbreviation = isEuDst ? "BST" : "GMT";
+            } else if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+                var cetStart = Date.UTC(year, 2, 31 - new Date(Date.UTC(year, 2, 31)).getUTCDay(), 1, 0, 0, 0);
+                var cetEnd = Date.UTC(year, 9, 31 - new Date(Date.UTC(year, 9, 31)).getUTCDay(), 1, 0, 0, 0);
+                var isCetDst = d.getTime() >= cetStart && d.getTime() < cetEnd;
+                offsetHours = isCetDst ? 2 : 1;
+                timezoneAbbreviation = isCetDst ? "CEST" : "CET";
+            } else if (tz.indexOf("tokyo") >= 0) {
+                offsetHours = 9;
+                timezoneAbbreviation = "JST";
+            } else if (tz.indexOf("sydney") >= 0) {
+                var sydStartDay = ((7 - new Date(Date.UTC(year, 9, 1)).getUTCDay()) % 7) + 1;
+                var sydEndDay = ((7 - new Date(Date.UTC(year, 3, 1)).getUTCDay()) % 7) + 1;
+                var sydStart = Date.UTC(year, 9, sydStartDay, 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+                var sydEnd = Date.UTC(year, 3, sydEndDay, 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+                var isSydDst = d.getTime() >= sydStart || d.getTime() < sydEnd;
+                offsetHours = isSydDst ? 11 : 10;
+                timezoneAbbreviation = isSydDst ? "AEDT" : "AEST";
             } else {
-                offsetHours = isDst ? -4 : -5;
+                offsetHours = 0;
+                timezoneAbbreviation = "UTC";
             }
 
             var localTimeMs = d.getTime() + (offsetHours * 60 * 60 * 1000);
@@ -333,15 +412,16 @@ onRecordAfterUpdateSuccess((e) => {
             
             var minVal = localDate.getUTCMinutes();
             var min = minVal < 10 ? "0" + minVal : String(minVal);
+            var timezoneSuffix = options.timeZoneName ? " " + timezoneAbbreviation : "";
 
             if (options.hour && !options.day) {
-                return hr + ":" + min + " " + ampm;
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
             }
             if (options.weekday === "long" && options.year) {
                 return wdayFull + ", " + monFull + " " + day + ", " + yr;
             }
             if (options.weekday === "short" && options.hour) {
-                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm;
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
             }
             if (options.weekday === "short" && !options.hour) {
                 return wday + ", " + mon + " " + day;
@@ -353,7 +433,7 @@ onRecordAfterUpdateSuccess((e) => {
 
             var doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
             var doubleDigitDay = (day < 10) ? "0" + day : String(day);
-            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm;
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
         }
     }
 
@@ -365,7 +445,7 @@ onRecordAfterUpdateSuccess((e) => {
 
             const timezone = getChoirTimezone();
             const dateStr = formatInTimezoneLocal(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = formatInTimezoneLocal(d, timezone, { hour: 'numeric', minute: '2-digit' });
+            const timeStr = formatInTimezoneLocal(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
             
             if (dateStr && timeStr) {
                 return dateStr + " at " + timeStr;

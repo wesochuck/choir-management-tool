@@ -421,7 +421,7 @@ export default function AuditionsView() {
               <div className="flex-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
                 {settings.slots?.map(slot => (
                   <div key={slot} className="badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.85rem', backgroundColor: '#ffffff', border: '1px solid var(--border)' }}>
-                    <span>{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                    <span>{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                     <button type="button" onClick={() => removeSlot(slot)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1 }}>
                       &times;
                     </button>
@@ -578,7 +578,7 @@ export default function AuditionsView() {
                   <td data-label="Audition Time" style={{ padding: '16px', fontSize: '0.9rem', color: 'var(--neutral-text)' }}>
                     {audition.status === 'Scheduled' && audition.scheduledTimeSlot ? (
                       <span style={{ fontWeight: 500 }}>
-                        {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     ) : (
                       <span className="badge" style={{ backgroundColor: '#f3f4f6', color: '#374151', padding: '4px 8px', fontSize: '0.8rem', borderRadius: 'var(--radius-sm)' }}>
@@ -681,7 +681,7 @@ export default function AuditionsView() {
                         fontSize: '0.8rem'
                       }}
                     >
-                      {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </button>
                   );
                 })}
@@ -699,7 +699,7 @@ export default function AuditionsView() {
             >
               {settings?.slots?.map((slot) => (
                 <option key={slot} value={slot}>
-                  {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                 </option>
               ))}
               <option value="__custom__">Custom / Other</option>

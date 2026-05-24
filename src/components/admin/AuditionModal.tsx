@@ -264,7 +264,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
                 <option value="">-- Not scheduled yet --</option>
                 {(settings?.slots || []).map((slot) => (
                   <option key={slot} value={slot}>
-                    {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </option>
                 ))}
                 <option value="__custom__">Custom time slot...</option>
@@ -389,7 +389,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
                     {index + 1}
                   </span>
                   <span style={{ fontWeight: 600 }}>
-                    {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
               ))}
