@@ -100,6 +100,51 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     loadRsvps();
   }, [isOpen, initialData, activeTab]);
 
+  const isDirty = useMemo(() => {
+    if (initialData) {
+      const nameChanged = (formData.name || '') !== (initialData.name || '');
+      const emailChanged = (formData.email || '') !== (initialData.expand?.user?.email || '');
+      const passwordChanged = Boolean(formData.password); // password is blank by default unless edited
+      const phoneChanged = (formData.phone || '') !== (initialData.phone || '');
+      const voicePartChanged = (formData.voicePart || '') !== (initialData.voicePart || '');
+      const globalStatusChanged = (formData.globalStatus || '') !== (initialData.globalStatus || '');
+      const notesChanged = (formData.notes || '') !== (initialData.notes || '');
+      const emailOptChanged = Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail);
+      const manualStatusChanged = Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual);
+      const photoChanged = formData.photo !== initialData.photo;
+
+      return nameChanged || emailChanged || passwordChanged || phoneChanged || voicePartChanged || globalStatusChanged || notesChanged || emailOptChanged || manualStatusChanged || photoChanged;
+    } else {
+      const hasName = Boolean(formData.name?.trim());
+      const hasEmail = Boolean(formData.email?.trim());
+      const hasPassword = Boolean(formData.password);
+      const hasPhone = Boolean(formData.phone?.trim());
+      const hasVoicePart = Boolean(formData.voicePart);
+      const isStatusChanged = formData.globalStatus !== 'Active (Current)';
+      const hasNotes = Boolean(formData.notes?.trim());
+      const hasEmailOpt = Boolean(formData.doNotEmail);
+      const hasManualStatus = Boolean(formData.statusIsManual);
+
+      return hasName || hasEmail || hasPassword || hasPhone || hasVoicePart || isStatusChanged || hasNotes || hasEmailOpt || hasManualStatus;
+    }
+  }, [formData, initialData]);
+
+  const handleClose = async () => {
+    if (isDirty) {
+      const confirmDiscard = await dialog.confirm({
+        title: 'Unsaved Changes',
+        message: initialData 
+          ? 'You have unsaved changes to this singer\'s profile. Do you want to discard them?' 
+          : 'You are adding a new singer with unsaved details. Do you want to discard this singer?',
+        confirmLabel: 'Discard Changes',
+        cancelLabel: 'Keep Editing',
+        variant: 'warning'
+      });
+      if (!confirmDiscard) return;
+    }
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -357,7 +402,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={initialData ? 'Edit Singer' : 'Add Singer'}
       maxWidth="640px"
       minHeight={initialData ? '680px' : undefined}
@@ -376,7 +421,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   {isDeleting ? 'Deleting...' : 'Delete Singer'}
                 </button>
               )}
-              <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
+              <button type="button" onClick={handleClose} className="btn btn-ghost">Cancel</button>
               <button 
                 type="submit" 
                 form="singer-form"
@@ -387,7 +432,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               </button>
             </>
           ) : (
-            <button type="button" onClick={onClose} className="btn btn-primary">Close</button>
+            <button type="button" onClick={handleClose} className="btn btn-primary">Close</button>
           )}
         </>
       }

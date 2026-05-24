@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
@@ -36,6 +36,31 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     }
   }, [item, isOpen]);
 
+  const isDirty = useMemo(() => {
+    if (!item) return false;
+    const titleChanged = title !== item.title;
+    const composerChanged = composer !== (item.composer || '');
+    const durationChanged = duration !== (item.duration || '');
+    const notesChanged = notes !== (item.notes || '');
+    const typeChanged = type !== (item.type || 'song');
+    const soloChanged = soloSmallGroup !== (!!item.soloSmallGroup);
+    return titleChanged || composerChanged || durationChanged || notesChanged || typeChanged || soloChanged;
+  }, [item, title, composer, duration, notes, type, soloSmallGroup]);
+
+  const handleClose = async () => {
+    if (isDirty) {
+      const confirmDiscard = await dialog.confirm({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes to this set list item. Do you want to discard them?',
+        confirmLabel: 'Discard Changes',
+        cancelLabel: 'Keep Editing',
+        variant: 'warning'
+      });
+      if (!confirmDiscard) return;
+    }
+    onClose();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!item) return;
@@ -66,12 +91,12 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Edit Set List Item"
       maxWidth="500px"
       footer={
         <>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
           <button type="submit" form="edit-item-form" className="btn btn-primary">Update Item</button>
         </>
       }

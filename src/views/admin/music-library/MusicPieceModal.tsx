@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { BaseModal } from '../../../components/common/BaseModal';
 import { useDialog } from '../../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../../services/musicLibraryService';
@@ -194,6 +194,61 @@ export function MusicPieceModal({
         setSuggestedDuration(null);
         setManuallyAddedParts({});
     }, [piece, isOpen, loadMovements, initialTitle]);
+
+    const isDirty = useMemo(() => {
+        if (piece) {
+            const titleChanged = title !== piece.title;
+            const composerChanged = composer !== (piece.composer || '');
+            const durationChanged = duration !== (piece.duration || '');
+            const copiesChanged = copies !== (piece.copies?.toString() || '');
+            const catalogIdChanged = catalogId !== (piece.catalogId || '');
+            const notesChanged = notes !== (piece.notes || '');
+            
+            const initialSections = [...(piece.sectionBuckets || [])].sort();
+            const currentSections = [...sectionBuckets].sort();
+            const sectionsChanged = JSON.stringify(initialSections) !== JSON.stringify(currentSections);
+
+            const initialGenres = [...(piece.genres || [])].sort();
+            const currentGenres = [...selectedGenres].sort();
+            const genresChanged = JSON.stringify(initialGenres) !== JSON.stringify(currentGenres);
+
+            const initialPerformances = [...(piece.performances || [])].sort();
+            const currentPerformances = [...selectedPerformanceIds].sort();
+            const performancesChanged = JSON.stringify(initialPerformances) !== JSON.stringify(currentPerformances);
+
+            return titleChanged || composerChanged || durationChanged || copiesChanged || catalogIdChanged || notesChanged || sectionsChanged || genresChanged || performancesChanged;
+        } else {
+            const hasTitle = title !== (initialTitle || '');
+            const hasComposer = Boolean(composer.trim());
+            const hasDuration = Boolean(duration.trim());
+            const hasCopies = Boolean(copies.trim());
+            const hasCatalogId = Boolean(catalogId.trim());
+            const hasNotes = Boolean(notes.trim());
+            const hasSections = sectionBuckets.length > 0;
+            const hasGenres = selectedGenres.length > 0;
+            const hasPerformances = selectedPerformanceIds.length > 0;
+            const hasTutti = tuttiFile !== null;
+            const hasStagedMovements = localMovementsList.length > 0;
+
+            return hasTitle || hasComposer || hasDuration || hasCopies || hasCatalogId || hasNotes || hasSections || hasGenres || hasPerformances || hasTutti || hasStagedMovements;
+        }
+    }, [piece, title, composer, duration, copies, catalogId, notes, sectionBuckets, selectedGenres, selectedPerformanceIds, initialTitle, tuttiFile, localMovementsList]);
+
+    const handleClose = async () => {
+        if (isDirty) {
+            const confirmDiscard = await dialog.confirm({
+                title: 'Unsaved Changes',
+                message: piece 
+                    ? 'You have unsaved changes to this music piece. Do you want to discard them?' 
+                    : 'You are adding a new music piece with unsaved details. Do you want to discard this piece?',
+                confirmLabel: 'Discard Changes',
+                cancelLabel: 'Keep Editing',
+                variant: 'warning'
+            });
+            if (!confirmDiscard) return;
+        }
+        onClose();
+    };
 
     const handleAddStagingMovement = (e?: React.SyntheticEvent | React.KeyboardEvent) => {
         e?.preventDefault();
@@ -572,14 +627,14 @@ export function MusicPieceModal({
     return (
         <BaseModal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={piece ? 'Edit Piece' : 'Add Piece'}
             maxWidth="640px"
             minHeight={piece ? '580px' : undefined}
             footer={
                 <>
                     {onDelete && <button type="button" className="btn btn-danger" onClick={() => { onClose(); onDelete(); }} style={{ marginRight: 'auto' }}>Delete</button>}
-                    <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+                    <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
                     <button type="submit" form="music-piece-form" className="btn btn-primary" disabled={isSaving}>
                         {isSaving ? 'Saving...' : 'Save Piece'}
                     </button>

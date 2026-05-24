@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BaseModal } from '../common/BaseModal';
+import { useDialog } from '../../contexts/DialogContext';
 import type { Audition } from '../../services/auditionService';
 import { eventService, type Event } from '../../services/eventService';
 import { settingsService, type AuditionSettings } from '../../services/settingsService';
@@ -19,6 +20,7 @@ interface AuditionModalProps {
 
 export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, onClose, onSave }) => {
   const navigate = useNavigate();
+  const dialog = useDialog();
   const { timezone } = useChoirSettings();
   const [activeTab, setActiveTab] = useState<'info' | 'slots'>('info');
   const [name, setName] = useState('');
@@ -93,6 +95,43 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
     }
   }, [audition, settings]);
 
+  const isDirty = useMemo(() => {
+    if (audition) {
+      const nameChanged = name !== audition.name;
+      const contactChanged = contact !== audition.contact;
+      const voicePartChanged = (voicePart || '') !== (audition.voicePart || '');
+      const performanceChanged = (performance || '') !== (audition.performance || '');
+      const experienceChanged = experience !== (audition.experience || '');
+      const notesChanged = notes !== (audition.notes || '');
+      const requestedSlotsChanged = JSON.stringify(requestedSlots) !== JSON.stringify(audition.requestedSlots || []);
+      return nameChanged || contactChanged || voicePartChanged || performanceChanged || experienceChanged || notesChanged || requestedSlotsChanged;
+    } else {
+      const hasName = Boolean(name.trim());
+      const hasContact = Boolean(contact.trim());
+      const hasVoicePart = Boolean(voicePart);
+      const hasExperience = Boolean(experience.trim());
+      const hasNotes = Boolean(notes.trim());
+      const hasSlots = requestedSlots.length > 0;
+      return hasName || hasContact || hasVoicePart || hasExperience || hasNotes || hasSlots;
+    }
+  }, [audition, name, contact, voicePart, performance, experience, notes, requestedSlots]);
+
+  const handleClose = async () => {
+    if (isDirty) {
+      const confirmDiscard = await dialog.confirm({
+        title: 'Unsaved Changes',
+        message: audition 
+          ? 'You have unsaved changes to this audition. Do you want to discard them?' 
+          : 'You are filling a new audition sheet with unsaved details. Do you want to discard this audition?',
+        confirmLabel: 'Discard Changes',
+        cancelLabel: 'Keep Editing',
+        variant: 'warning'
+      });
+      if (!confirmDiscard) return;
+    }
+    onClose();
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -123,11 +162,11 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={audition ? `Edit ${audition.name}` : 'Add Audition Manually'}
       footer={
         <>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
           <button type="submit" form="audition-form" className="btn btn-primary" disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : audition ? 'Save Audition' : 'Add Audition'}
           </button>
