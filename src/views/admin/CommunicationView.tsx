@@ -473,13 +473,14 @@ export default function CommunicationView() {
           {/* Wizard Progress Bar */}
           <div className="wizard-progress-bar">
             {[
-              { id: 'TARGETS', label: '1. Targets & Template' },
-              { id: 'COMPOSE', label: '2. Compose & Preview' },
-              { id: 'REVIEW', label: '3. Review & Send' }
+              { id: 'TARGETS', number: '1', label: 'Targets & Template' },
+              { id: 'COMPOSE', number: '2', label: 'Compose & Preview' },
+              { id: 'REVIEW', number: '3', label: 'Review & Send' }
             ].map((step, idx) => (
               <div key={step.id} className="wizard-step-item">
                 <span className={`wizard-step-label ${wizardStep === step.id ? 'active' : 'inactive'}`}>
-                  {step.label}
+                  <span className="step-number">{step.number}</span>
+                  <span className="step-text">. {step.label}</span>
                 </span>
                 {idx < 2 && <span className="text-muted">→</span>}
               </div>
@@ -592,7 +593,7 @@ export default function CommunicationView() {
                   </div>
                 </AppCard>
 
-                <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
+                <div className="wizard-action-footer">
                   <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
                     Next: Compose Message →
                   </button>
@@ -739,9 +740,9 @@ export default function CommunicationView() {
                   </div>
                 </AppCard>
 
-                <div className="flex-row" style={{ justifyContent: 'space-between' }}>
+                <div className="wizard-action-footer flex-responsive" style={{ justifyContent: 'space-between', width: '100%' }}>
                   <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>← Back to Targets</button>
-                  <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                  <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
                     <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                       {isSavingDraft ? 'Saving...' : 'Save Draft'}
                     </button>
@@ -811,9 +812,9 @@ export default function CommunicationView() {
                     </div>
                   </div>
 
-                  <div className="flex-row" style={{ justifyContent: 'space-between', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border)' }}>
+                  <div className="wizard-action-footer flex-responsive" style={{ justifyContent: 'space-between', width: '100%', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border)' }}>
                     <button className="btn btn-ghost" onClick={() => setWizardStep('COMPOSE')}>← Back to Compose</button>
-                    <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                    <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
                       <button 
                         className="btn btn-secondary" 
                         onClick={handleSendTest} 

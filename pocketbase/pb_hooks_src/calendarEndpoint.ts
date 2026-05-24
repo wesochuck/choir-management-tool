@@ -53,7 +53,9 @@ function getChoirTimezoneLocal(app: PocketBaseApp): string {
             if (typeof parsed === "string") timezone = parsed;
             else if (typeof parsed === "object" && parsed.timezone) timezone = parsed.timezone;
         }
-    } catch {}
+    } catch {
+        // ignore error
+    }
     return timezone;
 }
 
@@ -78,7 +80,7 @@ function parseSafeUtcDate(dateStr: string, timezone: string): Date {
             d.setFullYear(new Date().getFullYear());
         }
         
-        let offsetHours = -4; // default Eastern
+        let offsetHours: number;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         

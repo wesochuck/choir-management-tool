@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-24T01:55:35.588Z
+// Generated on: 2026-05-24T02:06:23.180Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -727,7 +727,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -750,7 +752,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -1644,7 +1646,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -1667,7 +1671,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -2620,7 +2624,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -2643,7 +2649,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -3541,7 +3547,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -3564,7 +3572,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -4466,7 +4474,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -4489,7 +4499,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -5395,7 +5405,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -5418,7 +5430,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -6336,7 +6348,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -6359,7 +6373,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -7266,7 +7280,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -7289,7 +7305,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -8203,7 +8219,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -8226,7 +8244,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
@@ -9129,7 +9147,9 @@ function getChoirTimezoneLocal(app) {
                 timezone = parsed.timezone;
         }
     }
-    catch { }
+    catch {
+        // ignore error
+    }
     return timezone;
 }
 /**
@@ -9152,7 +9172,7 @@ function parseSafeUtcDate(dateStr, timezone) {
         if (d.getFullYear() === 2001) {
             d.setFullYear(new Date().getFullYear());
         }
-        let offsetHours = -4; // default Eastern
+        let offsetHours;
         const tz = String(timezone || "").toLowerCase();
         const year = d.getUTCFullYear();
         const march1 = new Date(Date.UTC(year, 2, 1));
