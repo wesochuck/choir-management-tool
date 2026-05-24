@@ -16,6 +16,7 @@ const PLACEHOLDERS: Placeholder[] = [
   { tag: '{eventDate}', label: 'Event Date', desc: 'Formatted date and time of the event', category: 'Event', color: '#2563eb', bgColor: '#eff6ff' },
   { tag: '{eventLocation}', label: 'Event Location', desc: 'Name of the venue for the event', category: 'Event', color: '#2563eb', bgColor: '#eff6ff' },
   { tag: '{eventDetails}', label: 'Event Details', desc: 'Administrative details/notes', category: 'Event', color: '#2563eb', bgColor: '#eff6ff' },
+  { tag: '{{PLAYER_LINK}}', label: 'Practice Player', desc: 'Generates an unauthenticated standalone practice player button (requires Event context)', category: 'Event', color: '#7c3aed', bgColor: '#f5f3ff' },
   { tag: '{{RSVP_LINKS}}', label: 'RSVP Buttons', desc: 'Generates beautiful "Yes/No" response buttons', category: 'RSVP', color: '#d97706', bgColor: '#fffbeb' },
 ];
 

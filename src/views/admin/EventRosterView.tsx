@@ -416,42 +416,18 @@ export default function EventRosterView() {
         )}
 
         {/* Filters & Search Row (Positioned closer to the list of names) */}
-        <div 
-          className="flex-responsive" 
-          style={{ 
-            gap: 'var(--space-md)', 
-            alignItems: 'center', 
-            flexWrap: 'wrap',
-            borderBottom: '1px solid var(--border)',
-            paddingBottom: 'var(--space-md)',
-            marginTop: 'var(--space-sm)'
-          }}
-        >
+        <div className="roster-filters-bar" style={{ marginTop: 'var(--space-sm)' }}>
           {/* Name Search */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '240px', maxWidth: '400px' }}>
+          <div className="search-input-wrapper">
             <input
               type="text"
               placeholder="Search active singers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="card"
-              style={{
-                padding: '0 40px 0 36px',
-                height: '44px',
-                width: '100%',
-                fontSize: '15px'
-              }}
+              className="card search-input"
+              style={{ fontSize: '15px' }}
             />
-            <span style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              pointerEvents: 'none'
-            }}>
+            <span className="search-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -487,25 +463,17 @@ export default function EventRosterView() {
               </button>
             )}
           </div>
-
+ 
           {/* Sort By Select */}
           <select 
             value={sortBy} 
             onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
-            className="card"
-            style={{ 
-              padding: '0 12px', 
-              height: '44px', 
-              width: '200px', 
-              border: '1px solid var(--border)', 
-              borderRadius: 'var(--radius-md)',
-              fontSize: '15px'
-            }}
+            className="card admin-filter-select"
           >
             <option value="lastName">Last Name</option>
             <option value="voicePart">Voice Part + Last Name</option>
           </select>
-
+ 
           {/* Reset Filters */}
           {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
             <button 
@@ -514,14 +482,7 @@ export default function EventRosterView() {
                 setSelectedVoiceParts([]);
                 setRsvpFilter('All');
               }}
-              className="btn btn-secondary"
-              style={{ 
-                height: '44px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 'var(--space-xs)',
-                whiteSpace: 'nowrap'
-              }}
+              className="btn btn-secondary admin-filter-reset"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>

@@ -871,7 +871,7 @@ export default function CommunicationView() {
                           } 
                         }
                       } else {
-                        const values = { eventTitle: task.event.title || task.event.type, eventType: task.event.type, eventDate: new Date(task.event.date).toLocaleString(), eventLocation: task.event.expand?.venue?.name || 'TBD', eventDetails: task.event.details || '', singerName: '{singerName}', rsvpLinks: '{{RSVP_LINKS}}' };
+                        const values = { eventTitle: task.event.title || task.event.type, eventType: task.event.type, eventDate: new Date(task.event.date).toLocaleString(), eventLocation: task.event.expand?.venue?.name || 'TBD', eventDetails: task.event.details || '', singerName: '{singerName}', rsvpLinks: '{{RSVP_LINKS}}', playerLink: '{{PLAYER_LINK}}' };
                         setFilters({ ...DEFAULT_FILTERS, eventId: task.event.id, rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All' });
                         setSubject(renderCommunicationTemplate(commSettings.reminderSubjectTemplate, values));
                         setContent(renderCommunicationTemplate(commSettings.reminderBodyTemplate, values));

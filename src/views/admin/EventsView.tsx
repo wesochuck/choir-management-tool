@@ -97,6 +97,7 @@ export default function EventsView() {
       eventDetails: event.details || '',
       singerName: '{singerName}',
       rsvpLinks: '{{RSVP_LINKS}}',
+      playerLink: '{{PLAYER_LINK}}',
     };
 
     const initialSubject = renderCommunicationTemplate(communicationSettings.reminderSubjectTemplate, values);
@@ -188,6 +189,7 @@ export default function EventsView() {
             eventDetails: savedEvent.details || '',
             singerName: '{singerName}',
             rsvpLinks: '{{RSVP_LINKS}}',
+            playerLink: '{{PLAYER_LINK}}',
           };
 
           const initialSubject = renderCommunicationTemplate(communicationSettings.reminderSubjectTemplate, values);

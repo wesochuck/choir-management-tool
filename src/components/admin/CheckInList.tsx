@@ -133,23 +133,8 @@ const CheckInRow: React.FC<{
           </div>
         </div>
 
-        {/* Right Section: Attendance segmented control buttons */}
+        {/* Right Section: Attendance separated action buttons (Absent on left, Present on right) */}
         <div className="admin-checkin-actions">
-          <button
-            onClick={(event) => {
-              event.stopPropagation();
-              onSetAttendance(item.profileId, 'Present');
-            }}
-            className="btn"
-            style={{
-              backgroundColor: isPresent ? 'var(--primary)' : 'transparent',
-              color: isPresent ? 'var(--surface)' : '#475569',
-              fontWeight: isPresent ? '700' : '600',
-              boxShadow: isPresent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-            }}
-          >
-            Present
-          </button>
           <button
             onClick={(event) => {
               event.stopPropagation();
@@ -157,13 +142,30 @@ const CheckInRow: React.FC<{
             }}
             className="btn"
             style={{
-              backgroundColor: isAbsent ? '#ef4444' : 'transparent',
-              color: isAbsent ? 'var(--surface)' : '#475569',
-              fontWeight: isAbsent ? '700' : '600',
+              backgroundColor: isAbsent ? '#ef4444' : 'var(--surface)',
+              color: isAbsent ? 'var(--surface)' : '#64748b',
+              borderColor: isAbsent ? '#ef4444' : 'var(--border)',
+              fontWeight: isAbsent ? '700' : '500',
               boxShadow: isAbsent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
             }}
           >
             Absent
+          </button>
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              onSetAttendance(item.profileId, 'Present');
+            }}
+            className="btn"
+            style={{
+              backgroundColor: isPresent ? 'var(--primary)' : 'var(--surface)',
+              color: isPresent ? 'var(--surface)' : 'var(--primary-deep)',
+              borderColor: isPresent ? 'var(--primary)' : 'var(--border)',
+              fontWeight: isPresent ? '700' : '600',
+              boxShadow: isPresent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            Present
           </button>
         </div>
       </div>

@@ -110,7 +110,8 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
 
             let htmlBody = renderMarkdown(protectedContent);
 
@@ -119,7 +120,8 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
 
             let subject = record.get("subject") as string || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
@@ -282,6 +284,25 @@ export function processEmailQueue(app: PocketBaseApp): void {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            } else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                                   .replace(/{playerLink}/g, "");
             }
 
             // Compile secure unsubscribe URL

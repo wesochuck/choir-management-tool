@@ -42,6 +42,7 @@ export default function AuditionsView() {
   const [editingAudition, setEditingAudition] = useState<Audition | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [performanceFilter, setPerformanceFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<Audition['status'][]>(['New', 'Scheduled']);
 
   // Slot Generator State
   const [genDate, setGenDate] = useState('');
@@ -265,7 +266,8 @@ export default function AuditionsView() {
   };
 
   const filteredAuditions = auditions.filter(a => 
-    performanceFilter === 'all' || a.performance === performanceFilter
+    (performanceFilter === 'all' || a.performance === performanceFilter) &&
+    statusFilter.includes(a.status)
   );
 
   const sortedAuditions = useMemo(() => {
@@ -387,20 +389,20 @@ export default function AuditionsView() {
               <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'var(--neutral-bg)', border: '1px solid var(--border)' }}>
                 <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
                   <span className="text-label" style={{ fontSize: '0.8rem' }}>Generate Slots</span>
-                  <div className="flex-responsive" style={{ gap: 'var(--space-sm)', alignItems: 'flex-end' }}>
-                    <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
+                  <div className="slots-generator-grid">
+                    <div className="flex-col" style={{ gap: '4px' }}>
                       <span className="text-xs text-muted">Date</span>
                       <input type="date" className="card" value={genDate} onChange={e => setGenDate(e.target.value)} style={{ padding: '8px' }} />
                     </div>
-                    <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
+                    <div className="flex-col" style={{ gap: '4px' }}>
                       <span className="text-xs text-muted">Start Time</span>
                       <input type="time" className="card" value={genStart} onChange={e => setGenStart(e.target.value)} style={{ padding: '8px' }} />
                     </div>
-                    <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
+                    <div className="flex-col" style={{ gap: '4px' }}>
                       <span className="text-xs text-muted">End Time</span>
                       <input type="time" className="card" value={genEnd} onChange={e => setGenEnd(e.target.value)} style={{ padding: '8px' }} />
                     </div>
-                    <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
+                    <div className="flex-col" style={{ gap: '4px' }}>
                       <span className="text-xs text-muted">Interval (mins)</span>
                       <select className="card" value={genInterval} onChange={e => setGenInterval(e.target.value)} style={{ padding: '8px' }}>
                         <option value="10">10</option>
@@ -451,25 +453,53 @@ export default function AuditionsView() {
         </AppCard>
       )}
 
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label text-muted">Filter by Performance</label>
-          <select
-            className="card"
-            value={performanceFilter}
-            onChange={(e) => setPerformanceFilter(e.target.value)}
-            style={{ minWidth: '240px', height: '40px', padding: '0 12px' }}
-          >
-            <option value="all">All Auditions</option>
-            {performances.map(p => (
-              <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
-            ))}
-          </select>
+      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
+        <div className="flex-responsive" style={{ gap: 'var(--space-md)', flex: 1 }}>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '240px' }}>
+            <label className="text-label text-muted">Filter by Performance</label>
+            <select
+              className="card"
+              value={performanceFilter}
+              onChange={(e) => setPerformanceFilter(e.target.value)}
+              style={{ height: '40px', padding: '0 12px' }}
+            >
+              <option value="all">All Auditions</option>
+              {performances.map(p => (
+                <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label text-muted">Filter by Status</label>
+            <div className="flex-row" style={{ gap: '16px', height: '40px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {(['New', 'Scheduled', 'Closed'] as Audition['status'][]).map(status => {
+                const isChecked = statusFilter.includes(status);
+                return (
+                  <label key={status} className="flex-row" style={{ gap: '8px', cursor: 'pointer', fontSize: '0.9rem', userSelect: 'none', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        if (isChecked) {
+                          setStatusFilter(statusFilter.filter(s => s !== status));
+                        } else {
+                          setStatusFilter([...statusFilter, status]);
+                        }
+                      }}
+                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                    />
+                    <span>{status}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
       <AppCard noPadding>
-        <div className="table-responsive">
+        <div className="table-responsive admin-responsive-table">
           <table className="text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg)' }}>
@@ -508,7 +538,7 @@ export default function AuditionsView() {
                   onClick={() => { setEditingAudition(audition); setIsModalOpen(true); }}
                   style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                 >
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Name" style={{ padding: '16px' }}>
                     <div className="flex-col" style={{ gap: '4px' }}>
                       <div className="flex-row" style={{ gap: '8px', alignItems: 'center' }}>
                         <span style={{ fontWeight: 600 }}>{audition.name}</span>
@@ -538,14 +568,14 @@ export default function AuditionsView() {
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Target Performance" style={{ padding: '16px' }}>
                     {audition.expand?.performance ? (
                       <span className="badge badge-performance">{audition.expand.performance.title}</span>
                     ) : (
                       <span className="text-muted text-sm">None</span>
                     )}
                   </td>
-                  <td style={{ padding: '16px', fontSize: '0.9rem', color: 'var(--neutral-text)' }}>
+                  <td data-label="Audition Time" style={{ padding: '16px', fontSize: '0.9rem', color: 'var(--neutral-text)' }}>
                     {audition.status === 'Scheduled' && audition.scheduledTimeSlot ? (
                       <span style={{ fontWeight: 500 }}>
                         {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
@@ -558,7 +588,7 @@ export default function AuditionsView() {
                       </span>
                     )}
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Status" style={{ padding: '16px' }}>
                     <span className="badge" style={{ 
                       backgroundColor: audition.status === 'New' ? '#dbeafe' : audition.status === 'Scheduled' ? '#dcfce7' : audition.status === 'Closed' ? '#f1f5f9' : 'var(--bg)',
                       color: audition.status === 'New' ? '#1e40af' : audition.status === 'Scheduled' ? '#166534' : audition.status === 'Closed' ? '#64748b' : 'var(--neutral-text)'
@@ -566,8 +596,8 @@ export default function AuditionsView() {
                       {audition.status}
                     </span>
                   </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <div className="flex-row" style={{ gap: '8px', justifyContent: 'flex-end' }}>
+                  <td data-label="Actions" style={{ padding: '16px', textAlign: 'right' }}>
+                    <div className="flex-row" style={{ gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                       {audition.status === 'New' && (
                         <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); openScheduleModal(audition); }}>Schedule</button>
                       )}

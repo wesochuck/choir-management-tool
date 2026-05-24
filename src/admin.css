@@ -303,20 +303,20 @@
 .admin-checkin-actions {
   display: flex;
   flex-direction: row;
-  gap: 2px;
-  background-color: #f1f5f9;
-  padding: 3px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  gap: var(--space-sm, 12px);
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
   flex: 0 0 auto;
 }
 
 .admin-checkin-actions .btn {
-  height: 30px;
-  padding: 0 14px;
-  font-size: var(--font-size-xs);
-  border-radius: 6px;
-  border: none;
+  height: 34px;
+  padding: 0 16px;
+  font-size: var(--font-size-sm, 13px);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border);
   box-shadow: none;
   transition: all 0.15s ease;
 }
@@ -503,6 +503,19 @@
   .admin-checkin-folder-group {
     gap: 4px;
   }
+
+  /* Actions cell in event roster table */
+  .admin-responsive-table td[data-label="Actions"] .flex-row {
+    justify-content: flex-end !important;
+    width: 100% !important;
+    gap: 4px !important;
+  }
+  .admin-responsive-table td[data-label="Actions"] button {
+    padding: 0 8px !important;
+    font-size: 0.7rem !important;
+    height: 28px !important;
+    min-height: unset !important;
+  }
 }
 
 /* -------------------------------------------------------------
@@ -531,5 +544,27 @@
   .admin-event-actions .btn-ghost {
     border: 1px solid var(--border);
     background-color: var(--surface);
+  }
+}
+
+/* 8. Slots Generator Responsive Grid Layout */
+.slots-generator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  gap: var(--space-sm);
+  align-items: end;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .slots-generator-grid {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+  .slots-generator-grid .btn {
+    height: 44px;
+    font-size: var(--font-size-sm, 14px);
+    width: 100%;
   }
 }

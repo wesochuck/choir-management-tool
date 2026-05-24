@@ -409,11 +409,9 @@ export default function SetListView() {
   );
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="no-print flex-col" style={{ gap: 'var(--space-xl)', width: '100%' }}>
-        <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+      <div className="no-print admin-view-header">
         <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)' }}>
-          <h1 className="text-display" style={{ margin: 0 }}>Set Lists</h1>
           {selectedEventId && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
               {saveStatus === 'saving' && (
@@ -436,7 +434,7 @@ export default function SetListView() {
           )}
         </div>
         {selectedEvent && (
-          <div className="flex-row no-print" style={{ gap: 'var(--space-sm)' }}>
+          <div className="admin-view-actions">
             <button
               type="button"
               className="btn btn-secondary"
@@ -459,14 +457,13 @@ export default function SetListView() {
         )}
       </div>
 
-      <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'flex-end' }}>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1 }}>
+      <div className="roster-filters-bar" style={{ alignItems: 'stretch' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1, minWidth: '200px' }}>
             <label className="text-label">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
+              className="card admin-filter-select"
             >
               <option value="">-- Choose Event --</option>
               {events.map((e) => (
@@ -478,13 +475,12 @@ export default function SetListView() {
           </div>
 
           {selectedEvent && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '200px' }}>
               <label className="text-label">Copy from Previous</label>
               <select 
                 value="" 
                 onChange={(e) => handleCopyFrom(e.target.value)}
-                className="card"
-                style={{ width: '240px', padding: '0 12px', height: '48px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'none' }}
+                className="card admin-filter-select"
               >
                 <option value="">-- Copy Set List --</option>
                 {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (
@@ -497,18 +493,19 @@ export default function SetListView() {
           )}
 
           {selectedEvent && selectedEvent.type === 'Performance' && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '200px' }}>
               <label className="text-label">Singer Visibility</label>
               <div 
                 className="card"
                 style={{ 
-                  height: '48px', 
+                  height: '44px', 
                   display: 'flex', 
                   alignItems: 'center', 
                   padding: '0 16px',
                   backgroundColor: selectedEvent.setListApproved !== false ? 'rgba(74, 124, 89, 0.1)' : 'var(--surface)',
                   border: selectedEvent.setListApproved !== false ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  borderRadius: 'var(--radius-md)'
                 }}
               >
                 <label 
@@ -540,7 +537,7 @@ export default function SetListView() {
           )}
 
           {selectedEvent && selectedEvent.type === 'Rehearsal' && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '200px' }}>
               <label className="text-label">Parent Set List</label>
               {parentPerformance ? (
                 <button
@@ -548,7 +545,7 @@ export default function SetListView() {
                   className="btn btn-secondary"
                   onClick={() => setSelectedEventId(parentPerformance.id)}
                   style={{
-                    height: '48px',
+                    height: '44px',
                     width: '100%',
                     display: 'flex',
                     alignItems: 'center',
@@ -569,7 +566,7 @@ export default function SetListView() {
                     display: 'flex',
                     flexDirection: 'row',
                     alignItems: 'center', 
-                    height: '48px', 
+                    height: '44px', 
                     padding: '0 12px', 
                     fontSize: 'var(--font-size-label)', 
                     color: 'var(--text-muted)',
@@ -578,7 +575,7 @@ export default function SetListView() {
                     backgroundColor: 'var(--surface)'
                   }}
                 >
-                  No parent Performance linked
+                  No parent linked
                 </div>
               )}
             </div>
@@ -690,7 +687,6 @@ export default function SetListView() {
           <p className="text-muted">Select an event above to manage its set list.</p>
         </AppCard>
       )}
-      </div>
 
       <MusicPieceModal
         isOpen={isLibraryModalOpen}

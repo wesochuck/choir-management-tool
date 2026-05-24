@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-23T18:39:26.348Z
+// Generated on: 2026-05-24T01:55:35.588Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -456,14 +456,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -614,6 +616,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -1353,14 +1373,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -1511,6 +1533,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -2309,14 +2349,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -2467,6 +2509,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -3210,14 +3270,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -3368,6 +3430,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -4115,14 +4195,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -4273,6 +4355,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -5024,14 +5124,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -5182,6 +5284,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -5945,14 +6065,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -6103,6 +6225,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -6855,14 +6995,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -7013,6 +7155,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -7772,14 +7932,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -7930,6 +8092,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
@@ -8678,14 +8858,16 @@ function processEmailQueue(app) {
                 .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%");
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
             let htmlBody = renderMarkdown(protectedContent);
             // Restore protected placeholders
             htmlBody = htmlBody
                 .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}");
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
             let subject = record.get("subject") || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
             // Fetch dynamic event details if enqueued under filters
@@ -8836,6 +9018,24 @@ function processEmailQueue(app) {
 `;
                     htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
                 }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
             }
             // Compile secure unsubscribe URL
             let unsubscribeUrl = `${baseUrl}/unsubscribe`;
