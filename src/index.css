@@ -324,3 +324,51 @@ select:focus {
 .message-preview-content em {
   font-style: italic;
 }
+
+/* Global Filter Controls & Custom Dropdown Select overrides */
+.roster-filters-bar {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.admin-filter-select {
+  width: 200px;
+  height: 44px;
+  padding: 0 36px 0 12px !important;
+  color: var(--text) !important;
+  background-color: var(--surface) !important;
+  font-size: 15px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.admin-filter-reset {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .roster-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .search-input-wrapper,
+  .voice-part-filter-container,
+  .admin-filter-select,
+  .admin-filter-reset {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+  
+  .admin-filter-reset {
+    justify-content: center;
+  }
+}

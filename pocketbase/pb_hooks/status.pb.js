@@ -1,6 +1,6 @@
 // Profile Status Engine Hooks
 
-const STATUS_HOOK_VERSION = "2026-05-19T21:30:00-04:00-inline-callbacks";
+const STATUS_HOOK_VERSION = "2026-05-24T08:20:00-04:00-dynamic-settings";
 
 console.log("Profile status hook loaded: " + STATUS_HOOK_VERSION);
 
@@ -33,28 +33,68 @@ onRecordAfterUpdateSuccess((e) => {
 
         if (profile.get("statusIsManual")) return;
 
+        // Fetch global settings dynamically
+        let statusAutomationEnabled = true;
+        let statusAutomationMissThreshold = 3;
+        let statusAutomationRecoveryEnabled = true;
+
+        try {
+            const rosterSettingRecord = $app.findFirstRecordByFilter("appSettings", "key = 'roster'");
+            if (rosterSettingRecord) {
+                const valBytes = rosterSettingRecord.get("value");
+                if (valBytes) {
+                    let str = "";
+                    if (typeof valBytes === "string") {
+                        str = valBytes;
+                    } else if (Array.isArray(valBytes) || (typeof valBytes === "object" && valBytes.length !== undefined)) {
+                        for (let i = 0; i < valBytes.length; i++) {
+                            str += String.fromCharCode(valBytes[i]);
+                        }
+                    } else if (typeof valBytes === "object") {
+                        str = JSON.stringify(valBytes);
+                    }
+                    const rosterSettings = JSON.parse(str);
+                    if (rosterSettings.statusAutomationEnabled !== undefined) {
+                        statusAutomationEnabled = rosterSettings.statusAutomationEnabled;
+                    }
+                    if (rosterSettings.statusAutomationMissThreshold !== undefined) {
+                        statusAutomationMissThreshold = Number(rosterSettings.statusAutomationMissThreshold);
+                    }
+                    if (rosterSettings.statusAutomationRecoveryEnabled !== undefined) {
+                        statusAutomationRecoveryEnabled = rosterSettings.statusAutomationRecoveryEnabled;
+                    }
+                }
+            }
+        } catch (err) {
+            console.log("Failed to load global status settings, using defaults: " + err);
+        }
+
+        if (!statusAutomationEnabled) return;
+
         const now = new Date().toISOString().replace("T", " ").split(".")[0];
 
-        let futureRosters = [];
-        try {
-            futureRosters = $app.findRecordsByFilter(
-                "eventRosters",
-                "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'",
-                "-event.date",
-                1,
-                0,
-                { profileId: profileId, now: now }
-            );
-        } catch (err) {}
+        if (statusAutomationRecoveryEnabled) {
+            let futureRosters = [];
+            try {
+                futureRosters = $app.findRecordsByFilter(
+                    "eventRosters",
+                    "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'",
+                    "-event.date",
+                    1,
+                    0,
+                    { profileId: profileId, now: now }
+                );
+            } catch (err) {}
 
-        if (futureRosters && futureRosters.length > 0) {
-            if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
-                profile.set("globalStatus", "Active (Future)");
-                profile.set("statusLastChangedAt", now);
-                profile.set("statusChangeReason", "Automated recovery via future RSVP");
-                saveProfileStatus(profile);
+            if (futureRosters && futureRosters.length > 0) {
+                if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
+                    profile.set("globalStatus", "Active (Future)");
+                    profile.set("statusLastChangedAt", now);
+                    profile.set("statusChangeReason", "Automated recovery via future RSVP");
+                    saveProfileStatus(profile);
+                }
+                return;
             }
-            return;
         }
 
         let pastRosters = [];
@@ -63,18 +103,18 @@ onRecordAfterUpdateSuccess((e) => {
                 "eventRosters",
                 "profile = {:profileId} && event.date < {:now} && event.type = 'Performance'",
                 "-event.date",
-                3,
+                statusAutomationMissThreshold,
                 0,
                 { profileId: profileId, now: now }
             );
         } catch (err) {}
 
-        if (pastRosters && pastRosters.length === 3) {
+        if (pastRosters && pastRosters.length === statusAutomationMissThreshold) {
             const allMissed = pastRosters.every(r => r.get("attendance") === "Absent" || r.get("rsvp") === "No");
             if (allMissed && profile.get("globalStatus") !== "Inactive") {
                 profile.set("globalStatus", "Inactive");
                 profile.set("statusLastChangedAt", now);
-                profile.set("statusChangeReason", "Automated deactivation due to 3 consecutive misses");
+                profile.set("statusChangeReason", "Automated deactivation due to " + statusAutomationMissThreshold + " consecutive misses");
                 saveProfileStatus(profile);
             }
         }
@@ -117,28 +157,68 @@ onRecordAfterCreateSuccess((e) => {
 
         if (profile.get("statusIsManual")) return;
 
+        // Fetch global settings dynamically
+        let statusAutomationEnabled = true;
+        let statusAutomationMissThreshold = 3;
+        let statusAutomationRecoveryEnabled = true;
+
+        try {
+            const rosterSettingRecord = $app.findFirstRecordByFilter("appSettings", "key = 'roster'");
+            if (rosterSettingRecord) {
+                const valBytes = rosterSettingRecord.get("value");
+                if (valBytes) {
+                    let str = "";
+                    if (typeof valBytes === "string") {
+                        str = valBytes;
+                    } else if (Array.isArray(valBytes) || (typeof valBytes === "object" && valBytes.length !== undefined)) {
+                        for (let i = 0; i < valBytes.length; i++) {
+                            str += String.fromCharCode(valBytes[i]);
+                        }
+                    } else if (typeof valBytes === "object") {
+                        str = JSON.stringify(valBytes);
+                    }
+                    const rosterSettings = JSON.parse(str);
+                    if (rosterSettings.statusAutomationEnabled !== undefined) {
+                        statusAutomationEnabled = rosterSettings.statusAutomationEnabled;
+                    }
+                    if (rosterSettings.statusAutomationMissThreshold !== undefined) {
+                        statusAutomationMissThreshold = Number(rosterSettings.statusAutomationMissThreshold);
+                    }
+                    if (rosterSettings.statusAutomationRecoveryEnabled !== undefined) {
+                        statusAutomationRecoveryEnabled = rosterSettings.statusAutomationRecoveryEnabled;
+                    }
+                }
+            }
+        } catch (err) {
+            console.log("Failed to load global status settings, using defaults: " + err);
+        }
+
+        if (!statusAutomationEnabled) return;
+
         const now = new Date().toISOString().replace("T", " ").split(".")[0];
 
-        let futureRosters = [];
-        try {
-            futureRosters = $app.findRecordsByFilter(
-                "eventRosters",
-                "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'",
-                "-event.date",
-                1,
-                0,
-                { profileId: profileId, now: now }
-            );
-        } catch (err) {}
+        if (statusAutomationRecoveryEnabled) {
+            let futureRosters = [];
+            try {
+                futureRosters = $app.findRecordsByFilter(
+                    "eventRosters",
+                    "profile = {:profileId} && rsvp = 'Yes' && event.date >= {:now} && event.type = 'Performance'",
+                    "-event.date",
+                    1,
+                    0,
+                    { profileId: profileId, now: now }
+                );
+            } catch (err) {}
 
-        if (futureRosters && futureRosters.length > 0) {
-            if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
-                profile.set("globalStatus", "Active (Future)");
-                profile.set("statusLastChangedAt", now);
-                profile.set("statusChangeReason", "Automated recovery via future RSVP");
-                saveProfileStatus(profile);
+            if (futureRosters && futureRosters.length > 0) {
+                if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
+                    profile.set("globalStatus", "Active (Future)");
+                    profile.set("statusLastChangedAt", now);
+                    profile.set("statusChangeReason", "Automated recovery via future RSVP");
+                    saveProfileStatus(profile);
+                }
+                return;
             }
-            return;
         }
 
         let pastRosters = [];
@@ -147,18 +227,18 @@ onRecordAfterCreateSuccess((e) => {
                 "eventRosters",
                 "profile = {:profileId} && event.date < {:now} && event.type = 'Performance'",
                 "-event.date",
-                3,
+                statusAutomationMissThreshold,
                 0,
                 { profileId: profileId, now: now }
             );
         } catch (err) {}
 
-        if (pastRosters && pastRosters.length === 3) {
+        if (pastRosters && pastRosters.length === statusAutomationMissThreshold) {
             const allMissed = pastRosters.every(r => r.get("attendance") === "Absent" || r.get("rsvp") === "No");
             if (allMissed && profile.get("globalStatus") !== "Inactive") {
                 profile.set("globalStatus", "Inactive");
                 profile.set("statusLastChangedAt", now);
-                profile.set("statusChangeReason", "Automated deactivation due to 3 consecutive misses");
+                profile.set("statusChangeReason", "Automated deactivation due to " + statusAutomationMissThreshold + " consecutive misses");
                 saveProfileStatus(profile);
             }
         }

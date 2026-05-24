@@ -48,12 +48,14 @@ test('seating auto-paint fills vertical sections in the configured order', () =>
     ['S', 'A', 'T', 'B'],
   );
 
-  assert.equal(suggestions['0-0'], 'S');
-  assert.equal(suggestions['0-2'], 'A');
+  assert.equal(suggestions['0-0'], undefined);
+  assert.equal(suggestions['0-2'], 'S');
+  assert.equal(suggestions['0-3'], 'A');
   assert.equal(suggestions['0-4'], 'T');
-  assert.equal(suggestions['0-6'], 'B');
-  assert.equal(suggestions['1-0'], 'S');
-  assert.equal(suggestions['1-6'], 'B');
+  assert.equal(suggestions['0-5'], 'B');
+  assert.equal(suggestions['0-6'], undefined);
+  assert.equal(suggestions['1-2'], 'S');
+  assert.equal(suggestions['1-5'], 'B');
 });
 
 test('seating auto-paint supports custom section order', () => {

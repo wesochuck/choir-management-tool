@@ -132,6 +132,12 @@
 .admin-filter-select {
   width: 200px;
   height: 44px;
+  padding: 0 36px 0 12px !important;
+  color: var(--text) !important;
+  background-color: var(--surface) !important;
+  font-size: 15px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
 }
 
 .admin-filter-reset {
@@ -161,4 +167,118 @@
     justify-content: center;
   }
 }
+
+/* Voice Part Dropdown Panel & Grid Alignment */
+.voice-part-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  width: 320px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1));
+}
+
+.dropdown-section-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.dropdown-grid-sections {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.dropdown-grid-parts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+/* Voice Option Selectable Labels */
+.voice-part-option-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.voice-part-option-label:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+}
+
+.voice-part-option-label span {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+  transition: font-weight 0.15s;
+}
+
+.voice-part-option-label span.selected {
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+/* Premium Custom Checkboxes */
+.voice-part-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-deep, #cbd5e1);
+  border-radius: 3px;
+  background-color: var(--surface);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  margin: 0;
+}
+
+.voice-part-checkbox:hover {
+  border-color: var(--primary);
+}
+
+.voice-part-checkbox:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.voice-part-checkbox:checked::after {
+  content: "";
+  display: block;
+  width: 3.5px;
+  height: 7px;
+  border: solid white;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translate(-0.5px, -1px);
+}
+
+.voice-part-divider {
+  height: 1px;
+  background-color: var(--border);
+  margin: 4px 0;
+  border: none;
+}
+
 

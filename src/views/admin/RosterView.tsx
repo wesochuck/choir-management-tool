@@ -61,6 +61,9 @@ function getContrastColor(hex: string): string {
 interface RosterConfigState {
   defaultStatus: string;
   currentSeason: string;
+  statusAutomationEnabled: boolean;
+  statusAutomationMissThreshold: number;
+  statusAutomationRecoveryEnabled: boolean;
   sections: SectionDef[];
   voiceParts: VoicePartDef[];
 }
@@ -94,6 +97,9 @@ export default function RosterView() {
   const [configSeason, setConfigSeason] = useState('');
   const [configSections, setConfigSections] = useState<SectionDef[]>([]);
   const [configVoiceParts, setConfigVoiceParts] = useState<VoicePartDef[]>([]);
+  const [configAutomationEnabled, setConfigAutomationEnabled] = useState(true);
+  const [configAutomationMissThreshold, setConfigAutomationMissThreshold] = useState(3);
+  const [configAutomationRecoveryEnabled, setConfigAutomationRecoveryEnabled] = useState(true);
   const [initialConfigState, setInitialConfigState] = useState<RosterConfigState | null>(null);
   const [activeColorPickerIndex, setActiveColorPickerIndex] = useState<number | null>(null);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
@@ -108,15 +114,24 @@ export default function RosterView() {
       const loadedSeason = rosterSettings?.currentSeason || '';
       const loadedSections = voiceSettings.sections || [];
       const loadedVoiceParts = voiceSettings.voiceParts || [];
+      const loadedAutomationEnabled = rosterSettings?.statusAutomationEnabled ?? true;
+      const loadedAutomationMissThreshold = rosterSettings?.statusAutomationMissThreshold ?? 3;
+      const loadedAutomationRecoveryEnabled = rosterSettings?.statusAutomationRecoveryEnabled ?? true;
 
       setConfigDefaultStatus(loadedDefaultStatus);
       setConfigSeason(loadedSeason);
       setConfigSections(loadedSections);
       setConfigVoiceParts(loadedVoiceParts);
+      setConfigAutomationEnabled(loadedAutomationEnabled);
+      setConfigAutomationMissThreshold(loadedAutomationMissThreshold);
+      setConfigAutomationRecoveryEnabled(loadedAutomationRecoveryEnabled);
 
       setInitialConfigState({
         defaultStatus: loadedDefaultStatus,
         currentSeason: loadedSeason,
+        statusAutomationEnabled: loadedAutomationEnabled,
+        statusAutomationMissThreshold: loadedAutomationMissThreshold,
+        statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
         sections: JSON.parse(JSON.stringify(loadedSections)),
         voiceParts: JSON.parse(JSON.stringify(loadedVoiceParts))
       });
@@ -205,10 +220,22 @@ export default function RosterView() {
     return calculateSettingsDirty(initialConfigState, {
       defaultStatus: configDefaultStatus,
       currentSeason: configSeason,
+      statusAutomationEnabled: configAutomationEnabled,
+      statusAutomationMissThreshold: configAutomationMissThreshold,
+      statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
       sections: configSections,
       voiceParts: configVoiceParts
     });
-  }, [initialConfigState, configDefaultStatus, configSeason, configSections, configVoiceParts]);
+  }, [
+    initialConfigState,
+    configDefaultStatus,
+    configSeason,
+    configAutomationEnabled,
+    configAutomationMissThreshold,
+    configAutomationRecoveryEnabled,
+    configSections,
+    configVoiceParts
+  ]);
 
   const handleConfigSave = async () => {
     setIsSavingConfig(true);
@@ -280,7 +307,10 @@ export default function RosterView() {
       await settingsService.saveRosterSettings({
         ...rosterSettings,
         defaultStatus: configDefaultStatus,
-        currentSeason: configSeason
+        currentSeason: configSeason,
+        statusAutomationEnabled: configAutomationEnabled,
+        statusAutomationMissThreshold: configAutomationMissThreshold,
+        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled
       });
       await saveVoicePartsAndSections(configVoiceParts, configSections);
 
@@ -304,6 +334,9 @@ export default function RosterView() {
     if (!initialConfigState) return;
     setConfigDefaultStatus(initialConfigState.defaultStatus);
     setConfigSeason(initialConfigState.currentSeason);
+    setConfigAutomationEnabled(initialConfigState.statusAutomationEnabled);
+    setConfigAutomationMissThreshold(initialConfigState.statusAutomationMissThreshold);
+    setConfigAutomationRecoveryEnabled(initialConfigState.statusAutomationRecoveryEnabled);
     setConfigSections(JSON.parse(JSON.stringify(initialConfigState.sections)));
     setConfigVoiceParts(JSON.parse(JSON.stringify(initialConfigState.voiceParts)));
     setConfigMessage('');
@@ -476,50 +509,44 @@ export default function RosterView() {
               </button>
 
               {isDropdownOpen && (
-                <div className="card voice-part-dropdown-panel shadow-lg">
-                  <div className="dropdown-section-header">Sections</div>
-                  {configSectionsHook.map(sec => {
-                    const isChecked = (filters.voiceParts || []).includes(sec.code);
-                    return (
-                      <label key={sec.code} className="dropdown-item-label">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleVoicePartToggle(sec.code)}
-                          style={{
-                            cursor: 'pointer',
-                            accentColor: 'var(--primary)',
-                            width: '15px',
-                            height: '15px'
-                          }}
-                        />
-                        <span className={isChecked ? 'selected' : ''}>{sec.name}</span>
-                      </label>
-                    );
-                  })}
+                <div className="voice-part-dropdown-panel shadow-lg">
+                  <div className="dropdown-section-title">Sections</div>
+                  <div className="dropdown-grid-sections">
+                    {configSectionsHook.map(sec => {
+                      const isChecked = (filters.voiceParts || []).includes(sec.code);
+                      return (
+                        <label key={sec.code} className="voice-part-option-label">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleVoicePartToggle(sec.code)}
+                            className="voice-part-checkbox"
+                          />
+                          <span className={isChecked ? 'selected' : ''}>{sec.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
 
-                  <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
+                  <hr className="voice-part-divider" />
 
-                  <div className="dropdown-section-header">Individual Parts</div>
-                  {voicePartLabels.map(part => {
-                    const isChecked = (filters.voiceParts || []).includes(part);
-                    return (
-                      <label key={part} className="dropdown-item-label">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleVoicePartToggle(part)}
-                          style={{
-                            cursor: 'pointer',
-                            accentColor: 'var(--primary)',
-                            width: '15px',
-                            height: '15px'
-                          }}
-                        />
-                        <span className={isChecked ? 'selected' : ''}>{part}</span>
-                      </label>
-                    );
-                  })}
+                  <div className="dropdown-section-title">Individual Parts</div>
+                  <div className="dropdown-grid-parts">
+                    {voicePartLabels.map(part => {
+                      const isChecked = (filters.voiceParts || []).includes(part);
+                      return (
+                        <label key={part} className="voice-part-option-label">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleVoicePartToggle(part)}
+                            className="voice-part-checkbox"
+                          />
+                          <span className={isChecked ? 'selected' : ''}>{part}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -527,7 +554,7 @@ export default function RosterView() {
             <select 
               value={filters.status} 
               onChange={(e) => setFilter('status', e.target.value)}
-              className="card admin-filter-select"
+              className="admin-filter-select"
             >
               <option value="">All Statuses</option>
               <option value="Active (Current)">Active (Current)</option>
@@ -538,7 +565,7 @@ export default function RosterView() {
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="card admin-filter-select"
+              className="admin-filter-select"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
@@ -601,6 +628,56 @@ export default function RosterView() {
                   Choose the default status filter used when opening the global roster.
                 </p>
               </div>
+            </div>
+          </AppCard>
+
+          <AppCard title="Singer Status Automation">
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={configAutomationEnabled}
+                  onChange={(e) => setConfigAutomationEnabled(e.target.checked)}
+                  style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                />
+                <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Changes</span>
+              </label>
+              <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
+                Automatically mark singers as Active/Inactive based on their attendance and RSVP history.
+              </p>
+
+              {configAutomationEnabled && (
+                <div className="flex-col" style={{ gap: 'var(--space-md)', paddingLeft: 'var(--space-md)', borderLeft: '2px solid var(--border)', marginTop: 'var(--space-xs)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Consecutive Misses Threshold</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={configAutomationMissThreshold}
+                      onChange={(e) => setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="card"
+                      style={{ width: '100%', maxWidth: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                    />
+                    <p className="text-muted" style={{ margin: 0 }}>
+                      Mark a singer as Inactive after this many consecutive absences or 'No' RSVPs.
+                    </p>
+                  </div>
+
+                  <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', marginTop: 'var(--space-xs)' }}>
+                    <input
+                      type="checkbox"
+                      checked={configAutomationRecoveryEnabled}
+                      onChange={(e) => setConfigAutomationRecoveryEnabled(e.target.checked)}
+                      style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                    />
+                    <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Recovery</span>
+                  </label>
+                  <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
+                    Automatically mark inactive singers as "Active (Future)" when they RSVP 'Yes' to a future Performance.
+                  </p>
+                </div>
+              )}
             </div>
           </AppCard>
 

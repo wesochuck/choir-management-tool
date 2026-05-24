@@ -43,22 +43,27 @@ export default function SettingsView() {
   const { setChoirName: setContextChoirName, setTimezone: setContextTimezone } = useChoirSettings();
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
+  const [homepageUrl, setHomepageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [initialChoirName, setInitialChoirName] = useState('');
   const [initialTimezone, setInitialTimezone] = useState('America/New_York');
+  const [initialHomepageUrl, setInitialHomepageUrl] = useState('');
 
   useEffect(() => {
     const load = async () => {
-      const [loadedChoirName, loadedTimezone] = await Promise.all([
+      const [loadedChoirName, loadedTimezone, loadedHomepageUrl] = await Promise.all([
         settingsService.getChoirName(),
-        settingsService.getTimezone()
+        settingsService.getTimezone(),
+        settingsService.getHomepageUrl()
       ]);
       setChoirName(loadedChoirName);
       setInitialChoirName(loadedChoirName);
       setTimezone(loadedTimezone);
       setInitialTimezone(loadedTimezone);
+      setHomepageUrl(loadedHomepageUrl);
+      setInitialHomepageUrl(loadedHomepageUrl);
       setIsLoading(false);
     };
 
@@ -70,14 +75,15 @@ export default function SettingsView() {
 
   const isDirty = useMemo(() => {
     return calculateSettingsDirty(
-      { choirName: initialChoirName, timezone: initialTimezone },
-      { choirName, timezone }
+      { choirName: initialChoirName, timezone: initialTimezone, homepageUrl: initialHomepageUrl },
+      { choirName, timezone, homepageUrl }
     );
-  }, [initialChoirName, choirName, initialTimezone, timezone]);
+  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl]);
 
   const handleGlobalDiscard = () => {
     setChoirName(initialChoirName);
     setTimezone(initialTimezone);
+    setHomepageUrl(initialHomepageUrl);
   };
 
   const handleSave = async () => {
@@ -87,12 +93,14 @@ export default function SettingsView() {
     try {
       await Promise.all([
         settingsService.saveChoirName(choirName),
-        settingsService.saveTimezone(timezone)
+        settingsService.saveTimezone(timezone),
+        settingsService.saveHomepageUrl(homepageUrl)
       ]);
       setContextChoirName(choirName);
       setContextTimezone(timezone);
       setInitialChoirName(choirName);
       setInitialTimezone(timezone);
+      setInitialHomepageUrl(homepageUrl);
       setMessage('System settings saved.');
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
@@ -128,6 +136,24 @@ export default function SettingsView() {
           />
           <p className="text-muted" style={{ margin: 0 }}>
             Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
+          </p>
+        </div>
+      </AppCard>
+
+      <AppCard title="Public Homepage URL">
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label" htmlFor="homepage-url">Homepage Address</label>
+          <input
+            id="homepage-url"
+            type="url"
+            value={homepageUrl}
+            onChange={(event) => setHomepageUrl(event.target.value)}
+            placeholder="e.g. https://www.mychoir.org"
+            className="card"
+            style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          />
+          <p className="text-muted" style={{ margin: 0 }}>
+            The main public website address where applicants are redirected after submitting their audition sheet successfully.
           </p>
         </div>
       </AppCard>

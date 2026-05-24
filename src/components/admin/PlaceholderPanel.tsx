@@ -22,10 +22,23 @@ const PLACEHOLDERS: Placeholder[] = [
 
 interface PlaceholderPanelProps {
   onInsert: (tag: string) => void;
+  hasEvent?: boolean;
+  hasApprovedSetList?: boolean;
 }
 
-export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({ onInsert }) => {
-  const categories: Placeholder['category'][] = ['Recipient', 'Event', 'RSVP'];
+export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({ 
+  onInsert,
+  hasEvent = true,
+  hasApprovedSetList = true
+}) => {
+  const visiblePlaceholders = PLACEHOLDERS.filter(p => {
+    if (p.category === 'Recipient') return true;
+    if (!hasEvent) return false;
+    if (p.tag === '{{PLAYER_LINK}}') return hasApprovedSetList;
+    return true;
+  });
+
+  const categories = Array.from(new Set(visiblePlaceholders.map(p => p.category))) as Placeholder['category'][];
 
   return (
     <div 
@@ -58,7 +71,7 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({ onInsert }) 
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', overflowY: 'auto', overflowX: 'hidden', paddingRight: '4px', boxSizing: 'border-box' }}>
         {categories.map(cat => {
-          const items = PLACEHOLDERS.filter(p => p.category === cat);
+          const items = visiblePlaceholders.filter(p => p.category === cat);
           return (
             <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '2px' }}>

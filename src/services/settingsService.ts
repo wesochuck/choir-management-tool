@@ -40,6 +40,9 @@ export interface RosterSettings {
   defaultSort: 'lastName' | 'voicePart';
   defaultRsvpSort?: 'lastName' | 'voicePart';
   currentSeason?: string;
+  statusAutomationEnabled?: boolean;
+  statusAutomationMissThreshold?: number;
+  statusAutomationRecoveryEnabled?: boolean;
 }
 
 export interface MusicGenreDef {
@@ -137,6 +140,9 @@ export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultSort: 'lastName',
   defaultRsvpSort: 'lastName',
   currentSeason: '',
+  statusAutomationEnabled: true,
+  statusAutomationMissThreshold: 3,
+  statusAutomationRecoveryEnabled: true,
 };
 
 export const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
@@ -292,6 +298,15 @@ export const settingsService = {
 
   async saveTimezone(timezone: string) {
     return await upsertSetting('timezone', timezone, true);
+  },
+
+  async getHomepageUrl(): Promise<string> {
+    const setting = await getSetting<string>('homepage_url');
+    return setting?.value || '';
+  },
+
+  async saveHomepageUrl(url: string) {
+    return await upsertSetting('homepage_url', url, true);
   },
 };
 

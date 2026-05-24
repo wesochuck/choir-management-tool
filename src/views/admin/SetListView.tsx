@@ -463,7 +463,7 @@ export default function SetListView() {
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="card admin-filter-select"
+              className="admin-filter-select"
             >
               <option value="">-- Choose Event --</option>
               {events.map((e) => (
@@ -480,7 +480,7 @@ export default function SetListView() {
               <select 
                 value="" 
                 onChange={(e) => handleCopyFrom(e.target.value)}
-                className="card admin-filter-select"
+                className="admin-filter-select"
               >
                 <option value="">-- Copy Set List --</option>
                 {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (

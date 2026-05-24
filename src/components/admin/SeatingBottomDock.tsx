@@ -20,6 +20,8 @@ interface SeatingBottomDockProps {
   sections: SectionDef[];
   voiceParts: VoicePartDef[];
   assignSinger: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
+  onAddSinger?: () => void;
+  onRemoveRsvp?: (profileId: string, name: string) => void;
 }
 
 export function SeatingBottomDock({
@@ -27,7 +29,9 @@ export function SeatingBottomDock({
   assignments,
   sections,
   voiceParts,
-  assignSinger
+  assignSinger,
+  onAddSinger,
+  onRemoveRsvp
 }: SeatingBottomDockProps) {
   const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
   const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds, sections, voiceParts), [activeProfiles, assignedIds, sections, voiceParts]);
@@ -61,9 +65,21 @@ export function SeatingBottomDock({
         }}
         className="flex-col bottom-dock-container"
       >
-        <div className="flex-row bottom-dock-header">
-          <h3 className="text-headline bottom-dock-title">📥 Unassigned Singers Shelf</h3>
-          <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
+        <div className="flex-row bottom-dock-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div className="flex-col" style={{ gap: '2px' }}>
+            <h3 className="text-headline bottom-dock-title">📥 Unassigned Singers Shelf</h3>
+            <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
+          </div>
+          {onAddSinger && (
+            <button
+              type="button"
+              onClick={onAddSinger}
+              className="btn btn-secondary btn-sm no-print"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, padding: '0 12px', height: '32px', minHeight: '32px' }}
+            >
+              + Add Singer
+            </button>
+          )}
         </div>
 
         <div className="bottom-dock-grid" style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}>
@@ -106,6 +122,42 @@ export function SeatingBottomDock({
                       <span className="badge badge-rehearsal singer-card-badge">
                         {p.voicePart}
                       </span>
+                      {onRemoveRsvp && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveRsvp(p.id, p.name);
+                          }}
+                          className="no-print"
+                          title="Mark as Not Attending"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '2px 6px',
+                            marginLeft: '6px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                            e.currentTarget.style.color = '#b91c1c';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-muted)';
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   ))}
                   {list.length === 0 && (

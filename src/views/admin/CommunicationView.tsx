@@ -752,7 +752,14 @@ export default function CommunicationView() {
                   </div>
                 </div>
               </div>
-              <PlaceholderPanel onInsert={insertPlaceholder} />
+              <PlaceholderPanel 
+                onInsert={insertPlaceholder} 
+                hasEvent={!!filters.eventId}
+                hasApprovedSetList={(() => {
+                  const selectedEvent = events.find(e => e.id === filters.eventId);
+                  return selectedEvent ? selectedEvent.setListApproved !== false : false;
+                })()}
+              />
             </div>
           )}
 
@@ -796,6 +803,44 @@ export default function CommunicationView() {
                           <span>❌</span> <strong>No recipients selected.</strong> You cannot send this message.
                         </div>
                       )}
+
+                      {!filters.eventId && (() => {
+                        const eventPlaceholders = [
+                          '{eventTitle}',
+                          '{eventType}',
+                          '{eventDate}',
+                          '{eventLocation}',
+                          '{eventDetails}',
+                          '{{PLAYER_LINK}}',
+                          '{{RSVP_LINKS}}'
+                        ];
+                        const combinedText = (subject + ' ' + content).toLowerCase();
+                        const foundPlaceholders = eventPlaceholders.filter(p => combinedText.includes(p.toLowerCase()));
+                        if (foundPlaceholders.length > 0) {
+                          return (
+                            <div className="checklist-item warning">
+                              <span>⚠️</span> <strong>Missing Event Context.</strong> Your message body or subject contains event-specific placeholders: <code>{foundPlaceholders.join(', ')}</code>, but no event context is selected. These placeholders will resolve to blank or default values.
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
+                      {filters.eventId && (() => {
+                        const selectedEvent = events.find(e => e.id === filters.eventId);
+                        const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
+                        const hasPlayerPlaceholder = content.toLowerCase().includes('{{player_link}}');
+                        
+                        if (!hasApprovedSetList && hasPlayerPlaceholder) {
+                          return (
+                            <div className="checklist-item warning">
+                              <span>⚠️</span> <strong>Practice Player Not Approved.</strong> Your message body contains the <code>{"{{PLAYER_LINK}}"}</code> placeholder, but the set list for the selected event is not approved for singers. The practice player button will not render.
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
                       {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
                         <div className="checklist-item info">
                           <span>ℹ️</span> {selectedRecipients.filter(r => !r.email).length} singers have no email address and will skip Email.

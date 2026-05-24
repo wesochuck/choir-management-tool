@@ -13,10 +13,13 @@ import { SeatingFormationsEditor } from '../../components/admin/SeatingFormation
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
-import type { Profile } from '../../services/profileService';
+import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
+import { SingerModal } from '../../components/admin/SingerModal';
+import { profileService } from '../../services/profileService';
+import { rosterService } from '../../services/rosterService';
 import './SeatingView.css';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
@@ -79,6 +82,29 @@ export default function SeatingView() {
     chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
     isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh
   } = useSeatingChart(performanceId, selectedVenue);
+
+  const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
+
+  const handleAddSingerSave = async (data: ProfileInput) => {
+    const newProfile = await profileService.createProfile(data);
+    if (performanceId && newProfile?.id) {
+      await rosterService.updateRSVP(performanceId, newProfile.id, 'Yes');
+    }
+    await refresh();
+  };
+
+  const handleRemoveRsvp = async (profileId: string, name: string) => {
+    const confirmed = await dialog.confirm({
+      title: 'Remove from Performance Roster?',
+      message: `Change RSVP for ${name} to "No" (Not Attending) for this performance? This will remove them from the seating chart shelf.`,
+      confirmLabel: 'Remove',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+
+    await rosterService.updateRSVP(performanceId, profileId, 'No');
+    await refresh();
+  };
 
   const hasLayoutOverride = (() => {
     const layoutOverride = chart?.layoutOverride;
@@ -504,6 +530,8 @@ export default function SeatingView() {
                     sections={sections}
                     voiceParts={voiceParts}
                     assignSinger={assignSinger}
+                    onAddSinger={() => setIsSingerModalOpen(true)}
+                    onRemoveRsvp={handleRemoveRsvp}
                   />
                 )}
 
@@ -542,7 +570,17 @@ export default function SeatingView() {
                 }}
                 className="seating-sidebar-content"
               >
-                <h3 className="text-headline seating-sidebar-title">Unassigned</h3>
+                <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                  <h3 className="text-headline seating-sidebar-title" style={{ margin: 0 }}>Unassigned</h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsSingerModalOpen(true)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontWeight: 600, padding: '0 8px', height: '28px', minHeight: '28px', fontSize: '11px' }}
+                  >
+                    + Add
+                  </button>
+                </div>
                 <div className="flex-col seating-sidebar-list">
                   {activeProfiles
                     .filter(p => !Object.values(optimisticAssignments).includes(p.id))
@@ -573,6 +611,12 @@ export default function SeatingView() {
           <p className="text-muted">Select a Performance and a Venue to start creating the seating chart.</p>
         </AppCard>
       )}
+
+      <SingerModal 
+        isOpen={isSingerModalOpen} 
+        onClose={() => setIsSingerModalOpen(false)} 
+        onSave={handleAddSingerSave} 
+      />
     </div>
   );
 }

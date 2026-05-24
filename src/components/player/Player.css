@@ -437,15 +437,24 @@
 }
 
 .chorus-player .repeat-button.all {
-  background: var(--active-bg) !important;
+  background: var(--accent-color) !important;
   border-color: var(--accent-color) !important;
-  color: var(--accent-color) !important;
+  color: #ffffff !important;
 }
 
 .chorus-player .repeat-button.one {
-  background: var(--active-bg) !important;
+  background: var(--accent-color) !important;
   border-color: var(--accent-color) !important;
-  color: var(--accent-color) !important;
+  color: #ffffff !important;
+}
+
+@media (hover: hover) {
+  .chorus-player .repeat-button.all:hover:not(:disabled),
+  .chorus-player .repeat-button.one:hover:not(:disabled) {
+    background: var(--accent-hover) !important;
+    border-color: var(--accent-hover) !important;
+    color: #ffffff !important;
+  }
 }
 
 /* ── Volume / Settings Row ──────────────── */
@@ -733,7 +742,7 @@
   }
 
   .chorus-player .volume-control {
-    width: 100%;
+    display: none !important;
   }
 
   .chorus-player .skip-setting-container,

@@ -12,6 +12,7 @@ export default function PublicAuditionView() {
   useDocumentTitle('Auditions');
   const [settings, setSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
   const [timezone, setTimezone] = useState('America/New_York');
+  const [homepageUrl, setHomepageUrl] = useState('');
   const [targetPerformance, setTargetPerformance] = useState<Event | null>(null);
   const [rehearsals, setRehearsals] = useState<Event[]>([]);
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(window.innerWidth > 640);
@@ -25,16 +26,18 @@ export default function PublicAuditionView() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const { labels: voicePartLabels } = useVoiceParts();
-
+ 
   useEffect(() => {
     const init = async () => {
       try {
-        const [loaded, tz] = await Promise.all([
+        const [loaded, tz, loadedHomepage] = await Promise.all([
           settingsService.getAuditionSettings(),
           fetchChoirTimezone().catch(() => 'America/New_York'),
+          settingsService.getHomepageUrl().catch(() => ''),
         ]);
         setSettings(loaded);
         setTimezone(tz);
+        setHomepageUrl(loadedHomepage);
 
         if (loaded.defaultPerformanceId) {
           try {
@@ -107,9 +110,11 @@ export default function PublicAuditionView() {
         <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
           <Link to="/login" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}>Admin Login</Link>
           <h1 className="text-display" style={{ margin: 0 }}>Choir Auditions</h1>
-          <p className="text-muted" style={{ margin: 0 }}>
-            Choose an audition time and share the best way to reach you.
-          </p>
+          {!submitted && (
+            <p className="text-muted" style={{ margin: 0 }}>
+              Choose an audition time and share the best way to reach you.
+            </p>
+          )}
         </div>
 
         {!isFormActive ? (
@@ -128,6 +133,22 @@ export default function PublicAuditionView() {
             <p className="text-body" style={{ margin: 0 }}>
               {settings.confirmationMessage}
             </p>
+            {homepageUrl && (
+              <a 
+                href={homepageUrl} 
+                className="btn btn-primary" 
+                style={{ 
+                  alignSelf: 'flex-start',
+                  marginTop: 'var(--space-md)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                🏠 Visit our Homepage
+              </a>
+            )}
           </div>
         ) : (
           <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>

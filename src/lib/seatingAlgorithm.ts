@@ -24,27 +24,93 @@ export const calculateAutoPaint = (
   const totalSeats = rowCounts.reduce((a, b) => a + b, 0);
   const suggestions: Record<string, string> = {};
 
-  // Strategy A: Vertical Columns
+  // Strategy A: Vertical Columns (Perfect Wedge Alignment + Active-Singer-First Compacting)
   if (strategy === 'vertical_column') {
-    let cumulative = 0;
-    const boundaries: number[] = [0];
-    sectionOrder.forEach((code) => {
-      const count = sectionCounts[code] || 0;
-      cumulative += count / totalSingers;
-      boundaries.push(cumulative);
+    // 1. Allocate totalSingers to rows proportionally
+    const rowActiveCounts = rowCounts.map((rowSize) => {
+      return Math.round(rowSize * (totalSingers / totalSeats));
     });
 
-    rowCounts.forEach((rowSize, rowIndex) => {
-      for (let seatIndex = 0; seatIndex < rowSize; seatIndex++) {
-        const positionInRow = (seatIndex + 0.5) / rowSize;
-        for (let i = 0; i < sectionOrder.length; i++) {
-          if (positionInRow >= boundaries[i] && positionInRow <= boundaries[i + 1]) {
-            suggestions[`${rowIndex}-${seatIndex}`] = sectionOrder[i];
-            break;
+    // Adjust rowActiveCounts so the sum matches totalSingers exactly
+    let sumActive = rowActiveCounts.reduce((a, b) => a + b, 0);
+    while (sumActive !== totalSingers) {
+      if (sumActive < totalSingers) {
+        // Find a row that is not fully active and has the largest capacity remaining
+        let bestRowIdx = -1;
+        let maxRem = -1;
+        for (let i = 0; i < rowCounts.length; i++) {
+          const rem = rowCounts[i] - rowActiveCounts[i];
+          if (rem > 0 && rem > maxRem) {
+            maxRem = rem;
+            bestRowIdx = i;
           }
         }
+        if (bestRowIdx === -1) break; // Safety break
+        rowActiveCounts[bestRowIdx]++;
+        sumActive++;
+      } else {
+        // Find a row with active seats that can be reduced
+        let bestRowIdx = -1;
+        let maxActive = -1;
+        for (let i = 0; i < rowCounts.length; i++) {
+          if (rowActiveCounts[i] > 0 && rowActiveCounts[i] > maxActive) {
+            maxActive = rowActiveCounts[i];
+            bestRowIdx = i;
+          }
+        }
+        if (bestRowIdx === -1) break; // Safety break
+        rowActiveCounts[bestRowIdx]--;
+        sumActive--;
+      }
+    }
+
+    // 2. Identify all active seats and calculate their visually centered x coordinates
+    interface ActiveSeat {
+      rowIndex: number;
+      seatIndex: number;
+      x: number;
+    }
+    const activeSeats: ActiveSeat[] = [];
+
+    rowCounts.forEach((rowSize, rowIndex) => {
+      const activeCount = rowActiveCounts[rowIndex];
+      if (activeCount <= 0) return;
+
+      // Center the active seats in this row
+      const startIndex = Math.floor((rowSize - activeCount) / 2);
+      const endIndex = startIndex + activeCount - 1;
+
+      const midpoint = (rowSize - 1) / 2;
+      for (let seatIndex = startIndex; seatIndex <= endIndex; seatIndex++) {
+        activeSeats.push({
+          rowIndex,
+          seatIndex,
+          x: seatIndex - midpoint,
+        });
       }
     });
+
+    // 3. Sort all active seats grid-wide from left to right (visual stage alignment)
+    activeSeats.sort((a, b) => {
+      const diff = a.x - b.x;
+      if (Math.abs(diff) < 0.001) {
+        return a.rowIndex - b.rowIndex;
+      }
+      return diff;
+    });
+
+    // 4. Assign sections sequentially in the sorted active seats order
+    let seatCursor = 0;
+    sectionOrder.forEach((code) => {
+      const count = sectionCounts[code] || 0;
+      for (let k = 0; k < count; k++) {
+        if (seatCursor >= activeSeats.length) break;
+        const seat = activeSeats[seatCursor];
+        suggestions[`${seat.rowIndex}-${seat.seatIndex}`] = code;
+        seatCursor++;
+      }
+    });
+
     return suggestions;
   }
 
