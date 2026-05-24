@@ -8,7 +8,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { formatInTimezone } from '../../lib/timezone';
 
-const statusOptions: Audition['status'][] = ['New', 'Contacted', 'Scheduled', 'Closed'];
+
 
 interface AuditionModalProps {
   audition: Audition | null;
@@ -33,6 +33,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
   const [customTimeVal, setCustomTimeVal] = useState('');
   const [isCustomTime, setIsCustomTime] = useState(false);
 
+  const [requestedSlots, setRequestedSlots] = useState<string[]>([]);
   const [performances, setPerformances] = useState<Event[]>([]);
   const [settings, setSettings] = useState<AuditionSettings | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +59,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
       setPerformance(audition.performance || '');
       setExperience(audition.experience || '');
       setNotes(audition.notes || '');
+      setRequestedSlots(audition.requestedSlots || []);
 
       const currentSlot = audition.scheduledTimeSlot || '';
       const isSlotPredefined = currentSlot ? settings.slots?.includes(currentSlot) : false;
@@ -70,16 +72,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
         setCustomTimeVal(currentSlot);
         setIsCustomTime(true);
       } else {
-        // Unscheduled / New applicant request
-        if (settings.slots && settings.slots.length > 0) {
-          setScheduledTimeSlot(settings.slots[0]);
-          setIsCustomTime(false);
-          setCustomTimeVal('');
-        } else {
-          setScheduledTimeSlot('__custom__');
-          setIsCustomTime(true);
-          setCustomTimeVal('');
-        }
+        // Unscheduled / New applicant request - do not prefill scheduled time slot
+        setScheduledTimeSlot('');
+        setIsCustomTime(false);
+        setCustomTimeVal('');
       }
     } else {
       setName('');
@@ -89,15 +85,11 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
       setPerformance(settings.defaultPerformanceId || '');
       setExperience('');
       setNotes('');
-      if (settings.slots && settings.slots.length > 0) {
-        setScheduledTimeSlot(settings.slots[0]);
-        setIsCustomTime(false);
-        setCustomTimeVal('');
-      } else {
-        setScheduledTimeSlot('__custom__');
-        setIsCustomTime(true);
-        setCustomTimeVal('');
-      }
+      setRequestedSlots([]);
+      // Unscheduled / Manual add - do not prefill scheduled time slot
+      setScheduledTimeSlot('');
+      setIsCustomTime(false);
+      setCustomTimeVal('');
     }
   }, [audition, settings]);
 
@@ -120,8 +112,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
         voicePart: voicePart || undefined,
         experience: experience.trim(),
         notes: notes.trim(),
-        // Keep existing requestedSlots on manual edits
-        requestedSlots: audition ? audition.requestedSlots : undefined,
+        requestedSlots: requestedSlots,
       });
       onClose();
     } finally {
@@ -183,44 +174,42 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
           </div>
         )}
 
-        {audition?.requestedSlots && audition.requestedSlots.length > 0 && (
-          <div className="flex-row" style={{ 
-            borderBottom: '1px solid var(--border)', 
-            marginBottom: 'var(--space-xs)',
-            gap: 'var(--space-md)' 
-          }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('info')}
-              style={{
-                padding: '8px 12px',
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'info' ? '2px solid var(--primary)' : '2px solid transparent',
-                fontWeight: activeTab === 'info' ? 700 : 500,
-                color: activeTab === 'info' ? 'var(--primary-deep)' : 'var(--text-muted)',
-                cursor: 'pointer'
-              }}
-            >
-              📋 Information
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('slots')}
-              style={{
-                padding: '8px 12px',
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'slots' ? '2px solid var(--primary)' : '2px solid transparent',
-                fontWeight: activeTab === 'slots' ? 700 : 500,
-                color: activeTab === 'slots' ? 'var(--primary-deep)' : 'var(--text-muted)',
-                cursor: 'pointer'
-              }}
-            >
-              📅 Requested Slots ({audition.requestedSlots.length})
-            </button>
-          </div>
-        )}
+        <div className="flex-row" style={{ 
+          borderBottom: '1px solid var(--border)', 
+          marginBottom: 'var(--space-xs)',
+          gap: 'var(--space-md)' 
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('info')}
+            style={{
+              padding: '8px 12px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'info' ? '2px solid var(--primary)' : '2px solid transparent',
+              fontWeight: activeTab === 'info' ? 700 : 500,
+              color: activeTab === 'info' ? 'var(--primary-deep)' : 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+          >
+            📋 Information
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('slots')}
+            style={{
+              padding: '8px 12px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'slots' ? '2px solid var(--primary)' : '2px solid transparent',
+              fontWeight: activeTab === 'slots' ? 700 : 500,
+              color: activeTab === 'slots' ? 'var(--primary-deep)' : 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+          >
+            📅 Requested Slots ({requestedSlots.length})
+          </button>
+        </div>
 
         {/* Tab 1: Information Form Fields */}
         <div style={{ display: activeTab === 'info' ? 'flex' : 'none', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -255,13 +244,18 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
                 className="card flex-row" 
                 style={{ 
                   height: '44px', 
-                  padding: '0 12px', 
+                  padding: '0 8px', 
                   alignItems: 'center', 
                   backgroundColor: 'var(--bg)', 
                   border: '1px solid var(--border)',
                   color: audition?.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
-                  fontWeight: audition?.scheduledTimeSlot ? 600 : 400
+                  fontWeight: audition?.scheduledTimeSlot ? 700 : 400,
+                  fontSize: '0.82rem',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}
+                title={audition?.scheduledTimeSlot ? formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Not scheduled yet'}
               >
                 {audition?.scheduledTimeSlot ? (
                   formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -290,14 +284,18 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
           <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
               <label className="text-label">Status</label>
-              <select
-                className="card"
-                value={status}
-                disabled
-                style={{ height: '44px', padding: '0 12px', backgroundColor: 'var(--bg)', cursor: 'not-allowed' }}
+              <div 
+                style={{ 
+                  height: '44px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontWeight: 'bold', 
+                  fontSize: '1.05rem',
+                  color: 'var(--text)'
+                }}
               >
-                {statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
+                {status}
+              </div>
             </div>
 
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
@@ -339,46 +337,53 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
           </div>
         </div>
 
-        {/* Tab 2: Requested Timeslots Details */}
-        {activeTab === 'slots' && audition?.requestedSlots && (
+        {/* Tab 2: Requested Timeslots Selection */}
+        {activeTab === 'slots' && (
           <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-sm) 0' }}>
             <p className="text-muted text-sm" style={{ margin: 0 }}>
-              The applicant indicated availability for the following time slots:
+              Select the potential time slots this applicant requested or is available for:
             </p>
-            <div className="flex-col" style={{ gap: '8px' }}>
-              {audition.requestedSlots.map((slot, index) => (
-                <div 
-                  key={slot} 
-                  className="card"
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '12px', 
-                    padding: '12px var(--space-md)',
-                    backgroundColor: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)'
-                  }}
-                >
-                  <span style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    width: '24px', 
-                    height: '24px', 
-                    borderRadius: '50%', 
-                    backgroundColor: 'var(--primary-light)', 
-                    color: 'var(--primary-deep)', 
-                    fontWeight: 700,
-                    fontSize: '0.8rem' 
-                  }}>
-                    {index + 1}
-                  </span>
-                  <span style={{ fontWeight: 600 }}>
-                    {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  </span>
-                </div>
-              ))}
+            <div className="flex-col" style={{ gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
+              {(settings?.slots || []).map((slot) => {
+                const isChecked = requestedSlots.includes(slot);
+                return (
+                  <label 
+                    key={slot} 
+                    className="card flex-row" 
+                    style={{ 
+                      padding: '12px var(--space-md)', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
+                      backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg)',
+                      boxShadow: 'none',
+                      margin: 0
+                    }}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={isChecked} 
+                      onChange={() => {
+                        if (isChecked) {
+                          setRequestedSlots(requestedSlots.filter(s => s !== slot));
+                        } else {
+                          setRequestedSlots([...requestedSlots, slot].sort());
+                        }
+                      }}
+                      style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontWeight: isChecked ? 600 : 400, fontSize: '0.88rem', color: 'var(--text)' }}>
+                      {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                  </label>
+                );
+              })}
+              {(!settings?.slots || settings.slots.length === 0) && (
+                <p className="text-muted text-center" style={{ padding: '20px 0' }}>
+                  No potential audition times configured in settings.
+                </p>
+              )}
             </div>
           </div>
         )}
