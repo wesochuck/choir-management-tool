@@ -230,10 +230,10 @@ export default function EventsView() {
   }
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: '0 0 var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>Event Management</h1>
-        <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+      <div className="admin-view-header">
+        <h1 className="admin-view-title">Event Management</h1>
+        <div className="admin-view-actions">
           <button onClick={handleBulkAdd} className="btn btn-secondary">
             ⚡ Bulk Add Rehearsals
           </button>

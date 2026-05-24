@@ -71,16 +71,13 @@ export const EventList: React.FC<EventListProps> = ({
             </div>
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <div className="admin-event-actions">
             <button
               onClick={(event) => {
                 event.stopPropagation();
                 onViewRoster(e);
               }}
               className={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm"}
-              style={{
-                boxShadow: e.type === 'Rehearsal' && !e.isOpenForRSVP ? undefined : 'var(--shadow-sm)'
-              }}
             >
               RSVP Roster
             </button>
@@ -126,11 +123,6 @@ export const EventList: React.FC<EventListProps> = ({
                 onSendMessage(e);
               }}
               className="btn btn-secondary btn-sm"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
             >
               ✉️ Send Message
             </button>
@@ -140,10 +132,6 @@ export const EventList: React.FC<EventListProps> = ({
                 onEdit(e);
               }}
               className="btn btn-ghost btn-sm"
-              style={{ 
-                border: '1px solid var(--border)',
-                backgroundColor: 'var(--surface)'
-              }}
             >
               ✏️ Edit
             </button>

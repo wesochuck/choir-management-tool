@@ -118,3 +118,47 @@
 .voice-part-sort-item:active {
   cursor: grabbing;
 }
+
+/* Responsive Roster Filter Overrides */
+.voice-part-filter-container {
+  position: relative;
+  width: 200px;
+}
+
+.voice-part-filter-container button {
+  width: 100%;
+}
+
+.admin-filter-select {
+  width: 200px;
+  height: 44px;
+}
+
+.admin-filter-reset {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .roster-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .search-input-wrapper,
+  .voice-part-filter-container,
+  .admin-filter-select,
+  .admin-filter-reset {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+  
+  .admin-filter-reset {
+    justify-content: center;
+  }
+}
+

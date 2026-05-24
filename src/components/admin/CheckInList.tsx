@@ -69,10 +69,9 @@ const CheckInRow: React.FC<{
 
   return (
     <div
-      className="card checkin-row"
+      className="card admin-checkin-row checkin-row"
       onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
       style={{
-        padding: '12px 20px',
         opacity: isPresent ? 0.85 : 1,
         border: isPresent
           ? '1px solid var(--primary)'
@@ -84,123 +83,123 @@ const CheckInRow: React.FC<{
           : isAbsent
             ? 'rgba(153, 27, 27, 0.04)' // soft, premium crimson/red tint
             : 'var(--surface)',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 'var(--space-md)',
-        transition: 'all 0.15s ease-in-out'
       }}
     >
-      {/* Left Section: Singer name and details */}
-      <div className="flex-col" style={{ gap: '2px', minWidth: '220px', flex: '1 1 auto' }}>
-        <div className="flex-row" style={{ gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span
-            style={{
-              fontSize: '1.65rem',
-              fontWeight: 800,
-              color: isPresent 
-                ? 'var(--primary-deep)' 
-                : isAbsent 
-                  ? '#991b1b' 
-                  : 'var(--text-main)',
-              letterSpacing: '-0.02em',
-              lineHeight: '1.2'
-            }}
-          >
-            {item.name}
-          </span>
-          
-          <div className="flex-row" style={{ gap: '6px' }}>
-            {item.rsvp === 'Yes' && (
-              <span 
-                className="badge badge-rehearsal" 
-                style={{ 
-                  fontSize: '9px', 
-                  padding: '2px 6px',
-                  borderRadius: '4px'
-                }}
-              >
-                RSVP
-              </span>
-            )}
+      {/* Row Segment 1: Singer name, badges, and primary Present/Absent toggles */}
+      <div className="admin-checkin-top-row">
+        {/* Left Section: Singer name and details */}
+        <div className="admin-checkin-singer">
+          <div className="admin-checkin-singer-header">
             <span
-              className="badge"
+              className="admin-checkin-name"
               style={{
-                fontSize: '9px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                backgroundColor: 'var(--primary-light)',
-                color: 'var(--primary-deep)',
-                border: '1px solid rgba(74, 117, 89, 0.2)'
+                color: isPresent 
+                  ? 'var(--primary-deep)' 
+                  : isAbsent 
+                    ? '#991b1b' 
+                    : 'var(--text-main)',
               }}
             >
-              {item.voicePart}
+              {item.name}
             </span>
+            
+            <div className="admin-checkin-badges">
+              {item.rsvp === 'Yes' && (
+                <span 
+                  className="badge badge-rehearsal" 
+                  style={{ 
+                    fontSize: '9px', 
+                    padding: '2px 6px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  RSVP
+                </span>
+              )}
+              <span
+                className="badge"
+                style={{
+                  fontSize: '9px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: 'var(--primary-light)',
+                  color: 'var(--primary-deep)',
+                  border: '1px solid rgba(74, 117, 89, 0.2)'
+                }}
+              >
+                {item.voicePart}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* Right Section: Attendance segmented control buttons */}
+        <div className="admin-checkin-actions">
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              onSetAttendance(item.profileId, 'Present');
+            }}
+            className="btn"
+            style={{
+              backgroundColor: isPresent ? 'var(--primary)' : 'transparent',
+              color: isPresent ? 'var(--surface)' : '#475569',
+              fontWeight: isPresent ? '700' : '600',
+              boxShadow: isPresent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            Present
+          </button>
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              onSetAttendance(item.profileId, 'Absent');
+            }}
+            className="btn"
+            style={{
+              backgroundColor: isAbsent ? '#ef4444' : 'transparent',
+              color: isAbsent ? 'var(--surface)' : '#475569',
+              fontWeight: isAbsent ? '700' : '600',
+              boxShadow: isAbsent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            Absent
+          </button>
         </div>
       </div>
 
-      {/* Middle Section: Folder tracking & Edit */}
-      <div 
-        className="flex-row" 
-        style={{ 
-          gap: '20px', 
-          alignItems: 'center', 
-          flexWrap: 'wrap',
-          flex: '0 1 auto'
-        }}
-      >
-        {/* Folder Number */}
-        <div className="flex-row" style={{ gap: '6px', alignItems: 'center' }}>
-          <span 
-            className="text-xs" 
-            style={{ 
-              fontWeight: 700, 
-              color: 'var(--text-muted)', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.05em' 
-            }}
-          >
-            Folder
-          </span>
-          <FolderInput
-            initialValue={item.folderNumber}
-            onSave={(val) => onUpdateFolder(item.profileId, val, item.folderReturned)}
-          />
-        </div>
+      {/* Row Segment 2: Folder tracking & Edit Singer details */}
+      <div className="admin-checkin-bottom-row">
+        <div className="admin-checkin-meta">
+          {/* Folder Number */}
+          <div className="admin-checkin-folder-group">
+            <span className="admin-checkin-folder-label">
+              Folder
+            </span>
+            <FolderInput
+              initialValue={item.folderNumber}
+              onSave={(val) => onUpdateFolder(item.profileId, val, item.folderReturned)}
+            />
+          </div>
 
-        {/* Folder Returned Checkbox */}
-        <label
-          className="flex-row"
-          onClick={(event) => event.stopPropagation()}
-          style={{ gap: '8px', cursor: 'pointer', userSelect: 'none', alignItems: 'center' }}
-        >
-          <input
-            type="checkbox"
-            checked={item.folderReturned}
-            onChange={(e) => onUpdateFolder(item.profileId, item.folderNumber, e.target.checked)}
-            style={{
-              width: '18px',
-              height: '18px',
-              accentColor: 'var(--primary)',
-              cursor: 'pointer',
-              borderRadius: '4px'
-            }}
-          />
-          <span
-            className="text-xs"
-            style={{
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              letterSpacing: '0.02em',
-              color: item.folderReturned ? 'var(--primary)' : 'var(--text-muted)'
-            }}
-          >
-            {item.folderReturned ? 'RETURNED' : 'NOT RETURNED'}
-          </span>
-        </label>
+          {/* Folder Returned Checkbox */}
+          <label className="admin-checkin-returned-label" onClick={(event) => event.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={item.folderReturned}
+              onChange={(e) => onUpdateFolder(item.profileId, item.folderNumber, e.target.checked)}
+              className="admin-checkin-returned-checkbox"
+            />
+            <span
+              className="admin-checkin-returned-text"
+              style={{
+                color: item.folderReturned ? 'var(--primary)' : 'var(--text-muted)'
+              }}
+            >
+              {item.folderReturned ? 'RETURNED' : 'NOT RETURNED'}
+            </span>
+          </label>
+        </div>
 
         {/* Edit Profile */}
         <button
@@ -209,75 +208,9 @@ const CheckInRow: React.FC<{
             event.stopPropagation();
             onEdit(item.profileId);
           }}
-          className="btn btn-ghost btn-sm"
-          style={{
-            height: '32px',
-            padding: '0 10px',
-            fontSize: '0.75rem',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--text-muted)',
-            border: '1px dashed var(--border)'
-          }}
+          className="admin-checkin-edit-btn"
         >
           ✏️ Edit
-        </button>
-      </div>
-
-      {/* Right Section: Attendance segmented control buttons */}
-      <div
-        className="flex-row"
-        style={{
-          gap: '2px',
-          backgroundColor: '#f1f5f9', // iOS style background segment container
-          padding: '3px',
-          borderRadius: '8px',
-          border: '1px solid var(--border)',
-          flex: '0 0 auto'
-        }}
-      >
-        <button
-          onClick={(event) => {
-            event.stopPropagation();
-            onSetAttendance(item.profileId, 'Present');
-          }}
-          className="btn"
-          style={{
-            height: '30px',
-            padding: '0 14px',
-            fontSize: '0.75rem',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: isPresent ? 'var(--primary)' : 'transparent',
-            color: isPresent ? 'var(--surface)' : '#475569',
-            fontWeight: isPresent ? '700' : '600',
-            boxShadow: isPresent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          Present
-        </button>
-        <button
-          onClick={(event) => {
-            event.stopPropagation();
-            onSetAttendance(item.profileId, 'Absent');
-          }}
-          className="btn"
-          style={{
-            height: '30px',
-            padding: '0 14px',
-            fontSize: '0.75rem',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: isAbsent ? '#ef4444' : 'transparent',
-            color: isAbsent ? 'var(--surface)' : '#475569',
-            fontWeight: isAbsent ? '700' : '600',
-            boxShadow: isAbsent ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          Absent
         </button>
       </div>
     </div>

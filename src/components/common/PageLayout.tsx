@@ -16,23 +16,23 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 }) => {
   useDocumentTitle(title);
   return (
-    <div className="flex-col" style={{ minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
-      <header className="surface" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
-        <div className="container flex-responsive" style={{ alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-lg)', maxWidth }}>
-          <div className="flex-responsive" style={{ gap: 'var(--space-lg)' }}>
+    <div className="admin-layout-wrapper">
+      <header className="admin-layout-header">
+        <div className="admin-header-container" style={{ maxWidth }}>
+          <div className="admin-header-brand">
             {backTo && (
-              <Link to={backTo} className="btn btn-ghost">← Back</Link>
+              <Link to={backTo} className="admin-back-btn">← Back</Link>
             )}
-            <div className="flex-col" style={{ gap: 0 }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{title}</h2>
-              {subtitle && <p className="text-muted" style={{ margin: 0, fontSize: '0.8125rem' }}>{subtitle}</p>}
+            <div className="admin-header-titles">
+              <h2 className="admin-header-title">{title}</h2>
+              {subtitle && <p className="admin-header-subtitle">{subtitle}</p>}
             </div>
           </div>
-          {actions && <div className="flex-row" style={{ gap: 'var(--space-md)' }}>{actions}</div>}
+          {actions && <div className="admin-header-actions">{actions}</div>}
         </div>
       </header>
 
-      <main className="container" style={{ maxWidth }}>
+      <main className="admin-main-content" style={{ maxWidth }}>
         {children}
       </main>
     </div>
