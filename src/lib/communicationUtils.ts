@@ -32,7 +32,15 @@ export function renderMarkdown(text: string): string {
   html = html.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>');
 
   // Links: [text](url)
-  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">$1</a>');
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_match, text, url) => {
+    // Basic sanitization to prevent javascript: XSS
+    let safeUrl = url.trim();
+    const isSafeProtocol = /^(https?|mailto):/i.test(safeUrl);
+    if (!isSafeProtocol && !safeUrl.startsWith('/') && !safeUrl.startsWith('#')) {
+      safeUrl = '#'; // Fallback for unsafe URLs
+    }
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">${text}</a>`;
+  });
 
   // Unordered Lists: * item or - item
   const lines = html.split('\n');
@@ -77,22 +85,33 @@ export function resolvePreviewContent(
   content: string,
   event: Event | null,
   recipient: CommunicationRecipient | null,
-  mailingAddress: string = '123 Choir St, Harmony City, HC 12345'
+  mailingAddress: string = '123 Choir St, Harmony City, HC 12345',
+  escapeVariables: boolean = false
 ): string {
   if (!content) return '';
 
   let result = content;
 
+  const escapeHtml = (str: string) => {
+    if (!escapeVariables) return str;
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   // Recipient Placeholders
-  const name = recipient?.name || 'Sample Singer';
+  const name = escapeHtml(recipient?.name || 'Sample Singer');
   result = result.replace(/{singerName}/g, name);
 
   // Event Placeholders
-  const title = event?.title || event?.type || 'Sample Performance';
-  const type = event?.type || 'Performance';
-  const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  const location = event?.expand?.venue?.name || 'Main Concert Hall';
-  const details = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const title = escapeHtml(event?.title || event?.type || 'Sample Performance');
+  const type = escapeHtml(event?.type || 'Performance');
+  const date = escapeHtml(event ? new Date(event.date).toLocaleString() : new Date().toLocaleString());
+  const location = escapeHtml(event?.expand?.venue?.name || 'Main Concert Hall');
+  const details = escapeHtml(event?.details || 'Join us for an amazing evening of music and harmony!');
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
@@ -111,7 +130,7 @@ export function resolvePreviewContent(
   result = result.replace(/{rsvpLinks}/g, rsvpText);
 
   // Compliance Placeholders
-  result = result.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
+  result = result.replace(/{{MAILING_ADDRESS}}/g, escapeHtml(mailingAddress));
   result = result.replace(/{{UNSUBSCRIBE_LINK}}/g, '#');
 
   return result;
@@ -139,5 +158,6 @@ export function getRenderedPreview(
   }
 
   // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
-  return resolvePreviewContent(html, event, recipient, mailingAddress);
+  // We pass true to escapeVariables so user data doesn't introduce HTML injection.
+  return resolvePreviewContent(html, event, recipient, mailingAddress, true);
 }
