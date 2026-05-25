@@ -281,23 +281,44 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
   const sectionCounts = useMemo(() => {
     const counts: Record<string, number> = {};
+    const order = currentFormation?.sectionOrder || [];
+    const hasOrder = order.length > 0;
+
     if (currentFormation?.isVoicePartLayout) {
       const parts = voicePartSettings?.voiceParts || DEFAULT_VOICE_PARTS;
-      parts.forEach(vp => counts[vp.label] = 0);
+      parts.forEach(vp => {
+        if (!hasOrder || order.includes(vp.label)) {
+          counts[vp.label] = 0;
+        }
+      });
       
       activeProfiles.forEach(p => {
-        if (counts[p.voicePart] !== undefined) counts[p.voicePart]++;
-        else counts[p.voicePart] = 1;
+        if (!hasOrder || order.includes(p.voicePart)) {
+          if (counts[p.voicePart] !== undefined) {
+            counts[p.voicePart]++;
+          } else if (!hasOrder) {
+            counts[p.voicePart] = 1;
+          }
+        }
       });
     } else {
       const sections = voicePartSettings?.sections || DEFAULT_SECTIONS;
-      sections.forEach(s => counts[s.code] = 0);
+      sections.forEach(s => {
+        if (!hasOrder || order.includes(s.code)) {
+          counts[s.code] = 0;
+        }
+      });
       
       activeProfiles.forEach(p => {
         const voicePart = voicePartSettings?.voiceParts.find(vp => vp.label === p.voicePart);
         const sectionCode = voicePart?.sectionCode || p.voicePart[0];
-        if (counts[sectionCode] !== undefined) counts[sectionCode]++;
-        else counts[sectionCode] = 1;
+        if (!hasOrder || order.includes(sectionCode)) {
+          if (counts[sectionCode] !== undefined) {
+            counts[sectionCode]++;
+          } else if (!hasOrder) {
+            counts[sectionCode] = 1;
+          }
+        }
       });
     }
     return counts;
