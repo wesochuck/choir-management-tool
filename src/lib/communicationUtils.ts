@@ -32,7 +32,18 @@ export function renderMarkdown(text: string): string {
   html = html.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>');
 
   // Links: [text](url)
-  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">$1</a>');
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_match, text, url) => {
+    let safeUrl = url.trim();
+    // Validate protocol (http, https, mailto) or relative paths
+    const isSafe = /^(https?|mailto):/i.test(safeUrl) || /^[/#?]/.test(safeUrl);
+    if (!isSafe) {
+      safeUrl = '#';
+    } else {
+      // Prevent attribute injection (e.g. [text](https://" onmouseover="..."))
+      safeUrl = safeUrl.replace(/"/g, '&quot;');
+    }
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">${text}</a>`;
+  });
 
   // Unordered Lists: * item or - item
   const lines = html.split('\n');
