@@ -21,6 +21,7 @@ interface SeatingBottomDockProps {
   voiceParts: VoicePartDef[];
   assignSinger: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   onAddSinger?: () => void;
+  onLookupSinger?: () => void;
   onRemoveRsvp?: (profileId: string, name: string) => void;
 }
 
@@ -31,6 +32,7 @@ export function SeatingBottomDock({
   voiceParts,
   assignSinger,
   onAddSinger,
+  onLookupSinger,
   onRemoveRsvp
 }: SeatingBottomDockProps) {
   const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
@@ -70,16 +72,28 @@ export function SeatingBottomDock({
             <h3 className="text-headline bottom-dock-title">📥 Unassigned Singers Shelf</h3>
             <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
           </div>
-          {onAddSinger && (
-            <button
-              type="button"
-              onClick={onAddSinger}
-              className="btn btn-secondary btn-sm no-print"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, padding: '0 12px', height: '32px', minHeight: '32px' }}
-            >
-              + Add Singer
-            </button>
-          )}
+          <div className="flex-row no-print" style={{ gap: 'var(--space-xs)' }}>
+            {onLookupSinger && (
+              <button
+                type="button"
+                onClick={onLookupSinger}
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, padding: '0 12px', height: '32px', minHeight: '32px' }}
+              >
+                🔍 Lookup Singer
+              </button>
+            )}
+            {onAddSinger && (
+              <button
+                type="button"
+                onClick={onAddSinger}
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, padding: '0 12px', height: '32px', minHeight: '32px' }}
+              >
+                + Add New Singer
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bottom-dock-grid" style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}>

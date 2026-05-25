@@ -231,9 +231,10 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   const handleDelete = async () => {
     if (!initialData || !onDelete) return;
+    const eventName = initialData.title || initialData.type || 'this event';
     const shouldDelete = await dialog.confirm({
       title: 'Delete Event',
-      message: 'Delete event?',
+      message: `Are you sure you want to delete "${eventName}"? This action cannot be undone.`,
       confirmLabel: 'Delete',
       variant: 'danger',
     });

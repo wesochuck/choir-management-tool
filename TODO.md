@@ -24,12 +24,14 @@
 [ ] add on the music player for choir members maybe an encouragement to "install" this as a PWA app on their phone, but think about how it will work for members who return and it is a diff set list.
 [ ] Twilio SMS Integration: Add admin UI credentials settings card and server-side PocketBase dispatch hook in pb_hooks to route SMS messages directly via Twilio.
 [?] make sure all communication history from the various parts of the platform are visible in the communication history section
-[ ] make adding new people easier
-[ ] make printtable grid version
+[ x] make adding new people easier
+[x ] make printtable grid version
+[x] think about a better password reset workflow for singers.
 [ ] rename statuses in all places from: active (current) to active, rename active (future) to idle, keep Inactive
-[] fix when you type time on add eveent it jumps back to title
+[x] fix when you type time on add eveent it jumps back to title
 [] add clone event performace. clones everything including date/time
 [] make it easier to include a roster singer who hasn't rsvpd' quickly ot th seating chart, rename "Add Singer" to "Add New Singer" and add "Looku Singer"
-[] the bold section outlines on the outer edges are only showing up for the left most section
+[x] the bold section outlines on the outer edges are only showing up for the left most section
 [] it won't allow you to remove email address from account. the helper text takes up too much room.
-[] you should have a reset password button on the account that will reset the password.
+[] you should have a reset password button on the singer account that will reset the password.
+[] support adding event poster image to events

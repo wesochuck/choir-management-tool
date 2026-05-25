@@ -479,8 +479,7 @@ export default function RosterView() {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="card voice-part-dropdown-trigger flex-row"
-                style={{ fontSize: '15px' }}
+                className="voice-part-dropdown-trigger flex-row"
               >
                 <span style={{
                   whiteSpace: 'nowrap',

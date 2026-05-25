@@ -17,6 +17,7 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { SingerModal } from '../../components/admin/SingerModal';
+import { SingerLookupModal } from '../../components/admin/SingerLookupModal';
 import { profileService } from '../../services/profileService';
 import { rosterService } from '../../services/rosterService';
 import './SeatingView.css';
@@ -83,6 +84,14 @@ export default function SeatingView() {
   } = useSeatingChart(performanceId, selectedVenue);
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
+  const [isSingerLookupOpen, setIsSingerLookupOpen] = useState(false);
+
+  const handleLookupSingerSelect = async (profile: Profile) => {
+    if (performanceId && profile.id) {
+      await rosterService.updateRSVP(performanceId, profile.id, 'Yes');
+      await refresh();
+    }
+  };
 
   const handleAddSingerSave = async (data: ProfileInput) => {
     const newProfile = await profileService.createProfile(data);
@@ -518,6 +527,7 @@ export default function SeatingView() {
                     voiceParts={voiceParts}
                     assignSinger={assignSinger}
                     onAddSinger={() => setIsSingerModalOpen(true)}
+                    onLookupSinger={() => setIsSingerLookupOpen(true)}
                     onRemoveRsvp={handleRemoveRsvp}
                   />
                 )}
@@ -557,16 +567,26 @@ export default function SeatingView() {
                 }}
                 className="seating-sidebar-content"
               >
-                <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: 'var(--space-xs)' }}>
                   <h3 className="text-headline seating-sidebar-title" style={{ margin: 0 }}>Unassigned</h3>
-                  <button
-                    type="button"
-                    onClick={() => setIsSingerModalOpen(true)}
-                    className="btn btn-secondary btn-sm"
-                    style={{ fontWeight: 600, padding: '0 8px', height: '28px', minHeight: '28px', fontSize: '11px' }}
-                  >
-                    + Add
-                  </button>
+                  <div className="flex-row" style={{ gap: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsSingerLookupOpen(true)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontWeight: 600, padding: '0 8px', height: '28px', minHeight: '28px', fontSize: '11px' }}
+                    >
+                      🔍 Lookup
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsSingerModalOpen(true)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontWeight: 600, padding: '0 8px', height: '28px', minHeight: '28px', fontSize: '11px' }}
+                    >
+                      + Add New
+                    </button>
+                  </div>
                 </div>
                 <div className="flex-col seating-sidebar-list">
                   {activeProfiles
@@ -603,6 +623,13 @@ export default function SeatingView() {
         isOpen={isSingerModalOpen} 
         onClose={() => setIsSingerModalOpen(false)} 
         onSave={handleAddSingerSave} 
+      />
+
+      <SingerLookupModal
+        isOpen={isSingerLookupOpen}
+        onClose={() => setIsSingerLookupOpen(false)}
+        onSelect={handleLookupSingerSelect}
+        excludeIds={useMemo(() => new Set(activeProfiles.map(p => p.id)), [activeProfiles])}
       />
     </div>
   );

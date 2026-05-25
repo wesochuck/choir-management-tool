@@ -28,7 +28,15 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     
-    // Auto-focus the first visible focusable element inside the modal
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  // Auto-focus the first visible focusable element only when the modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+
     const focusTimer = setTimeout(() => {
       if (modalRef.current) {
         const firstFocusable = modalRef.current.querySelector<HTMLElement>(
@@ -39,10 +47,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     }, 50);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       clearTimeout(focusTimer);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

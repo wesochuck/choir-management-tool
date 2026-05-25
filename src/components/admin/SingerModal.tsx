@@ -518,7 +518,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             />
           </div>
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'flex-start' }}>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
               <label className="text-label">Login Email (Optional)</label>
               <input
