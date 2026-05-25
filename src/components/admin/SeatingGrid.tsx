@@ -497,7 +497,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                    {isVoicePartLayout ? suggestion : (sectionDef?.name[0] || suggestion)}{seatIndex + 1}
+                    {isVoicePartLayout ? `${suggestion} - ${seatIndex + 1}` : `${sectionDef?.name[0] || suggestion}${seatIndex + 1}`}
                   </div>
                   {assignedProfile ? (
                     <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
@@ -512,7 +512,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
                             <span style={{ fontWeight: 800 }}>⚠️ {assignedProfile.name}</span>
                             <span style={{ fontSize: '0.6875rem', opacity: 0.95, fontWeight: 600, letterSpacing: '0.01em' }}>
-                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? (vpDef?.fullName || suggestion) : (sectionDef?.name || suggestion)} seat
+                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || suggestion} seat ${seatIndex + 1}` : `${sectionDef?.name || suggestion} seat ${seatIndex + 1}`}
                             </span>
                           </div>
                         ) : (
