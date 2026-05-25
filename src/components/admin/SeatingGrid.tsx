@@ -58,6 +58,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const rowGap = isCompact ? 'var(--space-xs)' : 'var(--space-sm)';
   const containerPadding = isCompact ? 'var(--space-xs)' : 'var(--space-md)';
   const fontSize = isCompact ? 'var(--font-size-xs)' : 'var(--font-size-sm)';
+  const rowControlGutter = isCompact ? 132 : 162;
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -160,65 +161,79 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
         return (
           <div key={rowIndex} className="row-print" style={{
-            display: 'flex',
-            flexDirection: 'row',
+            display: 'grid',
+            gridTemplateColumns: `${rowControlGutter}px max-content ${rowControlGutter}px`,
             alignItems: 'center',
-            gap: `${gridGap}px`,
+            columnGap: `${gridGap}px`,
             justifyContent: 'center',
             minWidth: 'max-content'
           }}>
-            <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
-              {rowLabel}
+            <div className="no-print" style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: `${gridGap}px`,
+              minWidth: 0
+            }}>
+              <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
+                {rowLabel}
+              </div>
+
+              {/* "🗑️" remove row button */}
+              {!isReadOnly && onUpdateRowCounts && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={async () => {
+                    const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
+                    let shouldRemove = true;
+                    if (rowHasAssignments) {
+                      shouldRemove = await dialog.confirm({
+                        title: 'Remove Row?',
+                        message: `Row ${rowIndex + 1} has singer assignments. Removing the row will clear these assignments. Proceed?`,
+                        confirmLabel: 'Remove Row',
+                        cancelLabel: 'Cancel',
+                        variant: 'danger'
+                      });
+                    }
+
+                    if (shouldRemove) {
+                      const result = removeRowAndShiftAssignments(rowCounts, rowIndex, assignments);
+                      onUpdateRowCounts(result.rowCounts, result.assignments);
+                    }
+                  }}
+                  style={{
+                    minHeight: '28px',
+                    height: '28px',
+                    width: '28px',
+                    minWidth: '28px',
+                    padding: 0,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--color-danger-bg)',
+                    border: '1px dashed var(--color-danger-text)',
+                    color: 'var(--color-danger-text)',
+                    fontWeight: 'bold',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                  title="Remove this row"
+                >
+                  🗑️
+                </button>
+              )}
             </div>
 
-            {/* "🗑️" remove row button */}
-            {!isReadOnly && onUpdateRowCounts && (
-              <button
-                className="no-print btn btn-ghost"
-                onClick={async () => {
-                  const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
-                  let shouldRemove = true;
-                  if (rowHasAssignments) {
-                    shouldRemove = await dialog.confirm({
-                      title: 'Remove Row?',
-                      message: `Row ${rowIndex + 1} has singer assignments. Removing the row will clear these assignments. Proceed?`,
-                      confirmLabel: 'Remove Row',
-                      cancelLabel: 'Cancel',
-                      variant: 'danger'
-                    });
-                  }
-
-                  if (shouldRemove) {
-                    const result = removeRowAndShiftAssignments(rowCounts, rowIndex, assignments);
-                    onUpdateRowCounts(result.rowCounts, result.assignments);
-                  }
-                }}
-                style={{
-                  minHeight: '28px',
-                  height: '28px',
-                  width: '28px',
-                  minWidth: '28px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--color-danger-bg)',
-                  border: '1px dashed var(--color-danger-text)',
-                  color: 'var(--color-danger-text)',
-                  marginRight: '6px',
-                  fontWeight: 'bold',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
-                title="Remove this row"
-              >
-                🗑️
-              </button>
-            )}
-            {Array.from({ length: seatCount }).map((_, seatIndex) => {
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: `${gridGap}px`,
+              minWidth: 'max-content'
+            }}>
+              {Array.from({ length: seatCount }).map((_, seatIndex) => {
               const seatKey = `${rowIndex}-${seatIndex}`;
               const suggestion = suggestions[seatKey];
               const profileId = assignments[seatKey];
@@ -471,94 +486,100 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
                 </div>
               );
-            })}
+              })}
+            </div>
 
-            {/* "+" add seat button */}
-            {!isReadOnly && onUpdateRowCounts && (
-              <button
-                className="no-print btn btn-ghost"
-                onClick={() => {
-                  const newRowCounts = [...rowCounts];
-                  newRowCounts[rowIndex] += 1;
-                  onUpdateRowCounts(newRowCounts);
-                }}
-                style={{
-                  minHeight: '28px',
-                  height: '28px',
-                  width: '28px',
-                  minWidth: '28px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--primary-light)',
-                  border: '1px dashed var(--primary)',
-                  color: 'var(--primary-deep)',
-                  marginLeft: '12px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
-                title="Add seat to this row"
-              >
-                +
-              </button>
-            )}
+            <div className="no-print" style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: '6px'
+            }}>
+              {/* "+" add seat button */}
+              {!isReadOnly && onUpdateRowCounts && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    const newRowCounts = [...rowCounts];
+                    newRowCounts[rowIndex] += 1;
+                    onUpdateRowCounts(newRowCounts);
+                  }}
+                  style={{
+                    minHeight: '28px',
+                    height: '28px',
+                    width: '28px',
+                    minWidth: '28px',
+                    padding: 0,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--primary-light)',
+                    border: '1px dashed var(--primary)',
+                    color: 'var(--primary-deep)',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                  title="Add seat to this row"
+                >
+                  +
+                </button>
+              )}
 
-            {/* "-" remove seat button */}
-            {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
-              <button
-                className="no-print btn btn-ghost"
-                onClick={async () => {
-                  const seatIndex = seatCount - 1;
-                  const seatKey = `${rowIndex}-${seatIndex}`;
-                  const seatHasAssignment = !!assignments[seatKey];
-                  let shouldRemove = true;
-                  if (seatHasAssignment) {
-                    const profile = profileMap[assignments[seatKey]];
-                    const singerName = profile ? profile.name : 'A singer';
-                    shouldRemove = await dialog.confirm({
-                      title: 'Remove Seat?',
-                      message: `The last seat of Row ${rowIndex + 1} is assigned to ${singerName}. Removing this seat will unassign them. Proceed?`,
-                      confirmLabel: 'Remove Seat',
-                      cancelLabel: 'Cancel',
-                      variant: 'danger'
-                    });
-                  }
+              {/* "-" remove seat button */}
+              {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={async () => {
+                    const seatIndex = seatCount - 1;
+                    const seatKey = `${rowIndex}-${seatIndex}`;
+                    const seatHasAssignment = !!assignments[seatKey];
+                    let shouldRemove = true;
+                    if (seatHasAssignment) {
+                      const profile = profileMap[assignments[seatKey]];
+                      const singerName = profile ? profile.name : 'A singer';
+                      shouldRemove = await dialog.confirm({
+                        title: 'Remove Seat?',
+                        message: `The last seat of Row ${rowIndex + 1} is assigned to ${singerName}. Removing this seat will unassign them. Proceed?`,
+                        confirmLabel: 'Remove Seat',
+                        cancelLabel: 'Cancel',
+                        variant: 'danger'
+                      });
+                    }
 
-                  if (shouldRemove) {
-                    const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
-                    onUpdateRowCounts(result.rowCounts, result.assignments);
-                  }
-                }}
-                style={{
-                  minHeight: '28px',
-                  height: '28px',
-                  width: '28px',
-                  minWidth: '28px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--color-danger-bg)',
-                  border: '1px dashed var(--color-danger-text)',
-                  color: 'var(--color-danger-text)',
-                  marginLeft: '6px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
-                title="Remove last seat from this row"
-              >
-                -
-              </button>
-            )}
+                    if (shouldRemove) {
+                      const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
+                      onUpdateRowCounts(result.rowCounts, result.assignments);
+                    }
+                  }}
+                  style={{
+                    minHeight: '28px',
+                    height: '28px',
+                    width: '28px',
+                    minWidth: '28px',
+                    padding: 0,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'var(--color-danger-bg)',
+                    border: '1px dashed var(--color-danger-text)',
+                    color: 'var(--color-danger-text)',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                  title="Remove last seat from this row"
+                >
+                  -
+                </button>
+              )}
+            </div>
           </div>
         );
       })}
