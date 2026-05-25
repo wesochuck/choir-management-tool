@@ -490,9 +490,9 @@
 }
 
 .bottom-dock-singer-card {
-  height: 22px;
-  min-height: 22px;
-  padding: 0 5px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 6px;
   background-color: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -501,7 +501,7 @@
   font-size: 0.75rem;
   align-items: center;
   box-shadow: var(--shadow-sm);
-  line-height: 1;
+  line-height: 1.2;
   gap: 4px;
 }
 
@@ -516,7 +516,8 @@
   white-space: nowrap;
   flex: 1;
   min-width: 0;
-  line-height: 1;
+  line-height: 1.2;
+  padding-bottom: 1px;
 }
 
 .singer-card-badge {

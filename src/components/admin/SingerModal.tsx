@@ -44,7 +44,9 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
 
   useEffect(() => {
     if (initialData) {
-      const { password, ...restInitialData } = initialData as any; // Strip password if it accidentally exists
+      const restInitialData = { ...initialData } as Record<string, unknown>;
+      delete restInitialData.password; // Strip password if it accidentally exists
+      
       setFormData({
         ...restInitialData,
         email: initialData.expand?.user?.email || '',

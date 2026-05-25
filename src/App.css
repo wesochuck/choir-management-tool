@@ -4,6 +4,7 @@
 [data-print-mode="text"] .grid-print {
   display: none !important;
 }
+
 [data-print-mode="visual"] .seating-text-list {
   display: none !important;
 }
@@ -15,14 +16,17 @@
 
 /* Print Styles */
 @media print {
-  .print-only { display: block !important; }
+  .print-only {
+    display: block !important;
+  }
 
   @page {
     size: landscape;
     margin: 0.25in;
   }
 
-  body, html {
+  body,
+  html {
     background: #ffffff !important;
     color: #000000 !important;
     min-height: 0 !important;
@@ -30,7 +34,14 @@
   }
 
   /* Reset layout containers to standard block rendering to avoid browser print engine flexbox height bugs */
-  .container, main, .flex-responsive, .flex-col, .card, div:not(.grid-print):not(.row-print):not(.seat-cell) {
+  .container,
+  main,
+  .flex-responsive,
+  .card,
+  .seating-view-container,
+  .seating-main-layout,
+  .seating-card-editor,
+  .seating-print-shell {
     display: block !important;
     min-height: 0 !important;
     height: auto !important;
@@ -51,7 +62,7 @@
     display: none !important;
   }
 
-  [data-print-mode="text"] .seating-print-shell > :not(.seating-text-list) {
+  [data-print-mode="text"] .seating-print-shell> :not(.seating-text-list) {
     display: none !important;
   }
 
@@ -60,6 +71,7 @@
     display: block !important;
     padding: 0 !important;
   }
+
   .seating-text-list h3 {
     border-bottom: 2px solid black !important;
     color: black !important;
@@ -67,6 +79,7 @@
     margin-bottom: 5px !important;
     font-size: 1.15rem !important;
   }
+
   .seating-text-list .text-sm {
     background-color: white !important;
     border: 1px solid #ddd !important;
@@ -76,11 +89,11 @@
   }
 
   /* Seating Visual Grid Print Styles */
-  .grid-print { 
+  .grid-print {
     display: flex !important;
     flex-direction: column !important;
     gap: 3px !important;
-    padding: 0 !important; 
+    padding: 0 !important;
     margin: 0 auto !important;
     page-break-inside: avoid !important;
     align-items: center !important;
@@ -88,7 +101,8 @@
     max-width: 100% !important;
     overflow: visible !important;
   }
-  .row-print { 
+
+  .row-print {
     display: flex !important;
     flex-direction: row !important;
     gap: 2px !important;
@@ -97,13 +111,15 @@
     width: auto !important;
     min-width: 0 !important;
   }
-  .row-print > .text-xs {
+
+  .row-print>.text-xs {
     width: 42px !important;
     padding-right: 3px !important;
     color: #000000 !important;
     font-size: 7px !important;
     line-height: 1.1 !important;
   }
+
   .seat-cell {
     display: flex !important;
     flex-direction: column !important;
@@ -120,30 +136,35 @@
     print-color-adjust: exact !important;
     page-break-inside: avoid !important;
   }
-  .seat-cell > div {
+
+  .seat-cell>div {
     font-size: 6px !important;
     line-height: 1 !important;
   }
-  .seat-cell > .flex-col {
+
+  .seat-cell>.flex-col {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     gap: 0 !important;
   }
-  .seat-cell > .flex-col > div:first-child {
+
+  .seat-cell>.flex-col>div:first-child {
     font-size: 10px !important;
     line-height: 1 !important;
   }
-  .seat-cell > .flex-col > div:nth-child(2) {
+
+  .seat-cell>.flex-col>div:nth-child(2) {
     font-size: 6px !important;
     line-height: 1 !important;
   }
+
   .seat-empty {
     opacity: 0.6;
   }
 
   /* Seating visual print mode must be grid-only: no controls, no shelf, no text list. */
-  [data-print-mode="visual"] .seating-print-shell > :not(.grid-print),
+  [data-print-mode="visual"] .seating-print-shell> :not(.grid-print),
   [data-print-mode="visual"] .seating-text-list,
   [data-print-mode="visual"] .unassigned-print-section {
     display: none !important;
@@ -215,8 +236,13 @@ body:has(.seating-chart-wide-active) .container {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .spinner-small {
@@ -238,13 +264,13 @@ body:has(.seating-chart-wide-active) .container {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease-in-out, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s !important;
-  
+
   /* Fix vertical stretch caused by index.css accessibility rules */
   min-height: 16px !important;
   min-width: 16px !important;
   height: 16px !important;
   width: 16px !important;
-  
+
   /* Perfect text centering */
   display: flex !important;
   align-items: center !important;
@@ -383,6 +409,7 @@ body:has(.seating-chart-wide-active) .container {
     grid-template-columns: 1fr;
     gap: var(--space-md);
   }
+
   .setlist-col-span-2,
   .setlist-col-span-1 {
     grid-column: span 1;
@@ -393,14 +420,14 @@ body:has(.seating-chart-wide-active) .container {
 .photo-spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid rgba(255,255,255,0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
 
-*:hover > .photo-overlay,
-*:focus-within > .photo-overlay {
+*:hover>.photo-overlay,
+*:focus-within>.photo-overlay {
   opacity: 1 !important;
 }
 
