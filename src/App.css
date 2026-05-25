@@ -18,7 +18,8 @@
   .print-only { display: block !important; }
 
   @page {
-    margin: 0.5in;
+    size: landscape;
+    margin: 0.25in;
   }
 
   body, html {
@@ -41,7 +42,8 @@
     background-color: transparent !important;
   }
 
-  header.surface {
+  header.surface,
+  body:has([data-print-mode="visual"]) .admin-layout-header {
     display: none !important;
   }
 
@@ -53,15 +55,8 @@
     display: none !important;
   }
 
-  [data-print-mode="visual"] .seating-text-list {
-    display: none !important;
-  }
-  [data-print-mode="visual"] .seating-print-shell > :not(.grid-print) {
-    display: none !important;
-  }
-
   /* Seating Text List Print Styles */
-  .seating-text-list {
+  [data-print-mode="text"] .seating-text-list {
     display: block !important;
     padding: 0 !important;
   }
@@ -145,6 +140,22 @@
   }
   .seat-empty {
     opacity: 0.6;
+  }
+
+  /* Seating visual print mode must be grid-only: no controls, no shelf, no text list. */
+  [data-print-mode="visual"] .seating-print-shell > :not(.grid-print),
+  [data-print-mode="visual"] .seating-text-list,
+  [data-print-mode="visual"] .unassigned-print-section {
+    display: none !important;
+  }
+
+  [data-print-mode="visual"] .grid-print {
+    display: flex !important;
+  }
+
+  [data-print-mode="visual"] .director-indicator {
+    display: flex !important;
+    margin-top: 0.14in !important;
   }
 }
 

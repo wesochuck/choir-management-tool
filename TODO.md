@@ -26,3 +26,4 @@
 [?] make sure all communication history from the various parts of the platform are visible in the communication history section
 [ ] make adding new people easier
 [ ] make printtable grid version
+[ ] rename statuses in all places from: active (current) to active, rename active (future) to idle, keep Inactive
