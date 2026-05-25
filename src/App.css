@@ -30,7 +30,7 @@
   }
 
   /* Reset layout containers to standard block rendering to avoid browser print engine flexbox height bugs */
-  .container, main, .flex-responsive, .flex-col, .card, div:not(.grid-print):not(.row-print):not(.seat-cell) {
+  .container, main, .flex-responsive, .card, .seating-view-container, .seating-main-layout, .seating-card-editor, .seating-print-shell {
     display: block !important;
     min-height: 0 !important;
     height: auto !important;
