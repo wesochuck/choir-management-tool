@@ -96,11 +96,19 @@
 .seating-main-layout {
   align-items: flex-start;
   gap: var(--space-md);
+  min-width: 0;
+  width: 100%;
 }
 
 .seating-card-editor {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   padding: var(--space-md);
+}
+
+.seating-print-shell {
+  min-width: 0;
 }
 
 /* Toolbar & Sub-controls */

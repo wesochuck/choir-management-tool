@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { flushSync } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -162,19 +161,7 @@ export default function SeatingView() {
   }, [activeProfiles, optimisticAssignments]);
 
   const handlePrint = () => {
-    const originalMode = printMode;
-    if (originalMode !== 'text') {
-      // flushSync forces React to commit printMode='text' to the DOM
-      // synchronously before window.print() is called, preventing the
-      // grid artifact from appearing in the print output.
-      flushSync(() => {
-        setPrintMode('text');
-      });
-      window.print();
-      setPrintMode(originalMode);
-    } else {
-      window.print();
-    }
+    window.print();
   };
 
   const handleManualSave = async () => {

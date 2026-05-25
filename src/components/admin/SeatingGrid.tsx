@@ -49,15 +49,61 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   }, [activeProfiles]);
 
   const assignedProfileIds = new Set(Object.values(assignments));
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const [gridWidth, setGridWidth] = React.useState(0);
 
   // Compact Mode Detection
   const maxSeats = Math.max(...rowCounts, 0);
   const isCompact = maxSeats > 12;
-  const seatSize = isCompact ? 68 : 100;
-  const gridGap = isCompact ? 6 : 12;
+  const baseSeatSize = isCompact ? 68 : 100;
+  const baseGridGap = isCompact ? 6 : 12;
+  const tightGridGap = isCompact ? 4 : 8;
+  const labelWidth = isCompact ? 75 : 105;
+  const canEditLayout = !isReadOnly && Boolean(onUpdateRowCounts);
+  const editButtonCount = canEditLayout ? 3 : 0;
+  const rowChildCount = 1 + maxSeats + editButtonCount;
+  const editButtonWidth = editButtonCount * 28;
+  const editButtonMargins = canEditLayout ? 24 : 0;
+  const containerPaddingPx = isCompact ? 4 : 16;
+  const availableGridWidth = gridWidth > 0 ? gridWidth : Number.POSITIVE_INFINITY;
+  const getFittedSeatSize = (gap: number): number => {
+    const gapWidth = Math.max(0, rowChildCount - 1) * gap;
+    const fixedWidth = labelWidth + editButtonWidth + editButtonMargins + gapWidth + (containerPaddingPx * 2);
+    return maxSeats > 0 ? (availableGridWidth - fixedWidth) / maxSeats : baseSeatSize;
+  };
+  const baseFittedSeatSize = getFittedSeatSize(baseGridGap);
+  const gridGap = Number.isFinite(baseFittedSeatSize) && baseFittedSeatSize < baseSeatSize ? tightGridGap : baseGridGap;
+  const fittedSeatSize = Math.floor(getFittedSeatSize(gridGap));
+  const minSeatSize = isCompact ? 44 : 72;
+  const seatSize = Number.isFinite(fittedSeatSize) ? Math.max(minSeatSize, Math.min(baseSeatSize, fittedSeatSize)) : baseSeatSize;
+  const isTightGrid = seatSize < baseSeatSize;
   const rowGap = isCompact ? 'var(--space-xs)' : 'var(--space-sm)';
   const containerPadding = isCompact ? 'var(--space-xs)' : 'var(--space-md)';
-  const fontSize = isCompact ? 'var(--font-size-xs)' : 'var(--font-size-sm)';
+  const fontSize = isCompact ? (isTightGrid ? '0.625rem' : 'var(--font-size-xs)') : 'var(--font-size-sm)';
+  const seatNameFontSize = isCompact ? (isTightGrid ? '1.05rem' : '1.375rem') : '1.25rem';
+  const seatVoicePartFontSize = isCompact ? (isTightGrid ? '0.625rem' : '0.75rem') : '0.875rem';
+  const emptySeatFontSize = isCompact ? (isTightGrid ? '0.875rem' : '1rem') : '1.125rem';
+  const hoverScale = isTightGrid ? 1.24 : 1.45;
+  const neighborScale = isTightGrid ? 1.12 : 1.22;
+  const hoverTranslateY = isTightGrid ? -4 : -8;
+  const neighborTranslateY = isTightGrid ? -2 : -4;
+
+  React.useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    const updateGridWidth = () => setGridWidth(grid.clientWidth);
+    updateGridWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateGridWidth);
+      return () => window.removeEventListener('resize', updateGridWidth);
+    }
+
+    const observer = new ResizeObserver(updateGridWidth);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, []);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -94,7 +140,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   };
 
   return (
-    <div className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
+    <div ref={gridRef} className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
       {/* Warning banner if not enough seats */}
       {activeProfiles.length > totalSeats && onUpdateRowCounts && (
         <div className="no-print" style={{
@@ -260,8 +306,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const isHovered = seatKey === activeHoverOrDrag;
               const isNeighbor = getIsNeighbor(activeHoverOrDrag, seatKey);
 
-              const scale = isHovered ? 1.45 : (isNeighbor ? 1.22 : 1.0);
-              const translateY = isHovered ? -8 : (isNeighbor ? -4 : 0);
+              const scale = isHovered ? hoverScale : (isNeighbor ? neighborScale : 1.0);
+              const translateY = isHovered ? hoverTranslateY : (isNeighbor ? neighborTranslateY : 0);
               const zIndex = isHovered ? 10 : (isNeighbor ? 5 : 1);
               const boxShadow = isHovered ? 'var(--shadow-lg)' : (isNeighbor ? 'var(--shadow-sm)' : 'none');
 
@@ -446,10 +492,10 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   </div>
                   {assignedProfile ? (
                     <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
-                      <div style={{ fontWeight: 800, fontSize: isCompact ? '1.375rem' : '1.25rem', color: colors.text, lineHeight: 1.1 }}>
+                      <div style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
-                      <div style={{ fontWeight: 700, color: colors.text, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
+                      <div style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
                         {assignedProfile.voicePart}
                       </div>
                       <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'} ${isMismatch ? 'seat-tooltip-mismatch' : ''}`}>
@@ -466,7 +512,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div style={{ fontWeight: 600, color: seatTextColor, fontSize: isCompact ? '1rem' : '1.125rem' }}>{isCompact ? '—' : 'Empty'}</div>
+                    <div style={{ fontWeight: 600, color: seatTextColor, fontSize: emptySeatFontSize }}>{isCompact ? '—' : 'Empty'}</div>
                   )}
                 </div>
               );
@@ -597,7 +643,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Director Indicator */}
-      <div className="no-print director-indicator" style={{
+      <div className="director-indicator" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
