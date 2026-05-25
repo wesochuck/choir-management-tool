@@ -293,7 +293,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const seatBg = isAssigned ? colors.bg : 'var(--surface)';
               const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--text-muted)');
               const borderStyle = isAssigned ? 'solid' : 'dashed';
-              const borderColor = isAssigned ? colors.text : (secColor || 'var(--border)');
+              const borderColor = isAssigned ? '#000000' : (secColor || 'var(--border)');
 
               // Wedge Outline Logic
               const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
