@@ -259,17 +259,16 @@ export const settingsService = {
     const setting = await getSetting<SeatingSettings>('seating_config');
     const value = setting?.value;
     const voiceSettings = await getVoicePartsAndSections();
-    const activeCodes = voiceSettings.sections.map(s => s.code);
+    const activeCodes = voiceSettings.sections.map(s => s.code.toUpperCase());
+    const activeParts = voiceSettings.voiceParts.map(vp => vp.label.toUpperCase());
 
     const baseFormations = value?.formations || DEFAULT_SEATING_SETTINGS.formations;
 
-    // Sanitize sequence paths: filter missing sections, append new ones
     const sanitizedFormations = baseFormations.map(form => {
-      const order = form.sectionOrder.filter(code => activeCodes.includes(code));
-      activeCodes.forEach(code => {
-        if (!order.includes(code)) order.push(code);
-      });
-      return { ...form, sectionOrder: order };
+      const isVoice = !!form.isVoicePartLayout;
+      const filterList = isVoice ? activeParts : activeCodes;
+      const order = (form.sectionOrder || []).filter(code => filterList.includes(code.toUpperCase()));
+      return { ...form, sectionOrder: order, isVoicePartLayout: isVoice };
     });
 
     return {
@@ -322,6 +321,9 @@ export interface VoicePartDef {
   label: string;
   fullName: string;
   sectionCode: string;
+  color?: string;
+  colorBg?: string;
+  colorText?: string;
 }
 
 export interface VoicePartSettings {
@@ -335,7 +337,8 @@ export interface SeatingFormationDef {
   id: string;
   name: string;
   strategy: FormationStrategyType;
-  sectionOrder: string[]; // Sequential array of active SectionDef codes
+  sectionOrder: string[]; // Sequential array of active SectionDef codes or VoicePartDef labels
+  isVoicePartLayout?: boolean; // Toggles layout by voice parts instead of sections
 }
 
 export interface SeatingSettings {

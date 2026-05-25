@@ -77,6 +77,7 @@ export const useProfiles = () => {
   }, []);
 
   return {
+    allProfiles: profiles,
     profiles: filteredProfiles,
     unfilteredByVoicePartProfiles,
     isLoading,

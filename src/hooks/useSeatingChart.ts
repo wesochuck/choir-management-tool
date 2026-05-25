@@ -269,20 +269,6 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     fetchData();
   }, [fetchData]);
 
-  const sectionCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const sections = voicePartSettings?.sections || DEFAULT_SECTIONS;
-    sections.forEach(s => counts[s.code] = 0);
-    
-    activeProfiles.forEach(p => {
-      const voicePart = voicePartSettings?.voiceParts.find(vp => vp.label === p.voicePart);
-      const sectionCode = voicePart?.sectionCode || p.voicePart[0];
-      if (counts[sectionCode] !== undefined) counts[sectionCode]++;
-      else counts[sectionCode] = 1;
-    });
-    return counts;
-  }, [activeProfiles, voicePartSettings]);
-
   const rowCounts = useMemo(() => {
     return chart?.layoutOverride || venue?.rowCounts || [];
   }, [chart, venue]);
@@ -292,6 +278,30 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     const found = seatingSettings.formations.find((f: SeatingFormationDef) => f.id === fId);
     return found || seatingSettings.formations[0] || DEFAULT_SEATING_SETTINGS.formations[0];
   }, [chart?.formationId, seatingSettings]);
+
+  const sectionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (currentFormation?.isVoicePartLayout) {
+      const parts = voicePartSettings?.voiceParts || DEFAULT_VOICE_PARTS;
+      parts.forEach(vp => counts[vp.label] = 0);
+      
+      activeProfiles.forEach(p => {
+        if (counts[p.voicePart] !== undefined) counts[p.voicePart]++;
+        else counts[p.voicePart] = 1;
+      });
+    } else {
+      const sections = voicePartSettings?.sections || DEFAULT_SECTIONS;
+      sections.forEach(s => counts[s.code] = 0);
+      
+      activeProfiles.forEach(p => {
+        const voicePart = voicePartSettings?.voiceParts.find(vp => vp.label === p.voicePart);
+        const sectionCode = voicePart?.sectionCode || p.voicePart[0];
+        if (counts[sectionCode] !== undefined) counts[sectionCode]++;
+        else counts[sectionCode] = 1;
+      });
+    }
+    return counts;
+  }, [activeProfiles, voicePartSettings, currentFormation]);
 
   const formationType = useMemo((): 'Column' | 'Row' => {
     return currentFormation.strategy === 'horizontal_row' ? 'Row' : 'Column';

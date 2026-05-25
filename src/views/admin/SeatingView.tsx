@@ -80,7 +80,7 @@ export default function SeatingView() {
   const selectedVenue = venues.find(v => v.id === venueId) || null;
   const { 
     chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
-    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh
+    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh, currentFormation
   } = useSeatingChart(performanceId, selectedVenue);
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
@@ -517,6 +517,7 @@ export default function SeatingView() {
                     }
                     await updateChart(updates);
                   }}
+                  isVoicePartLayout={currentFormation?.isVoicePartLayout}
                 />
                 
                 {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
@@ -529,6 +530,8 @@ export default function SeatingView() {
                     onAddSinger={() => setIsSingerModalOpen(true)}
                     onLookupSinger={() => setIsSingerLookupOpen(true)}
                     onRemoveRsvp={handleRemoveRsvp}
+                    isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                    sectionOrder={currentFormation?.sectionOrder}
                   />
                 )}
 

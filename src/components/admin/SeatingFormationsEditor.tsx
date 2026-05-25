@@ -3,10 +3,20 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router-dom';
-import { settingsService, getVoicePartsAndSections, type SectionDef, type SeatingSettings, type SeatingFormationDef } from '../../services/settingsService';
+import { settingsService, getVoicePartsAndSections, type SectionDef, type VoicePartDef, type SeatingSettings, type SeatingFormationDef } from '../../services/settingsService';
 import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
+
+function getContrastColor(hex: string): string {
+  if (!hex || hex.length < 6) return '#000000';
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#000000' : '#FFFFFF';
+}
 
 interface FormationSectionPillProps {
   dndId: string;
@@ -55,7 +65,7 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
         ⣿
       </span>
       <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-        {!hasSec && <span title="Unknown section — click × to remove" style={{ cursor: 'help', flexShrink: 0 }}>⚠️</span>}
+        {!hasSec && <span title="Unknown item — click × to remove" style={{ cursor: 'help', flexShrink: 0 }}>⚠️</span>}
         {label}
       </span>
       <button
@@ -87,11 +97,13 @@ interface FormationRowProps {
   formation: SeatingFormationDef;
   formationIndex: number;
   allSections: SectionDef[];
+  allVoiceParts: VoicePartDef[];
   setCustomSeatingSettings: React.Dispatch<React.SetStateAction<SeatingSettings>>;
 }
 
-function FormationRow({ formation, formationIndex, allSections, setCustomSeatingSettings }: FormationRowProps) {
+function FormationRow({ formation, formationIndex, allSections, allVoiceParts, setCustomSeatingSettings }: FormationRowProps) {
   const isRows = formation.strategy === 'horizontal_row';
+  const isVoice = !!formation.isVoicePartLayout;
   const dndItems = formation.sectionOrder.map((code, i) => `${formation.id}::${code}::${i}`);
 
   const sensors = useSensors(
@@ -170,7 +182,31 @@ function FormationRow({ formation, formationIndex, allSections, setCustomSeating
         </button>
       </div>
 
-      {/* Row 2: section order preview */}
+      {/* Checkbox: Voice Part Layout Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+          <input
+            type="checkbox"
+            checked={isVoice}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setCustomSeatingSettings((prev) => {
+                const newFormations = [...prev.formations];
+                newFormations[formationIndex] = {
+                  ...newFormations[formationIndex],
+                  isVoicePartLayout: checked,
+                  sectionOrder: [] // Clear previous order to avoid mismatching items
+                };
+                return { ...prev, formations: newFormations };
+              });
+            }}
+            style={{ accentColor: 'var(--primary)', cursor: 'pointer', width: '15px', height: '15px' }}
+          />
+          Layout by Voice Parts (S1, S2...) instead of Section Buckets
+        </label>
+      </div>
+
+      {/* Row 2: section/voice part order preview */}
       <div
         style={{
           padding: '6px 8px',
@@ -192,12 +228,34 @@ function FormationRow({ formation, formationIndex, allSections, setCustomSeating
               }}
             >
               {formation.sectionOrder.map((code, secIdx) => {
-                const sec = allSections.find(s => s.code.toUpperCase() === code.toUpperCase());
-                const hasSec = !!sec;
-                const bgColor = hasSec ? (sec.color || sec.colorBg || 'var(--border)') : '#fee2e2';
-                const textColor = hasSec ? (sec.colorText || '#000000') : '#991b1b';
-                const borderColor = hasSec ? 'rgba(0,0,0,0.12)' : '#ef4444';
-                const label = hasSec && sec.name ? `${sec.name} (${code})` : code;
+                let hasSec = false;
+                let bgColor = '#fee2e2';
+                let textColor = '#991b1b';
+                let borderColor = '#ef4444';
+                let label = code;
+
+                if (isVoice) {
+                  const vp = allVoiceParts.find(v => v.label.toUpperCase() === code.toUpperCase());
+                  if (vp) {
+                    hasSec = true;
+                    const parentSec = allSections.find(s => s.code === vp.sectionCode);
+                    const activeColor = vp.color || vp.colorBg || parentSec?.color || parentSec?.colorBg || 'var(--border)';
+                    bgColor = activeColor;
+                    textColor = getContrastColor(activeColor);
+                    borderColor = 'rgba(0,0,0,0.12)';
+                    label = `${vp.fullName} (${vp.label})`;
+                  }
+                } else {
+                  const sec = allSections.find(s => s.code.toUpperCase() === code.toUpperCase());
+                  if (sec) {
+                    hasSec = true;
+                    bgColor = sec.color || sec.colorBg || 'var(--border)';
+                    textColor = sec.colorText || '#000000';
+                    borderColor = 'rgba(0,0,0,0.12)';
+                    label = `${sec.name} (${code})`;
+                  }
+                }
+
                 const dndId = dndItems[secIdx];
                 return (
                   <FormationSectionPill
@@ -224,7 +282,7 @@ function FormationRow({ formation, formationIndex, allSections, setCustomSeating
           </SortableContext>
         </DndContext>
 
-        {/* Add Section trigger */}
+        {/* Add Section/Part trigger */}
         <div style={{ position: 'relative', display: 'inline-block', marginTop: formation.sectionOrder.length > 0 ? '6px' : '0' }}>
           <select
             value=""
@@ -250,14 +308,22 @@ function FormationRow({ formation, formationIndex, allSections, setCustomSeating
               cursor: 'pointer',
               zIndex: 2,
             }}
-            title="Add section to order"
+            title={isVoice ? "Add voice part to order" : "Add section to order"}
           >
-            <option value="" disabled>+ Add Section</option>
-            {allSections.filter(s => s.code).map(s => (
-              <option key={s.code} value={s.code}>
-                {s.name ? `${s.name} (${s.code})` : s.code}
-              </option>
-            ))}
+            <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
+            {isVoice ? (
+              allVoiceParts.filter(vp => vp.label && !formation.sectionOrder.includes(vp.label)).map(vp => (
+                <option key={vp.label} value={vp.label}>
+                  {vp.fullName} ({vp.label})
+                </option>
+              ))
+            ) : (
+              allSections.filter(s => s.code && !formation.sectionOrder.includes(s.code)).map(s => (
+                <option key={s.code} value={s.code}>
+                  {s.name ? `${s.name} (${s.code})` : s.code}
+                </option>
+              ))
+            )}
           </select>
           <button
             type="button"
@@ -274,7 +340,7 @@ function FormationRow({ formation, formationIndex, allSections, setCustomSeating
               pointerEvents: 'none',
             }}
           >
-            + Add Section
+            {isVoice ? "+ Add Voice Part" : "+ Add Section"}
           </button>
         </div>
       </div>
@@ -296,6 +362,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
   });
   const [initialSeatingSettings, setInitialSeatingSettings] = useState<SeatingSettings | null>(null);
   const [allSections, setAllSections] = useState<SectionDef[]>([]);
+  const [allVoiceParts, setAllVoiceParts] = useState<VoicePartDef[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -311,6 +378,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       setCustomSeatingSettings(JSON.parse(JSON.stringify(seating)));
       setInitialSeatingSettings(JSON.parse(JSON.stringify(seating)));
       setAllSections(voiceData.sections);
+      setAllVoiceParts(voiceData.voiceParts);
     } catch {
       setMessage('Could not load seating templates.');
     } finally {
@@ -347,6 +415,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
 
       const seenFormationNames = new Set<string>();
       const sectionCodes = new Set(allSections.map(s => s.code.toUpperCase()));
+      const voicePartLabels = new Set(allVoiceParts.map(vp => vp.label.toUpperCase()));
       
       for (let i = 0; i < formations.length; i++) {
         const form = formations[i];
@@ -366,14 +435,17 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
 
         const codes = form.sectionOrder.map(c => c.trim().toUpperCase()).filter(Boolean);
         if (codes.length === 0) {
-          setMessage(`Error: Seating formation "${name}" must have at least one section code.`);
+          setMessage(`Error: Seating formation "${name}" must have at least one section or voice part.`);
           setIsSaving(false);
           return;
         }
 
+        const isVoice = !!form.isVoicePartLayout;
+        const validCodes = isVoice ? voicePartLabels : sectionCodes;
+
         for (const code of codes) {
-          if (!sectionCodes.has(code)) {
-            setMessage(`Error: Seating formation "${name}" contains unknown section code "${code}".`);
+          if (!validCodes.has(code)) {
+            setMessage(`Error: Seating formation "${name}" contains unknown ${isVoice ? 'voice part' : 'section'} code "${code}".`);
             setIsSaving(false);
             return;
           }
@@ -465,6 +537,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
               formation={formation}
               formationIndex={formationIndex}
               allSections={allSections}
+              allVoiceParts={allVoiceParts}
               setCustomSeatingSettings={setCustomSeatingSettings}
             />
           ))}

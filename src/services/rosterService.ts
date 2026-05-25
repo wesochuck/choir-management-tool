@@ -63,6 +63,24 @@ async function createAttendanceWithVerification(eventId: string, profileId: stri
   }
 }
 
+async function executeWithRetry<T>(fn: () => Promise<T>, retries = 3, delay = 250): Promise<T> {
+  try {
+    return await fn();
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === 'object' &&
+      'status' in err &&
+      (err as { status?: unknown }).status === 429 &&
+      retries > 0
+    ) {
+      await pause(delay);
+      return executeWithRetry(fn, retries - 1, delay * 2);
+    }
+    throw err;
+  }
+}
+
 function pause(ms: number) {
   return new Promise<void>(resolve => setTimeout(resolve, ms));
 }
@@ -147,11 +165,11 @@ export const rosterService = {
 
     for (let i = 0; i < updates.length; i += chunkSize) {
       if (i > 0) {
-        await pause(80);
+        await pause(100);
       }
       const chunk = updates.slice(i, i + chunkSize);
       const chunkResults = await Promise.all(
-        chunk.map(update => rosterService.updateRSVP(eventId, update.profileId, update.rsvp))
+        chunk.map(update => executeWithRetry(() => rosterService.updateRSVP(eventId, update.profileId, update.rsvp)))
       );
       results.push(...chunkResults);
     }
@@ -186,9 +204,9 @@ export const rosterService = {
     const operations = updates.map(update => {
       const existingRoster = existingMap.get(update.profileId);
       if (existingRoster) {
-        return () => updateAttendanceWithVerification(existingRoster.id, update.attendance);
+        return () => executeWithRetry(() => updateAttendanceWithVerification(existingRoster.id, update.attendance));
       } else {
-        return () => createAttendanceWithVerification(eventId, update.profileId, update.attendance);
+        return () => executeWithRetry(() => createAttendanceWithVerification(eventId, update.profileId, update.attendance));
       }
     });
 
@@ -196,7 +214,7 @@ export const rosterService = {
     const chunkSize = 2;
     for (let i = 0; i < operations.length; i += chunkSize) {
       if (i > 0) {
-        await pause(80);
+        await pause(100);
       }
       const chunk = operations.slice(i, i + chunkSize);
       const chunkResults = await Promise.all(chunk.map(op => op()));

@@ -26,10 +26,11 @@ interface SeatingGridProps {
   onAssign: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   isReadOnly?: boolean;
   onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<void>;
+  isVoicePartLayout?: boolean;
 }
 
 export const SeatingGrid: React.FC<SeatingGridProps> = ({
-  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts
+  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts, isVoicePartLayout = false
 }) => {
   const dialog = useDialog();
   const formatNameLastFirst = React.useCallback((fullName: string): string => {
@@ -269,20 +270,49 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const profileId = assignments[seatKey];
               const assignedProfile = profileId ? profileMap[profileId] : null;
 
-              const isMismatch = isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
+              const isMismatch = isVoicePartLayout
+                ? Boolean(assignedProfile?.voicePart && assignedProfile.voicePart.toUpperCase() !== suggestion?.toUpperCase())
+                : isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
 
-              const sectionDef = suggestion ? sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase()) : null;
-              const secColor = sectionDef?.color || sectionDef?.colorBg;
+              let sectionDef: SectionDef | undefined;
+              let vpDef: VoicePartDef | undefined;
+
+              if (suggestion) {
+                if (isVoicePartLayout) {
+                  vpDef = voiceParts.find(v => v.label.toUpperCase() === suggestion.toUpperCase());
+                  if (vpDef) {
+                    sectionDef = sections.find(s => s.code === vpDef?.sectionCode);
+                  }
+                } else {
+                  sectionDef = sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase());
+                }
+              }
+
+              let secColor: string | undefined;
+              if (suggestion) {
+                if (isVoicePartLayout) {
+                  if (vpDef) {
+                    secColor = vpDef.color || vpDef.colorBg || sectionDef?.color || sectionDef?.colorBg;
+                  }
+                } else {
+                  secColor = sectionDef?.color || sectionDef?.colorBg;
+                }
+              }
 
               const isAssigned = !!profileId;
 
-              // Resolve singer's section color for color-coding mismatches along with their section
+              // Resolve singer's section/voice-part color for color-coding mismatches along with their section
               let singerSecColor: string | undefined;
               if (assignedProfile) {
                 const vpDef = voiceParts.find(vp => vp.label === assignedProfile.voicePart);
-                const singerSectionCode = vpDef?.sectionCode || (assignedProfile.voicePart ? assignedProfile.voicePart.trim()[0].toUpperCase() : '');
-                const singerSectionDef = singerSectionCode ? sections.find(s => s.code.toUpperCase() === singerSectionCode.toUpperCase()) : null;
-                singerSecColor = singerSectionDef?.color || singerSectionDef?.colorBg;
+                if (vpDef) {
+                  const parentSec = sections.find(s => s.code === vpDef.sectionCode);
+                  singerSecColor = vpDef.color || vpDef.colorBg || parentSec?.color || parentSec?.colorBg;
+                } else if (assignedProfile.voicePart) {
+                  const derivedCode = assignedProfile.voicePart.trim()[0].toUpperCase();
+                  const parentSec = sections.find(s => s.code.toUpperCase() === derivedCode);
+                  singerSecColor = parentSec?.color || parentSec?.colorBg;
+                }
               }
 
               const activeColor = (isAssigned && singerSecColor) ? singerSecColor : secColor;
@@ -380,13 +410,17 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       <option value="">-- Assign --</option>
                       <option value="">(Empty)</option>
 
-                      {suggestion && sectionDef && (
-                        <optgroup label={`Recommended (${sectionDef.name})`}>
+                      {suggestion && (isVoicePartLayout ? vpDef : sectionDef) && (
+                        <optgroup label={`Recommended (${isVoicePartLayout ? vpDef?.fullName : sectionDef?.name})`}>
                           {activeProfiles
                             .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                             .filter(p => {
-                              const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                              return vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase();
+                              if (isVoicePartLayout) {
+                                return p.voicePart.toUpperCase() === suggestion.toUpperCase();
+                              } else {
+                                const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+                                return vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase();
+                              }
                             })
                             .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
                             .map(p => (
@@ -399,8 +433,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                         {activeProfiles
                           .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
                           .filter(p => {
-                            const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                            return vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase();
+                            if (isVoicePartLayout) {
+                              return p.voicePart.toUpperCase() !== suggestion?.toUpperCase();
+                            } else {
+                              const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+                              return vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase();
+                            }
                           })
                           .sort((a, b) => {
                             const vpCompare = a.voicePart.localeCompare(b.voicePart);
@@ -459,7 +497,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                    {sectionDef?.name[0] || suggestion}{seatIndex + 1}
+                    {isVoicePartLayout ? suggestion : (sectionDef?.name[0] || suggestion)}{seatIndex + 1}
                   </div>
                   {assignedProfile ? (
                     <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
@@ -474,7 +512,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
                             <span style={{ fontWeight: 800 }}>⚠️ {assignedProfile.name}</span>
                             <span style={{ fontSize: '0.6875rem', opacity: 0.95, fontWeight: 600, letterSpacing: '0.01em' }}>
-                              Not recommended voice type ({assignedProfile.voicePart}) for this {sectionDef?.name || suggestion} seat
+                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? (vpDef?.fullName || suggestion) : (sectionDef?.name || suggestion)} seat
                             </span>
                           </div>
                         ) : (

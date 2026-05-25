@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
-import { groupSingersBySection } from '../../lib/seatingSync';
 import { getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 
@@ -23,6 +22,8 @@ interface SeatingBottomDockProps {
   onAddSinger?: () => void;
   onLookupSinger?: () => void;
   onRemoveRsvp?: (profileId: string, name: string) => void;
+  isVoicePartLayout?: boolean;
+  sectionOrder?: string[];
 }
 
 export function SeatingBottomDock({
@@ -33,22 +34,108 @@ export function SeatingBottomDock({
   assignSinger,
   onAddSinger,
   onLookupSinger,
-  onRemoveRsvp
+  onRemoveRsvp,
+  isVoicePartLayout = false,
+  sectionOrder
 }: SeatingBottomDockProps) {
   const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
-  const grouped = useMemo(() => groupSingersBySection(activeProfiles, assignedIds, sections, voiceParts), [activeProfiles, assignedIds, sections, voiceParts]);
+
+  const unassigned = useMemo(() => {
+    return activeProfiles.filter(p => !assignedIds.has(p.id));
+  }, [activeProfiles, assignedIds]);
 
   const uniqueDisplayNames = useMemo(() => {
     return getUniqueDisplayNames(activeProfiles);
   }, [activeProfiles]);
 
   const displaySections = useMemo(() => {
-    const list = sections.map(s => ({ key: s.code, label: s.name }));
-    if (grouped.Other && grouped.Other.length > 0) {
-      list.push({ key: 'Other', label: 'Other' });
+    const order = sectionOrder && sectionOrder.length > 0
+      ? sectionOrder
+      : (isVoicePartLayout ? voiceParts.map(vp => vp.label) : sections.map(s => s.code));
+
+    if (isVoicePartLayout) {
+      return order.map(laneKey => {
+        const vpDef = voiceParts.find(vp => vp.label === laneKey);
+        return {
+          key: laneKey,
+          label: vpDef ? vpDef.label : laneKey,
+          color: (() => {
+            if (vpDef) {
+              if (vpDef.color) return vpDef.color;
+              const parentSec = sections.find(s => s.code === vpDef.sectionCode);
+              return parentSec?.color || parentSec?.colorBg || '';
+            }
+            return '';
+          })()
+        };
+      });
+    } else {
+      return order.map(laneKey => {
+        const sectionDef = sections.find(s => s.code === laneKey);
+        return {
+          key: laneKey,
+          label: sectionDef?.name || laneKey,
+          color: sectionDef?.color || sectionDef?.colorBg || ''
+        };
+      });
     }
-    return list;
-  }, [sections, grouped.Other]);
+  }, [isVoicePartLayout, sectionOrder, sections, voiceParts]);
+
+  const groupedSingers = useMemo(() => {
+    const groups: Record<string, Profile[]> = {};
+    displaySections.forEach(ds => {
+      groups[ds.key] = [];
+    });
+
+    const hasOtherLane = displaySections.some(ds => ds.key === 'Other');
+
+    unassigned.forEach(p => {
+      let matchedLaneKey: string | null = null;
+
+      if (isVoicePartLayout) {
+        for (const ds of displaySections) {
+          if (ds.key === 'Other') continue;
+          const vpDef = voiceParts.find(vp => vp.label === ds.key);
+          const part = (p.voicePart || '').trim().toLowerCase();
+          if (
+            part === ds.key.toLowerCase() ||
+            (vpDef && part === vpDef.fullName.toLowerCase())
+          ) {
+            matchedLaneKey = ds.key;
+            break;
+          }
+        }
+      } else {
+        const vpDef = voiceParts.find(vp => 
+          vp.label === p.voicePart || 
+          vp.fullName === p.voicePart || 
+          vp.label.toLowerCase() === p.voicePart.toLowerCase() ||
+          vp.fullName.toLowerCase() === p.voicePart.toLowerCase()
+        );
+        let sectionCode = vpDef?.sectionCode;
+        if (!sectionCode) {
+          const part = p.voicePart ? p.voicePart.trim() : '';
+          if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+          else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+          else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+          else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+        }
+
+        if (sectionCode && groups[sectionCode] !== undefined) {
+          matchedLaneKey = sectionCode;
+        }
+      }
+
+      if (matchedLaneKey) {
+        groups[matchedLaneKey].push(p);
+      } else if (hasOtherLane) {
+        if (!groups.Other) groups.Other = [];
+        groups.Other.push(p);
+      }
+    });
+
+    return groups;
+  }, [unassigned, isVoicePartLayout, displaySections, voiceParts]);
 
   return (
     <div className="no-print seating-bottom-dock">
@@ -97,10 +184,9 @@ export function SeatingBottomDock({
         </div>
 
         <div className="bottom-dock-grid" style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}>
-          {displaySections.map(({ key, label }) => {
-            const list = grouped[key] || [];
-            const sectionDef = sections.find(s => s.code === key);
-            const secColor = sectionDef?.color || sectionDef?.colorBg;
+          {displaySections.map(({ key, label, color }) => {
+            const list = groupedSingers[key] || [];
+            const secColor = color;
             const badgeStyle = secColor ? {
               backgroundColor: secColor,
               color: getContrastColor(secColor),

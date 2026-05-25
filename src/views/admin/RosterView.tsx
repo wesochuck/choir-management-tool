@@ -73,7 +73,7 @@ import './RosterView.css';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
-  const { profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
+  const { allProfiles, profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
   const { currentSeason, duesMap, toggleDues } = useDues();
   const [searchParams] = useSearchParams();
   const initialVoicePart = searchParams.get('voicePart') || '';
@@ -344,7 +344,7 @@ export default function RosterView() {
 
   const getSingerCountForPart = (label: string) => {
     if (!label) return 0;
-    return profiles.filter(p => p.voicePart === label).length;
+    return allProfiles.filter(p => p.voicePart === label).length;
   };
 
   const isSectionReferenced = (code: string) => {
@@ -946,8 +946,10 @@ export default function RosterView() {
                 {configVoiceParts.map((vp, index) => {
                   const count = getSingerCountForPart(vp.label);
                   const isTied = count > 0;
+                  const section = configSections.find(s => s.code === vp.sectionCode);
+                  const defaultColor = section?.color || '#e0e0e0';
                   return (
-                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 160px 120px 100px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 150px 130px 90px 80px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
                       <input
                         value={vp.label}
                         onChange={(e) => {
@@ -955,10 +957,10 @@ export default function RosterView() {
                           newParts[index] = { ...newParts[index], label: e.target.value };
                           setConfigVoiceParts(newParts);
                         }}
-                        placeholder="Label (e.g. S1)"
+                        placeholder="Label"
                         disabled={isTied}
                         className="card"
-                        style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                        style={{ width: '100%', padding: '0 8px', height: '40px', minHeight: '40px' }}
                         title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
                       />
                       <input
@@ -968,7 +970,7 @@ export default function RosterView() {
                           newParts[index] = { ...newParts[index], fullName: e.target.value };
                           setConfigVoiceParts(newParts);
                         }}
-                        placeholder="Full Name (e.g. Soprano 1)"
+                        placeholder="Full Name"
                         className="card"
                         style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
                       />
@@ -987,6 +989,64 @@ export default function RosterView() {
                           <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
                         ))}
                       </select>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
+                          <input
+                            type="color"
+                            value={vp.color || defaultColor}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const newParts = [...configVoiceParts];
+                              newParts[index] = {
+                                ...newParts[index],
+                                color: val,
+                                colorBg: val,
+                                colorText: getContrastColor(val)
+                              };
+                              setConfigVoiceParts(newParts);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: '-8px',
+                              left: '-8px',
+                              width: '48px',
+                              height: '48px',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'pointer'
+                            }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={vp.color || ''}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            if (val && !val.startsWith('#')) val = '#' + val;
+                            val = val.replace(/[^0-9A-Fa-f#]/g, '').substring(0, 7);
+                            const newParts = [...configVoiceParts];
+                            newParts[index] = {
+                              ...newParts[index],
+                              color: val || undefined,
+                              colorBg: val || undefined,
+                              colorText: val ? getContrastColor(val) : undefined
+                            };
+                            setConfigVoiceParts(newParts);
+                          }}
+                          placeholder="Inherit"
+                          className="card"
+                          style={{
+                            width: '80px',
+                            padding: '0 8px',
+                            height: '32px',
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: '11px',
+                            margin: 0
+                          }}
+                        />
+                      </div>
+
                       {vp.label ? (
                         <button
                           type="button"
