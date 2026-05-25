@@ -351,7 +351,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </div>
                   )}
 
-                  {!isReadOnly && (
+                  {(!isReadOnly && !assignedProfile) && (
                     <select
                       value={profileId || ''}
                       onChange={(e) => onAssign(seatKey, e.target.value)}
