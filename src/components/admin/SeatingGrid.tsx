@@ -94,24 +94,25 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   };
 
   return (
-    <div className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
-      {/* Warning banner if not enough seats */}
-      {activeProfiles.length > totalSeats && onUpdateRowCounts && (
-        <div className="no-print" style={{
-          backgroundColor: 'var(--color-danger-bg)',
-          border: '1px solid #fecaca',
-          borderRadius: 'var(--radius-md)',
-          padding: 'var(--space-md)',
-          width: '100%',
-          maxWidth: '800px',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 'var(--space-sm)',
-          boxShadow: 'var(--shadow-sm)',
-          color: 'var(--color-danger-text)',
-          boxSizing: 'border-box'
-        }}>
+    <div className="grid-print" style={{ width: '100%', overflowX: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div className="flex-col" style={{ gap: rowGap, alignItems: 'center', minWidth: 'max-content', padding: containerPadding }}>
+        {/* Warning banner if not enough seats */}
+        {activeProfiles.length > totalSeats && onUpdateRowCounts && (
+          <div className="no-print" style={{
+            backgroundColor: 'var(--color-danger-bg)',
+            border: '1px solid #fecaca',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-md)',
+            width: '100%',
+            maxWidth: '800px',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 'var(--space-sm)',
+            boxShadow: 'var(--shadow-sm)',
+            color: 'var(--color-danger-text)',
+            boxSizing: 'border-box'
+          }}>
           <span style={{ fontSize: '1.25rem' }}>⚠️</span>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <strong style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Not enough seats configured!</strong>
@@ -617,6 +618,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       }}>
         <span>🎼</span>
         <span>Director</span>
+      </div>
       </div>
     </div>
   );

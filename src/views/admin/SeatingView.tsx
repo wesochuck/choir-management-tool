@@ -494,15 +494,15 @@ export default function SeatingView() {
                     <strong>Editor Mode:</strong>{' '}
                     {singersListPosition === 'bottom' ? (
                       <span>
-                        Drag singers from the <strong>bottom shelf</strong> below or click a seat to assign. 
+                        Drag singers from the <strong>bottom shelf</strong> below, or click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them.
                         <span style={{ marginLeft: 'var(--space-sm)', fontWeight: 700, color: 'var(--color-performance-text)' }}>
                           👇 Scroll down to see unassigned singers!
                         </span>
                       </span>
                     ) : singersListPosition === 'side' ? (
-                      <span>Drag singers from the <strong>right sidebar</strong> or click a seat to assign.</span>
+                      <span>Drag singers from the <strong>right sidebar</strong>, or click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them.</span>
                     ) : (
-                      <span>Click a seat to assign. (Singers list is currently hidden).</span>
+                      <span>Click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them. (Singers list is currently hidden).</span>
                     )}
                   </div>
                 )}
