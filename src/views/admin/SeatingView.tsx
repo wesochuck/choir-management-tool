@@ -51,8 +51,8 @@ export default function SeatingView() {
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
   const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
   
-  const isWideLayout = true;
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const isWideLayout = isFullscreen;
   const singersListPosition = getSingersListPosition();
   
   const workspaceRef = useRef<HTMLDivElement>(null);

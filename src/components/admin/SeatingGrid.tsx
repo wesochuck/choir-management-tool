@@ -58,16 +58,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const rowGap = isCompact ? 'var(--space-xs)' : 'var(--space-sm)';
   const containerPadding = isCompact ? 'var(--space-xs)' : 'var(--space-md)';
   const fontSize = isCompact ? 'var(--font-size-xs)' : 'var(--font-size-sm)';
-  const gridScrollRef = React.useRef<HTMLDivElement>(null);
-  const rowLayoutKey = rowCounts.join('|');
-
-  React.useLayoutEffect(() => {
-    const grid = gridScrollRef.current;
-    if (!grid) return;
-
-    const maxScroll = grid.scrollWidth - grid.clientWidth;
-    grid.scrollLeft = maxScroll > 0 ? maxScroll / 2 : 0;
-  }, [rowLayoutKey]);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -104,25 +94,24 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   };
 
   return (
-    <div ref={gridScrollRef} className="grid-print" style={{ width: '100%', overflowX: 'auto', display: 'flex', flexDirection: 'column' }}>
-      <div className="flex-col" style={{ gap: rowGap, alignItems: 'center', minWidth: 'max-content', padding: containerPadding }}>
-        {/* Warning banner if not enough seats */}
-        {activeProfiles.length > totalSeats && onUpdateRowCounts && (
-          <div className="no-print" style={{
-            backgroundColor: 'var(--color-danger-bg)',
-            border: '1px solid #fecaca',
-            borderRadius: 'var(--radius-md)',
-            padding: 'var(--space-md)',
-            width: '100%',
-            maxWidth: '800px',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            boxShadow: 'var(--shadow-sm)',
-            color: 'var(--color-danger-text)',
-            boxSizing: 'border-box'
-          }}>
+    <div className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
+      {/* Warning banner if not enough seats */}
+      {activeProfiles.length > totalSeats && onUpdateRowCounts && (
+        <div className="no-print" style={{
+          backgroundColor: 'var(--color-danger-bg)',
+          border: '1px solid #fecaca',
+          borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-md)',
+          width: '100%',
+          maxWidth: '800px',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 'var(--space-sm)',
+          boxShadow: 'var(--shadow-sm)',
+          color: 'var(--color-danger-text)',
+          boxSizing: 'border-box'
+        }}>
           <span style={{ fontSize: '1.25rem' }}>⚠️</span>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <strong style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Not enough seats configured!</strong>
@@ -628,7 +617,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       }}>
         <span>🎼</span>
         <span>Director</span>
-      </div>
       </div>
     </div>
   );
