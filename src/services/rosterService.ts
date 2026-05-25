@@ -16,6 +16,7 @@ export interface EventRoster extends RecordModel {
 }
 
 type AttendanceStatus = EventRoster['attendance'];
+type RsvpStatus = EventRoster['rsvp'];
 
 const isPostCommitPocketBaseError = (err: unknown) => {
   return Boolean(
@@ -62,6 +63,10 @@ async function createAttendanceWithVerification(eventId: string, profileId: stri
   }
 }
 
+function pause(ms: number) {
+  return new Promise<void>(resolve => setTimeout(resolve, ms));
+}
+
 export const rosterService = {
   async getMyRosters() {
     // Note: This assumes we have a way to find the profile for the current user.
@@ -79,7 +84,7 @@ export const rosterService = {
     });
   },
 
-  async updateRSVP(eventId: string, profileId: string, rsvp: 'Yes' | 'No' | 'Pending') {
+  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus) {
     // Find existing or create new
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
@@ -135,6 +140,24 @@ export const rosterService = {
       expand: 'profile,profile.user',
     });
   },
+
+  async bulkUpdateRSVP(eventId: string, updates: { profileId: string, rsvp: RsvpStatus }[]) {
+    const results: EventRoster[] = [];
+    const chunkSize = 2;
+
+    for (let i = 0; i < updates.length; i += chunkSize) {
+      if (i > 0) {
+        await pause(80);
+      }
+      const chunk = updates.slice(i, i + chunkSize);
+      const chunkResults = await Promise.all(
+        chunk.map(update => rosterService.updateRSVP(eventId, update.profileId, update.rsvp))
+      );
+      results.push(...chunkResults);
+    }
+
+    return results;
+  },
   
   async updateAttendance(rosterId: string, attendance: AttendanceStatus) {
     return await updateAttendanceWithVerification(rosterId, attendance);
@@ -173,7 +196,7 @@ export const rosterService = {
     const chunkSize = 2;
     for (let i = 0; i < operations.length; i += chunkSize) {
       if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 80));
+        await pause(80);
       }
       const chunk = operations.slice(i, i + chunkSize);
       const chunkResults = await Promise.all(chunk.map(op => op()));

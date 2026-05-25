@@ -44,10 +44,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
 
   useEffect(() => {
     if (initialData) {
+      const { password, ...restInitialData } = initialData as any; // Strip password if it accidentally exists
       setFormData({
-        ...initialData,
+        ...restInitialData,
         email: initialData.expand?.user?.email || '',
-        password: '',
         doNotEmail: initialData.doNotEmail || false,
         statusIsManual: initialData.statusIsManual || false,
       });
@@ -55,7 +55,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       setFormData({
         name: '',
         email: '',
-        password: '',
         phone: '',
         voicePart: '',
         globalStatus: 'Active (Current)',
@@ -104,7 +103,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     if (initialData) {
       const nameChanged = (formData.name || '') !== (initialData.name || '');
       const emailChanged = (formData.email || '') !== (initialData.expand?.user?.email || '');
-      const passwordChanged = Boolean(formData.password); // password is blank by default unless edited
       const phoneChanged = (formData.phone || '') !== (initialData.phone || '');
       const voicePartChanged = (formData.voicePart || '') !== (initialData.voicePart || '');
       const globalStatusChanged = (formData.globalStatus || '') !== (initialData.globalStatus || '');
@@ -113,11 +111,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       const manualStatusChanged = Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual);
       const photoChanged = formData.photo !== initialData.photo;
 
-      return nameChanged || emailChanged || passwordChanged || phoneChanged || voicePartChanged || globalStatusChanged || notesChanged || emailOptChanged || manualStatusChanged || photoChanged;
+      return nameChanged || emailChanged || phoneChanged || voicePartChanged || globalStatusChanged || notesChanged || emailOptChanged || manualStatusChanged || photoChanged;
     } else {
       const hasName = Boolean(formData.name?.trim());
       const hasEmail = Boolean(formData.email?.trim());
-      const hasPassword = Boolean(formData.password);
       const hasPhone = Boolean(formData.phone?.trim());
       const hasVoicePart = Boolean(formData.voicePart);
       const isStatusChanged = formData.globalStatus !== 'Active (Current)';
@@ -125,7 +122,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       const hasEmailOpt = Boolean(formData.doNotEmail);
       const hasManualStatus = Boolean(formData.statusIsManual);
 
-      return hasName || hasEmail || hasPassword || hasPhone || hasVoicePart || isStatusChanged || hasNotes || hasEmailOpt || hasManualStatus;
+      return hasName || hasEmail || hasPhone || hasVoicePart || isStatusChanged || hasNotes || hasEmailOpt || hasManualStatus;
     }
   }, [formData, initialData]);
 
@@ -521,38 +518,31 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           </div>
           <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-              <label className="text-label">Login Email</label>
+              <label className="text-label">Login Email (Optional)</label>
               <input
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
                 className="card"
+                placeholder="e.g. singer@example.com"
                 style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
               />
+              <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>
+                {initialData?.user 
+                  ? "They already have a login account." 
+                  : "If provided, they will automatically be sent an email to set up their password and access the portal."}
+              </p>
             </div>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-              <label className="text-label">{initialData?.user ? 'New Password' : 'Temporary Password'}</label>
-              <input
-                type="password"
-                value={formData.password || ''}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required={!initialData?.user}
-                minLength={8}
-                placeholder={initialData?.user ? 'Leave blank to keep current' : 'At least 8 characters'}
+              <label className="text-label">Phone (Optional)</label>
+              <input 
+                value={formData.phone || ''} 
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
                 className="card"
+                placeholder="e.g. 555-123-4567"
                 style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
               />
             </div>
-          </div>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Phone</label>
-            <input 
-              value={formData.phone || ''} 
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-            />
           </div>
           <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>

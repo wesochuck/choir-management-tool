@@ -202,6 +202,49 @@ export default function EventRosterView() {
     }
   };
 
+  const handleBulkUpdateRSVP = async (nextRsvp: 'Yes' | 'No' | 'Pending') => {
+    if (!eventId || sortedSingers.length === 0) return;
+
+    const eligibleSingers = sortedSingers.filter(singer => singer.rsvp !== nextRsvp);
+    if (eligibleSingers.length === 0) {
+      dialog.showToast('Everyone shown already has that RSVP status.');
+      return;
+    }
+
+    const statusLabel = nextRsvp === 'Yes' ? 'Attending' : nextRsvp === 'No' ? 'Declined' : 'No Response';
+    const confirmed = await dialog.confirm({
+      title: `Bulk Mark ${statusLabel}`,
+      message: `Update ${eligibleSingers.length} displayed singer${eligibleSingers.length === 1 ? '' : 's'} to ${statusLabel}? This only affects the singers currently shown after your filters and search.`,
+      confirmLabel: `Mark ${statusLabel}`,
+      cancelLabel: 'Cancel',
+      variant: nextRsvp === 'No' ? 'warning' : 'info',
+    });
+
+    if (!confirmed) return;
+
+    setIsUpdating(true);
+    try {
+      await rosterService.bulkUpdateRSVP(
+        eventId,
+        eligibleSingers.map(singer => ({
+          profileId: singer.profile.id,
+          rsvp: nextRsvp,
+        })),
+      );
+      const rosters = await rosterService.getEventRoster(eventId);
+      setEventRoster(rosters);
+      dialog.showToast(`Updated ${eligibleSingers.length} RSVP${eligibleSingers.length === 1 ? '' : 's'}.`);
+    } catch (err: unknown) {
+      await dialog.showMessage({
+        title: 'Could Not Bulk Update RSVPs',
+        message: err instanceof Error ? err.message : 'Failed to update RSVP statuses',
+        variant: 'danger',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handlePhotoChange = () => {
     if (eventId) {
       rosterService.getEventRoster(eventId).then(setEventRoster);
@@ -415,82 +458,89 @@ export default function EventRosterView() {
           </AppCard>
         )}
 
-        {/* Filters & Search Row (Positioned closer to the list of names) */}
-        <div className="roster-filters-bar" style={{ marginTop: 'var(--space-sm)' }}>
-          {/* Name Search */}
-          <div className="search-input-wrapper">
-            <input
-              type="text"
-              placeholder="Search active singers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="card search-input"
-              style={{ fontSize: '15px' }}
-            />
-            <span className="search-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </span>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '4px',
-                  borderRadius: '50%',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Clear search"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
+        <div className="event-rsvp-toolbar">
+          <div className="event-rsvp-search-group">
+            <div className="event-rsvp-search-input">
+              <span className="event-rsvp-search-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Search active singers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="event-rsvp-clear-search"
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <select 
+              value={sortBy} 
+              onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
+              className="event-rsvp-sort-select"
+              aria-label="Sort singers"
+            >
+              <option value="lastName">Last Name</option>
+              <option value="voicePart">Voice Part + Last Name</option>
+            </select>
+
+            {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
+              <button 
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedVoiceParts([]);
+                  setRsvpFilter('All');
+                }}
+                className="btn btn-secondary event-rsvp-reset-filters"
+              >
+                Reset Filters
               </button>
             )}
           </div>
- 
-          {/* Sort By Select */}
-          <select 
-            value={sortBy} 
-            onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
-            className="card admin-filter-select"
-          >
-            <option value="lastName">Last Name</option>
-            <option value="voicePart">Voice Part + Last Name</option>
-          </select>
- 
-          {/* Reset Filters */}
-          {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-            <button 
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedVoiceParts([]);
-                setRsvpFilter('All');
-              }}
-              className="btn btn-secondary admin-filter-reset"
+
+          <div className="event-rsvp-bulk-actions" aria-label="Bulk RSVP actions">
+            <span className="event-rsvp-visible-count">{sortedSingers.length} shown</span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={isUpdating || sortedSingers.length === 0}
+              onClick={() => handleBulkUpdateRSVP('Yes')}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                <path d="M3 3v5h5"></path>
-              </svg>
-              Reset Filters
+              Mark Attending
             </button>
-          )}
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={isUpdating || sortedSingers.length === 0}
+              onClick={() => handleBulkUpdateRSVP('No')}
+            >
+              Mark Declined
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={isUpdating || sortedSingers.length === 0}
+              onClick={() => handleBulkUpdateRSVP('Pending')}
+            >
+              Reset RSVPs
+            </button>
+          </div>
         </div>
 
         {/* Unified Event Roster Table */}

@@ -26,7 +26,6 @@ export interface UserAccount extends RecordModel {
 
 export interface ProfileInput extends Partial<Profile> {
   email?: string;
-  password?: string;
   doNotEmail?: boolean;
   statusIsManual?: boolean;
 }
@@ -34,12 +33,10 @@ export interface ProfileInput extends Partial<Profile> {
 const splitProfileInput = (data: ProfileInput) => {
   const profile = { ...data };
   const email = profile.email?.trim();
-  const password = profile.password;
   delete profile.email;
-  delete profile.password;
   delete profile.expand;
   delete profile.photo;
-  return { email: email?.trim(), password, profile };
+  return { email: email?.trim(), profile };
 };
 
 /**
@@ -82,14 +79,10 @@ export const profileService = {
   },
 
   async createProfile(data: ProfileInput) {
-    const { email, password: providedPassword, profile } = splitProfileInput(data);
+    const { email, profile } = splitProfileInput(data);
 
     if (email) {
-      const password = providedPassword || generateRandomPassword();
-      
-      if (password.length < 8) {
-        throw new Error('Singer account passwords must be at least 8 characters.');
-      }
+      const password = generateRandomPassword();
 
       const user = await pb.collection('users').create<UserAccount>({
         email,
@@ -100,7 +93,10 @@ export const profileService = {
       });
 
       try {
-        return await pb.collection('profiles').create<Profile>({ ...profile, user: user.id });
+        const newProfile = await pb.collection('profiles').create<Profile>({ ...profile, user: user.id });
+        // Automatically send the password setup email
+        await pb.collection('users').requestPasswordReset(email);
+        return newProfile;
       } catch (err) {
         await pb.collection('users').delete(user.id).catch(() => undefined);
         throw err;
@@ -111,28 +107,19 @@ export const profileService = {
   },
 
   async updateProfile(id: string, data: ProfileInput) {
-    const { email, password, profile } = splitProfileInput(data);
+    const { email, profile } = splitProfileInput(data);
     const current = await pb.collection('profiles').getOne<Profile>(id, { expand: 'user' });
     let userId = current.user;
 
-    if (email || password) {
+    if (email) {
       if (userId) {
-        const userPayload: Partial<UserAccount> & { password?: string; passwordConfirm?: string } = {
+        const userPayload: Partial<UserAccount> = {
           name: profile.name || current.name,
+          email: email,
         };
-        if (email) userPayload.email = email;
-        if (password) {
-          if (password.length < 8) {
-            throw new Error('Singer account passwords must be at least 8 characters.');
-          }
-          userPayload.password = password;
-          userPayload.passwordConfirm = password;
-        }
         await pb.collection('users').update<UserAccount>(userId, userPayload);
       } else {
-        if (!email || !password || password.length < 8) {
-          throw new Error('Provide an email and a password of at least 8 characters to create a singer login.');
-        }
+        const password = generateRandomPassword();
         const user = await pb.collection('users').create<UserAccount>({
           email,
           password,
@@ -141,6 +128,8 @@ export const profileService = {
           name: profile.name || current.name || email,
         });
         userId = user.id;
+        // Automatically send the password setup email for the new user account
+        await pb.collection('users').requestPasswordReset(email);
       }
     }
 

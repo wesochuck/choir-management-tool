@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { pb } from '../src/lib/pocketbase.ts';
 import { rosterService, type EventRoster } from '../src/services/rosterService.ts';
 
@@ -93,6 +94,102 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
   } finally {
     pb.collection = originalCollection;
   }
+});
+
+test('bulkUpdateRSVP reuses single RSVP updates in small chunks', async (t) => {
+  const originalUpdateRSVP = rosterService.updateRSVP;
+  const updateRSVP = t.mock.fn(async (
+    eventId: string,
+    profileId: string,
+    rsvp: EventRoster['rsvp'],
+  ) => ({
+    id: `roster_${profileId}`,
+    event: eventId,
+    profile: profileId,
+    rsvp,
+    attendance: 'Pending',
+    seatId: '',
+    folderNumber: '',
+    folderReturned: false,
+  }) as EventRoster);
+
+  rosterService.updateRSVP = updateRSVP as typeof rosterService.updateRSVP;
+
+  try {
+    const updates = [
+      { profileId: 'profile_1', rsvp: 'Yes' as const },
+      { profileId: 'profile_2', rsvp: 'Yes' as const },
+      { profileId: 'profile_3', rsvp: 'No' as const },
+    ];
+    const results = await rosterService.bulkUpdateRSVP('event_1', updates);
+
+    assert.equal(results.length, 3);
+    assert.equal(updateRSVP.mock.callCount(), 3);
+    assert.deepEqual(
+      updateRSVP.mock.calls.map(call => call.arguments),
+      [
+        ['event_1', 'profile_1', 'Yes'],
+        ['event_1', 'profile_2', 'Yes'],
+        ['event_1', 'profile_3', 'No'],
+      ],
+    );
+  } finally {
+    rosterService.updateRSVP = originalUpdateRSVP;
+  }
+});
+
+test('bulkUpdateRSVP pauses between chunks so PocketBase is not overwhelmed', async (t) => {
+  const originalUpdateRSVP = rosterService.updateRSVP;
+  const callTimes: number[] = [];
+  rosterService.updateRSVP = t.mock.fn(async (
+    eventId: string,
+    profileId: string,
+    rsvp: EventRoster['rsvp'],
+  ) => {
+    callTimes.push(Date.now());
+    return {
+      id: `roster_${profileId}`,
+      event: eventId,
+      profile: profileId,
+      rsvp,
+      attendance: 'Pending',
+      seatId: '',
+      folderNumber: '',
+      folderReturned: false,
+    } as EventRoster;
+  }) as typeof rosterService.updateRSVP;
+
+  try {
+    await rosterService.bulkUpdateRSVP('event_1', [
+      { profileId: 'profile_1', rsvp: 'Pending' },
+      { profileId: 'profile_2', rsvp: 'Pending' },
+      { profileId: 'profile_3', rsvp: 'Pending' },
+    ]);
+
+    assert.equal(callTimes.length, 3);
+    assert.ok(
+      callTimes[2] - callTimes[0] >= 70,
+      'third update should wait for the next throttled chunk',
+    );
+  } finally {
+    rosterService.updateRSVP = originalUpdateRSVP;
+  }
+});
+
+test('event roster bulk actions operate on the currently shown singers', () => {
+  const source = readFileSync(new URL('../src/views/admin/EventRosterView.tsx', import.meta.url), 'utf8');
+
+  assert.match(
+    source,
+    /const eligibleSingers = sortedSingers\.filter\(singer => singer\.rsvp !== nextRsvp\)/,
+    'bulk RSVP actions should use the filtered and sorted singers currently shown in the table',
+  );
+
+  assert.match(
+    source,
+    /This only affects the singers currently shown after your filters and search\./,
+    'bulk confirmation copy should make the scope clear before updating many people',
+  );
 });
 
 test('getSingerRosters retrieves rosters filtered by profile and with expected expands', async (t) => {
@@ -248,5 +345,3 @@ test('updateRSVP updates record normally if set to Yes or No', async (t) => {
     pb.collection = originalCollection;
   }
 });
-
-
