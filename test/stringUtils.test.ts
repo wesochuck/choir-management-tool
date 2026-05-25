@@ -16,14 +16,16 @@ test('getLastName with standard first and last name', () => {
 });
 
 test('getLastName with middle names', () => {
-  assert.equal(getLastName('John Jacob Jingleheimer Schmidt'), 'Schmidt');
+  assert.equal(getLastName('John Jacob Jingleheimer Schmidt'), 'Jingleheimer Schmidt');
+  assert.equal(getLastName('John Van Dyke'), 'Van Dyke');
 });
 
 test('getLastName preserves standard suffixes', () => {
-  assert.equal(getLastName('Martin Luther King Jr.'), 'King Jr.');
+  assert.equal(getLastName('Martin Luther King Jr.'), 'Luther King Jr.');
   assert.equal(getLastName('Thurston Howell III'), 'Howell III');
   assert.equal(getLastName('John Doe Sr'), 'Doe Sr');
   assert.equal(getLastName('John Doe IV'), 'Doe IV');
+  assert.equal(getLastName('John Van Dyke Jr.'), 'Van Dyke Jr.');
 });
 
 test('getLastName ignores suffix if there is no last name to attach to', () => {

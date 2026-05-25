@@ -271,9 +271,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   onDragOver={(e) => {
                     if (!isReadOnly) {
                       e.preventDefault();
+                      if (activeDragOver !== seatKey) {
+                        setActiveDragOver(seatKey);
+                      }
                     }
                   }}
-                  onDragEnter={() => !isReadOnly && setActiveDragOver(seatKey)}
                   onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
                   onMouseEnter={() => !isReadOnly && setHoveredSeat(seatKey)}
                   onMouseLeave={() => !isReadOnly && setHoveredSeat(null)}
@@ -288,7 +290,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   draggable={!isReadOnly && !!assignedProfile}
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                   title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
-                  className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''}`}
+                  className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
                   style={{
                     width: `${seatSize}px`,
                     height: `${seatSize}px`,
@@ -312,6 +314,43 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s'
                   }}
                 >
+                  {(!isReadOnly && assignedProfile) && (
+                    <div
+                      className="no-print seat-grab-handle"
+                      title="Drag to move or swap"
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: '5px',
+                        opacity: 0.35,
+                        color: colors.text,
+                        fontSize: '9px',
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1px'
+                      }}
+                    >
+                      <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
+                        <circle cx="1.5" cy="1.5" r="1"/>
+                        <circle cx="1.5" cy="5" r="1"/>
+                        <circle cx="1.5" cy="8.5" r="1"/>
+                        <circle cx="4.5" cy="1.5" r="1"/>
+                        <circle cx="4.5" cy="5" r="1"/>
+                        <circle cx="4.5" cy="8.5" r="1"/>
+                      </svg>
+                    </div>
+                  )}
+
+                  {activeDragOver === seatKey && (
+                    <div className="drag-overlay">
+                      <span className="drag-overlay-icon" style={{ fontSize: isCompact ? '1.125rem' : '1.5rem' }}>
+                        {assignedProfile ? '🔄' : '📥'}
+                      </span>
+                    </div>
+                  )}
+
                   {!isReadOnly && (
                     <select
                       value={profileId || ''}

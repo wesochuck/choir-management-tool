@@ -249,6 +249,49 @@ export default function PublicRsvpView() {
 
   return (
     <div className="flex-col" style={{ minHeight: '100vh', width: '100vw', backgroundColor: 'var(--primary-light)', padding: 'var(--space-lg) var(--space-md)', boxSizing: 'border-box' }}>
+      <style>{`
+        .rsvp-button-group {
+          display: flex;
+          gap: var(--space-sm);
+          width: 100%;
+        }
+        .rsvp-button-group-segment {
+          display: flex;
+          background-color: #f1f5f9;
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid var(--border);
+          width: 100%;
+          height: 48px;
+        }
+        @media (max-width: 480px) {
+          .rsvp-button-group {
+            flex-direction: column !important;
+          }
+          .rsvp-button-group-segment {
+            flex-direction: column !important;
+            height: auto !important;
+            gap: 8px;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+          }
+          .rsvp-button-group-segment .btn {
+            height: 48px !important;
+            box-shadow: var(--shadow-sm) !important;
+            border-radius: var(--radius-md) !important;
+          }
+          .rsvp-button-group-segment .btn[style*="background-color: transparent"] {
+            background-color: #f8fafc !important;
+            color: #64748b !important;
+            border: 1px solid var(--border) !important;
+          }
+          .flex-responsive {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+        }
+      `}</style>
       <div style={{ margin: 'auto', width: '100%', maxWidth: '540px' }}>
         <AppCard style={{ width: '100%', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', border: '1px solid rgba(74, 117, 89, 0.15)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
           
@@ -297,7 +340,7 @@ export default function PublicRsvpView() {
                 <p className="text-muted" style={{ fontSize: '0.85rem', margin: 0, textAlign: 'center' }}>
                   Are you planning to attend?
                 </p>
-                <div style={{ display: 'flex', gap: 'var(--space-sm)', width: '100%' }}>
+                <div className="rsvp-button-group">
                   <button
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
@@ -414,17 +457,7 @@ export default function PublicRsvpView() {
                     Need to change your response?
                   </label>
                   
-                  <div 
-                    style={{ 
-                      display: 'flex', 
-                      backgroundColor: '#f1f5f9', 
-                      padding: '4px', 
-                      borderRadius: '10px', 
-                      border: '1px solid var(--border)', 
-                      width: '100%',
-                      height: '48px'
-                    }}
-                  >
+                  <div className="rsvp-button-group-segment">
                     <button
                       onClick={() => handleConfirmRsvp('Yes')}
                       disabled={isUpdating}

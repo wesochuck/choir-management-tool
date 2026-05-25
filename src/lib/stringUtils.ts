@@ -6,13 +6,25 @@ export const getLastName = (fullName: string): string => {
   if (!fullName) return '';
   const trimmed = fullName.trim();
   const parts = trimmed.split(/\s+/);
-  if (parts.length <= 1) return trimmed;
+  const len = parts.length;
+  if (len <= 1) return trimmed;
 
   const suffixes = new Set(['Jr', 'Sr', 'II', 'III', 'IV', 'V', 'Jr.', 'Sr.']);
-  const lastPart = parts[parts.length - 1];
+  const lastPart = parts[len - 1];
 
-  if (suffixes.has(lastPart) && parts.length > 2) {
-    return `${parts[parts.length - 2]} ${lastPart}`;
+  if (suffixes.has(lastPart)) {
+    const numNameParts = len - 1;
+    if (numNameParts >= 3) {
+      return `${parts[len - 3]} ${parts[len - 2]} ${lastPart}`;
+    }
+    if (numNameParts === 2) {
+      return `${parts[len - 2]} ${lastPart}`;
+    }
+    return lastPart;
+  }
+
+  if (len >= 3) {
+    return `${parts[len - 2]} ${parts[len - 1]}`;
   }
 
   return lastPart;
