@@ -63,7 +63,6 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         zIndex: 1000, padding: 'var(--space-md)'
       }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
         ref={modalRef}
