@@ -259,6 +259,15 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         const isFront = rowIndex === 0;
         const isBack = rowIndex === rowCounts.length - 1;
         const rowLabel = `Row ${rowIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
+        // Calculate suggestion-based seat numbers in this row
+        const suggestedSeatNumbers: Record<number, number> = {};
+        let suggestedCount = 0;
+        for (let sIdx = 0; sIdx < seatCount; sIdx++) {
+          if (suggestions[`${rowIndex}-${sIdx}`]) {
+            suggestedCount++;
+            suggestedSeatNumbers[sIdx] = suggestedCount;
+          }
+        }
 
         return (
           <div key={rowIndex} className="row-print" style={{
@@ -421,7 +430,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   }}
                   draggable={!isReadOnly && !!assignedProfile}
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
-                  title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${seatIndex + 1}` : `Empty Space ${seatIndex + 1}`)}
+                  title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}` : `Empty Space ${seatIndex + 1}`)}
                   className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
                   style={{
                     width: `${seatSize}px`,
@@ -556,7 +565,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
                   <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                     {suggestion
-                      ? (isVoicePartLayout ? `${suggestion} - ${seatIndex + 1}` : `${sectionDef?.name[0] || suggestion}${seatIndex + 1}`)
+                      ? (isVoicePartLayout ? `${suggestion} - ${suggestedSeatNumbers[seatIndex]}` : `${sectionDef?.name[0] || suggestion}${suggestedSeatNumbers[seatIndex]}`)
                       : ''
                     }
                   </div>
@@ -573,7 +582,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
                             <span style={{ fontWeight: 800 }}>⚠️ {assignedProfile.name}</span>
                             <span style={{ fontSize: '0.6875rem', opacity: 0.95, fontWeight: 600, letterSpacing: '0.01em' }}>
-                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || suggestion} seat ${seatIndex + 1}` : `${sectionDef?.name || suggestion} seat ${seatIndex + 1}`}
+                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || suggestion} seat ${suggestedSeatNumbers[seatIndex]}` : `${sectionDef?.name || suggestion} seat ${suggestedSeatNumbers[seatIndex]}`}
                             </span>
                           </div>
                         ) : (
