@@ -3,11 +3,12 @@ import { type MessageRecord } from '../../services/communicationService';
 import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
+import { Pagination } from '../common/Pagination';
 
 interface MessageHistoryProps {
   history: MessageRecord[];
   currentPage: number;
-  pageSize: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
@@ -18,22 +19,17 @@ interface MessageHistoryProps {
 export function MessageHistory({
   history,
   currentPage,
-  pageSize,
+  totalPages,
   onPageChange,
   onViewDetails,
   onCopyDraft,
   events,
   commSettings,
 }: MessageHistoryProps) {
-  const totalPages = Math.ceil(history.length / pageSize) || 1;
-  const safePage = currentPage > totalPages ? 1 : currentPage;
-  const startIdx = (safePage - 1) * pageSize;
-  const paginatedHistory = history.slice(startIdx, startIdx + pageSize);
-
   return (
     <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
       <AppCard noPadding>
-        {paginatedHistory.map((message) => {
+        {history.map((message) => {
           const mFilters = message.filters as Record<string, unknown>;
           const mType = mFilters?.type as string | undefined;
           const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
@@ -69,29 +65,12 @@ export function MessageHistory({
         {history.length === 0 && <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}><p className="text-muted">No messages logged yet.</p></div>}
       </AppCard>
 
-      {history.length > pageSize && (
-        <div className="flex-row" style={{ justifyContent: 'center', alignItems: 'center', gap: 'var(--space-md)', marginTop: '4px' }}>
-          <button 
-            type="button" 
-            className="btn btn-ghost btn-sm"
-            disabled={safePage === 1}
-            onClick={() => onPageChange(safePage - 1)}
-          >
-            ◀ Previous
-          </button>
-          <span className="text-muted text-sm" style={{ fontWeight: 600 }}>
-            Page {safePage} of {totalPages}
-          </span>
-          <button 
-            type="button" 
-            className="btn btn-ghost btn-sm"
-            disabled={safePage === totalPages}
-            onClick={() => onPageChange(safePage + 1)}
-          >
-            Next ▶
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }
+

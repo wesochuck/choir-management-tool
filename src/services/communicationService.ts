@@ -7,7 +7,7 @@ import {
   DEFAULT_COMMUNICATION_CONFIG,
   type CommunicationConfig,
 } from './settingsService';
-import type { RecordModel } from 'pocketbase';
+import type { RecordModel, ListResult } from 'pocketbase';
 
 export type { CommunicationConfig } from './settingsService';
 
@@ -84,6 +84,43 @@ export const communicationService = {
       sort: '-created',
       filter: 'status = "Sent"',
     });
+  },
+
+  async getMessagesPaginated(page: number, perPage: number, filterString = 'status = "Sent"') {
+    return await pb.collection('messages').getList<MessageRecord>(page, perPage, {
+      sort: '-created',
+      filter: filterString,
+    });
+  },
+
+  async wasMessageSent(filter: { eventId?: string; type?: 'Reminder' | 'Report' | 'RSVP Request' }) {
+    if (!filter.eventId || !filter.type) return false;
+    try {
+      let filterStr = '';
+      if (filter.type === 'RSVP Request') {
+        filterStr = pb.filter(
+          'status = "Sent" && filters.eventId = {:eventId} && (filters.type = "RSVP Invitation" || filters.rsvp = "Pending")',
+          { eventId: filter.eventId }
+        );
+      } else if (filter.type === 'Reminder') {
+        filterStr = pb.filter(
+          'status = "Sent" && filters.eventId = {:eventId} && filters.type = "Automated Reminder"',
+          { eventId: filter.eventId }
+        );
+      } else if (filter.type === 'Report') {
+        filterStr = pb.filter(
+          'status = "Sent" && filters.eventId = {:eventId} && (filters.type = "Automated Report" || filters.type = "Attendance Report")',
+          { eventId: filter.eventId }
+        );
+      } else {
+        return false;
+      }
+
+      await pb.collection('messages').getFirstListItem<MessageRecord>(filterStr);
+      return true;
+    } catch (err) {
+      return false;
+    }
   },
 
   async getDrafts() {
@@ -328,6 +365,8 @@ export const communicationService = {
   statuses: ['Active', 'Idle', 'Inactive'],
 } satisfies {
   getMessages: () => Promise<MessageRecord[]>;
+  getMessagesPaginated: (page: number, perPage: number, filterString?: string) => Promise<ListResult<MessageRecord>>;
+  wasMessageSent: (filter: { eventId?: string; type?: 'Reminder' | 'Report' | 'RSVP Request' }) => Promise<boolean>;
   getDrafts: () => Promise<MessageRecord[]>;
   saveDraft: (data: SendMessageInput, id?: string) => Promise<MessageRecord>;
   deleteDraft: (id: string) => Promise<unknown>;

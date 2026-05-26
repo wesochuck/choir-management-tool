@@ -143,3 +143,73 @@ test('frontend renderMarkdown - link security whitelisting and escaping', () => 
   assert.ok(!escapeQuotes.includes('onclick="alert(1)"'));
 });
 
+test('communicationService.getMessagesPaginated calls pocketbase with expected limits', async () => {
+  const { pb } = await import('../src/lib/pocketbase.ts');
+  const originalCollection = pb.collection;
+
+  const mockGetList = async (page: number, perPage: number, _options: Record<string, unknown>) => {
+    return {
+      page,
+      perPage,
+      totalItems: 12,
+      totalPages: 3,
+      items: [
+        { id: 'm1', subject: 'Paged Subject' }
+      ]
+    };
+  };
+
+  pb.collection = ((name: string) => {
+    if (name === 'messages') {
+      return { getList: mockGetList };
+    }
+    return originalCollection.call(pb, name);
+  }) as unknown as typeof pb.collection;
+
+  try {
+    const result = await communicationService.getMessagesPaginated(2, 5);
+    assert.equal(result.page, 2);
+    assert.equal(result.perPage, 5);
+    assert.equal(result.totalPages, 3);
+    assert.equal(result.items[0].subject, 'Paged Subject');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('communicationService.wasMessageSent uses parameterized filters and returns correct boolean', async () => {
+  const { pb } = await import('../src/lib/pocketbase.ts');
+  const originalCollection = pb.collection;
+
+  let lastFilterStr = '';
+  const mockGetFirstListItem = async (filterStr: string) => {
+    lastFilterStr = filterStr;
+    if (filterStr.includes('event123')) {
+      return { id: 'm123' };
+    }
+    throw new Error('404 Not Found');
+  };
+
+  pb.collection = ((name: string) => {
+    if (name === 'messages') {
+      return { getFirstListItem: mockGetFirstListItem };
+    }
+    return originalCollection.call(pb, name);
+  }) as unknown as typeof pb.collection;
+
+  try {
+    // 1. Test existing report sent check
+    const sent = await communicationService.wasMessageSent({ eventId: 'event123', type: 'Report' });
+    assert.equal(sent, true);
+    assert.ok(lastFilterStr.includes('Attendance Report') || lastFilterStr.includes('Automated Report'));
+    assert.ok(lastFilterStr.includes('event123'));
+
+    // 2. Test unsent reminder check
+    const unsent = await communicationService.wasMessageSent({ eventId: 'event456', type: 'Reminder' });
+    assert.equal(unsent, false);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+

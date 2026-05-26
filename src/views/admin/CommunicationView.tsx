@@ -72,6 +72,8 @@ export default function CommunicationView() {
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Partial<TemplateRecord> | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sentTaskStatus, setSentTaskStatus] = useState<Record<string, boolean>>({});
 
   // Core drafting state
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
@@ -138,10 +140,7 @@ export default function CommunicationView() {
       
       // RSVP Requests (Initial Invitation)
       if (event.isOpenForRSVP && eventDate > now) {
-        const alreadySent = history.some(m => {
-          const mFilters = m.filters as Record<string, unknown>;
-          return (mFilters?.type === 'RSVP Invitation' || mFilters?.rsvp === 'Pending') && mFilters?.eventId === event.id;
-        });
+        const alreadySent = sentTaskStatus[`rsvp-${event.id}`] || false;
 
         if (!alreadySent) {
           upcoming.push({
@@ -157,10 +156,7 @@ export default function CommunicationView() {
       // Reminders
       if (commSettings.reminderEnabled) {
         const scheduledTime = new Date(eventDate.getTime() - commSettings.reminderHoursBefore * 60 * 60 * 1000);
-        const alreadySent = history.some(m => {
-          const mFilters = m.filters as Record<string, unknown>;
-          return mFilters?.type === 'Automated Reminder' && mFilters?.eventId === event.id;
-        });
+        const alreadySent = sentTaskStatus[`reminder-${event.id}`] || false;
 
         const task: AutomatedTask = {
           id: `reminder-${event.id}`,
@@ -177,10 +173,7 @@ export default function CommunicationView() {
       // Reports
       if (commSettings.reportEnabled) {
         const scheduledTime = new Date(eventDate.getTime() + commSettings.reportHoursAfter * 60 * 60 * 1000);
-        const alreadySent = history.some(m => {
-          const mFilters = m.filters as Record<string, unknown>;
-          return (mFilters?.type === 'Automated Report' || mFilters?.type === 'Attendance Report') && mFilters?.eventId === event.id;
-        });
+        const alreadySent = sentTaskStatus[`report-${event.id}`] || false;
         
         const task: AutomatedTask = {
           id: `report-${event.id}`,
@@ -199,18 +192,67 @@ export default function CommunicationView() {
       upcomingTasks: upcoming.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime()),
       pastTasks: past.sort((a, b) => b.scheduledTime.getTime() - a.scheduledTime.getTime())
     };
-  }, [events, commSettings, history]);
+  }, [events, commSettings, sentTaskStatus]);
+
+  const refreshHistory = async (pageToFetch = historyPage) => {
+    try {
+      const result = await communicationService.getMessagesPaginated(pageToFetch, 5);
+      setHistory(result.items);
+      setTotalPages(result.totalPages);
+    } catch (err) {
+      console.error('Failed to refresh message history', err);
+    }
+  };
+
+  useEffect(() => {
+    void refreshHistory(historyPage);
+  }, [historyPage]);
+
+  useEffect(() => {
+    let isCurrent = true;
+    if (events.length === 0) return;
+
+    const checkSentStatuses = async () => {
+      const cache: Record<string, boolean> = {};
+      const promises = events.flatMap(event => [
+        (async () => {
+          const sent = await communicationService.wasMessageSent({ eventId: event.id, type: 'RSVP Request' });
+          cache[`rsvp-${event.id}`] = sent;
+        })(),
+        (async () => {
+          const sent = await communicationService.wasMessageSent({ eventId: event.id, type: 'Reminder' });
+          cache[`reminder-${event.id}`] = sent;
+        })(),
+        (async () => {
+          const sent = await communicationService.wasMessageSent({ eventId: event.id, type: 'Report' });
+          cache[`report-${event.id}`] = sent;
+        })()
+      ]);
+
+      await Promise.all(promises);
+
+      if (isCurrent) {
+        setSentTaskStatus(cache);
+      }
+    };
+
+    void checkSentStatuses();
+    return () => {
+      isCurrent = false;
+    };
+  }, [events]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [loadedHistory, loadedDrafts, loadedTemplates, loadedSettings] = await Promise.all([
-          communicationService.getMessages(),
+        const [historyPageResult, loadedDrafts, loadedTemplates, loadedSettings] = await Promise.all([
+          communicationService.getMessagesPaginated(1, 5),
           communicationService.getDrafts(),
           communicationService.getTemplates(),
           settingsService.getCommunicationSettings(),
         ]);
-        setHistory(loadedHistory);
+        setHistory(historyPageResult.items);
+        setTotalPages(historyPageResult.totalPages);
         setDrafts(loadedDrafts);
         setTemplates(loadedTemplates);
         setCommSettings(loadedSettings);
@@ -399,7 +441,17 @@ export default function CommunicationView() {
         filters: filters as unknown as Record<string, unknown>,
       };
       await communicationService.sendBulkMessage(input, activeDraftId || undefined);
-      setHistory(await communicationService.getMessages());
+      
+      if (filters.eventId) {
+        const key = filters.rsvp === 'Pending' ? `rsvp-${filters.eventId}` : `reminder-${filters.eventId}`;
+        setSentTaskStatus(prev => ({ ...prev, [key]: true }));
+      }
+
+      if (historyPage === 1) {
+        void refreshHistory(1);
+      } else {
+        setHistoryPage(1);
+      }
       setDrafts(await communicationService.getDrafts());
       setActiveDraftId(null);
       
@@ -913,7 +965,12 @@ export default function CommunicationView() {
                           setIsSending(true); 
                           try { 
                             await communicationService.triggerAttendanceReport(task.event.id); 
-                            setHistory(await communicationService.getMessages()); 
+                            setSentTaskStatus(prev => ({ ...prev, [`report-${task.event.id}`]: true }));
+                            if (historyPage === 1) {
+                              void refreshHistory(1);
+                            } else {
+                              setHistoryPage(1);
+                            } 
                           } catch (err: unknown) { 
                             const msg = err instanceof Error ? err.message : String(err);
                             await dialog.showMessage({ title: 'Error', message: msg, variant: 'danger' }); 
@@ -989,7 +1046,7 @@ export default function CommunicationView() {
         <MessageHistory
           history={history}
           currentPage={historyPage}
-          pageSize={5}
+          totalPages={totalPages}
           onPageChange={setHistoryPage}
           onViewDetails={setSelectedMessage}
           onCopyDraft={handleResumeDraft}
