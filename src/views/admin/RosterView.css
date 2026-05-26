@@ -249,40 +249,8 @@
 
 /* Compact Checkboxes */
 .voice-part-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  border: 1.5px solid var(--border-deep, #cbd5e1);
-  border-radius: 3px;
-  background-color: var(--surface);
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: all 0.15s ease-in-out;
   margin: 0;
-}
-
-.voice-part-checkbox:hover {
-  border-color: var(--primary);
-}
-
-.voice-part-checkbox:checked {
-  background-color: var(--primary);
-  border-color: var(--primary);
-}
-
-.voice-part-checkbox:checked::after {
-  content: "";
-  display: block;
-  width: 3.5px;
-  height: 7px;
-  border: solid white;
-  border-width: 0 1.5px 1.5px 0;
-  transform: rotate(45deg) translate(-0.5px, -1px);
 }
 
 .voice-part-divider {

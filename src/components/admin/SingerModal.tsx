@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Profile, ProfileInput } from '../../services/profileService';
+import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { PhotoUploader } from '../common/PhotoUploader';
@@ -33,6 +33,27 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   });
   const [isSubmitting, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Password reset state
+  const [resetFeedback, setResetFeedback] = useState<string | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  const handleResetPassword = async () => {
+    const email = formData.email?.trim();
+    if (!email) return;
+    setIsResettingPassword(true);
+    setResetFeedback(null);
+    try {
+      await profileService.requestPasswordReset(email);
+      setResetFeedback('✓ Password reset email sent successfully!');
+      setTimeout(() => setResetFeedback(null), 3000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setResetFeedback(`Error: ${msg}`);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   // Tabs and RSVP History state
   const [activeTab, setActiveTab] = useState<'profile' | 'rsvps'>('profile');
@@ -534,6 +555,37 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   ? "They already have a login account." 
                   : "If provided, they will automatically be sent an email to set up their password and access the portal."}
               </p>
+              {initialData?.user && formData.email && (
+                <div className="flex-col" style={{ gap: '4px', marginTop: '6px', alignItems: 'flex-start' }}>
+                  <button
+                    type="button"
+                    onClick={handleResetPassword}
+                    disabled={isResettingPassword}
+                    className="btn btn-xs btn-secondary"
+                    style={{
+                      height: '24px',
+                      padding: '0 8px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {isResettingPassword ? 'Sending Link...' : '🔑 Reset Password'}
+                  </button>
+                  {resetFeedback && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: resetFeedback.startsWith('Error') ? 'var(--color-danger-text, #ef4444)' : 'var(--color-success-text, #22c55e)'
+                    }}>
+                      {resetFeedback}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
               <label className="text-label">Phone (Optional)</label>

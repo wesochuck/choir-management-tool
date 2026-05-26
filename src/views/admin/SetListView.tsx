@@ -458,12 +458,13 @@ export default function SetListView() {
       </div>
 
       <div className="roster-filters-bar" style={{ alignItems: 'stretch' }}>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1, minWidth: '200px' }}>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1, minWidth: '260px' }}>
             <label className="text-label">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
               className="admin-filter-select"
+              style={{ width: '100%', minWidth: '260px' }}
             >
               <option value="">-- Choose Event --</option>
               {events.map((e) => (
@@ -475,12 +476,13 @@ export default function SetListView() {
           </div>
 
           {selectedEvent && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '200px' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '260px', flex: 1 }}>
               <label className="text-label">Copy from Previous</label>
               <select 
                 value="" 
                 onChange={(e) => handleCopyFrom(e.target.value)}
                 className="admin-filter-select"
+                style={{ width: '100%', minWidth: '260px' }}
               >
                 <option value="">-- Copy Set List --</option>
                 {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (

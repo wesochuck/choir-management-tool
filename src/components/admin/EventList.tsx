@@ -28,6 +28,21 @@ export const EventList: React.FC<EventListProps> = ({
   openAuditionEventId
 }) => {
   const { timezone } = useChoirSettings();
+  const [activeDropdownId, setActiveDropdownId] = React.useState<string | null>(null);
+
+  // Click outside to dismiss open dropdowns
+  React.useEffect(() => {
+    if (!activeDropdownId) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.actions-dropdown-container')) {
+        setActiveDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [activeDropdownId]);
+
   return (
     <AppCard noPadding style={{ gap: 0 }}>
       {events.map((e) => (
@@ -73,13 +88,14 @@ export const EventList: React.FC<EventListProps> = ({
             </div>
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <div className="admin-event-actions">
+          <div className="admin-event-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
             <button
               onClick={(event) => {
                 event.stopPropagation();
                 onViewRoster(e);
               }}
               className={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm"}
+              style={{ fontWeight: 700 }}
             >
               RSVP Roster
             </button>
@@ -91,6 +107,7 @@ export const EventList: React.FC<EventListProps> = ({
                 }}
                 className="btn btn-secondary btn-sm"
                 title="Take attendance for this event"
+                style={{ fontWeight: 700 }}
               >
                 📋 Attendance
               </button>
@@ -103,52 +120,173 @@ export const EventList: React.FC<EventListProps> = ({
                 }}
                 className="btn btn-secondary btn-sm"
                 title="Open seating chart for this performance"
+                style={{ fontWeight: 700 }}
               >
                 🪑 Seating
               </button>
             )}
-            {onOpenPlayer && (
+
+            {/* Actions Dropdown Button Panel */}
+            <div className="actions-dropdown-container" style={{ position: 'relative' }}>
               <button
                 onClick={(event) => {
                   event.stopPropagation();
-                  onOpenPlayer(e);
+                  setActiveDropdownId(activeDropdownId === e.id ? null : e.id);
                 }}
                 className="btn btn-secondary btn-sm"
-                title="Open audio practice player"
-              >
-                🎧 Player
-              </button>
-            )}
-            <button 
-              onClick={(event) => {
-                event.stopPropagation();
-                onSendMessage(e);
-              }}
-              className="btn btn-secondary btn-sm"
-            >
-              ✉️ Send Message
-            </button>
-            {onClone && e.type === 'Performance' && (
-              <button 
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onClone(e);
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  padding: 0,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '16px',
+                  border: '1px solid var(--border)'
                 }}
-                className="btn btn-secondary btn-sm"
-                title="Clone this performance"
+                title="More Actions"
               >
-                👯 Clone
+                ⋮
               </button>
-            )}
-            <button 
-              onClick={(event) => {
-                event.stopPropagation();
-                onEdit(e);
-              }}
-              className="btn btn-ghost btn-sm"
-            >
-              ✏️ Edit
-            </button>
+
+              {activeDropdownId === e.id && (
+                <div 
+                  className="dropdown-menu shadow-lg" 
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '6px',
+                    width: '180px',
+                    backgroundColor: 'var(--surface, #ffffff)',
+                    border: '1px solid var(--border, #cbd5e1)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    padding: '6px 0',
+                    zIndex: 250,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  {onOpenPlayer && (
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveDropdownId(null);
+                        onOpenPlayer(e);
+                      }}
+                      className="dropdown-item btn-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        width: '100%',
+                        padding: '8px 16px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--text)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
+                      onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      🎧 Practice Player
+                    </button>
+                  )}
+                  <button 
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setActiveDropdownId(null);
+                      onSendMessage(e);
+                    }}
+                    className="dropdown-item btn-sm"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      padding: '8px 16px',
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--text)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
+                    onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    ✉️ Send Message
+                  </button>
+                  {onClone && e.type === 'Performance' && (
+                    <button 
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveDropdownId(null);
+                        onClone(e);
+                      }}
+                      className="dropdown-item btn-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        width: '100%',
+                        padding: '8px 16px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--text)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
+                      onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      👯 Clone Performance
+                    </button>
+                  )}
+                  <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '4px 0' }} />
+                  <button 
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setActiveDropdownId(null);
+                      onEdit(e);
+                    }}
+                    className="dropdown-item btn-sm"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      padding: '8px 16px',
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--primary-deep, #345940)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
+                    onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    ✏️ Edit Event
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ))}

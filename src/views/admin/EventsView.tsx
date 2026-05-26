@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -31,6 +31,33 @@ export default function EventsView() {
   const [cloningEventId, setCloningEventId] = useState<string | null>(null);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [auditionSettings, setAuditionSettings] = useState<AuditionSettings | null>(null);
+
+  // Tabbed navigation & Past events states
+  const [activeTab, setActiveTab] = useState<'all' | 'performances' | 'rehearsals'>('all');
+  const [showPastEvents, setShowPastEvents] = useState(false);
+
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    // 3 hours grace period for today's active events
+    const cutoffTime = now.getTime() - (3 * 60 * 60 * 1000);
+
+    const filtered = events.filter(e => {
+      if (!showPastEvents) {
+        const eventTime = new Date(e.date).getTime();
+        if (eventTime < cutoffTime) return false;
+      }
+      if (activeTab === 'performances') {
+        return e.type === 'Performance';
+      }
+      if (activeTab === 'rehearsals') {
+        return e.type === 'Rehearsal';
+      }
+      return true;
+    });
+
+    // Chronological sort (soonest first)
+    return [...filtered].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [events, activeTab, showPastEvents]);
 
   useEffect(() => {
     Promise.all([
@@ -279,8 +306,76 @@ export default function EventsView() {
         </div>
       </div>
 
+      {/* Segmented controls and filter options */}
+      <div className="flex-responsive" style={{
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0 4px',
+        gap: 'var(--space-md)',
+        flexWrap: 'wrap',
+        marginBottom: '4px'
+      }}>
+        {/* Tab buttons */}
+        <div className="flex-row" style={{
+          backgroundColor: 'var(--primary-light, #f1f5f9)',
+          padding: '4px',
+          borderRadius: 'var(--radius-md, 8px)',
+          border: '1px solid var(--border, #cbd5e1)',
+          gap: '4px'
+        }}>
+          {(['all', 'performances', 'rehearsals'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                height: '32px',
+                padding: '0 var(--space-md)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: 'calc(var(--radius-md) - 2px)',
+                backgroundColor: activeTab === tab ? 'var(--primary)' : 'transparent',
+                color: activeTab === tab ? 'white' : 'var(--text-muted)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'capitalize'
+              }}
+            >
+              {tab === 'all' ? 'All Events' : tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Show past checkbox */}
+        <label className="flex-row" style={{
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+          userSelect: 'none',
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          color: 'var(--text-muted)'
+        }}>
+          <input
+            type="checkbox"
+            checked={showPastEvents}
+            onChange={(e) => setShowPastEvents(e.target.checked)}
+            style={{
+              width: '16px',
+              height: '16px',
+              accentColor: 'var(--primary)',
+              cursor: 'pointer'
+            }}
+          />
+          <span>Show past events</span>
+        </label>
+      </div>
+
       <EventList
-        events={events}
+        events={filteredEvents}
         onEdit={handleEdit}
         onSendMessage={handleSendMessage}
         onViewRoster={(event) => navigate(`/admin/events/${event.id}/roster`)}

@@ -33,6 +33,6 @@
 [x] make it easier to include a roster singer who hasn't rsvpd' quickly ot th seating chart, rename "Add Singer" to "Add New Singer" and add "Looku Singer"
 [x] the bold section outlines on the outer edges are only showing up for the left most section
 [] it won't allow you to remove email address from account. the helper text takes up too much room.
-[] you should have a reset password button on the singer account that will reset the password.
+[x] you should have a reset password button on the singer account that will reset the password.
 [] support adding event poster image to events
 [] be able to do individual vocie parts on roseter and remove sections if needed.

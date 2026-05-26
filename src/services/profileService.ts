@@ -144,6 +144,10 @@ export const profileService = {
       await pb.collection('users').delete(current.user).catch(() => undefined);
     }
   },
+
+  async requestPasswordReset(email: string) {
+    return await pb.collection('users').requestPasswordReset(email);
+  },
 };
 
 export function exportToCSV(profiles: Profile[]): string {
