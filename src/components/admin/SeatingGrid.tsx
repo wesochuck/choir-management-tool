@@ -27,10 +27,11 @@ interface SeatingGridProps {
   isReadOnly?: boolean;
   onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<void>;
   isVoicePartLayout?: boolean;
+  sectionOrder?: string[];
 }
 
 export const SeatingGrid: React.FC<SeatingGridProps> = ({
-  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts, isVoicePartLayout = false
+  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts, isVoicePartLayout = false, sectionOrder
 }) => {
   const dialog = useDialog();
   const formatNameLastFirst = React.useCallback((fullName: string): string => {
@@ -44,25 +45,44 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const totalSeats = React.useMemo(() => rowCounts.reduce((sum, count) => sum + count, 0), [rowCounts]);
 
   const fitsFormation = React.useCallback((p: Profile): boolean => {
-    const activeSuggestionCodes = new Set(
-      Object.values(suggestions).map(code => code.toUpperCase())
-    );
-    if (activeSuggestionCodes.size === 0) return true;
-    if (isVoicePartLayout) {
-      return activeSuggestionCodes.has(p.voicePart.toUpperCase());
-    } else {
-      const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-      let sectionCode = vpDef?.sectionCode;
-      if (!sectionCode) {
-        const part = p.voicePart ? p.voicePart.trim() : '';
-        if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
-        else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
-        else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
-        else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+    const order = sectionOrder || [];
+    if (order.length === 0) {
+      const activeSuggestionCodes = new Set(
+        Object.values(suggestions).map(code => code.toUpperCase())
+      );
+      if (activeSuggestionCodes.size === 0) return true;
+      if (isVoicePartLayout) {
+        return activeSuggestionCodes.has(p.voicePart.toUpperCase());
+      } else {
+        const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+        let sectionCode = vpDef?.sectionCode;
+        if (!sectionCode) {
+          const part = p.voicePart ? p.voicePart.trim() : '';
+          if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+          else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+          else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+          else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+        }
+        return sectionCode ? activeSuggestionCodes.has(sectionCode.toUpperCase()) : false;
       }
-      return sectionCode ? activeSuggestionCodes.has(sectionCode.toUpperCase()) : false;
     }
-  }, [suggestions, isVoicePartLayout, voiceParts]);
+
+    // Check exact voice part match first
+    const hasExactMatch = order.some(code => code.toUpperCase() === p.voicePart.toUpperCase());
+    if (hasExactMatch) return true;
+
+    // Check parent section code match
+    const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+    let sectionCode = vpDef?.sectionCode;
+    if (!sectionCode) {
+      const part = p.voicePart ? p.voicePart.trim() : '';
+      if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+      else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+      else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+      else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+    }
+    return sectionCode ? order.some(code => code.toUpperCase() === sectionCode.toUpperCase()) : false;
+  }, [sectionOrder, suggestions, isVoicePartLayout, voiceParts]);
 
   const activeSingersForFormationCount = React.useMemo(() => {
     return activeProfiles.filter(fitsFormation).length;

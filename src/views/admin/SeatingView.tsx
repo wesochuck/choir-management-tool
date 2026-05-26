@@ -518,6 +518,7 @@ export default function SeatingView() {
                     await updateChart(updates);
                   }}
                   isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                  sectionOrder={currentFormation?.sectionOrder}
                 />
                 
                 {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
