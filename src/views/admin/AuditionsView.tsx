@@ -295,9 +295,11 @@ export default function AuditionsView() {
 
   return (
     <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>Auditions</h1>
-        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+      <div className="admin-view-header">
+        <div className="admin-view-titles">
+          {/* Page title is already handled by PageLayout in App.tsx */}
+        </div>
+        <div className="admin-view-actions">
           <button className="btn btn-primary" onClick={() => { setEditingAudition(null); setIsModalOpen(true); }}>
             Add Audition
           </button>
@@ -360,10 +362,9 @@ export default function AuditionsView() {
             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
               <label className="text-label">Target Performance</label>
               <select
-                className="card"
+                className="form-select"
                 value={settings.defaultPerformanceId || ''}
                 onChange={(e) => setSettings({ ...settings, defaultPerformanceId: e.target.value })}
-                style={{ height: '44px', padding: '0 12px' }}
               >
                 <option value="">-- No performance assigned --</option>
                 {performances.map(p => (
@@ -401,7 +402,7 @@ export default function AuditionsView() {
                     </div>
                     <div className="flex-col" style={{ gap: '4px' }}>
                       <span className="text-xs text-muted">Interval (mins)</span>
-                      <select className="card" value={genInterval} onChange={e => setGenInterval(e.target.value)} style={{ padding: '8px' }}>
+                      <select className="form-select" value={genInterval} onChange={e => setGenInterval(e.target.value)}>
                         <option value="10">10</option>
                         <option value="15">15</option>
                         <option value="20">20</option>
@@ -455,10 +456,9 @@ export default function AuditionsView() {
           <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '240px' }}>
             <label className="text-label text-muted">Filter by Performance</label>
             <select
-              className="card"
+              className="form-select"
               value={performanceFilter}
               onChange={(e) => setPerformanceFilter(e.target.value)}
-              style={{ height: '40px', padding: '0 12px' }}
             >
               <option value="all">All Auditions</option>
               {performances.map(p => (
@@ -689,10 +689,9 @@ export default function AuditionsView() {
           <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
             <label className="text-label">Select Confirmed Time Slot</label>
             <select
-              className="card"
+              className="form-select"
               value={schedSlot}
               onChange={(e) => setSchedSlot(e.target.value)}
-              style={{ height: '44px', padding: '0 12px' }}
             >
               {settings?.slots?.map((slot) => (
                 <option key={slot} value={slot}>

@@ -36,6 +36,19 @@
   --color-success-bg: #dcfce7;
   --color-success-text: #166534;
   
+  /* Shared Section Palette */
+  --section-red: #EF4444;
+  --section-orange: #F97316;
+  --section-amber: #F59E0B;
+  --section-green: #10B981;
+  --section-cyan: #06B6D4;
+  --section-blue: #3B82F6;
+  --section-indigo: #6366F1;
+  --section-purple: #8B5CF6;
+  --section-pink: #EC4899;
+  --section-slate: #64748B;
+
+  
   /* Typography Roles from DESIGN.md */
   --font-size-display: clamp(2rem, 5vw, 3rem);
   --font-size-headline: 1.5rem;

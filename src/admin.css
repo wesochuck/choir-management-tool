@@ -733,3 +733,54 @@
     width: 100%;
   }
 }
+
+/* -------------------------------------------------------------
+   9. Standardized Form Select & Accent Card Classes
+   ------------------------------------------------------------- */
+.form-select {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.card-accent {
+  background-color: var(--primary-light);
+  border: 1px solid rgba(74, 117, 89, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+}
+
+/* -------------------------------------------------------------
+   10. Seating View Custom Controls
+   ------------------------------------------------------------- */
+.seating-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.seating-control-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+

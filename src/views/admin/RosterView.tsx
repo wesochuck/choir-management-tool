@@ -23,17 +23,18 @@ import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 
 // Section Palette Colors
 const PALETTE_COLORS = [
-  '#EF4444', // Red
-  '#F97316', // Orange
-  '#F59E0B', // Amber
-  '#10B981', // Green
-  '#06B6D4', // Cyan
-  '#3B82F6', // Blue
-  '#6366F1', // Indigo
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
-  '#64748B', // Slate
+  'var(--section-red)',
+  'var(--section-orange)',
+  'var(--section-amber)',
+  'var(--section-green)',
+  'var(--section-cyan)',
+  'var(--section-blue)',
+  'var(--section-indigo)',
+  'var(--section-purple)',
+  'var(--section-pink)',
+  'var(--section-slate)',
 ];
+
 
 function isColorTooClose(hex1: string, hex2: string): boolean {
   if (!hex1 || !hex2 || !hex1.startsWith('#') || !hex2.startsWith('#')) return false;

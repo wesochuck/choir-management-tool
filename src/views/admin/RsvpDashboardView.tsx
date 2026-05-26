@@ -37,17 +37,17 @@ export default function RsvpDashboardView() {
 
   return (
     <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-md)' }}>
-        <h1 className="text-display" style={{ margin: 0, fontSize: '2.25rem' }}>Event RSVPs</h1>
-        
-        <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center', minWidth: '320px' }}>
+      <div className="admin-view-header">
+        <div className="admin-view-titles">
+          {/* Page title is already handled by PageLayout in App.tsx */}
+        </div>
+        <div className="admin-view-actions" style={{ minWidth: '320px' }}>
           <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
             <label className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="form-select"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
@@ -60,18 +60,14 @@ export default function RsvpDashboardView() {
 
       {selectedEvent && (
         <div 
-          className="card" 
+          className="card-accent" 
           style={{ 
-            padding: '12px 18px', 
-            backgroundColor: 'var(--primary-light)', 
-            border: '1px solid rgba(74, 117, 89, 0.2)',
             display: 'flex',
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)'
+            gap: 'var(--space-md)'
           }}
         >
           <div className="flex-col" style={{ gap: '2px' }}>

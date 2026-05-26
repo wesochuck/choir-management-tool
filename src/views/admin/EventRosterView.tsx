@@ -408,7 +408,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
     const q = (str: string) => {
       let val = (str || '').replace(/"/g, '""');
-      if (val.match(/^[=\+\-@]/)) {
+      if (val.match(/^[=+\-@]/)) {
         val = "'" + val; // Add single quote to neutralize formula
       }
       return `"${val}"`;

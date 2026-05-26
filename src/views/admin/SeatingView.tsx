@@ -228,7 +228,7 @@ export default function SeatingView() {
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
-      <div className="no-print flex-responsive seating-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-sm)', flexWrap: 'wrap' }}>
+      <div className="no-print seating-controls-bar seating-header">
         <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
           <h1 className="text-headline seating-header-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
             Seating Chart
@@ -283,7 +283,7 @@ export default function SeatingView() {
         {activeTab === 'chart' && (
           <div className="flex-row seating-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
             <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
-              <span className="text-label text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Perf:</span>
+              <span className="seating-control-label">Perf:</span>
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
@@ -298,7 +298,7 @@ export default function SeatingView() {
             </div>
 
             <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
-              <span className="text-label text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Venue:</span>
+              <span className="seating-control-label">Venue:</span>
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
@@ -346,7 +346,7 @@ export default function SeatingView() {
             </div>
 
             <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
-              <span className="text-label text-muted" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Format:</span>
+              <span className="seating-control-label">Format:</span>
               <div className="flex-row" style={{ gap: '4px' }}>
                 <select 
                   value={chart?.formationId || seatingSettings.defaultFormationId} 
