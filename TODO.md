@@ -35,4 +35,4 @@
 [] it won't allow you to remove email address from account. the helper text takes up too much room.
 [] you should have a reset password button on the singer account that will reset the password.
 [] support adding event poster image to events
-[] be able to do individual vocie parts on roseter and remote sections if needed.
+[] be able to do individual vocie parts on roseter and remove sections if needed.
