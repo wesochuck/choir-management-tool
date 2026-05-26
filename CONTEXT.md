@@ -63,5 +63,9 @@ A reusable layout or pre-written text block containing placeholders that can be 
 ## Event Cloning
 A function that duplicates an existing Performance, copying its title, date/time, details, and venue into a new event record with RSVPs (Event Roster responses) copied over, while keeping the set list empty, setting attendance/folder stats to default, and keeping its initial RSVP state closed.
 
+## Seating Chart
+A physical arrangement of singers in rows and columns on a stage or venue layout. A single performance can support multiple distinct seating charts, each identified by a custom user-defined name (e.g., "Chamber Choir", "Combined Finale"). Each seating chart is linked to a Seating Formation, which dynamically filters the unassigned singer pool and available seats to match only the voice parts or section buckets specified in that formation.
+
+
 
 

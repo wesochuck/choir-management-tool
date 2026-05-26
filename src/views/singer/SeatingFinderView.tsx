@@ -16,7 +16,7 @@ export default function SeatingFinderView() {
   }, []);
 
   const event = events.find(e => e.id === eventId);
-  const { chart, rowCounts, isLoading: chartLoading } = useSeatingChart(eventId || '', event?.expand?.venue || null);
+  const { chart, charts, activeChartId, setActiveChartId, rowCounts, isLoading: chartLoading } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
   const isLoading = eventsLoading || chartLoading;
 
@@ -37,6 +37,23 @@ export default function SeatingFinderView() {
       maxWidth="800px"
     >
       <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+        {charts.length > 1 && (
+          <div className="flex-row" style={{ gap: 'var(--space-xs)', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-xs)' }}>
+            {charts.map(c => {
+              const isActive = c.id === activeChartId;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setActiveChartId(c.id)}
+                  className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{ fontWeight: 700 }}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <AppCard>
           {isOpenSeating ? (
             <div className="flex-col" style={{ 

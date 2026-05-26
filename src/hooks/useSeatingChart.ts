@@ -25,13 +25,18 @@ interface SyncOptions {
 
 export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   const venueId = venue?.id || '';
-  const contextKey = seatingContextKey(performanceId, venueId);
+  const [activeChartId, setActiveChartId] = useState<string>('');
+  const [charts, setCharts] = useState<SeatingChart[]>([]);
+  
+  const contextKey = `${seatingContextKey(performanceId, venueId)}-${activeChartId}`;
   const [chart, setChart] = useState<SeatingChart | null>(null);
   const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
   const [seatingSettings, setSeatingSettings] = useState<SeatingSettings>(DEFAULT_SEATING_SETTINGS);
   const [voicePartSettings, setVoicePartSettings] = useState<VoicePartSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentVenueId, setCurrentVenueId] = useState(venueId);
+  const [currentPerformanceId, setCurrentPerformanceId] = useState(performanceId);
   const [error, setError] = useState<string | null>(null);
   const [isSyncPending, setIsSyncPending] = useState(false);
   const [activeRequestsCount, setActiveRequestsCount] = useState(0);
@@ -53,6 +58,15 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     sessionId: 0,
   });
   const syncWithServerRef = useRef<(options?: SyncOptions) => Promise<void>>(async () => undefined);
+
+  // Sync performanceId and venueId when they change to trigger reloading charts list
+  useEffect(() => {
+    if (performanceId !== currentPerformanceId || venueId !== currentVenueId) {
+      setCurrentPerformanceId(performanceId);
+      setCurrentVenueId(venueId);
+      setActiveChartId('');
+    }
+  }, [performanceId, venueId, currentPerformanceId, currentVenueId]);
 
   const currentSessionId = contextState.key === contextKey
     ? contextState.sessionId
@@ -137,6 +151,9 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
           setChart(updated);
           setOptimisticAssignments(updated.assignments || {});
+          
+          // Update in local list
+          setCharts(prev => prev.map(c => c.id === updated.id ? updated : c));
           setIsDirty(false);
           setError(null);
         } else {
@@ -150,6 +167,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
           chartRef.current = merged;
           setChart(merged);
+          setCharts(prev => prev.map(c => c.id === merged.id ? merged : c));
           setError(null);
         }
       }
@@ -211,7 +229,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     if (!performanceId) return;
     const requestContext = currentContext;
     const requestContextId = seatingContextId(requestContext);
-    const contextChanged = loadedContextKeyRef.current !== seatingContextKey(performanceId, venueId);
+    const contextChanged = loadedContextKeyRef.current !== contextKey;
 
     setIsLoading(true);
 
@@ -222,13 +240,34 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     }
 
     try {
-      const [existingChart, profiles, roster, sSettings, vpSettings] = await Promise.all([
-        seatingService.getChartForPerformance(performanceId, venueId || null),
+      const [profiles, roster, sSettings, vpSettings] = await Promise.all([
         profileService.getActiveProfiles(), // Filtered for Active (Current/Future)
         rosterService.getEventRoster(performanceId),
         settingsService.getSeatingSettings(),
         getVoicePartsAndSections(),
       ]);
+
+      let loadedCharts = await seatingService.getChartsForPerformance(performanceId, venueId || null);
+      
+      // Auto-create default chart if none exist
+      if (loadedCharts.length === 0 && performanceId && venueId) {
+        const defaultChart = await seatingService.saveChart({
+          performance: performanceId,
+          venue: venueId,
+          name: 'Main Seating Chart',
+          formationId: sSettings.defaultFormationId,
+          assignments: {},
+          layoutOverride: null,
+        });
+        loadedCharts = [defaultChart];
+      }
+
+      setCharts(loadedCharts);
+
+      let activeChart = loadedCharts.find(c => c.id === activeChartId) || loadedCharts[0] || null;
+      if (activeChart && activeChart.id !== activeChartId) {
+        setActiveChartId(activeChart.id);
+      }
 
       // Strictly filter for Active (Current) and RSVP'd Yes as per user request for seating chart
       const activeCurrent = filterProfilesByRsvpYes(profiles, roster);
@@ -236,13 +275,13 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
       const mergedChart = !contextChanged && isDirtyRef.current && dirtyPayloadRef.current
         ? mergeSeatingResponseWithDirtyState(
-          existingChart,
+          activeChart,
           dirtyPayloadRef.current,
           optimisticAssignmentsRef.current,
           performanceId,
           venueId,
         )
-        : existingChart;
+        : activeChart;
       const assignments = mergedChart?.assignments || {};
 
       setChart(mergedChart);
@@ -263,7 +302,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         setIsLoading(false);
       }
     }
-  }, [clearSaveTimer, contextKey, currentContext, performanceId, resetDirtyTracking, venueId]);
+  }, [clearSaveTimer, contextKey, currentContext, performanceId, resetDirtyTracking, venueId, activeChartId]);
 
   useEffect(() => {
     fetchData();
@@ -422,10 +461,44 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     await syncWithServer();
   }, [error, fetchData, syncWithServer]);
 
+  const createChart = async (name: string) => {
+    if (!venue || !performanceId) return;
+    const newChart = await seatingService.saveChart({
+      performance: performanceId,
+      venue: venueId,
+      name,
+      formationId: seatingSettings.defaultFormationId,
+      assignments: {},
+      layoutOverride: null,
+    });
+    await fetchData();
+    setActiveChartId(newChart.id);
+    return newChart;
+  };
+
+  const renameChart = async (id: string, name: string) => {
+    await seatingService.saveChart({ id, name } as Partial<SeatingChart>);
+    await fetchData();
+  };
+
+  const deleteChart = async (id: string) => {
+    await seatingService.deleteChart(id);
+    if (activeChartId === id) {
+      setActiveChartId('');
+    }
+    await fetchData();
+  };
+
   const isSaving = isSyncPending || activeRequestsCount > 0;
 
   return {
     chart,
+    charts,
+    activeChartId,
+    setActiveChartId,
+    createChart,
+    renameChart,
+    deleteChart,
     optimisticAssignments,
     activeProfiles,
     sectionCounts,

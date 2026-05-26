@@ -80,7 +80,8 @@ export default function SeatingView() {
   const selectedVenue = venues.find(v => v.id === venueId) || null;
   const { 
     chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
-    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh, currentFormation
+    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh, currentFormation,
+    charts, activeChartId, setActiveChartId, createChart, renameChart, deleteChart
   } = useSeatingChart(performanceId, selectedVenue);
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
@@ -381,7 +382,127 @@ export default function SeatingView() {
       {activeTab === 'templates' ? (
         <SeatingFormationsEditor onSaveSuccess={refresh} />
       ) : performanceId && venueId ? (
-        <div className="flex-responsive seating-main-layout">
+        <>
+          {/* Seating Charts Tabs Row */}
+          <div className="no-print flex-row seating-charts-tabs-row" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-sm)',
+            padding: '0 var(--space-md) var(--space-md) var(--space-md)',
+            borderBottom: '1px solid var(--border)',
+            width: '100%',
+            flexWrap: 'wrap'
+          }}>
+            {/* Render visible tabs */}
+            {(charts || []).slice(0, 3).map(c => {
+              const isActive = c.id === activeChartId;
+              return (
+                <div key={c.id} className="flex-row" style={{ 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: isActive ? 'var(--primary-light)' : 'var(--neutral-bg, #f8fafc)',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
+                  transition: 'all 0.2s ease'
+                }}>
+                  <button
+                    onClick={() => setActiveChartId(c.id)}
+                    className="btn btn-sm btn-ghost"
+                    style={{ 
+                      fontWeight: isActive ? 800 : 500,
+                      padding: '0 4px',
+                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)'
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                  {isActive && (
+                    <div className="flex-row" style={{ gap: '2px' }}>
+                      <button
+                        onClick={async () => {
+                          const newName = window.prompt('Rename Seating Chart:', c.name);
+                          if (newName && newName.trim()) {
+                            await renameChart(c.id, newName.trim());
+                          }
+                        }}
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem' }}
+                        title="Rename chart"
+                      >
+                        ✏️
+                      </button>
+                      {(charts || []).length > 1 && (
+                        <button
+                          onClick={async () => {
+                            const confirmed = await dialog.confirm({
+                              title: 'Delete Seating Chart?',
+                              message: `Are you sure you want to delete "${c.name}"? This cannot be undone.`,
+                              confirmLabel: 'Delete',
+                              variant: 'danger'
+                            });
+                            if (confirmed) {
+                              await deleteChart(c.id);
+                            }
+                          }}
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem', color: 'var(--color-danger-text)' }}
+                          title="Delete chart"
+                        >
+                          ❌
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Render overflow dropdown if more than 3 charts */}
+            {(charts || []).length > 3 && (
+              <select
+                value={(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? '' : activeChartId}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setActiveChartId(e.target.value);
+                  }
+                }}
+                className="seating-select-perf"
+                style={{
+                  height: '32px',
+                  minHeight: '32px',
+                  padding: '0 24px 0 8px',
+                  fontSize: '0.75rem',
+                  width: '150px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  backgroundColor: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary-light)' : 'var(--surface)',
+                  color: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text)'
+                }}
+              >
+                <option value="">More Charts... ▼</option>
+                {(charts || []).slice(3).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Add New Seating Chart Button */}
+            <button
+              onClick={async () => {
+                const name = window.prompt('Enter name for the new seating chart:');
+                if (name && name.trim()) {
+                  await createChart(name.trim());
+                }
+              }}
+              className="btn btn-secondary btn-sm"
+              style={{ fontWeight: 600, height: '32px', minHeight: '32px', display: 'inline-flex', alignItems: 'center' }}
+            >
+              ➕ New Chart
+            </button>
+          </div>
+
+          <div className="flex-responsive seating-main-layout">
           <AppCard className="flex-col seating-card-editor">
             <div className="no-print flex-responsive seating-toolbar">
                <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
@@ -617,6 +738,7 @@ export default function SeatingView() {
             </AppCard>
           )}
         </div>
+        </>
       ) : (
         <AppCard className="seating-empty-view">
           <p className="text-muted">Select a Performance and a Venue to start creating the seating chart.</p>
