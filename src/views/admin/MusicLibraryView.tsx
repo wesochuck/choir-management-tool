@@ -384,9 +384,9 @@ export default function MusicLibraryView() {
             onSelectAll={(checked) => {
               const newSet = new Set(selectedIds);
               if (checked) {
-                  paginatedPieces.forEach(p => newSet.add(p.id));
+                  filteredPieces.forEach(p => newSet.add(p.id));
               } else {
-                  paginatedPieces.forEach(p => newSet.delete(p.id));
+                  filteredPieces.forEach(p => newSet.delete(p.id));
               }
               setSelectedIds(newSet);
             }}

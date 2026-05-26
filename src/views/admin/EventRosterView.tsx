@@ -406,7 +406,14 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       { label: 'No Response (Pending)', status: 'Pending' },
     ];
 
-    const q = (str: string) => `"${str.replace(/"/g, '""')}"`;
+    const q = (str: string) => {
+      let val = (str || '').replace(/"/g, '""');
+      if (val.match(/^[=\+\-@]/)) {
+        val = "'" + val; // Add single quote to neutralize formula
+      }
+      return `"${val}"`;
+    };
+
 
     const csvLines: string[] = [];
     csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));

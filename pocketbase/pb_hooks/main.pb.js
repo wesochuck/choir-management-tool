@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-26T03:21:46.842Z
+// Generated on: 2026-05-26T11:23:21.211Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -260,7 +260,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -1233,7 +1240,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -2267,7 +2281,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -3244,7 +3265,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -4225,7 +4253,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -5210,7 +5245,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -6207,7 +6249,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -7193,7 +7242,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -8186,7 +8242,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;
@@ -9168,7 +9231,14 @@ function renderMarkdown(text) {
     // Italic: *text* or _text_
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
     // Unordered Lists
     const lines = html.split("\n");
     let inList = false;

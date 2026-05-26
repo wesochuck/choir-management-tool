@@ -851,6 +851,11 @@ export default function CommunicationView() {
                           <span>ℹ️</span> {selectedRecipients.filter(r => !r.phone).length} singers have no phone number and will skip SMS.
                         </div>
                       )}
+                      {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
+                        <div className="checklist-item warning">
+                          <span>⚠️</span> <strong>Default Mailing Address Active:</strong> You are currently using the default mock physical mailing address ("{commSettings.mailingAddress}"). Please update this in Communication Settings for CAN-SPAM legal compliance before sending.
+                        </div>
+                      )}
                       <div className="checklist-item success">
                         <span>✅</span> Compliance footer will be automatically attached.
                       </div>

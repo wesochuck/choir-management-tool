@@ -18,7 +18,15 @@ export function renderMarkdown(text: string): string {
     html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
 
     // Links: [text](url)
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">$1</a>');
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
+
 
     // Unordered Lists
     const lines = html.split("\n");
