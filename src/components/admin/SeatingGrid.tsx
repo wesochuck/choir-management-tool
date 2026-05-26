@@ -43,6 +43,32 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   }, [activeProfiles]);
   const totalSeats = React.useMemo(() => rowCounts.reduce((sum, count) => sum + count, 0), [rowCounts]);
 
+  const activeSingersForFormationCount = React.useMemo(() => {
+    const activeSuggestionCodes = new Set(
+      Object.values(suggestions).map(code => code.toUpperCase())
+    );
+    if (activeSuggestionCodes.size === 0) {
+      return activeProfiles.length;
+    }
+
+    return activeProfiles.filter(p => {
+      if (isVoicePartLayout) {
+        return activeSuggestionCodes.has(p.voicePart.toUpperCase());
+      } else {
+        const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
+        let sectionCode = vpDef?.sectionCode;
+        if (!sectionCode) {
+          const part = p.voicePart ? p.voicePart.trim() : '';
+          if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+          else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+          else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+          else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+        }
+        return sectionCode ? activeSuggestionCodes.has(sectionCode.toUpperCase()) : false;
+      }
+    }).length;
+  }, [activeProfiles, suggestions, isVoicePartLayout, voiceParts]);
+
   const profileMap = React.useMemo(() => {
     const map: Record<string, Profile> = {};
     activeProfiles.forEach(p => map[p.id] = p);
@@ -143,7 +169,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div ref={gridRef} className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
       {/* Warning banner if not enough seats */}
-      {activeProfiles.length > totalSeats && onUpdateRowCounts && (
+      {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
         <div className="no-print" style={{
           backgroundColor: 'var(--color-danger-bg)',
           border: '1px solid #fecaca',
@@ -163,7 +189,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <strong style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Not enough seats configured!</strong>
             <span style={{ fontSize: '0.8125rem', opacity: 0.9 }}>
-              You have {activeProfiles.length} active singers but only {totalSeats} seats. Click the <strong style={{ color: 'var(--color-danger-text)' }}>+</strong> button at the end of any row to add seats.
+              You have {activeSingersForFormationCount} active singers but only {totalSeats} seats. Click the <strong style={{ color: 'var(--color-danger-text)' }}>+</strong> button at the end of any row to add seats.
             </span>
           </div>
         </div>
@@ -497,7 +523,10 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                    {isVoicePartLayout ? `${suggestion} - ${seatIndex + 1}` : `${sectionDef?.name[0] || suggestion}${seatIndex + 1}`}
+                    {suggestion
+                      ? (isVoicePartLayout ? `${suggestion} - ${seatIndex + 1}` : `${sectionDef?.name[0] || suggestion}${seatIndex + 1}`)
+                      : `${seatIndex + 1}`
+                    }
                   </div>
                   {assignedProfile ? (
                     <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>

@@ -60,5 +60,8 @@ A partially composed or unsent message that is saved to the database (with a sta
 ## Message Template
 A reusable layout or pre-written text block containing placeholders that can be loaded instantly in the compose editor to simplify bulk messaging for common scenarios (e.g. event reminders, weather delays, dues alerts).
 
+## Event Cloning
+A function that duplicates an existing Performance, copying its title, date/time, details, and venue into a new event record with RSVPs (Event Roster responses) copied over, while keeping the set list empty, setting attendance/folder stats to default, and keeping its initial RSVP state closed.
+
 
 

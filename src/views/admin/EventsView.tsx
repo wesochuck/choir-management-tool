@@ -17,6 +17,7 @@ import {
 import { playerService } from '../../services/playerService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
+import { rosterService } from '../../services/rosterService';
 
 export default function EventsView() {
   const dialog = useDialog();
@@ -27,6 +28,7 @@ export default function EventsView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [cloningEventId, setCloningEventId] = useState<string | null>(null);
   const [communicationSettings, setCommunicationSettings] = useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
   const [auditionSettings, setAuditionSettings] = useState<AuditionSettings | null>(null);
 
@@ -113,24 +115,39 @@ export default function EventsView() {
   };
 
   const handleEdit = (event: Event) => {
+    setCloningEventId(null);
     setEditingEvent(event);
     setIsModalOpen(true);
   };
 
   const handleAdd = () => {
+    setCloningEventId(null);
     setEditingEvent(null);
     setIsModalOpen(true);
   };
 
   const handleBulkAdd = () => {
+    setCloningEventId(null);
     setEditingEvent(null);
     setIsBulkModalOpen(true);
+  };
+
+  const handleClone = (event: Event) => {
+    setCloningEventId(event.id);
+    setEditingEvent({
+      ...event,
+      id: '',
+      isOpenForRSVP: false,
+      setList: [],
+      parentPerformanceId: '',
+    });
+    setIsModalOpen(true);
   };
 
   const handleSave = async (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig, openAuditions?: boolean) => {
     let resultEvent: Event | undefined;
     try {
-      if (editingEvent) {
+      if (editingEvent && editingEvent.id) {
         resultEvent = await editEvent(editingEvent.id, data);
       } else {
         resultEvent = await addEvent(data, bulkConfig);
@@ -142,6 +159,23 @@ export default function EventsView() {
 
       if (!resultEvent) return;
       const savedEvent = resultEvent;
+
+      if (cloningEventId) {
+        try {
+          const originalRoster = await rosterService.getEventRoster(cloningEventId);
+          const updates = originalRoster.map(r => ({
+            profileId: r.profile,
+            rsvp: r.rsvp
+          }));
+          if (updates.length > 0) {
+            await rosterService.bulkUpdateRSVP(savedEvent.id, updates);
+          }
+        } catch (err) {
+          console.error('Failed to clone roster RSVPs:', err);
+        } finally {
+          setCloningEventId(null);
+        }
+      }
 
       if (openAuditions && savedEvent.type === 'Performance') {
         const currentSettings = await settingsService.getAuditionSettings();
@@ -253,6 +287,7 @@ export default function EventsView() {
         onCheckAttendance={(event) => navigate(`/admin/attendance?eventId=${event.id}`)}
         onViewSeating={(event) => navigate(`/admin/seating?eventId=${event.id}`)}
         onOpenPlayer={handleOpenPlayer}
+        onClone={handleClone}
         openAuditionEventId={auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined}
       />
 

@@ -11,6 +11,7 @@ interface EventListProps {
   onCheckAttendance?: (event: Event) => void;
   onViewSeating?: (event: Event) => void;
   onOpenPlayer?: (event: Event) => void;
+  onClone?: (event: Event) => void;
   openAuditionEventId?: string;
 }
 import { AppCard } from '../common/AppCard';
@@ -23,6 +24,7 @@ export const EventList: React.FC<EventListProps> = ({
   onCheckAttendance,
   onViewSeating,
   onOpenPlayer,
+  onClone,
   openAuditionEventId
 }) => {
   const { timezone } = useChoirSettings();
@@ -126,6 +128,18 @@ export const EventList: React.FC<EventListProps> = ({
             >
               ✉️ Send Message
             </button>
+            {onClone && e.type === 'Performance' && (
+              <button 
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClone(e);
+                }}
+                className="btn btn-secondary btn-sm"
+                title="Clone this performance"
+              >
+                👯 Clone
+              </button>
+            )}
             <button 
               onClick={(event) => {
                 event.stopPropagation();

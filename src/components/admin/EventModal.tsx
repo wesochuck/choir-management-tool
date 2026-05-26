@@ -49,6 +49,18 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [bulkVenue, setBulkVenue] = useState('');
 
   const [isSubmitting, setIsLoading] = useState(false);
+  const titleInputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        if (titleInputRef.current) {
+          titleInputRef.current.focus();
+          titleInputRef.current.select();
+        }
+      }, 50);
+    }
+  }, [isOpen]);
 
   // Inline Quick-Add Venue States
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
@@ -248,10 +260,10 @@ export const EventModal: React.FC<EventModalProps> = ({
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={initialData ? 'Edit Event' : 'Schedule Event'}
+      title={initialData && initialData.id ? 'Edit Event' : 'Schedule Event'}
       footer={
         <>
-          {initialData && onDelete && (
+          {initialData && initialData.id && onDelete && (
             <button 
               type="button" 
               onClick={handleDelete}
@@ -277,6 +289,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <label className="text-label">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
           <input 
+            ref={titleInputRef}
             value={formData.title} 
             onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
             placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
