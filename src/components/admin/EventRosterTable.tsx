@@ -14,6 +14,7 @@ interface EventRosterTableProps {
   isUpdating: boolean;
   onUpdateRSVP: (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => Promise<void>;
   onPhotoChange?: () => void;
+  onSingerClick?: (profile: Profile) => void;
 }
 
 export const EventRosterTable: React.FC<EventRosterTableProps> = ({
@@ -21,9 +22,19 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
   isUpdating,
   onUpdateRSVP,
   onPhotoChange,
+  onSingerClick,
 }) => {
   return (
     <AppCard noPadding>
+      <style>{`
+        .singer-name-btn {
+          text-decoration: none;
+        }
+        .singer-name-btn:hover {
+          color: var(--primary) !important;
+          text-decoration: underline;
+        }
+      `}</style>
       <div className="admin-table-wrapper">
         <table className="admin-responsive-table">
           <thead>
@@ -52,7 +63,29 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         onSuccess={onPhotoChange}
                         readOnlyOnDesktop={true}
                       />
-                      <span>{p.name}</span>
+                      {onSingerClick ? (
+                        <button
+                          type="button"
+                          onClick={() => onSingerClick(p)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            margin: 0,
+                            font: 'inherit',
+                            color: 'var(--primary-deep)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'color 0.15s ease',
+                          }}
+                          className="singer-name-btn"
+                        >
+                          {p.name}
+                        </button>
+                      ) : (
+                        <span>{p.name}</span>
+                      )}
                     </div>
                   </td>
                   <td data-label="Voice">

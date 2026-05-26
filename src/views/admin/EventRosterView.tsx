@@ -2,9 +2,10 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { eventService, type Event } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
-import { profileService, type Profile } from '../../services/profileService';
+import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { getVoicePartsAndSections, settingsService, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
+import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
@@ -32,6 +33,10 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const [sections, setSections] = useState<SectionDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Singer modal states
+  const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
+  const [selectedSingerProfile, setSelectedSingerProfile] = useState<Profile | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
@@ -260,6 +265,39 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const handlePhotoChange = () => {
     if (eventId) {
       rosterService.getEventRoster(eventId).then(setEventRoster);
+    }
+  };
+
+  const handleSingerClick = (profile: Profile) => {
+    setSelectedSingerProfile(profile);
+    setIsSingerModalOpen(true);
+  };
+
+  const refreshProfiles = async () => {
+    try {
+      const activeProfs = await profileService.getActiveProfiles();
+      setActiveProfiles(activeProfs);
+    } catch (err) {
+      console.error('Failed to refresh active profiles', err);
+    }
+  };
+
+  const handleSingerModalSave = async (formData: ProfileInput) => {
+    if (!selectedSingerProfile) return;
+    await profileService.updateProfile(selectedSingerProfile.id, formData);
+    await refreshProfiles();
+    if (eventId) {
+      const rosters = await rosterService.getEventRoster(eventId);
+      setEventRoster(rosters);
+    }
+  };
+
+  const handleSingerModalDelete = async (profile: Profile) => {
+    await profileService.deleteProfile(profile.id);
+    await refreshProfiles();
+    if (eventId) {
+      const rosters = await rosterService.getEventRoster(eventId);
+      setEventRoster(rosters);
     }
   };
 
@@ -713,8 +751,17 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           isUpdating={isUpdating}
           onUpdateRSVP={handleUpdateRSVP}
           onPhotoChange={handlePhotoChange}
+          onSingerClick={handleSingerClick}
         />
       </div>
+
+      <SingerModal 
+        isOpen={isSingerModalOpen}
+        onClose={() => setIsSingerModalOpen(false)}
+        onSave={handleSingerModalSave}
+        onDelete={handleSingerModalDelete}
+        initialData={selectedSingerProfile}
+      />
     </AppCard>
   );
 }
