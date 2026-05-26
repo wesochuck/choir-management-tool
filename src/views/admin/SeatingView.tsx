@@ -11,6 +11,7 @@ import { SeatingBottomDock } from '../../components/admin/SeatingBottomDock';
 import { SeatingFormationsEditor } from '../../components/admin/SeatingFormationsEditor';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
+import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -86,6 +87,13 @@ export default function SeatingView() {
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
   const [isSingerLookupOpen, setIsSingerLookupOpen] = useState(false);
+
+  const [isNewChartModalOpen, setIsNewChartModalOpen] = useState(false);
+  const [newChartName, setNewChartName] = useState('');
+  
+  const [isRenameChartModalOpen, setIsRenameChartModalOpen] = useState(false);
+  const [renameChartName, setRenameChartName] = useState('');
+  const [chartToRename, setChartToRename] = useState<SeatingChart | null>(null);
 
   const handleLookupSingerSelect = async (profile: Profile) => {
     if (performanceId && profile.id) {
@@ -387,11 +395,11 @@ export default function SeatingView() {
           <div className="no-print flex-row seating-charts-tabs-row" style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--space-sm)',
-            padding: '0 var(--space-md) var(--space-md) var(--space-md)',
+            gap: 'var(--space-md)',
+            padding: '0 var(--space-md)',
             borderBottom: '1px solid var(--border)',
             width: '100%',
-            flexWrap: 'wrap'
+            marginBottom: 'var(--space-md)'
           }}>
             {/* Render visible tabs */}
             {(charts || []).slice(0, 3).map(c => {
@@ -399,20 +407,25 @@ export default function SeatingView() {
               return (
                 <div key={c.id} className="flex-row" style={{ 
                   alignItems: 'center', 
-                  gap: '6px', 
-                  backgroundColor: isActive ? 'var(--primary-light)' : 'var(--neutral-bg, #f8fafc)',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
+                  gap: '4px', 
+                  borderBottom: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
+                  paddingBottom: '12px',
+                  marginBottom: '-1px',
                   transition: 'all 0.2s ease'
                 }}>
                   <button
                     onClick={() => setActiveChartId(c.id)}
                     className="btn btn-sm btn-ghost"
                     style={{ 
-                      fontWeight: isActive ? 800 : 500,
-                      padding: '0 4px',
-                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)'
+                      fontWeight: isActive ? 700 : 500,
+                      padding: '0 var(--space-xs)',
+                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      boxShadow: 'none',
+                      borderRadius: 0,
+                      height: 'auto',
+                      minHeight: 'auto'
                     }}
                   >
                     {c.name}
@@ -420,14 +433,13 @@ export default function SeatingView() {
                   {isActive && (
                     <div className="flex-row" style={{ gap: '2px' }}>
                       <button
-                        onClick={async () => {
-                          const newName = window.prompt('Rename Seating Chart:', c.name);
-                          if (newName && newName.trim()) {
-                            await renameChart(c.id, newName.trim());
-                          }
+                        onClick={() => {
+                          setChartToRename(c);
+                          setRenameChartName(c.name);
+                          setIsRenameChartModalOpen(true);
                         }}
                         className="btn btn-ghost btn-sm"
-                        style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem' }}
+                        style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem', height: '24px', minHeight: '24px' }}
                         title="Rename chart"
                       >
                         ✏️
@@ -446,7 +458,7 @@ export default function SeatingView() {
                             }
                           }}
                           className="btn btn-ghost btn-sm"
-                          style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem', color: 'var(--color-danger-text)' }}
+                          style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem', color: 'var(--color-danger-text)', height: '24px', minHeight: '24px' }}
                           title="Delete chart"
                         >
                           ❌
@@ -460,45 +472,64 @@ export default function SeatingView() {
 
             {/* Render overflow dropdown if more than 3 charts */}
             {(charts || []).length > 3 && (
-              <select
-                value={(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? '' : activeChartId}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setActiveChartId(e.target.value);
-                  }
-                }}
-                className="seating-select-perf"
-                style={{
-                  height: '32px',
-                  minHeight: '32px',
-                  padding: '0 24px 0 8px',
-                  fontSize: '0.75rem',
-                  width: '150px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)',
-                  backgroundColor: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary-light)' : 'var(--surface)',
-                  color: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text)'
-                }}
-              >
-                <option value="">More Charts... ▼</option>
-                {(charts || []).slice(3).map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div style={{
+                borderBottom: `2px solid ${!(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`,
+                paddingBottom: '12px',
+                marginBottom: '-1px'
+              }}>
+                <select
+                  value={(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? '' : activeChartId}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setActiveChartId(e.target.value);
+                    }
+                  }}
+                  className="seating-select-perf"
+                  style={{
+                    height: '24px',
+                    minHeight: '24px',
+                    padding: '0 24px 0 8px !important',
+                    fontSize: '0.75rem',
+                    width: '140px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
+                    fontWeight: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 700 : 500,
+                    boxShadow: 'none'
+                  }}
+                >
+                  <option value="">More Charts... ▼</option>
+                  {(charts || []).slice(3).map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
             )}
 
-            {/* Add New Seating Chart Button */}
+            {/* Add New Seating Chart Button (Plus sign on far right) */}
             <button
-              onClick={async () => {
-                const name = window.prompt('Enter name for the new seating chart:');
-                if (name && name.trim()) {
-                  await createChart(name.trim());
-                }
+              onClick={() => setIsNewChartModalOpen(true)}
+              className="btn btn-sm btn-ghost"
+              style={{ 
+                marginLeft: 'auto', 
+                fontWeight: 800, 
+                fontSize: '1.25rem', 
+                padding: '0 12px', 
+                height: '32px', 
+                minHeight: '32px', 
+                width: '32px', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                borderRadius: '50%', 
+                border: '1px dashed var(--border)', 
+                color: 'var(--primary)',
+                marginBottom: '12px'
               }}
-              className="btn btn-secondary btn-sm"
-              style={{ fontWeight: 600, height: '32px', minHeight: '32px', display: 'inline-flex', alignItems: 'center' }}
+              title="Create new seating chart"
             >
-              ➕ New Chart
+              +
             </button>
           </div>
 
@@ -757,6 +788,107 @@ export default function SeatingView() {
         onSelect={handleLookupSingerSelect}
         excludeIds={useMemo(() => new Set(activeProfiles.map(p => p.id)), [activeProfiles])}
       />
+
+      {/* New Chart Modal */}
+      <BaseModal
+        isOpen={isNewChartModalOpen}
+        onClose={() => {
+          setIsNewChartModalOpen(false);
+          setNewChartName('');
+        }}
+        title="New Seating Chart"
+        maxWidth="400px"
+        footer={
+          <>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => {
+                setIsNewChartModalOpen(false);
+                setNewChartName('');
+              }}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-primary" 
+              disabled={!newChartName.trim()}
+              onClick={async () => {
+                if (newChartName.trim()) {
+                  await createChart(newChartName.trim());
+                  setIsNewChartModalOpen(false);
+                  setNewChartName('');
+                }
+              }}
+            >
+              Create
+            </button>
+          </>
+        }
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label" style={{ fontWeight: 600 }}>Chart Name</label>
+          <input 
+            className="card" 
+            value={newChartName} 
+            onChange={(e) => setNewChartName(e.target.value)} 
+            placeholder="e.g. Chamber Choir, Combined Finale"
+            required 
+            style={{ padding: '0 12px', height: '44px', width: '100%' }} 
+          />
+        </div>
+      </BaseModal>
+
+      {/* Rename Chart Modal */}
+      <BaseModal
+        isOpen={isRenameChartModalOpen}
+        onClose={() => {
+          setIsRenameChartModalOpen(false);
+          setRenameChartName('');
+          setChartToRename(null);
+        }}
+        title="Rename Seating Chart"
+        maxWidth="400px"
+        footer={
+          <>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => {
+                setIsRenameChartModalOpen(false);
+                setRenameChartName('');
+                setChartToRename(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-primary" 
+              disabled={!renameChartName.trim()}
+              onClick={async () => {
+                if (chartToRename && renameChartName.trim()) {
+                  await renameChart(chartToRename.id, renameChartName.trim());
+                  setIsRenameChartModalOpen(false);
+                  setRenameChartName('');
+                  setChartToRename(null);
+                }
+              }}
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label" style={{ fontWeight: 600 }}>New Chart Name</label>
+          <input 
+            className="card" 
+            value={renameChartName} 
+            onChange={(e) => setRenameChartName(e.target.value)} 
+            placeholder="e.g. Chamber Choir"
+            required 
+            style={{ padding: '0 12px', height: '44px', width: '100%' }} 
+          />
+        </div>
+      </BaseModal>
     </div>
   );
 }
