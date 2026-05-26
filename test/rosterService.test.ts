@@ -96,31 +96,14 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
   }
 });
 
-test('bulkUpdateRSVP queries existing rosters and runs delta writes sequentially with progress callbacks', async (t) => {
-  const originalCollection = pb.collection;
-  
-  const getFullList = t.mock.fn(async () => [
-    { id: 'roster_1', profile: 'profile_1', rsvp: 'Yes', attendance: 'Pending', folderReturned: false }
-  ]);
-  const update = t.mock.fn(async (id: string, data: Partial<EventRoster>) => ({
-    id,
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: data.rsvp,
-  }));
-  const create = t.mock.fn(async (data: Partial<EventRoster>) => ({
-    id: 'roster_2',
-    event: 'event_1',
-    profile: data.profile,
-    rsvp: data.rsvp,
-  }));
+test('bulkUpdateRSVP calls custom backend bulk update endpoint with expected payload', async () => {
+  const originalSend = pb.send;
+  const sendCalls: Array<{ path: string; options: { method?: string; body?: unknown } | undefined }> = [];
 
-  pb.collection = function (name: string) {
-    if (name === 'eventRosters') {
-      return { getFullList, update, create } as unknown as CollectionMock;
-    }
-    return originalCollection.call(pb, name);
-  };
+  pb.send = (async <T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> => {
+    sendCalls.push({ path, options });
+    return { success: true } as unknown as T;
+  }) as typeof pb.send;
 
   const progressCalls: Array<{ current: number; total: number }> = [];
   const onProgress = (current: number, total: number) => {
@@ -129,61 +112,45 @@ test('bulkUpdateRSVP queries existing rosters and runs delta writes sequentially
 
   try {
     const updates = [
-      { profileId: 'profile_1', rsvp: 'Yes' as const }, // No-op (matches existing)
-      { profileId: 'profile_1', rsvp: 'No' as const },  // Update (Yes -> No)
-      { profileId: 'profile_2', rsvp: 'Yes' as const }, // Create (new roster)
+      { profileId: 'profile_1', rsvp: 'Yes' as const },
+      { profileId: 'profile_2', rsvp: 'No' as const }
     ];
-    
+
     const results = await rosterService.bulkUpdateRSVP('event_1', updates, onProgress);
 
-    // Only 2 updates require actual database writes
-    assert.equal(results.length, 2);
-    assert.equal(getFullList.mock.callCount(), 1);
-    assert.equal(update.mock.callCount(), 1);
-    assert.equal(create.mock.callCount(), 1);
-    
+    assert.deepEqual(results, []);
+    assert.equal(sendCalls.length, 1);
+    assert.equal(sendCalls[0].path, '/api/admin/bulk-update-rsvps');
+    assert.equal(sendCalls[0].options?.method, 'POST');
+    assert.deepEqual(sendCalls[0].options?.body, {
+      eventId: 'event_1',
+      updates
+    });
+
     assert.deepEqual(progressCalls, [
-      { current: 1, total: 2 },
+      { current: 0, total: 2 },
       { current: 2, total: 2 }
     ]);
   } finally {
-    pb.collection = originalCollection;
+    pb.send = originalSend;
   }
 });
 
-test('bulkUpdateRSVP staggers writes with a pause delay between sequential requests', async (t) => {
-  const originalCollection = pb.collection;
-  const getFullList = t.mock.fn(async () => []);
-  const writeTimes: number[] = [];
-  
-  const create = t.mock.fn(async (data: Partial<EventRoster>) => {
-    writeTimes.push(Date.now());
-    return {
-      id: `roster_${data.profile}`,
-      event: 'event_1',
-      profile: data.profile,
-      rsvp: data.rsvp,
-    };
-  });
+test('bulkUpdateRSVP handles empty updates array without calling backend API', async () => {
+  const originalSend = pb.send;
+  const sendCalls: Array<string> = [];
 
-  pb.collection = function (name: string) {
-    if (name === 'eventRosters') {
-      return { getFullList, create } as unknown as CollectionMock;
-    }
-    return originalCollection.call(pb, name);
-  };
+  pb.send = (async <T>(path: string): Promise<T> => {
+    sendCalls.push(path);
+    return { success: true } as unknown as T;
+  }) as typeof pb.send;
 
   try {
-    await rosterService.bulkUpdateRSVP('event_1', [
-      { profileId: 'profile_1', rsvp: 'Yes' },
-      { profileId: 'profile_2', rsvp: 'Yes' }
-    ]);
-
-    assert.equal(writeTimes.length, 2);
-    const diff = writeTimes[1] - writeTimes[0];
-    assert.ok(diff >= 120, `stagger delay should pause between sequential writes, got ${diff}ms`);
+    const results = await rosterService.bulkUpdateRSVP('event_1', []);
+    assert.deepEqual(results, []);
+    assert.equal(sendCalls.length, 0);
   } finally {
-    pb.collection = originalCollection;
+    pb.send = originalSend;
   }
 });
 

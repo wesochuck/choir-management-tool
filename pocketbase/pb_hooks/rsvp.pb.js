@@ -523,3 +523,78 @@ routerAdd("POST", "/api/unsubscribe", (e) => {
 
     return e.json(200, { success: true });
 });
+
+routerAdd("POST", "/api/admin/bulk-update-rsvps", (e) => {
+    const authRecord = e.auth;
+    if (!authRecord || authRecord.get("role") !== "admin") {
+        return e.json(403, { error: "Forbidden: Admins only" });
+    }
+
+    const data = e.requestInfo().body;
+    const eventId = data.eventId;
+    const updates = data.updates;
+
+    if (!eventId || !updates || !Array.isArray(updates)) {
+        return e.json(400, { error: "Missing eventId or updates array" });
+    }
+
+    try {
+        const rosterCollection = $app.findCollectionByNameOrId("eventRosters");
+        const existingRosters = $app.findRecordsByFilter(
+            "eventRosters",
+            "event = {:eventId}",
+            "",
+            1000,
+            0,
+            { eventId: eventId }
+        ) || [];
+
+        const rosterMap = {};
+        existingRosters.forEach(r => {
+            rosterMap[r.get("profile")] = r;
+        });
+
+        $app.runInTransaction((txApp) => {
+            updates.forEach(u => {
+                const existing = rosterMap[u.profileId];
+                if (existing) {
+                    if (u.rsvp === 'Pending') {
+                        const attendance = existing.get("attendance") || "Pending";
+                        const folderNumber = (existing.get("folderNumber") || "").trim();
+                        const folderReturned = existing.get("folderReturned");
+                        const seatId = (existing.get("seatId") || "").trim();
+
+                        const hasOtherData = attendance !== 'Pending' ||
+                                             folderNumber !== '' ||
+                                             folderReturned ||
+                                             seatId !== '';
+                        if (!hasOtherData) {
+                            txApp.delete(existing);
+                        } else if (existing.get("rsvp") !== 'Pending') {
+                            existing.set("rsvp", "Pending");
+                            txApp.save(existing);
+                        }
+                    } else if (existing.get("rsvp") !== u.rsvp) {
+                        existing.set("rsvp", u.rsvp);
+                        txApp.save(existing);
+                    }
+                } else {
+                    if (u.rsvp !== 'Pending') {
+                        const roster = new Record(rosterCollection);
+                        roster.set("event", eventId);
+                        roster.set("profile", u.profileId);
+                        roster.set("rsvp", u.rsvp);
+                        roster.set("attendance", "Pending");
+                        roster.set("folderReturned", false);
+                        txApp.save(roster);
+                    }
+                }
+            });
+        });
+
+        return e.json(200, { success: true });
+    } catch (err) {
+        console.log("[Bulk RSVP Hook Error]: " + String(err));
+        return e.json(500, { error: "Failed to bulk update RSVPs: " + String(err) });
+    }
+});

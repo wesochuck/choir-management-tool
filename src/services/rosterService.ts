@@ -164,104 +164,28 @@ export const rosterService = {
     updates: { profileId: string; rsvp: RsvpStatus }[],
     onProgress?: (current: number, total: number) => void
   ) {
-    // 1. Fetch entire event roster once to eliminate N+1 reads
-    const existingRosters = await rosterService.getEventRoster(eventId);
-    const rosterMap = new Map(existingRosters.map(r => [r.profile, r]));
-
-    // 2. Identify required writes (delta)
-    const requiredWrites: Array<{
-      type: 'create' | 'update' | 'delete';
-      id?: string;
-      profileId: string;
-      rsvp: RsvpStatus;
-      payload?: Partial<EventRoster>;
-    }> = [];
-
-    updates.forEach(u => {
-      const existing = rosterMap.get(u.profileId);
-      if (existing) {
-        if (u.rsvp === 'Pending') {
-          // Check if there is other useful data.
-          const hasOtherData = existing.attendance !== 'Pending' ||
-                               Boolean(existing.folderNumber && existing.folderNumber.trim() !== '') ||
-                               existing.folderReturned ||
-                               Boolean(existing.seatId && existing.seatId.trim() !== '');
-          if (!hasOtherData) {
-            requiredWrites.push({ type: 'delete', id: existing.id, profileId: u.profileId, rsvp: 'Pending' });
-          } else if (existing.rsvp !== 'Pending') {
-            requiredWrites.push({ type: 'update', id: existing.id, profileId: u.profileId, rsvp: 'Pending', payload: { rsvp: 'Pending' } });
-          }
-        } else if (existing.rsvp !== u.rsvp) {
-          requiredWrites.push({ type: 'update', id: existing.id, profileId: u.profileId, rsvp: u.rsvp, payload: { rsvp: u.rsvp } });
-        }
-      } else {
-        // Doesn't exist, we only create if setting to non-Pending
-        if (u.rsvp !== 'Pending') {
-          requiredWrites.push({ 
-            type: 'create', 
-            profileId: u.profileId, 
-            rsvp: u.rsvp, 
-            payload: { 
-              event: eventId, 
-              profile: u.profileId, 
-              rsvp: u.rsvp, 
-              attendance: 'Pending', 
-              folderReturned: false 
-            } 
-          });
-        }
-      }
-    });
-
-    const results: EventRoster[] = [];
-    const total = requiredWrites.length;
-
-    if (total === 0) {
+    if (updates.length === 0) {
       if (onProgress) onProgress(0, 0);
       return [];
     }
 
-    // 3. Process required writes sequentially with a safety stagger delay to play nice with PocketHost
-    for (let idx = 0; idx < total; idx++) {
-      if (idx > 0) {
-        await pause(150); // safety gap to respect rate limits
-      }
-      
-      const write = requiredWrites[idx];
-      let resRecord: EventRoster | null = null;
-
-      try {
-        if (write.type === 'delete' && write.id) {
-          await executeWithRetry(() => pb.collection('eventRosters').delete(write.id!));
-          resRecord = {
-            id: write.id!,
-            event: eventId,
-            profile: write.profileId,
-            rsvp: 'Pending',
-            attendance: 'Pending',
-            folderNumber: '',
-            folderReturned: false,
-            seatId: ''
-          } as EventRoster;
-        } else if (write.type === 'update' && write.id && write.payload) {
-          resRecord = await executeWithRetry(() => pb.collection('eventRosters').update<EventRoster>(write.id!, write.payload!));
-        } else if (write.type === 'create' && write.payload) {
-          resRecord = await executeWithRetry(() => pb.collection('eventRosters').create<EventRoster>(write.payload!));
-        }
-        
-        if (resRecord) {
-          results.push(resRecord);
-        }
-      } catch (writeErr) {
-        console.error(`Failed to execute bulk write for profile ${write.profileId}`, writeErr);
-      }
-
-      if (onProgress) {
-        onProgress(idx + 1, total);
-      }
+    if (onProgress) {
+      onProgress(0, updates.length);
     }
 
-    return results;
+    await pb.send('/api/admin/bulk-update-rsvps', {
+      method: 'POST',
+      body: {
+        eventId,
+        updates
+      }
+    });
+
+    if (onProgress) {
+      onProgress(updates.length, updates.length);
+    }
+
+    return [];
   },
   
   async updateAttendance(rosterId: string, attendance: AttendanceStatus) {
