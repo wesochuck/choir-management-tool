@@ -93,7 +93,7 @@ export async function convertAuditionToSinger(audition: ConvertibleAudition): Pr
     email: email || '',
     phone: phone || '',
     voicePart: audition.voicePart || '',
-    globalStatus: 'Active (Current)',
+    globalStatus: 'Active',
     notes: [
       audition.experience ? `Audition experience: ${audition.experience}` : '',
       audition.notes ? `Audition notes: ${audition.notes}` : '',

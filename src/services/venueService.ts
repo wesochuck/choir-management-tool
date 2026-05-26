@@ -6,6 +6,7 @@ export interface Venue extends RecordModel {
   rowCounts: number[];
   address?: string;
   isOpenSeating?: boolean;
+  status: 'Active' | 'Inactive';
 }
 
 export const venueService = {

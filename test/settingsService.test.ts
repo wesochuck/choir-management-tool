@@ -180,7 +180,7 @@ test('getRosterSettings and saveRosterSettings processes roster settings fields'
     return {
       key: 'roster',
       value: {
-        defaultStatus: 'Active (Current)',
+        defaultStatus: 'Active',
         defaultSort: 'voicePart',
         defaultRsvpSort: 'voicePart'
       }
@@ -204,7 +204,7 @@ test('getRosterSettings and saveRosterSettings processes roster settings fields'
 
   try {
     const settings = await settingsService.getRosterSettings();
-    assert.equal(settings.defaultStatus, 'Active (Current)');
+    assert.equal(settings.defaultStatus, 'Active');
     assert.equal(settings.defaultSort, 'voicePart');
     assert.equal(settings.defaultRsvpSort, 'voicePart');
 

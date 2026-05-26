@@ -26,7 +26,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     password: '',
     phone: '',
     voicePart: '',
-    globalStatus: 'Active (Current)',
+    globalStatus: 'Active',
     notes: '',
     doNotEmail: false,
     statusIsManual: false,
@@ -80,7 +80,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         email: '',
         phone: '',
         voicePart: '',
-        globalStatus: 'Active (Current)',
+        globalStatus: 'Active',
         notes: '',
         doNotEmail: false,
         statusIsManual: false,
@@ -140,7 +140,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       const hasEmail = Boolean(formData.email?.trim());
       const hasPhone = Boolean(formData.phone?.trim());
       const hasVoicePart = Boolean(formData.voicePart);
-      const isStatusChanged = formData.globalStatus !== 'Active (Current)';
+      const isStatusChanged = formData.globalStatus !== 'Active';
       const hasNotes = Boolean(formData.notes?.trim());
       const hasEmailOpt = Boolean(formData.doNotEmail);
       const hasManualStatus = Boolean(formData.statusIsManual);
@@ -624,8 +624,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 className="card"
                 style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
               >
-                <option value="Active (Current)">Active (Current)</option>
-                <option value="Active (Future)">Active (Future)</option>
+                <option value="Active">Active</option>
+                <option value="Idle">Idle</option>
                 <option value="Inactive">Inactive</option>
               </select>
             </div>

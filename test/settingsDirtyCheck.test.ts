@@ -6,7 +6,7 @@ test('Pristine settings return false for dirty checks', () => {
   const initial = {
     choirName: 'Downtown Community Chorale',
     attendance: { defaultSort: 'lastName' },
-    roster: { defaultStatus: 'Active (Current)', defaultSort: 'voicePart' },
+    roster: { defaultStatus: 'Active', defaultSort: 'voicePart' },
     musicLibrary: { catalogLookupUrlTemplate: '', genres: [{ id: 'sacred', label: 'Sacred' }] },
     seating: { formations: [] },
   };
@@ -14,7 +14,7 @@ test('Pristine settings return false for dirty checks', () => {
   const current = {
     choirName: 'Downtown Community Chorale',
     attendance: { defaultSort: 'lastName' },
-    roster: { defaultStatus: 'Active (Current)', defaultSort: 'voicePart' },
+    roster: { defaultStatus: 'Active', defaultSort: 'voicePart' },
     musicLibrary: { catalogLookupUrlTemplate: '', genres: [{ id: 'sacred', label: 'Sacred' }] },
     seating: { formations: [] },
   };

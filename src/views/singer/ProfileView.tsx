@@ -56,7 +56,7 @@ export default function ProfileView() {
             phone: '',
             photo: '',
             voicePart: 'Administrator',
-            globalStatus: 'Active (Current)',
+            globalStatus: 'Active',
             notes: '',
             collectionId: '',
             collectionName: 'profiles',

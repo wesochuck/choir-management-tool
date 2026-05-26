@@ -7,11 +7,11 @@ import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, type Profile } fro
 type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('exportToCSV maps profiles to CSV format correctly', () => {
-  const profiles = [{ id: '1', name: 'John Doe', phone: '123', voicePart: 'T1', globalStatus: 'Active (Current)', user: '', photo: '', notes: '', expand: { user: { email: 'john@example.com', name: 'John Doe', role: 'singer', id: 'u1', collectionId: '', collectionName: '', created: '', updated: '' } } }] as unknown as Profile[];
+  const profiles = [{ id: '1', name: 'John Doe', phone: '123', voicePart: 'T1', globalStatus: 'Active', user: '', photo: '', notes: '', expand: { user: { email: 'john@example.com', name: 'John Doe', role: 'singer', id: 'u1', collectionId: '', collectionName: '', created: '', updated: '' } } }] as unknown as Profile[];
   const csv = exportToCSV(profiles);
 
   assert.ok(csv.includes('Name,Email,Phone,Voice Part,Status'));
-  assert.ok(csv.includes('"John Doe","john@example.com","123","T1","Active (Current)"'));
+  assert.ok(csv.includes('"John Doe","john@example.com","123","T1","Active"'));
 });
 
 test('updateProfilePhoto calls pocketbase with FormData', async (t) => {

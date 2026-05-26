@@ -285,7 +285,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     { key: 'email', label: 'Email', desc: 'Enables user login if provided' },
     { key: 'phone', label: 'Phone', desc: 'Contact phone number' },
     { key: 'voicePart', label: 'Voice Part', desc: 'S1, A2, etc. (should match your configured parts)' },
-    { key: 'globalStatus', label: 'Global Status', desc: 'Active (Current), Active (Future), or Inactive' },
+    { key: 'globalStatus', label: 'Global Status', desc: 'Active, Idle, or Inactive' },
     { key: 'notes', label: 'Notes', desc: 'Administrative notes' },
   ];
 

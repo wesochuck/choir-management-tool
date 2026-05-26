@@ -42,12 +42,12 @@ const getProfilesForSummary = (
 };
 
 const sampleProfiles = [
-  { id: '1', name: 'Sarah Connor', voicePart: 'S1', globalStatus: 'Active (Current)' },
-  { id: '2', name: 'Susan Storm', voicePart: 'S2', globalStatus: 'Active (Current)' },
-  { id: '3', name: 'Arthur Pendragon', voicePart: 'A1', globalStatus: 'Active (Current)' },
+  { id: '1', name: 'Sarah Connor', voicePart: 'S1', globalStatus: 'Active' },
+  { id: '2', name: 'Susan Storm', voicePart: 'S2', globalStatus: 'Active' },
+  { id: '3', name: 'Arthur Pendragon', voicePart: 'A1', globalStatus: 'Active' },
   { id: '4', name: 'Amy Pond', voicePart: 'A2', globalStatus: 'Inactive' },
-  { id: '5', name: 'Tony Stark', voicePart: 'T1', globalStatus: 'Active (Future)' },
-  { id: '6', name: 'Bruce Banner', voicePart: 'B2', globalStatus: 'Active (Current)' },
+  { id: '5', name: 'Tony Stark', voicePart: 'T1', globalStatus: 'Idle' },
+  { id: '6', name: 'Bruce Banner', voicePart: 'B2', globalStatus: 'Active' },
 ];
 
 test('matchesVoiceParts correctly matches multiple exact subparts', () => {
@@ -86,15 +86,15 @@ test('filterProfiles filters by combined sections and subparts correctly', () =>
 });
 
 test('getProfilesForSummary bypasses voice parts filter but respects status and name', () => {
-  const filters = { voiceParts: ['S1', 'B2'], status: 'Active (Current)', name: '' };
+  const filters = { voiceParts: ['S1', 'B2'], status: 'Active', name: '' };
   
-  // Roster table shows S1 and B2 Active (Current) profiles -> Sarah (S1) and Bruce (B2)
+  // Roster table shows S1 and B2 Active profiles -> Sarah (S1) and Bruce (B2)
   const tableResult = filterProfiles(sampleProfiles, filters);
   assert.equal(tableResult.length, 2);
   assert.ok(tableResult.some(p => p.name === 'Sarah Connor'));
   assert.ok(tableResult.some(p => p.name === 'Bruce Banner'));
 
-  // Roster summary counts shows all Active (Current) profiles -> Sarah (S1), Susan (S2), Arthur (A1), Bruce (B2)
+  // Roster summary counts shows all Active profiles -> Sarah (S1), Susan (S2), Arthur (A1), Bruce (B2)
   const summaryResult = getProfilesForSummary(sampleProfiles, filters);
   assert.equal(summaryResult.length, 4);
   

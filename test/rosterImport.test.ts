@@ -59,7 +59,7 @@ test('validateAndMapSingers validates name and normalizes voice parts and status
       // 1. Valid row with normalizable voice part and status
       ['John Doe', 'john@example.com', '123-456-7890', 'Soprano 1', 'Active', 'New member'],
       // 2. Row with missing name (invalid)
-      ['', 'jane@example.com', '', 'A2', 'Active (Future)', ''],
+      ['', 'jane@example.com', '', 'A2', 'Idle', ''],
       // 3. Row with unmapped fields and unrecognized voice part (warning)
       ['Bob Smith', 'bob@example.com', '', 'Soloist', 'Inactive', ''],
     ]
@@ -83,7 +83,7 @@ test('validateAndMapSingers validates name and normalizes voice parts and status
   assert.equal(mapped[0].data.name, 'John Doe');
   assert.equal(mapped[0].data.email, 'john@example.com');
   assert.equal(mapped[0].data.voicePart, 'S1'); // normalized
-  assert.equal(mapped[0].data.globalStatus, 'Active (Current)'); // normalized
+  assert.equal(mapped[0].data.globalStatus, 'Active'); // normalized
   assert.equal(mapped[0].isValid, true);
   assert.equal(mapped[0].errors.length, 0);
 

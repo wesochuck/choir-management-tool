@@ -7,7 +7,7 @@ export interface Profile extends RecordModel {
   phone: string;
   photo: string;
   voicePart: string;
-  globalStatus: 'Active (Current)' | 'Active (Future)' | 'Inactive';
+  globalStatus: 'Active' | 'Idle' | 'Inactive';
   notes: string;
   doNotEmail?: boolean;
   statusIsManual?: boolean;

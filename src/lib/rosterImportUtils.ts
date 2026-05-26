@@ -13,7 +13,7 @@ export interface MappedSinger {
     email: string;
     phone: string;
     voicePart: string;
-    globalStatus: 'Active (Current)' | 'Active (Future)' | 'Inactive';
+    globalStatus: 'Active' | 'Idle' | 'Inactive';
     notes: string;
   };
   isValid: boolean;
@@ -172,19 +172,18 @@ export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping, v
       }
     }
 
-    // 4. Status normalization
-    let globalStatus: MappedSinger['data']['globalStatus'] = 'Active (Current)';
+    let globalStatus: MappedSinger['data']['globalStatus'] = 'Active';
     if (rawStatus) {
       const cleanStatus = rawStatus.toLowerCase().replace(/\s+/g, '');
-      if (cleanStatus.includes('future')) {
-        globalStatus = 'Active (Future)';
+      if (cleanStatus.includes('future') || cleanStatus.includes('idle')) {
+        globalStatus = 'Idle';
       } else if (cleanStatus.includes('inactive')) {
         globalStatus = 'Inactive';
       } else if (cleanStatus.includes('current') || cleanStatus === 'active') {
-        globalStatus = 'Active (Current)';
+        globalStatus = 'Active';
       } else {
-        warnings.push(`Unrecognized status "${rawStatus}", defaulting to "Active (Current)".`);
-        globalStatus = 'Active (Current)';
+        warnings.push(`Unrecognized status "${rawStatus}", defaulting to "Active".`);
+        globalStatus = 'Active';
       }
     }
 

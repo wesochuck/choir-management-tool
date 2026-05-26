@@ -87,8 +87,8 @@ onRecordAfterUpdateSuccess((e) => {
             } catch (err) {}
 
             if (futureRosters && futureRosters.length > 0) {
-                if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
-                    profile.set("globalStatus", "Active (Future)");
+                if (profile.get("globalStatus") !== "Idle" && profile.get("globalStatus") !== "Active") {
+                    profile.set("globalStatus", "Idle");
                     profile.set("statusLastChangedAt", now);
                     profile.set("statusChangeReason", "Automated recovery via future RSVP");
                     saveProfileStatus(profile);
@@ -211,8 +211,8 @@ onRecordAfterCreateSuccess((e) => {
             } catch (err) {}
 
             if (futureRosters && futureRosters.length > 0) {
-                if (profile.get("globalStatus") !== "Active (Future)" && profile.get("globalStatus") !== "Active (Current)") {
-                    profile.set("globalStatus", "Active (Future)");
+                if (profile.get("globalStatus") !== "Idle" && profile.get("globalStatus") !== "Active") {
+                    profile.set("globalStatus", "Idle");
                     profile.set("statusLastChangedAt", now);
                     profile.set("statusChangeReason", "Automated recovery via future RSVP");
                     saveProfileStatus(profile);

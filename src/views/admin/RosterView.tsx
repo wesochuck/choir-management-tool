@@ -557,8 +557,8 @@ export default function RosterView() {
               className="admin-filter-select"
             >
               <option value="">All Statuses</option>
-              <option value="Active (Current)">Active (Current)</option>
-              <option value="Active (Future)">Active (Future)</option>
+              <option value="Active">Active</option>
+              <option value="Idle">Idle</option>
               <option value="Inactive">Inactive</option>
             </select>
 
@@ -620,8 +620,8 @@ export default function RosterView() {
                   style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
                 >
                   <option value="">All Statuses</option>
-                  <option value="Active (Current)">Active (Current)</option>
-                  <option value="Active (Future)">Active (Future)</option>
+                  <option value="Active">Active</option>
+                  <option value="Idle">Idle</option>
                   <option value="Inactive">Inactive</option>
                 </select>
                 <p className="text-muted" style={{ margin: 0 }}>
@@ -674,7 +674,7 @@ export default function RosterView() {
                     <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Recovery</span>
                   </label>
                   <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
-                    Automatically mark inactive singers as "Active (Future)" when they RSVP 'Yes' to a future Performance.
+                    Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future Performance.
                   </p>
                 </div>
               )}

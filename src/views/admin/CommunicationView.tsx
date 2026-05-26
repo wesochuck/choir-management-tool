@@ -35,7 +35,7 @@ const DEFAULT_FILTERS: CommunicationFilters = {
   eventId: '',
   rsvp: 'All',
   voiceParts: [],
-  globalStatus: 'Active (Current)',
+  globalStatus: 'Active',
 };
 
 interface AutomatedTask {
@@ -322,7 +322,7 @@ export default function CommunicationView() {
       eventId: (mFilters?.eventId as string) || '',
       rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
       voiceParts: vpArray,
-      globalStatus: (mFilters?.globalStatus as string) || 'Active (Current)',
+      globalStatus: (mFilters?.globalStatus as string) || 'Active',
     });
     
     setWizardStep('COMPOSE');
@@ -514,8 +514,8 @@ export default function CommunicationView() {
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                     <label className="text-label">Global Status</label>
                     <select className="card" value={filters.globalStatus} onChange={(event) => updateFilter('globalStatus', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
-                      <option value="Active (Current)">Active (Current)</option>
-                      <option value="Active (Future)">Active (Future)</option>
+                      <option value="Active">Active</option>
+                      <option value="Idle">Idle</option>
                       <option value="Inactive">Inactive</option>
                       <option value="">All Statuses</option>
                     </select>
@@ -903,7 +903,7 @@ export default function CommunicationView() {
                   </div>
                   <div className="automated-task-footer">
                     <button className="btn btn-ghost btn-sm" onClick={async () => {
-                      const r = await communicationService.resolveRecipients({ eventId: task.event.id, rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All', voiceParts: [], globalStatus: 'Active (Current)' });
+                      const r = await communicationService.resolveRecipients({ eventId: task.event.id, rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All', voiceParts: [], globalStatus: 'Active' });
                       setRecipientPreviewList({ isOpen: true, recipients: r, title: `Expected Recipients for ${task.event.title || task.event.type}` });
                     }}>View Recipients</button>
                     <button className="btn btn-primary btn-sm" disabled={isSending} onClick={async () => {

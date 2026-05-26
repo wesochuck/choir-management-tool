@@ -36,6 +36,7 @@ export interface MessageRecord extends RecordModel {
   content: string;
   type: MessageType;
   recipients: CommunicationRecipient[];
+  recipientIds?: string[];
   filters: Record<string, unknown>; // Allow flexible structure for automated messages
   status: MessageStatus;
   sender?: string;
@@ -47,6 +48,7 @@ export interface SendMessageInput {
   content: string;
   type: MessageType;
   recipients: CommunicationRecipient[];
+  recipientIds?: string[];
   filters: Record<string, unknown>;
   status?: MessageStatus;
 }
@@ -323,7 +325,7 @@ export const communicationService = {
   },
 
   defaultConfig: DEFAULT_COMMUNICATION_CONFIG,
-  statuses: ['Active (Current)', 'Active (Future)', 'Inactive'],
+  statuses: ['Active', 'Idle', 'Inactive'],
 } satisfies {
   getMessages: () => Promise<MessageRecord[]>;
   getDrafts: () => Promise<MessageRecord[]>;

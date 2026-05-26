@@ -269,7 +269,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         setActiveChartId(activeChart.id);
       }
 
-      // Strictly filter for Active (Current) and RSVP'd Yes as per user request for seating chart
+      // Strictly filter for Active and RSVP'd Yes as per user request for seating chart
       const activeCurrent = filterProfilesByRsvpYes(profiles, roster);
       if (seatingContextId(currentContextRef.current) !== requestContextId) return;
 
