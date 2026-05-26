@@ -169,6 +169,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     }
 
     setStep('COMPLETE');
+    dialog.showToast(`Music library import finished: ${successes} items added.`);
     await onSuccess();
   };
 

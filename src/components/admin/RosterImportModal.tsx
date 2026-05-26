@@ -197,6 +197,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
     setCredentialsList(credentials);
     setStep('COMPLETE');
+    dialog.showToast(`Roster import finished: ${successes} singers added.`);
     await onSuccess();
   };
 

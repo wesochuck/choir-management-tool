@@ -140,6 +140,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
     setIsLoading(true);
     try {
       await onSave(performance, { count, dayOfWeek, time, venue });
+      dialog.showToast(`Successfully generated ${count} rehearsals.`);
       onClose();
     } catch (err: unknown) {
       console.error("Bulk generate error:", err);

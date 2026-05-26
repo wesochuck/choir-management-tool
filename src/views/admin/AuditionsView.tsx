@@ -226,10 +226,7 @@ export default function AuditionsView() {
 
     try {
       await auditionService.convertAuditionToSinger(audition.id);
-      await dialog.showMessage({
-        title: 'Conversion Successful',
-        message: `${audition.name} has been added to the choir roster and linked to their target performance schedule.`,
-      });
+      dialog.showToast(`${audition.name} has been added to the choir roster.`);
       await fetchData();
     } catch (err: unknown) {
       await dialog.showMessage({
