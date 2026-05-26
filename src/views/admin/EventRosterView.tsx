@@ -263,9 +263,92 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     }
   };
 
+  const handleExportCSV = () => {
+    if (!event) return;
+
+    const rsvpGroups: Array<{ label: string, status: 'Yes' | 'No' | 'Pending' }> = [
+      { label: 'Attending (Yes)', status: 'Yes' },
+      { label: 'Declined (No)', status: 'No' },
+      { label: 'No Response (Pending)', status: 'Pending' }
+    ];
+
+    const getSectionIndex = (voicePart: string) => {
+      const vpDef = voiceParts.find(vp => vp.label === voicePart);
+      const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
+      const idx = sections.findIndex(s => s.code === secCode);
+      return idx === -1 ? 999 : idx;
+    };
+
+    const getSingerSectionName = (voicePart: string) => {
+      const vpDef = voiceParts.find(vp => vp.label === voicePart);
+      const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
+      const secDef = sections.find(s => s.code === secCode);
+      return secDef ? secDef.name : (voicePart ? secCode : 'Unassigned');
+    };
+
+    const csvLines: string[] = [];
+    // Header line
+    csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));
+
+    rsvpGroups.forEach((group) => {
+      // Filter active/filtered singers for this RSVP status
+      const groupSingers = filteredSingers.filter(s => s.rsvp === group.status);
+      if (groupSingers.length === 0) return;
+
+      // If it's not the first group, add a blank row and a status label row
+      if (csvLines.length > 1) {
+        csvLines.push(''); // Blank row
+        csvLines.push([`"${group.label.replace(/"/g, '""')}"`, '', '', '', ''].join(','));
+      } else {
+        csvLines.push([`"${group.label.replace(/"/g, '""')}"`, '', '', '', ''].join(','));
+      }
+
+      // Sort these singers: by Section, then Last Name
+      const sortedGroup = [...groupSingers].sort((a, b) => {
+        const idxA = getSectionIndex(a.profile.voicePart);
+        const idxB = getSectionIndex(b.profile.voicePart);
+        if (idxA !== idxB) {
+          return idxA - idxB;
+        }
+        const lastA = getLastName(a.profile.name);
+        const lastB = getLastName(b.profile.name);
+        const cmp = lastA.localeCompare(lastB);
+        if (cmp !== 0) return cmp;
+        return a.profile.name.localeCompare(b.profile.name);
+      });
+
+      // Append rows
+      sortedGroup.forEach(s => {
+        const name = s.profile.name;
+        const section = getSingerSectionName(s.profile.voicePart);
+        const voicePart = s.profile.voicePart || 'Not sure';
+        const eventTitle = event.title || event.type || 'Event';
+        const rsvpStatus = s.rsvp;
+        csvLines.push([
+          `"${name.replace(/"/g, '""')}"`,
+          `"${section.replace(/"/g, '""')}"`,
+          `"${voicePart.replace(/"/g, '""')}"`,
+          `"${eventTitle.replace(/"/g, '""')}"`,
+          `"${rsvpStatus.replace(/"/g, '""')}"`
+        ].join(','));
+      });
+    });
+
+    const csvContent = csvLines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const sanitizedTitle = (event.title || event.type || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    link.setAttribute('download', `${sanitizedTitle}_rsvp_export.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <AppCard
-      title={`RSVP Management: ${event.title || event.expand?.venue?.name || ''}`}
+      title={isInline ? '' : `RSVP Management: ${event.title || event.expand?.venue?.name || ''}`}
       actions={
         !isInline ? (
           <button 
@@ -533,6 +616,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 Reset Filters
               </button>
             )}
+
+            <button 
+              type="button"
+              onClick={handleExportCSV}
+              className="btn btn-secondary"
+              style={{ fontWeight: 700 }}
+            >
+              📥 Export CSV
+            </button>
           </div>
 
           <div className="event-rsvp-bulk-actions" aria-label="Bulk RSVP actions">
