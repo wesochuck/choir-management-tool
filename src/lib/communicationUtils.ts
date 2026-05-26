@@ -1,6 +1,19 @@
 import { type CommunicationRecipient } from '../services/communicationService';
 import { type Event } from '../services/eventService';
 
+/**
+ * Escapes HTML characters in a string to prevent XSS.
+ */
+function escapeHtml(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export const COMPLIANT_FOOTER_HTML = `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
   <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
@@ -84,15 +97,15 @@ export function resolvePreviewContent(
   let result = content;
 
   // Recipient Placeholders
-  const name = recipient?.name || 'Sample Singer';
+  const name = escapeHtml(recipient?.name || 'Sample Singer');
   result = result.replace(/{singerName}/g, name);
 
   // Event Placeholders
-  const title = event?.title || event?.type || 'Sample Performance';
-  const type = event?.type || 'Performance';
-  const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  const location = event?.expand?.venue?.name || 'Main Concert Hall';
-  const details = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const title = escapeHtml(event?.title || event?.type || 'Sample Performance');
+  const type = escapeHtml(event?.type || 'Performance');
+  const date = escapeHtml(event ? new Date(event.date).toLocaleString() : new Date().toLocaleString());
+  const location = escapeHtml(event?.expand?.venue?.name || 'Main Concert Hall');
+  const details = escapeHtml(event?.details || 'Join us for an amazing evening of music and harmony!');
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
