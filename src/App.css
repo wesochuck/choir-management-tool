@@ -92,7 +92,7 @@
   .grid-print {
     display: flex !important;
     flex-direction: column !important;
-    gap: 3px !important;
+    gap: 6px !important;
     padding: 0 !important;
     margin: 0 auto !important;
     page-break-inside: avoid !important;
@@ -105,19 +105,24 @@
   .row-print {
     display: flex !important;
     flex-direction: row !important;
-    gap: 2px !important;
+    gap: 4px !important;
     justify-content: center !important;
-    margin-bottom: 3px !important;
+    margin-bottom: 2px !important;
     width: auto !important;
     min-width: 0 !important;
   }
 
   .row-print>.text-xs {
-    width: 42px !important;
-    padding-right: 3px !important;
+    width: 60px !important;
+    padding-right: 4px !important;
     color: #000000 !important;
-    font-size: 7px !important;
-    line-height: 1.1 !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    text-align: right !important;
   }
 
   .seat-cell {
@@ -125,38 +130,47 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
-    border-radius: 3px !important;
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+    border-radius: 4px !important;
     box-shadow: none !important;
     transform: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     page-break-inside: avoid !important;
+    overflow: hidden !important;
+    padding: 2px !important;
   }
 
-  .seat-cell>div {
-    font-size: 6px !important;
-    line-height: 1 !important;
+  /* Seat label (e.g. "T1 - 1") */
+  .seat-cell>div:first-child {
+    font-size: 8px !important;
+    line-height: 1.1 !important;
   }
 
   .seat-cell>.flex-col {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 0 !important;
+    gap: 1px !important;
   }
 
+  /* Singer name */
   .seat-cell>.flex-col>div:first-child {
-    font-size: 10px !important;
-    line-height: 1 !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    text-align: center !important;
+    max-width: 66px !important;
   }
 
+  /* Voice part label */
   .seat-cell>.flex-col>div:nth-child(2) {
-    font-size: 6px !important;
-    line-height: 1 !important;
+    font-size: 8px !important;
+    line-height: 1.1 !important;
   }
 
   .seat-empty {
