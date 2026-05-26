@@ -505,14 +505,15 @@ export default function SeatingView() {
                     onDragEnd={() => setDragOverChartId(null)}
                     style={{
                       cursor: 'grab',
-                      padding: '2px',
-                      color: 'var(--text-muted)',
-                      fontSize: '0.8rem',
+                      padding: '2px 4px',
+                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
+                      fontSize: '0.9rem',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      opacity: 0.4,
+                      opacity: isActive ? 0.95 : 0.75,
                       userSelect: 'none',
-                      marginRight: '2px'
+                      marginRight: '2px',
+                      fontWeight: 'bold'
                     }}
                     title="Drag to reorder"
                   >

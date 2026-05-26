@@ -421,7 +421,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   }}
                   draggable={!isReadOnly && !!assignedProfile}
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
-                  title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : `Empty Seat ${suggestion}${seatIndex + 1}`}
+                  title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${seatIndex + 1}` : `Empty Space ${seatIndex + 1}`)}
                   className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
                   style={{
                     width: `${seatSize}px`,
@@ -557,7 +557,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                     {suggestion
                       ? (isVoicePartLayout ? `${suggestion} - ${seatIndex + 1}` : `${sectionDef?.name[0] || suggestion}${seatIndex + 1}`)
-                      : `${seatIndex + 1}`
+                      : ''
                     }
                   </div>
                   {assignedProfile ? (
