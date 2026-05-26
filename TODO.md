@@ -29,7 +29,7 @@
 [x] think about a better password reset workflow for singers.
 [ ] rename statuses in all places from: active (current) to active, rename active (future) to idle, keep Inactive
 [x] fix when you type time on add eveent it jumps back to title
-[] add clone event performace. clones everything including date/time
+[x] add clone event performace. clones everything including date/time
 [] make it easier to include a roster singer who hasn't rsvpd' quickly ot th seating chart, rename "Add Singer" to "Add New Singer" and add "Looku Singer"
 [x] the bold section outlines on the outer edges are only showing up for the left most section
 [] it won't allow you to remove email address from account. the helper text takes up too much room.

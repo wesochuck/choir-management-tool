@@ -252,8 +252,18 @@ export const EventModal: React.FC<EventModalProps> = ({
     });
     if (!shouldDelete) return;
 
-    await onDelete(initialData.id);
     onClose();
+    dialog.showToast('Deleting event...');
+    try {
+      await onDelete(initialData.id);
+      dialog.showToast('Event deleted successfully.');
+    } catch (err: unknown) {
+      await dialog.showMessage({
+        title: 'Error Deleting Event',
+        message: err instanceof Error ? err.message : 'Failed to delete event',
+        variant: 'danger',
+      });
+    }
   };
 
   return (
