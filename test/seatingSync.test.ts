@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { filterProfilesByRsvpYes, type ProfileWithStatus, type RsvpRecord } from '../src/lib/seatingSync.ts';
+import { filterProfilesByRsvpYes, type RsvpRecord } from '../src/lib/seatingSync.ts';
 
 test('filterProfilesByRsvpYes includes only Active profiles who RSVPd Yes', () => {
-  const profiles: ProfileWithStatus[] = [
+  const profiles = [
     { id: 'p1', name: 'Singer A', globalStatus: 'Active' },
     { id: 'p2', name: 'Singer B', globalStatus: 'Active' },
     { id: 'p3', name: 'Singer C', globalStatus: 'Idle' },

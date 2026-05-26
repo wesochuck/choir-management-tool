@@ -118,7 +118,7 @@ export const communicationService = {
 
       await pb.collection('messages').getFirstListItem<MessageRecord>(filterStr);
       return true;
-    } catch (err) {
+    } catch {
       return false;
     }
   },

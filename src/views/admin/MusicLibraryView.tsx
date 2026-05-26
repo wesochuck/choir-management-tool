@@ -22,8 +22,8 @@ export default function MusicLibraryView() {
   const [sections, setSections] = useState<SectionDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sectionFilter, setSectionFilter] = useState('');
-  const [genreFilter, setGenreFilter] = useState('');
+  const [sectionFilters, setSectionFilters] = useState<string[]>([]);
+  const [genreFilters, setGenreFilters] = useState<string[]>([]);
   const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
 
@@ -82,7 +82,7 @@ export default function MusicLibraryView() {
   // Reset to first page when search filters, duplicate filter, or page size changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sectionFilter, genreFilter, showDuplicatesOnly, pageSize]);
+  }, [searchTerm, sectionFilters, genreFilters, showDuplicatesOnly, pageSize]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
@@ -254,10 +254,10 @@ export default function MusicLibraryView() {
       showDuplicatesOnly,
       showMovements: false,
       duplicateIds,
-      sectionFilter,
-      genreFilter
+      sectionFilters,
+      genreFilters
     });
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilter, genreFilter]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters]);
 
   const paginatedPieces = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -356,10 +356,10 @@ export default function MusicLibraryView() {
           <MusicLibraryFilters 
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            sectionFilter={sectionFilter}
-            onSectionFilterChange={setSectionFilter}
-            genreFilter={genreFilter}
-            onGenreFilterChange={setGenreFilter}
+            sectionFilters={sectionFilters}
+            onSectionFiltersChange={setSectionFilters}
+            genreFilters={genreFilters}
+            onGenreFiltersChange={setGenreFilters}
             genres={configuredGenres}
             sections={sections}
             showDuplicatesOnly={showDuplicatesOnly}

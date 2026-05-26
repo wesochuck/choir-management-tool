@@ -8,6 +8,7 @@ import {
     resolveCatalogLookupUrl 
 } from '../../../lib/musicPieceUtils';
 import { toggleIdInSet } from '../../../lib/music/libraryRows';
+import { Pagination } from '../../../components/common/Pagination';
 
 export interface MusicLibraryTableProps {
     pieces: MusicPiece[];
@@ -381,81 +382,11 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                         Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–{Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
                     </span>
 
-                    <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            disabled={currentPage === 1}
-                            onClick={() => onPageChange(1)}
-                            style={{ 
-                                minWidth: '36px', 
-                                padding: '6px 10px', 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                opacity: currentPage === 1 ? 0.5 : 1
-                            }}
-                        >
-                            ⏮ First
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            disabled={currentPage === 1}
-                            onClick={() => onPageChange(currentPage - 1)}
-                            style={{ 
-                                minWidth: '36px', 
-                                padding: '6px 10px', 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                opacity: currentPage === 1 ? 0.5 : 1
-                            }}
-                        >
-                            ◀ Prev
-                        </button>
-
-                        <span className="text-sm text-muted" style={{ padding: '0 var(--space-sm)', fontWeight: 600, color: 'var(--text)' }}>
-                            Page {currentPage} of {totalPages}
-                        </span>
-
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            disabled={currentPage >= totalPages}
-                            onClick={() => onPageChange(currentPage + 1)}
-                            style={{ 
-                                minWidth: '36px', 
-                                padding: '6px 10px', 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                opacity: currentPage >= totalPages ? 0.5 : 1
-                            }}
-                        >
-                            Next ▶
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            disabled={currentPage >= totalPages}
-                            onClick={() => onPageChange(totalPages)}
-                            style={{ 
-                                minWidth: '36px', 
-                                padding: '6px 10px', 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                opacity: currentPage >= totalPages ? 0.5 : 1
-                            }}
-                        >
-                            Last ⏭
-                        </button>
-                    </div>
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={onPageChange}
+                    />
                 </div>
             )}
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
 import { EventList } from '../../components/admin/EventList';
@@ -22,6 +22,7 @@ import { rosterService } from '../../services/rosterService';
 export default function EventsView() {
   const dialog = useDialog();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { timezone } = useChoirSettings();
   const { events, performances, isLoading, error, addEvent, editEvent, removeEvent, bulkAddRehearsals } = useEvents();
   const { venues, addVenue } = useVenues();
@@ -35,6 +36,26 @@ export default function EventsView() {
   // Tabbed navigation & Past events states
   const [activeTab, setActiveTab] = useState<'all' | 'performances' | 'rehearsals'>('all');
   const [showPastEvents, setShowPastEvents] = useState(false);
+
+  // Handle deep linking for a specific event
+  useEffect(() => {
+    if (isLoading || events.length === 0) return;
+    const eventId = searchParams.get('eventId');
+    const openModal = searchParams.get('openModal') === 'true';
+    if (eventId && openModal) {
+      const found = events.find(e => e.id === eventId);
+      if (found) {
+        setCloningEventId(null);
+        setEditingEvent(found);
+        setIsModalOpen(true);
+        // Clear search parameters
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('eventId');
+        newParams.delete('openModal');
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [events, isLoading, searchParams, setSearchParams]);
 
   const filteredEvents = useMemo(() => {
     const now = new Date();

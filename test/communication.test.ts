@@ -147,7 +147,7 @@ test('communicationService.getMessagesPaginated calls pocketbase with expected l
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalCollection = pb.collection;
 
-  const mockGetList = async (page: number, perPage: number, _options: Record<string, unknown>) => {
+  const mockGetList = async (page: number, perPage: number) => {
     return {
       page,
       perPage,

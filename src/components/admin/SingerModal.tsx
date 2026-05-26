@@ -552,8 +552,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               />
               <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>
                 {initialData?.user 
-                  ? "They already have a login account." 
-                  : "If provided, they will automatically be sent an email to set up their password and access the portal."}
+                  ? "Clearing this removes their login account." 
+                  : "Provides portal access via password reset email."}
               </p>
               {initialData?.user && formData.email && (
                 <div className="flex-col" style={{ gap: '4px', marginTop: '6px', alignItems: 'flex-start' }}>

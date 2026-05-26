@@ -458,23 +458,34 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   return (
     <AppCard
-      title={isInline ? '' : `RSVP Management: ${event.title || event.expand?.venue?.name || ''}`}
+      title={isInline ? '' : `RSVP Management: ${event ? (event.title || event.expand?.venue?.name || '') : ''}`}
       actions={
-        !isInline ? (
-          <button 
-            className="btn btn-ghost btn-sm" 
-            onClick={() => navigate('/admin/events')}
-          >
-            Close
-          </button>
-        ) : onClose ? (
-          <button 
-            className="btn btn-ghost btn-sm" 
-            onClick={onClose}
-          >
-            Close
-          </button>
-        ) : null
+        <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'center' }}>
+          {!isInline && event && (
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={() => navigate(`/admin/events?eventId=${event.id}&openModal=true`)}
+              style={{ fontWeight: 600 }}
+            >
+              ✏️ Edit Event
+            </button>
+          )}
+          {!isInline ? (
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={() => navigate('/admin/events')}
+            >
+              Close
+            </button>
+          ) : onClose ? (
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={onClose}
+            >
+              Close
+            </button>
+          ) : null}
+        </div>
       }
     >
       <div className="flex-col" style={{ gap: 'var(--space-md)' }}>

@@ -111,7 +111,12 @@ export const profileService = {
     const current = await pb.collection('profiles').getOne<Profile>(id, { expand: 'user' });
     let userId = current.user;
 
-    if (email) {
+    if (email === "") {
+      if (userId) {
+        await pb.collection('users').delete(userId).catch(() => undefined);
+        userId = '';
+      }
+    } else if (email) {
       if (userId) {
         const userPayload: Partial<UserAccount> = {
           name: profile.name || current.name,

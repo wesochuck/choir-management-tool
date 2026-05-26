@@ -27,4 +27,13 @@ test('isSectionMismatch correctly identifies voice part and section conflicts', 
   // Case 5: Missing inputs
   assert.equal(isSectionMismatch(undefined, 'S', voiceParts), false);
   assert.equal(isSectionMismatch('S1', undefined, voiceParts), false);
+
+  // Case 6: Voice part has no assigned section (section-less)
+  const voicePartsWithSectionless: VoicePartDef[] = [
+    { label: 'Soloist', fullName: 'Soloist', sectionCode: '' },
+    { label: 'Narrator', fullName: 'Narrator' } as unknown as VoicePartDef,
+  ];
+  assert.equal(isSectionMismatch('Soloist', 'S', voicePartsWithSectionless), false);
+  assert.equal(isSectionMismatch('Narrator', 'S', voicePartsWithSectionless), false);
 });
+

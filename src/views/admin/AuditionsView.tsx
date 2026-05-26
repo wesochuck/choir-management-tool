@@ -567,7 +567,18 @@ export default function AuditionsView() {
                   </td>
                   <td data-label="Target Performance" style={{ padding: '16px' }}>
                     {audition.expand?.performance ? (
-                      <span className="badge badge-performance">{audition.expand.performance.title}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/events?eventId=${audition.performance}&openModal=true`);
+                        }}
+                        className="btn btn-link"
+                        style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', textDecoration: 'underline', color: 'var(--primary)', textAlign: 'left', fontWeight: 600, display: 'inline' }}
+                        title="Click to edit performance details"
+                      >
+                        {audition.expand.performance.title}
+                      </button>
                     ) : (
                       <span className="text-muted text-sm">None</span>
                     )}
@@ -595,6 +606,19 @@ export default function AuditionsView() {
                   </td>
                   <td data-label="Actions" style={{ padding: '16px', textAlign: 'right' }}>
                     <div className="flex-row" style={{ gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      {audition.contact.includes('@') && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEmailClick(audition.contact, audition.name, audition.voicePart || '');
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          ✉️ Email
+                        </button>
+                      )}
                       {audition.status === 'New' && (
                         <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); openScheduleModal(audition); }}>Schedule</button>
                       )}

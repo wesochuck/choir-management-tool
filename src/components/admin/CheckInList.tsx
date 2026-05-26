@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { AttendanceItem } from '../../hooks/useAttendance';
 
 interface CheckInListProps {
@@ -64,6 +65,7 @@ const CheckInRow: React.FC<{
   onUpdateFolder: (profileId: string, folderNumber: string, folderReturned: boolean) => Promise<void>;
   onEdit: (profileId: string) => void;
 }> = ({ item, onSetAttendance, onUpdateFolder, onEdit }) => {
+  const navigate = useNavigate();
   const isPresent = item.attendance === 'Present';
   const isAbsent = item.attendance === 'Absent';
 
@@ -92,13 +94,20 @@ const CheckInRow: React.FC<{
           <div className="admin-checkin-singer-header">
             <span
               className="admin-checkin-name"
+              onClick={(event) => {
+                event.stopPropagation();
+                navigate(`/admin/roster?singerId=${item.profileId}&openModal=true`);
+              }}
               style={{
                 color: isPresent 
                   ? 'var(--primary-deep)' 
                   : isAbsent 
                     ? '#991b1b' 
                     : 'var(--text-main)',
+                cursor: 'pointer',
+                textDecoration: 'underline'
               }}
+              title="Click to view full roster profile"
             >
               {item.name}
             </span>

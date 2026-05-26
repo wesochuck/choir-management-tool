@@ -72,6 +72,6 @@ export function isSectionMismatch(
 ): boolean {
   if (!profilePart || !suggestedSection) return false;
   const vpDef = voiceParts.find(vp => vp.label === profilePart);
-  if (!vpDef) return false;
+  if (!vpDef || !vpDef.sectionCode) return false;
   return vpDef.sectionCode.toUpperCase() !== suggestedSection.toUpperCase();
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -194,7 +194,7 @@ export default function CommunicationView() {
     };
   }, [events, commSettings, sentTaskStatus]);
 
-  const refreshHistory = async (pageToFetch = historyPage) => {
+  const refreshHistory = useCallback(async (pageToFetch: number) => {
     try {
       const result = await communicationService.getMessagesPaginated(pageToFetch, 5);
       setHistory(result.items);
@@ -202,11 +202,11 @@ export default function CommunicationView() {
     } catch (err) {
       console.error('Failed to refresh message history', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void refreshHistory(historyPage);
-  }, [historyPage]);
+  }, [historyPage, refreshHistory]);
 
   useEffect(() => {
     let isCurrent = true;

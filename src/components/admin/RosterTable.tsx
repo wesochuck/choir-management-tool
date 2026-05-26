@@ -3,6 +3,7 @@ import type { Profile } from '../../services/profileService';
 import type { SeasonalDue } from '../../services/duesService';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
+import { Pagination } from '../common/Pagination';
 
 interface RosterTableProps {
   profiles: Profile[];
@@ -11,11 +12,26 @@ interface RosterTableProps {
   currentSeason?: string;
   duesMap?: Record<string, SeasonalDue>;
   onToggleDues?: (profileId: string, paid: boolean) => void;
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
 }
 
 import { AppCard } from '../common/AppCard';
 
-export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit, onPhotoChange, currentSeason, duesMap, onToggleDues }) => {
+export const RosterTable: React.FC<RosterTableProps> = ({ 
+  profiles, 
+  onEdit, 
+  onPhotoChange, 
+  currentSeason, 
+  duesMap, 
+  onToggleDues,
+  currentPage,
+  pageSize,
+  totalCount,
+  onPageChange
+}) => {
   return (
     <AppCard noPadding>
       <div className="admin-table-wrapper">
@@ -103,6 +119,27 @@ export const RosterTable: React.FC<RosterTableProps> = ({ profiles, onEdit, onPh
           </tbody>
         </table>
       </div>
+      {totalCount > 0 && (
+        <div className="flex-responsive no-print" style={{ 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: 'var(--space-md) var(--space-lg)', 
+          borderTop: '1px solid var(--border)',
+          backgroundColor: 'var(--bg-card, #fff)',
+          borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+          marginTop: 'var(--space-xs)'
+        }}>
+          <span className="text-sm text-muted" style={{ fontWeight: 500 }}>
+            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
+          </span>
+
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={Math.max(1, Math.ceil(totalCount / pageSize))}
+            onPageChange={onPageChange}
+          />
+        </div>
+      )}
     </AppCard>
   );
 };

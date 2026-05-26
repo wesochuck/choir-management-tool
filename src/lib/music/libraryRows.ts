@@ -8,7 +8,9 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   showMovements?: boolean;
   duplicateIds?: Set<string>;
   sectionFilter?: string;
+  sectionFilters?: string[];
   genreFilter?: string;
+  genreFilters?: string[];
 }
 
 /**
@@ -25,7 +27,9 @@ export function buildVisibleMusicLibraryRows(
     showMovements = false, 
     duplicateIds = new Set<string>(),
     sectionFilter = '',
-    genreFilter = ''
+    sectionFilters = [],
+    genreFilter = '',
+    genreFilters = []
   } = options;
 
   let result = [...pieces];
@@ -50,12 +54,26 @@ export function buildVisibleMusicLibraryRows(
   }
 
   // 3. Section Bucket Applicability
-  if (sectionFilter) {
+  if (sectionFilters && sectionFilters.length > 0) {
+    result = result.filter(p => {
+      if (!p.sectionBuckets || p.sectionBuckets.length === 0) {
+        return true;
+      }
+      return p.sectionBuckets.some(code => sectionFilters.includes(code));
+    });
+  } else if (sectionFilter) {
     result = filterPiecesBySectionBucket(result, sectionFilter);
   }
 
   // 3b. Genre Filtering
-  if (genreFilter) {
+  if (genreFilters && genreFilters.length > 0) {
+    result = result.filter(p => {
+      if (!p.genres || !Array.isArray(p.genres)) {
+        return false;
+      }
+      return p.genres.some(gId => genreFilters.includes(gId));
+    });
+  } else if (genreFilter) {
     result = filterPiecesByGenre(result, genreFilter);
   }
 

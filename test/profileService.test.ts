@@ -170,3 +170,52 @@ test('deleteProfilePhoto calls pocketbase with photo set to null', async (t) => 
   }
 });
 
+test('profileService.updateProfile deletes user login when email is empty', async (t) => {
+  const originalCollection = pb.collection;
+
+  const mockGetOne = t.mock.fn(async (id: string) => {
+    return { id, name: 'John Doe', user: 'user123' };
+  });
+
+  const mockDeleteUser = t.mock.fn(async () => {
+    return true;
+  });
+
+  const mockUpdateProfile = t.mock.fn(async (id: string, payload: Record<string, unknown>) => {
+    return { id, ...payload };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return {
+        getOne: mockGetOne,
+        update: mockUpdateProfile,
+      } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return {
+        delete: mockDeleteUser,
+      } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    
+    await profileService.updateProfile('profile123', { name: 'John Doe', email: '' });
+    
+    assert.equal(mockGetOne.mock.callCount(), 1);
+    assert.equal(mockDeleteUser.mock.callCount(), 1);
+    const deleteArgs = mockDeleteUser.mock.calls[0].arguments as unknown[];
+    assert.equal(deleteArgs[0], 'user123');
+    
+    assert.equal(mockUpdateProfile.mock.callCount(), 1);
+    const updatePayload = mockUpdateProfile.mock.calls[0].arguments[1] as Record<string, unknown>;
+    assert.equal(updatePayload.user, null);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+

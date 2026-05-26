@@ -76,7 +76,7 @@ export default function RosterView() {
   const { user, updatePreferences } = useAuth();
   const { allProfiles, profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
   const { currentSeason, duesMap, toggleDues } = useDues();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialVoicePart = searchParams.get('voicePart') || '';
   const { labels: voicePartLabels, sections: configSectionsHook, refresh: refreshVoiceParts } = useVoiceParts();
   
@@ -85,13 +85,41 @@ export default function RosterView() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
+
   // Roster Sort user preference & fallback
   const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
   const sortBy = user?.preferences?.rosterSort || defaultSort;
   const setSortBy = (val: 'lastName' | 'voicePart') => {
     updatePreferences({ rosterSort: val });
   };
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(25);
+
+  // Reset to first page when search filters or sorting selections change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.name, filters.voiceParts, filters.status, sortBy, pageSize]);
+
+  // Handle deep linking for a specific singer profile
+  useEffect(() => {
+    if (isLoading || allProfiles.length === 0) return;
+    const singerId = searchParams.get('singerId');
+    const openModal = searchParams.get('openModal') === 'true';
+    if (singerId && openModal) {
+      const found = allProfiles.find(p => p.id === singerId);
+      if (found) {
+        setEditingProfile(found);
+        setIsModalOpen(true);
+        // Clear search parameters
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('singerId');
+        newParams.delete('openModal');
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [allProfiles, isLoading, searchParams, setSearchParams]);
 
   // Config States
   const [configDefaultStatus, setConfigDefaultStatus] = useState('');
@@ -196,6 +224,11 @@ export default function RosterView() {
     });
   }, [profiles, sortBy, voicePartLabels]);
 
+  const paginatedProfiles = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return sortedProfiles.slice(startIndex, startIndex + pageSize);
+  }, [sortedProfiles, currentPage, pageSize]);
+
   const handleVoicePartToggle = (part: string) => {
     const active = filters.voiceParts || [];
     const next = active.includes(part)
@@ -291,12 +324,7 @@ export default function RosterView() {
         setIsSavingConfig(false);
         return;
       }
-      if (!secCode) {
-        setConfigMessage(`Error: Voice part "${label}" must belong to a section bucket.`);
-        setIsSavingConfig(false);
-        return;
-      }
-      if (!seenSectionCodes.has(secCode)) {
+      if (secCode && !seenSectionCodes.has(secCode)) {
         setConfigMessage(`Error: Voice part "${label}" belongs to unknown section bucket "${secCode}".`);
         setIsSavingConfig(false);
         return;
@@ -590,12 +618,16 @@ export default function RosterView() {
           </div>
 
           <RosterTable 
-            profiles={sortedProfiles} 
+            profiles={paginatedProfiles} 
             onEdit={handleEdit} 
             onPhotoChange={refresh} 
             currentSeason={currentSeason}
             duesMap={duesMap}
             onToggleDues={toggleDues}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalCount={sortedProfiles.length}
+            onPageChange={setCurrentPage}
           />
         </>
       ) : (
