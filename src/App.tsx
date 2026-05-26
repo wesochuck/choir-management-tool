@@ -17,6 +17,7 @@ const SetListView = lazy(() => import('./views/admin/SetListView'));
 const ReportsView = lazy(() => import('./views/admin/ReportsView'));
 const MusicLibraryView = lazy(() => import('./views/admin/MusicLibraryView'));
 const AdminDashboardView = lazy(() => import('./views/admin/AdminDashboardView'));
+const RsvpDashboardView = lazy(() => import('./views/admin/RsvpDashboardView'));
 const SingerDashboardView = lazy(() => import('./views/singer/DashboardView'));
 const SeatingFinderView = lazy(() => import('./views/singer/SeatingFinderView'));
 const ProfileView = lazy(() => import('./views/singer/ProfileView'));
@@ -107,6 +108,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Attendance Check-in" backTo="/">
                 <AttendanceView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/rsvp" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Event RSVPs" backTo="/">
+                <RsvpDashboardView />
               </PageLayout>
             </ProtectedRoute>
           } />

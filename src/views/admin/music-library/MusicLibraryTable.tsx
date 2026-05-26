@@ -22,6 +22,10 @@ export interface MusicLibraryTableProps {
     onEditPiece: (piece: MusicPiece) => void;
     onPlayTrack: (piece: MusicPiece) => void;
     catalogLookupTemplate: string;
+    currentPage: number;
+    pageSize: number;
+    totalParentCount: number;
+    onPageChange: (page: number) => void;
 }
 
 export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
@@ -36,7 +40,11 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     onSelectAll,
     onEditPiece,
     onPlayTrack,
-    catalogLookupTemplate
+    catalogLookupTemplate,
+    currentPage,
+    pageSize,
+    totalParentCount,
+    onPageChange
 }) => {
     const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(new Set());
 
@@ -301,58 +309,155 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         );
     };
 
+    const totalPages = Math.max(1, Math.ceil(totalParentCount / pageSize));
+
     return (
-        <div style={{ overflowX: 'auto' }}>
-            <table className="table" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid var(--border)' }}>
-                <thead>
-                    <tr style={{ backgroundColor: 'var(--primary-light)' }}>
-                        <th className="text-label" style={{ width: '40px', textAlign: 'center', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>
-                            <input 
-                                type="checkbox" 
-                                checked={filteredPieces.length > 0 && selectedIds.size === filteredPieces.length}
-                                onChange={(e) => onSelectAll(e.target.checked)}
-                                style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
-                            />
-                        </th>
-                        <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Title</th>
-                        <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Composer/Arranger</th>
-                        <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Duration</th>
-                        <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Copies</th>
-                        <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Catalog ID</th>
-                        <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Tracks</th>
-                        <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {isLoading ? (
-                        <tr>
-                            <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div style={{ overflowX: 'auto' }}>
+                <table className="table" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid var(--border)' }}>
+                    <thead>
+                        <tr style={{ backgroundColor: 'var(--primary-light)' }}>
+                            <th className="text-label" style={{ width: '40px', textAlign: 'center', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={filteredPieces.length > 0 && selectedIds.size === filteredPieces.length}
+                                    onChange={(e) => onSelectAll(e.target.checked)}
+                                    style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
+                                />
+                            </th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Title</th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Composer/Arranger</th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Duration</th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Copies</th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Catalog ID</th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Tracks</th>
+                            <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
                         </tr>
-                    ) : filteredPieces.length === 0 ? (
-                        <tr>
-                            <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
-                        </tr>
-                    ) : (
-                        filteredPieces.map(piece => {
-                            // Exclude child records from the top-level loop to prevent duplicate entries
-                            if (piece.parentId) return null;
+                    </thead>
+                    <tbody>
+                        {isLoading ? (
+                            <tr>
+                                <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
+                            </tr>
+                        ) : filteredPieces.length === 0 ? (
+                            <tr>
+                                <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
+                            </tr>
+                        ) : (
+                            filteredPieces.map(piece => {
+                                // Exclude child records from the top-level loop to prevent duplicate entries
+                                if (piece.parentId) return null;
 
-                            const isExpanded = expandedParentIds.has(piece.id);
-                            const movements = pieces.filter(m => m.parentId === piece.id);
+                                const isExpanded = expandedParentIds.has(piece.id);
+                                const movements = pieces.filter(m => m.parentId === piece.id);
 
-                            return (
-                                <React.Fragment key={piece.id}>
-                                    {/* Primary Parent Row */}
-                                    {renderRow(piece, false)}
+                                return (
+                                    <React.Fragment key={piece.id}>
+                                        {/* Primary Parent Row */}
+                                        {renderRow(piece, false)}
 
-                                    {/* Sub-Movement Rows Rendered Contextually */}
-                                    {isExpanded && movements.map(movement => renderRow(movement, true))}
-                                </React.Fragment>
-                            );
-                        })
-                    )}
-                </tbody>
-            </table>
+                                        {/* Sub-Movement Rows Rendered Contextually */}
+                                        {isExpanded && movements.map(movement => renderRow(movement, true))}
+                                    </React.Fragment>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Premium Pagination Navigation Controls */}
+            {!isLoading && totalParentCount > 0 && (
+                <div className="flex-responsive no-print" style={{ 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    padding: 'var(--space-md) var(--space-lg)', 
+                    borderTop: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg-card, #fff)',
+                    borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+                    marginTop: 'var(--space-xs)'
+                }}>
+                    <span className="text-sm text-muted" style={{ fontWeight: 500 }}>
+                        Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–{Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
+                    </span>
+
+                    <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentPage === 1}
+                            onClick={() => onPageChange(1)}
+                            style={{ 
+                                minWidth: '36px', 
+                                padding: '6px 10px', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                opacity: currentPage === 1 ? 0.5 : 1
+                            }}
+                        >
+                            ⏮ First
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentPage === 1}
+                            onClick={() => onPageChange(currentPage - 1)}
+                            style={{ 
+                                minWidth: '36px', 
+                                padding: '6px 10px', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                opacity: currentPage === 1 ? 0.5 : 1
+                            }}
+                        >
+                            ◀ Prev
+                        </button>
+
+                        <span className="text-sm text-muted" style={{ padding: '0 var(--space-sm)', fontWeight: 600, color: 'var(--text)' }}>
+                            Page {currentPage} of {totalPages}
+                        </span>
+
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentPage >= totalPages}
+                            onClick={() => onPageChange(currentPage + 1)}
+                            style={{ 
+                                minWidth: '36px', 
+                                padding: '6px 10px', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                opacity: currentPage >= totalPages ? 0.5 : 1
+                            }}
+                        >
+                            Next ▶
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentPage >= totalPages}
+                            onClick={() => onPageChange(totalPages)}
+                            style={{ 
+                                minWidth: '36px', 
+                                padding: '6px 10px', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                opacity: currentPage >= totalPages ? 0.5 : 1
+                            }}
+                        >
+                            Last ⏭
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

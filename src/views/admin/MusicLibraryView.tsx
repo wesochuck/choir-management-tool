@@ -74,6 +74,15 @@ export default function MusicLibraryView() {
   // Duplicates & Bulk Delete state
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Reset to first page when search filters, duplicate filter, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sectionFilter, genreFilter, showDuplicatesOnly, pageSize]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
@@ -250,6 +259,11 @@ export default function MusicLibraryView() {
     });
   }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilter, genreFilter]);
 
+  const paginatedPieces = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredPieces.slice(startIndex, startIndex + pageSize);
+  }, [filteredPieces, currentPage, pageSize]);
+
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
       if (newSet.has(id)) newSet.delete(id);
@@ -354,11 +368,13 @@ export default function MusicLibraryView() {
             selectedCount={selectedIds.size}
             isBulkDeleting={isBulkDeleting}
             onBulkDelete={handleBulkDelete}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
           />
 
           <MusicLibraryTable 
             pieces={pieces}
-            filteredPieces={filteredPieces}
+            filteredPieces={paginatedPieces}
             sections={sections}
             genres={configuredGenres}
             isLoading={isLoading}
@@ -367,7 +383,7 @@ export default function MusicLibraryView() {
             onToggleSelection={toggleSelection}
             onSelectAll={(checked) => {
               if (checked) {
-                  setSelectedIds(new Set(filteredPieces.map(p => p.id)));
+                  setSelectedIds(new Set(paginatedPieces.map(p => p.id)));
               } else {
                   setSelectedIds(new Set());
               }
@@ -375,6 +391,10 @@ export default function MusicLibraryView() {
             onEditPiece={(piece) => { setEditingPiece(piece); setIsModalOpen(true); }}
             onPlayTrack={handlePlayDefaultTrack}
             catalogLookupTemplate={catalogLookupTemplate}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalParentCount={filteredPieces.length}
+            onPageChange={setCurrentPage}
           />
         </AppCard>
       ) : (

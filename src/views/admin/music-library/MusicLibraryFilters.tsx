@@ -16,6 +16,8 @@ export interface MusicLibraryFiltersProps {
     selectedCount: number;
     isBulkDeleting: boolean;
     onBulkDelete: () => void;
+    pageSize: number;
+    onPageSizeChange: (value: number) => void;
 }
 
 export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
@@ -32,7 +34,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     duplicateCount,
     selectedCount,
     isBulkDeleting,
-    onBulkDelete
+    onBulkDelete,
+    pageSize,
+    onPageSizeChange
 }) => {
     return (
         <div className="flex-responsive" style={{ padding: 'var(--space-md) var(--space-lg)', borderBottom: '1px solid var(--border)', gap: 'var(--space-md)', justifyContent: 'space-between' }}>
@@ -41,7 +45,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 placeholder="Search title, composer, catalog..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                style={{ width: '100%', maxWidth: '400px', height: '40px', padding: '0 12px' }}
+                style={{ width: '100%', maxWidth: '350px', height: '40px', padding: '0 12px' }}
             />
 
             <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
@@ -50,7 +54,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     className="card"
                     value={sectionFilter}
                     onChange={(e) => onSectionFilterChange(e.target.value)}
-                    style={{ height: '40px', padding: '0 8px', minWidth: '140px', cursor: 'pointer' }}
+                    style={{ height: '40px', padding: '0 8px', minWidth: '130px', cursor: 'pointer' }}
                 >
                     <option value="">All Pieces</option>
                     {sections.map(s => (
@@ -65,12 +69,27 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     className="card"
                     value={genreFilter}
                     onChange={(e) => onGenreFilterChange(e.target.value)}
-                    style={{ height: '40px', padding: '0 8px', minWidth: '140px', cursor: 'pointer' }}
+                    style={{ height: '40px', padding: '0 8px', minWidth: '130px', cursor: 'pointer' }}
                 >
                     <option value="">All Genres</option>
                     {genres.map(g => (
                         <option key={g.id} value={g.id}>{g.label}</option>
                     ))}
+                </select>
+            </div>
+
+            <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+                <span className="text-sm text-muted">Page Size:</span>
+                <select
+                    className="card"
+                    value={pageSize}
+                    onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                    style={{ height: '40px', padding: '0 8px', minWidth: '80px', cursor: 'pointer' }}
+                >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
                 </select>
             </div>
             

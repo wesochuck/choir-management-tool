@@ -11,8 +11,16 @@ import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartU
 import { getLastName } from '../../lib/stringUtils';
 import { useAuth } from '../../contexts/AuthContext';
 
-export default function EventRosterView() {
-  const { eventId } = useParams<{ eventId: string }>();
+interface EventRosterViewProps {
+  eventIdProp?: string;
+  onClose?: () => void;
+}
+
+export default function EventRosterView({ eventIdProp, onClose }: EventRosterViewProps = {}) {
+  const { eventId: paramEventId } = useParams<{ eventId: string }>();
+  const eventId = eventIdProp || paramEventId;
+  const isInline = !!eventIdProp;
+
   const navigate = useNavigate();
   const dialog = useDialog();
 
@@ -38,7 +46,9 @@ export default function EventRosterView() {
 
   useEffect(() => {
     if (!eventId) {
-      navigate('/admin/events');
+      if (!isInline) {
+        navigate('/admin/events');
+      }
       return;
     }
 
@@ -73,7 +83,9 @@ export default function EventRosterView() {
             message: 'The requested event or its RSVP roster could not be loaded.',
             variant: 'danger',
           }).then(() => {
-            navigate('/admin/events');
+            if (!isInline) {
+              navigate('/admin/events');
+            }
           });
         }
       });
@@ -81,7 +93,7 @@ export default function EventRosterView() {
     return () => {
       isCurrent = false;
     };
-  }, [eventId, navigate, dialog]);
+  }, [eventId, navigate, dialog, isInline]);
 
   const profileRosterMap = new Map<string, EventRoster>();
   eventRoster.forEach(item => {
@@ -255,12 +267,21 @@ export default function EventRosterView() {
     <AppCard
       title={`RSVP Management: ${event.title || event.expand?.venue?.name || ''}`}
       actions={
-        <button 
-          className="btn btn-ghost btn-sm" 
-          onClick={() => navigate('/admin/events')}
-        >
-          Close
-        </button>
+        !isInline ? (
+          <button 
+            className="btn btn-ghost btn-sm" 
+            onClick={() => navigate('/admin/events')}
+          >
+            Close
+          </button>
+        ) : onClose ? (
+          <button 
+            className="btn btn-ghost btn-sm" 
+            onClick={onClose}
+          >
+            Close
+          </button>
+        ) : null
       }
     >
       <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
