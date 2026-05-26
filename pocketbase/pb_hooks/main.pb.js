@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-25T23:34:50.594Z
+// Generated on: 2026-05-26T03:21:46.842Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -1963,7 +1963,9 @@ function parseSignedToken(token, requiredKeys) {
             if (parsed.reportSubjectTemplate) commSettings.reportSubjectTemplate = parsed.reportSubjectTemplate;
             if (parsed.reportBodyTemplate) commSettings.reportBodyTemplate = parsed.reportBodyTemplate;
         }
-    } catch (e) {}
+    } catch (e) {
+        console.log("Warning: Failed to parse communications settings", e);
+    }
 
     events.forEach(event => {
         const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });

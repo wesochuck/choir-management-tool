@@ -122,7 +122,9 @@ cronAdd("post_event_report", "0 * * * *", () => {
             if (parsed.reportSubjectTemplate) commSettings.reportSubjectTemplate = parsed.reportSubjectTemplate;
             if (parsed.reportBodyTemplate) commSettings.reportBodyTemplate = parsed.reportBodyTemplate;
         }
-    } catch (e) {}
+    } catch (e) {
+        console.log("Warning: Failed to parse communications settings", e);
+    }
 
     events.forEach(event => {
         const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });

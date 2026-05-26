@@ -320,7 +320,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                             <th className="text-label" style={{ width: '40px', textAlign: 'center', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>
                                 <input 
                                     type="checkbox" 
-                                    checked={filteredPieces.length > 0 && selectedIds.size === filteredPieces.length}
+                                    checked={filteredPieces.length > 0 && filteredPieces.every(p => selectedIds.has(p.id))}
                                     onChange={(e) => onSelectAll(e.target.checked)}
                                     style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
                                 />

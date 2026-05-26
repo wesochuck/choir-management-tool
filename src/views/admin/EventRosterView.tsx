@@ -83,6 +83,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       .catch((err) => {
         console.error('Failed to load roster data', err);
         if (isCurrent) {
+          setIsLoading(false);
           dialog.showMessage({
             title: 'Event Not Found',
             message: 'The requested event or its RSVP roster could not be loaded.',
@@ -264,7 +265,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   const handlePhotoChange = () => {
     if (eventId) {
-      rosterService.getEventRoster(eventId).then(setEventRoster);
+      rosterService.getEventRoster(eventId).then(setEventRoster).catch(console.error);
     }
   };
 
@@ -284,20 +285,28 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   const handleSingerModalSave = async (formData: ProfileInput) => {
     if (!selectedSingerProfile) return;
-    await profileService.updateProfile(selectedSingerProfile.id, formData);
-    await refreshProfiles();
-    if (eventId) {
-      const rosters = await rosterService.getEventRoster(eventId);
-      setEventRoster(rosters);
+    try {
+      await profileService.updateProfile(selectedSingerProfile.id, formData);
+      await refreshProfiles();
+      if (eventId) {
+        const rosters = await rosterService.getEventRoster(eventId);
+        setEventRoster(rosters);
+      }
+    } catch (err) {
+      console.error('Failed to save singer profile', err);
     }
   };
 
   const handleSingerModalDelete = async (profile: Profile) => {
-    await profileService.deleteProfile(profile.id);
-    await refreshProfiles();
-    if (eventId) {
-      const rosters = await rosterService.getEventRoster(eventId);
-      setEventRoster(rosters);
+    try {
+      await profileService.deleteProfile(profile.id);
+      await refreshProfiles();
+      if (eventId) {
+        const rosters = await rosterService.getEventRoster(eventId);
+        setEventRoster(rosters);
+      }
+    } catch (err) {
+      console.error('Failed to delete singer profile', err);
     }
   };
 

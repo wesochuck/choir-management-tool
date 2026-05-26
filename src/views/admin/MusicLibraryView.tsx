@@ -382,11 +382,13 @@ export default function MusicLibraryView() {
             selectedIds={selectedIds}
             onToggleSelection={toggleSelection}
             onSelectAll={(checked) => {
+              const newSet = new Set(selectedIds);
               if (checked) {
-                  setSelectedIds(new Set(paginatedPieces.map(p => p.id)));
+                  paginatedPieces.forEach(p => newSet.add(p.id));
               } else {
-                  setSelectedIds(new Set());
+                  paginatedPieces.forEach(p => newSet.delete(p.id));
               }
+              setSelectedIds(newSet);
             }}
             onEditPiece={(piece) => { setEditingPiece(piece); setIsModalOpen(true); }}
             onPlayTrack={handlePlayDefaultTrack}

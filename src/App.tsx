@@ -44,11 +44,34 @@ function MainDashboard() {
   return role === 'admin' ? <AdminDashboardView /> : <SingerDashboardView />;
 }
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>
+          <h1>Something went wrong.</h1>
+          <p>Please refresh the page to try again.</p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>Refresh</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading...</div>}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading...</div>}>
+          <Routes>
           <Route path="/login" element={<LoginView />} />
           <Route path="/auditions" element={<PublicAuditionView />} />
           <Route path="/rsvp" element={<PublicRsvpView />} />
@@ -165,6 +188,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

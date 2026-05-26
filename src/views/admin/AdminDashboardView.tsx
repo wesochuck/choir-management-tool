@@ -1,11 +1,15 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { pb } from '../../lib/pocketbase';
 import { PageLayout } from '../../components/common/PageLayout';
 
 export default function AdminDashboardView() {
   const { user } = useAuth();
-  const handleLogout = () => pb.authStore.clear();
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    pb.authStore.clear();
+    navigate('/login');
+  };
 
   return (
     <PageLayout 
