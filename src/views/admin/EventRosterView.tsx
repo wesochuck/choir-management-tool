@@ -263,15 +263,67 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (!event) return;
 
-    const rsvpGroups: Array<{ label: string, status: 'Yes' | 'No' | 'Pending' }> = [
-      { label: 'Attending (Yes)', status: 'Yes' },
-      { label: 'Declined (No)', status: 'No' },
-      { label: 'No Response (Pending)', status: 'Pending' }
-    ];
+    // --- Build filter summary string ---
+    const filterParts: string[] = [];
+    if (rsvpFilter !== 'All') {
+      const label = rsvpFilter === 'Yes' ? 'Attending' : rsvpFilter === 'No' ? 'Declined' : 'No Response';
+      filterParts.push(`RSVP: ${label}`);
+    }
+    if (selectedVoiceParts.length > 0) filterParts.push(`Voice Parts: ${selectedVoiceParts.join(', ')}`);
+    if (searchQuery.trim()) filterParts.push(`Search: "${searchQuery.trim()}"`);
+    const filterSummary = filterParts.length > 0
+      ? filterParts.join(' · ')
+      : 'No filters active — all singers included';
 
+    // Determine default sort from user preference
+    const defaultExportSort: 'lastName' | 'section' =
+      user?.preferences?.rsvpExportSort || 'section';
+
+    // We use a ref on a container div to read the select value at confirm time
+    let chosenSort: 'lastName' | 'section' = defaultExportSort;
+
+    const confirmed = await dialog.confirm({
+      title: 'Export RSVP Roster to CSV',
+      message: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ padding: '12px 14px', borderRadius: '8px', backgroundColor: 'var(--primary-light)', border: '1px solid rgba(74,117,89,0.2)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              Exporting {filteredSingers.length} singer{filteredSingers.length !== 1 ? 's' : ''} currently shown
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--primary-deep)', fontWeight: 600 }}>
+              {filterSummary}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+              Sort Order
+            </label>
+            <select
+              id="rsvp-export-sort-select"
+              defaultValue={defaultExportSort}
+              onChange={(e) => { chosenSort = e.target.value as 'lastName' | 'section'; }}
+              style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', fontSize: '0.9rem', fontWeight: 600 }}
+            >
+              <option value="lastName">Last Name</option>
+              <option value="section">Section → Last Name</option>
+            </select>
+          </div>
+        </div>
+      ),
+      confirmLabel: '📥 Export CSV',
+      cancelLabel: 'Cancel',
+      variant: 'info',
+    });
+
+    if (!confirmed) return;
+
+    // Persist the chosen sort preference
+    await updatePreferences({ rsvpExportSort: chosenSort }).catch(() => undefined);
+
+    // --- Helper functions ---
     const getSectionIndex = (voicePart: string) => {
       const vpDef = voiceParts.find(vp => vp.label === voicePart);
       const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
@@ -286,29 +338,12 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       return secDef ? secDef.name : (voicePart ? secCode : 'Unassigned');
     };
 
-    const csvLines: string[] = [];
-    // Header line
-    csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));
-
-    rsvpGroups.forEach((group) => {
-      // Filter active/filtered singers for this RSVP status
-      const groupSingers = filteredSingers.filter(s => s.rsvp === group.status);
-      if (groupSingers.length === 0) return;
-
-      // If it's not the first group, add a blank row and a status label row
-      if (csvLines.length > 1) {
-        csvLines.push(''); // Blank row
-        csvLines.push([`"${group.label.replace(/"/g, '""')}"`, '', '', '', ''].join(','));
-      } else {
-        csvLines.push([`"${group.label.replace(/"/g, '""')}"`, '', '', '', ''].join(','));
-      }
-
-      // Sort these singers: by Section, then Last Name
-      const sortedGroup = [...groupSingers].sort((a, b) => {
-        const idxA = getSectionIndex(a.profile.voicePart);
-        const idxB = getSectionIndex(b.profile.voicePart);
-        if (idxA !== idxB) {
-          return idxA - idxB;
+    const sortGroup = (singers: typeof filteredSingers) =>
+      [...singers].sort((a, b) => {
+        if (chosenSort === 'section') {
+          const idxA = getSectionIndex(a.profile.voicePart);
+          const idxB = getSectionIndex(b.profile.voicePart);
+          if (idxA !== idxB) return idxA - idxB;
         }
         const lastA = getLastName(a.profile.name);
         const lastB = getLastName(b.profile.name);
@@ -317,25 +352,39 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         return a.profile.name.localeCompare(b.profile.name);
       });
 
-      // Append rows
-      sortedGroup.forEach(s => {
-        const name = s.profile.name;
-        const section = getSingerSectionName(s.profile.voicePart);
-        const voicePart = s.profile.voicePart || 'Not sure';
-        const eventTitle = event.title || event.type || 'Event';
-        const rsvpStatus = s.rsvp;
+    // --- Build CSV ---
+    const rsvpGroups: Array<{ label: string; status: 'Yes' | 'No' | 'Pending' }> = [
+      { label: 'Attending (Yes)', status: 'Yes' },
+      { label: 'Declined (No)', status: 'No' },
+      { label: 'No Response (Pending)', status: 'Pending' },
+    ];
+
+    const q = (str: string) => `"${str.replace(/"/g, '""')}"`;
+
+    const csvLines: string[] = [];
+    csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));
+
+    let firstGroup = true;
+    rsvpGroups.forEach((group) => {
+      const groupSingers = filteredSingers.filter(s => s.rsvp === group.status);
+      if (groupSingers.length === 0) return;
+
+      if (!firstGroup) csvLines.push('');
+      firstGroup = false;
+      csvLines.push([q(group.label), '', '', '', ''].join(','));
+
+      sortGroup(groupSingers).forEach(s => {
         csvLines.push([
-          `"${name.replace(/"/g, '""')}"`,
-          `"${section.replace(/"/g, '""')}"`,
-          `"${voicePart.replace(/"/g, '""')}"`,
-          `"${eventTitle.replace(/"/g, '""')}"`,
-          `"${rsvpStatus.replace(/"/g, '""')}"`
+          q(s.profile.name),
+          q(getSingerSectionName(s.profile.voicePart)),
+          q(s.profile.voicePart || 'Not sure'),
+          q(event.title || event.type || 'Event'),
+          q(s.rsvp),
         ].join(','));
       });
     });
 
-    const csvContent = csvLines.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
@@ -344,6 +393,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -373,12 +423,22 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           <AppCard 
             title="Voice Part RSVP Balance"
             actions={
-              <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
-                {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
-                {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
-                {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
-                {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: 'var(--space-sm)', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontWeight: 700 }}
+                >
+                  📥 Export CSV
+                </button>
+                <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
+                  {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
+                  {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
+                  {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
+                  {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
+                </span>
+              </div>
             }
             style={{ gap: 'var(--space-md)' }}
           >
@@ -616,15 +676,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 Reset Filters
               </button>
             )}
-
-            <button 
-              type="button"
-              onClick={handleExportCSV}
-              className="btn btn-secondary"
-              style={{ fontWeight: 700 }}
-            >
-              📥 Export CSV
-            </button>
           </div>
 
           <div className="event-rsvp-bulk-actions" aria-label="Bulk RSVP actions">

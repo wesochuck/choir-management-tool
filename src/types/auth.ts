@@ -4,6 +4,7 @@ export interface UserPreferences {
   attendanceSort?: 'lastName' | 'voicePart';
   rosterSort?: 'lastName' | 'voicePart';
   rsvpSort?: 'lastName' | 'voicePart';
+  rsvpExportSort?: 'lastName' | 'section';
 }
 
 export interface ChoirUser extends RecordModel {
