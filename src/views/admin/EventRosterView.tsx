@@ -7,6 +7,7 @@ import { getVoicePartsAndSections, settingsService, type VoicePartDef, type Sect
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
+import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
 import { getLastName } from '../../lib/stringUtils';
@@ -33,6 +34,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const [sections, setSections] = useState<SectionDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Singer modal states
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
@@ -248,6 +250,9 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           profileId: singer.profile.id,
           rsvp: nextRsvp,
         })),
+        (current, total) => {
+          setBulkProgress({ current, total });
+        }
       );
       const rosters = await rosterService.getEventRoster(eventId);
       setEventRoster(rosters);
@@ -260,6 +265,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       });
     } finally {
       setIsUpdating(false);
+      setBulkProgress(null);
     }
   };
 
@@ -525,6 +531,9 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 border-color: var(--primary) !important;
                 background-color: var(--primary-light) !important;
               }
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
             `}</style>
 
             {/* RSVP Status Filters acting on Voice Part Counts */}
@@ -778,6 +787,33 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         onDelete={handleSingerModalDelete}
         initialData={selectedSingerProfile}
       />
+
+      <BaseModal
+        isOpen={bulkProgress !== null}
+        onClose={() => {}}
+        title="Updating RSVPs"
+        maxWidth="400px"
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-md)', alignItems: 'center', padding: '12px 0' }}>
+          <div className="loader" style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)' }}>
+            Processing changes...
+          </div>
+          <div style={{ fontSize: 'var(--font-size-label)', color: 'var(--text-muted)', fontWeight: 600 }}>
+            {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
+          </div>
+          <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border)', borderRadius: '4px', overflow: 'hidden', marginTop: 'var(--space-xs)' }}>
+            <div 
+              style={{ 
+                width: bulkProgress ? `${(bulkProgress.current / bulkProgress.total) * 100}%` : '0%', 
+                height: '100%', 
+                backgroundColor: 'var(--primary)', 
+                transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)' 
+              }} 
+            />
+          </div>
+        </div>
+      </BaseModal>
     </AppCard>
   );
 }
