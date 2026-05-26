@@ -180,7 +180,7 @@ export default function PublicAuditionView() {
                     <div>
                       <h3 style={{ margin: 0, color: 'var(--primary-deep)' }}>{targetPerformance.title}</h3>
                       <p className="text-sm" style={{ margin: 0 }}>
-                        Performance: <strong>{formatInTimezone(targetPerformance.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                        Performance: <strong>{formatInTimezone(targetPerformance.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</strong>
                       </p>
                     </div>
 

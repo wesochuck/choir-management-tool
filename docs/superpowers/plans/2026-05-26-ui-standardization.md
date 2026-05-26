@@ -16,7 +16,7 @@
 - Modify: `src/index.css`
 - Modify: `src/admin.css`
 
-- [ ] **Step 1: Define shared section palette in index.css**
+- [x] **Step 1: Define shared section palette in index.css**
 ```css
 /* index.css - Add to :root */
   --section-red: #EF4444;
@@ -31,7 +31,7 @@
   --section-slate: #64748B;
 ```
 
-- [ ] **Step 2: Add .form-select and .card-accent to admin.css**
+- [x] **Step 2: Add .form-select and .card-accent to admin.css**
 ```css
 /* admin.css */
 .form-select {
@@ -60,7 +60,7 @@
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 ```bash
 git add src/index.css src/admin.css
 git commit -m "style: expand design tokens and add shared admin utility classes"
@@ -73,7 +73,7 @@ git commit -m "style: expand design tokens and add shared admin utility classes"
 **Files:**
 - Modify: `src/views/admin/AuditionsView.tsx`
 
-- [ ] **Step 1: Remove redundant h1 and switch to admin-view-header**
+- [x] **Step 1: Remove redundant h1 and switch to admin-view-header**
 Replace the top `flex-responsive` div with:
 ```tsx
 <div className="admin-view-header">
@@ -92,10 +92,10 @@ Replace the top `flex-responsive` div with:
 </div>
 ```
 
-- [ ] **Step 2: Replace manual select styling with .form-select**
+- [x] **Step 2: Replace manual select styling with .form-select**
 Update the status and performance filters to use `className="form-select"`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 ```bash
 git add src/views/admin/AuditionsView.tsx
 git commit -m "refactor: remove redundant header and standardize inputs in AuditionsView"
@@ -108,13 +108,13 @@ git commit -m "refactor: remove redundant header and standardize inputs in Audit
 **Files:**
 - Modify: `src/views/admin/RsvpDashboardView.tsx`
 
-- [ ] **Step 1: Remove redundant h1 and switch to admin-view-header**
+- [x] **Step 1: Remove redundant h1 and switch to admin-view-header**
 Remove the `<h1>Event RSVPs</h1>` and the containing `flex-responsive` div.
 
-- [ ] **Step 2: Switch "Active Event" banner to .card-accent**
+- [x] **Step 2: Switch "Active Event" banner to .card-accent**
 Replace the inline `style={{ ... }}` on the active event card with `className="card-accent"`.
 
-- [ ] **Step 3: Use .form-select for the event picker**
+- [x] **Step 3: Use .form-select for the event picker**
 ```tsx
 <select 
   value={selectedEventId} 
@@ -123,7 +123,7 @@ Replace the inline `style={{ ... }}` on the active event card with `className="c
 >
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add src/views/admin/RsvpDashboardView.tsx
 git commit -m "refactor: remove redundant header and standardize layout in RsvpDashboardView"
@@ -137,7 +137,7 @@ git commit -m "refactor: remove redundant header and standardize layout in RsvpD
 - Modify: `src/admin.css`
 - Modify: `src/views/admin/SeatingView.tsx`
 
-- [ ] **Step 1: Move Seating-specific styles to admin.css**
+- [x] **Step 1: Move Seating-specific styles to admin.css**
 ```css
 /* admin.css */
 .seating-controls-bar {
@@ -159,10 +159,10 @@ git commit -m "refactor: remove redundant header and standardize layout in RsvpD
 }
 ```
 
-- [ ] **Step 2: Apply classes to SeatingView.tsx**
+- [x] **Step 2: Apply classes to SeatingView.tsx**
 Replace inline styles in the header area with the new classes.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 ```bash
 git add src/admin.css src/views/admin/SeatingView.tsx
 git commit -m "style: migrate SeatingView inline styles to admin.css"
@@ -175,7 +175,7 @@ git commit -m "style: migrate SeatingView inline styles to admin.css"
 **Files:**
 - Modify: `src/views/admin/RosterView.tsx`
 
-- [ ] **Step 1: Replace hardcoded hex values with CSS variables**
+- [x] **Step 1: Replace hardcoded hex values with CSS variables**
 ```tsx
 const PALETTE_COLORS = [
   'var(--section-red)',
@@ -191,7 +191,7 @@ const PALETTE_COLORS = [
 ];
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 ```bash
 git add src/views/admin/RosterView.tsx
 git commit -m "refactor: use design tokens for section palette in RosterView"
@@ -201,12 +201,12 @@ git commit -m "refactor: use design tokens for section palette in RosterView"
 
 ### Task 6: Final Verification
 
-- [ ] **Step 1: Run Lint & Build**
+- [x] **Step 1: Run Lint & Build**
 ```bash
 npm run lint && npm run build
 ```
 
-- [ ] **Step 2: Final Commit**
+- [x] **Step 2: Final Commit**
 ```bash
 git commit --allow-empty -m "chore: complete UI standardization cleanup"
 ```
