@@ -7,16 +7,9 @@ import { settingsService, getVoicePartsAndSections, type SectionDef, type VoiceP
 import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
+import { toggleAccordion } from '../../lib/seatingFormationsUtils';
 
-function getContrastColor(hex: string): string {
-  if (!hex || hex.length < 6) return '#000000';
-  const cleanHex = hex.replace('#', '');
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? '#000000' : '#FFFFFF';
-}
+
 
 interface FormationSectionPillProps {
   dndId: string;
@@ -99,9 +92,19 @@ interface FormationRowProps {
   allSections: SectionDef[];
   allVoiceParts: VoicePartDef[];
   setCustomSeatingSettings: React.Dispatch<React.SetStateAction<SeatingSettings>>;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 }
 
-function FormationRow({ formation, formationIndex, allSections, allVoiceParts, setCustomSeatingSettings }: FormationRowProps) {
+function FormationRow({ 
+  formation, 
+  formationIndex, 
+  allSections, 
+  allVoiceParts, 
+  setCustomSeatingSettings,
+  isExpanded,
+  onToggleExpand
+}: FormationRowProps) {
   const isRows = formation.strategy === 'horizontal_row';
   const isVoice = !!formation.isVoicePartLayout;
   const dndItems = formation.sectionOrder.map((code, i) => `${formation.id}::${code}::${i}`);
@@ -129,219 +132,277 @@ function FormationRow({ formation, formationIndex, allSections, allVoiceParts, s
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 'var(--space-sm)',
+        gap: isExpanded ? 'var(--space-sm)' : '0',
         width: '100%',
         padding: 'var(--space-sm)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
         backgroundColor: 'var(--bg)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* Row 1: name input + strategy select + delete */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px auto', gap: 'var(--space-sm)', alignItems: 'center' }}>
-        <input
-          value={formation.name}
-          onChange={(e) => {
-            setCustomSeatingSettings((prev) => {
-              const newFormations = [...prev.formations];
-              newFormations[formationIndex] = { ...newFormations[formationIndex], name: e.target.value };
-              return { ...prev, formations: newFormations };
-            });
-          }}
-          placeholder="Formation Name"
-          className="card"
-          style={{ width: '100%', padding: '0 8px', height: '38px' }}
-        />
-        <select
-          value={formation.strategy}
-          onChange={(e) => {
-            setCustomSeatingSettings((prev) => {
-              const newFormations = [...prev.formations];
-              newFormations[formationIndex] = { ...newFormations[formationIndex], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
-              return { ...prev, formations: newFormations };
-            });
-          }}
-          className="card"
-          style={{ width: '100%', padding: '0 8px', height: '38px' }}
-        >
-          <option value="vertical_column">Vertical Columns</option>
-          <option value="horizontal_row">Horizontal Rows</option>
-        </select>
-        <button
-          type="button"
-          onClick={() => {
-            setCustomSeatingSettings((prev) => {
-              const newFormations = prev.formations.filter((_, idx) => idx !== formationIndex);
-              return { ...prev, formations: newFormations };
-            });
-          }}
-          className="btn btn-danger btn-sm"
-          style={{ height: '38px', minHeight: '38px', whiteSpace: 'nowrap', padding: '0 14px' }}
-        >
-          Delete
-        </button>
-      </div>
-
-      {/* Checkbox: Voice Part Layout Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
-          <input
-            type="checkbox"
-            checked={isVoice}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setCustomSeatingSettings((prev) => {
-                const newFormations = [...prev.formations];
-                newFormations[formationIndex] = {
-                  ...newFormations[formationIndex],
-                  isVoicePartLayout: checked,
-                  sectionOrder: [] // Clear previous order to avoid mismatching items
-                };
-                return { ...prev, formations: newFormations };
-              });
-            }}
-            style={{ accentColor: 'var(--primary)', cursor: 'pointer', width: '15px', height: '15px' }}
-          />
-          Layout by Voice Parts (S1, S2...) instead of Section Buckets
-        </label>
-      </div>
-
-      {/* Row 2: section/voice part order preview */}
+      {/* Collapsible Accordion Header */}
       <div
+        onClick={onToggleExpand}
         style={{
-          padding: '6px 8px',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--card-bg)',
-          minHeight: '44px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          padding: '4px 0',
+          userSelect: 'none',
         }}
       >
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={dndItems} strategy={horizontalListSortingStrategy}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: isRows ? 'column' : 'row',
-                gap: isRows ? '4px' : '6px',
-                flexWrap: isRows ? 'nowrap' : 'wrap',
-                alignItems: isRows ? 'stretch' : 'center',
-              }}
-            >
-              {formation.sectionOrder.map((code, secIdx) => {
-                let hasSec = false;
-                let bgColor = '#fee2e2';
-                let textColor = '#991b1b';
-                let borderColor = '#ef4444';
-                let label = code;
-
-                if (isVoice) {
-                  const vp = allVoiceParts.find(v => v.label.toUpperCase() === code.toUpperCase());
-                  if (vp) {
-                    hasSec = true;
-                    const parentSec = allSections.find(s => s.code === vp.sectionCode);
-                    const activeColor = vp.color || vp.colorBg || parentSec?.color || parentSec?.colorBg || 'var(--border)';
-                    bgColor = activeColor;
-                    textColor = getContrastColor(activeColor);
-                    borderColor = 'rgba(0,0,0,0.12)';
-                    label = `${vp.fullName} (${vp.label})`;
-                  }
-                } else {
-                  const sec = allSections.find(s => s.code.toUpperCase() === code.toUpperCase());
-                  if (sec) {
-                    hasSec = true;
-                    bgColor = sec.color || sec.colorBg || 'var(--border)';
-                    textColor = sec.colorText || '#000000';
-                    borderColor = 'rgba(0,0,0,0.12)';
-                    label = `${sec.name} (${code})`;
-                  }
-                }
-
-                const dndId = dndItems[secIdx];
-                return (
-                  <FormationSectionPill
-                    key={dndId}
-                    dndId={dndId}
-                    label={label}
-                    hasSec={hasSec}
-                    bgColor={bgColor}
-                    textColor={textColor}
-                    borderColor={borderColor}
-                    isRows={isRows}
-                    onRemove={() => {
-                      setCustomSeatingSettings((prev) => {
-                        const newFormations = [...prev.formations];
-                        const order = newFormations[formationIndex].sectionOrder.filter((_, sIdx) => sIdx !== secIdx);
-                        newFormations[formationIndex] = { ...newFormations[formationIndex], sectionOrder: order };
-                        return { ...prev, formations: newFormations };
-                      });
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </SortableContext>
-        </DndContext>
-
-        {/* Add Section/Part trigger */}
-        <div style={{ position: 'relative', display: 'inline-block', marginTop: formation.sectionOrder.length > 0 ? '6px' : '0' }}>
-          <select
-            value=""
-            onChange={(e) => {
-              const val = e.target.value;
-              if (!val) return;
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text)' }}>
+            {formation.name || 'New Formation'}
+          </span>
+          <span
+            className="badge"
+            style={{
+              backgroundColor: 'var(--bg-light)',
+              color: 'var(--text-muted)',
+              fontSize: '0.75rem',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              fontWeight: 600,
+            }}
+          >
+            {isRows ? 'Horizontal Rows' : 'Vertical Columns'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation(); // prevent collapsing triggers
               setCustomSeatingSettings((prev) => {
-                const newFormations = [...prev.formations];
-                newFormations[formationIndex] = {
-                  ...newFormations[formationIndex],
-                  sectionOrder: [...newFormations[formationIndex].sectionOrder, val],
-                };
+                const newFormations = prev.formations.filter((_, idx) => idx !== formationIndex);
                 return { ...prev, formations: newFormations };
               });
             }}
             style={{
-              opacity: 0,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
+              background: 'none',
+              border: 'none',
+              color: '#dc2626',
               cursor: 'pointer',
-              zIndex: 2,
-            }}
-            title={isVoice ? "Add voice part to order" : "Add section to order"}
-          >
-            <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
-            {isVoice ? (
-              allVoiceParts.filter(vp => vp.label && !formation.sectionOrder.includes(vp.label)).map(vp => (
-                <option key={vp.label} value={vp.label}>
-                  {vp.fullName} ({vp.label})
-                </option>
-              ))
-            ) : (
-              allSections.filter(s => s.code && !formation.sectionOrder.includes(s.code)).map(s => (
-                <option key={s.code} value={s.code}>
-                  {s.name ? `${s.name} (${s.code})` : s.code}
-                </option>
-              ))
-            )}
-          </select>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            style={{
-              padding: '2px 8px',
-              height: '26px',
-              fontSize: '0.8rem',
-              border: '1px dashed var(--border)',
-              backgroundColor: 'transparent',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              pointerEvents: 'none',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              padding: '4px 8px',
+              borderRadius: 'var(--radius-sm)',
+              transition: 'background-color 0.2s',
             }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-light)')}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
-            {isVoice ? "+ Add Voice Part" : "+ Add Section"}
+            🗑 Delete template
           </button>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'bold', paddingRight: '4px' }}>
+            {isExpanded ? '▲' : '▼'}
+          </span>
+        </div>
+      </div>
+
+      {/* Collapsible details body container */}
+      <div
+        style={{
+          display: isExpanded ? 'flex' : 'none',
+          flexDirection: 'column',
+          gap: 'var(--space-sm)',
+          borderTop: '1px solid var(--border)',
+          paddingTop: 'var(--space-sm)',
+        }}
+      >
+        {/* Row 1: name input + strategy select */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px', gap: 'var(--space-sm)', alignItems: 'center' }}>
+          <input
+            value={formation.name}
+            onChange={(e) => {
+              setCustomSeatingSettings((prev) => {
+                const newFormations = [...prev.formations];
+                newFormations[formationIndex] = { ...newFormations[formationIndex], name: e.target.value };
+                return { ...prev, formations: newFormations };
+              });
+            }}
+            placeholder="Formation Name"
+            className="card"
+            style={{ width: '100%', padding: '0 8px', height: '38px' }}
+          />
+          <select
+            value={formation.strategy}
+            onChange={(e) => {
+              setCustomSeatingSettings((prev) => {
+                const newFormations = [...prev.formations];
+                newFormations[formationIndex] = { ...newFormations[formationIndex], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
+                return { ...prev, formations: newFormations };
+              });
+            }}
+            className="card"
+            style={{ width: '100%', padding: '0 8px', height: '38px' }}
+          >
+            <option value="vertical_column">Vertical Columns</option>
+            <option value="horizontal_row">Horizontal Rows</option>
+          </select>
+        </div>
+
+        {/* Checkbox: Voice Part Layout Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={isVoice}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setCustomSeatingSettings((prev) => {
+                  const newFormations = [...prev.formations];
+                  newFormations[formationIndex] = {
+                    ...newFormations[formationIndex],
+                    isVoicePartLayout: checked,
+                    sectionOrder: [] // Clear previous order to avoid mismatching items
+                  };
+                  return { ...prev, formations: newFormations };
+                });
+              }}
+              style={{ accentColor: 'var(--primary)', cursor: 'pointer', width: '15px', height: '15px' }}
+            />
+            Layout by Voice Parts (S1, S2...) instead of Section Buckets
+          </label>
+        </div>
+
+        {/* Row 2: section/voice part order preview */}
+        <div
+          style={{
+            padding: '6px 8px',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--card-bg)',
+            minHeight: '44px',
+          }}
+        >
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={dndItems} strategy={horizontalListSortingStrategy}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: isRows ? 'column' : 'row',
+                  gap: isRows ? '4px' : '6px',
+                  flexWrap: isRows ? 'nowrap' : 'wrap',
+                  alignItems: isRows ? 'stretch' : 'center',
+                }}
+              >
+                {formation.sectionOrder.map((code, secIdx) => {
+                  const itemDndId = `${formation.id}::${code}::${secIdx}`;
+                  let label = code;
+                  let color = '#7f8c8d';
+
+                  if (isVoice) {
+                    const vp = allVoiceParts.find(v => v.label === code);
+                    if (vp) {
+                      label = vp.fullName;
+                      color = vp.color || color;
+                    }
+                  } else {
+                    const sec = allSections.find(s => s.code === code);
+                    if (sec) {
+                      label = sec.name;
+                      color = sec.color || color;
+                    }
+                  }
+
+                  const bg = `${color}22`;
+
+                  return (
+                    <FormationSectionPill
+                      key={itemDndId}
+                      dndId={itemDndId}
+                      label={label}
+                      hasSec={!isVoice}
+                      bgColor={bg}
+                      textColor={color}
+                      borderColor={color}
+                      isRows={isRows}
+                      onRemove={() => {
+                        setCustomSeatingSettings((prev) => {
+                          const newFormations = [...prev.formations];
+                          const order = newFormations[formationIndex].sectionOrder.filter((_, sIdx) => sIdx !== secIdx);
+                          newFormations[formationIndex] = { ...newFormations[formationIndex], sectionOrder: order };
+                          return { ...prev, formations: newFormations };
+                        });
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+
+        {/* Row 3: Section/Voice dropdown pill creators */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-xs)', alignItems: 'center' }}>
+          <div style={{ position: 'relative', display: 'inline-block', marginTop: formation.sectionOrder.length > 0 ? '6px' : '0' }}>
+            <select
+              value=""
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) return;
+                setCustomSeatingSettings((prev) => {
+                  const newFormations = [...prev.formations];
+                  newFormations[formationIndex] = {
+                    ...newFormations[formationIndex],
+                    sectionOrder: [...newFormations[formationIndex].sectionOrder, val],
+                  };
+                  return { ...prev, formations: newFormations };
+                });
+              }}
+              style={{
+                opacity: 0,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                cursor: 'pointer',
+                zIndex: 2,
+              }}
+              title={isVoice ? "Add voice part to order" : "Add section to order"}
+            >
+              <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
+              {isVoice ? (
+                allVoiceParts.filter(vp => vp.label && !formation.sectionOrder.includes(vp.label)).map(vp => (
+                  <option key={vp.label} value={vp.label}>
+                    {vp.fullName} ({vp.label})
+                  </option>
+                ))
+              ) : (
+                allSections.filter(s => s.code && !formation.sectionOrder.includes(s.code)).map(s => (
+                  <option key={s.code} value={s.code}>
+                    {s.name ? `${s.name} (${s.code})` : s.code}
+                  </option>
+                ))
+              )}
+            </select>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              style={{
+                padding: '2px 8px',
+                height: '26px',
+                fontSize: '0.8rem',
+                border: '1px dashed var(--border)',
+                backgroundColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                pointerEvents: 'none',
+              }}
+            >
+              {isVoice ? "+ Add Voice Part" : "+ Add Section"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -361,6 +422,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
     formations: []
   });
   const [initialSeatingSettings, setInitialSeatingSettings] = useState<SeatingSettings | null>(null);
+  const [expandedFormationId, setExpandedFormationId] = useState<string | null>(null);
   const [allSections, setAllSections] = useState<SectionDef[]>([]);
   const [allVoiceParts, setAllVoiceParts] = useState<VoicePartDef[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -379,6 +441,11 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       setInitialSeatingSettings(JSON.parse(JSON.stringify(seating)));
       setAllSections(voiceData.sections);
       setAllVoiceParts(voiceData.voiceParts);
+      
+      // Expand the first formation by default if none is selected
+      if (seating.formations && seating.formations.length > 0) {
+        setExpandedFormationId(seating.formations[0].id);
+      }
     } catch {
       setMessage('Could not load seating templates.');
     } finally {
@@ -399,6 +466,9 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
     if (initialSeatingSettings) {
       setCustomSeatingSettings(JSON.parse(JSON.stringify(initialSeatingSettings)));
       setMessage('');
+      if (initialSeatingSettings.formations && initialSeatingSettings.formations.length > 0) {
+        setExpandedFormationId(initialSeatingSettings.formations[0].id);
+      }
     }
   };
 
@@ -539,6 +609,8 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
               allSections={allSections}
               allVoiceParts={allVoiceParts}
               setCustomSeatingSettings={setCustomSeatingSettings}
+              isExpanded={expandedFormationId === formation.id}
+              onToggleExpand={() => setExpandedFormationId(prev => toggleAccordion(prev, formation.id))}
             />
           ))}
 
