@@ -441,11 +441,6 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       setInitialSeatingSettings(JSON.parse(JSON.stringify(seating)));
       setAllSections(voiceData.sections);
       setAllVoiceParts(voiceData.voiceParts);
-      
-      // Expand the first formation by default if none is selected
-      if (seating.formations && seating.formations.length > 0) {
-        setExpandedFormationId(seating.formations[0].id);
-      }
     } catch {
       setMessage('Could not load seating templates.');
     } finally {
@@ -466,9 +461,6 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
     if (initialSeatingSettings) {
       setCustomSeatingSettings(JSON.parse(JSON.stringify(initialSeatingSettings)));
       setMessage('');
-      if (initialSeatingSettings.formations && initialSeatingSettings.formations.length > 0) {
-        setExpandedFormationId(initialSeatingSettings.formations[0].id);
-      }
     }
   };
 
