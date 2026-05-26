@@ -36,3 +36,5 @@
 [x] you should have a reset password button on the singer account that will reset the password.
 [] support adding event poster image to events
 [] be able to do individual vocie parts on roseter and remove sections if needed. 
+[] we need to have accordians for formation settings that page is getting too long.
+[] consider all the places we need to have pagination.

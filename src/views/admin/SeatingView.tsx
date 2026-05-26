@@ -135,7 +135,7 @@ export default function SeatingView() {
     // Run initial measurement
     setVisibleTabCount(estimateVisibleTabs(container.offsetWidth));
     return () => observer.disconnect();
-  }, [estimateVisibleTabs]);
+  }, [estimateVisibleTabs, activeTab]);
 
   const handleLookupSingerSelect = async (profile: Profile) => {
     if (performanceId && profile.id) {
