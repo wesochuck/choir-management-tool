@@ -92,7 +92,6 @@
   .grid-print {
     display: flex !important;
     flex-direction: column !important;
-    gap: 6px !important;
     padding: 0 !important;
     margin: 0 auto !important;
     page-break-inside: avoid !important;
@@ -100,12 +99,18 @@
     width: 100% !important;
     max-width: 100% !important;
     overflow: visible !important;
+
+    /* Calculate dynamic seat size for print landscape layouts */
+    --print-seat-size: min(72px, calc((100vw - 120px) / var(--max-seats, 12))) !important;
+    --print-grid-gap: clamp(2px, calc(var(--print-seat-size) * 0.08), 6px) !important;
+
+    gap: var(--print-grid-gap) !important;
   }
 
   .row-print {
     display: flex !important;
     flex-direction: row !important;
-    gap: 4px !important;
+    gap: var(--print-grid-gap) !important;
     justify-content: center !important;
     margin-bottom: 2px !important;
     width: auto !important;
@@ -116,7 +121,7 @@
     width: 60px !important;
     padding-right: 4px !important;
     color: #000000 !important;
-    font-size: 8px !important;
+    font-size: clamp(6px, calc(var(--print-seat-size) * 0.11), 8px) !important;
     line-height: 1.2 !important;
     font-weight: 700 !important;
     display: flex !important;
@@ -130,23 +135,23 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 72px !important;
-    height: 72px !important;
-    min-width: 72px !important;
-    min-height: 72px !important;
-    border-radius: 4px !important;
+    width: var(--print-seat-size) !important;
+    height: var(--print-seat-size) !important;
+    min-width: var(--print-seat-size) !important;
+    min-height: var(--print-seat-size) !important;
+    border-radius: clamp(3px, calc(var(--print-seat-size) * 0.06), 4px) !important;
     box-shadow: none !important;
     transform: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     page-break-inside: avoid !important;
     overflow: hidden !important;
-    padding: 2px !important;
+    padding: clamp(1px, calc(var(--print-seat-size) * 0.03), 3px) !important;
   }
 
   /* Seat label (e.g. "T1 - 1") */
   .seat-cell>div:first-child {
-    font-size: 8px !important;
+    font-size: clamp(6px, calc(var(--print-seat-size) * 0.11), 8px) !important;
     line-height: 1.1 !important;
   }
 
@@ -154,22 +159,22 @@
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 1px !important;
+    gap: clamp(0px, calc(var(--print-seat-size) * 0.02), 1px) !important;
   }
 
   /* Singer name */
   .seat-cell>.flex-col>div:first-child {
-    font-size: 13px !important;
+    font-size: clamp(8px, calc(var(--print-seat-size) * 0.18), 13px) !important;
     line-height: 1.15 !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
     text-align: center !important;
-    max-width: 66px !important;
+    max-width: calc(var(--print-seat-size) - 6px) !important;
   }
 
   /* Voice part label */
   .seat-cell>.flex-col>div:nth-child(2) {
-    font-size: 8px !important;
+    font-size: clamp(6px, calc(var(--print-seat-size) * 0.11), 8px) !important;
     line-height: 1.1 !important;
   }
 

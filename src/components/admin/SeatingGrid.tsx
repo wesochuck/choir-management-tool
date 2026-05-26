@@ -186,7 +186,18 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   };
 
   return (
-    <div ref={gridRef} className="flex-col grid-print" style={{ gap: rowGap, alignItems: 'center', width: '100%', overflowX: 'auto', padding: containerPadding }}>
+    <div
+      ref={gridRef}
+      className={`flex-col grid-print ${isCompact ? 'grid-print-compact' : ''}`}
+      style={{
+        gap: rowGap,
+        alignItems: 'center',
+        width: '100%',
+        overflowX: 'auto',
+        padding: containerPadding,
+        ...({ '--max-seats': maxSeats } as React.CSSProperties)
+      }}
+    >
       {/* Warning banner if not enough seats */}
       {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
         <div className="no-print" style={{
