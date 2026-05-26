@@ -6,7 +6,7 @@ export const calculateAutoPaint = (
   arg3: string[] | 'Column' | 'Row',
   arg4?: FormationStrategyType | string[]
 ): Record<string, string> => {
-  let sectionOrder: string[] = [];
+  let sectionOrder: string[];
   let strategy: FormationStrategyType;
 
   if (Array.isArray(arg3)) {
@@ -115,17 +115,17 @@ export const calculateAutoPaint = (
   }
 
   // Strategy B: Horizontal Rows (Continuous Block Spillover)
-  let currentSectionIndex = 0;
-  let remainingSingersInCurrentSection = sectionCounts[sectionOrder[0]] || 0;
-
-  // Advance to the first section that contains active singers
-  while (remainingSingersInCurrentSection === 0 && currentSectionIndex < sectionOrder.length - 1) {
-    currentSectionIndex++;
-    remainingSingersInCurrentSection = sectionCounts[sectionOrder[currentSectionIndex]] || 0;
-  }
+  // The formation editor displays sectionOrder top-to-bottom matching the grid's
+  // visual top-to-bottom (back-to-front). sectionOrder[0] = back, last = front.
+  // Grid: rowIndex 0 = Front (bottom), highest rowIndex = Back (top).
+  // We iterate rows from back (highest) to front (0) so sectionOrder[0] fills
+  // the back rows first. Within each row, seats fill left-to-right from the
+  // director's perspective (seatIndex 0 → N). Overspill continues left-to-right.
 
   let filledSeatsCount = 0;
-  rowCounts.forEach((rowSize, rowIndex) => {
+  // Iterate rows from back (highest index) to front (index 0)
+  for (let ri = rowCounts.length - 1; ri >= 0; ri--) {
+    const rowSize = rowCounts[ri];
     for (let seatIndex = 0; seatIndex < rowSize; seatIndex++) {
       // Calculate target capacity weight thresholds
       const currentSeatTargetIndex = Math.floor((filledSeatsCount / totalSeats) * totalSingers);
@@ -142,10 +142,10 @@ export const calculateAutoPaint = (
         }
       }
       
-      suggestions[`${rowIndex}-${seatIndex}`] = chosenSection;
+      suggestions[`${ri}-${seatIndex}`] = chosenSection;
       filledSeatsCount++;
     }
-  });
+  }
 
   return suggestions;
 };

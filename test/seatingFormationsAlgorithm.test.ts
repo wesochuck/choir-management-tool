@@ -9,10 +9,10 @@ test('Seating Auto-Paint Formations Strategy Engine - horizontal_row spillover',
   
   const result = calculateAutoPaint(rowCounts, sectionCounts, order, 'horizontal_row');
   
-  // Row 0 must be entirely filled with Sopranos
-  assert.equal(result['0-0'], 'S');
-  assert.equal(result['0-9'], 'S');
-  // Row 1 must be entirely filled with Altos
-  assert.equal(result['1-0'], 'A');
-  assert.equal(result['1-9'], 'A');
+  // Row 1 (Back) must be entirely filled with Sopranos (order[0], top of editor)
+  assert.equal(result['1-0'], 'S');
+  assert.equal(result['1-9'], 'S');
+  // Row 0 (Front) must be entirely filled with Altos (order[1], bottom of editor)
+  assert.equal(result['0-0'], 'A');
+  assert.equal(result['0-9'], 'A');
 });

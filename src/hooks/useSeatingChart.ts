@@ -264,7 +264,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
       setCharts(loadedCharts);
 
-      let activeChart = loadedCharts.find(c => c.id === activeChartId) || loadedCharts[0] || null;
+      const activeChart = loadedCharts.find(c => c.id === activeChartId) || loadedCharts[0] || null;
       if (activeChart && activeChart.id !== activeChartId) {
         setActiveChartId(activeChart.id);
       }
@@ -463,6 +463,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
   const createChart = async (name: string) => {
     if (!venue || !performanceId) return;
+    const maxSortOrder = (charts || []).reduce((max, c) => Math.max(max, c.sortOrder || 0), 0);
     const newChart = await seatingService.saveChart({
       performance: performanceId,
       venue: venueId,
@@ -470,6 +471,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       formationId: seatingSettings.defaultFormationId,
       assignments: {},
       layoutOverride: null,
+      sortOrder: maxSortOrder + 1,
     });
     await fetchData();
     setActiveChartId(newChart.id);
@@ -489,6 +491,15 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     await fetchData();
   };
 
+  const reorderCharts = async (orderedIds: string[]) => {
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        seatingService.saveChart({ id, sortOrder: index } as Partial<SeatingChart>)
+      )
+    );
+    await fetchData();
+  };
+
   const isSaving = isSyncPending || activeRequestsCount > 0;
 
   return {
@@ -499,6 +510,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     createChart,
     renameChart,
     deleteChart,
+    reorderCharts,
     optimisticAssignments,
     activeProfiles,
     sectionCounts,

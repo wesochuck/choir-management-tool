@@ -10,6 +10,7 @@ export interface SeatingChart extends RecordModel {
   layoutOverride: number[] | null;
   formationId: string; // Replaces text-based sectionOrder field
   assignments: Record<string, string>; // Seat index string -> Profile id string
+  sortOrder?: number;
 }
 
 export const seatingService = {
@@ -20,10 +21,10 @@ export const seatingService = {
         : pb.filter('performance = {:performanceId}', { performanceId });
       return await pb.collection('pbc_seating_001').getFullList<SeatingChart>({
         filter: filterStr,
-        sort: 'name',
+        sort: 'sortOrder,name',
         expand: 'venue'
       });
-    } catch (err: unknown) {
+    } catch {
       return [];
     }
   },

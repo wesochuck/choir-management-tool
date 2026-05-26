@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -82,7 +82,7 @@ export default function SeatingView() {
   const { 
     chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
     isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh, currentFormation,
-    charts, activeChartId, setActiveChartId, createChart, renameChart, deleteChart
+    charts, activeChartId, setActiveChartId, createChart, renameChart, deleteChart, reorderCharts
   } = useSeatingChart(performanceId, selectedVenue);
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
@@ -94,6 +94,48 @@ export default function SeatingView() {
   const [isRenameChartModalOpen, setIsRenameChartModalOpen] = useState(false);
   const [renameChartName, setRenameChartName] = useState('');
   const [chartToRename, setChartToRename] = useState<SeatingChart | null>(null);
+
+  const [dragOverChartId, setDragOverChartId] = useState<string | null>(null);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [visibleTabCount, setVisibleTabCount] = useState(10);
+
+  const CHART_DRAG_MIME = 'application/x-chart-reorder';
+
+  // Estimate how many tabs fit based on container width and chart name lengths
+  const estimateVisibleTabs = useCallback((containerWidth: number) => {
+    const allChartsList = charts || [];
+    if (allChartsList.length === 0) return 10;
+    // Reserve space for the + button (40px) and overflow dropdown (160px) and padding (32px)
+    const reservedWidth = 40 + 32;
+    let usedWidth = reservedWidth;
+    let count = 0;
+    for (const chart of allChartsList) {
+      // Estimate: drag handle ~20px, name ~8px/char, padding/gap ~48px, action buttons ~60px if active
+      const nameWidth = chart.name.length * 8;
+      const tabWidth = 20 + nameWidth + 48 + (chart.id === activeChartId ? 60 : 0);
+      if (usedWidth + tabWidth > containerWidth && count > 0) {
+        break;
+      }
+      usedWidth += tabWidth;
+      count++;
+    }
+    return Math.max(1, count);
+  }, [charts, activeChartId]);
+
+  useEffect(() => {
+    const container = tabsContainerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        setVisibleTabCount(estimateVisibleTabs(width));
+      }
+    });
+    observer.observe(container);
+    // Run initial measurement
+    setVisibleTabCount(estimateVisibleTabs(container.offsetWidth));
+    return () => observer.disconnect();
+  }, [estimateVisibleTabs]);
 
   const handleLookupSingerSelect = async (profile: Profile) => {
     if (performanceId && profile.id) {
@@ -392,7 +434,7 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           {/* Seating Charts Tabs Row */}
-          <div className="no-print flex-row seating-charts-tabs-row" style={{
+          <div ref={tabsContainerRef} className="no-print flex-row seating-charts-tabs-row" style={{
             display: 'flex',
             alignItems: 'center',
             gap: 'var(--space-sm)',
@@ -401,24 +443,91 @@ export default function SeatingView() {
             width: '100%',
             marginBottom: 'var(--space-sm)'
           }}>
-            {/* Render visible tabs */}
-            {(charts || []).slice(0, 3).map(c => {
+            {/* Render visible tabs (dynamic count based on container width) */}
+            {(charts || []).slice(0, visibleTabCount).map(c => {
               const isActive = c.id === activeChartId;
+              const isDragOver = dragOverChartId === c.id;
               return (
-                <div key={c.id} className="flex-row" style={{ 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  borderBottom: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
-                  paddingBottom: '8px',
-                  marginBottom: '-1px',
-                  transition: 'all 0.2s ease'
-                }}>
+                <div 
+                  key={c.id} 
+                  className="flex-row" 
+                  style={{ 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    borderBottom: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
+                    borderLeft: isDragOver ? '2px solid var(--primary)' : '2px solid transparent',
+                    padding: '8px 12px 8px 10px',
+                    margin: '-8px 0 -1px 0',
+                    transition: 'border-color 0.15s ease, border-left 0.15s ease',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    if (!isActive) {
+                      setActiveChartId(c.id);
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer) {
+                      e.dataTransfer.dropEffect = 'move';
+                    }
+                    setDragOverChartId(c.id);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    setDragOverChartId(c.id);
+                  }}
+                  onDragLeave={() => {
+                    setDragOverChartId(prev => prev === c.id ? null : prev);
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    setDragOverChartId(null);
+                    const draggedId = e.dataTransfer.getData(CHART_DRAG_MIME);
+                    if (draggedId && draggedId !== c.id) {
+                      const currentCharts = [...(charts || [])];
+                      const draggedIndex = currentCharts.findIndex(x => x.id === draggedId);
+                      const targetIndex = currentCharts.findIndex(x => x.id === c.id);
+                      if (draggedIndex !== -1 && targetIndex !== -1) {
+                        const [draggedItem] = currentCharts.splice(draggedIndex, 1);
+                        currentCharts.splice(targetIndex, 0, draggedItem);
+                        await reorderCharts(currentCharts.map(x => x.id));
+                      }
+                    }
+                  }}
+                >
+                  <span
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(CHART_DRAG_MIME, c.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragEnd={() => setDragOverChartId(null)}
+                    style={{
+                      cursor: 'grab',
+                      padding: '2px',
+                      color: 'var(--text-muted)',
+                      fontSize: '0.8rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      opacity: 0.4,
+                      userSelect: 'none',
+                      marginRight: '2px'
+                    }}
+                    title="Drag to reorder"
+                  >
+                    ⋮⋮
+                  </span>
                   <button
-                    onClick={() => setActiveChartId(c.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isActive) setActiveChartId(c.id);
+                    }}
                     className="btn btn-sm btn-ghost"
                     style={{ 
                       fontWeight: isActive ? 700 : 500,
-                      padding: '0 var(--space-xs)',
+                      padding: '4px 8px',
+                      margin: '-4px -8px',
                       color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
                       backgroundColor: 'transparent',
                       border: 'none',
@@ -431,22 +540,24 @@ export default function SeatingView() {
                     {c.name}
                   </button>
                   {isActive && (
-                    <div className="flex-row" style={{ gap: '2px' }}>
+                    <div className="flex-row" style={{ gap: '2px', marginLeft: '4px' }} onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setChartToRename(c);
                           setRenameChartName(c.name);
                           setIsRenameChartModalOpen(true);
                         }}
                         className="btn btn-ghost btn-sm"
-                        style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem', height: '24px', minHeight: '24px' }}
+                        style={{ padding: '4px', minWidth: 'auto', fontSize: '0.85rem', height: '28px', minHeight: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         title="Rename chart"
                       >
                         ✏️
                       </button>
                       {(charts || []).length > 1 && (
                         <button
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             const confirmed = await dialog.confirm({
                               title: 'Delete Seating Chart?',
                               message: `Are you sure you want to delete "${c.name}"? This cannot be undone.`,
@@ -458,7 +569,7 @@ export default function SeatingView() {
                             }
                           }}
                           className="btn btn-ghost btn-sm"
-                          style={{ padding: '0 2px', minWidth: 'auto', fontSize: '0.85rem', color: 'var(--color-danger-text)', height: '24px', minHeight: '24px' }}
+                          style={{ padding: '4px', minWidth: 'auto', fontSize: '0.85rem', color: 'var(--color-danger-text)', height: '28px', minHeight: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                           title="Delete chart"
                         >
                           ❌
@@ -470,15 +581,15 @@ export default function SeatingView() {
               );
             })}
 
-            {/* Render overflow dropdown if more than 3 charts */}
-            {(charts || []).length > 3 && (
+            {/* Render overflow dropdown when charts exceed visible count */}
+            {(charts || []).length > visibleTabCount && (
               <div style={{
-                borderBottom: `2px solid ${!(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`,
+                borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`,
                 paddingBottom: '8px',
                 marginBottom: '-1px'
               }}>
                 <select
-                  value={(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? '' : activeChartId}
+                  value={(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? '' : activeChartId}
                   onChange={(e) => {
                     if (e.target.value) {
                       setActiveChartId(e.target.value);
@@ -494,13 +605,13 @@ export default function SeatingView() {
                     borderRadius: 'var(--radius-sm)',
                     border: 'none',
                     backgroundColor: 'transparent',
-                    color: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
-                    fontWeight: !(charts || []).slice(0, 3).some(c => c.id === activeChartId) ? 700 : 500,
+                    color: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
+                    fontWeight: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 700 : 500,
                     boxShadow: 'none'
                   }}
                 >
                   <option value="">More Charts... ▼</option>
-                  {(charts || []).slice(3).map(c => (
+                  {(charts || []).slice(visibleTabCount).map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
@@ -524,7 +635,8 @@ export default function SeatingView() {
                 borderRadius: '50%', 
                 border: '1px dashed var(--border)', 
                 color: 'var(--primary)',
-                marginBottom: '8px'
+                marginBottom: '8px',
+                flexShrink: 0
               }}
               title="Create new seating chart"
             >
