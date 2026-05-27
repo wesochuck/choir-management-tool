@@ -126,6 +126,12 @@ export default function AttendanceView() {
     };
   }, [items]);
 
+  const remainingUnmarkedProfileIds = useMemo(() => {
+    return items
+      .filter((item) => item.attendance === 'Pending')
+      .map((item) => item.profileId);
+  }, [items]);
+
   const handleRescueDeclined = async (profileId: string) => {
     if (!profileId) return;
     try {
@@ -305,6 +311,34 @@ export default function AttendanceView() {
               className="btn btn-sm attendance-bulk-present-btn"
             >
               ✅ Mark All Present
+            </button>
+
+            {/* Bulk Absent */}
+            <button
+              onClick={async () => {
+                if (remainingUnmarkedProfileIds.length === 0) return;
+                const confirmed = await dialog.confirm({
+                  title: 'Mark Remaining Absent',
+                  message: `Mark the remaining ${attendanceCounts.unmarked} unmarked singers as Absent? Singers already marked Present will not be changed.`,
+                  confirmLabel: 'Mark Remaining Absent',
+                  variant: 'warning'
+                });
+                if (confirmed) {
+                  try {
+                    await setAllAttendance('Absent', remainingUnmarkedProfileIds);
+                  } catch (err: unknown) {
+                    await dialog.showMessage({
+                      title: 'Error updating attendance',
+                      message: err instanceof Error ? err.message : 'Failed to bulk update',
+                      variant: 'danger'
+                    });
+                  }
+                }
+              }}
+              className="btn btn-sm attendance-bulk-remaining-absent-btn"
+              disabled={remainingUnmarkedProfileIds.length === 0}
+            >
+              ⚠️ Mark Remaining Absent
             </button>
 
             {/* Bulk Absent */}

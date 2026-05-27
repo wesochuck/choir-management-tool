@@ -69,9 +69,12 @@
 .attendance-refresh-btn { height: 34px; width: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--border); }
 .attendance-actions-divider { height: 20px; width: 1px; background-color: var(--border); }
 .attendance-bulk-present-btn,
+.attendance-bulk-remaining-absent-btn,
 .attendance-bulk-absent-btn,
 .attendance-bulk-reset-btn { height: 34px; padding: 0 12px; font-size: 0.75rem; font-weight: 700; border-radius: 8px; }
 .attendance-bulk-present-btn { background-color: rgba(74, 117, 89, 0.1); color: var(--primary-deep); border: 1px solid rgba(74, 117, 89, 0.25); }
+.attendance-bulk-remaining-absent-btn { background-color: rgba(251, 191, 36, 0.14); color: #92400e; border: 1px solid rgba(217, 119, 6, 0.3); }
+.attendance-bulk-remaining-absent-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .attendance-bulk-absent-btn { background-color: rgba(239, 68, 68, 0.08); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.2); }
 .attendance-bulk-reset-btn { color: var(--text-muted); border: 1px dashed var(--border); }
 
