@@ -10,6 +10,7 @@ export interface Profile extends RecordModel {
   globalStatus: 'Active' | 'Idle' | 'Inactive';
   notes: string;
   doNotEmail?: boolean;
+  isSectionLeader?: boolean;
   statusIsManual?: boolean;
   statusLastChangedAt?: string;
   statusChangeReason?: string;
@@ -27,6 +28,7 @@ export interface UserAccount extends RecordModel {
 export interface ProfileInput extends Partial<Profile> {
   email?: string;
   doNotEmail?: boolean;
+  isSectionLeader?: boolean;
   statusIsManual?: boolean;
 }
 
@@ -155,19 +157,39 @@ export const profileService = {
   },
 };
 
+function escapeCsvField(value: unknown): string {
+  const text = value == null ? '' : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function profileToCsvRow(profile: Profile): string {
+  const email = profile.email || profile.expand?.user?.email || '';
+  return [
+    escapeCsvField(profile.name),
+    escapeCsvField(email),
+    escapeCsvField(profile.phone),
+    escapeCsvField(profile.voicePart),
+    escapeCsvField(profile.globalStatus),
+  ].join(',');
+}
+
 export function exportToCSV(profiles: Profile[]): string {
   const header = ['Name', 'Email', 'Phone', 'Voice Part', 'Status'].join(',');
-  const rows = profiles.map(p => {
-    const email = p.email || p.expand?.user?.email || '';
-    return [
-      `"${p.name || ''}"`,
-      `"${email}"`,
-      `"${p.phone || ''}"`,
-      `"${p.voicePart || ''}"`,
-      `"${p.globalStatus || ''}"`
-    ].join(',');
-  });
-  return [header, ...rows].join('\n');
+  const rows = profiles.map(profileToCsvRow);
+  const sectionLeaders = profiles.filter((profile) => profile.isSectionLeader === true);
+
+  if (sectionLeaders.length === 0) {
+    return [header, ...rows].join('\n');
+  }
+
+  return [
+    header,
+    ...rows,
+    '',
+    'Section Leaders',
+    header,
+    ...sectionLeaders.map(profileToCsvRow),
+  ].join('\n');
 }
 
 export async function updateProfilePhoto(id: string, formData: FormData) {
@@ -177,4 +199,3 @@ export async function updateProfilePhoto(id: string, formData: FormData) {
 export async function deleteProfilePhoto(id: string) {
   return await pb.collection('profiles').update<Profile>(id, { photo: null });
 }
-
