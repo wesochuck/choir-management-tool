@@ -29,6 +29,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     globalStatus: 'Active',
     notes: '',
     doNotEmail: false,
+    isSectionLeader: false,
     statusIsManual: false,
   });
   const [isSubmitting, setIsLoading] = useState(false);
@@ -72,6 +73,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         ...restInitialData,
         email: initialData.expand?.user?.email || '',
         doNotEmail: initialData.doNotEmail || false,
+        isSectionLeader: initialData.isSectionLeader || false,
         statusIsManual: initialData.statusIsManual || false,
       });
     } else {
@@ -83,6 +85,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         globalStatus: 'Active',
         notes: '',
         doNotEmail: false,
+        isSectionLeader: false,
         statusIsManual: false,
       });
     }
@@ -132,9 +135,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       const notesChanged = (formData.notes || '') !== (initialData.notes || '');
       const emailOptChanged = Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail);
       const manualStatusChanged = Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual);
+      const sectionLeaderChanged = Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader);
       const photoChanged = formData.photo !== initialData.photo;
 
-      return nameChanged || emailChanged || phoneChanged || voicePartChanged || globalStatusChanged || notesChanged || emailOptChanged || manualStatusChanged || photoChanged;
+      return nameChanged || emailChanged || phoneChanged || voicePartChanged || globalStatusChanged || notesChanged || emailOptChanged || manualStatusChanged || sectionLeaderChanged || photoChanged;
     } else {
       const hasName = Boolean(formData.name?.trim());
       const hasEmail = Boolean(formData.email?.trim());
@@ -143,9 +147,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       const isStatusChanged = formData.globalStatus !== 'Active';
       const hasNotes = Boolean(formData.notes?.trim());
       const hasEmailOpt = Boolean(formData.doNotEmail);
+      const hasSectionLeader = Boolean(formData.isSectionLeader);
       const hasManualStatus = Boolean(formData.statusIsManual);
 
-      return hasName || hasEmail || hasPhone || hasVoicePart || isStatusChanged || hasNotes || hasEmailOpt || hasManualStatus;
+      return hasName || hasEmail || hasPhone || hasVoicePart || isStatusChanged || hasNotes || hasEmailOpt || hasSectionLeader || hasManualStatus;
     }
   }, [formData, initialData]);
 
@@ -649,6 +654,15 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
+            </label>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(formData.isSectionLeader)}
+                onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+              />
+              <span className="text-label">Section Leader</span>
             </label>
           </div>
 

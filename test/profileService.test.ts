@@ -12,6 +12,36 @@ test('exportToCSV maps profiles to CSV format correctly', () => {
 
   assert.ok(csv.includes('Name,Email,Phone,Voice Part,Status'));
   assert.ok(csv.includes('"John Doe","john@example.com","123","T1","Active"'));
+  assert.equal(csv.includes('Section Leaders'), false);
+});
+
+test('exportToCSV duplicates section leaders into dedicated section preserving order', () => {
+  const profiles = [
+    { id: '1', name: 'Jane Singer', phone: '555-123-4567', voicePart: 'S1', globalStatus: 'Active', isSectionLeader: true, user: '', photo: '', notes: '', expand: { user: { email: 'jane@example.com', name: 'Jane', role: 'singer', id: 'u1', collectionId: '', collectionName: '', created: '', updated: '' } } },
+    { id: '2', name: 'Sam Singer', phone: '', voicePart: 'B2', globalStatus: 'Active', isSectionLeader: false, user: '', photo: '', notes: '', expand: { user: { email: 'sam@example.com', name: 'Sam', role: 'singer', id: 'u2', collectionId: '', collectionName: '', created: '', updated: '' } } },
+    { id: '3', name: 'Alex "Ace", Singer', phone: '', voicePart: 'T2', globalStatus: 'Active', isSectionLeader: true, user: '', photo: '', notes: '', expand: { user: { email: 'alex@example.com', name: 'Alex', role: 'singer', id: 'u3', collectionId: '', collectionName: '', created: '', updated: '' } } },
+  ] as unknown as Profile[];
+
+  const csv = exportToCSV(profiles);
+  const sections = csv.split('\n\nSection Leaders\n');
+
+  assert.equal(sections.length, 2);
+
+  const [mainTable, leaderTable] = sections;
+  assert.ok(mainTable.includes('"Jane Singer","jane@example.com","555-123-4567","S1","Active"'));
+  assert.ok(mainTable.includes('"Sam Singer","sam@example.com","","B2","Active"'));
+  assert.ok(mainTable.includes('"Alex ""Ace"", Singer","alex@example.com","","T2","Active"'));
+
+  const leaderRows = leaderTable.split('\n');
+  assert.equal(leaderRows[0], 'Name,Email,Phone,Voice Part,Status');
+  assert.equal(leaderRows[1], '"Jane Singer","jane@example.com","555-123-4567","S1","Active"');
+  assert.equal(leaderRows[2], '"Alex ""Ace"", Singer","alex@example.com","","T2","Active"');
+  assert.equal(leaderTable.includes('"Sam Singer","sam@example.com","","B2","Active"'), false);
+
+  const janeCount = csv.split('"Jane Singer","jane@example.com","555-123-4567","S1","Active"').length - 1;
+  const alexCount = csv.split('"Alex ""Ace"", Singer","alex@example.com","","T2","Active"').length - 1;
+  assert.equal(janeCount, 2);
+  assert.equal(alexCount, 2);
 });
 
 test('updateProfilePhoto calls pocketbase with FormData', async (t) => {
@@ -217,5 +247,4 @@ test('profileService.updateProfile deletes user login when email is empty', asyn
     pb.collection = originalCollection;
   }
 });
-
 
