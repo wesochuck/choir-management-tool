@@ -336,13 +336,13 @@ export const communicationService = {
 
         const firstRecipient = recipients[0];
         const token = tokens[firstRecipient.id];
-        const pollLink = `${baseUrl}/poll?token=${encodeURIComponent(token)}`;
+        const pollLink = TokenUrlFactory.generatePublicLink(baseUrl, 'poll', token);
 
         previewContent = previewContent.replace(fullPlaceholder, `(Poll Link for ${firstRecipient.name})\nLink: ${pollLink}\n(No login required)`);
         
         recipients.forEach(r => {
           const t = tokens[r.id];
-          logs.push(`Personalized Poll Link (${pollId}) for ${r.name}: ${baseUrl}/poll?token=${encodeURIComponent(t)}`);
+          logs.push(`Personalized Poll Link (${pollId}) for ${r.name}: ${TokenUrlFactory.generatePublicLink(baseUrl, 'poll', t)}`);
         });
       }
 

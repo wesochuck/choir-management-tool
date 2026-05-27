@@ -52,7 +52,7 @@ test('phase 06 POLL-05: communication poll placeholder flow is integrated', () =
 
   assert.match(communicationService, /resolvePollPlaceholders/);
   assert.match(communicationService, /\/api\/generate-poll-tokens/);
-  assert.match(communicationService, /encodeURIComponent\(token\)/);
+  assert.match(communicationService, /TokenUrlFactory\.generatePublicLink\(baseUrl, 'poll', token\)/);
   assert.match(placeholderPanel, /\{\{POLL_LINK:pollId\}\}/);
   assert.match(communicationView, /PollSelectionModal/);
   assert.match(communicationView, /setIsPollModalOpen\(true\)/);
