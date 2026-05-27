@@ -152,7 +152,7 @@
 
   /* Seat label (e.g. "B8") — kept small so initials can dominate */
   .grid-print .seat-label {
-    font-size: clamp(5px, calc(var(--print-seat-size) * 0.09), 7px) !important;
+    font-size: clamp(6px, calc(var(--print-seat-size) * 0.12), 9px) !important;
     line-height: 1 !important;
     font-weight: 700 !important;
   }
@@ -165,6 +165,7 @@
     gap: 0 !important;
     min-width: 0 !important;
     max-width: 100% !important;
+    margin-top: clamp(1px, calc(var(--print-seat-size) * 0.04), 3px) !important;
   }
 
   /* Singer initials/name — as prominent as seat label was */
