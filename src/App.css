@@ -146,34 +146,35 @@
     print-color-adjust: exact !important;
     page-break-inside: avoid !important;
     overflow: hidden !important;
-    padding: clamp(0px, calc(var(--print-seat-size) * 0.015), 2px) !important;
+    padding: 0 !important;
+    gap: 1px !important;
   }
 
-  /* Seat label (e.g. "T1 - 1") */
-  .seat-cell>div:first-child {
+  /* Seat label (e.g. "B8") — kept small so initials can dominate */
+  .seat-cell .seat-label {
     font-size: clamp(5px, calc(var(--print-seat-size) * 0.09), 7px) !important;
     line-height: 1 !important;
   }
 
-  .seat-cell>.flex-col {
+  .seat-cell > .flex-col {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: clamp(0px, calc(var(--print-seat-size) * 0.02), 1px) !important;
+    gap: 0 !important;
   }
 
-  /* Singer name */
-  .seat-cell>.flex-col>div:first-child {
-    font-size: clamp(10px, calc(var(--print-seat-size) * 0.24), 17px) !important;
-    line-height: 1.05 !important;
+  /* Singer initials/name — as prominent as seat label was */
+  .seat-cell .seat-initials {
+    font-size: clamp(10px, calc(var(--print-seat-size) * 0.30), 20px) !important;
+    line-height: 1 !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
     text-align: center !important;
-    max-width: calc(var(--print-seat-size) - 4px) !important;
+    max-width: calc(var(--print-seat-size) - 2px) !important;
   }
 
-  /* Voice part label — hidden in visual print mode to reduce vertical crowding */
-  .seat-cell>.flex-col>div:nth-child(2) {
+  /* Voice part — hidden in print to reduce clutter */
+  .seat-cell .seat-voice-part {
     display: none !important;
   }
 

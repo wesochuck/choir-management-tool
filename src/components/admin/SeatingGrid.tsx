@@ -563,7 +563,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </button>
                   )}
 
-                  <div style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
+                  <div className="seat-label" style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                     {suggestion
                       ? (isVoicePartLayout ? `${suggestion} - ${suggestedSeatNumbers[seatIndex]}` : `${sectionDef?.name[0] || suggestion}${suggestedSeatNumbers[seatIndex]}`)
                       : ''
@@ -571,10 +571,10 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   </div>
                   {assignedProfile ? (
                     <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
-                      <div style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
+                      <div className="seat-initials" style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
-                      <div style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
+                      <div className="seat-voice-part" style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
                         {assignedProfile.voicePart}
                       </div>
                       <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'} ${isMismatch ? 'seat-tooltip-mismatch' : ''}`}>
