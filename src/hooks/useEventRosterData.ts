@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { eventService, type Event } from '../services/eventService';
 import { rosterService, type EventRoster } from '../services/rosterService';
@@ -24,6 +24,8 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
   const navigate = useNavigate();
   const dialog = useDialog();
   const { user, updatePreferences } = useAuth();
+
+  const loadSeq = useRef(0);
 
   const [event, setEvent] = useState<Event | null>(null);
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
@@ -51,6 +53,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
       return;
     }
 
+    const seq = ++loadSeq.current;
     setIsLoading(true);
     setLoadError(null);
 
@@ -63,6 +66,8 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
         settingsService.getRosterSettings()
       ]);
 
+      if (seq !== loadSeq.current) return;
+
       setEvent(evt);
       setActiveProfiles(profiles);
       setEventRoster(rosters);
@@ -73,6 +78,8 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
       }
       setIsLoading(false);
     } catch (err: unknown) {
+      if (seq !== loadSeq.current) return;
+
       console.error('Failed to load roster data', err);
       setLoadError(err);
       setIsLoading(false);
@@ -82,6 +89,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
         message: 'The requested event or its RSVP roster could not be loaded.',
         variant: 'danger',
       }).then(() => {
+        if (seq !== loadSeq.current) return;
         if (!isInline) {
           navigate('/admin/events');
         }
