@@ -2,6 +2,7 @@ import { pb } from '../lib/pocketbase';
 import { eventService, type Event } from './eventService';
 import { profileService, type Profile } from './profileService';
 import { rosterService } from './rosterService';
+import { TokenUrlFactory } from '../lib/tokenUrlUtils';
 import { settingsService, getVoicePartsAndSections } from './settingsService';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
@@ -293,13 +294,13 @@ export const communicationService = {
 
       const firstRecipient = recipients[0];
       const token = tokens[firstRecipient.id];
-      const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+      const rsvpLink = TokenUrlFactory.generatePublicLink(baseUrl, 'rsvp', token);
 
       const previewContent = content.replace('{{RSVP_LINKS}}', `(RSVP Link for ${firstRecipient.name})\nLink: ${rsvpLink}\n(No login required)`);
       
       const logs = recipients.map(r => {
         const t = tokens[r.id];
-        return `Personalized Link for ${r.name}: ${baseUrl}/rsvp?token=${encodeURIComponent(t)}`;
+        return `Personalized Link for ${r.name}: ${TokenUrlFactory.generatePublicLink(baseUrl, 'rsvp', t)}`;
       });
 
       return { previewContent, logs };
