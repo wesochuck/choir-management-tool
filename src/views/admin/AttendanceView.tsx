@@ -273,6 +273,7 @@ export default function AttendanceView() {
               }}
               className="btn btn-ghost btn-sm attendance-refresh-btn"
               title="Refresh Roster"
+              aria-label="Refresh roster"
             >
               🔄
             </button>
