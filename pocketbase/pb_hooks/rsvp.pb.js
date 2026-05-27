@@ -622,6 +622,10 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
         Pending: true
     };
 
+    const shouldPromotePendingRsvpToYes = (attendance, rsvp) => {
+        return attendance === "Present" && (!rsvp || rsvp === "Pending");
+    };
+
     for (let i = 0; i < updates.length; i++) {
         const update = updates[i] || {};
         if (!update.profileId) {
@@ -653,16 +657,32 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
             updates.forEach((update) => {
                 const existingRoster = rosterMap[update.profileId];
                 if (existingRoster) {
-                    if (existingRoster.get("attendance") !== update.attendance) {
+                    const currentAttendance = existingRoster.get("attendance");
+                    const currentRsvp = existingRoster.get("rsvp");
+                    let changed = false;
+
+                    if (currentAttendance !== update.attendance) {
                         existingRoster.set("attendance", update.attendance);
+                        changed = true;
+                    }
+
+                    // Match the single attendance update behavior: marking a pending singer Present
+                    // also makes them attending so RSVP-driven seating views include them.
+                    if (shouldPromotePendingRsvpToYes(update.attendance, currentRsvp)) {
+                        existingRoster.set("rsvp", "Yes");
+                        changed = true;
+                    }
+
+                    if (changed) {
                         txApp.save(existingRoster);
                     }
+
                     changedRosters.push(existingRoster);
                 } else {
                     const roster = new Record(rosterCollection);
                     roster.set("event", eventId);
                     roster.set("profile", update.profileId);
-                    roster.set("rsvp", "Pending");
+                    roster.set("rsvp", update.attendance === "Present" ? "Yes" : "Pending");
                     roster.set("attendance", update.attendance);
                     roster.set("folderReturned", false);
                     txApp.save(roster);
