@@ -55,7 +55,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     }
   };
 
-    // Tabs state
+  // Tabs state
   const [activeTab, setActiveTab] = useState<'profile' | 'rsvps'>('profile');
 
   useEffect(() => {
