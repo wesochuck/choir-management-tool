@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem, type Event } from '../../services/eventService';
 import { playerService } from '../../services/playerService';
+import { TokenUrlFactory } from '../../lib/tokenUrlUtils';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../services/musicLibraryService';
 import { settingsService, type MusicGenreDef } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
@@ -141,7 +142,7 @@ export default function SetListView() {
   const handleOpenPlayer = async (event: Event) => {
     try {
       const token = await playerService.generateToken(event.id);
-      const url = `${window.location.origin}/player?token=${encodeURIComponent(token)}`;
+      const url = TokenUrlFactory.generatePublicLink(window.location.origin, 'player', token);
       
       await dialog.showMessage({
         title: 'Player Link Generated',

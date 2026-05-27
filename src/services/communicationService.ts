@@ -189,28 +189,28 @@ export const communicationService = {
     eventId: string,
     filters: { targetRsvpStatus: ExplicitRsvpStatus },
   ): Promise<FilteredSingerTarget[]> {
-    const profiles = await pb.collection('profiles').getFullList<RecordModel>();
-    const rosterRows = await pb.collection('eventRosters').getList<RecordModel>(1, 500, {
+    const profiles = await profileService.getProfiles();
+    const rosterRows = await pb.collection('eventRosters').getFullList<RecordModel>({
       filter: pb.filter('event = {:eventId}', { eventId }),
     });
 
     const statusMap = new Map<string, ExplicitRsvpStatus>();
 
-    for (const row of rosterRows.items) {
-      const userId = typeof row.user === 'string' ? row.user : '';
-      const status = typeof row.status === 'string' ? row.status.toUpperCase() : '';
+    for (const row of rosterRows) {
+      const profileId = typeof row.profile === 'string' ? row.profile : '';
+      const rosterRsvp = typeof row.rsvp === 'string' ? row.rsvp : 'Pending';
       const resolvedStatus: ExplicitRsvpStatus =
-        status === 'ATTENDING' || status === 'DECLINED' || status === 'PENDING' ? status : 'PENDING';
+        rosterRsvp === 'Yes' ? 'ATTENDING' : rosterRsvp === 'No' ? 'DECLINED' : 'PENDING';
 
-      if (userId) {
-        statusMap.set(userId, resolvedStatus);
+      if (profileId) {
+        statusMap.set(profileId, resolvedStatus);
       }
     }
 
     return profiles
       .map((profile) => {
         const profileId = typeof profile.id === 'string' ? profile.id : '';
-        const email = typeof profile.email === 'string' ? profile.email : '';
+        const email = profile.expand?.user?.email || '';
         const inferredStatus = statusMap.get(profileId) ?? 'PENDING';
 
         return {
