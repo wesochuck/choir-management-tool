@@ -444,6 +444,22 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       });
     });
 
+    const sectionLeaders = filteredSingers.filter(s => s.profile.isSectionLeader === true);
+    if (sectionLeaders.length > 0) {
+      csvLines.push('');
+      csvLines.push('Section Leaders');
+      csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));
+      sortGroup(sectionLeaders).forEach(s => {
+        csvLines.push([
+          q(s.profile.name),
+          q(getSingerSectionName(s.profile.voicePart)),
+          q(s.profile.voicePart || 'Not sure'),
+          q(event.title || event.type || 'Event'),
+          q(s.rsvp),
+        ].join(','));
+      });
+    }
+
     const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
