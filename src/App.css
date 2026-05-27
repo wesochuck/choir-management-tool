@@ -152,7 +152,7 @@
 
   /* Seat label (e.g. "B8") — highly visible but structured */
   .grid-print .seat-label {
-    font-size: clamp(8px, calc(var(--print-seat-size) * 0.18), 13px) !important;
+    font-size: clamp(9px, calc(var(--print-seat-size) * 0.21), 14px) !important;
     line-height: 0.95 !important;
     font-weight: 700 !important;
   }
@@ -170,7 +170,7 @@
 
   /* Singer initials/name — prominent and clean */
   .grid-print .seat-initials {
-    font-size: clamp(10px, calc(var(--print-seat-size) * 0.28), 19px) !important;
+    font-size: clamp(12px, calc(var(--print-seat-size) * 0.32), 22px) !important;
     line-height: 0.95 !important;
     font-weight: 900 !important;
     word-break: break-word !important;
@@ -182,7 +182,7 @@
   /* Voice part — displayed below the initials, matching the seat label size */
   .grid-print .seat-voice-part {
     display: block !important;
-    font-size: clamp(8px, calc(var(--print-seat-size) * 0.18), 13px) !important;
+    font-size: clamp(9px, calc(var(--print-seat-size) * 0.21), 14px) !important;
     line-height: 0.95 !important;
     font-weight: 700 !important;
     margin-top: 1px !important;
