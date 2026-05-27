@@ -78,7 +78,7 @@ test('visual print seat typography uses semantic seat classes', () => {
   assert.match(printRules, /\.grid-print\s+\.seat-label\s*\{[^}]*font-size:/, 'print CSS should style seat labels by semantic class');
   assert.match(printRules, /\.grid-print\s+\.seat-person\s*\{[^}]*display:\s*flex\s*!important/, 'print CSS should style assigned singer container by semantic class');
   assert.match(printRules, /\.grid-print\s+\.seat-initials\s*\{[^}]*font-size:/, 'print CSS should style singer initials by semantic class');
-  assert.match(printRules, /\.grid-print\s+\.seat-voice-part\s*\{[^}]*display:\s*none\s*!important/, 'print CSS should hide voice-part labels in print by semantic class');
+  assert.match(printRules, /\.grid-print\s+\.seat-voice-part\s*\{[^}]*display:\s*block\s*!important/, 'print CSS should show voice-part labels in print by semantic class');
 
   assert.ok(!/\.seat-cell\s*>\s*\.flex-col\s*\{/.test(printRules), 'print CSS should avoid fragile structural selector for assigned singer wrapper');
 });

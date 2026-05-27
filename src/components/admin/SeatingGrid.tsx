@@ -257,8 +257,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         const rowIndex = rowCounts.length - 1 - index;
         const seatCount = rowCounts[rowIndex];
         const isFront = rowIndex === 0;
-        const isBack = rowIndex === rowCounts.length - 1;
-        const rowLabel = `Row ${rowIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
+        const rowLabel = `Row ${rowIndex + 1}`;
         // Calculate suggestion-based seat numbers in this row
         const suggestedSeatNumbers: Record<number, number> = {};
         let suggestedCount = 0;
@@ -280,6 +279,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}>
             <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
               {rowLabel}
+              {(isFront || rowIndex === rowCounts.length - 1) && (
+                <span className="no-print">
+                  {isFront ? ' (Front)' : ' (Back)'}
+                </span>
+              )}
             </div>
 
             {/* "🗑️" remove row button */}
@@ -339,17 +343,32 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 ? Boolean(assignedProfile?.voicePart && assignedProfile.voicePart.toUpperCase() !== suggestion?.toUpperCase())
                 : isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
 
+              const displaySuggestion = (() => {
+                if (suggestion) return suggestion;
+                if (assignedProfile) {
+                  const profileVpDef = voiceParts.find(vp => vp.label === assignedProfile.voicePart);
+                  if (profileVpDef) {
+                    const parentSec = sections.find(s => s.code === profileVpDef.sectionCode);
+                    return isVoicePartLayout ? assignedProfile.voicePart : (parentSec?.code || assignedProfile.voicePart[0]?.toUpperCase() || '');
+                  }
+                  return assignedProfile.voicePart[0]?.toUpperCase() || '';
+                }
+                return '';
+              })();
+
+              const displaySeatNumber = suggestion ? suggestedSeatNumbers[seatIndex] : (seatIndex + 1);
+
               let sectionDef: SectionDef | undefined;
               let vpDef: VoicePartDef | undefined;
 
-              if (suggestion) {
+              if (displaySuggestion) {
                 if (isVoicePartLayout) {
-                  vpDef = voiceParts.find(v => v.label.toUpperCase() === suggestion.toUpperCase());
+                  vpDef = voiceParts.find(v => v.label.toUpperCase() === displaySuggestion.toUpperCase());
                   if (vpDef) {
                     sectionDef = sections.find(s => s.code === vpDef?.sectionCode);
                   }
                 } else {
-                  sectionDef = sections.find(s => s.code.toUpperCase() === suggestion.toUpperCase());
+                  sectionDef = sections.find(s => s.code.toUpperCase() === displaySuggestion.toUpperCase());
                 }
               }
 
@@ -564,8 +583,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   <div className="seat-label" style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
-                    {suggestion
-                      ? (isVoicePartLayout ? `${suggestion} - ${suggestedSeatNumbers[seatIndex]}` : `${sectionDef?.name[0] || suggestion}${suggestedSeatNumbers[seatIndex]}`)
+                    {displaySuggestion
+                      ? (isVoicePartLayout ? `${displaySuggestion} - ${displaySeatNumber}` : `${sectionDef?.name[0] || displaySuggestion}${displaySeatNumber}`)
                       : ''
                     }
                   </div>
@@ -582,7 +601,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
                             <span style={{ fontWeight: 800 }}>⚠️ {assignedProfile.name}</span>
                             <span style={{ fontSize: '0.6875rem', opacity: 0.95, fontWeight: 600, letterSpacing: '0.01em' }}>
-                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || suggestion} seat ${suggestedSeatNumbers[seatIndex]}` : `${sectionDef?.name || suggestion} seat ${suggestedSeatNumbers[seatIndex]}`}
+                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || displaySuggestion} seat ${displaySeatNumber}` : `${sectionDef?.name || displaySuggestion} seat ${displaySeatNumber}`}
                             </span>
                           </div>
                         ) : (
