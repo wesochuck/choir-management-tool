@@ -32,6 +32,7 @@ export default function AdminDashboardView() {
           { to: '/admin/roster', icon: '👥', label: 'Manage Roster', desc: 'Add singers and track status' },
           { to: '/admin/events', icon: '📅', label: 'Manage Events', desc: 'Schedule performances and rehearsals' },
           { to: '/admin/rsvp', icon: '📬', label: 'Event RSVPs', desc: 'Track responses and roster balances' },
+          { to: '/admin/polls', icon: '📊', label: 'Engagement Polls', desc: 'Review volunteer responses and counts' },
           { to: '/admin/library', icon: '🎼', label: 'Music Library', desc: 'Catalog, repertoire, and CSV import' },
           { to: '/admin/setlists', icon: '📋', label: 'Set Lists', desc: 'Build and reorder event music' },
           { to: '/admin/seating', icon: '🪑', label: 'Seating Charts', desc: 'Design layouts and assign seats' },

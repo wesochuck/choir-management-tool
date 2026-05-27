@@ -128,6 +128,15 @@ export function resolvePreviewContent(
   result = result.replace(/{{PLAYER_LINK}}/g, playerText);
   result = result.replace(/{playerLink}/g, playerText);
 
+  // Poll Links - Injected as literal HTML preview
+  const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
+  result = result.replace(pollRegex, () => `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <span style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</span>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+</div>
+  `);
+
   // Compliance Placeholders
   result = result.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
   result = result.replace(/{{UNSUBSCRIBE_LINK}}/g, '#');

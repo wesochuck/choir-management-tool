@@ -10,7 +10,7 @@ export const computePaginationRange = (
   totalPages: number,
   siblingCount = 1
 ): (number | string)[] => {
-  // Total numbers we want to show: siblingCount + firstPage + lastPage + currentPage + 2*DOTS
+  // Maximum number of pagination slots shown before collapsing ranges with DOTS.
   const totalPageNumbers = siblingCount + 5;
 
   // Case 1: If total pages is smaller than standard display length, show all pages

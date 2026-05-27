@@ -3,6 +3,18 @@
 ## Voice Part Definition
 A classification of a singer's vocal range and role within the choir (e.g., Soprano 1, Bass 2). Admins can customize the list of voice parts in settings, defining a short label (e.g., "S1"), a descriptive full name (e.g., "Soprano 1"), and optionally a custom color for visual identity on seating charts.
 
+## Personalized Magic Link
+A secure, uniquely generated URL sent to a singer that allows them to perform a specific action (e.g., RSVP, respond to a poll, access the music player) without requiring a standard password login. These links use signed tokens to verify the singer's identity and the intended action.
+
+## Engagement Poll
+A targeted question sent to singers via Personalized Magic Links to gather volunteers or information for specific event-related tasks (e.g., moving risers) or organizational needs (e.g., general skill sets). Polls are created directly within the Communications interface during message composition. Singers can toggle or edit their responses at any time via their personalized link.
+
+## Voluntary Assignment
+A record of a singer's affirmative response to an Engagement Poll. These assignments allow administrators to track volunteer names and total counts to assess organizational capability for specific tasks.
+
+## Polls Dashboard
+A central management interface for reviewing affirmative responses to Engagement Polls. The dashboard provides an overview of volunteer counts and detailed lists of specific singer names to help administrators assess organizational capability. Event-linked polls are grouped by performance/rehearsal and automatically archive when the event passes.
+
 ## RSVP Status
 The attendance response provided by or assigned to a singer for a specific event. Can be:
 - **Yes (Attending)**: Singer expects to perform or rehearse.

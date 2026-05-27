@@ -7,8 +7,10 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   showDuplicatesOnly?: boolean;
   showMovements?: boolean;
   duplicateIds?: Set<string>;
+  /** @deprecated Use sectionFilters instead. */
   sectionFilter?: string;
   sectionFilters?: string[];
+  /** @deprecated Use genreFilters instead. */
   genreFilter?: string;
   genreFilters?: string[];
 }
@@ -133,4 +135,3 @@ export function toggleIdInSet(set: Set<string>, id: string): Set<string> {
   }
   return next;
 }
-

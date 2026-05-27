@@ -24,6 +24,7 @@ import {
 import { pb } from '../../lib/pocketbase';
 import { getRenderedPreview, resolvePreviewContent } from '../../lib/communicationUtils';
 import { PlaceholderPanel } from '../../components/admin/PlaceholderPanel';
+import { PollSelectionModal } from '../../components/admin/PollSelectionModal';
 import { MessageHistory } from '../../components/admin/MessageHistory';
 import './CommunicationView.css';
 
@@ -95,6 +96,7 @@ export default function CommunicationView() {
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false);
 
   // Secondary UI state
 
@@ -308,6 +310,11 @@ export default function CommunicationView() {
   };
 
   const insertPlaceholder = (tag: string) => {
+    if (tag === '{{POLL_LINK:pollId}}') {
+      setIsPollModalOpen(true);
+      return;
+    }
+
     if (!textAreaRef.current) return;
     const { selectionStart, selectionEnd } = textAreaRef.current;
     
@@ -1305,7 +1312,13 @@ export default function CommunicationView() {
         </div>
       )}
 
-      <BaseModal isOpen={!!selectedMessage} onClose={() => setSelectedMessage(null)} title="Message Details" maxWidth="600px">
+      <BaseModal 
+        isOpen={!!selectedMessage} 
+        onClose={() => setSelectedMessage(null)} 
+        title="Message Details" 
+        maxWidth="600px"
+        footer={<button className="btn btn-secondary" onClick={() => setSelectedMessage(null)}>Cancel</button>}
+      >
         {selectedMessage && (
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <div className="flex-col" style={{ gap: '2px' }}>
@@ -1346,6 +1359,12 @@ export default function CommunicationView() {
           ))}
         </div>
       </BaseModal>
+
+      <PollSelectionModal
+        isOpen={isPollModalOpen}
+        onClose={() => setIsPollModalOpen(false)}
+        onSelect={(pollId) => insertPlaceholder(`{{POLL_LINK:${pollId}}}`)}
+      />
 
     </div>
   );

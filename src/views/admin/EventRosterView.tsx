@@ -464,7 +464,13 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           {!isInline && event && (
             <button 
               className="btn btn-secondary btn-sm"
-              onClick={() => navigate(`/admin/events?eventId=${event.id}&openModal=true`)}
+              onClick={() => {
+                const query = new URLSearchParams({
+                  eventId: event.id,
+                  openModal: 'true',
+                });
+                navigate(`/admin/events?${query.toString()}`);
+              }}
               style={{ fontWeight: 600 }}
             >
               ✏️ Edit Event

@@ -43,7 +43,6 @@ export const Pagination: React.FC<PaginationProps> = ({
         justifyContent: 'center',
         alignItems: 'center',
         gap: 'var(--space-xs)',
-        marginTop: 'var(--space-md)',
         flexWrap: 'wrap',
       }}
     >

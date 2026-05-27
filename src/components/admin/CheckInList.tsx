@@ -96,7 +96,11 @@ const CheckInRow: React.FC<{
               className="admin-checkin-name"
               onClick={(event) => {
                 event.stopPropagation();
-                navigate(`/admin/roster?singerId=${item.profileId}&openModal=true`);
+                const query = new URLSearchParams({
+                  singerId: item.profileId,
+                  openModal: 'true',
+                });
+                navigate(`/admin/roster?${query.toString()}`);
               }}
               style={{
                 color: isPresent 

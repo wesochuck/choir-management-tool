@@ -86,6 +86,10 @@ export const communicationService = {
     });
   },
 
+  /**
+   * @param filterString Raw PocketBase filter expression. Callers must use pb.filter()
+   * for any dynamic values before passing the resulting string here.
+   */
   async getMessagesPaginated(page: number, perPage: number, filterString = 'status = "Sent"') {
     return await pb.collection('messages').getList<MessageRecord>(page, perPage, {
       sort: '-created',
@@ -258,6 +262,49 @@ export const communicationService = {
     }
   },
 
+  async resolvePollPlaceholders(content: string, recipients: CommunicationRecipient[]): Promise<{ previewContent: string; logs: string[] }> {
+    const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
+    const matches = [...content.matchAll(pollRegex)];
+    
+    if (matches.length === 0 || recipients.length === 0) {
+      return { previewContent: content, logs: [] };
+    }
+
+    let previewContent = content;
+    const logs: string[] = [];
+
+    try {
+      const commSettings = await settingsService.getCommunicationSettings();
+      const baseUrl = commSettings.frontendUrl || window.location.origin;
+
+      for (const match of matches) {
+        const fullPlaceholder = match[0];
+        const pollId = match[1];
+
+        const { tokens } = await pb.send('/api/generate-poll-tokens', {
+          method: 'POST',
+          body: { pollId, profileIds: recipients.map(r => r.id) }
+        });
+
+        const firstRecipient = recipients[0];
+        const token = tokens[firstRecipient.id];
+        const pollLink = `${baseUrl}/poll?token=${encodeURIComponent(token)}`;
+
+        previewContent = previewContent.replace(fullPlaceholder, `(Poll Link for ${firstRecipient.name})\nLink: ${pollLink}\n(No login required)`);
+        
+        recipients.forEach(r => {
+          const t = tokens[r.id];
+          logs.push(`Personalized Poll Link (${pollId}) for ${r.name}: ${baseUrl}/poll?token=${encodeURIComponent(t)}`);
+        });
+      }
+
+      return { previewContent, logs };
+    } catch (err) {
+      console.error('Failed to generate poll tokens', err);
+      return { previewContent: content.replace(pollRegex, '(Error generating poll links)'), logs: [] };
+    }
+  },
+
   async saveMessage(data: SendMessageInput) {
     return await pb.collection('messages').create<MessageRecord>(data);
   },
@@ -378,6 +425,7 @@ export const communicationService = {
   saveConfig: (value: CommunicationConfig) => Promise<unknown>;
   resolveRecipients: (filters: CommunicationFilters) => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (content: string, eventId: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
+  resolvePollPlaceholders: (content: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   sendBulkMessage: (data: SendMessageInput, draftId?: string) => Promise<SendMessageResult>;
   triggerAttendanceReport: (eventId: string) => Promise<MessageRecord>;

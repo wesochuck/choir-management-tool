@@ -17,12 +17,14 @@ const SetListView = lazy(() => import('./views/admin/SetListView'));
 const ReportsView = lazy(() => import('./views/admin/ReportsView'));
 const MusicLibraryView = lazy(() => import('./views/admin/MusicLibraryView'));
 const AdminDashboardView = lazy(() => import('./views/admin/AdminDashboardView'));
+const PollsDashboardView = lazy(() => import('./views/admin/PollsDashboardView'));
 const RsvpDashboardView = lazy(() => import('./views/admin/RsvpDashboardView'));
 const SingerDashboardView = lazy(() => import('./views/singer/DashboardView'));
 const SeatingFinderView = lazy(() => import('./views/singer/SeatingFinderView'));
 const ProfileView = lazy(() => import('./views/singer/ProfileView'));
 const PublicAuditionView = lazy(() => import('./views/PublicAuditionView'));
 const PublicRsvpView = lazy(() => import('./views/PublicRsvpView'));
+const PublicPollView = lazy(() => import('./views/PublicPollView'));
 const PublicUnsubscribeView = lazy(() => import('./views/PublicUnsubscribeView'));
 const PublicPlayerView = lazy(() => import('./views/PublicPlayerView'));
 
@@ -75,6 +77,7 @@ export default function App() {
           <Route path="/login" element={<LoginView />} />
           <Route path="/auditions" element={<PublicAuditionView />} />
           <Route path="/rsvp" element={<PublicRsvpView />} />
+          <Route path="/poll" element={<PublicPollView />} />
           <Route path="/unsubscribe" element={<PublicUnsubscribeView />} />
           <Route path="/player" element={<PublicPlayerView />} />
           <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
@@ -139,6 +142,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Event RSVPs" backTo="/">
                 <RsvpDashboardView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/polls" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Engagement Polls" backTo="/">
+                <PollsDashboardView />
               </PageLayout>
             </ProtectedRoute>
           } />
