@@ -1,0 +1,351 @@
+/* src/views/admin/AdminDashboardView.css */
+
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg);
+}
+
+.admin-dashboard-header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.admin-dashboard-header-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-sm) var(--space-lg);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.admin-dashboard-brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.admin-dashboard-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-dashboard-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.admin-dashboard-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* Hero Section: full-width block with a --primary-deep background and white text */
+.admin-dashboard-hero {
+  background: linear-gradient(135deg, var(--primary-deep), var(--primary));
+  color: var(--surface);
+  padding: var(--space-xl) 0;
+  width: 100%;
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-dashboard-hero-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+}
+
+.admin-dashboard-hero-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.admin-dashboard-hero-welcome h1 {
+  color: var(--surface);
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.admin-dashboard-hero-welcome p {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  font-size: var(--font-size-body);
+}
+
+/* Stats Pills in Hero section */
+.admin-dashboard-stats-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.admin-dashboard-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  padding: 0 var(--space-lg);
+  height: 44px; /* Accessibility minimum */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-dashboard-stat-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.admin-dashboard-stat-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-dashboard-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--section-amber); /* gold/amber highlight token */
+}
+
+/* Quick Action Bar: horizontal container with --surface background, --border outline, and --radius-lg corners */
+.admin-dashboard-quick-actions {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-dashboard-quick-actions-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-sm);
+}
+
+.admin-dashboard-quick-actions-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* Quick actions buttons: minimum height 44px */
+.admin-dashboard-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background-color: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 0 var(--space-lg);
+  height: 44px;
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-dashboard-quick-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.admin-dashboard-quick-btn:active {
+  transform: translateY(0);
+}
+
+.admin-dashboard-quick-icon {
+  font-size: 1.1rem;
+}
+
+/* Section Headers: flex row for section titles featuring a small circular colored dot indicator next to uppercase, spaced tracking text */
+.admin-dashboard-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.admin-dashboard-section-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.admin-dashboard-section-title {
+  font-size: var(--font-size-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Card Grid: responsive CSS grid using repeat(auto-fill, minmax(240px, 1fr)) with a --space-md gap */
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+/* Card Styling: Extend base .card, configure as flex column, min height 44px for targets */
+.admin-dashboard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-decoration: none;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  min-height: 180px;
+  cursor: pointer;
+}
+
+.admin-dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+/* Icon block: square, rounded-corner at top */
+.admin-dashboard-card-icon-block {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: var(--space-md);
+  transition: transform 0.2s ease;
+}
+
+.admin-dashboard-card:hover .admin-dashboard-card-icon-block {
+  transform: scale(1.05);
+}
+
+/* Color variants for the icon block */
+.admin-dashboard-card-icon-block.ic-green {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--section-green);
+}
+.admin-dashboard-card-icon-block.ic-sage {
+  background-color: rgba(74, 124, 89, 0.1);
+  color: var(--primary);
+}
+.admin-dashboard-card-icon-block.ic-slate {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: var(--section-slate);
+}
+.admin-dashboard-card-icon-block.ic-pink {
+  background-color: rgba(236, 72, 153, 0.1);
+  color: var(--section-pink);
+}
+.admin-dashboard-card-icon-block.ic-amber {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--section-amber);
+}
+.admin-dashboard-card-icon-block.ic-teal {
+  background-color: rgba(6, 182, 212, 0.1);
+  color: var(--section-cyan);
+}
+
+.admin-dashboard-card h3 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-dashboard-card p {
+  margin: 0;
+  font-size: var(--font-size-label);
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex-grow: 1; /* Pushes the arrow to the bottom */
+  margin-bottom: var(--space-md);
+}
+
+/* Right pointing arrow at bottom right that translates right on hover */
+.admin-dashboard-card-arrow {
+  align-self: flex-end;
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  transition: transform 0.2s ease, color 0.2s ease;
+  margin-top: auto;
+  line-height: 1;
+}
+
+.admin-dashboard-card:hover .admin-dashboard-card-arrow {
+  transform: translateX(4px);
+  color: var(--primary);
+}
+
+/* Responsiveness for dashboard hero */
+@media (max-width: 768px) {
+  .admin-dashboard-hero-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  
+  .admin-dashboard-stats-row {
+    width: 100%;
+  }
+  
+  .admin-dashboard-stat-pill {
+    flex: 1 1 calc(50% - var(--space-sm));
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard-stat-pill {
+    flex: 1 1 100%;
+  }
+}

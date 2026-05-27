@@ -39,10 +39,12 @@ export default function EventsView() {
 
   // Handle deep linking for a specific event
   useEffect(() => {
-    if (isLoading || events.length === 0) return;
+    if (isLoading) return;
     const eventId = searchParams.get('eventId');
     const openModal = searchParams.get('openModal') === 'true';
-    if (eventId && openModal) {
+    const addNew = searchParams.get('add') === 'true';
+
+    if (eventId && openModal && events.length > 0) {
       const found = events.find(e => e.id === eventId);
       if (found) {
         setCloningEventId(null);
@@ -54,6 +56,14 @@ export default function EventsView() {
         newParams.delete('openModal');
         setSearchParams(newParams, { replace: true });
       }
+    } else if (addNew) {
+      setCloningEventId(null);
+      setEditingEvent(null);
+      setIsModalOpen(true);
+      // Clear search parameter
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('add');
+      setSearchParams(newParams, { replace: true });
     }
   }, [events, isLoading, searchParams, setSearchParams]);
 

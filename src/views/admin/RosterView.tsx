@@ -49,10 +49,12 @@ export default function RosterView() {
 
   // Handle deep linking for a specific singer profile
   useEffect(() => {
-    if (isLoading || allProfiles.length === 0) return;
+    if (isLoading) return;
     const singerId = searchParams.get('singerId');
     const openModal = searchParams.get('openModal') === 'true';
-    if (singerId && openModal) {
+    const addNew = searchParams.get('add') === 'true';
+
+    if (singerId && openModal && allProfiles.length > 0) {
       const found = allProfiles.find(p => p.id === singerId);
       if (found) {
         setEditingProfile(found);
@@ -63,6 +65,13 @@ export default function RosterView() {
         newParams.delete('openModal');
         setSearchParams(newParams, { replace: true });
       }
+    } else if (addNew) {
+      setEditingProfile(null);
+      setIsModalOpen(true);
+      // Clear search parameter
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('add');
+      setSearchParams(newParams, { replace: true });
     }
   }, [allProfiles, isLoading, searchParams, setSearchParams]);
 
