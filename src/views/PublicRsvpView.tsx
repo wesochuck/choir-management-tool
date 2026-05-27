@@ -5,6 +5,7 @@ import { pb } from '../lib/pocketbase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { calendarUtils } from '../lib/calendar';
 import { formatInTimezone } from '../lib/timezone';
+import { TokenUrlFactory } from '../lib/tokenUrlUtils';
 
 interface EventDetails {
   id: string;
@@ -29,12 +30,7 @@ interface ProfileDetails {
 
 export default function PublicRsvpView() {
   const [searchParams] = useSearchParams();
-  let token = searchParams.get('token') || '';
-  const pParam = searchParams.get('p');
-  const sParam = searchParams.get('s');
-  if (token && pParam && sParam && !token.includes('p=')) {
-    token = `${token}&p=${pParam}&s=${sParam}`;
-  }
+  const token = TokenUrlFactory.extractTokenFromSearchParams(searchParams) || '';
   const initialRsvp = searchParams.get('rsvp') as 'Yes' | 'No' | null;
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');

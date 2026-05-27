@@ -2,6 +2,7 @@ import { pb } from '../lib/pocketbase';
 import { eventService, type Event } from './eventService';
 import { profileService, type Profile } from './profileService';
 import { rosterService } from './rosterService';
+import { TokenUrlFactory } from '../lib/tokenUrlUtils';
 import { settingsService, getVoicePartsAndSections } from './settingsService';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
@@ -14,6 +15,15 @@ export type { CommunicationConfig } from './settingsService';
 export type MessageType = 'Email' | 'SMS' | 'Both';
 export type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
 export type MessageStatus = 'Draft' | 'Sent' | 'Failed';
+
+
+export type ExplicitRsvpStatus = 'ATTENDING' | 'DECLINED' | 'PENDING';
+
+export interface FilteredSingerTarget {
+  id: string;
+  email: string;
+  inferredStatus: ExplicitRsvpStatus;
+}
 
 export interface CommunicationRecipient {
   id: string;
@@ -175,6 +185,44 @@ export const communicationService = {
     return await settingsService.saveCommunicationConfig(value);
   },
 
+
+  async resolveExplicitTargets(
+    eventId: string,
+    filters: { targetRsvpStatus: ExplicitRsvpStatus },
+  ): Promise<FilteredSingerTarget[]> {
+    const profiles = await profileService.getProfiles();
+    const rosterRows = await pb.collection('eventRosters').getFullList<RecordModel>({
+      filter: pb.filter('event = {:eventId}', { eventId }),
+    });
+
+    const statusMap = new Map<string, ExplicitRsvpStatus>();
+
+    for (const row of rosterRows) {
+      const profileId = typeof row.profile === 'string' ? row.profile : '';
+      const rosterRsvp = typeof row.rsvp === 'string' ? row.rsvp : 'Pending';
+      const resolvedStatus: ExplicitRsvpStatus =
+        rosterRsvp === 'Yes' ? 'ATTENDING' : rosterRsvp === 'No' ? 'DECLINED' : 'PENDING';
+
+      if (profileId) {
+        statusMap.set(profileId, resolvedStatus);
+      }
+    }
+
+    return profiles
+      .map((profile) => {
+        const profileId = typeof profile.id === 'string' ? profile.id : '';
+        const email = profile.expand?.user?.email || '';
+        const inferredStatus = statusMap.get(profileId) ?? 'PENDING';
+
+        return {
+          id: profileId,
+          email,
+          inferredStatus,
+        };
+      })
+      .filter((target) => target.inferredStatus === filters.targetRsvpStatus);
+  },
+
   async resolveRecipients(filters: CommunicationFilters) {
     const [profiles, voiceData] = await Promise.all([
       profileService.getProfiles(),
@@ -246,13 +294,13 @@ export const communicationService = {
 
       const firstRecipient = recipients[0];
       const token = tokens[firstRecipient.id];
-      const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+      const rsvpLink = TokenUrlFactory.generatePublicLink(baseUrl, 'rsvp', token);
 
       const previewContent = content.replace('{{RSVP_LINKS}}', `(RSVP Link for ${firstRecipient.name})\nLink: ${rsvpLink}\n(No login required)`);
       
       const logs = recipients.map(r => {
         const t = tokens[r.id];
-        return `Personalized Link for ${r.name}: ${baseUrl}/rsvp?token=${encodeURIComponent(t)}`;
+        return `Personalized Link for ${r.name}: ${TokenUrlFactory.generatePublicLink(baseUrl, 'rsvp', t)}`;
       });
 
       return { previewContent, logs };
@@ -288,13 +336,13 @@ export const communicationService = {
 
         const firstRecipient = recipients[0];
         const token = tokens[firstRecipient.id];
-        const pollLink = `${baseUrl}/poll?token=${encodeURIComponent(token)}`;
+        const pollLink = TokenUrlFactory.generatePublicLink(baseUrl, 'poll', token);
 
         previewContent = previewContent.replace(fullPlaceholder, `(Poll Link for ${firstRecipient.name})\nLink: ${pollLink}\n(No login required)`);
         
         recipients.forEach(r => {
           const t = tokens[r.id];
-          logs.push(`Personalized Poll Link (${pollId}) for ${r.name}: ${baseUrl}/poll?token=${encodeURIComponent(t)}`);
+          logs.push(`Personalized Poll Link (${pollId}) for ${r.name}: ${TokenUrlFactory.generatePublicLink(baseUrl, 'poll', t)}`);
         });
       }
 
@@ -423,6 +471,7 @@ export const communicationService = {
   getEvents: () => Promise<Event[]>;
   getConfig: () => Promise<CommunicationConfig>;
   saveConfig: (value: CommunicationConfig) => Promise<unknown>;
+  resolveExplicitTargets: (eventId: string, filters: { targetRsvpStatus: ExplicitRsvpStatus }) => Promise<FilteredSingerTarget[]>;
   resolveRecipients: (filters: CommunicationFilters) => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (content: string, eventId: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
   resolvePollPlaceholders: (content: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;

@@ -37,6 +37,7 @@ export default function MusicLibraryView() {
     genres: [],
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [newGenreLabel, setNewGenreLabel] = useState('');
 
   const isConfigDirty = useMemo(() => {
     if (!initialSettings) return false;
@@ -452,17 +453,17 @@ export default function MusicLibraryView() {
               
               <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
                 <input
-                  id="new-genre-input"
                   placeholder="New Genre Name (e.g. Sacred)"
                   className="card"
+                  value={newGenreLabel}
+                  onChange={(e) => setNewGenreLabel(e.target.value)}
                   style={{ height: '40px', padding: '0 12px', maxWidth: '250px' }}
                 />
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => {
-                    const inputEl = document.getElementById('new-genre-input') as HTMLInputElement;
-                    const label = inputEl?.value?.trim();
+                    const label = newGenreLabel.trim();
                     if (!label) return;
                     
                     const normalized = label;
@@ -482,7 +483,7 @@ export default function MusicLibraryView() {
                     
                     const updated = [...currentList, { id: finalId, label: normalized }];
                     setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
-                    inputEl.value = '';
+                    setNewGenreLabel('');
                   }}
                 >
                   Add Genre

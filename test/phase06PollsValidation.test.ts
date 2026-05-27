@@ -52,7 +52,7 @@ test('phase 06 POLL-05: communication poll placeholder flow is integrated', () =
 
   assert.match(communicationService, /resolvePollPlaceholders/);
   assert.match(communicationService, /\/api\/generate-poll-tokens/);
-  assert.match(communicationService, /encodeURIComponent\(token\)/);
+  assert.match(communicationService, /TokenUrlFactory\.generatePublicLink\(baseUrl, 'poll', token\)/);
   assert.match(placeholderPanel, /\{\{POLL_LINK:pollId\}\}/);
   assert.match(communicationView, /PollSelectionModal/);
   assert.match(communicationView, /setIsPollModalOpen\(true\)/);
@@ -70,7 +70,7 @@ test('phase 06 POLL-06/POLL-07: admin and singer dashboards include active poll 
   assert.match(appRoutes, /path="\/admin\/polls"/);
   assert.match(adminDashboard, /Show Archived \(Past Events\)/);
   assert.match(adminDashboard, /View Names/);
-  assert.match(adminDashboard, /new Date\(event\.date\)\s*>\s*now/);
+  assert.match(adminDashboard, /filterArchivedPolls\(polls,\s*events,\s*showArchived\)/);
   assert.match(adminDashboard, /volunteers/);
   assert.match(singerDashboard, /📊 Quick Polls/);
   assert.match(singerDashboard, /getActivePollsForSinger/);

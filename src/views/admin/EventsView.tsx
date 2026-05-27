@@ -15,6 +15,7 @@ import {
   type CommunicationSettings,
 } from '../../services/settingsService';
 import { playerService } from '../../services/playerService';
+import { TokenUrlFactory } from '../../lib/tokenUrlUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { rosterService } from '../../services/rosterService';
@@ -95,7 +96,7 @@ export default function EventsView() {
   const handleOpenPlayer = async (event: Event) => {
     try {
       const token = await playerService.generateToken(event.id);
-      const url = `${window.location.origin}/player?token=${encodeURIComponent(token)}`;
+      const url = TokenUrlFactory.generatePublicLink(window.location.origin, 'player', token);
       
       await dialog.showMessage({
         title: 'Player Link Generated',
