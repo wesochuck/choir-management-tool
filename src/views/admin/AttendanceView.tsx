@@ -31,6 +31,7 @@ export default function AttendanceView() {
   const [filterName, setFilterName] = useState('');
   const [filterVoicePart, setFilterVoicePart] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [isEventExpanded, setIsEventExpanded] = useState(false);
   
   // Sorting preference state
   const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
@@ -224,26 +225,46 @@ export default function AttendanceView() {
       </div>
 
       {selectedEvent && (
-        <div className="card attendance-active-event-card">
-          <div className="flex-col attendance-active-event-main">
-            <span className="text-muted text-xs attendance-active-event-label">Active Event</span>
-            {selectedEvent.title && <h2 className="text-headline attendance-active-event-title">{selectedEvent.title}</h2>}
+        <div className={`card attendance-active-event-card ${isEventExpanded ? 'is-expanded' : 'is-collapsed'}`}>
+          <div className="attendance-active-event-header" onClick={() => setIsEventExpanded(!isEventExpanded)}>
+            <div className="flex-col attendance-active-event-main">
+              <span className="text-muted text-xs attendance-active-event-label">Active Event</span>
+              <div className="flex-row attendance-active-event-title-row" style={{ alignItems: 'center', gap: '8px' }}>
+                {selectedEvent.title && <h2 className="text-headline attendance-active-event-title">{selectedEvent.title}</h2>}
+                <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
+                  {selectedEvent.type}
+                </span>
+              </div>
+            </div>
+            
+            <button 
+              type="button" 
+              className="btn btn-ghost btn-sm attendance-event-toggle-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEventExpanded(!isEventExpanded);
+              }}
+              aria-expanded={isEventExpanded}
+            >
+              {isEventExpanded ? '▲ Hide' : '▼ Details'}
+            </button>
           </div>
           
-          <div className="flex-row attendance-active-event-meta">
-            <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
+          <div className="attendance-active-event-details">
+            <span className={`badge badge-desktop ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
               {selectedEvent.type}
             </span>
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label"
+              className="text-label attendance-active-event-venue"
+              onClick={(e) => e.stopPropagation()}
               style={{ fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary-deep)' }}
             >
               📍 {selectedEvent.expand?.venue?.name || ''}
             </a>
-            <span className="text-muted text-sm" style={{ fontWeight: 500 }}>
+            <span className="text-muted text-sm attendance-active-event-date" style={{ fontWeight: 500 }}>
               📅 {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
@@ -265,7 +286,7 @@ export default function AttendanceView() {
               aria-expanded={isMobileActionsOpen}
               aria-controls="attendance-mobile-actions"
             >
-              {isMobileActionsOpen ? 'Hide Actions' : 'Actions'}
+              {isMobileActionsOpen ? '⚡ Hide Bulk Actions  ▲' : '⚡ Bulk Actions  ▼'}
             </button>
 
             <div

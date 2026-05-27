@@ -45,22 +45,61 @@
 }
 
 .attendance-active-event-card {
-  padding: 12px 18px;
+  padding: 14px 20px;
   background-color: var(--primary-light);
   border: 1px solid rgba(74, 117, 89, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  border-radius: var(--radius-md);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.attendance-active-event-header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  border-radius: var(--radius-md);
+  width: 100%;
 }
 
-.attendance-active-event-main { gap: 2px; }
-.attendance-active-event-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-.attendance-active-event-title { margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--primary-deep); }
-.attendance-active-event-meta { gap: var(--space-lg); align-items: center; flex-wrap: wrap; }
+.attendance-active-event-main { 
+  gap: 2px; 
+}
+
+.attendance-active-event-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Hide mobile badge and button on desktop */
+.attendance-active-event-title-row .badge,
+.attendance-event-toggle-btn {
+  display: none;
+}
+
+.attendance-active-event-label { 
+  font-weight: 600; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+}
+
+.attendance-active-event-title { 
+  margin: 0; 
+  font-size: 1.4rem; 
+  font-weight: 800; 
+  color: var(--primary-deep); 
+}
+
+.attendance-active-event-details { 
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-lg); 
+  align-items: center; 
+  flex-wrap: wrap; 
+}
 
 .attendance-toolbar { justify-content: space-between; align-items: center; gap: var(--space-md); padding: 4px 0; }
 .attendance-roster-summary { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
@@ -100,13 +139,84 @@
   .attendance-header { align-items: flex-start; gap: var(--space-sm); padding-bottom: var(--space-sm); }
   .attendance-title { font-size: 1.6rem; }
   .attendance-event-selector-wrap { width: 100%; min-width: 0; }
-  .attendance-active-event-card { padding: 10px 12px; gap: var(--space-sm); }
-  .attendance-active-event-title { font-size: 1.05rem; }
-  .attendance-active-event-meta { gap: var(--space-sm); }
+  .attendance-active-event-card {
+    padding: 10px 14px;
+    gap: 0;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(74, 117, 89, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+  }
+  .attendance-active-event-title {
+    font-size: 1.05rem;
+  }
+  .attendance-active-event-title-row .badge {
+    display: inline-flex;
+  }
+  .attendance-active-event-details .badge-desktop {
+    display: none;
+  }
+  .attendance-event-toggle-btn {
+    display: inline-flex;
+    padding: 0 10px;
+    height: 28px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid rgba(74, 117, 89, 0.2);
+    color: var(--primary-deep);
+    background: var(--surface);
+    transition: all 0.2s ease;
+  }
+  .attendance-active-event-details {
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(74, 117, 89, 0.15);
+    width: 100%;
+    margin-top: 8px;
+  }
+  .attendance-active-event-card.is-expanded .attendance-active-event-details {
+    display: flex;
+    animation: slideDown 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
   .attendance-toolbar { flex-direction: column; align-items: stretch; }
   .attendance-toolbar-actions { width: 100%; align-items: stretch; }
-  .attendance-mobile-actions-toggle { display: inline-flex; justify-content: center; }
+  .attendance-mobile-actions-toggle {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-light) !important;
+    border: 1px solid rgba(74, 117, 89, 0.35) !important;
+    color: var(--primary-deep) !important;
+    font-weight: 750;
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 4px;
+  }
+  .attendance-mobile-actions-toggle:active {
+    background-color: rgba(74, 117, 89, 0.2) !important;
+    transform: scale(0.98);
+  }
   .attendance-bulk-actions { display: none; width: 100%; }
   .attendance-bulk-actions.is-open { display: flex; }
   .attendance-actions-divider { display: none; }
