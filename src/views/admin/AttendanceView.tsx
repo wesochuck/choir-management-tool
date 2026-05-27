@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
+import './AttendanceView.css';
 
 export default function AttendanceView() {
   const dialog = useDialog();
@@ -39,6 +40,7 @@ export default function AttendanceView() {
   };
   
   const [isPendingExpanded, setIsPendingExpanded] = useState(false);
+  const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false);
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
   const { labels: voicePartLabels } = useVoiceParts();
 
@@ -111,6 +113,19 @@ export default function AttendanceView() {
     return items.filter(item => item.rsvp === 'No');
   }, [items]);
 
+  const attendanceCounts = useMemo(() => {
+    const present = items.filter((item) => item.attendance === 'Present').length;
+    const absent = items.filter((item) => item.attendance === 'Absent').length;
+    const unmarked = items.filter((item) => item.attendance === 'Pending').length;
+
+    return {
+      total: items.length,
+      present,
+      absent,
+      unmarked,
+    };
+  }, [items]);
+
   const handleRescueDeclined = async (profileId: string) => {
     if (!profileId) return;
     try {
@@ -178,21 +193,20 @@ export default function AttendanceView() {
   };
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-md)' }}>
-        <h1 className="text-display" style={{ margin: 0, fontSize: '2.25rem' }}>Attendance Check-in</h1>
+    <div className="flex-col attendance-page">
+      <div className="flex-responsive attendance-header">
+        <h1 className="text-display attendance-title">Attendance Check-in</h1>
         
-        <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center', minWidth: '320px' }}>
-          <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
-            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Select Event</label>
+        <div className="flex-row attendance-event-selector-wrap">
+          <div className="flex-col attendance-event-selector-inner">
+            <label className="text-label attendance-event-selector-label">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => {
                 setSelectedEventId(e.target.value);
                 handleResetFilters(); // Reset filters when changing active event
               }}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="card attendance-event-select"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
@@ -204,27 +218,13 @@ export default function AttendanceView() {
       </div>
 
       {selectedEvent && (
-        <div 
-          className="card" 
-          style={{ 
-            padding: '12px 18px', 
-            backgroundColor: 'var(--primary-light)', 
-            border: '1px solid rgba(74, 117, 89, 0.2)',
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)'
-          }}
-        >
-          <div className="flex-col" style={{ gap: '2px' }}>
-            <span className="text-muted text-xs" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Event</span>
-            {selectedEvent.title && <h2 className="text-headline" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary-deep)' }}>{selectedEvent.title}</h2>}
+        <div className="card attendance-active-event-card">
+          <div className="flex-col attendance-active-event-main">
+            <span className="text-muted text-xs attendance-active-event-label">Active Event</span>
+            {selectedEvent.title && <h2 className="text-headline attendance-active-event-title">{selectedEvent.title}</h2>}
           </div>
           
-          <div className="flex-row" style={{ gap: 'var(--space-lg)', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="flex-row attendance-active-event-meta">
             <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
               {selectedEvent.type}
             </span>
@@ -245,55 +245,40 @@ export default function AttendanceView() {
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div
-          className="flex-responsive"
-          style={{
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 'var(--space-md)',
-            padding: '4px 0'
-          }}
-        >
+        <div className="flex-responsive attendance-toolbar">
           {/* Left Side: Summary info */}
-          <span 
-            style={{ 
-              fontSize: '0.85rem', 
-              fontWeight: 700, 
-              color: 'var(--text-muted)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px' 
-            }}
-          >
-            👥 Roster: {items.length} singers
+          <span className="attendance-roster-summary">
+            👥 Roster: {attendanceCounts.total} singers
           </span>
 
-          {/* Right Side: Bulk actions and Refresh */}
-          <div className="flex-row" style={{ gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="attendance-toolbar-actions">
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm attendance-mobile-actions-toggle"
+              onClick={() => setIsMobileActionsOpen((previous) => !previous)}
+              aria-expanded={isMobileActionsOpen}
+              aria-controls="attendance-mobile-actions"
+            >
+              {isMobileActionsOpen ? 'Hide Actions' : 'Actions'}
+            </button>
+
+            <div
+              className={`flex-row attendance-bulk-actions ${isMobileActionsOpen ? 'is-open' : ''}`}
+              id="attendance-mobile-actions"
+            >
             {/* Refresh Button */}
             <button
               onClick={() => {
                 refresh();
               }}
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm attendance-refresh-btn"
               title="Refresh Roster"
-              style={{
-                height: '34px',
-                width: '34px',
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
+              aria-label="Refresh roster"
             >
               🔄
             </button>
 
-            <span style={{ height: '20px', width: '1px', backgroundColor: 'var(--border)' }}></span>
+            <span className="attendance-actions-divider"></span>
 
             {/* Bulk Present */}
             <button
@@ -317,19 +302,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-sm"
-              style={{
-                height: '34px',
-                padding: '0 12px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                backgroundColor: 'rgba(74, 117, 89, 0.1)',
-                color: 'var(--primary-deep)',
-                border: '1px solid rgba(74, 117, 89, 0.25)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="btn btn-sm attendance-bulk-present-btn"
             >
               ✅ Mark All Present
             </button>
@@ -356,19 +329,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-sm"
-              style={{
-                height: '34px',
-                padding: '0 12px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                color: '#b91c1c',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="btn btn-sm attendance-bulk-absent-btn"
             >
               ❌ Mark All Absent
             </button>
@@ -395,61 +356,44 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-ghost btn-sm"
-              style={{
-                height: '34px',
-                padding: '0 12px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                border: '1px dashed var(--border)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="btn btn-ghost btn-sm attendance-bulk-reset-btn"
             >
               ⏳ Reset All
             </button>
+            </div>
           </div>
         </div>
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div 
-          className="card" 
-          style={{ 
-            padding: '16px 20px', 
-            display: 'flex', 
-            flexDirection: 'row', 
-            gap: 'var(--space-md)', 
-            flexWrap: 'wrap', 
-            alignItems: 'center', 
-            border: '1px solid var(--border)', 
-            backgroundColor: 'var(--surface)',
-            borderRadius: 'var(--radius-md)'
-          }}
-        >
+        <div className="attendance-mobile-progress" aria-label="Attendance progress">
+          <span className="attendance-mobile-progress-chip">Present {attendanceCounts.present}</span>
+          <span className="attendance-mobile-progress-chip">Absent {attendanceCounts.absent}</span>
+          <span className="attendance-mobile-progress-chip">Unmarked {attendanceCounts.unmarked}</span>
+        </div>
+      )}
+
+      {selectedEventId && !isLoading && !error && (
+        <div className="card attendance-filter-card">
           {/* Name Search */}
-          <div className="flex-col" style={{ flex: '1 1 200px', gap: '6px' }}>
-            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Search by Name</label>
+          <div className="flex-col attendance-search-control">
+            <label className="text-label attendance-filter-label">Search by Name</label>
             <input 
               type="text"
               value={filterName}
               onChange={(e) => setFilterName(e.target.value)}
               placeholder="🔍 Search name..."
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="card attendance-filter-input"
             />
           </div>
 
           {/* Voice Part Filter */}
-          <div className="flex-col" style={{ width: '140px', gap: '6px' }}>
-            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Voice Part</label>
+          <div className="flex-col attendance-filter-control">
+            <label className="text-label attendance-filter-label">Voice Part</label>
             <select
               value={filterVoicePart}
               onChange={(e) => setFilterVoicePart(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="card attendance-filter-input"
             >
               <option value="">All Parts</option>
               {voicePartLabels.map(part => (
@@ -459,13 +403,12 @@ export default function AttendanceView() {
           </div>
 
           {/* Attendance Status Filter */}
-          <div className="flex-col" style={{ width: '160px', gap: '6px' }}>
-            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Status</label>
+          <div className="flex-col attendance-filter-control">
+            <label className="text-label attendance-filter-label">Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="card attendance-filter-input"
             >
               <option value="">All Statuses</option>
               <option value="Present">Present</option>
@@ -475,13 +418,12 @@ export default function AttendanceView() {
           </div>
 
           {/* Sort By Filter */}
-          <div className="flex-col" style={{ width: '180px', gap: '6px' }}>
-            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Sort By</label>
+          <div className="flex-col attendance-filter-control">
+            <label className="text-label attendance-filter-label">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="card attendance-filter-input"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
@@ -492,15 +434,7 @@ export default function AttendanceView() {
           {(filterName || filterVoicePart || filterStatus) && (
             <button 
               onClick={handleResetFilters}
-              className="btn btn-ghost"
-              style={{ 
-                height: '40px', 
-                alignSelf: 'flex-end', 
-                fontSize: '0.85rem', 
-                fontWeight: 700, 
-                color: '#ef4444',
-                padding: '0 8px'
-              }}
+              className="btn btn-ghost attendance-filter-reset-btn"
             >
               Clear Filters
             </button>
