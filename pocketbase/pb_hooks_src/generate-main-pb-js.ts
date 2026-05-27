@@ -92,7 +92,7 @@ function parseSignedToken(token, requiredKeys) {
 
     const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: ${new Date().toISOString()}
+// Source: pocketbase/pb_hooks_src/
 
 ${sharedUtils}
 
