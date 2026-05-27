@@ -52,38 +52,40 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {profiles.map((p) => (
-              <tr 
-                key={p.id} 
-                className="relative-row" 
-                onClick={() => onEdit(p)}
-              >
-                <td data-label="Name" style={{ fontWeight: 500 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                    <PhotoUploader
-                      profileId={p.id}
-                      profileName={p.name}
-                      currentPhotoUrl={p.photo ? pb.files.getURL(p, p.photo) : undefined}
+            {profiles.map((p) => {
+              const statusDisplay = getGlobalStatusDisplay(p.globalStatus);
+              return (
+                <tr 
+                  key={p.id} 
+                  className="relative-row" 
+                  onClick={() => onEdit(p)}
+                >
+                  <td data-label="Name" style={{ fontWeight: 500 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                      <PhotoUploader
+                        profileId={p.id}
+                        profileName={p.name}
+                        currentPhotoUrl={p.photo ? pb.files.getURL(p, p.photo) : undefined}
+                        size="sm"
+                        onSuccess={onPhotoChange}
+                        readOnlyOnDesktop={true}
+                      />
+                      <span>{p.name}</span>
+                    </div>
+                  </td>
+                  <td data-label="Login" className="text-muted text-sm">
+                    {p.expand?.user?.email || 'No login'}
+                  </td>
+                  <td data-label="Voice">
+                    <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart}</span>
+                  </td>
+                  <td data-label="Status">
+                    <StatusBadge
+                      label={statusDisplay.label}
+                      tone={statusDisplay.tone}
                       size="sm"
-                      onSuccess={onPhotoChange}
-                      readOnlyOnDesktop={true}
                     />
-                    <span>{p.name}</span>
-                  </div>
-                </td>
-                <td data-label="Login" className="text-muted text-sm">
-                  {p.expand?.user?.email || 'No login'}
-                </td>
-                <td data-label="Voice">
-                  <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart}</span>
-                </td>
-                <td data-label="Status">
-                  <StatusBadge
-                    label={getGlobalStatusDisplay(p.globalStatus).label}
-                    tone={getGlobalStatusDisplay(p.globalStatus).tone}
-                    size="sm"
-                  />
-                </td>
+                  </td>
                 {currentSeason && (
                   <td data-label="Dues Paid" onClick={(e) => e.stopPropagation()}>
                     <input 
@@ -112,7 +114,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {profiles.length === 0 && (
               <tr>
                 <td colSpan={currentSeason ? 7 : 6} style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
