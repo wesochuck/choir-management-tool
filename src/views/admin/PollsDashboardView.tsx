@@ -4,7 +4,7 @@ import { useEvents } from '../../hooks/useEvents';
 import { usePollsDashboard } from '../../hooks/usePollsDashboard';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
-import { buildPollDashboardStats } from '../../lib/pollDashboard';
+import { buildPollDashboardStats, filterArchivedPolls } from '../../lib/pollDashboard';
 import { useDialog } from '../../contexts/DialogContext';
 
 export default function PollsDashboardView() {
@@ -16,14 +16,7 @@ export default function PollsDashboardView() {
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
 
   const filteredPolls = useMemo(() => {
-    const now = new Date();
-    return polls.filter((poll) => {
-      if (showArchived) return true;
-      if (!poll.eventId) return true;
-      const event = events.find((candidate) => candidate.id === poll.eventId);
-      if (!event) return true;
-      return new Date(event.date) > now;
-    });
+    return filterArchivedPolls(polls, events, showArchived);
   }, [polls, events, showArchived]);
 
   const pollStats = useMemo(() => buildPollDashboardStats(polls, responses), [polls, responses]);

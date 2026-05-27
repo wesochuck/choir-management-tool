@@ -70,7 +70,7 @@ test('phase 06 POLL-06/POLL-07: admin and singer dashboards include active poll 
   assert.match(appRoutes, /path="\/admin\/polls"/);
   assert.match(adminDashboard, /Show Archived \(Past Events\)/);
   assert.match(adminDashboard, /View Names/);
-  assert.match(adminDashboard, /new Date\(event\.date\)\s*>\s*now/);
+  assert.match(adminDashboard, /filterArchivedPolls\(polls,\s*events,\s*showArchived\)/);
   assert.match(adminDashboard, /volunteers/);
   assert.match(singerDashboard, /📊 Quick Polls/);
   assert.match(singerDashboard, /getActivePollsForSinger/);

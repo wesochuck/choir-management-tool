@@ -17,6 +17,7 @@ export default function PublicPollView() {
   const [pollData, setPollData] = useState<PollDetails | null>(null);
   const [selectedResponse, setSelectedResponse] = useState<'Yes' | 'No' | ''>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
 
   useDocumentTitle(pollData?.poll.question ? `Poll: ${pollData.poll.question}` : 'Engagement Poll');
@@ -59,13 +60,15 @@ export default function PublicPollView() {
   const handleSubmitResponse = async (val: 'Yes' | 'No') => {
     if (!token || isUpdating) return;
 
+    setSubmitError('');
     setIsUpdating(true);
     try {
       await pollService.submitResponse(token, val);
+      setSubmitError('');
       setSelectedResponse(val);
     } catch (err: unknown) {
       const errObj = err as { data?: { error?: string } } | null;
-      alert(errObj?.data?.error || 'Failed to record response. Please try again.');
+      setSubmitError(errObj?.data?.error || 'Failed to record response. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -194,6 +197,13 @@ export default function PublicPollView() {
                 </button>
               </div>
             </div>
+
+
+            {submitError && (
+              <div style={{ textAlign: 'center', padding: 'var(--space-sm)', backgroundColor: '#fef2f2', borderRadius: 'var(--radius-md)', border: '1px solid #fecaca', color: '#991b1b', fontWeight: 600 }}>
+                {submitError}
+              </div>
+            )}
 
             {hasResponded && (
               <div style={{ textAlign: 'center', padding: 'var(--space-sm)', backgroundColor: '#ecfdf5', borderRadius: 'var(--radius-md)', border: '1px solid #d1fae5', color: '#065f46', fontWeight: 600 }}>
