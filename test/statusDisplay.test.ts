@@ -14,6 +14,13 @@ test('rsvp display maps known statuses', () => {
   assert.deepEqual(getRsvpDisplay('Pending'), { label: 'Pending', tone: 'muted' });
 });
 
+test('rsvp display eventRoster variant maps statuses', () => {
+  assert.deepEqual(getRsvpDisplay('Yes', { variant: 'eventRoster' }), { label: '🟢 Attending', tone: 'success' });
+  assert.deepEqual(getRsvpDisplay('No', { variant: 'eventRoster' }), { label: '🔴 Declined', tone: 'danger' });
+  assert.deepEqual(getRsvpDisplay('Pending', { variant: 'eventRoster' }), { label: '⏳ No Response', tone: 'muted' });
+  assert.deepEqual(getRsvpDisplay('unknown-value', { variant: 'eventRoster' }), { label: '⏳ No Response', tone: 'muted' });
+});
+
 test('global status display maps known statuses', () => {
   assert.deepEqual(getGlobalStatusDisplay('Active'), { label: 'Active', tone: 'success' });
   assert.deepEqual(getGlobalStatusDisplay('Idle'), { label: 'Idle', tone: 'warning' });

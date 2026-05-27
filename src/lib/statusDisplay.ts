@@ -20,14 +20,35 @@ export function getAttendanceDisplay(status: string): StatusDisplay {
   }
 }
 
-export function getRsvpDisplay(status: string): StatusDisplay {
-  switch (normalizeStatus(status)) {
+export interface RsvpDisplayOptions {
+  variant?: 'plain' | 'eventRoster';
+}
+
+export function getRsvpDisplay(
+  status: string,
+  options: RsvpDisplayOptions = {}
+): StatusDisplay {
+  const normalized = normalizeStatus(status);
+  const isEventRoster = options.variant === 'eventRoster';
+
+  if (isEventRoster) {
+    switch (normalized) {
+      case 'yes':
+        return { label: '🟢 Attending', tone: 'success' };
+      case 'no':
+        return { label: '🔴 Declined', tone: 'danger' };
+      case 'pending':
+      default:
+        return { label: '⏳ No Response', tone: 'muted' };
+    }
+  }
+
+  switch (normalized) {
     case 'yes':
       return { label: 'Yes', tone: 'success' };
     case 'no':
       return { label: 'No', tone: 'danger' };
     case 'pending':
-      return { label: 'Pending', tone: 'muted' };
     default:
       return { label: 'Pending', tone: 'muted' };
   }

@@ -50,6 +50,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           <tbody>
             {singers.map((s) => {
               const p = s.profile;
+              const rsvpDisplay = getRsvpDisplay(s.rsvp, { variant: 'eventRoster' });
               return (
                 <tr 
                   key={p.id} 
@@ -95,14 +96,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                   </td>
                   <td data-label="RSVP Status" style={{ textAlign: 'center' }}>
                     <StatusBadge
-                      label={
-                        s.rsvp === 'Yes' 
-                          ? '🟢 Attending' 
-                          : s.rsvp === 'No' 
-                            ? '🔴 Declined' 
-                            : '⏳ No Response'
-                      }
-                      tone={getRsvpDisplay(s.rsvp).tone}
+                      label={rsvpDisplay.label}
+                      tone={rsvpDisplay.tone}
                       size="sm"
                     />
                   </td>
