@@ -1,4 +1,4 @@
-export type PublicTokenScope = 'player' | 'rsvp';
+export type PublicTokenScope = 'player' | 'rsvp' | 'poll';
 
 function appendTokenFragments(token: string, pParam: string | null, sParam: string | null): string {
   if (!token) return token;

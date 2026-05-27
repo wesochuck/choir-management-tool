@@ -5,13 +5,18 @@ export function usePollsDashboard() {
   const [polls, setPolls] = useState<PollRecord[]>([]);
   const [responses, setResponses] = useState<PollResponseRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
+      setError(null);
       const data = await pollService.getDashboardData();
       setPolls(data.polls);
       setResponses(data.responses);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load poll dashboard data';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -27,5 +32,5 @@ export function usePollsDashboard() {
     setResponses((previous) => previous.filter((response) => response.pollId !== pollId));
   }, []);
 
-  return { polls, responses, isLoading, reload: loadData, deletePoll };
+  return { polls, responses, isLoading, error, reload: loadData, deletePoll };
 }

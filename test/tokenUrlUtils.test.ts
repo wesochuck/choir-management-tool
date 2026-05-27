@@ -26,3 +26,9 @@ test('extractTokenFromUrl rebuilds token with p and s fragments in deterministic
   const splitUrl = 'https://choir.org/rsvp?token=abc123&p=profile1&s=sig1';
   assert.strictEqual(TokenUrlFactory.extractTokenFromUrl(splitUrl), 'abc123&p=profile1&s=sig1');
 });
+
+
+test('extractTokenFromUrl rebuilds poll token with l, p and s fragments', () => {
+  const splitUrl = 'https://choir.org/poll?token=l=poll1&p=profile1&s=sig1';
+  assert.strictEqual(TokenUrlFactory.extractTokenFromUrl(splitUrl), 'l=poll1&p=profile1&s=sig1');
+});

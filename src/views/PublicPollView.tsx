@@ -5,10 +5,11 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pollService, type PollDetails } from '../services/pollService';
 import { formatInTimezone } from '../lib/timezone';
 import { pb } from '../lib/pocketbase';
+import { TokenUrlFactory } from '../lib/tokenUrlUtils';
 
 export default function PublicPollView() {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const token = TokenUrlFactory.extractTokenFromSearchParams(searchParams) || '';
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');

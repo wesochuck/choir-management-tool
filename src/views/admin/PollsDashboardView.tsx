@@ -4,20 +4,24 @@ import { useEvents } from '../../hooks/useEvents';
 import { usePollsDashboard } from '../../hooks/usePollsDashboard';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
-import { buildPollDashboardStats, filterArchivedPolls } from '../../lib/pollDashboard';
+import { buildPollDashboardStats } from '../../lib/pollDashboard';
 
 export default function PollsDashboardView() {
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
-  const { polls, responses, isLoading, deletePoll } = usePollsDashboard();
+  const { polls, responses, isLoading, error, deletePoll } = usePollsDashboard();
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
 
   const filteredPolls = useMemo(() => {
     const now = new Date();
-    // Keep explicit archived semantic in-view per validation expectations.
-    void events.some((event) => new Date(event.date) > now);
-    return filterArchivedPolls(polls, events, showArchived, now);
+    return polls.filter((poll) => {
+      if (showArchived) return true;
+      if (!poll.eventId) return true;
+      const event = events.find((candidate) => candidate.id === poll.eventId);
+      if (!event) return true;
+      return new Date(event.date) > now;
+    });
   }, [polls, events, showArchived]);
 
   const pollStats = useMemo(() => buildPollDashboardStats(polls, responses), [polls, responses]);
@@ -32,6 +36,7 @@ export default function PollsDashboardView() {
   };
 
   if (isLoading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Polls...</div>;
+  if (error) return <div style={{ padding: '40px', textAlign: 'center' }}>Failed to load polls: {error}</div>;
 
   return (
     <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
