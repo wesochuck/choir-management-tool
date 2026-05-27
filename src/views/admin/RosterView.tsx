@@ -7,68 +7,13 @@ import { RosterSummary } from '../../components/admin/RosterSummary';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
-import { 
-  settingsService, 
-  getVoicePartsAndSections, 
-  saveVoicePartsAndSections,
-  type VoicePartDef,
-  type SectionDef
-} from '../../services/settingsService';
-import { getLastName } from '../../lib/stringUtils';
+import { settingsService } from '../../services/settingsService';
+import { sortProfiles } from '../../lib/singerSort';
+import { getVoicePartFilterLabel } from '../../lib/voicePartLabels';
 import { useDues } from '../../hooks/useDues';
 import { useAuth } from '../../contexts/AuthContext';
-import { AppCard } from '../../components/common/AppCard';
-import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
-import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
-
-// Section Palette Colors
-const PALETTE_COLORS = [
-  'var(--section-red)',
-  'var(--section-orange)',
-  'var(--section-amber)',
-  'var(--section-green)',
-  'var(--section-cyan)',
-  'var(--section-blue)',
-  'var(--section-indigo)',
-  'var(--section-purple)',
-  'var(--section-pink)',
-  'var(--section-slate)',
-];
-
-
-function isColorTooClose(hex1: string, hex2: string): boolean {
-  if (!hex1 || !hex2 || !hex1.startsWith('#') || !hex2.startsWith('#')) return false;
-  const r1 = parseInt(hex1.substring(1, 3), 16);
-  const g1 = parseInt(hex1.substring(3, 5), 16);
-  const b1 = parseInt(hex1.substring(5, 7), 16);
-  
-  const r2 = parseInt(hex2.substring(1, 3), 16);
-  const g2 = parseInt(hex2.substring(3, 5), 16);
-  const b2 = parseInt(hex2.substring(5, 7), 16);
-  
-  const distance = Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
-  return distance < 60;
-}
-
-function getContrastColor(hex: string): string {
-  if (!hex || !hex.startsWith('#') || hex.length < 7) return 'var(--text)';
-  const r = parseInt(hex.substring(1, 3), 16);
-  const g = parseInt(hex.substring(3, 5), 16);
-  const b = parseInt(hex.substring(5, 7), 16);
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-  return (yiq >= 128) ? '#000000' : '#ffffff';
-}
-
-interface RosterConfigState {
-  defaultStatus: string;
-  currentSeason: string;
-  statusAutomationEnabled: boolean;
-  statusAutomationMissThreshold: number;
-  statusAutomationRecoveryEnabled: boolean;
-  sections: SectionDef[];
-  voiceParts: VoicePartDef[];
-}
-
+import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
+import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import './RosterView.css';
 
@@ -79,7 +24,7 @@ export default function RosterView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialVoicePart = searchParams.get('voicePart') || '';
   const { labels: voicePartLabels, sections: configSectionsHook, refresh: refreshVoiceParts } = useVoiceParts();
-  
+
   const [activeTab, setActiveTab] = useState<'roster' | 'config'>('roster');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -121,70 +66,44 @@ export default function RosterView() {
     }
   }, [allProfiles, isLoading, searchParams, setSearchParams]);
 
-  // Config States
-  const [configDefaultStatus, setConfigDefaultStatus] = useState('');
-  const [configSeason, setConfigSeason] = useState('');
-  const [configSections, setConfigSections] = useState<SectionDef[]>([]);
-  const [configVoiceParts, setConfigVoiceParts] = useState<VoicePartDef[]>([]);
-  const [configAutomationEnabled, setConfigAutomationEnabled] = useState(true);
-  const [configAutomationMissThreshold, setConfigAutomationMissThreshold] = useState(3);
-  const [configAutomationRecoveryEnabled, setConfigAutomationRecoveryEnabled] = useState(true);
-  const [initialConfigState, setInitialConfigState] = useState<RosterConfigState | null>(null);
-  const [activeColorPickerIndex, setActiveColorPickerIndex] = useState<number | null>(null);
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const [configMessage, setConfigMessage] = useState('');
-
-  const loadConfig = async () => {
-    try {
-      const rosterSettings = await settingsService.getRosterSettings();
-      const voiceSettings = await getVoicePartsAndSections();
-      
-      const loadedDefaultStatus = rosterSettings?.defaultStatus || '';
-      const loadedSeason = rosterSettings?.currentSeason || '';
-      const loadedSections = voiceSettings.sections || [];
-      const loadedVoiceParts = voiceSettings.voiceParts || [];
-      const loadedAutomationEnabled = rosterSettings?.statusAutomationEnabled ?? true;
-      const loadedAutomationMissThreshold = rosterSettings?.statusAutomationMissThreshold ?? 3;
-      const loadedAutomationRecoveryEnabled = rosterSettings?.statusAutomationRecoveryEnabled ?? true;
-
-      setConfigDefaultStatus(loadedDefaultStatus);
-      setConfigSeason(loadedSeason);
-      setConfigSections(loadedSections);
-      setConfigVoiceParts(loadedVoiceParts);
-      setConfigAutomationEnabled(loadedAutomationEnabled);
-      setConfigAutomationMissThreshold(loadedAutomationMissThreshold);
-      setConfigAutomationRecoveryEnabled(loadedAutomationRecoveryEnabled);
-
-      setInitialConfigState({
-        defaultStatus: loadedDefaultStatus,
-        currentSeason: loadedSeason,
-        statusAutomationEnabled: loadedAutomationEnabled,
-        statusAutomationMissThreshold: loadedAutomationMissThreshold,
-        statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
-        sections: JSON.parse(JSON.stringify(loadedSections)),
-        voiceParts: JSON.parse(JSON.stringify(loadedVoiceParts))
-      });
-    } catch (err) {
-      console.error('Failed to load configuration:', err);
-    }
-  };
+  // Config hook integration
+  const {
+    configDefaultStatus,
+    setConfigDefaultStatus,
+    configSeason,
+    setConfigSeason,
+    configSections,
+    setConfigSections,
+    configVoiceParts,
+    setConfigVoiceParts,
+    configAutomationEnabled,
+    setConfigAutomationEnabled,
+    configAutomationMissThreshold,
+    setConfigAutomationMissThreshold,
+    configAutomationRecoveryEnabled,
+    setConfigAutomationRecoveryEnabled,
+    isSavingConfig,
+    configMessage,
+    isConfigDirty,
+    activeColorPickerIndex,
+    setActiveColorPickerIndex,
+    handleConfigSave,
+    handleConfigDiscard,
+  } = useRosterConfigForm({
+    setFilter,
+    refreshRoster: refresh,
+    refreshVoiceParts,
+  });
 
   useEffect(() => {
     settingsService.getRosterSettings().then(settings => {
-      if (settings) {
-        if (settings.defaultStatus !== undefined) {
-          setFilter('status', settings.defaultStatus);
-        }
-        if (settings.defaultSort !== undefined) {
-          setDefaultSort(settings.defaultSort);
-        }
+      if (settings && settings.defaultSort !== undefined) {
+        setDefaultSort(settings.defaultSort);
       }
     }).catch(err => {
       console.error('Failed to load roster settings:', err);
     });
-
-    loadConfig();
-  }, [setFilter]);
+  }, []);
 
   useEffect(() => {
     if (initialVoicePart) {
@@ -205,23 +124,7 @@ export default function RosterView() {
   }, [isDropdownOpen]);
 
   const sortedProfiles = useMemo(() => {
-    return [...profiles].sort((a, b) => {
-      if (sortBy === 'voicePart') {
-        const idxA = voicePartLabels.indexOf(a.voicePart);
-        const idxB = voicePartLabels.indexOf(b.voicePart);
-        const orderA = idxA === -1 ? 999 : idxA;
-        const orderB = idxB === -1 ? 999 : idxB;
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-      }
-      
-      const lastA = getLastName(a.name);
-      const lastB = getLastName(b.name);
-      const cmp = lastA.localeCompare(lastB);
-      if (cmp !== 0) return cmp;
-      return a.name.localeCompare(b.name);
-    });
+    return sortProfiles(profiles, sortBy, voicePartLabels);
   }, [profiles, sortBy, voicePartLabels]);
 
   const paginatedProfiles = useMemo(() => {
@@ -239,146 +142,12 @@ export default function RosterView() {
 
   const getDropdownLabel = () => {
     const active = filters.voiceParts || [];
-    if (active.length === 0) return 'All Voice Parts';
-    return active.map(code => {
-      if (code === 'S') return 'Sopranos';
-      if (code === 'A') return 'Altos';
-      if (code === 'T') return 'Tenors';
-      if (code === 'B') return 'Basses';
-      return code;
-    }).join(', ');
+    return getVoicePartFilterLabel(active, configSectionsHook, voicePartLabels);
   };
 
-  const isConfigDirty = useMemo(() => {
-    if (!initialConfigState) return false;
-    return calculateSettingsDirty(initialConfigState, {
-      defaultStatus: configDefaultStatus,
-      currentSeason: configSeason,
-      statusAutomationEnabled: configAutomationEnabled,
-      statusAutomationMissThreshold: configAutomationMissThreshold,
-      statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
-      sections: configSections,
-      voiceParts: configVoiceParts
-    });
-  }, [
-    initialConfigState,
-    configDefaultStatus,
-    configSeason,
-    configAutomationEnabled,
-    configAutomationMissThreshold,
-    configAutomationRecoveryEnabled,
-    configSections,
-    configVoiceParts
-  ]);
 
-  const handleConfigSave = async () => {
-    setIsSavingConfig(true);
-    setConfigMessage('');
 
-    // Validate Sections
-    const seenSectionCodes = new Set<string>();
-    for (let i = 0; i < configSections.length; i++) {
-      const sec = configSections[i];
-      const code = sec.code.trim().toUpperCase();
-      const name = sec.name.trim();
-      
-      if (!code) {
-        setConfigMessage('Error: Section bucket code cannot be empty.');
-        setIsSavingConfig(false);
-        return;
-      }
-      if (seenSectionCodes.has(code)) {
-        setConfigMessage(`Error: Duplicate section bucket code "${code}".`);
-        setIsSavingConfig(false);
-        return;
-      }
-      seenSectionCodes.add(code);
-      if (!name) {
-        setConfigMessage(`Error: Section bucket "${code}" name cannot be empty.`);
-        setIsSavingConfig(false);
-        return;
-      }
-    }
 
-    // Validate Voice Parts
-    const seenPartLabels = new Set<string>();
-    for (let i = 0; i < configVoiceParts.length; i++) {
-      const vp = configVoiceParts[i];
-      const label = vp.label.trim();
-      const fullName = vp.fullName.trim();
-      const secCode = vp.sectionCode.trim().toUpperCase();
-
-      if (!label) {
-        setConfigMessage('Error: Voice part label cannot be empty.');
-        setIsSavingConfig(false);
-        return;
-      }
-      if (seenPartLabels.has(label)) {
-        setConfigMessage(`Error: Duplicate voice part label "${label}".`);
-        setIsSavingConfig(false);
-        return;
-      }
-      seenPartLabels.add(label);
-      if (!fullName) {
-        setConfigMessage(`Error: Voice part "${label}" full name cannot be empty.`);
-        setIsSavingConfig(false);
-        return;
-      }
-      if (secCode && !seenSectionCodes.has(secCode)) {
-        setConfigMessage(`Error: Voice part "${label}" belongs to unknown section bucket "${secCode}".`);
-        setIsSavingConfig(false);
-        return;
-      }
-    }
-
-    try {
-      const rosterSettings = await settingsService.getRosterSettings();
-      await settingsService.saveRosterSettings({
-        ...rosterSettings,
-        defaultStatus: configDefaultStatus,
-        currentSeason: configSeason,
-        statusAutomationEnabled: configAutomationEnabled,
-        statusAutomationMissThreshold: configAutomationMissThreshold,
-        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled
-      });
-      await saveVoicePartsAndSections(configVoiceParts, configSections);
-
-      // Refresh roster data & sections
-      await refresh();
-      await refreshVoiceParts();
-
-      // Reload config state
-      await loadConfig();
-
-      setConfigMessage('Configuration saved successfully.');
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setConfigMessage(`Error saving configuration: ${errMsg}`);
-    } finally {
-      setIsSavingConfig(false);
-    }
-  };
-
-  const handleConfigDiscard = () => {
-    if (!initialConfigState) return;
-    setConfigDefaultStatus(initialConfigState.defaultStatus);
-    setConfigSeason(initialConfigState.currentSeason);
-    setConfigAutomationEnabled(initialConfigState.statusAutomationEnabled);
-    setConfigAutomationMissThreshold(initialConfigState.statusAutomationMissThreshold);
-    setConfigAutomationRecoveryEnabled(initialConfigState.statusAutomationRecoveryEnabled);
-    setConfigSections(JSON.parse(JSON.stringify(initialConfigState.sections)));
-    setConfigVoiceParts(JSON.parse(JSON.stringify(initialConfigState.voiceParts)));
-    setConfigMessage('');
-  };
-
-  const getSingerCountForPart = (label: string) => {
-    if (!label) return 0;
-    return allProfiles.filter(p => p.voicePart === label).length;
-  };
-
-  const isSectionReferenced = (code: string) => {
-    return configVoiceParts.some(vp => vp.sectionCode === code);
-  };
 
   const handleEdit = (profile: Profile) => {
     setEditingProfile(profile);
@@ -631,507 +400,32 @@ export default function RosterView() {
           />
         </>
       ) : (
-        <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
-          {configMessage && (
-            <div 
-              className={`badge ${configMessage.startsWith('Error') ? 'badge-rehearsal' : 'badge-performance'}`} 
-              style={{ alignSelf: 'flex-start', padding: '8px 12px', fontSize: '14px' }}
-            >
-              {configMessage}
-            </div>
-          )}
-
-          <AppCard title="Roster Display Options">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Default Status Filter</label>
-                <select
-                  value={configDefaultStatus}
-                  onChange={(event) => setConfigDefaultStatus(event.target.value)}
-                  className="card"
-                  style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="Active">Active</option>
-                  <option value="Idle">Idle</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-                <p className="text-muted" style={{ margin: 0 }}>
-                  Choose the default status filter used when opening the global roster.
-                </p>
-              </div>
-            </div>
-          </AppCard>
-
-          <AppCard title="Singer Status Automation">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={configAutomationEnabled}
-                  onChange={(e) => setConfigAutomationEnabled(e.target.checked)}
-                  style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
-                />
-                <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Changes</span>
-              </label>
-              <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
-                Automatically mark singers as Active/Inactive based on their attendance and RSVP history.
-              </p>
-
-              {configAutomationEnabled && (
-                <div className="flex-col" style={{ gap: 'var(--space-md)', paddingLeft: 'var(--space-md)', borderLeft: '2px solid var(--border)', marginTop: 'var(--space-xs)' }}>
-                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Consecutive Misses Threshold</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={configAutomationMissThreshold}
-                      onChange={(e) => setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="card"
-                      style={{ width: '100%', maxWidth: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-                    />
-                    <p className="text-muted" style={{ margin: 0 }}>
-                      Mark a singer as Inactive after this many consecutive absences or 'No' RSVPs.
-                    </p>
-                  </div>
-
-                  <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', marginTop: 'var(--space-xs)' }}>
-                    <input
-                      type="checkbox"
-                      checked={configAutomationRecoveryEnabled}
-                      onChange={(e) => setConfigAutomationRecoveryEnabled(e.target.checked)}
-                      style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
-                    />
-                    <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Recovery</span>
-                  </label>
-                  <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
-                    Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future Performance.
-                  </p>
-                </div>
-              )}
-            </div>
-          </AppCard>
-
-          <AppCard title="Season Management">
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label">Current Season</label>
-              <input
-                type="text"
-                value={configSeason}
-                onChange={(event) => setConfigSeason(event.target.value)}
-                placeholder="e.g. Fall 2026"
-                className="card"
-                style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-              />
-              <p className="text-muted" style={{ margin: 0 }}>
-                Set the active season for tracking dues in the roster view. Leave blank to disable dues tracking.
-              </p>
-            </div>
-          </AppCard>
-
-          <AppCard title="Section Bucket Configurations">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <p className="text-muted" style={{ margin: 0 }}>
-                Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity on the seating chart.
-              </p>
-
-              <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                {configSections.map((sec, index) => {
-                  const isTied = isSectionReferenced(sec.code);
-                  const hexBg = sec.color || sec.colorBg || '#e0e0e0';
-                  const tooClose = configSections.some((other, idx) => {
-                    if (idx === index) return false;
-                    const otherHex = other.color || other.colorBg;
-                    return isColorTooClose(hexBg, otherHex || '');
-                  });
-
-                  return (
-                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 200px 80px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
-                      <input
-                        value={sec.code}
-                        onChange={(e) => {
-                          const newSecs = [...configSections];
-                          newSecs[index] = { ...newSecs[index], code: e.target.value };
-                          setConfigSections(newSecs);
-                        }}
-                        placeholder="Code"
-                        disabled={isTied}
-                        className="card"
-                        style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                      />
-                      <input
-                        value={sec.name}
-                        onChange={(e) => {
-                          const newSecs = [...configSections];
-                          newSecs[index] = { ...newSecs[index], name: e.target.value };
-                          setConfigSections(newSecs);
-                        }}
-                        placeholder="Name"
-                        className="card"
-                        style={{ width: '100%', padding: '0 8px', height: '40px' }}
-                      />
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveColorPickerIndex(activeColorPickerIndex === index ? null : index)}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '6px',
-                            backgroundColor: hexBg,
-                            border: '1px solid var(--border)',
-                            cursor: 'pointer',
-                            padding: 0,
-                            boxShadow: 'var(--shadow-sm)',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'transform 0.1s ease',
-                          }}
-                          title="Choose color"
-                        />
-
-                        <input
-                          type="text"
-                          value={sec.color || sec.colorBg || '#e0e0e0'}
-                          onChange={(e) => {
-                            let val = e.target.value;
-                            if (!val.startsWith('#') && val.length > 0) {
-                              val = '#' + val;
-                            }
-                            val = '#' + val.replace(/[^0-9A-Fa-f]/g, '').substring(0, 6);
-                            
-                            const newSecs = [...configSections];
-                            newSecs[index] = { 
-                              ...newSecs[index], 
-                              color: val,
-                              colorBg: val,
-                              colorText: getContrastColor(val)
-                            };
-                            setConfigSections(newSecs);
-                          }}
-                          placeholder="#FFFFFF"
-                          className="card"
-                          style={{ 
-                            width: '90px', 
-                            padding: '0 8px', 
-                            height: '32px', 
-                            fontFamily: 'var(--font-mono, monospace)', 
-                            fontSize: '12px',
-                            margin: 0
-                          }}
-                        />
-
-                        {tooClose && (
-                          <span title="Warning: This color lacks adequate visual contrast with another section color." style={{ color: 'var(--color-danger-text)', cursor: 'help', fontSize: '14px' }}>⚠️</span>
-                        )}
-
-                        {activeColorPickerIndex === index && (
-                          <>
-                            <div 
-                              onClick={() => setActiveColorPickerIndex(null)}
-                              style={{
-                                position: 'fixed',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                zIndex: 100,
-                                cursor: 'default'
-                              }}
-                            />
-                            <div style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              marginTop: '4px',
-                              backgroundColor: 'var(--card-bg, #ffffff)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 'var(--radius-md, 8px)',
-                              padding: '12px',
-                              boxShadow: 'var(--shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1))',
-                              zIndex: 101,
-                              width: '180px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '8px'
-                            }}>
-                              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-light)', textTransform: 'uppercase' }}>Presets</span>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
-                                {PALETTE_COLORS.map(c => {
-                                  const isSelected = hexBg.toUpperCase() === c.toUpperCase();
-                                  return (
-                                    <button
-                                      key={c}
-                                      type="button"
-                                      onClick={() => {
-                                        const newSecs = [...configSections];
-                                        newSecs[index] = { 
-                                          ...newSecs[index], 
-                                          color: c,
-                                          colorBg: c,
-                                          colorText: getContrastColor(c)
-                                        };
-                                        setConfigSections(newSecs);
-                                        setActiveColorPickerIndex(null);
-                                      }}
-                                      style={{
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '6px',
-                                        backgroundColor: c,
-                                        border: isSelected ? '2px solid var(--text-main, #000000)' : '1px solid var(--border)',
-                                        cursor: 'pointer',
-                                        padding: 0,
-                                        flexShrink: 0,
-                                        transition: 'transform 0.1s ease',
-                                        transform: isSelected ? 'scale(1.1)' : 'scale(1)'
-                                      }}
-                                      title={c}
-                                    />
-                                  );
-                                })}
-                              </div>
-                              
-                              <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }} />
-                              
-                              <label style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '6px', 
-                                fontSize: '12px', 
-                                cursor: 'pointer',
-                                color: 'var(--text-main)',
-                                padding: '6px 8px',
-                                borderRadius: '4px',
-                                border: '1px solid var(--border)',
-                                justifyContent: 'center',
-                                backgroundColor: 'var(--bg-light, #f9fafb)',
-                                textAlign: 'center',
-                                margin: 0
-                              }}>
-                                <span style={{ fontSize: '14px' }}>🎨</span> Custom Color
-                                <input 
-                                  type="color"
-                                  value={hexBg}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    const newSecs = [...configSections];
-                                    newSecs[index] = {
-                                      ...newSecs[index],
-                                      color: val,
-                                      colorBg: val,
-                                      colorText: getContrastColor(val)
-                                    };
-                                    setConfigSections(newSecs);
-                                  }}
-                                  style={{ 
-                                    position: 'absolute',
-                                    width: 0,
-                                    height: 0,
-                                    opacity: 0,
-                                    pointerEvents: 'none'
-                                  }}
-                                />
-                              </label>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConfigSections(configSections.filter((_, idx) => idx !== index));
-                        }}
-                        disabled={isTied}
-                        className="btn btn-danger btn-sm"
-                        style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setConfigSections([...configSections, { code: '', name: '', color: '', colorBg: '', colorText: '' }])}
-                className="btn btn-secondary"
-                style={{ alignSelf: 'flex-start' }}
-              >
-                + Add Section Bucket
-              </button>
-            </div>
-          </AppCard>
-
-          <AppCard title="Voice Part Configurations">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <p className="text-muted" style={{ margin: 0 }}>
-                Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a Section Bucket.
-              </p>
-
-              <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                {configVoiceParts.map((vp, index) => {
-                  const count = getSingerCountForPart(vp.label);
-                  const isTied = count > 0;
-                  const section = configSections.find(s => s.code === vp.sectionCode);
-                  const defaultColor = section?.color || '#e0e0e0';
-                  return (
-                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 150px 130px 90px 80px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
-                      <input
-                        value={vp.label}
-                        onChange={(e) => {
-                          const newParts = [...configVoiceParts];
-                          newParts[index] = { ...newParts[index], label: e.target.value };
-                          setConfigVoiceParts(newParts);
-                        }}
-                        placeholder="Label"
-                        disabled={isTied}
-                        className="card"
-                        style={{ width: '100%', padding: '0 8px', height: '40px', minHeight: '40px' }}
-                        title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
-                      />
-                      <input
-                        value={vp.fullName}
-                        onChange={(e) => {
-                          const newParts = [...configVoiceParts];
-                          newParts[index] = { ...newParts[index], fullName: e.target.value };
-                          setConfigVoiceParts(newParts);
-                        }}
-                        placeholder="Full Name"
-                        className="card"
-                        style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
-                      />
-                      <select
-                        value={vp.sectionCode}
-                        onChange={(e) => {
-                          const newParts = [...configVoiceParts];
-                          newParts[index] = { ...newParts[index], sectionCode: e.target.value };
-                          setConfigVoiceParts(newParts);
-                        }}
-                        className="card"
-                        style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
-                      >
-                        <option value="">Select Section...</option>
-                        {configSections.map(s => (
-                          <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
-                        ))}
-                      </select>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
-                          <input
-                            type="color"
-                            value={vp.color || defaultColor}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const newParts = [...configVoiceParts];
-                              newParts[index] = {
-                                ...newParts[index],
-                                color: val,
-                                colorBg: val,
-                                colorText: getContrastColor(val)
-                              };
-                              setConfigVoiceParts(newParts);
-                            }}
-                            style={{
-                              position: 'absolute',
-                              top: '-8px',
-                              left: '-8px',
-                              width: '48px',
-                              height: '48px',
-                              border: 'none',
-                              padding: 0,
-                              cursor: 'pointer'
-                            }}
-                          />
-                        </div>
-                        <input
-                          type="text"
-                          value={vp.color || ''}
-                          onChange={(e) => {
-                            let val = e.target.value;
-                            if (val && !val.startsWith('#')) val = '#' + val;
-                            val = val.replace(/[^0-9A-Fa-f#]/g, '').substring(0, 7);
-                            const newParts = [...configVoiceParts];
-                            newParts[index] = {
-                              ...newParts[index],
-                              color: val || undefined,
-                              colorBg: val || undefined,
-                              colorText: val ? getContrastColor(val) : undefined
-                            };
-                            setConfigVoiceParts(newParts);
-                          }}
-                          placeholder="Inherit"
-                          className="card"
-                          style={{
-                            width: '80px',
-                            padding: '0 8px',
-                            height: '32px',
-                            fontFamily: 'var(--font-mono, monospace)',
-                            fontSize: '11px',
-                            margin: 0
-                          }}
-                        />
-                      </div>
-
-                      {vp.label ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveTab('roster');
-                            setFilter('voiceParts', [vp.label]);
-                          }}
-                          className="btn btn-secondary btn-sm"
-                          style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                          title={`Click to view the ${count} singer(s) in this voice part`}
-                        >
-                          <span style={{ fontWeight: 600 }}>{count}</span>
-                          <span>singer{count === 1 ? '' : 's'}</span>
-                        </button>
-                      ) : (
-                        <div style={{ height: '36px' }} />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConfigVoiceParts(configVoiceParts.filter((_, idx) => idx !== index));
-                        }}
-                        disabled={isTied}
-                        className="btn btn-danger btn-sm"
-                        style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        title={isTied ? "Cannot delete voice part with assigned singers" : undefined}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setConfigVoiceParts([...configVoiceParts, { label: '', fullName: '', sectionCode: '' }])}
-                className="btn btn-secondary"
-                style={{ alignSelf: 'flex-start' }}
-              >
-                + Add Voice Part
-              </button>
-            </div>
-          </AppCard>
-
-          <FloatingSaveBar 
-            isDirty={isConfigDirty} 
-            isSaving={isSavingConfig} 
-            onSave={handleConfigSave} 
-            onDiscard={handleConfigDiscard} 
-          />
-        </div>
+        <RosterSettingsTab
+          configMessage={configMessage}
+          configDefaultStatus={configDefaultStatus}
+          setConfigDefaultStatus={setConfigDefaultStatus}
+          configSeason={configSeason}
+          setConfigSeason={setConfigSeason}
+          configAutomationEnabled={configAutomationEnabled}
+          setConfigAutomationEnabled={setConfigAutomationEnabled}
+          configAutomationMissThreshold={configAutomationMissThreshold}
+          setConfigAutomationMissThreshold={setConfigAutomationMissThreshold}
+          configAutomationRecoveryEnabled={configAutomationRecoveryEnabled}
+          setConfigAutomationRecoveryEnabled={setConfigAutomationRecoveryEnabled}
+          configSections={configSections}
+          setConfigSections={setConfigSections}
+          configVoiceParts={configVoiceParts}
+          setConfigVoiceParts={setConfigVoiceParts}
+          isSavingConfig={isSavingConfig}
+          isConfigDirty={isConfigDirty}
+          activeColorPickerIndex={activeColorPickerIndex}
+          setActiveColorPickerIndex={setActiveColorPickerIndex}
+          handleConfigSave={handleConfigSave}
+          handleConfigDiscard={handleConfigDiscard}
+          allProfiles={allProfiles}
+          setActiveTab={setActiveTab}
+          setFilter={setFilter}
+        />
       )}
 
       <SingerModal 

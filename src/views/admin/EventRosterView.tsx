@@ -1,17 +1,16 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { eventService, type Event } from '../../services/eventService';
-import { rosterService, type EventRoster } from '../../services/rosterService';
+import { rosterService } from '../../services/rosterService';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
-import { getVoicePartsAndSections, settingsService, type VoicePartDef, type SectionDef } from '../../services/settingsService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
-import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
-import { getLastName } from '../../lib/stringUtils';
 import { useAuth } from '../../contexts/AuthContext';
+import { useEventRosterData } from '../../hooks/useEventRosterData';
+import { getLastName } from '../../lib/stringUtils';
+import { getSectionFromVoicePart } from '../../lib/voicePartUtils';
 
 interface EventRosterViewProps {
   eventIdProp?: string;
@@ -27,170 +26,38 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const dialog = useDialog();
 
   const { user, updatePreferences } = useAuth();
-  const [event, setEvent] = useState<Event | null>(null);
-  const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
-  const [eventRoster, setEventRoster] = useState<EventRoster[]>([]);
-  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
-  const [sections, setSections] = useState<SectionDef[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    event,
+    voiceParts,
+    sections,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    selectedVoiceParts,
+    setSelectedVoiceParts,
+    rsvpFilter,
+    setRsvpFilter,
+    sortBy,
+    setSortBy,
+    mappedSingers,
+    filteredSingers,
+    sortedSingers,
+    yesCount,
+    noCount,
+    pendingCount,
+    sectionCounts,
+    partCounts,
+    refreshProfiles,
+    refreshRosters,
+  } = useEventRosterData({ eventId, isInline });
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Singer modal states
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
   const [selectedSingerProfile, setSelectedSingerProfile] = useState<Profile | null>(null);
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
-  const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
-  
-  // Sorting preference state
-  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
-  const sortBy = user?.preferences?.rsvpSort || defaultSort;
-  const handleSortChange = (val: 'lastName' | 'voicePart') => {
-    updatePreferences({ rsvpSort: val });
-  };
-
-  useEffect(() => {
-    if (!eventId) {
-      if (!isInline) {
-        navigate('/admin/events');
-      }
-      return;
-    }
-
-    let isCurrent = true;
-    setIsLoading(true);
-
-    Promise.all([
-      eventService.getEventById(eventId),
-      profileService.getActiveProfiles(),
-      rosterService.getEventRoster(eventId),
-      getVoicePartsAndSections(),
-      settingsService.getRosterSettings()
-    ])
-      .then(([evt, profiles, rosters, settings, rosterSettings]) => {
-        if (isCurrent) {
-          setEvent(evt);
-          setActiveProfiles(profiles);
-          setEventRoster(rosters);
-          setVoiceParts(settings.voiceParts);
-          setSections(settings.sections);
-          if (rosterSettings && rosterSettings.defaultRsvpSort) {
-            setDefaultSort(rosterSettings.defaultRsvpSort);
-          }
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load roster data', err);
-        if (isCurrent) {
-          setIsLoading(false);
-          dialog.showMessage({
-            title: 'Event Not Found',
-            message: 'The requested event or its RSVP roster could not be loaded.',
-            variant: 'danger',
-          }).then(() => {
-            if (!isInline) {
-              navigate('/admin/events');
-            }
-          });
-        }
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [eventId, navigate, dialog, isInline]);
-
-  const profileRosterMap = new Map<string, EventRoster>();
-  eventRoster.forEach(item => {
-    if (item.profile) {
-      profileRosterMap.set(item.profile, item);
-    }
-  });
-
-  const mappedSingers = activeProfiles.map(profile => {
-    const roster = profileRosterMap.get(profile.id);
-    const rsvp = roster?.rsvp || 'Pending';
-    return {
-      profile,
-      rsvp,
-      roster,
-    };
-  });
-
-  const yesCount = mappedSingers.filter(s => s.rsvp === 'Yes').length;
-  const noCount = mappedSingers.filter(s => s.rsvp === 'No').length;
-  const pendingCount = mappedSingers.filter(s => s.rsvp === 'Pending').length;
-
-  const activeCountSingers = mappedSingers.filter(s => {
-    if (rsvpFilter === 'All') return true;
-    return s.rsvp === rsvpFilter;
-  });
-
-  const sectionCounts = (() => {
-    const counts: Record<string, number> = {};
-    sections.forEach(sec => {
-      counts[sec.code] = 0;
-    });
-    activeCountSingers.forEach(s => {
-      if (s.profile.voicePart) {
-        const vpDef = voiceParts.find(vp => vp.label === s.profile.voicePart);
-        const section = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(s.profile.voicePart);
-        if (counts[section] !== undefined) {
-          counts[section]++;
-        } else {
-          counts[section] = (counts[section] || 0) + 1;
-        }
-      }
-    });
-    return counts;
-  })();
-
-  const partCounts = new Map<string, number>();
-  voiceParts.forEach(vp => {
-    const count = activeCountSingers.filter(s => s.profile.voicePart === vp.label).length;
-    partCounts.set(vp.label, count);
-  });
-
-  const filteredSingers = mappedSingers.filter(singer => {
-    if (rsvpFilter !== 'All' && singer.rsvp !== rsvpFilter) return false;
-    
-    if (selectedVoiceParts.length > 0) {
-      const matchesVoice = matchesVoiceParts(singer.profile.voicePart, selectedVoiceParts, voiceParts);
-      if (!matchesVoice) return false;
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return singer.profile.name.toLowerCase().includes(q);
-    }
-    return true;
-  });
-
-  const sortedSingers = useMemo(() => {
-    const parts = voiceParts.map(vp => vp.label);
-    return [...filteredSingers].sort((a, b) => {
-      const profA = a.profile;
-      const profB = b.profile;
-      if (sortBy === 'voicePart') {
-        const idxA = parts.indexOf(profA.voicePart);
-        const idxB = parts.indexOf(profB.voicePart);
-        const orderA = idxA === -1 ? 999 : idxA;
-        const orderB = idxB === -1 ? 999 : idxB;
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-      }
-      
-      const lastA = getLastName(profA.name);
-      const lastB = getLastName(profB.name);
-      const cmp = lastA.localeCompare(lastB);
-      if (cmp !== 0) return cmp;
-      return profA.name.localeCompare(profB.name);
-    });
-  }, [filteredSingers, sortBy, voiceParts]);
 
   if (isLoading || !event) {
     return <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Loading RSVP details...</div>;
@@ -209,8 +76,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     setIsUpdating(true);
     try {
       await rosterService.updateRSVP(eventId, profileId, nextRsvp);
-      const rosters = await rosterService.getEventRoster(eventId);
-      setEventRoster(rosters);
+      await refreshRosters();
     } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Could Not Update RSVP',
@@ -254,8 +120,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           setBulkProgress({ current, total });
         }
       );
-      const rosters = await rosterService.getEventRoster(eventId);
-      setEventRoster(rosters);
+      await refreshRosters();
       dialog.showToast(`Updated ${eligibleSingers.length} RSVP${eligibleSingers.length === 1 ? '' : 's'}.`);
     } catch (err: unknown) {
       await dialog.showMessage({
@@ -270,9 +135,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   };
 
   const handlePhotoChange = () => {
-    if (eventId) {
-      rosterService.getEventRoster(eventId).then(setEventRoster).catch(console.error);
-    }
+    refreshRosters();
   };
 
   const handleSingerClick = (profile: Profile) => {
@@ -280,24 +143,12 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     setIsSingerModalOpen(true);
   };
 
-  const refreshProfiles = async () => {
-    try {
-      const activeProfs = await profileService.getActiveProfiles();
-      setActiveProfiles(activeProfs);
-    } catch (err) {
-      console.error('Failed to refresh active profiles', err);
-    }
-  };
-
   const handleSingerModalSave = async (formData: ProfileInput) => {
     if (!selectedSingerProfile) return;
     try {
       await profileService.updateProfile(selectedSingerProfile.id, formData);
       await refreshProfiles();
-      if (eventId) {
-        const rosters = await rosterService.getEventRoster(eventId);
-        setEventRoster(rosters);
-      }
+      await refreshRosters();
     } catch (err) {
       console.error('Failed to save singer profile', err);
     }
@@ -307,10 +158,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     try {
       await profileService.deleteProfile(profile.id);
       await refreshProfiles();
-      if (eventId) {
-        const rosters = await rosterService.getEventRoster(eventId);
-        setEventRoster(rosters);
-      }
+      await refreshRosters();
     } catch (err) {
       console.error('Failed to delete singer profile', err);
     }
@@ -751,7 +599,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
             <select 
               value={sortBy} 
-              onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
+              onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
               className="event-rsvp-sort-select"
               aria-label="Sort singers"
             >

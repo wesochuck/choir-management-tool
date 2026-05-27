@@ -4,6 +4,8 @@ import type { EventRoster } from '../../services/rosterService';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { AppCard } from '../common/AppCard';
+import { StatusBadge } from '../common/StatusBadge';
+import { getRsvpDisplay } from '../../lib/statusDisplay';
 
 interface EventRosterTableProps {
   singers: Array<{
@@ -92,22 +94,17 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart || '--'}</span>
                   </td>
                   <td data-label="RSVP Status" style={{ textAlign: 'center' }}>
-                    <span 
-                      className={`badge ${
+                    <StatusBadge
+                      label={
                         s.rsvp === 'Yes' 
-                          ? 'badge-rehearsal' 
+                          ? '🟢 Attending' 
                           : s.rsvp === 'No' 
-                            ? 'badge-performance' 
-                            : ''
-                      }`}
-                      style={{
-                        backgroundColor: s.rsvp === 'Pending' ? 'var(--border)' : undefined,
-                        color: s.rsvp === 'Pending' ? 'var(--text-muted)' : undefined,
-                        fontWeight: 600
-                      }}
-                    >
-                      {s.rsvp === 'Yes' ? '🟢 Attending' : s.rsvp === 'No' ? '🔴 Declined' : '⏳ No Response'}
-                    </span>
+                            ? '🔴 Declined' 
+                            : '⏳ No Response'
+                      }
+                      tone={getRsvpDisplay(s.rsvp).tone}
+                      size="sm"
+                    />
                   </td>
                   <td data-label="Actions" style={{ textAlign: 'right' }}>
                     <div className="flex-row" style={{ gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
