@@ -13,6 +13,20 @@ export const COMPLIANT_FOOTER_HTML = `
 `;
 
 /**
+ * Escapes raw HTML tags within the content to prevent XSS.
+ * Converts characters like <, >, &, ", and ' into their corresponding HTML entities.
+ */
+export function escapeHtml(unsafe: string): string {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Renders a basic subset of Markdown to HTML.
  * Supports: Bold, Italic, Links, Unordered Lists, Line Breaks.
  * Note: This escapes raw HTML tags within the content for security.
@@ -93,7 +107,7 @@ export function resolvePreviewContent(
 
   // Recipient Placeholders
   const name = recipient?.name || 'Sample Singer';
-  result = result.replace(/{singerName}/g, name);
+  result = result.replace(/{singerName}/g, escapeHtml(name));
 
   // Event Placeholders
   const title = event?.title || event?.type || 'Sample Performance';
@@ -102,11 +116,11 @@ export function resolvePreviewContent(
   const location = event?.expand?.venue?.name || 'Main Concert Hall';
   const details = event?.details || 'Join us for an amazing evening of music and harmony!';
 
-  result = result.replace(/{eventTitle}/g, title);
-  result = result.replace(/{eventType}/g, type);
-  result = result.replace(/{eventDate}/g, date);
-  result = result.replace(/{eventLocation}/g, location);
-  result = result.replace(/{eventDetails}/g, details);
+  result = result.replace(/{eventTitle}/g, escapeHtml(title));
+  result = result.replace(/{eventType}/g, escapeHtml(type));
+  result = result.replace(/{eventDate}/g, escapeHtml(date));
+  result = result.replace(/{eventLocation}/g, escapeHtml(location));
+  result = result.replace(/{eventDetails}/g, escapeHtml(details));
 
   // RSVP Links - Injected as literal HTML
   const rsvpText = `
@@ -138,7 +152,7 @@ export function resolvePreviewContent(
   `);
 
   // Compliance Placeholders
-  result = result.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
+  result = result.replace(/{{MAILING_ADDRESS}}/g, escapeHtml(mailingAddress));
   result = result.replace(/{{UNSUBSCRIBE_LINK}}/g, '#');
 
   return result;
