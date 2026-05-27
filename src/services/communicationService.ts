@@ -15,6 +15,15 @@ export type MessageType = 'Email' | 'SMS' | 'Both';
 export type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
 export type MessageStatus = 'Draft' | 'Sent' | 'Failed';
 
+
+export type ExplicitRsvpStatus = 'ATTENDING' | 'DECLINED' | 'PENDING';
+
+export interface FilteredSingerTarget {
+  id: string;
+  email: string;
+  inferredStatus: ExplicitRsvpStatus;
+}
+
 export interface CommunicationRecipient {
   id: string;
   name: string;
@@ -173,6 +182,44 @@ export const communicationService = {
 
   async saveConfig(value: CommunicationConfig) {
     return await settingsService.saveCommunicationConfig(value);
+  },
+
+
+  async resolveExplicitTargets(
+    eventId: string,
+    filters: { targetRsvpStatus: ExplicitRsvpStatus },
+  ): Promise<FilteredSingerTarget[]> {
+    const profiles = await pb.collection('profiles').getFullList<RecordModel>();
+    const rosterRows = await pb.collection('eventRosters').getList<RecordModel>(1, 500, {
+      filter: pb.filter('event = {:eventId}', { eventId }),
+    });
+
+    const statusMap = new Map<string, ExplicitRsvpStatus>();
+
+    for (const row of rosterRows.items) {
+      const userId = typeof row.user === 'string' ? row.user : '';
+      const status = typeof row.status === 'string' ? row.status.toUpperCase() : '';
+      const resolvedStatus: ExplicitRsvpStatus =
+        status === 'ATTENDING' || status === 'DECLINED' || status === 'PENDING' ? status : 'PENDING';
+
+      if (userId) {
+        statusMap.set(userId, resolvedStatus);
+      }
+    }
+
+    return profiles
+      .map((profile) => {
+        const profileId = typeof profile.id === 'string' ? profile.id : '';
+        const email = typeof profile.email === 'string' ? profile.email : '';
+        const inferredStatus = statusMap.get(profileId) ?? 'PENDING';
+
+        return {
+          id: profileId,
+          email,
+          inferredStatus,
+        };
+      })
+      .filter((target) => target.inferredStatus === filters.targetRsvpStatus);
   },
 
   async resolveRecipients(filters: CommunicationFilters) {
@@ -423,6 +470,7 @@ export const communicationService = {
   getEvents: () => Promise<Event[]>;
   getConfig: () => Promise<CommunicationConfig>;
   saveConfig: (value: CommunicationConfig) => Promise<unknown>;
+  resolveExplicitTargets: (eventId: string, filters: { targetRsvpStatus: ExplicitRsvpStatus }) => Promise<FilteredSingerTarget[]>;
   resolveRecipients: (filters: CommunicationFilters) => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (content: string, eventId: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;
   resolvePollPlaceholders: (content: string, recipients: CommunicationRecipient[]) => Promise<{ previewContent: string; logs: string[] }>;

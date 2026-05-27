@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-26T22:34:35.083Z
+// Generated on: 2026-05-27T01:12:44.902Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
@@ -204,26 +204,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -1184,26 +1197,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -2225,26 +2251,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -3209,26 +3248,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -4197,26 +4249,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -5189,26 +5254,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -6193,26 +6271,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -7186,26 +7277,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -8186,26 +8290,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
@@ -9175,26 +9292,39 @@ function formatInTimezone(date, timezone, options) {
  */
 function decodeGoBytes(val) {
     if (!val)
-        return "";
+        return '';
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
+                return val.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
             }
             catch {
-                // Ignore decoding errors
+                return '';
             }
         }
         return val;
     }
     return String(val);
+}
+function safeDecodeCollectionBytes(rawBytes, fallback) {
+    if (!rawBytes || !Array.isArray(rawBytes)) {
+        return fallback.defaultSchema;
+    }
+    try {
+        const characterString = rawBytes.map((byteCode) => String.fromCharCode(Number(byteCode))).join('');
+        if (!characterString.trim())
+            return fallback.defaultSchema;
+        const parsedData = JSON.parse(characterString);
+        if (typeof parsedData === 'object' && parsedData !== null && !Array.isArray(parsedData)) {
+            return parsedData;
+        }
+        return fallback.defaultSchema;
+    }
+    catch (_err) {
+        return fallback.defaultSchema;
+    }
 }
 /**
  * Safely parses a JSON field from a PocketBase record.
