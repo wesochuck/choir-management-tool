@@ -6,6 +6,7 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { eventService, type Event } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
+import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -20,18 +21,7 @@ import { useVoiceParts } from '../../hooks/useVoiceParts';
 export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData }) => {
   const dialog = useDialog();
   const { voiceParts } = useVoiceParts();
-  const [formData, setFormData] = useState<ProfileInput>({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    voicePart: '',
-    globalStatus: 'Active',
-    notes: '',
-    doNotEmail: false,
-    isSectionLeader: false,
-    statusIsManual: false,
-  });
+  const [formData, setFormData] = useState<ProfileInput>({ ...defaultProfileInput });
   const [isSubmitting, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -65,30 +55,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   const [savingRsvpId, setSavingRsvpId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialData) {
-      const restInitialData = { ...initialData } as Record<string, unknown>;
-      delete restInitialData.password; // Strip password if it accidentally exists
-      
-      setFormData({
-        ...restInitialData,
-        email: initialData.expand?.user?.email || '',
-        doNotEmail: initialData.doNotEmail || false,
-        isSectionLeader: initialData.isSectionLeader || false,
-        statusIsManual: initialData.statusIsManual || false,
-      });
-    } else {
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        voicePart: '',
-        globalStatus: 'Active',
-        notes: '',
-        doNotEmail: false,
-        isSectionLeader: false,
-        statusIsManual: false,
-      });
-    }
+    setFormData(profileToFormData(initialData));
   }, [initialData, isOpen]);
 
   // Reset tab when modal closes/opens
@@ -125,34 +92,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     loadRsvps();
   }, [isOpen, initialData, activeTab]);
 
-  const isDirty = useMemo(() => {
-    if (initialData) {
-      const nameChanged = (formData.name || '') !== (initialData.name || '');
-      const emailChanged = (formData.email || '') !== (initialData.expand?.user?.email || '');
-      const phoneChanged = (formData.phone || '') !== (initialData.phone || '');
-      const voicePartChanged = (formData.voicePart || '') !== (initialData.voicePart || '');
-      const globalStatusChanged = (formData.globalStatus || '') !== (initialData.globalStatus || '');
-      const notesChanged = (formData.notes || '') !== (initialData.notes || '');
-      const emailOptChanged = Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail);
-      const manualStatusChanged = Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual);
-      const sectionLeaderChanged = Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader);
-      const photoChanged = formData.photo !== initialData.photo;
-
-      return nameChanged || emailChanged || phoneChanged || voicePartChanged || globalStatusChanged || notesChanged || emailOptChanged || manualStatusChanged || sectionLeaderChanged || photoChanged;
-    } else {
-      const hasName = Boolean(formData.name?.trim());
-      const hasEmail = Boolean(formData.email?.trim());
-      const hasPhone = Boolean(formData.phone?.trim());
-      const hasVoicePart = Boolean(formData.voicePart);
-      const isStatusChanged = formData.globalStatus !== 'Active';
-      const hasNotes = Boolean(formData.notes?.trim());
-      const hasEmailOpt = Boolean(formData.doNotEmail);
-      const hasSectionLeader = Boolean(formData.isSectionLeader);
-      const hasManualStatus = Boolean(formData.statusIsManual);
-
-      return hasName || hasEmail || hasPhone || hasVoicePart || isStatusChanged || hasNotes || hasEmailOpt || hasSectionLeader || hasManualStatus;
-    }
-  }, [formData, initialData]);
+  const isDirty = useMemo(() => isProfileFormDirty(formData, initialData), [formData, initialData]);
 
   const handleClose = async () => {
     if (isDirty) {
