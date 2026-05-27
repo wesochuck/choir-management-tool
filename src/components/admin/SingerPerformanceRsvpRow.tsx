@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Event } from '../../services/eventService';
 import type { EventRoster } from '../../services/rosterService';
+import { StatusBadge } from '../common/StatusBadge';
+import { getAttendanceDisplay, getRsvpDisplay } from '../../lib/statusDisplay';
 
 interface SingerPerformanceRsvpRowProps {
   performance: Event;
@@ -23,7 +25,9 @@ const getSelectStyle = (val: EventRoster['rsvp']) => {
     transition: 'all 0.2s',
     outline: 'none',
   };
-  if (val === 'Yes') {
+
+  const tone = getRsvpDisplay(val).tone;
+  if (tone === 'success') {
     return {
       ...base,
       backgroundColor: 'rgba(34, 197, 94, 0.15)',
@@ -31,7 +35,8 @@ const getSelectStyle = (val: EventRoster['rsvp']) => {
       border: '1px solid rgba(34, 197, 94, 0.3)',
     };
   }
-  if (val === 'No') {
+
+  if (tone === 'danger') {
     return {
       ...base,
       backgroundColor: 'rgba(239, 68, 68, 0.15)',
@@ -39,44 +44,13 @@ const getSelectStyle = (val: EventRoster['rsvp']) => {
       border: '1px solid rgba(239, 68, 68, 0.3)',
     };
   }
+
   return {
     ...base,
     backgroundColor: 'rgba(107, 114, 128, 0.1)',
     color: '#4b5563',
     border: '1px solid rgba(107, 114, 128, 0.2)',
   };
-};
-
-const renderAttendanceBadge = (status: EventRoster['attendance']) => {
-  let bg = 'rgba(107, 114, 128, 0.1)';
-  let fg = '#4b5563';
-  let text = 'Pending';
-  if (status === 'Present') {
-    bg = 'rgba(34, 197, 94, 0.15)';
-    fg = '#15803d';
-    text = 'Present';
-  } else if (status === 'Absent') {
-    bg = 'rgba(239, 68, 68, 0.15)';
-    fg = '#b91c1c';
-    text = 'Absent';
-  }
-
-  return (
-    <span
-      style={{
-        padding: '4px 8px',
-        borderRadius: 'var(--radius-sm)',
-        fontSize: '11px',
-        fontWeight: 700,
-        backgroundColor: bg,
-        color: fg,
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-      }}
-    >
-      {text}
-    </span>
-  );
 };
 
 export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> = ({
@@ -89,6 +63,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
 }) => {
   const currentRsvp = rosterEntry?.rsvp ?? 'Pending';
   const currentAttendance = rosterEntry?.attendance ?? 'Pending';
+  const attendanceDisplay = getAttendanceDisplay(currentAttendance);
 
   const performanceDate = new Date(performance.date);
   const dateString = performanceDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -136,7 +111,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
         {isPast && (
           <div className="flex-col" style={{ alignItems: 'center', gap: '2px' }}>
             <span className="text-xs text-muted" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Attended</span>
-            {renderAttendanceBadge(currentAttendance)}
+            <StatusBadge label={attendanceDisplay.label} tone={attendanceDisplay.tone} />
           </div>
         )}
 
