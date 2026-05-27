@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AttendanceItem } from '../../hooks/useAttendance';
+import './CheckInList.css';
 
 interface CheckInListProps {
   items: AttendanceItem[];
@@ -68,10 +69,12 @@ const CheckInRow: React.FC<{
   const navigate = useNavigate();
   const isPresent = item.attendance === 'Present';
   const isAbsent = item.attendance === 'Absent';
+  const [isSecondaryOpen, setIsSecondaryOpen] = useState(false);
+  const secondaryPanelId = `checkin-secondary-${item.profileId}`;
 
   return (
     <div
-      className="card admin-checkin-row checkin-row"
+      className={`card admin-checkin-row checkin-row ${isSecondaryOpen ? 'secondary-open' : ''}`}
       onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
       style={{
         opacity: isPresent ? 0.85 : 1,
@@ -144,6 +147,15 @@ const CheckInRow: React.FC<{
               </span>
             </div>
           </div>
+          <div className="admin-checkin-status-summary">
+            <span>{item.voicePart}</span>
+            {item.rsvp === 'Yes' && <span>RSVP</span>}
+            <span>Folder {item.folderNumber || '--'}</span>
+            <span>{item.folderReturned ? 'Returned' : 'Not returned'}</span>
+          </div>
+          <div className="admin-checkin-primary-hint">
+            {isPresent ? 'Checked in' : isAbsent ? 'Marked absent' : 'Tap card to mark present'}
+          </div>
         </div>
 
         {/* Right Section: Attendance separated action buttons (Absent on left, Present on right) */}
@@ -153,7 +165,7 @@ const CheckInRow: React.FC<{
               event.stopPropagation();
               onSetAttendance(item.profileId, 'Absent');
             }}
-            className="btn"
+            className="btn admin-checkin-absent-btn"
             style={{
               backgroundColor: isAbsent ? '#ef4444' : 'var(--surface)',
               color: isAbsent ? 'var(--surface)' : '#64748b',
@@ -169,7 +181,7 @@ const CheckInRow: React.FC<{
               event.stopPropagation();
               onSetAttendance(item.profileId, 'Present');
             }}
-            className="btn"
+            className="btn admin-checkin-present-btn"
             style={{
               backgroundColor: isPresent ? 'var(--primary)' : 'var(--surface)',
               color: isPresent ? 'var(--surface)' : 'var(--primary-deep)',
@@ -180,11 +192,23 @@ const CheckInRow: React.FC<{
           >
             Present
           </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm admin-checkin-mobile-more"
+            aria-expanded={isSecondaryOpen}
+            aria-controls={secondaryPanelId}
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsSecondaryOpen((previous) => !previous);
+            }}
+          >
+            {isSecondaryOpen ? 'Less' : 'More'}
+          </button>
         </div>
       </div>
 
       {/* Row Segment 2: Folder tracking & Edit Singer details */}
-      <div className="admin-checkin-bottom-row">
+      <div className="admin-checkin-bottom-row admin-checkin-secondary-panel" id={secondaryPanelId}>
         <div className="admin-checkin-meta">
           {/* Folder Number */}
           <div className="admin-checkin-folder-group">

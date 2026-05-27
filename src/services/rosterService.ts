@@ -63,28 +63,6 @@ async function createAttendanceWithVerification(eventId: string, profileId: stri
   }
 }
 
-async function executeWithRetry<T>(fn: () => Promise<T>, retries = 3, delay = 250): Promise<T> {
-  try {
-    return await fn();
-  } catch (err: unknown) {
-    if (
-      err &&
-      typeof err === 'object' &&
-      'status' in err &&
-      (err as { status?: unknown }).status === 429 &&
-      retries > 0
-    ) {
-      await pause(delay);
-      return executeWithRetry(fn, retries - 1, delay * 2);
-    }
-    throw err;
-  }
-}
-
-function pause(ms: number) {
-  return new Promise<void>(resolve => setTimeout(resolve, ms));
-}
-
 export const rosterService = {
   async getMyRosters() {
     // Note: This assumes we have a way to find the profile for the current user.
@@ -207,32 +185,15 @@ export const rosterService = {
   },
 
   async bulkUpsertAttendance(eventId: string, updates: { profileId: string, attendance: AttendanceStatus }[]) {
-    const existing = await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: pb.filter('event = {:eventId}', { eventId }),
-    });
-    const existingMap = new Map(existing.map(r => [r.profile, r]));
-
-    const operations = updates.map(update => {
-      const existingRoster = existingMap.get(update.profileId);
-      if (existingRoster) {
-        return () => executeWithRetry(() => updateAttendanceWithVerification(existingRoster.id, update.attendance));
-      } else {
-        return () => executeWithRetry(() => createAttendanceWithVerification(eventId, update.profileId, update.attendance));
+    const response = await pb.send<{ rosters: EventRoster[] }>('/api/admin/bulk-upsert-attendance', {
+      method: 'POST',
+      body: {
+        eventId,
+        updates
       }
     });
 
-    const results: EventRoster[] = [];
-    const chunkSize = 2;
-    for (let i = 0; i < operations.length; i += chunkSize) {
-      if (i > 0) {
-        await pause(100);
-      }
-      const chunk = operations.slice(i, i + chunkSize);
-      const chunkResults = await Promise.all(chunk.map(op => op()));
-      results.push(...chunkResults);
-    }
-
-    return results;
+    return response.rosters ?? [];
   },
 
   async updateFolder(rosterId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
