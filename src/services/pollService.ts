@@ -13,6 +13,31 @@ export interface PollDetails {
   currentStatus: 'Yes' | 'No' | '';
 }
 
+export interface PollRecord extends RecordModel {
+  question: string;
+  eventId?: string;
+  created: string;
+}
+
+export interface PollResponseRecord extends RecordModel {
+  pollId: string;
+  profileId: string;
+  status: 'Yes' | 'No';
+  expand?: {
+    profileId?: {
+      name: string;
+      voicePart: string;
+    };
+  };
+}
+
+export interface PollStats {
+  yes: number;
+  no: number;
+  volunteers: PollResponseRecord[];
+  decliners: PollResponseRecord[];
+}
+
 export interface SingerPoll extends RecordModel {
   question: string;
   eventId?: string;
@@ -20,6 +45,37 @@ export interface SingerPoll extends RecordModel {
 }
 
 export const pollService = {
+
+  async listPolls(): Promise<PollRecord[]> {
+    return await pb.collection('polls').getFullList<PollRecord>({ sort: '-created' });
+  },
+
+  async listResponsesWithProfiles(): Promise<PollResponseRecord[]> {
+    return await pb.collection('pollResponses').getFullList<PollResponseRecord>({
+      expand: 'profileId',
+      sort: '-updated',
+    });
+  },
+
+  async createPoll(input: { question: string; eventId?: string }): Promise<PollRecord> {
+    return await pb.collection('polls').create<PollRecord>({
+      question: input.question,
+      eventId: input.eventId || null,
+    });
+  },
+
+  async deletePoll(id: string): Promise<void> {
+    await pb.collection('polls').delete(id);
+  },
+
+  async getDashboardData(): Promise<{ polls: PollRecord[]; responses: PollResponseRecord[] }> {
+    const [polls, responses] = await Promise.all([
+      this.listPolls(),
+      this.listResponsesWithProfiles(),
+    ]);
+    return { polls, responses };
+  },
+
   async getPollDetails(token: string): Promise<PollDetails> {
     return await pb.send('/api/poll-details', {
       method: 'POST',

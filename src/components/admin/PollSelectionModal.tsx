@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BaseModal } from '../common/BaseModal';
-import { pb } from '../../lib/pocketbase';
+import { pollService, type PollRecord } from '../../services/pollService';
 import { useEvents } from '../../hooks/useEvents';
-import type { RecordModel } from 'pocketbase';
-
-interface PollRecord extends RecordModel {
-  question: string;
-  eventId?: string;
-}
-
 interface PollSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,9 +26,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   const loadPolls = async () => {
     setIsLoading(true);
     try {
-      const list = await pb.collection('polls').getFullList<PollRecord>({
-        sort: '-created',
-      });
+      const list = await pollService.listPolls();
       setPolls(list);
     } catch (err) {
       console.error('Failed to load polls', err);
@@ -59,9 +50,9 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
 
     setIsCreating(true);
     try {
-      const record = await pb.collection('polls').create<PollRecord>({
+      const record = await pollService.createPoll({
         question,
-        eventId: eventId || null,
+        eventId: eventId || undefined,
       });
       onSelect(record.id);
       onClose();

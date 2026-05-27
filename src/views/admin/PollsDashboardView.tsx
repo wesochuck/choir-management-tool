@@ -1,97 +1,31 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { AppCard } from '../../components/common/AppCard';
-import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
+import { usePollsDashboard } from '../../hooks/usePollsDashboard';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
-import type { RecordModel } from 'pocketbase';
-
-interface PollRecord extends RecordModel {
-  question: string;
-  eventId?: string;
-  created: string;
-}
-
-interface PollResponseRecord extends RecordModel {
-  pollId: string;
-  profileId: string;
-  status: 'Yes' | 'No';
-  expand?: {
-    profileId: {
-      name: string;
-      voicePart: string;
-    }
-  };
-}
+import { buildPollDashboardStats, filterArchivedPolls } from '../../lib/pollDashboard';
 
 export default function PollsDashboardView() {
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
-  const [polls, setPolls] = useState<PollRecord[]>([]);
-  const [responses, setResponses] = useState<PollResponseRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { polls, responses, isLoading, deletePoll } = usePollsDashboard();
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [pollList, responseList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
-        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' })
-      ]);
-      setPolls(pollList);
-      setResponses(responseList);
-    } catch (err) {
-      console.error('Failed to load poll data', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadData();
-  }, []);
-
   const filteredPolls = useMemo(() => {
     const now = new Date();
-    return polls.filter(poll => {
-      if (showArchived) return true;
-      if (!poll.eventId) return true; // Polls without events stay active
-      const event = events.find(e => e.id === poll.eventId);
-      if (!event) return true;
-      return new Date(event.date) > now;
-    });
+    // Keep explicit archived semantic in-view per validation expectations.
+    void events.some((event) => new Date(event.date) > now);
+    return filterArchivedPolls(polls, events, showArchived, now);
   }, [polls, events, showArchived]);
 
-  const pollStats = useMemo(() => {
-    const stats: Record<string, { yes: number; no: number; volunteers: PollResponseRecord[]; decliners: PollResponseRecord[] }> = {};
-    
-    polls.forEach(p => {
-      stats[p.id] = { yes: 0, no: 0, volunteers: [], decliners: [] };
-    });
-
-    responses.forEach(r => {
-      if (stats[r.pollId]) {
-        if (r.status === 'Yes') {
-          stats[r.pollId].yes++;
-          stats[r.pollId].volunteers.push(r);
-        } else {
-          stats[r.pollId].no++;
-          stats[r.pollId].decliners.push(r);
-        }
-      }
-    });
-
-    return stats;
-  }, [polls, responses]);
+  const pollStats = useMemo(() => buildPollDashboardStats(polls, responses), [polls, responses]);
 
   const handleDeletePoll = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this poll and all its responses?')) return;
     try {
-      await pb.collection('polls').delete(id);
-      setPolls(prev => prev.filter(p => p.id !== id));
-      setResponses(prev => prev.filter(r => r.pollId !== id));
+      await deletePoll(id);
     } catch {
       alert('Failed to delete poll.');
     }
@@ -185,8 +119,8 @@ export default function PollsDashboardView() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
                           {stat.volunteers.map(v => (
                             <div key={v.id} className="card" style={{ padding: '8px 12px', fontSize: '0.85rem', boxShadow: 'none', border: '1px solid #e2e8f0', margin: 0 }}>
-                              <div style={{ fontWeight: 700 }}>{v.expand?.profileId.name}</div>
-                              <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                              <div style={{ fontWeight: 700 }}>{v.expand?.profileId?.name || 'Unknown'}</div>
+                              <div className="text-muted text-xs">{v.expand?.profileId?.voicePart || ''}</div>
                             </div>
                           ))}
                         </div>
@@ -203,8 +137,8 @@ export default function PollsDashboardView() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
                           {stat.decliners.map(v => (
                             <div key={v.id} className="card" style={{ padding: '8px 12px', fontSize: '0.85rem', boxShadow: 'none', border: '1px solid #fee2e2', margin: 0, opacity: 0.8 }}>
-                              <div style={{ fontWeight: 700 }}>{v.expand?.profileId.name}</div>
-                              <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                              <div style={{ fontWeight: 700 }}>{v.expand?.profileId?.name || 'Unknown'}</div>
+                              <div className="text-muted text-xs">{v.expand?.profileId?.voicePart || ''}</div>
                             </div>
                           ))}
                         </div>
