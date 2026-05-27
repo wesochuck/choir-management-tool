@@ -102,7 +102,7 @@
     overflow: visible !important;
 
     /* Calculate dynamic seat size accounting for margins, gaps, and labels */
-    --print-seat-size: min(72px, calc((100vw - 210px) / var(--max-seats, 12))) !important;
+    --print-seat-size: min(72px, calc((100vw - 170px) / var(--max-seats, 12))) !important;
     --print-grid-gap: clamp(2px, calc(var(--print-seat-size) * 0.08), 6px) !important;
 
     gap: var(--print-grid-gap) !important;
@@ -121,14 +121,14 @@
   /* Symmetric spacer on the right to perfectly balance the left row label for centered seating rows */
   .row-print::after {
     content: "" !important;
-    width: 50px !important;
+    width: 30px !important;
     padding-left: 4px !important;
     display: block !important;
     flex-shrink: 0 !important;
   }
 
   .row-print>.text-xs {
-    width: 50px !important;
+    width: 30px !important;
     padding-right: 4px !important;
     color: #000000 !important;
     font-size: clamp(9px, calc(var(--print-seat-size) * 0.18), 12px) !important;
