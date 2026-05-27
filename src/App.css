@@ -92,7 +92,8 @@
   .grid-print {
     display: flex !important;
     flex-direction: column !important;
-    padding: 0 !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
     margin: 0 auto !important;
     page-break-inside: avoid !important;
     align-items: center !important;
@@ -100,8 +101,8 @@
     max-width: 100% !important;
     overflow: visible !important;
 
-    /* Calculate dynamic seat size for print landscape layouts */
-    --print-seat-size: min(72px, calc((100vw - 120px) / var(--max-seats, 12))) !important;
+    /* Calculate dynamic seat size accounting for margins, gaps, and labels */
+    --print-seat-size: min(72px, calc((100vw - 240px) / var(--max-seats, 12))) !important;
     --print-grid-gap: clamp(2px, calc(var(--print-seat-size) * 0.08), 6px) !important;
 
     gap: var(--print-grid-gap) !important;
@@ -117,11 +118,20 @@
     min-width: 0 !important;
   }
 
+  /* Symmetric spacer on the right to perfectly balance the left row label for centered seating rows */
+  .row-print::after {
+    content: "" !important;
+    width: 60px !important;
+    padding-left: 4px !important;
+    display: block !important;
+    flex-shrink: 0 !important;
+  }
+
   .row-print>.text-xs {
     width: 60px !important;
     padding-right: 4px !important;
     color: #000000 !important;
-    font-size: clamp(6px, calc(var(--print-seat-size) * 0.11), 8px) !important;
+    font-size: clamp(9px, calc(var(--print-seat-size) * 0.18), 12px) !important;
     line-height: 1.2 !important;
     font-weight: 700 !important;
     display: flex !important;
