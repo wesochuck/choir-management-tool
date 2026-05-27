@@ -341,32 +341,6 @@ export default function AttendanceView() {
               ⚠️ Mark Remaining Absent
             </button>
 
-            {/* Bulk Absent */}
-            <button
-              onClick={async () => {
-                const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
-                const confirmed = await dialog.confirm({
-                  title: 'Mark All Absent',
-                  message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Absent?`,
-                  confirmLabel: 'Mark Absent',
-                  variant: 'danger'
-                });
-                if (confirmed) {
-                  try {
-                    await setAllAttendance('Absent', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                  } catch (err: unknown) {
-                    await dialog.showMessage({
-                      title: 'Error updating attendance',
-                      message: err instanceof Error ? err.message : 'Failed to bulk update',
-                      variant: 'danger'
-                    });
-                  }
-                }
-              }}
-              className="btn btn-sm attendance-bulk-absent-btn"
-            >
-              ❌ Mark All Absent
-            </button>
 
             {/* Bulk Reset */}
             <button
