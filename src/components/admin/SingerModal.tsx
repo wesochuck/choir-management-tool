@@ -6,6 +6,8 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { eventService, type Event } from '../../services/eventService';
 import { rosterService, type EventRoster } from '../../services/rosterService';
+import { StatusBadge } from '../common/StatusBadge';
+import { getAttendanceDisplay } from '../../lib/statusDisplay';
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -298,35 +300,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     };
   };
 
-  const renderAttendanceBadge = (status: string) => {
-    let bg = 'rgba(107, 114, 128, 0.1)';
-    let fg = '#4b5563';
-    let text = 'Pending';
-    if (status === 'Present') {
-      bg = 'rgba(34, 197, 94, 0.15)';
-      fg = '#15803d';
-      text = 'Present';
-    } else if (status === 'Absent') {
-      bg = 'rgba(239, 68, 68, 0.15)';
-      fg = '#b91c1c';
-      text = 'Absent';
-    }
-    return (
-      <span style={{
-        padding: '4px 8px',
-        borderRadius: 'var(--radius-sm)',
-        fontSize: '11px',
-        fontWeight: 700,
-        backgroundColor: bg,
-        color: fg,
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
-      }}>
-        {text}
-      </span>
-    );
-  };
-
   const renderPerformanceRow = (p: Event, isPast: boolean) => {
     const rosterEntry = rosters.find(r => r.event === p.id);
     const currentRsvp = rosterEntry?.rsvp || 'Pending';
@@ -380,7 +353,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           {isPast && (
             <div className="flex-col" style={{ alignItems: 'center', gap: '2px' }}>
               <span className="text-xs text-muted" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Attended</span>
-              {renderAttendanceBadge(currentAttendance)}
+              {(() => {
+                const attendanceDisplay = getAttendanceDisplay(currentAttendance);
+                return <StatusBadge label={attendanceDisplay.label} tone={attendanceDisplay.tone} />;
+              })()}
             </div>
           )}
 
