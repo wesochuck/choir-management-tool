@@ -1,0 +1,184 @@
+import React from 'react';
+import type { Event } from '../../services/eventService';
+import type { EventRoster } from '../../services/rosterService';
+
+interface SingerPerformanceRsvpRowProps {
+  performance: Event;
+  rosterEntry?: EventRoster;
+  isPast: boolean;
+  isSaving: boolean;
+  saveError?: string;
+  onRsvpChange: (eventId: string, newRsvp: EventRoster['rsvp']) => void;
+}
+
+const getSelectStyle = (val: EventRoster['rsvp']) => {
+  const base: React.CSSProperties = {
+    padding: '0 8px',
+    height: '32px',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: '13px',
+    fontWeight: 600,
+    border: '1px solid transparent',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    outline: 'none',
+  };
+  if (val === 'Yes') {
+    return {
+      ...base,
+      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+      color: '#15803d',
+      border: '1px solid rgba(34, 197, 94, 0.3)',
+    };
+  }
+  if (val === 'No') {
+    return {
+      ...base,
+      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+      color: '#b91c1c',
+      border: '1px solid rgba(239, 68, 68, 0.3)',
+    };
+  }
+  return {
+    ...base,
+    backgroundColor: 'rgba(107, 114, 128, 0.1)',
+    color: '#4b5563',
+    border: '1px solid rgba(107, 114, 128, 0.2)',
+  };
+};
+
+const renderAttendanceBadge = (status: EventRoster['attendance']) => {
+  let bg = 'rgba(107, 114, 128, 0.1)';
+  let fg = '#4b5563';
+  let text = 'Pending';
+  if (status === 'Present') {
+    bg = 'rgba(34, 197, 94, 0.15)';
+    fg = '#15803d';
+    text = 'Present';
+  } else if (status === 'Absent') {
+    bg = 'rgba(239, 68, 68, 0.15)';
+    fg = '#b91c1c';
+    text = 'Absent';
+  }
+
+  return (
+    <span
+      style={{
+        padding: '4px 8px',
+        borderRadius: 'var(--radius-sm)',
+        fontSize: '11px',
+        fontWeight: 700,
+        backgroundColor: bg,
+        color: fg,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+      }}
+    >
+      {text}
+    </span>
+  );
+};
+
+export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> = ({
+  performance,
+  rosterEntry,
+  isPast,
+  isSaving,
+  saveError,
+  onRsvpChange,
+}) => {
+  const currentRsvp = rosterEntry?.rsvp ?? 'Pending';
+  const currentAttendance = rosterEntry?.attendance ?? 'Pending';
+
+  const performanceDate = new Date(performance.date);
+  const dateString = performanceDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeString = performanceDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+  return (
+    <div
+      className="flex-row card"
+      style={{
+        padding: 'var(--space-md)',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 'var(--space-md)',
+        boxShadow: 'none',
+        border: '1px solid var(--border)',
+        backgroundColor: 'var(--bg)',
+        transition: 'border-color 0.2s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--primary)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--border)';
+      }}
+    >
+      <div className="flex-col" style={{ gap: '2px', minWidth: '100px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{dateString}</span>
+        <span className="text-xs text-muted">{timeString}</span>
+      </div>
+
+      <div className="flex-col" style={{ flex: 1, gap: '2px', minWidth: '120px' }}>
+        <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text)' }}>{performance.title}</span>
+        <span className="text-xs text-muted" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+            {performance.expand?.venue?.name || 'No venue'}
+          </span>
+        </span>
+      </div>
+
+      <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexShrink: 0 }}>
+        {isPast && (
+          <div className="flex-col" style={{ alignItems: 'center', gap: '2px' }}>
+            <span className="text-xs text-muted" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Attended</span>
+            {renderAttendanceBadge(currentAttendance)}
+          </div>
+        )}
+
+        <div className="flex-col" style={{ alignItems: 'flex-start', gap: '2px' }}>
+          <span className="text-xs text-muted" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>RSVP</span>
+          <div className="flex-row" style={{ alignItems: 'center', gap: '8px' }}>
+            <select
+              value={currentRsvp}
+              disabled={isSaving}
+              onChange={(e) => onRsvpChange(performance.id, e.target.value as EventRoster['rsvp'])}
+              style={getSelectStyle(currentRsvp)}
+            >
+              <option value="Pending">Pending</option>
+              <option value="Yes">Yes (Attending)</option>
+              <option value="No">No (Declined)</option>
+            </select>
+
+            {isSaving && (
+              <span className="text-xs text-muted" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span
+                  className="saving-spinner"
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid rgba(0,0,0,0.1)',
+                    borderTop: '2px solid var(--primary)',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    animation: 'spin 0.8s linear infinite',
+                  }}
+                ></span>
+              </span>
+            )}
+
+            {saveError && (
+              <span className="text-xs" style={{ color: 'var(--danger)', fontWeight: 600 }}>
+                {saveError}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
