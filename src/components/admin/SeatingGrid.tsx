@@ -570,7 +570,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     }
                   </div>
                   {assignedProfile ? (
-                    <div className="flex-col" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
+                    <div className="flex-col seat-person" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
                       <div className="seat-initials" style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>

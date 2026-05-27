@@ -70,3 +70,15 @@ test('seating grid print mode prints only the visual grid surface', () => {
     'visual print mode must not hide the seating grid',
   );
 });
+
+
+test('visual print seat typography uses semantic seat classes', () => {
+  const printRules = appCss.match(/@media print\s*\{[\s\S]*\n\}/)?.[0] || '';
+
+  assert.match(printRules, /\.grid-print\s+\.seat-label\s*\{[^}]*font-size:/, 'print CSS should style seat labels by semantic class');
+  assert.match(printRules, /\.grid-print\s+\.seat-person\s*\{[^}]*display:\s*flex\s*!important/, 'print CSS should style assigned singer container by semantic class');
+  assert.match(printRules, /\.grid-print\s+\.seat-initials\s*\{[^}]*font-size:/, 'print CSS should style singer initials by semantic class');
+  assert.match(printRules, /\.grid-print\s+\.seat-voice-part\s*\{[^}]*display:\s*none\s*!important/, 'print CSS should hide voice-part labels in print by semantic class');
+
+  assert.ok(!/\.seat-cell\s*>\s*\.flex-col\s*\{/.test(printRules), 'print CSS should avoid fragile structural selector for assigned singer wrapper');
+});
