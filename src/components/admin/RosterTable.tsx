@@ -19,6 +19,8 @@ interface RosterTableProps {
 }
 
 import { AppCard } from '../common/AppCard';
+import { StatusBadge } from '../common/StatusBadge';
+import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
 
 export const RosterTable: React.FC<RosterTableProps> = ({ 
   profiles, 
@@ -76,9 +78,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart}</span>
                 </td>
                 <td data-label="Status">
-                  <span className={`badge ${p.globalStatus.includes('Active') ? 'badge-rehearsal' : 'badge-performance'}`}>
-                    {p.globalStatus}
-                  </span>
+                  <StatusBadge
+                    label={getGlobalStatusDisplay(p.globalStatus).label}
+                    tone={getGlobalStatusDisplay(p.globalStatus).tone}
+                    size="sm"
+                  />
                 </td>
                 {currentSeason && (
                   <td data-label="Dues Paid" onClick={(e) => e.stopPropagation()}>

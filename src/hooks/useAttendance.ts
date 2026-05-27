@@ -203,7 +203,10 @@ export const useAttendance = (eventId: string) => {
             ...item,
             id: r?.id || item.id,
             rosterId: r?.id || item.rosterId,
-            attendance: next
+            attendance: r?.attendance || next,
+            rsvp: r?.rsvp || item.rsvp,
+            folderNumber: r?.folderNumber ?? item.folderNumber,
+            folderReturned: r?.folderReturned ?? item.folderReturned,
           };
         }
         return item;
