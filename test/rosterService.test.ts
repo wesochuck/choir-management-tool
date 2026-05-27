@@ -42,38 +42,37 @@ test('updateAttendance returns the saved roster when PocketBase reports a post-c
   }
 });
 
-test('bulkUpsertAttendance queries existing records once and runs updates/creates in chunks', async (t) => {
-  const originalCollection = pb.collection;
-  const getFullList = t.mock.fn(async () => [
-    { id: 'roster_1', profile: 'profile_1', attendance: 'Pending' }
-  ]);
-  const update = t.mock.fn(async (id: string, data: { attendance: 'Present' | 'Absent' | 'Pending' }) => ({
-    id,
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: 'Pending',
-    attendance: data.attendance,
-    seatId: '',
-    folderNumber: '',
-    folderReturned: false,
-  }));
-  const create = t.mock.fn(async (data: { profile: string; attendance: 'Present' | 'Absent' | 'Pending' }) => ({
-    id: 'roster_2',
-    event: 'event_1',
-    profile: data.profile,
-    rsvp: 'Pending',
-    attendance: data.attendance,
-    seatId: '',
-    folderNumber: '',
-    folderReturned: false,
-  }));
+test('bulkUpsertAttendance calls custom backend bulk attendance endpoint and returns rosters', async () => {
+  const originalSend = pb.send;
+  const sendCalls: Array<{ path: string; options: { method?: string; body?: unknown } | undefined }> = [];
 
-  pb.collection = function (name: string) {
-    if (name === 'eventRosters') {
-      return { getFullList, update, create } as unknown as CollectionMock;
-    }
-    return originalCollection.call(pb, name);
-  };
+  pb.send = (async <T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> => {
+    sendCalls.push({ path, options });
+    return {
+      rosters: [
+        {
+          id: 'roster_1',
+          event: 'event_1',
+          profile: 'profile_1',
+          rsvp: 'Pending',
+          attendance: 'Present',
+          seatId: '',
+          folderNumber: '',
+          folderReturned: false,
+        },
+        {
+          id: 'roster_2',
+          event: 'event_1',
+          profile: 'profile_2',
+          rsvp: 'Pending',
+          attendance: 'Absent',
+          seatId: '',
+          folderNumber: '',
+          folderReturned: false,
+        }
+      ]
+    } as unknown as T;
+  }) as typeof pb.send;
 
   try {
     const updates = [
@@ -87,12 +86,15 @@ test('bulkUpsertAttendance queries existing records once and runs updates/create
     assert.equal(results[0].attendance, 'Present');
     assert.equal(results[1].id, 'roster_2');
     assert.equal(results[1].attendance, 'Absent');
-
-    assert.equal(getFullList.mock.callCount(), 1);
-    assert.equal(update.mock.callCount(), 1);
-    assert.equal(create.mock.callCount(), 1);
+    assert.equal(sendCalls.length, 1);
+    assert.equal(sendCalls[0].path, '/api/admin/bulk-upsert-attendance');
+    assert.equal(sendCalls[0].options?.method, 'POST');
+    assert.deepEqual(sendCalls[0].options?.body, {
+      eventId: 'event_1',
+      updates
+    });
   } finally {
-    pb.collection = originalCollection;
+    pb.send = originalSend;
   }
 });
 

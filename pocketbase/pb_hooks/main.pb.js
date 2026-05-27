@@ -1,5 +1,5 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
-// Generated on: 2026-05-26T22:34:35.083Z
+// Generated on: 2026-05-27T05:00:16.597Z
 
 // --- SHARED UTILITIES ---
 // WARNING: This section is automatically inlined by the generator.
