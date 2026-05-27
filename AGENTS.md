@@ -51,6 +51,15 @@
 - **Query Parameter Encoding:** When constructing URLs with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)` to prevent query parameter splitting/truncation.
 - **Defensive Parsing Fallback:** When parsing composite tokens from URL parameters, always check if the token was split by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls.
 
+
+## TokenUrlFactory Standardization
+
+- `src/lib/tokenUrlUtils.ts` is the **single source of truth** for public token links (`player`, `rsvp`, `poll`).
+- Always use `TokenUrlFactory.generatePublicLink(...)` for public link creation in UI/services unless an existing test explicitly enforces inline `encodeURIComponent` formatting for that exact call site.
+- Always use `TokenUrlFactory.extractTokenFromSearchParams(...)` (or `extractTokenFromUrl(...)`) when reading token query params in public views to preserve split fragments (`p`, `s`) caused by unencoded ampersands.
+- If adding a new tokenized public route, extend `PublicTokenScope` and add tests in `test/tokenUrlUtils.test.ts` for both encoded and split-token URL forms.
+- Do not duplicate ad-hoc token reconstruction logic in views/services when `TokenUrlFactory` can be used.
+
 ## PocketBase JS VM (Goja) JSON Field & File URL Safety
 
 - **Goja VM JSON Column []byte Serialization Bug:** PocketBase Goja JS VM handles JSON database columns as raw Go `[]byte` (represented in Javascript hooks as a numerical `[]uint8` array of character codes) rather than strings or standard JS objects.
