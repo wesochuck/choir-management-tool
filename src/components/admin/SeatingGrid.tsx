@@ -257,8 +257,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         const rowIndex = rowCounts.length - 1 - index;
         const seatCount = rowCounts[rowIndex];
         const isFront = rowIndex === 0;
-        const isBack = rowIndex === rowCounts.length - 1;
-        const rowLabel = `Row ${rowIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
+        const rowLabel = `Row ${rowIndex + 1}`;
         // Calculate suggestion-based seat numbers in this row
         const suggestedSeatNumbers: Record<number, number> = {};
         let suggestedCount = 0;
@@ -280,6 +279,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}>
             <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
               {rowLabel}
+              {(isFront || rowIndex === rowCounts.length - 1) && (
+                <span className="no-print">
+                  {isFront ? ' (Front)' : ' (Back)'}
+                </span>
+              )}
             </div>
 
             {/* "🗑️" remove row button */}
