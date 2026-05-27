@@ -5,10 +5,12 @@ import { usePollsDashboard } from '../../hooks/usePollsDashboard';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { buildPollDashboardStats } from '../../lib/pollDashboard';
+import { useDialog } from '../../contexts/DialogContext';
 
 export default function PollsDashboardView() {
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
+  const dialog = useDialog();
   const { polls, responses, isLoading, error, deletePoll } = usePollsDashboard();
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
@@ -27,11 +29,25 @@ export default function PollsDashboardView() {
   const pollStats = useMemo(() => buildPollDashboardStats(polls, responses), [polls, responses]);
 
   const handleDeletePoll = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this poll and all its responses?')) return;
+    const confirmed = await dialog.confirm({
+      title: 'Delete Poll',
+      message: 'Are you sure you want to delete this poll and all its responses?',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
+
     try {
       await deletePoll(id);
+      dialog.showToast('Poll deleted.');
     } catch {
-      alert('Failed to delete poll.');
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to delete poll.',
+        variant: 'danger',
+      });
     }
   };
 

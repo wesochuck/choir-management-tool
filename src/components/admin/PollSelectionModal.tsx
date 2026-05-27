@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import { pollService, type PollRecord } from '../../services/pollService';
 import { useEvents } from '../../hooks/useEvents';
+import { useDialog } from '../../contexts/DialogContext';
 interface PollSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,6 +19,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const { events } = useEvents();
+  const dialog = useDialog();
 
   // Create form state
   const [question, setQuestion] = useState('');
@@ -58,7 +60,11 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
       onClose();
     } catch (err) {
       console.error('Failed to create poll', err);
-      alert('Failed to create poll. Please try again.');
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to create poll. Please try again.',
+        variant: 'danger',
+      });
     } finally {
       setIsCreating(false);
     }

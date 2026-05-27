@@ -4,7 +4,7 @@ import { AppCard } from '../components/common/AppCard';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pollService, type PollDetails } from '../services/pollService';
 import { formatInTimezone } from '../lib/timezone';
-import { pb } from '../lib/pocketbase';
+import { settingsService } from '../services/settingsService';
 import { TokenUrlFactory } from '../lib/tokenUrlUtils';
 
 export default function PublicPollView() {
@@ -32,11 +32,9 @@ export default function PublicPollView() {
       try {
         const res = await pollService.getPollDetails(token);
         
-        // Resolve local tz if available
         let tz = 'America/New_York';
         try {
-          const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
-          if (setting?.value?.timezone) tz = setting.value.timezone;
+          tz = await settingsService.getTimezone();
         } catch {
           // Fallback to default America/New_York
         }
