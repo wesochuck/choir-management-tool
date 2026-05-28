@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
@@ -86,13 +86,15 @@ export default function CommunicationView() {
     initialSubject?: string;
     initialContent?: string;
     initialEventId?: string;
+    initialOpenReview?: boolean;
+    returnToPolls?: boolean;
   } | null;
 
   const { user } = useAuth();
 
   // Global UI state
   const [tab, setTab] = useState<CommunicationTab>('compose');
-  const [wizardStep, setWizardStep] = useState<WizardStep>('TARGETS');
+  const [wizardStep, setWizardStep] = useState<WizardStep>(routeState?.initialOpenReview ? 'REVIEW' : 'TARGETS');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -111,6 +113,9 @@ export default function CommunicationView() {
   });
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(routeState?.initialRecipients || []);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(routeState?.initialRecipients?.map(r => r.id) || []));
+  const [lockInitialRecipients, setLockInitialRecipients] = useState(
+    Boolean(routeState?.initialOpenReview && routeState?.initialRecipients && routeState.initialRecipients.length > 0),
+  );
   const [subject, setSubject] = useState(routeState?.initialSubject || '');
   const [content, setContent] = useState(routeState?.initialContent || '');
   const [messageType, setMessageType] = useState<MessageType>('Email');
@@ -301,6 +306,7 @@ export default function CommunicationView() {
   // Recipient resolution logic
   useEffect(() => {
     if (tab !== 'compose') return;
+    if (lockInitialRecipients) return;
     let isCurrent = true;
     communicationService.resolveRecipients(filters)
       .then((resolved) => {
@@ -317,9 +323,10 @@ export default function CommunicationView() {
         if (isCurrent) setIsLoading(false);
       });
     return () => { isCurrent = false; };
-  }, [filters, tab]);
+  }, [filters, tab, lockInitialRecipients]);
 
   const updateFilter = <K extends keyof CommunicationFilters>(key: K, value: CommunicationFilters[K]) => {
+    if (lockInitialRecipients) setLockInitialRecipients(false);
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -327,6 +334,13 @@ export default function CommunicationView() {
     const active = filters.voiceParts || [];
     const next = active.includes(token) ? active.filter((p) => p !== token) : [...active, token];
     updateFilter('voiceParts', next);
+  };
+
+  const handleEventContextChange = (eventId: string) => {
+    updateFilter('eventId', eventId);
+    if (!eventId && filters.rsvp !== 'All') {
+      updateFilter('rsvp', 'All');
+    }
   };
 
   const insertPlaceholder = (tag: string) => {
@@ -528,7 +542,14 @@ export default function CommunicationView() {
   return (
     <div className="communication-container">
       <div className="communication-header">
-        <h1 className="text-display" style={{ margin: 0 }}>Communications</h1>
+        <div className="flex-col" style={{ gap: '6px' }}>
+          <h1 className="text-display" style={{ margin: 0 }}>Communications</h1>
+          {routeState?.returnToPolls && (
+            <Link to="/admin/polls" className="text-muted text-sm" style={{ textDecoration: 'underline' }}>
+              Back to Polls
+            </Link>
+          )}
+        </div>
         <CommunicationTabs
           activeTab={tab}
           onTabChange={(nextTab) => {
@@ -578,7 +599,7 @@ export default function CommunicationView() {
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                     <label className="text-label">Event Context</label>
-                    <select className="card" value={filters.eventId} onChange={(event) => updateFilter('eventId', event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
+                    <select className="card" value={filters.eventId} onChange={(event) => handleEventContextChange(event.target.value)} style={{ height: '44px', padding: '0 12px' }}>
                       <option value="">No Specific Event</option>
                       {events.map((event) => (
                         <option key={event.id} value={event.id}>{event.title || event.expand?.venue?.name || ''}</option>
@@ -588,12 +609,21 @@ export default function CommunicationView() {
 
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                     <label className="text-label">RSVP Status</label>
-                    <select className="card" value={filters.rsvp} onChange={(event) => updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])} style={{ height: '44px', padding: '0 12px' }}>
+                    <select
+                      className="card"
+                      value={filters.rsvp}
+                      onChange={(event) => updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])}
+                      style={{ height: '44px', padding: '0 12px' }}
+                      disabled={!filters.eventId}
+                    >
                       <option value="All">All Members</option>
                       <option value="Yes">Attending Only</option>
                       <option value="No">Declined Only</option>
                       <option value="Pending">No Response (Pending)</option>
                     </select>
+                    {!filters.eventId && (
+                      <span className="text-muted text-xs">Select an event first to filter by RSVP status.</span>
+                    )}
                   </div>
 
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
@@ -658,6 +688,15 @@ export default function CommunicationView() {
                        <span>Email Reach: <strong>{recipientCounts.hasEmail}</strong></span>
                        <span>SMS Reach: <strong>{recipientCounts.hasPhone}</strong></span>
                      </div>
+                     <button
+                       type="button"
+                       className="btn btn-ghost btn-sm"
+                       style={{ alignSelf: 'flex-end', marginTop: '8px' }}
+                       disabled={recipients.length === 0}
+                       onClick={() => setRecipientPreviewList({ isOpen: true, recipients, title: 'Matched Singers' })}
+                     >
+                       View Matched Singers
+                     </button>
                    </div>
                  </div>
                </AppCard>
@@ -758,6 +797,22 @@ export default function CommunicationView() {
                         <span className="review-stat-value">{recipientCounts.hasPhone}</span>
                         <span className="text-muted text-sm">Via SMS</span>
                       </div>
+                    </div>
+                    <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        disabled={selectedRecipients.length === 0}
+                        onClick={() =>
+                          setRecipientPreviewList({
+                            isOpen: true,
+                            recipients: selectedRecipients,
+                            title: 'Recipients Selected for Send',
+                          })
+                        }
+                      >
+                        View Matched Singers
+                      </button>
                     </div>
                   </div>
 

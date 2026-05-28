@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { pb } from '../../lib/pocketbase';
@@ -7,6 +7,8 @@ import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
+import { profileService } from '../../services/profileService';
+import type { CommunicationRecipient } from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
 
 interface PollRecord extends RecordModel {
@@ -30,6 +32,7 @@ interface PollResponseRecord extends RecordModel {
 
 export default function PollsDashboardView() {
   const dialog = useDialog();
+  const navigate = useNavigate();
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
   const [polls, setPolls] = useState<PollRecord[]>([]);
@@ -39,6 +42,10 @@ export default function PollsDashboardView() {
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
+  const [quickCreateStep, setQuickCreateStep] = useState<1 | 2>(1);
+  const [quickPollQuestion, setQuickPollQuestion] = useState('');
+  const [isCreatingQuickPoll, setIsCreatingQuickPoll] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -118,6 +125,58 @@ export default function PollsDashboardView() {
     }
   };
 
+  const openQuickCreate = () => {
+    setQuickCreateStep(1);
+    setQuickPollQuestion('');
+    setIsQuickCreateOpen(true);
+  };
+
+  const handleQuickCreateAndOpenReview = async () => {
+    const trimmedQuestion = quickPollQuestion.trim();
+    if (!trimmedQuestion) return;
+
+    setIsCreatingQuickPoll(true);
+    try {
+      const poll = await pb.collection('polls').create<PollRecord>({
+        question: trimmedQuestion,
+      });
+
+      const profiles = await profileService.getProfiles();
+      const recipients: CommunicationRecipient[] = profiles
+        .filter((profile) => profile.globalStatus === 'Active' || profile.globalStatus === 'Idle')
+        .map((profile) => ({
+          id: profile.id,
+          name: profile.name,
+          email: profile.expand?.user?.email || '',
+          phone: profile.phone || '',
+          voicePart: profile.voicePart,
+          globalStatus: profile.globalStatus,
+        }));
+
+      setPolls((prev) => [poll, ...prev]);
+      setIsQuickCreateOpen(false);
+
+      navigate('/admin/communications', {
+        state: {
+          initialRecipients: recipients,
+          initialSubject: 'Quick Choir Poll',
+          initialContent: `Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:${poll.id}}}\n\nThank you!`,
+          initialOpenReview: true,
+          returnToPolls: true,
+        },
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create quick poll workflow.';
+      await dialog.showMessage({
+        title: 'Quick Create Failed',
+        message,
+        variant: 'danger',
+      });
+    } finally {
+      setIsCreatingQuickPoll(false);
+    }
+  };
+
   if (isLoading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Polls...</div>;
 
   return (
@@ -138,7 +197,7 @@ export default function PollsDashboardView() {
             type="button"
             className="btn btn-primary btn-sm flex-row" 
             style={{ gap: '6px', height: '36px', display: 'flex', alignItems: 'center' }}
-            onClick={() => setIsInfoModalOpen(true)}
+            onClick={openQuickCreate}
           >
             <span>+</span> Start New Poll
           </button>
@@ -163,7 +222,7 @@ export default function PollsDashboardView() {
               </ol>
             </div>
             <div>
-              <button type="button" className="btn btn-primary" onClick={() => setIsInfoModalOpen(true)}>
+              <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
                 Start New Poll
               </button>
             </div>
@@ -274,6 +333,72 @@ export default function PollsDashboardView() {
           })
         )}
       </div>
+
+      <BaseModal
+        isOpen={isQuickCreateOpen}
+        onClose={() => setIsQuickCreateOpen(false)}
+        title={quickCreateStep === 1 ? 'Quick Create Poll' : 'Confirm & Open Review'}
+        maxWidth="560px"
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          {quickCreateStep === 1 ? (
+            <>
+              <p className="text-muted" style={{ margin: 0 }}>
+                Create a poll and jump straight to Communications Review with a prefilled message.
+              </p>
+              <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
+              <textarea
+                id="quick-poll-question"
+                className="card"
+                style={{ minHeight: '110px', padding: '12px', resize: 'vertical' }}
+                value={quickPollQuestion}
+                onChange={(e) => setQuickPollQuestion(e.target.value)}
+                placeholder="Who can help with setup?"
+              />
+              <p className="text-muted text-sm" style={{ margin: 0 }}>
+                Recipients default to all singers with status Active or Idle.
+              </p>
+              <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setIsQuickCreateOpen(false)}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={!quickPollQuestion.trim()}
+                  onClick={() => setQuickCreateStep(2)}
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0 }}>
+                We’ll create this poll and open Communications directly at Review with a prefilled draft.
+              </p>
+              <div className="card" style={{ padding: '12px 14px' }}>
+                <div className="text-muted text-xs" style={{ marginBottom: '6px' }}>Poll Question</div>
+                <strong>{quickPollQuestion.trim()}</strong>
+              </div>
+              <div className="card" style={{ padding: '12px 14px' }}>
+                <div className="text-muted text-xs" style={{ marginBottom: '6px' }}>Draft Preview</div>
+                <div><strong>Subject:</strong> Quick Choir Poll</div>
+                <div style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
+              </div>
+              <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+                <button type="button" className="btn btn-ghost" disabled={isCreatingQuickPoll} onClick={() => setQuickCreateStep(1)}>Back</button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={isCreatingQuickPoll}
+                  onClick={() => void handleQuickCreateAndOpenReview()}
+                >
+                  {isCreatingQuickPoll ? 'Creating...' : 'Create + Open Review'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </BaseModal>
 
       <BaseModal
         isOpen={isInfoModalOpen}
