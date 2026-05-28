@@ -46,7 +46,8 @@ export default function PollsDashboardView() {
         pb.collection('polls').getFullList<PollRecord>(),
         pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId' }),
       ]);
-      setPolls(pollList);
+      // Sort newest-first: PocketBase IDs are ULIDs — lexicographic order == chronological order
+      setPolls([...pollList].sort((a, b) => b.id.localeCompare(a.id)));
       setResponses(responseList);
     } catch (err) {
       console.error('Failed to load poll dashboard data', err);
@@ -163,7 +164,18 @@ export default function PollsDashboardView() {
 
             return (
               <AppCard key={poll.id} noPadding>
-                <div style={{ padding: 'var(--space-md) var(--space-lg)', borderBottom: isExpanded ? '1px solid var(--border)' : 'none' }}>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
+                  style={{
+                    padding: 'var(--space-md) var(--space-lg)',
+                    borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                >
                   <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
                     <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
                       <div className="flex-row" style={{ gap: '8px', alignItems: 'center' }}>
@@ -189,17 +201,14 @@ export default function PollsDashboardView() {
                         </div>
                       </div>
 
-                      <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
-                        <button 
-                          className="btn btn-ghost btn-sm" 
-                          onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
-                        >
-                          {isExpanded ? 'Hide Details' : 'View Names'}
-                        </button>
-                        <button 
-                          className="btn btn-ghost btn-sm" 
+                      <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {isExpanded ? '▲ Hide' : '▼ Names'}
+                        </span>
+                        <button
+                          className="btn btn-ghost btn-sm"
                           style={{ color: '#ef4444' }}
-                          onClick={() => handleDeletePoll(poll.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
                         >
                           Delete
                         </button>
