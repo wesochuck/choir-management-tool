@@ -43,7 +43,7 @@ export const pollService = {
 
   async getActivePollsForSinger(profileId: string): Promise<SingerPoll[]> {
     const [polls, responses] = await Promise.all([
-      pb.collection('polls').getFullList<SingerPoll>({ sort: '-created' }),
+      pb.collection('polls').getFullList<SingerPoll>(),
       pb.collection('pollResponses').getFullList<RecordModel>({
         filter: pb.filter('profileId = {:profileId}', { profileId })
       })

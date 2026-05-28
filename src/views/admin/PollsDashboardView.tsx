@@ -11,7 +11,8 @@ import type { RecordModel } from 'pocketbase';
 interface PollRecord extends RecordModel {
   question: string;
   eventId?: string;
-  created: string;
+  created?: string;
+  updated?: string;
 }
 
 interface PollResponseRecord extends RecordModel {
@@ -42,8 +43,8 @@ export default function PollsDashboardView() {
     setLoadError(null);
     try {
       const [pollList, responseList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
-        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
+        pb.collection('polls').getFullList<PollRecord>(),
+        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId' }),
       ]);
       setPolls(pollList);
       setResponses(responseList);
