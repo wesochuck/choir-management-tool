@@ -85,7 +85,8 @@ export function resolvePreviewContent(
   content: string,
   event: Event | null,
   recipient: CommunicationRecipient | null,
-  mailingAddress: string = '123 Choir St, Harmony City, HC 12345'
+  mailingAddress: string = '123 Choir St, Harmony City, HC 12345',
+  pollQuestions: Record<string, string> = {}
 ): string {
   if (!content) return '';
 
@@ -128,14 +129,17 @@ export function resolvePreviewContent(
   result = result.replace(/{{PLAYER_LINK}}/g, playerText);
   result = result.replace(/{playerLink}/g, playerText);
 
-  // Poll Links - Injected as literal HTML preview
+  // Poll Links - Injected as literal HTML preview, using actual poll question if available
   const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
-  result = result.replace(pollRegex, () => `
+  result = result.replace(pollRegex, (_, pollId: string) => {
+    const question = pollQuestions[pollId] || 'Answer our quick question';
+    return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <span style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</span>
-    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    <span style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${question}</span>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">(No login required)</p>
 </div>
-  `);
+  `;
+  });
 
   // Compliance Placeholders
   result = result.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
@@ -155,7 +159,8 @@ export function getRenderedPreview(
   messageType: 'Email' | 'SMS' | 'Both',
   event: Event | null,
   recipient: CommunicationRecipient | null,
-  mailingAddress: string
+  mailingAddress: string,
+  pollQuestions: Record<string, string> = {}
 ): string {
   // 1. Render Markdown first (escapes user input)
   let html = renderMarkdown(userContent);
@@ -166,5 +171,5 @@ export function getRenderedPreview(
   }
 
   // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
-  return resolvePreviewContent(html, event, recipient, mailingAddress);
+  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions);
 }

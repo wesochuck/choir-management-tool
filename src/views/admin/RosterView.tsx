@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
@@ -15,19 +15,16 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
-import { useDialog } from '../../contexts/DialogContext';
+import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import './RosterView.css';
 
 export default function RosterView() {
-  const dialog = useDialog();
   const { user, updatePreferences } = useAuth();
-  const hasShownRetryToastRef = useRef(false);
+  const { onRetry: onRosterRateLimitRetry, reset: resetRosterRateLimitToast } = useRateLimitRetryToast(
+    'Roster loading is being rate-limited; retrying automatically...',
+  );
   const { allProfiles, profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles({
-    onRateLimitRetry: () => {
-      if (hasShownRetryToastRef.current) return;
-      hasShownRetryToastRef.current = true;
-      dialog.showToast('Roster loading is being rate-limited; retrying automatically...');
-    },
+    onRateLimitRetry: onRosterRateLimitRetry,
   });
   const { currentSeason, duesMap, toggleDues } = useDues();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -54,9 +51,9 @@ export default function RosterView() {
   // Reset to first page when search filters or sorting selections change
   useEffect(() => {
     if (isLoading) {
-      hasShownRetryToastRef.current = false;
+      resetRosterRateLimitToast();
     }
-  }, [isLoading]);
+  }, [isLoading, resetRosterRateLimitToast]);
 
   useEffect(() => {
     setCurrentPage(1);

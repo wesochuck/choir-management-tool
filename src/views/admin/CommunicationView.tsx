@@ -6,6 +6,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { useEvents } from '../../hooks/useEvents';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import {
   communicationService,
   type CommunicationFilters,
@@ -88,7 +89,11 @@ export default function CommunicationView() {
     initialEventId?: string;
     initialOpenReview?: boolean;
     returnToPolls?: boolean;
+    // Quick-poll draft flow: open the Drafts tab and resume a specific draft
+    openDraftId?: string;
+    initialPollQuestions?: Record<string, string>;
   } | null;
+
 
   const { user } = useAuth();
 
@@ -129,6 +134,10 @@ export default function CommunicationView() {
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+  const [pollQuestions, setPollQuestions] = useState<Record<string, string>>(
+    routeState?.initialPollQuestions ?? {}
+  );
+
 
   // Secondary UI state
 
@@ -141,7 +150,9 @@ export default function CommunicationView() {
     recipients: [],
     title: '',
   });
-  const hasShownStatusRetryToastRef = useRef(false);
+  const { onRetry: onStatusRateLimitRetry, reset: resetStatusRateLimitToast } = useRateLimitRetryToast(
+    'Communications status checks are rate-limited; retrying automatically...',
+  );
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
@@ -173,9 +184,11 @@ export default function CommunicationView() {
       previewType as MessageType,
       selectedEvent,
       sampleRecipient,
-      commSettings.mailingAddress
+      commSettings.mailingAddress,
+      pollQuestions
     );
-  }, [content, editingTemplate, events, filters.eventId, selectedRecipients, messageType, commSettings.mailingAddress]);
+  }, [content, editingTemplate, events, filters.eventId, selectedRecipients, messageType, commSettings.mailingAddress, pollQuestions]);
+
 
   const { upcomingTasks, pastTasks } = useMemo(() => {
     const upcoming: AutomatedTask[] = [];
@@ -258,15 +271,11 @@ export default function CommunicationView() {
   useEffect(() => {
     let isCurrent = true;
     if (events.length === 0) return;
-    hasShownStatusRetryToastRef.current = false;
+    resetStatusRateLimitToast();
 
     const checkSentStatuses = async () => {
       const cache = await communicationService.getSentTaskStatuses(events.map((event) => event.id), {
-        onRetry: () => {
-          if (hasShownStatusRetryToastRef.current) return;
-          hasShownStatusRetryToastRef.current = true;
-          dialog.showToast('Communications status checks are rate-limited; retrying automatically...');
-        },
+        onRetry: onStatusRateLimitRetry,
       });
       if (isCurrent) setSentTaskStatus(cache);
     };
@@ -275,7 +284,7 @@ export default function CommunicationView() {
     return () => {
       isCurrent = false;
     };
-  }, [events, dialog]);
+  }, [events, onStatusRateLimitRetry, resetStatusRateLimitToast]);
 
   useEffect(() => {
     const load = async () => {
@@ -292,13 +301,21 @@ export default function CommunicationView() {
         setTemplates(loadedTemplates);
         setCommSettings(loadedSettings);
         setIsLoading(false);
+
+        // If we arrived here from Quick Poll "Save as Draft", auto-switch to Drafts tab
+        // so the user immediately sees the new draft with the badge count.
+        if (routeState?.openDraftId) {
+          setTab('drafts');
+        }
       } catch (err) {
         setIsLoading(false);
         console.error('Failed to load initial communication data', err);
       }
     };
     void load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   // Dropdown outside click handler
   useEffect(() => {
@@ -1357,7 +1374,33 @@ export default function CommunicationView() {
       <PollSelectionModal
         isOpen={isPollModalOpen}
         onClose={() => setIsPollModalOpen(false)}
-        onSelect={(pollId) => insertPlaceholder(`{{POLL_LINK:${pollId}}}`)}
+        onSelect={(pollId, pollQuestion) => {
+          const tag = `{{POLL_LINK:${pollId}}}`;
+          // Directly insert the tag without going through insertPlaceholder
+          // (which would re-open the modal if it sees the generic poll tag).
+          if (textAreaRef.current) {
+            const { selectionStart, selectionEnd } = textAreaRef.current;
+            if (editingTemplate) {
+              const currentContent = editingTemplate.content || '';
+              const newContent = currentContent.substring(0, selectionStart) + tag + currentContent.substring(selectionEnd);
+              setEditingTemplate({ ...editingTemplate, content: newContent });
+            } else {
+              const newContent = content.substring(0, selectionStart) + tag + content.substring(selectionEnd);
+              setContent(newContent);
+              setTimeout(() => {
+                if (textAreaRef.current) {
+                  textAreaRef.current.focus();
+                  textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = selectionStart + tag.length;
+                }
+              }, 0);
+            }
+          } else {
+            setContent(prev => prev + tag);
+          }
+          // Store the poll question so the preview can resolve it
+          setPollQuestions(prev => ({ ...prev, [pollId]: pollQuestion }));
+          setIsPollModalOpen(false);
+        }}
       />
 
     </div>

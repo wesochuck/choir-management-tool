@@ -53,6 +53,8 @@
   - `mapWithConcurrency(...)` for capped in-flight request counts
   - `retryOn429(...)` for exponential backoff + jitter on rate-limited reads
 - **Retry Feedback in Interactive Views:** When using `retryOn429(...)` in admin/user-facing flows, provide non-blocking UI feedback via `onRetry` (for example, a toast like “Rate-limited, retrying...”) so users understand transient loading delays.
+- **Use the Retry Toast Hook in React:** For React screens, prefer `useRateLimitRetryToast(...)` from `src/hooks/useRateLimitRetryToast.ts` instead of hand-rolled retry toast refs/callbacks.
+- **Stable Retry Callbacks:** Do not let retry feedback callbacks become dependencies that retrigger the data fetch; keep them stable with `useCallback` or store them in a ref inside reusable hooks.
 - **No Unbounded Fan-Out:** Never fire one API request per item in a large list without batching or a concurrency cap. Avoid `Promise.all(items.map(...))` for network calls unless the item count is strictly bounded and small.
 - **Batch First:** Prefer bulk/aggregated reads over per-record probes (for example, fetch statuses for many event IDs in one query, then map results locally).
 - **Chunk Dynamic Filters:** When building OR filters for many IDs, chunk into bounded groups (for example 20-50 IDs per query) to avoid oversized URLs and parser strain.

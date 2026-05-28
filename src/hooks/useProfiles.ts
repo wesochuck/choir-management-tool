@@ -1,36 +1,45 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { profileService, type Profile, type ProfileInput } from '../services/profileService';
 import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
+import { getHttpStatus, type Retry429Options } from '../lib/networkSafety';
 
 interface UseProfilesOptions {
-  onRateLimitRetry?: (attempt: number, delayMs: number) => void;
+  onRateLimitRetry?: Retry429Options['onRetry'];
 }
 
 export const useProfiles = (options: UseProfilesOptions = {}) => {
-  const onRateLimitRetry = options.onRateLimitRetry;
+  const onRateLimitRetryRef = useRef(options.onRateLimitRetry);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({ voiceParts: [] as string[], status: '', name: '' });
 
+  useEffect(() => {
+    onRateLimitRetryRef.current = options.onRateLimitRetry;
+  }, [options.onRateLimitRetry]);
+
   const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await profileService.getProfiles({
-        onRetry: (attempt, delayMs) => {
-          onRateLimitRetry?.(attempt, delayMs);
+        onRetry: (attempt, delayMs, error) => {
+          onRateLimitRetryRef.current?.(attempt, delayMs, error);
         },
       });
       setProfiles(data);
       setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch profiles');
+      if (getHttpStatus(err) === 429) {
+        setError('Roster loading is temporarily rate-limited. Please wait a moment and try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch profiles');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [onRateLimitRetry]);
+  }, []);
 
   useEffect(() => {
     fetchProfiles();

@@ -34,9 +34,19 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
             <span
               className="badge"
               style={{
-                marginLeft: '8px',
-                backgroundColor: 'var(--primary-light)',
-                color: 'var(--primary-deep)',
+                marginLeft: '6px',
+                backgroundColor: '#f59e0b',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                minWidth: '18px',
+                height: '18px',
+                lineHeight: '18px',
+                padding: '0 5px',
+                borderRadius: '999px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               {draftsCount}

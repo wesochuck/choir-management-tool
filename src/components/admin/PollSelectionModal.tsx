@@ -12,8 +12,9 @@ interface PollRecord extends RecordModel {
 interface PollSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (pollId: string) => void;
+  onSelect: (pollId: string, pollQuestion: string) => void;
 }
+
 
 export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   isOpen,
@@ -61,7 +62,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
         question,
         eventId: eventId || null,
       });
-      onSelect(record.id);
+      onSelect(record.id, record.question);
       onClose();
     } catch (err) {
       console.error('Failed to create poll', err);
@@ -75,9 +76,10 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="📊 Engagement Polls"
+      title="📊 Insert a Poll"
       maxWidth="500px"
     >
+
       <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
         <div className="flex-row" style={{ gap: 'var(--space-xs)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)' }}>
           <button
@@ -95,28 +97,36 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
         </div>
 
         {tab === 'list' ? (
-          <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
-            {isLoading ? (
-              <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>Loading polls...</p>
-            ) : polls.length === 0 ? (
-              <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>No polls found. Create one to get started!</p>
-            ) : (
-              polls.map(poll => (
-                <button
-                  key={poll.id}
-                  className="card flex-col"
-                  style={{ textAlign: 'left', padding: 'var(--space-sm) var(--space-md)', gap: '4px', cursor: 'pointer', border: '1px solid var(--border)' }}
-                  onClick={() => onSelect(poll.id)}
-                >
-                  <strong style={{ fontSize: '0.95rem' }}>{poll.question}</strong>
-                  {poll.eventId && (
-                    <span className="text-muted text-xs">
-                      Linked to: {events.find(e => e.id === poll.eventId)?.title || 'Event'}
-                    </span>
-                  )}
-                </button>
-              ))
-            )}
+          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
+              {isLoading ? (
+                <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>Loading polls...</p>
+              ) : polls.length === 0 ? (
+                <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>No polls found. Create one to get started!</p>
+              ) : (
+                polls.map(poll => (
+                  <button
+                    key={poll.id}
+                    className="card flex-col"
+                    style={{ textAlign: 'left', padding: 'var(--space-sm) var(--space-md)', gap: '4px', cursor: 'pointer', border: '1px solid var(--border)' }}
+                    onClick={() => {
+                      onSelect(poll.id, poll.question);
+                      onClose();
+                    }}
+                  >
+                    <strong style={{ fontSize: '0.95rem' }}>{poll.question}</strong>
+                    {poll.eventId && (
+                      <span className="text-muted text-xs">
+                        Linked to: {events.find(e => e.id === poll.eventId)?.title || 'Event'}
+                      </span>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-xs)' }}>
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleCreate} className="flex-col" style={{ gap: 'var(--space-md)' }}>

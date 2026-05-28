@@ -8,8 +8,9 @@ import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService } from '../../services/profileService';
-import type { CommunicationRecipient } from '../../services/communicationService';
+import { communicationService, type CommunicationRecipient } from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
+
 
 interface PollRecord extends RecordModel {
   question: string;
@@ -137,10 +138,12 @@ export default function PollsDashboardView() {
 
     setIsCreatingQuickPoll(true);
     try {
+      // 1. Create the poll record
       const poll = await pb.collection('polls').create<PollRecord>({
         question: trimmedQuestion,
       });
 
+      // 2. Build recipients (active/idle singers)
       const profiles = await profileService.getProfiles();
       const recipients: CommunicationRecipient[] = profiles
         .filter((profile) => profile.globalStatus === 'Active' || profile.globalStatus === 'Idle')
@@ -153,15 +156,27 @@ export default function PollsDashboardView() {
           globalStatus: profile.globalStatus,
         }));
 
+      const subject = 'Quick Choir Poll';
+      const content = `Hi {singerName},\n\nPlease tap below to answer:\n{{POLL_LINK:${poll.id}}}\n\nThank you!`;
+
+      // 3. Save immediately as a draft so it shows up in the Drafts badge
+      const draft = await communicationService.saveDraft({
+        subject,
+        content,
+        type: 'Email',
+        recipients,
+        filters: {},
+      });
+
       setPolls((prev) => [poll, ...prev]);
       setIsQuickCreateOpen(false);
 
+      // 4. Navigate to Communications → Drafts tab, passing the draft ID and poll question
+      // so the preview can show the actual question without the fallback text.
       navigate('/admin/communications', {
         state: {
-          initialRecipients: recipients,
-          initialSubject: 'Quick Choir Poll',
-          initialContent: `Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:${poll.id}}}\n\nThank you!`,
-          initialOpenReview: true,
+          openDraftId: draft.id,
+          initialPollQuestions: { [poll.id]: trimmedQuestion },
           returnToPolls: true,
         },
       });
@@ -373,7 +388,7 @@ export default function PollsDashboardView() {
           ) : (
             <>
               <p style={{ margin: 0 }}>
-                We’ll create this poll and open Communications directly at Review with a prefilled draft.
+                We'll create this poll and save a pre-filled message to your <strong>Drafts</strong>. You can review, edit, and send from the Communications page.
               </p>
               <div className="card" style={{ padding: '12px 14px' }}>
                 <div className="text-muted text-xs" style={{ marginBottom: '6px' }}>Poll Question</div>
@@ -392,7 +407,7 @@ export default function PollsDashboardView() {
                   disabled={isCreatingQuickPoll}
                   onClick={() => void handleQuickCreateAndOpenReview()}
                 >
-                  {isCreatingQuickPoll ? 'Creating...' : 'Create + Open Review'}
+                  {isCreatingQuickPoll ? 'Saving draft...' : 'Create + Save as Draft'}
                 </button>
               </div>
             </>
