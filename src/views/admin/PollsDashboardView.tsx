@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
+import { BaseModal } from '../../components/common/BaseModal';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
@@ -32,6 +34,7 @@ export default function PollsDashboardView() {
   const [isLoading, setIsLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -109,21 +112,44 @@ export default function PollsDashboardView() {
     <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
       <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
         <h2 className="text-headline" style={{ margin: 0 }}>Engagement Polls & Volunteering</h2>
-        <label className="flex-row" style={{ gap: '8px', alignItems: 'center', cursor: 'pointer', fontSize: '0.9rem' }}>
-          <input 
-            type="checkbox" 
-            checked={showArchived} 
-            onChange={e => setShowArchived(e.target.checked)}
-            style={{ width: '16px', height: '16px' }}
-          />
-          Show Archived (Past Events)
-        </label>
+        <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+          <label className="flex-row" style={{ gap: '8px', alignItems: 'center', cursor: 'pointer', fontSize: '0.9rem' }}>
+            <input 
+              type="checkbox" 
+              checked={showArchived} 
+              onChange={e => setShowArchived(e.target.checked)}
+              style={{ width: '16px', height: '16px' }}
+            />
+            Show Archived (Past Events)
+          </label>
+          <button 
+            type="button"
+            className="btn btn-primary btn-sm flex-row" 
+            style={{ gap: '6px', height: '36px', display: 'flex', alignItems: 'center' }}
+            onClick={() => setIsInfoModalOpen(true)}
+          >
+            <span>+</span> Start New Poll
+          </button>
+        </div>
       </div>
 
       <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
         {filteredPolls.length === 0 ? (
-          <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
-            <p className="text-muted">No active polls found.</p>
+          <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: 'var(--space-md)' }}>No active polls found.</p>
+            <div style={{ maxWidth: '480px', margin: '0 auto 24px auto', textAlign: 'left', backgroundColor: 'var(--bg)', padding: '16px 20px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              <strong style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px' }}>How to create a poll:</strong>
+              <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <li>Go to the <Link to="/admin/communications" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Communications Dashboard</Link>.</li>
+                <li>In the Composer, click the <strong>Engagement Poll</strong> placeholder badge.</li>
+                <li>Create your poll question and insert it into your email/SMS.</li>
+              </ol>
+            </div>
+            <div>
+              <button type="button" className="btn btn-primary" onClick={() => setIsInfoModalOpen(true)}>
+                Start New Poll
+              </button>
+            </div>
           </AppCard>
         ) : (
           filteredPolls.map(poll => {
@@ -223,6 +249,45 @@ export default function PollsDashboardView() {
           })
         )}
       </div>
+
+      <BaseModal
+        isOpen={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        title="📊 How to Start an Engagement Poll"
+        maxWidth="520px"
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-md)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+          <p>
+            Engagement Polls are sent to choir members inside communications (emails/SMS). Members can click their personalized button to answer without logging in.
+          </p>
+          
+          <div style={{ backgroundColor: 'var(--bg)', padding: '16px 20px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <strong style={{ display: 'block', color: 'var(--text-main)', marginBottom: '10px' }}>Simple Steps:</strong>
+            <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <li>
+                Go to the <strong><Link to="/admin/communications" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }} onClick={() => setIsInfoModalOpen(false)}>Communications Dashboard</Link></strong>.
+              </li>
+              <li>
+                In the <strong>Composer</strong> (Step 2), click the <strong>Engagement Poll</strong> placeholder badge on the right panel.
+              </li>
+              <li>
+                Select or create a new poll question, then insert the placeholder tag into your message.
+              </li>
+              <li>
+                Send the email/SMS. Once sent, members' answers will automatically compile on this dashboard!
+              </li>
+            </ol>
+          </div>
+          
+          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setIsInfoModalOpen(false)}>Cancel</button>
+            <Link to="/admin/communications" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center' }} onClick={() => setIsInfoModalOpen(false)}>
+              Go to Communications →
+            </Link>
+          </div>
+        </div>
+      </BaseModal>
+
     </div>
   );
 }

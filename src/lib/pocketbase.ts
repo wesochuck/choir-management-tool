@@ -12,6 +12,15 @@ export const pb = new PocketBase(String(env?.VITE_PB_URL || defaultPbUrl));
 // Disable auto-cancellation globally to prevent aborted requests from React Strict Mode double-mounting
 pb.autoCancellation(false);
 
+pb.beforeSend = (url, options) => {
+  // Strip out skipTotal parameter if present to support older PocketBase server versions
+  const cleanUrl = url
+    .replace(/[&?]skipTotal=[^&]+/g, '')
+    .replace(/\?&/g, '?')
+    .replace(/\?$/g, '');
+  return { url: cleanUrl, options };
+};
+
 pb.authStore.onChange(() => undefined, true);
 
 pb.afterSend = async (response, data) => {
