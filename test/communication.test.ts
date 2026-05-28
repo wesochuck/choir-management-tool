@@ -181,18 +181,19 @@ test('communicationService.wasMessageSent uses parameterized filters and returns
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalCollection = pb.collection;
 
-  let lastFilterStr = '';
-  const mockGetFirstListItem = async (filterStr: string) => {
-    lastFilterStr = filterStr;
-    if (filterStr.includes('event123')) {
-      return { id: 'm123' };
+  const seenFilters: string[] = [];
+  const mockGetFullList = async <T>(options?: { filter?: string }): Promise<T[]> => {
+    const filterStr = options?.filter || '';
+    seenFilters.push(filterStr);
+    if (filterStr.includes('event123') && (filterStr.includes('Attendance Report') || filterStr.includes('Automated Report'))) {
+      return [{ id: 'm123', filters: { eventId: 'event123' } } as T];
     }
-    throw new Error('404 Not Found');
+    return [];
   };
 
   pb.collection = ((name: string) => {
     if (name === 'messages') {
-      return { getFirstListItem: mockGetFirstListItem };
+      return { getFullList: mockGetFullList };
     }
     return originalCollection.call(pb, name);
   }) as unknown as typeof pb.collection;
@@ -201,8 +202,8 @@ test('communicationService.wasMessageSent uses parameterized filters and returns
     // 1. Test existing report sent check
     const sent = await communicationService.wasMessageSent({ eventId: 'event123', type: 'Report' });
     assert.equal(sent, true);
-    assert.ok(lastFilterStr.includes('Attendance Report') || lastFilterStr.includes('Automated Report'));
-    assert.ok(lastFilterStr.includes('event123'));
+    assert.ok(seenFilters.some((filterStr) => filterStr.includes('Attendance Report') || filterStr.includes('Automated Report')));
+    assert.ok(seenFilters.some((filterStr) => filterStr.includes('event123')));
 
     // 2. Test unsent reminder check
     const unsent = await communicationService.wasMessageSent({ eventId: 'event456', type: 'Reminder' });
@@ -211,5 +212,4 @@ test('communicationService.wasMessageSent uses parameterized filters and returns
     pb.collection = originalCollection;
   }
 });
-
 

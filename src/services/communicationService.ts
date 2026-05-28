@@ -8,12 +8,14 @@ import {
   type CommunicationConfig,
 } from './settingsService';
 import type { RecordModel, ListResult } from 'pocketbase';
+import { chunkArray, mapWithConcurrency, retryOn429 } from '../lib/networkSafety';
 
 export type { CommunicationConfig } from './settingsService';
 
 export type MessageType = 'Email' | 'SMS' | 'Both';
 export type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
 export type MessageStatus = 'Draft' | 'Sent' | 'Failed';
+type AutomatedTaskType = 'Reminder' | 'Report' | 'RSVP Request';
 
 export interface CommunicationRecipient {
   id: string;
@@ -78,6 +80,39 @@ const profileToRecipient = (profile: Profile): CommunicationRecipient => ({
 
 const encodeSmsBody = (content: string) => encodeURIComponent(content.slice(0, 1500));
 
+const EVENT_ID_CHUNK_SIZE = 20;
+const EVENT_STATUS_FETCH_CONCURRENCY = 3;
+const AUTOMATED_STATUS_FILTERS: Record<AutomatedTaskType, { typeFilter: string; paramPrefix: string }> = {
+  'RSVP Request': {
+    typeFilter: '(filters.type = "RSVP Invitation" || filters.rsvp = "Pending")',
+    paramPrefix: 'rsvpEventId',
+  },
+  Reminder: {
+    typeFilter: 'filters.type = "Automated Reminder"',
+    paramPrefix: 'reminderEventId',
+  },
+  Report: {
+    typeFilter: '(filters.type = "Automated Report" || filters.type = "Attendance Report")',
+    paramPrefix: 'reportEventId',
+  },
+};
+
+const buildEventIdClause = (eventIds: string[], paramPrefix: string) => {
+  const params: Record<string, string> = {};
+  const clauses = eventIds.map((eventId, idx) => {
+    const key = `${paramPrefix}${idx}`;
+    params[key] = eventId;
+    return `filters.eventId = {:${key}}`;
+  });
+  return { clause: clauses.join(' || '), params };
+};
+
+const readFilterEventId = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const rawEventId = (value as { eventId?: unknown }).eventId;
+  return typeof rawEventId === 'string' && rawEventId ? rawEventId : null;
+};
+
 export const communicationService = {
   async getMessages() {
     return await pb.collection('messages').getFullList<MessageRecord>({
@@ -97,31 +132,80 @@ export const communicationService = {
     });
   },
 
-  async wasMessageSent(filter: { eventId?: string; type?: 'Reminder' | 'Report' | 'RSVP Request' }) {
+  async getSentTaskStatuses(eventIds: string[]) {
+    const uniqueEventIds = [...new Set(eventIds.filter((eventId) => !!eventId))];
+    const statusMap: Record<string, boolean> = {};
+
+    uniqueEventIds.forEach((eventId) => {
+      statusMap[`rsvp-${eventId}`] = false;
+      statusMap[`reminder-${eventId}`] = false;
+      statusMap[`report-${eventId}`] = false;
+    });
+
+    if (uniqueEventIds.length === 0) {
+      return statusMap;
+    }
+
+    const getEventIdsForType = async (type: AutomatedTaskType): Promise<Set<string>> => {
+      const seenEventIds = new Set<string>();
+      const { typeFilter, paramPrefix } = AUTOMATED_STATUS_FILTERS[type];
+      const chunks = chunkArray(uniqueEventIds, EVENT_ID_CHUNK_SIZE);
+
+      await mapWithConcurrency(
+        chunks,
+        async (chunk, chunkIndex) => {
+          const { clause, params } = buildEventIdClause(chunk, `${paramPrefix}${chunkIndex}_`);
+          const filterStr = pb.filter(`status = "Sent" && ${typeFilter} && (${clause})`, params);
+
+          const records = await retryOn429(
+            () =>
+              pb.collection('messages').getFullList<MessageRecord>({
+                filter: filterStr,
+                fields: 'id,filters',
+              }),
+            {
+              maxRetries: 3,
+              baseDelayMs: 250,
+              maxDelayMs: 2000,
+            },
+          );
+
+          records.forEach((record) => {
+            const eventId = readFilterEventId(record.filters);
+            if (eventId) seenEventIds.add(eventId);
+          });
+        },
+        { concurrency: EVENT_STATUS_FETCH_CONCURRENCY },
+      );
+
+      return seenEventIds;
+    };
+
+    const [rsvpEventIds, reminderEventIds, reportEventIds] = await Promise.all([
+      getEventIdsForType('RSVP Request'),
+      getEventIdsForType('Reminder'),
+      getEventIdsForType('Report'),
+    ]);
+
+    rsvpEventIds.forEach((eventId) => {
+      statusMap[`rsvp-${eventId}`] = true;
+    });
+    reminderEventIds.forEach((eventId) => {
+      statusMap[`reminder-${eventId}`] = true;
+    });
+    reportEventIds.forEach((eventId) => {
+      statusMap[`report-${eventId}`] = true;
+    });
+
+    return statusMap;
+  },
+
+  async wasMessageSent(filter: { eventId?: string; type?: AutomatedTaskType }) {
     if (!filter.eventId || !filter.type) return false;
     try {
-      let filterStr = '';
-      if (filter.type === 'RSVP Request') {
-        filterStr = pb.filter(
-          'status = "Sent" && filters.eventId = {:eventId} && (filters.type = "RSVP Invitation" || filters.rsvp = "Pending")',
-          { eventId: filter.eventId }
-        );
-      } else if (filter.type === 'Reminder') {
-        filterStr = pb.filter(
-          'status = "Sent" && filters.eventId = {:eventId} && filters.type = "Automated Reminder"',
-          { eventId: filter.eventId }
-        );
-      } else if (filter.type === 'Report') {
-        filterStr = pb.filter(
-          'status = "Sent" && filters.eventId = {:eventId} && (filters.type = "Automated Report" || filters.type = "Attendance Report")',
-          { eventId: filter.eventId }
-        );
-      } else {
-        return false;
-      }
-
-      await pb.collection('messages').getFirstListItem<MessageRecord>(filterStr);
-      return true;
+      const statuses = await this.getSentTaskStatuses([filter.eventId]);
+      const keyPrefix = filter.type === 'RSVP Request' ? 'rsvp' : filter.type === 'Reminder' ? 'reminder' : 'report';
+      return statuses[`${keyPrefix}-${filter.eventId}`] || false;
     } catch {
       return false;
     }
@@ -413,6 +497,7 @@ export const communicationService = {
 } satisfies {
   getMessages: () => Promise<MessageRecord[]>;
   getMessagesPaginated: (page: number, perPage: number, filterString?: string) => Promise<ListResult<MessageRecord>>;
+  getSentTaskStatuses: (eventIds: string[]) => Promise<Record<string, boolean>>;
   wasMessageSent: (filter: { eventId?: string; type?: 'Reminder' | 'Report' | 'RSVP Request' }) => Promise<boolean>;
   getDrafts: () => Promise<MessageRecord[]>;
   saveDraft: (data: SendMessageInput, id?: string) => Promise<MessageRecord>;

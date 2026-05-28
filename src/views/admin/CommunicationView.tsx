@@ -254,27 +254,8 @@ export default function CommunicationView() {
     if (events.length === 0) return;
 
     const checkSentStatuses = async () => {
-      const cache: Record<string, boolean> = {};
-      const promises = events.flatMap(event => [
-        (async () => {
-          const sent = await communicationService.wasMessageSent({ eventId: event.id, type: 'RSVP Request' });
-          cache[`rsvp-${event.id}`] = sent;
-        })(),
-        (async () => {
-          const sent = await communicationService.wasMessageSent({ eventId: event.id, type: 'Reminder' });
-          cache[`reminder-${event.id}`] = sent;
-        })(),
-        (async () => {
-          const sent = await communicationService.wasMessageSent({ eventId: event.id, type: 'Report' });
-          cache[`report-${event.id}`] = sent;
-        })()
-      ]);
-
-      await Promise.all(promises);
-
-      if (isCurrent) {
-        setSentTaskStatus(cache);
-      }
+      const cache = await communicationService.getSentTaskStatuses(events.map((event) => event.id));
+      if (isCurrent) setSentTaskStatus(cache);
     };
 
     void checkSentStatuses();

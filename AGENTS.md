@@ -46,6 +46,17 @@
 - Always use `pb.files.getURL(...)` (all-uppercase `URL`) when generating file/photo URLs from PocketBase records. Never use `pb.files.getUrl(...)` as it is deprecated in the JS SDK.
 - Always use `pb.filter(...)` to parameterize and construct filter strings that include dynamic variables (e.g. IDs, names, search tokens). Never interpolate variables directly into PocketBase filter strings via template literals or string concatenation.
 
+## API Load & Rate-Limit Safety
+
+- **No Unbounded Fan-Out:** Never fire one API request per item in a large list without batching or a concurrency cap. Avoid `Promise.all(items.map(...))` for network calls unless the item count is strictly bounded and small.
+- **Batch First:** Prefer bulk/aggregated reads over per-record probes (for example, fetch statuses for many event IDs in one query, then map results locally).
+- **Chunk Dynamic Filters:** When building OR filters for many IDs, chunk into bounded groups (for example 20-50 IDs per query) to avoid oversized URLs and parser strain.
+- **Cap Concurrency:** If multiple requests are still required, use a small concurrency limit (default 3-5 in-flight requests), not full parallel fan-out.
+- **Handle 429 Explicitly:** For read paths, treat HTTP `429` as a rate-limit signal: retry with backoff and jitter a limited number of times, then surface a non-blocking warning state in UI.
+- **Load Only What UI Needs:** Prefer `perPage=1` existence checks only when truly singular; otherwise query once for a set and derive booleans client-side.
+- **Reduce Duplicate Fetches:** Cache or memoize repeated status lookups by stable keys (e.g., eventId + type) during a page session to prevent repeated mount/refetch storms.
+- **Protect High-Traffic Views:** For admin dashboards/pages that aggregate many events/messages, explicitly review request count in code review and include a short note estimating worst-case API calls on first load.
+
 ## Token & URL Parameter Safety (Ampersand Issue Prevention)
 
 - **Query Parameter Encoding:** When constructing URLs with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)` to prevent query parameter splitting/truncation.
@@ -90,4 +101,3 @@
     const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
     ```
-
