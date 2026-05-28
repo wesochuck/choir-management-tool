@@ -77,6 +77,15 @@ export function renderMarkdown(text: string): string {
   return html;
 }
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /**
  * Resolves placeholders for message preview.
  * This can handle both raw text (for subjects) and rendered HTML (for body).
@@ -92,15 +101,15 @@ export function resolvePreviewContent(
   let result = content;
 
   // Recipient Placeholders
-  const name = recipient?.name || 'Sample Singer';
+  const name = escapeHtml(recipient?.name || 'Sample Singer');
   result = result.replace(/{singerName}/g, name);
 
   // Event Placeholders
-  const title = event?.title || event?.type || 'Sample Performance';
-  const type = event?.type || 'Performance';
-  const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  const location = event?.expand?.venue?.name || 'Main Concert Hall';
-  const details = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const title = escapeHtml(event?.title || event?.type || 'Sample Performance');
+  const type = escapeHtml(event?.type || 'Performance');
+  const date = escapeHtml(event ? new Date(event.date).toLocaleString() : new Date().toLocaleString());
+  const location = escapeHtml(event?.expand?.venue?.name || 'Main Concert Hall');
+  const details = escapeHtml(event?.details || 'Join us for an amazing evening of music and harmony!');
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
