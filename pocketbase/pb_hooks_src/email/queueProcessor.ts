@@ -111,7 +111,8 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
                 .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                 .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%");
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
 
             let htmlBody = renderMarkdown(protectedContent);
 
@@ -121,7 +122,8 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
                 .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                 .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}");
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
 
             let subject = record.get("subject") as string || "";
             subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
@@ -303,6 +305,23 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 // If there's no event context, clear out the player link placeholders
                 htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
                                    .replace(/{playerLink}/g, "");
+            }
+
+            // Resolve poll links: {{POLL_LINK:pollId}}
+            if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                    const payload = "l=" + pollId + "&p=" + recipientId;
+                    const signature = $security.hs256(payload, secret);
+                    const token = payload + "&s=" + signature;
+                    const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    
+                    return `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+</div>
+`.trim();
+                });
             }
 
             // Compile secure unsubscribe URL

@@ -52,7 +52,7 @@ test('processEmailQueue batched success and failure flows', () => {
         recipientEmail: 'success@example.com',
         recipientName: 'Success Member',
         subject: 'Invited to Concert',
-        rawContent: 'Please attend {eventTitle} at {eventLocation}. Info: {{EVENT_INFO}}. RSVP: {{RSVP_LINKS}}',
+        rawContent: 'Please attend {eventTitle} at {eventLocation}. Info: {{EVENT_INFO}}. RSVP: {{RSVP_LINKS}}. Poll: {{POLL_LINK:poll123}}',
         status: 'Pending',
         attempts: 0,
         filters: JSON.stringify({ eventId: 'evt-1' })
@@ -161,5 +161,8 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.ok(htmlPart.includes('No login required'), 'Should include no login required hint');
     assert.ok(htmlPart.includes('/rsvp?token='), 'Should compile RSVP signed tokens');
     assert.ok(htmlPart.includes('/unsubscribe?token='), 'Should compile unsubscribe signed tokens');
+    assert.ok(htmlPart.includes('/poll?token='), 'Should compile POLL_LINK signed tokens');
+    assert.ok(htmlPart.includes('l%3Dpoll123'), 'Should include poll ID in token payload');
+    assert.ok(htmlPart.includes('Answer our quick question'), 'Should include poll button text');
     assert.ok(htmlPart.includes('123 Harmony St'), 'Should include mailing address');
 });
