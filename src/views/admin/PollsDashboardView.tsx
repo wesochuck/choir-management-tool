@@ -32,27 +32,24 @@ export default function PollsDashboardView() {
   const [polls, setPolls] = useState<PollRecord[]>([]);
   const [responses, setResponses] = useState<PollResponseRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [pollList, responseList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }).catch(err => {
-          console.error('Failed to load polls', err);
-          return [] as PollRecord[];
-        }),
-        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }).catch(err => {
-          console.error('Failed to load poll responses', err);
-          return [] as PollResponseRecord[];
-        })
+        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
+        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
       ]);
       setPolls(pollList);
       setResponses(responseList);
     } catch (err) {
-      console.error('Unexpected error loading poll data', err);
+      console.error('Failed to load poll dashboard data', err);
+      setLoadError('Unable to load polls. Check PocketBase collection fields, API rules, and browser console.');
     } finally {
       setIsLoading(false);
     }
@@ -134,6 +131,11 @@ export default function PollsDashboardView() {
       </div>
 
       <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        {loadError && (
+          <AppCard style={{ padding: 'var(--space-md)', borderColor: '#ef4444' }}>
+            <p style={{ margin: 0, color: '#ef4444' }}>{loadError}</p>
+          </AppCard>
+        )}
         {filteredPolls.length === 0 ? (
           <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: 'var(--space-md)' }}>No active polls found.</p>
