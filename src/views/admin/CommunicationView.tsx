@@ -26,9 +26,15 @@ import { getRenderedPreview, resolvePreviewContent } from '../../lib/communicati
 import { PlaceholderPanel } from '../../components/admin/PlaceholderPanel';
 import { PollSelectionModal } from '../../components/admin/PollSelectionModal';
 import { MessageHistory } from '../../components/admin/MessageHistory';
+import type { MessageTemplate, CommunicationTab } from '../../types/Communication';
+import { CommunicationTabs } from '../../components/CommunicationTabs';
+import { TemplateGrid } from '../../components/TemplateGrid';
+import { WizardStepper } from '../../components/WizardStepper';
+import { LivePreview } from '../../components/LivePreview';
+import { ComposeStep, checkValidation } from '../../components/ComposeStep';
 import './CommunicationView.css';
 
-type Tab = 'compose' | 'automated' | 'drafts' | 'history' | 'settings';
+
 
 type WizardStep = 'TARGETS' | 'COMPOSE' | 'REVIEW';
 
@@ -48,6 +54,27 @@ interface AutomatedTask {
   recipientCount?: number;
 }
 
+const mapToMessageTemplate = (tpl: TemplateRecord): MessageTemplate => {
+  const titleLower = tpl.title.toLowerCase();
+  let category: MessageTemplate['category'] = 'general';
+  if (titleLower.includes('rehearsal')) category = 'rehearsal';
+  else if (titleLower.includes('due') || titleLower.includes('payment')) category = 'dues';
+  else if (titleLower.includes('weather') || titleLower.includes('snow') || titleLower.includes('cancel')) category = 'weather';
+  else if (titleLower.includes('attendance')) category = 'attendance';
+  else if (titleLower.includes('blank')) category = 'blank';
+
+  return {
+    id: tpl.id,
+    title: tpl.title,
+    description: tpl.subject || tpl.content.substring(0, 100) || 'Pre-filled message template.',
+    category,
+    channel: (tpl.type?.toLowerCase() as 'email' | 'sms' | 'both') || 'email',
+    origin: tpl.isSystemTemplate ? 'system' : 'custom',
+    subjectLine: tpl.subject,
+    content: tpl.content
+  };
+};
+
 export default function CommunicationView() {
   const dialog = useDialog();
   const location = useLocation();
@@ -64,7 +91,7 @@ export default function CommunicationView() {
   const { user } = useAuth();
 
   // Global UI state
-  const [tab, setTab] = useState<Tab>('compose');
+  const [tab, setTab] = useState<CommunicationTab>('compose');
   const [wizardStep, setWizardStep] = useState<WizardStep>('TARGETS');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -114,6 +141,18 @@ export default function CommunicationView() {
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
     [recipients, selectedIds],
   );
+
+  const recipientCounts = useMemo(() => {
+    return {
+      total: selectedRecipients.length,
+      hasEmail: selectedRecipients.filter(m => m.email?.trim()).length,
+      hasPhone: selectedRecipients.filter(m => m.phone?.trim()).length,
+    };
+  }, [selectedRecipients]);
+
+  const warnings = useMemo(() => {
+    return checkValidation(content, subject, messageType, filters.eventId);
+  }, [content, subject, messageType, filters.eventId]);
 
   const previewHtml = useMemo(() => {
     const previewContent = editingTemplate ? editingTemplate.content : content;
@@ -509,46 +548,35 @@ export default function CommunicationView() {
     <div className="communication-container">
       <div className="communication-header">
         <h1 className="text-display" style={{ margin: 0 }}>Communications</h1>
-        <div className="communication-tabs">
-          {(['compose', 'automated', 'drafts', 'history', 'settings'] as Tab[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`btn ${tab === item ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => {
-                setTab(item);
-                if (item === 'compose' && wizardStep === 'REVIEW') setWizardStep('TARGETS');
-              }}
-            >
-              {item === 'compose' ? 'Send Wizard' : item[0].toUpperCase() + item.slice(1)}
-              {item === 'drafts' && drafts.length > 0 && <span className="badge" style={{ marginLeft: '8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary-deep)' }}>{drafts.length}</span>}
-            </button>
-          ))}
-        </div>
+        <CommunicationTabs
+          activeTab={tab}
+          onTabChange={(nextTab) => {
+            setTab(nextTab);
+            if (nextTab === 'compose' && wizardStep === 'REVIEW') setWizardStep('TARGETS');
+          }}
+          draftsCount={drafts.length}
+        />
       </div>
 
       {tab === 'compose' && (
         <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-          {/* Wizard Progress Bar */}
-          <div className="wizard-progress-bar">
-            {[
-              { id: 'TARGETS', number: '1', label: 'Targets & Template' },
-              { id: 'COMPOSE', number: '2', label: 'Compose & Preview' },
-              { id: 'REVIEW', number: '3', label: 'Review & Send' }
-            ].map((step, idx) => (
-              <div key={step.id} className="wizard-step-item">
-                <span className={`wizard-step-label ${wizardStep === step.id ? 'active' : 'inactive'}`}>
-                  <span className="step-number">{step.number}</span>
-                  <span className="step-text">. {step.label}</span>
-                </span>
-                {idx < 2 && <span className="text-muted">→</span>}
-              </div>
-            ))}
-          </div>
+          <WizardStepper
+            steps={[
+              { number: 1, id: 'TARGETS', label: 'Recipients', isValid: true },
+              { number: 2, id: 'COMPOSE', label: 'Compose & Preview', isValid: true },
+              { number: 3, id: 'REVIEW', label: 'Review & Send', isValid: selectedRecipients.length > 0 }
+            ]}
+            currentStep={wizardStep === 'TARGETS' ? 1 : wizardStep === 'COMPOSE' ? 2 : 3}
+            onStepClick={(num) => {
+              if (num === 1) setWizardStep('TARGETS');
+              if (num === 2) setWizardStep('COMPOSE');
+              if (num === 3) setWizardStep('REVIEW');
+            }}
+          />
 
           {wizardStep === 'TARGETS' && (
             <div className="targets-grid">
-              <AppCard title="Target Audience">
+              <AppCard title="Recipients">
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                     <label className="text-label">Event Context</label>
@@ -621,34 +649,15 @@ export default function CommunicationView() {
                 <AppCard title="Templates & Quick Starts">
                   <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                     <p className="text-muted text-sm">Select a template to pre-fill your message, or start with a blank canvas.</p>
-                    <div className="template-gallery">
-                      <button 
-                        className="btn btn-ghost template-card-btn" 
-                        onClick={() => {
-                          setSubject('');
-                          setContent('');
-                          setWizardStep('COMPOSE');
-                        }}
-                      >
-                        <div className="template-card-icon">📄</div>
-                        <div style={{ fontWeight: 600 }}>Blank Message</div>
-                      </button>
-                      {templates.map(tpl => (
-                        <button 
-                          key={tpl.id}
-                          className="btn btn-ghost template-card-btn" 
-                          onClick={() => {
-                            setSubject(tpl.subject);
-                            setContent(tpl.content);
-                            setMessageType(tpl.type);
-                            setWizardStep('COMPOSE');
-                          }}
-                        >
-                          <div className="template-card-icon">{tpl.type === 'SMS' ? '📱' : '✉️'}</div>
-                          <div style={{ fontWeight: 600 }}>{tpl.title}</div>
-                        </button>
-                      ))}
-                    </div>
+                    <TemplateGrid
+                      templates={templates.map(mapToMessageTemplate)}
+                      onSelect={(tpl) => {
+                        setSubject(tpl.subjectLine || '');
+                        setContent(tpl.content || '');
+                        setMessageType(tpl.channel === 'sms' ? 'SMS' : tpl.channel === 'both' ? 'Both' : 'Email');
+                        setWizardStep('COMPOSE');
+                      }}
+                    />
                   </div>
                 </AppCard>
 
@@ -665,137 +674,28 @@ export default function CommunicationView() {
             <div className="compose-grid">
               <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
                 <AppCard title="Composer">
-                  <div className="composer-form">
-                    <div className="composer-header-row">
-                      <div className="composer-subject-field flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <label className="text-label">Subject</label>
-                        <input className="card" value={subject} onChange={(e) => setSubject(e.target.value)} style={{ height: '44px', padding: '0 12px' }} disabled={messageType === 'SMS'} />
-                      </div>
-                      <div className="composer-channel-field flex-col" style={{ gap: 'var(--space-xs)' }}>
-                        <label className="text-label">Channel</label>
-                        <select className="card" value={messageType} onChange={(e) => setMessageType(e.target.value as MessageType)} style={{ height: '44px', padding: '0 12px' }}>
-                          <option value="Email">Email</option>
-                          <option value="SMS">SMS</option>
-                          <option value="Both">Both</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                      <label className="text-label">Message Body (Markdown Supported)</label>
-                      <textarea 
-                        ref={textAreaRef}
-                        className="card composer-textarea" 
-                        value={content} 
-                        onChange={(e) => setContent(e.target.value)} 
-                      />
-                    </div>
-                  </div>
+                  <ComposeStep
+                    subject={subject}
+                    onSubjectChange={setSubject}
+                    messageType={messageType}
+                    onMessageTypeChange={setMessageType}
+                    content={content}
+                    onContentChange={setContent}
+                    textAreaRef={textAreaRef}
+                    warnings={warnings}
+                  />
                 </AppCard>
                 
-                <AppCard 
-                  title="Live Preview"
-                  actions={
-                    <div className="flex-row" style={{ gap: '4px', backgroundColor: 'var(--bg)', padding: '2px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'}`}
-                        style={{ padding: '4px 10px', height: '30px' }}
-                        onClick={() => setPreviewDevice('desktop')}
-                      >
-                        🖥️ Desktop
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'}`}
-                        style={{ padding: '4px 10px', height: '30px' }}
-                        onClick={() => setPreviewDevice('mobile')}
-                      >
-                        📱 Mobile
-                      </button>
-                    </div>
-                  }
-                >
-                  <div 
-                    className="email-client-mockup"
-                    style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-md, 8px)',
-                      overflow: 'hidden',
-                      backgroundColor: '#f1f5f9',
-                      padding: previewDevice === 'mobile' ? '30px 15px' : '0',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                  >
-                    <div
-                      className={`email-client-frame ${previewDevice === 'mobile' ? 'mobile-frame' : 'desktop-frame'}`}
-                      style={{
-                        width: '100%',
-                        maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
-                        backgroundColor: '#ffffff',
-                        boxShadow: 'var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1))',
-                        borderRadius: previewDevice === 'mobile' ? '20px' : '0',
-                        border: previewDevice === 'mobile' ? '8px solid #1e293b' : 'none',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        minHeight: '400px',
-                      }}
-                    >
-                      {/* Email Header */}
-                      <div 
-                        style={{ 
-                          padding: '16px', 
-                          borderBottom: '1px solid #e2e8f0', 
-                          backgroundColor: '#f8fafc',
-                          fontSize: '13px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', color: '#64748b' }}>
-                          <span style={{ width: '60px', fontWeight: 600 }}>From:</span>
-                          <span style={{ color: '#1e293b' }}>Choir Management &lt;no-reply@choir.management&gt;</span>
-                        </div>
-                        <div style={{ display: 'flex', color: '#64748b' }}>
-                          <span style={{ width: '60px', fontWeight: 600 }}>To:</span>
-                          <span style={{ color: '#1e293b' }}>
-                            {selectedRecipients[0]?.name 
-                              ? `${selectedRecipients[0].name} <${selectedRecipients[0].email}>` 
-                              : 'Active Choir Members <singers@yourchoir.org>'}
-                          </span>
-                        </div>
-                        {(messageType === 'Email' || messageType === 'Both') && (
-                          <div style={{ display: 'flex', color: '#64748b', marginTop: '4px', borderTop: '1px dashed #e2e8f0', paddingTop: '6px' }}>
-                            <span style={{ width: '60px', fontWeight: 600 }}>Subject:</span>
-                            <strong style={{ color: '#0f172a' }}>
-                              {resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
-                            </strong>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Email Body */}
-                      <div 
-                        className="email-client-body"
-                        style={{ 
-                          padding: previewDevice === 'mobile' ? '16px' : '24px', 
-                          overflowY: 'auto',
-                          flex: 1,
-                          fontSize: '15px',
-                          lineHeight: '1.6',
-                          color: '#334155',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        <div 
-                          className="text-body message-preview-content" 
-                          dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-muted" style="text-align: center; padding: 40px 0;">No message content drafted yet.</p>' }} 
-                        />
-                      </div>
-                    </div>
+                <AppCard noPadding>
+                  <div style={{ padding: '24px' }}>
+                    <LivePreview
+                      channel={messageType}
+                      subject={resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                      bodyHtml={previewHtml}
+                      smsBody={resolvePreviewContent(content, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                      recipientName={selectedRecipients[0]?.name}
+                      recipientEmail={selectedRecipients[0]?.email}
+                    />
                   </div>
                 </AppCard>
 
@@ -830,15 +730,15 @@ export default function CommunicationView() {
                     <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
                     <div className="review-summary-row">
                       <div className="review-summary-stat">
-                        <span className="review-stat-value">{selectedRecipients.length}</span>
-                        <span className="text-muted text-sm">Total Targeted</span>
+                        <span className="review-stat-value">{recipientCounts.total}</span>
+                        <span className="text-muted text-sm">Recipients Selected</span>
                       </div>
                       <div className="review-summary-stat divider">
-                        <span className="review-stat-value">{selectedRecipients.filter(r => r.email).length}</span>
+                        <span className="review-stat-value">{recipientCounts.hasEmail}</span>
                         <span className="text-muted text-sm">Via Email</span>
                       </div>
                       <div className="review-summary-stat divider">
-                        <span className="review-stat-value">{selectedRecipients.filter(r => r.phone).length}</span>
+                        <span className="review-stat-value">{recipientCounts.hasPhone}</span>
                         <span className="text-muted text-sm">Via SMS</span>
                       </div>
                     </div>
@@ -933,7 +833,7 @@ export default function CommunicationView() {
                         {isSendingTest ? 'Sending Test...' : '🧪 Send Email Test to Me'}
                       </button>
                       <button className="btn btn-primary" onClick={sendMessage} disabled={isSending || selectedRecipients.length === 0}>
-                        {isSending ? 'Dispatching...' : '🚀 Final Send'}
+                        {isSending ? 'Dispatching...' : `Send to ${selectedRecipients.length} Recipients`}
                       </button>
                     </div>
                   </div>
