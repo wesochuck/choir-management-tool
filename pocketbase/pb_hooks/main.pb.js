@@ -705,9 +705,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -1702,9 +1713,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -2760,9 +2782,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -3761,9 +3794,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -4766,9 +4810,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -5775,9 +5830,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -6796,9 +6862,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -7806,9 +7883,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -8823,9 +8911,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
@@ -9829,9 +9928,20 @@ function processEmailQueue(app) {
                     const signature = $security.hs256(payload, secret);
                     const token = payload + "&s=" + signature;
                     const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord?.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch {
+                        // keep safe fallback label if poll lookup fails
+                    }
                     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Answer our quick question</a>
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();

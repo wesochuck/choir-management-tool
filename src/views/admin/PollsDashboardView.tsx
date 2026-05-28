@@ -6,6 +6,7 @@ import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { useDialog } from '../../contexts/DialogContext';
 import type { RecordModel } from 'pocketbase';
 
 interface PollRecord extends RecordModel {
@@ -28,6 +29,7 @@ interface PollResponseRecord extends RecordModel {
 }
 
 export default function PollsDashboardView() {
+  const dialog = useDialog();
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
   const [polls, setPolls] = useState<PollRecord[]>([]);
@@ -43,11 +45,10 @@ export default function PollsDashboardView() {
     setLoadError(null);
     try {
       const [pollList, responseList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>(),
+        pb.collection('polls').getFullList<PollRecord>({ sort: '-id' }),
         pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId' }),
       ]);
-      // Sort newest-first: PocketBase IDs are ULIDs — lexicographic order == chronological order
-      setPolls([...pollList].sort((a, b) => b.id.localeCompare(a.id)));
+      setPolls(pollList);
       setResponses(responseList);
     } catch (err) {
       console.error('Failed to load poll dashboard data', err);
@@ -95,13 +96,25 @@ export default function PollsDashboardView() {
   }, [polls, responses]);
 
   const handleDeletePoll = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this poll and all its responses?')) return;
+    const confirmed = await dialog.confirm({
+      title: 'Delete Poll',
+      message: 'Are you sure you want to delete this poll and all its responses?',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await pb.collection('polls').delete(id);
       setPolls(prev => prev.filter(p => p.id !== id));
       setResponses(prev => prev.filter(r => r.pollId !== id));
+      dialog.showToast('Poll deleted.');
     } catch {
-      alert('Failed to delete poll.');
+      await dialog.showMessage({
+        title: 'Delete Failed',
+        message: 'Failed to delete poll.',
+        variant: 'danger',
+      });
     }
   };
 

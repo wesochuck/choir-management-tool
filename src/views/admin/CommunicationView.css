@@ -167,6 +167,8 @@
 .communication-tabs {
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
   gap: var(--space-sm);
   overflow-x: auto;
   white-space: nowrap;
@@ -513,6 +515,19 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .communication-header > h1 {
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  .communication-tabs {
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
+    padding-bottom: 0;
   }
 
   .targets-grid {

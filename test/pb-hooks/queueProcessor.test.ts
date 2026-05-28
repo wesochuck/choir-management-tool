@@ -44,6 +44,7 @@ test('processEmailQueue batched success and failure flows', () => {
     // Mock event and venue
     const mockVenue = new MockRecord('venues', { id: 'ven-1', name: 'St. Mary Church' });
     const mockEvent = new MockRecord('events', { id: 'evt-1', title: 'Spring Concert', type: 'Performance', date: '2026-06-15T19:00:00Z', venue: 'ven-1', details: 'Fun show' });
+    const mockPoll = new MockRecord('polls', { id: 'poll123', question: 'Who can help with setup?' });
 
     // Mock queue records
     const recordSuccess = new MockRecord('emailQueue', {
@@ -107,6 +108,7 @@ test('processEmailQueue batched success and failure flows', () => {
         findRecordById: (collection: string, id: string) => {
             if (collection === 'events' && id === 'evt-1') return mockEvent;
             if (collection === 'venues' && id === 'ven-1') return mockVenue;
+            if (collection === 'polls' && id === 'poll123') return mockPoll;
             throw new Error('Not found id: ' + id);
         },
         save: (record: PocketBaseRecord) => {
@@ -163,6 +165,6 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.ok(htmlPart.includes('/unsubscribe?token='), 'Should compile unsubscribe signed tokens');
     assert.ok(htmlPart.includes('/poll?token='), 'Should compile POLL_LINK signed tokens');
     assert.ok(htmlPart.includes('l%3Dpoll123'), 'Should include poll ID in token payload');
-    assert.ok(htmlPart.includes('Answer our quick question'), 'Should include poll button text');
+    assert.ok(htmlPart.includes('Who can help with setup?'), 'Should include poll question as button text');
     assert.ok(htmlPart.includes('123 Harmony St'), 'Should include mailing address');
 });
