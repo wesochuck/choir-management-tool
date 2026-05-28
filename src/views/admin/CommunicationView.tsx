@@ -1063,6 +1063,9 @@ export default function CommunicationView() {
           onPageChange={setHistoryPage}
           onViewDetails={setSelectedMessage}
           onCopyDraft={handleResumeDraft}
+          onViewRecipients={(recipients, title) =>
+            setRecipientPreviewList({ isOpen: true, recipients, title })
+          }
           events={events}
           commSettings={commSettings}
         />

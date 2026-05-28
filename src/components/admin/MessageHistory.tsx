@@ -1,5 +1,5 @@
 import { AppCard } from '../common/AppCard';
-import { type MessageRecord } from '../../services/communicationService';
+import { type MessageRecord, type CommunicationRecipient } from '../../services/communicationService';
 import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
@@ -12,6 +12,7 @@ interface MessageHistoryProps {
   onPageChange: (page: number) => void;
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
+  onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
   events: Event[];
   commSettings: CommunicationSettings;
 }
@@ -23,6 +24,7 @@ export function MessageHistory({
   onPageChange,
   onViewDetails,
   onCopyDraft,
+  onViewRecipients,
   events,
   commSettings,
 }: MessageHistoryProps) {
@@ -53,7 +55,27 @@ export function MessageHistory({
                   <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
                 </div>
                 <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{resolvedSubject}</h3>
-                <p className="text-muted text-xs" style={{ margin: 0 }}>{message.recipients.length} recipients</p>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{
+                    padding: 0,
+                    height: 'auto',
+                    fontSize: '0.75rem',
+                    color: 'var(--primary)',
+                    textDecoration: 'underline',
+                    alignSelf: 'flex-start',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() =>
+                    onViewRecipients(
+                      message.recipients,
+                      `Recipients — ${resolvedSubject}`
+                    )
+                  }
+                >
+                  {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''} →
+                </button>
               </div>
               <div className="flex-row" style={{ gap: '6px' }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>Details</button>
@@ -73,4 +95,3 @@ export function MessageHistory({
     </div>
   );
 }
-
