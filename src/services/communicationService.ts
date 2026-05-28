@@ -399,25 +399,29 @@ export const communicationService = {
   },
 
   async sendBulkMessage(data: SendMessageInput, draftId?: string): Promise<SendMessageResult> {
-    // The backend email dispatch hook automatically appends the compliant footer HTML dynamically.
-    const payload = { 
-      ...data, 
+    // Always CREATE a new Sent record so the onRecordAfterCreateSuccess hook fires
+    // reliably on PocketHost. When sending a draft, delete it first to avoid duplicates.
+    if (draftId) {
+      try {
+        await pb.collection('messages').delete(draftId);
+      } catch {
+        // If the draft was already deleted or missing, proceed silently.
+      }
+    }
+
+    const payload = {
+      ...data,
       content: data.content,
-      status: 'Sent' as const
+      status: 'Sent' as const,
     };
 
-    let message: MessageRecord;
-    if (draftId) {
-      message = await pb.collection('messages').update<MessageRecord>(draftId, payload);
-    } else {
-      message = await pb.collection('messages').create<MessageRecord>(payload);
-    }
+    const message = await pb.collection('messages').create<MessageRecord>(payload);
 
     const phoneRecipients = data.recipients.map((recipient) => recipient.phone.replace(/[^\d+]/g, '')).filter(Boolean);
 
     const mailtoUrl = ''; // Intentionally left blank. Email is dispatched securely on the server side.
     const smsUrl = phoneRecipients.length
-      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}?&body=${encodeSmsBody(data.content)}`
+      ? `sms:${encodeURIComponent(phoneRecipients.join(','))}&body=${encodeSmsBody(data.content)}`
       : '';
 
     return { message, mailtoUrl, smsUrl };
