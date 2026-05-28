@@ -80,6 +80,16 @@ test('phase 06 POLL-06/POLL-07: admin and singer dashboards include active poll 
 });
 
 test('phase 06 POLL-08: poll timestamp repair migration is forward-only and backfills legacy rows', () => {
+  const migrationsDir = resolveProjectPath('pocketbase/pb_migrations');
+  const files = fs.readdirSync(migrationsDir).sort();
+
+  const originalMigrationIndex = files.findIndex(f => f.includes('_add_polls.js'));
+  const repairMigrationIndex = files.findIndex(f => f.includes('_backfill_poll_autodates.js'));
+
+  assert.ok(originalMigrationIndex !== -1, 'Original migration not found');
+  assert.ok(repairMigrationIndex !== -1, 'Repair migration not found');
+  assert.ok(repairMigrationIndex > originalMigrationIndex, 'Repair migration must execute after original poll migration');
+
   const migration = readProjectFile('pocketbase/pb_migrations/1717650000_backfill_poll_autodates.js');
 
   assert.match(migration, /new AutodateField\(\{[\s\S]*name,[\s\S]*onCreate,[\s\S]*onUpdate,[\s\S]*\}\)/);

@@ -300,6 +300,7 @@ export default function PollsDashboardView() {
                         <button
                           className="btn btn-ghost btn-sm polls-delete-btn"
                           onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
+                          onKeyDown={(e) => { e.stopPropagation(); }}
                         >
                           Delete
                         </button>
@@ -337,8 +338,8 @@ export default function PollsDashboardView() {
                           <div className="polls-response-grid">
                             {stat.decliners.map(v => (
                               <div key={v.id} className="polls-response-person polls-response-person-muted">
-                                <div className="polls-response-name">{v.expand?.profileId.name}</div>
-                                <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                                <div className="polls-response-name">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
+                                <div className="text-muted text-xs">{v.expand?.profileId?.voicePart ?? ''}</div>
                               </div>
                             ))}
                           </div>
