@@ -116,6 +116,8 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: background 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .admin-dashboard-stat-pill:hover {
@@ -147,13 +149,14 @@
   box-shadow: var(--shadow-sm);
 }
 
-.admin-dashboard-quick-actions-title {
+.admin-dashboard-quick-actions-title-outside {
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: var(--space-sm);
+  margin-top: var(--space-xs);
 }
 
 .admin-dashboard-quick-actions-row {

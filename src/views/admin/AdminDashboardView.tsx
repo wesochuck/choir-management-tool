@@ -118,24 +118,24 @@ export default function AdminDashboardView() {
           </div>
 
           <div className="admin-dashboard-stats-row">
-            <div className="admin-dashboard-stat-pill">
+            <Link to="/admin/roster" className="admin-dashboard-stat-pill">
               <span className="admin-dashboard-stat-label">Active Singers</span>
               <span className="admin-dashboard-stat-value">
                 {activeSingers !== null ? activeSingers : '...'}
               </span>
-            </div>
-            <div className="admin-dashboard-stat-pill">
+            </Link>
+            <Link to="/admin/events" className="admin-dashboard-stat-pill">
               <span className="admin-dashboard-stat-label">Upcoming Events</span>
               <span className="admin-dashboard-stat-value">
                 {upcomingEvents !== null ? upcomingEvents : '...'}
               </span>
-            </div>
-            <div className="admin-dashboard-stat-pill">
+            </Link>
+            <Link to="/admin/auditions" className="admin-dashboard-stat-pill">
               <span className="admin-dashboard-stat-label">Pending Auditions</span>
               <span className="admin-dashboard-stat-value">
                 {pendingAuditions !== null ? pendingAuditions : '...'}
               </span>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -143,20 +143,20 @@ export default function AdminDashboardView() {
       {/* Main Content Area */}
       <main className="container">
         {/* Quick Action Bar */}
+        <div className="admin-dashboard-quick-actions-title-outside">Quick Actions</div>
         <section className="admin-dashboard-quick-actions">
-          <div className="admin-dashboard-quick-actions-title">Quick Actions</div>
           <div className="admin-dashboard-quick-actions-row">
-            <Link to="/admin/roster?add=true" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">👥</span> Add Singer
-            </Link>
-            <Link to="/admin/events?add=true" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">📅</span> New Event
-            </Link>
             <Link to="/admin/attendance" className="admin-dashboard-quick-btn">
               <span className="admin-dashboard-quick-icon">✅</span> Take Attendance
             </Link>
             <Link to="/admin/communications" className="admin-dashboard-quick-btn">
               <span className="admin-dashboard-quick-icon">✉️</span> Send Announcement
+            </Link>
+            <Link to="/admin/roster?add=true" className="admin-dashboard-quick-btn">
+              <span className="admin-dashboard-quick-icon">👥</span> Add Singer
+            </Link>
+            <Link to="/admin/events?add=true" className="admin-dashboard-quick-btn">
+              <span className="admin-dashboard-quick-icon">📅</span> New Event
             </Link>
             <Link to="/admin/library" className="admin-dashboard-quick-btn">
               <span className="admin-dashboard-quick-icon">🎼</span> Add Music
