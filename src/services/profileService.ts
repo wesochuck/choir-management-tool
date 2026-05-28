@@ -1,4 +1,5 @@
 import { pb } from '../lib/pocketbase';
+import { retryOn429, type Retry429Options } from '../lib/networkSafety';
 import type { RecordModel } from 'pocketbase';
 
 export interface Profile extends RecordModel {
@@ -32,6 +33,10 @@ export interface ProfileInput extends Partial<Profile> {
   statusIsManual?: boolean;
 }
 
+interface ProfileFetchOptions {
+  onRetry?: Retry429Options['onRetry'];
+}
+
 const splitProfileInput = (data: ProfileInput) => {
   const profile = { ...data };
   const email = profile.email?.trim();
@@ -60,18 +65,24 @@ export const generateRandomPassword = (length = 12): string => {
 };
 
 export const profileService = {
-  async getProfiles() {
-    return await pb.collection('profiles').getFullList<Profile>({
-      sort: 'name',
-      expand: 'user',
-    });
+  async getProfiles(options: ProfileFetchOptions = {}) {
+    return await retryOn429(() =>
+      pb.collection('profiles').getFullList<Profile>({
+        sort: 'name',
+        expand: 'user',
+      }),
+      { onRetry: options.onRetry },
+    );
   },
 
-  async getActiveProfiles() {
-    return await pb.collection('profiles').getFullList<Profile>({
-      filter: 'globalStatus != "Inactive"',
-      sort: 'name',
-    });
+  async getActiveProfiles(options: ProfileFetchOptions = {}) {
+    return await retryOn429(() =>
+      pb.collection('profiles').getFullList<Profile>({
+        filter: 'globalStatus != "Inactive"',
+        sort: 'name',
+      }),
+      { onRetry: options.onRetry },
+    );
   },
 
   async getMyProfile() {

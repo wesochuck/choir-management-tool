@@ -141,6 +141,7 @@ export default function CommunicationView() {
     recipients: [],
     title: '',
   });
+  const hasShownStatusRetryToastRef = useRef(false);
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
@@ -257,9 +258,16 @@ export default function CommunicationView() {
   useEffect(() => {
     let isCurrent = true;
     if (events.length === 0) return;
+    hasShownStatusRetryToastRef.current = false;
 
     const checkSentStatuses = async () => {
-      const cache = await communicationService.getSentTaskStatuses(events.map((event) => event.id));
+      const cache = await communicationService.getSentTaskStatuses(events.map((event) => event.id), {
+        onRetry: () => {
+          if (hasShownStatusRetryToastRef.current) return;
+          hasShownStatusRetryToastRef.current = true;
+          dialog.showToast('Communications status checks are rate-limited; retrying automatically...');
+        },
+      });
       if (isCurrent) setSentTaskStatus(cache);
     };
 
@@ -267,7 +275,7 @@ export default function CommunicationView() {
     return () => {
       isCurrent = false;
     };
-  }, [events]);
+  }, [events, dialog]);
 
   useEffect(() => {
     const load = async () => {
@@ -1321,7 +1329,21 @@ export default function CommunicationView() {
         )}
       </BaseModal>
 
-      <BaseModal isOpen={recipientPreviewList.isOpen} onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })} title={recipientPreviewList.title} maxWidth="500px">
+      <BaseModal
+        isOpen={recipientPreviewList.isOpen}
+        onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
+        title={recipientPreviewList.title}
+        maxWidth="500px"
+        footer={
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
+          >
+            Cancel
+          </button>
+        }
+      >
         <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
           {recipientPreviewList.recipients.map(r => (
             <div key={r.id} className="flex-row card" style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}>

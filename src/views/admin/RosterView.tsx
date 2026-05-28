@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
@@ -15,11 +15,20 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import { useDialog } from '../../contexts/DialogContext';
 import './RosterView.css';
 
 export default function RosterView() {
+  const dialog = useDialog();
   const { user, updatePreferences } = useAuth();
-  const { allProfiles, profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles();
+  const hasShownRetryToastRef = useRef(false);
+  const { allProfiles, profiles, unfilteredByVoicePartProfiles, isLoading, error, filters, setFilter, addProfile, editProfile, removeProfile, refresh } = useProfiles({
+    onRateLimitRetry: () => {
+      if (hasShownRetryToastRef.current) return;
+      hasShownRetryToastRef.current = true;
+      dialog.showToast('Roster loading is being rate-limited; retrying automatically...');
+    },
+  });
   const { currentSeason, duesMap, toggleDues } = useDues();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialVoicePart = searchParams.get('voicePart') || '';
@@ -43,6 +52,12 @@ export default function RosterView() {
   const [pageSize] = useState(25);
 
   // Reset to first page when search filters or sorting selections change
+  useEffect(() => {
+    if (isLoading) {
+      hasShownRetryToastRef.current = false;
+    }
+  }, [isLoading]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [filters.name, filters.voiceParts, filters.status, sortBy, pageSize]);

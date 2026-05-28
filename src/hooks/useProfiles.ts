@@ -3,7 +3,12 @@ import { profileService, type Profile, type ProfileInput } from '../services/pro
 import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
 
-export const useProfiles = () => {
+interface UseProfilesOptions {
+  onRateLimitRetry?: (attempt: number, delayMs: number) => void;
+}
+
+export const useProfiles = (options: UseProfilesOptions = {}) => {
+  const onRateLimitRetry = options.onRateLimitRetry;
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,7 +18,11 @@ export const useProfiles = () => {
   const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await profileService.getProfiles();
+      const data = await profileService.getProfiles({
+        onRetry: (attempt, delayMs) => {
+          onRateLimitRetry?.(attempt, delayMs);
+        },
+      });
       setProfiles(data);
       setError(null);
     } catch (err: unknown) {
@@ -21,7 +30,7 @@ export const useProfiles = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [onRateLimitRetry]);
 
   useEffect(() => {
     fetchProfiles();

@@ -8,7 +8,7 @@ import {
   type CommunicationConfig,
 } from './settingsService';
 import type { RecordModel, ListResult } from 'pocketbase';
-import { chunkArray, mapWithConcurrency, retryOn429 } from '../lib/networkSafety';
+import { chunkArray, mapWithConcurrency, retryOn429, type Retry429Options } from '../lib/networkSafety';
 
 export type { CommunicationConfig } from './settingsService';
 
@@ -113,6 +113,10 @@ const readFilterEventId = (value: unknown): string | null => {
   return typeof rawEventId === 'string' && rawEventId ? rawEventId : null;
 };
 
+interface SentTaskStatusOptions {
+  onRetry?: Retry429Options['onRetry'];
+}
+
 export const communicationService = {
   async getMessages() {
     return await pb.collection('messages').getFullList<MessageRecord>({
@@ -132,7 +136,7 @@ export const communicationService = {
     });
   },
 
-  async getSentTaskStatuses(eventIds: string[]) {
+  async getSentTaskStatuses(eventIds: string[], options: SentTaskStatusOptions = {}) {
     const uniqueEventIds = [...new Set(eventIds.filter((eventId) => !!eventId))];
     const statusMap: Record<string, boolean> = {};
 
@@ -167,6 +171,7 @@ export const communicationService = {
               maxRetries: 3,
               baseDelayMs: 250,
               maxDelayMs: 2000,
+              onRetry: options.onRetry,
             },
           );
 
@@ -497,7 +502,7 @@ export const communicationService = {
 } satisfies {
   getMessages: () => Promise<MessageRecord[]>;
   getMessagesPaginated: (page: number, perPage: number, filterString?: string) => Promise<ListResult<MessageRecord>>;
-  getSentTaskStatuses: (eventIds: string[]) => Promise<Record<string, boolean>>;
+  getSentTaskStatuses: (eventIds: string[], options?: SentTaskStatusOptions) => Promise<Record<string, boolean>>;
   wasMessageSent: (filter: { eventId?: string; type?: 'Reminder' | 'Report' | 'RSVP Request' }) => Promise<boolean>;
   getDrafts: () => Promise<MessageRecord[]>;
   saveDraft: (data: SendMessageInput, id?: string) => Promise<MessageRecord>;
