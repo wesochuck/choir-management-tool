@@ -5112,7 +5112,7 @@ function parseSignedToken(token, requiredKeys) {
     
     try {
         const record = e?.record;
-        const original = e.originalCopy;
+        const original = (e.record && typeof e.record.originalCopy === 'function') ? e.record.originalCopy() : e.originalCopy;
         const oldStatus = original ? original.get("status") : "";
         if (record && shouldQueueMessage(record, oldStatus)) {
             enqueueBulkMessage($app, record);

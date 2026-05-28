@@ -832,10 +832,10 @@ export default function CommunicationView() {
                         <span className="text-muted text-sm">Via SMS</span>
                       </div>
                     </div>
-                    <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
+                    <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: '-8px' }}>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm"
+                        className="btn btn-secondary btn-sm"
                         disabled={selectedRecipients.length === 0}
                         onClick={() =>
                           setRecipientPreviewList({
@@ -845,7 +845,7 @@ export default function CommunicationView() {
                           })
                         }
                       >
-                        View Matched Singers
+                        🔍 View Recipient List
                       </button>
                     </div>
                   </div>

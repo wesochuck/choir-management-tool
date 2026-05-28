@@ -25,6 +25,7 @@
     2.  Run `npm run generate:pb-hooks`.
     3.  Run `npm run check:pb-hooks` to verify integrity and pass unit tests.
 - **Defensive Hooks**: For advisory hooks, always wrap the whole registered callback body in `try/catch`. Logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
+- **Accessing Previous Record State in Hooks**: In PocketBase JS hooks (v0.22+ JS VM), always use `e.record.originalCopy()` to access the previous state of a record during an update event. Do NOT use `e.originalCopy`, as it is undefined and will silently fail validation checks. If you need a safe fallback for cross-version compatibility, use: `(e.record && typeof e.record.originalCopy === 'function') ? e.record.originalCopy() : e.originalCopy`.
 - **Sanitization**: When generating HTML bodies (e.g., for emails), always sanitize dynamic text data by passing it through an HTML escaping function (like the `escapeHtml` utility) before injecting it into the HTML string.
 
 ## PocketBase Migration Safety
