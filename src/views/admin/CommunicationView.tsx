@@ -576,7 +576,24 @@ export default function CommunicationView() {
 
           {wizardStep === 'TARGETS' && (
             <div className="targets-grid">
-              <AppCard title="Recipients">
+              <AppCard 
+                title="Recipients"
+                actions={
+                  <span 
+                    className="badge" 
+                    style={{ 
+                      backgroundColor: 'var(--primary-light)', 
+                      color: 'var(--primary-deep)', 
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem',
+                      padding: '4px 8px',
+                      borderRadius: '12px'
+                    }}
+                  >
+                    {recipientCounts.total} Matched
+                  </span>
+                }
+              >
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                     <label className="text-label">Event Context</label>
@@ -611,39 +628,58 @@ export default function CommunicationView() {
                   <div className="flex-col" style={{ gap: 'var(--space-xs)', position: 'relative' }} ref={dropdownRef}>
                     <label className="text-label">Voice Part / Section</label>
                     <button
-                      type="button"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="card voice-part-dropdown-trigger flex-row"
-                    >
-                      <span className={`dropdown-item-text ${(filters.voiceParts || []).length > 0 ? 'selected' : ''}`}>
-                        {filters.voiceParts.length === 0 ? 'All Voice Parts' : `${filters.voiceParts.length} selected`}
-                      </span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-muted)' }}>
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </button>
-                    {isDropdownOpen && (
-                      <div className="card voice-part-dropdown-panel shadow-lg">
-                        <div className="dropdown-section-header">Sections</div>
-                        {configSections.map(sec => (
-                          <label key={sec.code} className="dropdown-item-label">
-                            <input type="checkbox" checked={filters.voiceParts.includes(sec.code)} onChange={() => handleVoicePartToggle(sec.code)} style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }} />
-                            <span className={filters.voiceParts.includes(sec.code) ? 'selected' : ''}>{sec.name}</span>
-                          </label>
-                        ))}
-                        <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
-                        <div className="dropdown-section-header">Individual Parts</div>
-                        {voicePartLabels.map(part => (
-                          <label key={part} className="dropdown-item-label">
-                            <input type="checkbox" checked={filters.voiceParts.includes(part)} onChange={() => handleVoicePartToggle(part)} style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }} />
-                            <span className={filters.voiceParts.includes(part) ? 'selected' : ''}>{part}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </AppCard>
+                       type="button"
+                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                       className="card voice-part-dropdown-trigger flex-row"
+                     >
+                       <span className={`dropdown-item-text ${(filters.voiceParts || []).length > 0 ? 'selected' : ''}`}>
+                         {filters.voiceParts.length === 0 ? 'All Voice Parts' : `${filters.voiceParts.length} selected`}
+                       </span>
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-muted)' }}>
+                         <polyline points="6 9 12 15 18 9"></polyline>
+                       </svg>
+                     </button>
+                     {isDropdownOpen && (
+                       <div className="card voice-part-dropdown-panel shadow-lg">
+                         <div className="dropdown-section-header">Sections</div>
+                         {configSections.map(sec => (
+                           <label key={sec.code} className="dropdown-item-label">
+                             <input type="checkbox" checked={filters.voiceParts.includes(sec.code)} onChange={() => handleVoicePartToggle(sec.code)} style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }} />
+                             <span className={filters.voiceParts.includes(sec.code) ? 'selected' : ''}>{sec.name}</span>
+                           </label>
+                         ))}
+                         <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }}></div>
+                         <div className="dropdown-section-header">Individual Parts</div>
+                         {voicePartLabels.map(part => (
+                           <label key={part} className="dropdown-item-label">
+                             <input type="checkbox" checked={filters.voiceParts.includes(part)} onChange={() => handleVoicePartToggle(part)} style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }} />
+                             <span className={filters.voiceParts.includes(part) ? 'selected' : ''}>{part}</span>
+                           </label>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+
+                   <div style={{ 
+                     marginTop: 'var(--space-xs)', 
+                     padding: '12px', 
+                     backgroundColor: 'var(--bg)', 
+                     borderRadius: 'var(--radius-md)', 
+                     border: '1px solid var(--border)',
+                     fontSize: '0.85rem',
+                     color: 'var(--text-muted)'
+                   }} className="flex-col">
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                       <span>Matched Singers:</span>
+                       <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{recipientCounts.total}</strong>
+                     </div>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', borderTop: '1px dashed var(--border)', paddingTop: '6px' }}>
+                       <span>Email Reach: <strong>{recipientCounts.hasEmail}</strong></span>
+                       <span>SMS Reach: <strong>{recipientCounts.hasPhone}</strong></span>
+                     </div>
+                   </div>
+                 </div>
+               </AppCard>
 
               <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
                 <AppCard title="Templates & Quick Starts">
@@ -700,7 +736,7 @@ export default function CommunicationView() {
                 </AppCard>
 
                 <div className="wizard-action-footer flex-responsive" style={{ justifyContent: 'space-between', width: '100%' }}>
-                  <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>← Back to Targets</button>
+                  <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>← Back to Recipients</button>
                   <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
                     <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                       {isSavingDraft ? 'Saving...' : 'Save Draft'}
