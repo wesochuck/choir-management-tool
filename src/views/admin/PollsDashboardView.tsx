@@ -37,13 +37,19 @@ export default function PollsDashboardView() {
     setIsLoading(true);
     try {
       const [pollList, responseList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
-        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' })
+        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }).catch(err => {
+          console.error('Failed to load polls', err);
+          return [] as PollRecord[];
+        }),
+        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }).catch(err => {
+          console.error('Failed to load poll responses', err);
+          return [] as PollResponseRecord[];
+        })
       ]);
       setPolls(pollList);
       setResponses(responseList);
     } catch (err) {
-      console.error('Failed to load poll data', err);
+      console.error('Unexpected error loading poll data', err);
     } finally {
       setIsLoading(false);
     }
