@@ -165,7 +165,7 @@ export default function PollsDashboardView() {
         content,
         type: 'Email',
         recipients,
-        filters: {},
+        filters: { eventId: '', rsvp: 'All', voiceParts: [], globalStatus: 'Active' },
       });
 
       setPolls((prev) => [poll, ...prev]);

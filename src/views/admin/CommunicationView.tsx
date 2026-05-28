@@ -432,6 +432,15 @@ export default function CommunicationView() {
       voiceParts: vpArray,
       globalStatus: (mFilters?.globalStatus as string) || 'Active',
     });
+
+    // If the draft already has a saved recipient list (e.g. quick poll drafts which
+    // capture Active+Idle singers at creation time), restore them directly and lock
+    // them so the filter-resolution effect doesn't overwrite the saved audience.
+    if (draft.recipients && draft.recipients.length > 0) {
+      setRecipients(draft.recipients);
+      setSelectedIds(new Set(draft.recipients.map((r) => r.id)));
+      setLockInitialRecipients(true);
+    }
     
     setWizardStep('COMPOSE');
     setTab('compose');

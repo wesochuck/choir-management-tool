@@ -68,7 +68,7 @@
 
 - **Prefer App Modals Over Browser Dialogs:** In React/admin UI flows, use `useDialog()` (`dialog.confirm`, `dialog.showMessage`, `dialog.showToast`) instead of native `window.alert`, `window.confirm`, or `window.prompt`.
 - **Destructive Actions:** Deletes/resets/revocations must use a danger-styled confirmation modal with clear action labels (for example `confirmLabel: 'Delete'`, `variant: 'danger'`).
-- **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; do not rely on ESC key or backdrop click as the only exit path.
+- **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; ECS key should be supported but do not rely on ESC key or backdrop click as the only exit path.
 - **Allowed Exception:** Native browser dialogs are acceptable only in narrowly scoped, temporary fallback flows where the shared dialog context is not available; prefer migrating these to `useDialog` when touched.
 
 ## Token & URL Parameter Safety (Ampersand Issue Prevention)
