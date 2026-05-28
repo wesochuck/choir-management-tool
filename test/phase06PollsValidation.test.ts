@@ -78,3 +78,14 @@ test('phase 06 POLL-06/POLL-07: admin and singer dashboards include active poll 
   assert.match(pollService, /pb\.filter\('profileId = \{:profileId\}'/);
   assert.match(relaxRules, /polls\.listRule = "@request\.auth\.id != ''"/);
 });
+
+test('phase 06 POLL-08: poll timestamp repair migration is forward-only and backfills legacy rows', () => {
+  const migration = readProjectFile('pocketbase/pb_migrations/1717650000_backfill_poll_autodates.js');
+
+  assert.match(migration, /new AutodateField\(\{[\s\S]*name,[\s\S]*onCreate,[\s\S]*onUpdate,[\s\S]*\}\)/);
+  assert.match(migration, /const collectionNames = \["polls", "pollResponses"\]/);
+  assert.match(migration, /record\.set\("created", fallbackTimestamp\)/);
+  assert.match(migration, /record\.set\("updated", fallbackTimestamp\)/);
+  assert.match(migration, /app\.saveNoValidate\(record\)/);
+  assert.match(migration, /Forward-only data repair/);
+});

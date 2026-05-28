@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
+import './PollsDashboardView.css';
 import { BaseModal } from '../../components/common/BaseModal';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
@@ -53,8 +54,8 @@ export default function PollsDashboardView() {
     setLoadError(null);
     try {
       const [pollList, responseList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>({ sort: '-id' }),
-        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId' }),
+        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
+        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
       ]);
       setPolls(pollList);
       setResponses(responseList);
@@ -243,58 +244,61 @@ export default function PollsDashboardView() {
             </div>
           </AppCard>
         ) : (
-          filteredPolls.map(poll => {
-            const stat = pollStats[poll.id];
-            const isExpanded = expandedPollId === poll.id;
-            const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
-            const isArchived = event ? new Date(event.date) < new Date() : false;
+          <AppCard noPadding className="polls-list-card">
+            {filteredPolls.map((poll, index) => {
+              const stat = pollStats[poll.id];
+              const isExpanded = expandedPollId === poll.id;
+              const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
+              const isArchived = event ? new Date(event.date) < new Date() : false;
+              const createdLabel = poll.created
+                ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                : null;
 
-            return (
-              <AppCard key={poll.id} noPadding>
+              return (
                 <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
-                  style={{
-                    padding: 'var(--space-md) var(--space-lg)',
-                    borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
+                  key={poll.id}
+                  className={`polls-list-item${isExpanded ? ' is-expanded' : ''}${index === filteredPolls.length - 1 ? ' is-last' : ''}`}
                 >
-                  <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
-                    <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
-                      <div className="flex-row" style={{ gap: '8px', alignItems: 'center' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{poll.question}</h3>
-                        {isArchived && <span className="badge" style={{ backgroundColor: '#f1f5f9', color: '#64748b', fontSize: '10px' }}>Archived</span>}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="polls-list-row"
+                    onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
+                  >
+                    <div className="polls-list-main">
+                      <div className="polls-list-title-row">
+                        <h3 className="polls-list-title">{poll.question}</h3>
+                        {isArchived && <span className="badge polls-archived-badge">Archived</span>}
                       </div>
-                      {event && (
-                        <span className="text-muted text-xs" style={{ fontWeight: 600 }}>
-                          📅 {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
-                        </span>
-                      )}
+                      <div className="polls-list-meta">
+                        {createdLabel && <span>Created {createdLabel}</span>}
+                        {event && (
+                          <span>
+                            📅 {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex-row" style={{ gap: 'var(--space-lg)', alignItems: 'center' }}>
-                      <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-                        <div className="flex-col" style={{ alignItems: 'center' }}>
-                          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>{stat.yes}</span>
-                          <span className="text-muted text-xs">Yes</span>
+                    <div className="polls-list-side">
+                      <div className="polls-stat-group" aria-label="Poll response counts">
+                        <div className="polls-stat">
+                          <span className="polls-stat-value polls-stat-yes">{stat.yes}</span>
+                          <span className="polls-stat-label">Yes</span>
                         </div>
-                        <div className="flex-col" style={{ alignItems: 'center' }}>
-                          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ef4444' }}>{stat.no}</span>
-                          <span className="text-muted text-xs">No</span>
+                        <div className="polls-stat">
+                          <span className="polls-stat-value polls-stat-no">{stat.no}</span>
+                          <span className="polls-stat-label">No</span>
                         </div>
                       </div>
 
-                      <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {isExpanded ? '▲ Hide' : '▼ Names'}
+                      <div className="polls-list-actions">
+                        <span className="polls-expand-label">
+                          {isExpanded ? '▲ Hide' : '▼ View Names'}
                         </span>
                         <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: '#ef4444' }}
+                          className="btn btn-ghost btn-sm polls-delete-btn"
                           onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
                         >
                           Delete
@@ -302,50 +306,50 @@ export default function PollsDashboardView() {
                       </div>
                     </div>
                   </div>
+
+                  {isExpanded && (
+                    <div className="polls-response-panel">
+                      <div className="polls-response-column">
+                        <h4 className="polls-response-heading polls-response-heading-yes">
+                          Volunteers ({stat.yes})
+                        </h4>
+                        {stat.volunteers.length === 0 ? (
+                          <p className="text-muted text-sm">No volunteers yet.</p>
+                        ) : (
+                          <div className="polls-response-grid">
+                            {stat.volunteers.map(v => (
+                              <div key={v.id} className="polls-response-person">
+                                <div className="polls-response-name">{v.expand?.profileId.name}</div>
+                                <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="polls-response-column">
+                        <h4 className="polls-response-heading polls-response-heading-no">
+                          Declined ({stat.no})
+                        </h4>
+                        {stat.decliners.length === 0 ? (
+                          <p className="text-muted text-sm">No decliners yet.</p>
+                        ) : (
+                          <div className="polls-response-grid">
+                            {stat.decliners.map(v => (
+                              <div key={v.id} className="polls-response-person polls-response-person-muted">
+                                <div className="polls-response-name">{v.expand?.profileId.name}</div>
+                                <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {isExpanded && (
-                  <div className="flex-responsive" style={{ padding: 'var(--space-lg)', backgroundColor: '#fcfdfc', gap: 'var(--space-xl)' }}>
-                    <div className="flex-col" style={{ flex: 1, gap: 'var(--space-sm)' }}>
-                      <h4 style={{ margin: 0, color: 'var(--primary)', borderBottom: '2px solid var(--primary-light)', paddingBottom: '4px' }}>
-                        Volunteers ({stat.yes})
-                      </h4>
-                      {stat.volunteers.length === 0 ? (
-                        <p className="text-muted text-sm">No volunteers yet.</p>
-                      ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-                          {stat.volunteers.map(v => (
-                            <div key={v.id} className="card" style={{ padding: '8px 12px', fontSize: '0.85rem', boxShadow: 'none', border: '1px solid #e2e8f0', margin: 0 }}>
-                              <div style={{ fontWeight: 700 }}>{v.expand?.profileId.name}</div>
-                              <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-col" style={{ flex: 1, gap: 'var(--space-sm)' }}>
-                      <h4 style={{ margin: 0, color: '#ef4444', borderBottom: '2px solid #fee2e2', paddingBottom: '4px' }}>
-                        Declined ({stat.no})
-                      </h4>
-                      {stat.decliners.length === 0 ? (
-                        <p className="text-muted text-sm">No decliners yet.</p>
-                      ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-                          {stat.decliners.map(v => (
-                            <div key={v.id} className="card" style={{ padding: '8px 12px', fontSize: '0.85rem', boxShadow: 'none', border: '1px solid #fee2e2', margin: 0, opacity: 0.8 }}>
-                              <div style={{ fontWeight: 700 }}>{v.expand?.profileId.name}</div>
-                              <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </AppCard>
-            );
-          })
+              );
+            })}
+          </AppCard>
         )}
       </div>
 

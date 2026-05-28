@@ -34,7 +34,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   const loadPolls = async () => {
     setIsLoading(true);
     try {
-      const list = await pb.collection('polls').getFullList<PollRecord>();
+      const list = await pb.collection('polls').getFullList<PollRecord>({ sort: '-created' });
       setPolls(list);
     } catch (err) {
       console.error('Failed to load polls', err);
