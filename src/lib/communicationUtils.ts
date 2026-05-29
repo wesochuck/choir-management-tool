@@ -1,6 +1,16 @@
 import { type CommunicationRecipient } from '../services/communicationService';
 import { type Event } from '../services/eventService';
 
+export function escapeHtml(unsafe: string): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export const COMPLIANT_FOOTER_HTML = `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
   <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
@@ -86,22 +96,25 @@ export function resolvePreviewContent(
   event: Event | null,
   recipient: CommunicationRecipient | null,
   mailingAddress: string = '123 Choir St, Harmony City, HC 12345',
-  pollQuestions: Record<string, string> = {}
+  pollQuestions: Record<string, string> = {},
+  isHtml: boolean = false
 ): string {
   if (!content) return '';
 
   let result = content;
 
+  const processValue = (val: string) => isHtml ? escapeHtml(val) : val;
+
   // Recipient Placeholders
-  const name = recipient?.name || 'Sample Singer';
+  const name = processValue(recipient?.name || 'Sample Singer');
   result = result.replace(/{singerName}/g, name);
 
   // Event Placeholders
-  const title = event?.title || event?.type || 'Sample Performance';
-  const type = event?.type || 'Performance';
-  const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  const location = event?.expand?.venue?.name || 'Main Concert Hall';
-  const details = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const title = processValue(event?.title || event?.type || 'Sample Performance');
+  const type = processValue(event?.type || 'Performance');
+  const date = processValue(event ? new Date(event.date).toLocaleString() : new Date().toLocaleString());
+  const location = processValue(event?.expand?.venue?.name || 'Main Concert Hall');
+  const details = processValue(event?.details || 'Join us for an amazing evening of music and harmony!');
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
@@ -132,7 +145,7 @@ export function resolvePreviewContent(
   // Poll Links - Injected as literal HTML preview, using actual poll question if available
   const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
   result = result.replace(pollRegex, (_, pollId: string) => {
-    const question = pollQuestions[pollId] || 'Answer our quick question';
+    const question = processValue(pollQuestions[pollId] || 'Answer our quick question');
     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
     <span style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${question}</span>
@@ -142,7 +155,7 @@ export function resolvePreviewContent(
   });
 
   // Compliance Placeholders
-  result = result.replace(/{{MAILING_ADDRESS}}/g, mailingAddress);
+  result = result.replace(/{{MAILING_ADDRESS}}/g, processValue(mailingAddress));
   result = result.replace(/{{UNSUBSCRIBE_LINK}}/g, '#');
 
   return result;
@@ -171,5 +184,5 @@ export function getRenderedPreview(
   }
 
   // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
-  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions);
+  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions, true);
 }

@@ -1,0 +1,4 @@
+## 2024-05-20 - XSS in message preview
+**Vulnerability:** XSS vulnerability when replacing placeholders like `{eventTitle}` and `{singerName}` inside the preview content in `resolvePreviewContent`. Because `resolvePreviewContent` acts after Markdown is rendered, dynamically replacing user data without HTML encoding leads to XSS if the data (like `event.title`) contains `<script>` tags and the string is used in `dangerouslySetInnerHTML`.
+**Learning:** Placeholders replaced into an HTML template must be escaped. The current flow renders Markdown to HTML (which escapes raw HTML tags) and *then* substitutes the dynamic data (singerName, eventTitle, etc.). Because it just strings concatenates, an event title like `<script>alert(1)</script>` bypassing the first escape filter.
+**Prevention:** Always escape dynamic variables when inserting them into HTML string templates.
