@@ -839,10 +839,10 @@ export default function CommunicationView() {
           )}
 
           {wizardStep === 'REVIEW' && (
-            <div className="review-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+            <div className="review-container">
               <AppCard title="Pre-Flight Review">
-                <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
-                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
                     <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
                     <div className="review-summary-row">
                       <div className="review-summary-stat">
@@ -876,7 +876,7 @@ export default function CommunicationView() {
                     </div>
                   </div>
 
-                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
                     <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Checklist</h4>
                     <div className="review-checklist-card card">
                       {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
@@ -923,7 +923,7 @@ export default function CommunicationView() {
                         const hasPlayerPlaceholder = content.toLowerCase().includes('{{player_link}}');
                         
                         if (!hasApprovedSetList && hasPlayerPlaceholder) {
-                          return (
+                           return (
                             <div className="checklist-item warning">
                               <span>⚠️</span> <strong>Practice Player Not Approved.</strong> Your message body contains the <code>{"{{PLAYER_LINK}}"}</code> placeholder, but the set list for the selected event is not approved for singers. The practice player button will not render.
                             </div>
@@ -953,7 +953,7 @@ export default function CommunicationView() {
                     </div>
                   </div>
 
-                  <div className="wizard-action-footer flex-responsive" style={{ justifyContent: 'space-between', width: '100%', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border)' }}>
+                  <div className="wizard-action-footer flex-responsive" style={{ justifyContent: 'space-between', width: '100%', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
                     <button className="btn btn-ghost" onClick={() => setWizardStep('COMPOSE')}>← Back to Compose</button>
                     <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
                       <button 
@@ -972,8 +972,8 @@ export default function CommunicationView() {
                 </div>
               </AppCard>
 
-              <AppCard title="Message Preview" noPadding>
-                <div style={{ padding: '24px' }}>
+              <AppCard noPadding>
+                <div style={{ padding: '20px' }}>
                   <LivePreview
                     channel={messageType}
                     subject={resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
