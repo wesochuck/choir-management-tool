@@ -99,7 +99,7 @@ export default function CommunicationView() {
 
   // Global UI state
   const [tab, setTab] = useState<CommunicationTab>('compose');
-  const [wizardStep, setWizardStep] = useState<WizardStep>(routeState?.initialOpenReview ? 'REVIEW' : 'TARGETS');
+  const [wizardStep, setWizardStep] = useState<WizardStep>((routeState?.initialOpenReview || routeState?.openDraftId) ? 'REVIEW' : 'TARGETS');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -119,7 +119,10 @@ export default function CommunicationView() {
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(routeState?.initialRecipients || []);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(routeState?.initialRecipients?.map(r => r.id) || []));
   const [lockInitialRecipients, setLockInitialRecipients] = useState(
-    Boolean(routeState?.initialOpenReview && routeState?.initialRecipients && routeState.initialRecipients.length > 0),
+    Boolean(
+      (routeState?.initialOpenReview && routeState?.initialRecipients && routeState.initialRecipients.length > 0) ||
+      routeState?.openDraftId
+    ),
   );
   const [subject, setSubject] = useState(routeState?.initialSubject || '');
   const [content, setContent] = useState(routeState?.initialContent || '');
@@ -302,10 +305,33 @@ export default function CommunicationView() {
         setCommSettings(loadedSettings);
         setIsLoading(false);
 
-        // If we arrived here from Quick Poll "Save as Draft", auto-switch to Drafts tab
-        // so the user immediately sees the new draft with the badge count.
+        // If we arrived here from Quick Poll "Save as Draft", find that draft,
+        // resume it, and jump straight to the REVIEW step.
         if (routeState?.openDraftId) {
-          setTab('drafts');
+          const draftToResume = loadedDrafts.find(d => d.id === routeState.openDraftId);
+          if (draftToResume) {
+            setActiveDraftId(draftToResume.id);
+            setSubject(draftToResume.subject);
+            setContent(draftToResume.content);
+            setMessageType(draftToResume.type);
+            
+            const mFilters = draftToResume.filters as Record<string, unknown>;
+            const vpArray: string[] = Array.isArray(mFilters?.voiceParts) ? (mFilters.voiceParts as string[]) : (mFilters?.voicePart ? [mFilters.voicePart as string] : []);
+            setFilters({
+              eventId: (mFilters?.eventId as string) || '',
+              rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
+              voiceParts: vpArray,
+              globalStatus: (mFilters?.globalStatus as string) || 'Active',
+            });
+
+            if (draftToResume.recipients && draftToResume.recipients.length > 0) {
+              setRecipients(draftToResume.recipients);
+              setSelectedIds(new Set(draftToResume.recipients.map((r) => r.id)));
+              setLockInitialRecipients(true);
+            }
+            
+            setTab('compose');
+          }
         }
       } catch (err) {
         setIsLoading(false);
@@ -813,7 +839,7 @@ export default function CommunicationView() {
           )}
 
           {wizardStep === 'REVIEW' && (
-            <div className="review-container">
+            <div className="review-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
               <AppCard title="Pre-Flight Review">
                 <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
@@ -943,6 +969,19 @@ export default function CommunicationView() {
                       </button>
                     </div>
                   </div>
+                </div>
+              </AppCard>
+
+              <AppCard title="Message Preview" noPadding>
+                <div style={{ padding: '24px' }}>
+                  <LivePreview
+                    channel={messageType}
+                    subject={resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                    bodyHtml={previewHtml}
+                    smsBody={resolvePreviewContent(content, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                    recipientName={selectedRecipients[0]?.name}
+                    recipientEmail={selectedRecipients[0]?.email}
+                  />
                 </div>
               </AppCard>
             </div>

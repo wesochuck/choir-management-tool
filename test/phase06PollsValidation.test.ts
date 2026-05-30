@@ -68,7 +68,7 @@ test('phase 06 POLL-06/POLL-07: admin and singer dashboards include active poll 
   const relaxRules = readProjectFile('pocketbase/pb_migrations/1717610000_relax_poll_rules.js');
 
   assert.match(appRoutes, /path="\/admin\/polls"/);
-  assert.match(adminDashboard, /Show Archived \(Past Events\)/);
+  assert.match(adminDashboard, /Show Archived/);
   assert.match(adminDashboard, /View Names/);
   assert.match(adminDashboard, /new Date\(event\.date\)\s*>\s*now/);
   assert.match(adminDashboard, /volunteers/);

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import './PollsDashboardView.css';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -11,11 +11,14 @@ import { useDialog } from '../../contexts/DialogContext';
 import { profileService } from '../../services/profileService';
 import { communicationService, type CommunicationRecipient } from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
+import { settingsService, type PollSettings } from '../../services/settingsService';
+import { Pagination } from '../../components/common/Pagination';
 
 
 interface PollRecord extends RecordModel {
   question: string;
   eventId?: string;
+  archiveAt?: string;
   created?: string;
   updated?: string;
 }
@@ -43,22 +46,34 @@ export default function PollsDashboardView() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [quickCreateStep, setQuickCreateStep] = useState<1 | 2>(1);
   const [quickPollQuestion, setQuickPollQuestion] = useState('');
   const [isCreatingQuickPoll, setIsCreatingQuickPoll] = useState(false);
 
+  // Auto-Archive and Pagination States
+  const [pollSettings, setPollSettings] = useState<PollSettings>({ defaultAutoArchiveDays: 3 });
+  const [globalDefaultDays, setGlobalDefaultDays] = useState(3);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  const [quickPollDays, setQuickPollDays] = useState(3);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const loadData = async () => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [pollList, responseList] = await Promise.all([
+      const [pollList, responseList, loadedSettings] = await Promise.all([
         pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
         pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
+        settingsService.getPollSettings(),
       ]);
       setPolls(pollList);
       setResponses(responseList);
+      setPollSettings(loadedSettings);
+      setGlobalDefaultDays(loadedSettings.defaultAutoArchiveDays);
     } catch (err) {
       console.error('Failed to load poll dashboard data', err);
       setLoadError('Unable to load polls. Check PocketBase collection fields, API rules, and browser console.');
@@ -71,16 +86,30 @@ export default function PollsDashboardView() {
     void loadData();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [showArchived, polls.length]);
+
   const filteredPolls = useMemo(() => {
     const now = new Date();
     return polls.filter(poll => {
+      // Auto-archive check
+      const isExpired = poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < now : false;
+
       if (showArchived) return true;
+      if (isExpired) return false;
+
       if (!poll.eventId) return true; // Polls without events stay active
       const event = events.find(e => e.id === poll.eventId);
       if (!event) return true;
       return new Date(event.date) > now;
     });
   }, [polls, events, showArchived]);
+
+  const paginatedPolls = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredPolls.slice(startIndex, startIndex + pageSize);
+  }, [filteredPolls, currentPage, pageSize]);
 
   const pollStats = useMemo(() => {
     const stats: Record<string, { yes: number; no: number; volunteers: PollResponseRecord[]; decliners: PollResponseRecord[] }> = {};
@@ -130,6 +159,7 @@ export default function PollsDashboardView() {
   const openQuickCreate = () => {
     setQuickCreateStep(1);
     setQuickPollQuestion('');
+    setQuickPollDays(pollSettings.defaultAutoArchiveDays);
     setIsQuickCreateOpen(true);
   };
 
@@ -139,9 +169,13 @@ export default function PollsDashboardView() {
 
     setIsCreatingQuickPoll(true);
     try {
+      // Calculate archive target timestamp
+      const archiveAt = new Date(Date.now() + quickPollDays * 24 * 60 * 60 * 1000).toISOString();
+
       // 1. Create the poll record
       const poll = await pb.collection('polls').create<PollRecord>({
         question: trimmedQuestion,
+        archiveAt,
       });
 
       // 2. Build recipients (active/idle singers)
@@ -193,6 +227,20 @@ export default function PollsDashboardView() {
     }
   };
 
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      await settingsService.savePollSettings({ defaultAutoArchiveDays: globalDefaultDays });
+      setPollSettings({ defaultAutoArchiveDays: globalDefaultDays });
+      setIsSettingsModalOpen(false);
+      dialog.showToast('Poll settings saved successfully.');
+    } catch {
+      await dialog.showMessage({ title: 'Error', message: 'Failed to save poll settings.', variant: 'danger' });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   if (isLoading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Polls...</div>;
 
   return (
@@ -207,8 +255,16 @@ export default function PollsDashboardView() {
               onChange={e => setShowArchived(e.target.checked)}
               style={{ width: '16px', height: '16px' }}
             />
-            Show Archived (Past Events)
+            Show Archived
           </label>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm flex-row" 
+            style={{ gap: '6px', height: '36px', display: 'flex', alignItems: 'center' }}
+            onClick={() => setIsSettingsModalOpen(true)}
+          >
+            ⚙️ Settings
+          </button>
           <button 
             type="button"
             className="btn btn-primary btn-sm flex-row" 
@@ -229,14 +285,6 @@ export default function PollsDashboardView() {
         {filteredPolls.length === 0 ? (
           <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: 'var(--space-md)' }}>No active polls found.</p>
-            <div style={{ maxWidth: '480px', margin: '0 auto 24px auto', textAlign: 'left', backgroundColor: 'var(--bg)', padding: '16px 20px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              <strong style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px' }}>How to create a poll:</strong>
-              <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <li>Go to the <Link to="/admin/communications" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Communications Dashboard</Link>.</li>
-                <li>In the Composer, click the <strong>Engagement Poll</strong> placeholder badge.</li>
-                <li>Create your poll question and insert it into your email/SMS.</li>
-              </ol>
-            </div>
             <div>
               <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
                 Start New Poll
@@ -244,21 +292,23 @@ export default function PollsDashboardView() {
             </div>
           </AppCard>
         ) : (
-          <AppCard noPadding className="polls-list-card">
-            {filteredPolls.map((poll, index) => {
-              const stat = pollStats[poll.id];
-              const isExpanded = expandedPollId === poll.id;
-              const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
-              const isArchived = event ? new Date(event.date) < new Date() : false;
-              const createdLabel = poll.created
-                ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
-                : null;
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <AppCard noPadding className="polls-list-card">
+              {paginatedPolls.map((poll, index) => {
+                const stat = pollStats[poll.id];
+                const isExpanded = expandedPollId === poll.id;
+                const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
+                const isArchived = (event ? new Date(event.date) < new Date() : false) || 
+                                   (poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < new Date() : false);
+                const createdLabel = poll.created
+                  ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                  : null;
 
-              return (
-                <div
-                  key={poll.id}
-                  className={`polls-list-item${isExpanded ? ' is-expanded' : ''}${index === filteredPolls.length - 1 ? ' is-last' : ''}`}
-                >
+                return (
+                  <div
+                    key={poll.id}
+                    className={`polls-list-item${isExpanded ? ' is-expanded' : ''}${index === paginatedPolls.length - 1 ? ' is-last' : ''}`}
+                  >
                   <div
                     role="button"
                     tabIndex={0}
@@ -348,9 +398,16 @@ export default function PollsDashboardView() {
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </AppCard>
+                );
+              })}
+            </AppCard>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.max(1, Math.ceil(filteredPolls.length / pageSize))}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         )}
       </div>
 
@@ -366,16 +423,34 @@ export default function PollsDashboardView() {
               <p className="text-muted" style={{ margin: 0 }}>
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
-              <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
-              <textarea
-                id="quick-poll-question"
-                className="card"
-                style={{ minHeight: '110px', padding: '12px', resize: 'vertical' }}
-                value={quickPollQuestion}
-                onChange={(e) => setQuickPollQuestion(e.target.value)}
-                placeholder="Who can help with setup?"
-              />
-              <p className="text-muted text-sm" style={{ margin: 0 }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)', marginBottom: 'var(--space-md)' }}>
+                <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
+                <input
+                  id="quick-poll-question"
+                  type="text"
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  value={quickPollQuestion}
+                  onChange={(e) => setQuickPollQuestion(e.target.value)}
+                  placeholder="e.g. Who can help with setup?"
+                  required
+                />
+              </div>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)', marginBottom: 'var(--space-md)' }}>
+                <label className="text-label" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
+                <input
+                  id="quick-poll-days"
+                  type="number"
+                  min="1"
+                  max="365"
+                  className="card"
+                  style={{ width: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  value={quickPollDays}
+                  onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
+                  required
+                />
+              </div>
+              <p className="text-muted text-sm" style={{ margin: 0, marginBottom: 'var(--space-sm)' }}>
                 Recipients default to all singers with status Active or Idle.
               </p>
               <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
@@ -420,40 +495,44 @@ export default function PollsDashboardView() {
         </div>
       </BaseModal>
 
+      {/* Global default archive days settings modal */}
       <BaseModal
-        isOpen={isInfoModalOpen}
-        onClose={() => setIsInfoModalOpen(false)}
-        title="📊 How to Start an Engagement Poll"
-        maxWidth="520px"
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        title="⚙️ Engagement Poll Settings"
+        maxWidth="400px"
       >
-        <div className="flex-col" style={{ gap: 'var(--space-md)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-          <p>
-            Engagement Polls are sent to choir members inside communications (emails/SMS). Members can click their personalized button to answer without logging in.
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <p className="text-muted" style={{ margin: 0 }}>
+            Configure global default settings for quick engagement polls.
           </p>
-          
-          <div style={{ backgroundColor: 'var(--bg)', padding: '16px 20px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            <strong style={{ display: 'block', color: 'var(--text-main)', marginBottom: '10px' }}>Simple Steps:</strong>
-            <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <li>
-                Go to the <strong><Link to="/admin/communications" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }} onClick={() => setIsInfoModalOpen(false)}>Communications Dashboard</Link></strong>.
-              </li>
-              <li>
-                In the <strong>Composer</strong> (Step 2), click the <strong>Engagement Poll</strong> placeholder badge on the right panel.
-              </li>
-              <li>
-                Select or create a new poll question, then insert the placeholder tag into your message.
-              </li>
-              <li>
-                Send the email/SMS. Once sent, members' answers will automatically compile on this dashboard!
-              </li>
-            </ol>
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
+            <input
+              id="settings-default-days"
+              type="number"
+              min="1"
+              max="365"
+              className="card"
+              style={{ width: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              value={globalDefaultDays}
+              onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
+              required
+            />
           </div>
-          
-          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsInfoModalOpen(false)}>Cancel</button>
-            <Link to="/admin/communications" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center' }} onClick={() => setIsInfoModalOpen(false)}>
-              Go to Communications →
-            </Link>
+          <p className="text-muted text-xs" style={{ margin: 0 }}>
+            New quick polls will automatically archive after this many days unless overridden.
+          </p>
+          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
+            <button type="button" className="btn btn-ghost" disabled={isSavingSettings} onClick={() => setIsSettingsModalOpen(false)}>Cancel</button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={isSavingSettings}
+              onClick={() => void handleSaveSettings()}
+            >
+              {isSavingSettings ? 'Saving...' : 'Save Settings'}
+            </button>
           </div>
         </div>
       </BaseModal>

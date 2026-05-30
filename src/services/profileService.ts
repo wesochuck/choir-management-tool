@@ -31,6 +31,7 @@ export interface ProfileInput extends Partial<Profile> {
   doNotEmail?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
+  role?: 'admin' | 'singer';
 }
 
 interface ProfileFetchOptions {
@@ -40,10 +41,12 @@ interface ProfileFetchOptions {
 const splitProfileInput = (data: ProfileInput) => {
   const profile = { ...data };
   const email = profile.email?.trim();
+  const role = profile.role;
   delete profile.email;
+  delete profile.role;
   delete profile.expand;
   delete profile.photo;
-  return { email: email?.trim(), profile };
+  return { email: email?.trim(), role, profile };
 };
 
 /**
@@ -92,7 +95,7 @@ export const profileService = {
   },
 
   async createProfile(data: ProfileInput) {
-    const { email, profile } = splitProfileInput(data);
+    const { email, role, profile } = splitProfileInput(data);
 
     if (email) {
       const password = generateRandomPassword();
@@ -101,7 +104,7 @@ export const profileService = {
         email,
         password,
         passwordConfirm: password,
-        role: 'singer',
+        role: role || 'singer',
         name: profile.name || email,
       });
 
@@ -120,7 +123,7 @@ export const profileService = {
   },
 
   async updateProfile(id: string, data: ProfileInput) {
-    const { email, profile } = splitProfileInput(data);
+    const { email, role, profile } = splitProfileInput(data);
     const current = await pb.collection('profiles').getOne<Profile>(id, { expand: 'user' });
     let userId = current.user;
 
@@ -134,6 +137,7 @@ export const profileService = {
         const userPayload: Partial<UserAccount> = {
           name: profile.name || current.name,
           email: email,
+          role: role || 'singer',
         };
         await pb.collection('users').update<UserAccount>(userId, userPayload);
       } else {
@@ -142,7 +146,7 @@ export const profileService = {
           email,
           password,
           passwordConfirm: password,
-          role: 'singer',
+          role: role || 'singer',
           name: profile.name || current.name || email,
         });
         userId = user.id;

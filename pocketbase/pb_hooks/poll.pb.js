@@ -156,6 +156,16 @@ routerAdd("POST", "/api/poll-details", (e) => {
 
     try {
         const poll = $app.findRecordById("polls", parts.l);
+
+        const archiveAt = poll.get("archiveAt");
+        if (archiveAt) {
+            const archiveStr = typeof archiveAt === "string" ? archiveAt : archiveAt.toString();
+            const archiveDate = new Date(archiveStr.replace(" ", "T"));
+            if (!isNaN(archiveDate.getTime()) && archiveDate < new Date()) {
+                return e.json(400, { error: "This poll has concluded and is no longer accepting responses." });
+            }
+        }
+
         const eventId = poll.get("eventId");
         let event = null;
         if (eventId) {
@@ -273,6 +283,16 @@ routerAdd("POST", "/api/submit-poll-response", (e) => {
     }
 
     try {
+        const poll = $app.findRecordById("polls", parts.l);
+        const archiveAt = poll.get("archiveAt");
+        if (archiveAt) {
+            const archiveStr = typeof archiveAt === "string" ? archiveAt : archiveAt.toString();
+            const archiveDate = new Date(archiveStr.replace(" ", "T"));
+            if (!isNaN(archiveDate.getTime()) && archiveDate < new Date()) {
+                return e.json(400, { error: "This poll has concluded and is no longer accepting responses." });
+            }
+        }
+
         let response = null;
         try {
             response = $app.findFirstRecordByFilter("pollResponses", "pollId = {:l} && profileId = {:p}", { l: parts.l, p: parts.p });

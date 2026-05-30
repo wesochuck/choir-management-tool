@@ -28,6 +28,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
+  const isSelf = initialData?.user && pb.authStore.model && initialData.user === pb.authStore.model.id;
+
   const handleResetPassword = async () => {
     const email = formData.email?.trim();
     if (!email) return;
@@ -334,34 +336,60 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             </div>
           </div>
           
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+          <div className="flex-row" style={{ gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={formData.doNotEmail}
                 onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
               />
               <span className="text-label">Do Not Email</span>
             </label>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={formData.statusIsManual}
                 onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
             </label>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={Boolean(formData.isSectionLeader)}
                 onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
               />
               <span className="text-label">Section Leader</span>
             </label>
+            {formData.email?.trim() && (
+              <label
+                className="flex-row"
+                style={{
+                  alignItems: 'center',
+                  gap: 'var(--space-sm)',
+                  cursor: isSelf ? 'not-allowed' : 'pointer',
+                  opacity: isSelf ? 0.6 : 1
+                }}
+                title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.role === 'admin'}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
+                  disabled={Boolean(isSelf)}
+                  style={{
+                    accentColor: 'var(--primary)',
+                    width: '16px',
+                    height: '16px',
+                    cursor: isSelf ? 'not-allowed' : 'pointer'
+                  }}
+                />
+                <span className="text-label">Administrator</span>
+              </label>
+            )}
           </div>
 
           {initialData?.statusLastChangedAt && (

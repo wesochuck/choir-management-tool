@@ -71,6 +71,21 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                         readOnlyOnDesktop={true}
                       />
                       <span>{p.name}</span>
+                      {p.expand?.user?.role === 'admin' && (
+                        <span className="badge badge-admin" style={{
+                          fontSize: '0.65rem',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--primary-light, #e0f2fe)',
+                          color: 'var(--primary, #0284c7)',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.025em',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          height: 'fit-content'
+                        }}>Admin</span>
+                      )}
                     </div>
                   </td>
                   <td data-label="Login" className="text-muted text-sm">

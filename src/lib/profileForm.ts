@@ -10,6 +10,7 @@ export const defaultProfileInput: ProfileInput = {
   doNotEmail: false,
   isSectionLeader: false,
   statusIsManual: false,
+  role: 'singer',
 };
 
 export function profileToFormData(profile: Profile | null | undefined): ProfileInput {
@@ -24,6 +25,7 @@ export function profileToFormData(profile: Profile | null | undefined): ProfileI
     doNotEmail: Boolean(profile.doNotEmail),
     isSectionLeader: Boolean(profile.isSectionLeader),
     statusIsManual: Boolean(profile.statusIsManual),
+    role: profile.expand?.user?.role || 'singer',
   } as ProfileInput;
 }
 
@@ -38,7 +40,8 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
       formData.notes?.trim() ||
       formData.doNotEmail ||
       formData.isSectionLeader ||
-      formData.statusIsManual
+      formData.statusIsManual ||
+      formData.role !== 'singer'
     );
   }
 
@@ -52,6 +55,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
     Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail) ||
     Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader) ||
     Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual) ||
+    (formData.role || 'singer') !== (initialData.expand?.user?.role || 'singer') ||
     formData.photo !== initialData.photo
   );
 }

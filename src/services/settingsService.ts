@@ -71,6 +71,10 @@ export interface CommunicationConfig {
   };
 }
 
+export interface PollSettings {
+  defaultAutoArchiveDays: number;
+}
+
 export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
   enabled: true,
   slots: [],
@@ -169,6 +173,10 @@ export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
   },
 };
 
+export const DEFAULT_POLL_SETTINGS: PollSettings = {
+  defaultAutoArchiveDays: 3,
+};
+
 const getSetting = async <T>(key: string) => {
   try {
     const setting = await pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }));
@@ -203,6 +211,15 @@ export const settingsService = {
 
   async saveAuditionSettings(value: AuditionSettings) {
     return await upsertSetting('auditions', value, true);
+  },
+
+  async getPollSettings() {
+    const setting = await getSetting<PollSettings>('poll_settings');
+    return { ...DEFAULT_POLL_SETTINGS, ...setting?.value };
+  },
+
+  async savePollSettings(value: PollSettings) {
+    return await upsertSetting('poll_settings', value, false);
   },
 
   async getCommunicationSettings() {
