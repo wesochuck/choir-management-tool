@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import { PageLayout } from './components/common/PageLayout';
 
 const LoginView = lazy(() => import('./views/LoginView'));
+const ResetPasswordView = lazy(() => import('./views/ResetPasswordView'));
 const RosterView = lazy(() => import('./views/admin/RosterView'));
 const EventsView = lazy(() => import('./views/admin/EventsView'));
 const EventRosterView = lazy(() => import('./views/admin/EventRosterView'));
@@ -75,6 +76,7 @@ export default function App() {
         <Suspense fallback={<div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading...</div>}>
           <Routes>
           <Route path="/login" element={<LoginView />} />
+          <Route path="/reset-password" element={<ResetPasswordView />} />
           <Route path="/auditions" element={<PublicAuditionView />} />
           <Route path="/rsvp" element={<PublicRsvpView />} />
           <Route path="/poll" element={<PublicPollView />} />
