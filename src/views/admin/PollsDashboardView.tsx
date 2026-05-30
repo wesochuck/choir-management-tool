@@ -9,7 +9,7 @@ import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService } from '../../services/profileService';
-import { communicationService, type CommunicationRecipient } from '../../services/communicationService';
+import { communicationService, type CommunicationRecipient, type MessageRecord } from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
 import { settingsService, type PollSettings } from '../../services/settingsService';
 import { Pagination } from '../../components/common/Pagination';
@@ -42,6 +42,12 @@ export default function PollsDashboardView() {
   const { timezone } = useChoirSettings();
   const [polls, setPolls] = useState<PollRecord[]>([]);
   const [responses, setResponses] = useState<PollResponseRecord[]>([]);
+  const [pollMessages, setPollMessages] = useState<MessageRecord[]>([]);
+  const [recipientModal, setRecipientModal] = useState<{ isOpen: boolean; recipients: CommunicationRecipient[]; title: string }>({
+    isOpen: false,
+    recipients: [],
+    title: '',
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -65,15 +71,19 @@ export default function PollsDashboardView() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [pollList, responseList, loadedSettings] = await Promise.all([
+      const [pollList, responseList, loadedSettings, messagesList] = await Promise.all([
         pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
         pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
         settingsService.getPollSettings(),
+        pb.collection('messages').getFullList<MessageRecord>({
+          filter: 'status = "Sent" && content ~ "{{POLL_LINK:"',
+        }),
       ]);
       setPolls(pollList);
       setResponses(responseList);
       setPollSettings(loadedSettings);
       setGlobalDefaultDays(loadedSettings.defaultAutoArchiveDays);
+      setPollMessages(messagesList);
     } catch (err) {
       console.error('Failed to load poll dashboard data', err);
       setLoadError('Unable to load polls. Check PocketBase collection fields, API rules, and browser console.');
@@ -303,6 +313,9 @@ export default function PollsDashboardView() {
                 const createdLabel = poll.created
                   ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
                   : null;
+                const archiveLabel = poll.archiveAt
+                  ? formatInTimezone(poll.archiveAt, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                  : null;
 
                 return (
                   <div
@@ -323,6 +336,11 @@ export default function PollsDashboardView() {
                       </div>
                       <div className="polls-list-meta">
                         {createdLabel && <span>Created {createdLabel}</span>}
+                        {archiveLabel && (
+                          <span title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}>
+                            ⏱️ {isArchived ? 'Archived' : 'Auto-archives'} {archiveLabel}
+                          </span>
+                        )}
                         {event && (
                           <span>
                             📅 {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
@@ -358,45 +376,96 @@ export default function PollsDashboardView() {
                     </div>
                   </div>
 
-                  {isExpanded && (
-                    <div className="polls-response-panel">
-                      <div className="polls-response-column">
-                        <h4 className="polls-response-heading polls-response-heading-yes">
-                          Volunteers ({stat.yes})
-                        </h4>
-                        {stat.volunteers.length === 0 ? (
-                          <p className="text-muted text-sm">No volunteers yet.</p>
-                        ) : (
-                          <div className="polls-response-grid">
-                            {stat.volunteers.map(v => (
-                              <div key={v.id} className="polls-response-person">
-                                <div className="polls-response-name">{v.expand?.profileId.name}</div>
-                                <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                  {isExpanded && (() => {
+                    const contactedSingers = (() => {
+                      const contactedMap = new Map<string, CommunicationRecipient>();
+                      const msgs = pollMessages.filter(msg => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
+                      msgs.forEach(msg => {
+                        if (Array.isArray(msg.recipients)) {
+                          msg.recipients.forEach(rec => {
+                            contactedMap.set(rec.id, rec);
+                          });
+                        }
+                      });
+                      return Array.from(contactedMap.values());
+                    })();
 
-                      <div className="polls-response-column">
-                        <h4 className="polls-response-heading polls-response-heading-no">
-                          Declined ({stat.no})
-                        </h4>
-                        {stat.decliners.length === 0 ? (
-                          <p className="text-muted text-sm">No decliners yet.</p>
-                        ) : (
-                          <div className="polls-response-grid">
-                            {stat.decliners.map(v => (
-                              <div key={v.id} className="polls-response-person polls-response-person-muted">
-                                <div className="polls-response-name">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
-                                <div className="text-muted text-xs">{v.expand?.profileId?.voicePart ?? ''}</div>
+                    return (
+                      <div className="polls-response-panel flex-col" style={{ gap: 'var(--space-md)' }}>
+                        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '4px' }}>
+                          {contactedSingers.length > 0 ? (
+                            <>
+                              <span>📨 Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '0 8px', height: '24px', fontSize: '0.75rem', textDecoration: 'underline', color: 'var(--primary)', cursor: 'pointer' }}
+                                onClick={() => setRecipientModal({
+                                  isOpen: true,
+                                  recipients: contactedSingers,
+                                  title: `Contacted Singers — ${poll.question}`
+                                })}
+                              >
+                                View Contacted List →
+                              </button>
+                            </>
+                          ) : (
+                            <span>
+                              📨 No sent communications found for this poll yet. You can send it from the{' '}
+                              <a
+                                href="/admin/communications"
+                                style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate('/admin/communications');
+                                }}
+                              >
+                                Communications page
+                              </a>.
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 'var(--space-xl)', width: '100%' }} className="polls-response-columns-container">
+                          <div className="polls-response-column">
+                            <h4 className="polls-response-heading polls-response-heading-yes">
+                              Volunteers ({stat.yes})
+                            </h4>
+                            {stat.volunteers.length === 0 ? (
+                              <p className="text-muted text-sm">No volunteers yet.</p>
+                            ) : (
+                              <div className="polls-response-grid">
+                                {stat.volunteers.map(v => (
+                                  <div key={v.id} className="polls-response-person">
+                                    <div className="polls-response-name">{v.expand?.profileId.name}</div>
+                                    <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
-                        )}
+
+                          <div className="polls-response-column">
+                            <h4 className="polls-response-heading polls-response-heading-no">
+                              Declined ({stat.no})
+                            </h4>
+                            {stat.decliners.length === 0 ? (
+                              <p className="text-muted text-sm">No decliners yet.</p>
+                            ) : (
+                              <div className="polls-response-grid">
+                                {stat.decliners.map(v => (
+                                  <div key={v.id} className="polls-response-person polls-response-person-muted">
+                                    <div className="polls-response-name">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
+                                    <div className="text-muted text-xs">{v.expand?.profileId?.voicePart ?? ''}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 );
               })}
@@ -534,6 +603,31 @@ export default function PollsDashboardView() {
               {isSavingSettings ? 'Saving...' : 'Save Settings'}
             </button>
           </div>
+        </div>
+      </BaseModal>
+
+      <BaseModal
+        isOpen={recipientModal.isOpen}
+        onClose={() => setRecipientModal({ ...recipientModal, isOpen: false })}
+        title={recipientModal.title}
+        maxWidth="500px"
+        footer={
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setRecipientModal({ ...recipientModal, isOpen: false })}
+          >
+            Cancel
+          </button>
+        }
+      >
+        <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
+          {recipientModal.recipients.map(r => (
+            <div key={r.id} className="flex-row card" style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}>
+              <strong>{r.name}</strong>
+              <span className="text-muted text-xs">{r.voicePart}</span>
+            </div>
+          ))}
         </div>
       </BaseModal>
 
