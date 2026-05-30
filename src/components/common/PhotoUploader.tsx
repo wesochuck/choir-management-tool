@@ -13,7 +13,7 @@ interface PhotoUploaderProps {
 
 const SIZES = {
   sm: 32,
-  md: 96,
+  md: 80,
   lg: 120,
 };
 

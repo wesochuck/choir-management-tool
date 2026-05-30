@@ -130,7 +130,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       onClose={handleClose}
       title={initialData ? 'Edit Singer' : 'Add Singer'}
       maxWidth="640px"
-      minHeight={initialData ? '680px' : undefined}
+      minHeight={initialData ? '540px' : undefined}
       footer={
         <>
           {activeTab === 'profile' ? (
@@ -202,8 +202,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       )}
 
       {activeTab === 'profile' ? (
-        <form id="singer-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-sm)' }}>
+        <form id="singer-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-xs)' }}>
             {initialData ? (
               <>
                 <PhotoUploader
@@ -241,7 +241,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
               required
               className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+              style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
             />
           </div>
           <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'flex-start' }}>
@@ -253,7 +253,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="card"
                 placeholder="e.g. singer@example.com"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               />
               <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>
                 {initialData?.user 
@@ -299,7 +299,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
                 className="card"
                 placeholder="e.g. 555-123-4567"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               />
             </div>
           </div>
@@ -311,7 +311,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required
                 className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               >
                 <option value="" disabled>-- Please Select --</option>
                 {voiceParts.map(v => (
@@ -327,7 +327,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
                 className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>
@@ -336,42 +336,43 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             </div>
           </div>
           
-          <div className="flex-row" style={{ gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px var(--space-md)' }}>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
               <input
                 type="checkbox"
                 checked={formData.doNotEmail}
                 onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
               />
               <span className="text-label">Do Not Email</span>
             </label>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
               <input
                 type="checkbox"
                 checked={formData.statusIsManual}
                 onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
             </label>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
               <input
                 type="checkbox"
                 checked={Boolean(formData.isSectionLeader)}
                 onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
               />
               <span className="text-label">Section Leader</span>
             </label>
-            {formData.email?.trim() && (
+            {formData.email?.trim() ? (
               <label
                 className="flex-row"
                 style={{
                   alignItems: 'center',
                   gap: 'var(--space-sm)',
                   cursor: isSelf ? 'not-allowed' : 'pointer',
-                  opacity: isSelf ? 0.6 : 1
+                  opacity: isSelf ? 0.6 : 1,
+                  minHeight: 'auto'
                 }}
                 title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
               >
@@ -384,20 +385,21 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     accentColor: 'var(--primary)',
                     width: '16px',
                     height: '16px',
+                    minHeight: 'auto',
                     cursor: isSelf ? 'not-allowed' : 'pointer'
                   }}
                 />
                 <span className="text-label">Administrator</span>
               </label>
-            )}
+            ) : <div />}
           </div>
 
           {initialData?.statusLastChangedAt && (
-            <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'var(--bg)', boxShadow: 'none', border: '1px solid var(--border)' }}>
-              <div className="text-xs text-muted" style={{ marginBottom: '4px' }}>
-                <strong>Status Last Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleString()}
+            <div className="card" style={{ padding: '6px 10px', backgroundColor: 'var(--bg)', boxShadow: 'none', border: '1px solid var(--border)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px 12px' }}>
+              <div className="text-xs text-muted" style={{ margin: 0 }}>
+                <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
               </div>
-              <div className="text-xs text-muted">
+              <div className="text-xs text-muted" style={{ margin: 0 }}>
                 <strong>Reason:</strong> {initialData.statusChangeReason || 'Manual update'}
               </div>
             </div>
@@ -409,7 +411,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               value={formData.notes} 
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
               className="card"
-              style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', height: '100px', resize: 'vertical' }}
+              style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', height: '60px', minHeight: '60px', resize: 'vertical' }}
             />
           </div>
         </form>
