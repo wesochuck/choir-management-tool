@@ -1,6 +1,10 @@
 import type { MusicPiece } from '../../types/musicLibrary';
 import { filterPiecesBySectionBucket } from './applicability';
 import { filterPiecesByGenre } from './genres';
+import {
+  getMostRecentPerformanceDate,
+  type PerformanceRecencyFilter,
+} from './performanceHistory';
 
 export interface BuildVisibleMusicLibraryRowsOptions {
   searchTerm?: string;
@@ -13,6 +17,8 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   /** @deprecated Use genreFilters instead. */
   genreFilter?: string;
   genreFilters?: string[];
+  recencyFilter?: PerformanceRecencyFilter;
+  now?: Date;
 }
 
 /**
@@ -31,7 +37,9 @@ export function buildVisibleMusicLibraryRows(
     sectionFilter = '',
     sectionFilters = [],
     genreFilter = '',
-    genreFilters = []
+    genreFilters = [],
+    recencyFilter = 'all',
+    now
   } = options;
 
   let result = [...pieces];
@@ -77,6 +85,50 @@ export function buildVisibleMusicLibraryRows(
     });
   } else if (genreFilter) {
     result = filterPiecesByGenre(result, genreFilter);
+  }
+
+  // 3c. Performance Recency Filtering
+  if (recencyFilter && recencyFilter !== 'all') {
+    const referenceDate = now || new Date();
+    result = result.filter(p => {
+      const mostRecent = getMostRecentPerformanceDate(p);
+
+      if (recencyFilter === 'never') {
+        return mostRecent === null;
+      }
+
+      if (recencyFilter === 'within-1-year') {
+        if (!mostRecent) return false;
+        const cutoff = subtractYears(referenceDate, 1);
+        return isOnOrAfterDateOnly(mostRecent, cutoff);
+      }
+
+      if (recencyFilter === 'within-2-years') {
+        if (!mostRecent) return false;
+        const cutoff = subtractYears(referenceDate, 2);
+        return isOnOrAfterDateOnly(mostRecent, cutoff);
+      }
+
+      if (recencyFilter === 'within-3-years') {
+        if (!mostRecent) return false;
+        const cutoff = subtractYears(referenceDate, 3);
+        return isOnOrAfterDateOnly(mostRecent, cutoff);
+      }
+
+      if (recencyFilter === 'not-within-3-years') {
+        if (!mostRecent) return true; // Never performed counts as not within 3 years
+        const cutoff = subtractYears(referenceDate, 3);
+        return !isOnOrAfterDateOnly(mostRecent, cutoff);
+      }
+
+      if (recencyFilter === 'not-within-5-years') {
+        if (!mostRecent) return true; // Never performed counts as not within 5 years
+        const cutoff = subtractYears(referenceDate, 5);
+        return !isOnOrAfterDateOnly(mostRecent, cutoff);
+      }
+
+      return true;
+    });
   }
 
   // 4. Hierarchical Sorting & Grouping
@@ -134,4 +186,16 @@ export function toggleIdInSet(set: Set<string>, id: string): Set<string> {
     next.add(id);
   }
   return next;
+}
+
+function subtractYears(date: Date, years: number): Date {
+  const next = new Date(date.getTime());
+  next.setFullYear(next.getFullYear() - years);
+  return next;
+}
+
+function isOnOrAfterDateOnly(dateIso: string, cutoff: Date): boolean {
+  const dateStr = dateIso.split('T')[0];
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  return dateStr >= cutoffStr;
 }

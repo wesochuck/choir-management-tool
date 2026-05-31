@@ -1,5 +1,6 @@
 import React from 'react';
 import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
+import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
@@ -18,6 +19,8 @@ export interface MusicLibraryFiltersProps {
     onBulkDelete: () => void;
     pageSize: number;
     onPageSizeChange: (value: number) => void;
+    recencyFilter: PerformanceRecencyFilter;
+    onRecencyFilterChange: (value: PerformanceRecencyFilter) => void;
 }
 
 export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
@@ -36,7 +39,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     isBulkDeleting,
     onBulkDelete,
     pageSize,
-    onPageSizeChange
+    onPageSizeChange,
+    recencyFilter,
+    onRecencyFilterChange
 }) => {
     // Sort genres alphabetically by label
     const sortedGenres = React.useMemo(() => {
@@ -95,6 +100,24 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 />
 
                 <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+                    <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
+                        <span className="text-sm text-muted" style={{ fontWeight: 600 }}>Last Performed:</span>
+                        <select
+                            className="card"
+                            value={recencyFilter}
+                            onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
+                            style={{ height: '40px', padding: '0 8px', minWidth: '150px', cursor: 'pointer' }}
+                        >
+                            <option value="all">All</option>
+                            <option value="within-1-year">Within the last year</option>
+                            <option value="within-2-years">Within the last 2 years</option>
+                            <option value="within-3-years">Within the last 3 years</option>
+                            <option value="not-within-3-years">Not performed in the last 3 years</option>
+                            <option value="not-within-5-years">Not performed in the last 5 years</option>
+                            <option value="never">Never Performed</option>
+                        </select>
+                    </div>
+
                     <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
                         <span className="text-sm text-muted" style={{ fontWeight: 600 }}>Page Size:</span>
                         <select

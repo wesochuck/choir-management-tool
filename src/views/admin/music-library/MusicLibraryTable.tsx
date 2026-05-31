@@ -9,6 +9,7 @@ import {
 } from '../../../lib/musicPieceUtils';
 import { toggleIdInSet } from '../../../lib/music/libraryRows';
 import { Pagination } from '../../../components/common/Pagination';
+import { getMostRecentPerformanceDate } from '../../../lib/music/performanceHistory';
 
 export interface MusicLibraryTableProps {
     pieces: MusicPiece[];
@@ -255,6 +256,9 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                     ) : '-'}
                 </td>
                 <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
+                    {getMostRecentPerformanceDate(piece) || '-'}
+                </td>
+                <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
                     {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
                         <button
                             className="btn btn-secondary btn-sm"
@@ -315,7 +319,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     return (
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <div style={{ overflowX: 'auto' }}>
-                <table className="table" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid var(--border)' }}>
+                <table className="table" style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid var(--border)' }}>
                     <thead>
                         <tr style={{ backgroundColor: 'var(--primary-light)' }}>
                             <th className="text-label" style={{ width: '40px', textAlign: 'center', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>
@@ -331,6 +335,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                             <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Duration</th>
                             <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Copies</th>
                             <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Catalog ID</th>
+                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Last Performed</th>
                             <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Tracks</th>
                             <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
                         </tr>
@@ -338,11 +343,11 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                     <tbody>
                         {isLoading ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
+                                <td colSpan={9} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
                             </tr>
                         ) : filteredPieces.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
+                                <td colSpan={9} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
                             </tr>
                         ) : (
                             filteredPieces.map(piece => {

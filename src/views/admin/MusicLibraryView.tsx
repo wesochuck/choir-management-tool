@@ -8,6 +8,7 @@ import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicG
 import { pb } from '../../lib/pocketbase';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
 import { buildVisibleMusicLibraryRows } from '../../lib/music/libraryRows';
+import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
@@ -78,11 +79,12 @@ export default function MusicLibraryView() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [recencyFilter, setRecencyFilter] = useState<PerformanceRecencyFilter>('all');
 
   // Reset to first page when search filters, duplicate filter, or page size changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sectionFilters, genreFilters, showDuplicatesOnly, pageSize]);
+  }, [searchTerm, sectionFilters, genreFilters, recencyFilter, showDuplicatesOnly, pageSize]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
@@ -255,9 +257,10 @@ export default function MusicLibraryView() {
       showMovements: false,
       duplicateIds,
       sectionFilters,
-      genreFilters
+      genreFilters,
+      recencyFilter
     });
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters, recencyFilter]);
 
   const paginatedPieces = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -370,6 +373,8 @@ export default function MusicLibraryView() {
             onBulkDelete={handleBulkDelete}
             pageSize={pageSize}
             onPageSizeChange={setPageSize}
+            recencyFilter={recencyFilter}
+            onRecencyFilterChange={setRecencyFilter}
           />
 
           <MusicLibraryTable 

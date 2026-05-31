@@ -161,9 +161,11 @@ const CheckInRow: React.FC<{
         {/* Right Section: Attendance separated action buttons (Absent on left, Present on right) */}
         <div className="admin-checkin-actions">
           <button
+            type="button"
+            aria-pressed={isAbsent}
             onClick={(event) => {
               event.stopPropagation();
-              onSetAttendance(item.profileId, 'Absent');
+              onSetAttendance(item.profileId, isAbsent ? 'Pending' : 'Absent');
             }}
             className="btn admin-checkin-absent-btn"
             style={{
@@ -177,9 +179,11 @@ const CheckInRow: React.FC<{
             Absent
           </button>
           <button
+            type="button"
+            aria-pressed={isPresent}
             onClick={(event) => {
               event.stopPropagation();
-              onSetAttendance(item.profileId, 'Present');
+              onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present');
             }}
             className="btn admin-checkin-present-btn"
             style={{

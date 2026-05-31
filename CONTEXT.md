@@ -84,6 +84,13 @@ A user interface component in the seating finder that displays the names and voi
 ## Seating Grid Mirroring
 A layout rendering strategy for the stage finder that positions Row 1 (the physical front row of the stage, closest to the director and audience) at the bottom of the screen, and the last row (the physical back row/tier) at the top of the screen, aligning with a singer's forward-facing perspective looking toward the podium.
 
+## Performance Recency
+The elapsed time since a music piece was last performed. In the music library, this is calculated dynamically using the date of the most recent linked performance event.
+
+## Performance Recency Filter
+A search control in the music catalog that filters pieces based on how recently they were performed (e.g. within the last 1, 2, or 3 years, not performed for over 3 or 5 years, or never performed).
+
+
 
 
 
