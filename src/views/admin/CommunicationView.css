@@ -272,7 +272,7 @@
 
 @media (min-width: 1024px) {
   .review-container {
-    grid-template-columns: 6.5fr 3.5fr;
+    grid-template-columns: 7fr 3fr;
     max-width: 1280px;
     margin: 0 auto;
   }
@@ -281,21 +281,23 @@
 .review-summary-row {
   display: flex;
   flex-direction: row;
-  gap: var(--space-md);
+  gap: var(--space-sm);
+  justify-content: space-between;
 }
 
 .review-summary-stat {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .review-summary-stat.divider {
   border-left: 1px solid var(--border);
-  padding-left: var(--space-md);
+  padding-left: var(--space-sm);
 }
 
 .review-stat-value {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 800;
   line-height: 1.1;
   color: var(--text-main);
@@ -304,8 +306,8 @@
 .review-checklist-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-  padding: 12px;
+  gap: 6px;
+  padding: 8px 10px;
   background-color: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 6px);
@@ -315,9 +317,9 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 8px;
-  font-size: 0.85rem;
-  line-height: 1.4;
+  gap: 6px;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .checklist-item.warning { color: #991b1b; }

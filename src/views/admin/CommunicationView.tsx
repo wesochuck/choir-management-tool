@@ -895,17 +895,20 @@ export default function CommunicationView() {
                     <div className="review-checklist-card card">
                       {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
                         <div className="checklist-item warning">
-                          <span>⚠️</span> <strong>Subject is empty.</strong> It's better to add a subject for higher open rates.
+                          <span>⚠️</span>
+                          <span><strong>Subject is empty.</strong> Add a subject line for better open rates.</span>
                         </div>
                       )}
                       {content.length < 10 && (
                         <div className="checklist-item warning">
-                          <span>⚠️</span> <strong>Message is very short.</strong>
+                          <span>⚠️</span>
+                          <span><strong>Very short message body.</strong></span>
                         </div>
                       )}
                       {selectedRecipients.length === 0 && (
                         <div className="checklist-item warning">
-                          <span>❌</span> <strong>No recipients selected.</strong> You cannot send this message.
+                          <span>❌</span>
+                          <span><strong>No recipients selected.</strong></span>
                         </div>
                       )}
 
@@ -924,7 +927,8 @@ export default function CommunicationView() {
                         if (foundPlaceholders.length > 0) {
                           return (
                             <div className="checklist-item warning">
-                              <span>⚠️</span> <strong>Missing Event Context.</strong> Your message body or subject contains event-specific placeholders: <code>{foundPlaceholders.join(', ')}</code>, but no event context is selected. These placeholders will resolve to blank or default values.
+                              <span>⚠️</span>
+                              <span><strong>No event selected</strong> but active event placeholders exist: <code>{foundPlaceholders.join(', ')}</code>.</span>
                             </div>
                           );
                         }
@@ -939,7 +943,8 @@ export default function CommunicationView() {
                         if (!hasApprovedSetList && hasPlayerPlaceholder) {
                            return (
                             <div className="checklist-item warning">
-                              <span>⚠️</span> <strong>Practice Player Not Approved.</strong> Your message body contains the <code>{"{{PLAYER_LINK}}"}</code> placeholder, but the set list for the selected event is not approved for singers. The practice player button will not render.
+                              <span>⚠️</span>
+                              <span><strong>Practice player not approved.</strong> Set list is unapproved; <code>{"{{PLAYER_LINK}}"}</code> button will not render.</span>
                             </div>
                           );
                         }
@@ -948,21 +953,25 @@ export default function CommunicationView() {
 
                       {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
                         <div className="checklist-item info">
-                          <span>ℹ️</span> {selectedRecipients.filter(r => !r.email).length} singers have no email address and will skip Email.
+                          <span>ℹ️</span>
+                          <span>{selectedRecipients.filter(r => !r.email).length} singers have no email configured and will skip this channel.</span>
                         </div>
                       )}
                       {selectedRecipients.some(r => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
                         <div className="checklist-item info">
-                          <span>ℹ️</span> {selectedRecipients.filter(r => !r.phone).length} singers have no phone number and will skip SMS.
+                          <span>ℹ️</span>
+                          <span>{selectedRecipients.filter(r => !r.phone).length} singers have no phone configured and will skip this channel.</span>
                         </div>
                       )}
                       {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
                         <div className="checklist-item warning">
-                          <span>⚠️</span> <strong>Default Mailing Address Active:</strong> You are currently using the default mock physical mailing address ("{commSettings.mailingAddress}"). Please <button type="button" onClick={() => { setTab('settings'); setEditingTemplate(null); }} style={{ background: 'none', border: 'none', color: '#991b1b', textDecoration: 'underline', padding: 0, font: 'inherit', cursor: 'pointer', fontWeight: 'bold', display: 'inline' }}>update this in settings</button> for CAN-SPAM legal compliance before sending.
+                          <span>⚠️</span>
+                          <span><strong>Default physical address active.</strong> Please <button type="button" onClick={() => { setTab('settings'); setEditingTemplate(null); }} style={{ background: 'none', border: 'none', color: '#991b1b', textDecoration: 'underline', padding: 0, font: 'inherit', cursor: 'pointer', fontWeight: 'bold', display: 'inline' }}>update this in settings</button> for CAN-SPAM legal compliance.</span>
                         </div>
                       )}
                       <div className="checklist-item success">
-                        <span>✅</span> Compliance footer will be automatically attached.
+                        <span>✅</span>
+                        <span>Compliance footer will be attached.</span>
                       </div>
                     </div>
                   </div>
