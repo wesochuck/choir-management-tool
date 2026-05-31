@@ -845,56 +845,32 @@ export default function CommunicationView() {
 
           {wizardStep === 'REVIEW' && (
             <div className="review-send-grid">
-              <section className="review-preview-card" aria-label="Live preview">
-                <div className="review-preview-header">
-                  <span className="review-section-eyebrow">Live preview</span>
-
-                  <div className="preview-device-toggle" role="group" aria-label="Preview device">
-                    <button
-                      type="button"
-                      className={previewDevice === 'desktop' ? 'active' : ''}
-                      onClick={() => setPreviewDevice('desktop')}
-                    >
-                      Desktop
-                    </button>
-                    <button
-                      type="button"
-                      className={previewDevice === 'mobile' ? 'active' : ''}
-                      onClick={() => setPreviewDevice('mobile')}
-                    >
-                      Mobile
-                    </button>
+              {/* Left Column: Unified Live Preview */}
+              <div className="review-preview-section">
+                <AppCard noPadding>
+                  <div style={{ padding: '24px' }}>
+                    <LivePreview
+                      channel={messageType}
+                      subject={renderedSubject}
+                      bodyHtml={previewHtml}
+                      smsBody={renderedSmsBody}
+                      recipientName={previewRecipient?.name}
+                      recipientEmail={previewRecipient?.email}
+                    />
                   </div>
-                </div>
+                </AppCard>
+              </div>
 
-                <div className={`review-email-frame-wrapper ${previewDevice === 'mobile' ? 'mobile' : 'desktop'}`}>
-                  <LivePreview
-                    channel={messageType}
-                    subject={renderedSubject}
-                    bodyHtml={previewHtml}
-                    smsBody={renderedSmsBody}
-                    recipientName={previewRecipient?.name}
-                    recipientEmail={previewRecipient?.email}
-                  />
-                </div>
-
-                <footer className="review-email-footer">
-                  <div>{commSettings.mailingAddress}</div>
-                  <div>You are receiving this message because you are part of our choir communications list.</div>
-                  <button type="button" className="review-unsubscribe-link">
-                    Unsubscribe
-                  </button>
-                </footer>
-              </section>
-
+              {/* Right Column: Sidebar Stack */}
               <aside className="review-side-stack">
                 {/* Card 1: Recipient summary */}
-                <section className="review-card">
-                  <div className="review-card-header">
-                    <h3>Recipient summary</h3>
+                <AppCard
+                  title="Recipient Summary"
+                  actions={
                     <button
                       type="button"
-                      className="review-ghost-button"
+                      className="btn btn-ghost btn-sm"
+                      style={{ padding: '4px 10px', height: '30px', display: 'flex', alignItems: 'center', gap: '4px' }}
                       disabled={selectedRecipients.length === 0}
                       onClick={() =>
                         setRecipientPreviewList({
@@ -904,53 +880,89 @@ export default function CommunicationView() {
                         })
                       }
                     >
-                      <span aria-hidden="true">☰</span>
-                      View list
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '14px', height: '14px' }}>
+                        <line x1="8" y1="6" x2="21" y2="6" />
+                        <line x1="8" y1="12" x2="21" y2="12" />
+                        <line x1="8" y1="18" x2="21" y2="18" />
+                        <line x1="3" y1="6" x2="3.01" y2="6" />
+                        <line x1="3" y1="12" x2="3.01" y2="12" />
+                        <line x1="3" y1="18" x2="3.01" y2="18" />
+                      </svg>
+                      View List
                     </button>
-                  </div>
-
+                  }
+                >
                   <div className="review-metric-grid">
-                    <div className="review-metric-tile">
-                      <strong>{recipientCounts.total}</strong>
-                      <span>Selected</span>
+                    <div className="review-metric-tile total">
+                      <div className="metric-tile-header">
+                        <svg className="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <span className="metric-tile-label">Total Audience</span>
+                      </div>
+                      <strong className="metric-tile-val">{recipientCounts.total}</strong>
+                      <span className="metric-tile-desc">matched singers</span>
                     </div>
 
-                    <div className="review-metric-tile">
-                      <strong>{recipientCounts.hasEmail}</strong>
-                      <span>Via email</span>
-                      <em className="channel-pill email">Email</em>
+                    <div className="review-metric-tile email">
+                      <div className="metric-tile-header">
+                        <svg className="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                          <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        <span className="metric-tile-label">Via Email</span>
+                      </div>
+                      <strong className="metric-tile-val">{recipientCounts.hasEmail}</strong>
+                      <span className="metric-tile-desc">receive email</span>
                     </div>
 
-                    <div className="review-metric-tile">
-                      <strong>{recipientCounts.hasPhone}</strong>
-                      <span>Via SMS</span>
-                      <em className="channel-pill sms">SMS</em>
+                    <div className="review-metric-tile sms">
+                      <div className="metric-tile-header">
+                        <svg className="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                          <line x1="12" y1="18" x2="12.01" y2="18" />
+                        </svg>
+                        <span className="metric-tile-label">Via SMS</span>
+                      </div>
+                      <strong className="metric-tile-val">{recipientCounts.hasPhone}</strong>
+                      <span className="metric-tile-desc">receive SMS text</span>
                     </div>
                   </div>
-                </section>
+                </AppCard>
 
                 {/* Card 2: Pre-flight checklist */}
-                <section className="review-card">
-                  <div className="review-card-header">
-                    <h3>Pre-flight checklist</h3>
-                  </div>
-
+                <AppCard title="Pre-Flight Checklist">
                   <div className="review-checklist-list">
                     {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
                       <div className="review-checklist-item warning">
-                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
                         <span><strong>Subject is empty.</strong> Add a subject line for better open rates.</span>
                       </div>
                     )}
                     {content.length < 10 && (
                       <div className="review-checklist-item warning">
-                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
                         <span><strong>Very short message body.</strong></span>
                       </div>
                     )}
                     {selectedRecipients.length === 0 && (
                       <div className="review-checklist-item warning">
-                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
                         <span><strong>No recipients selected.</strong></span>
                       </div>
                     )}
@@ -974,7 +986,11 @@ export default function CommunicationView() {
                       if (foundPlaceholders.length > 0) {
                         return (
                           <div className="review-checklist-item warning">
-                            <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                            <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                             <span>
                               <strong>No event selected</strong> but active event placeholders exist:{' '}
                               <code>{foundPlaceholders.join(', ')}</code>.
@@ -995,7 +1011,11 @@ export default function CommunicationView() {
                       if (!hasApprovedSetList && hasPlayerPlaceholder) {
                         return (
                           <div className="review-checklist-item warning">
-                            <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                            <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                             <span>
                               <strong>Practice player not approved.</strong> Set list is unapproved;{' '}
                               <code>{'{{PLAYER_LINK}}'}</code> button will not render.
@@ -1009,28 +1029,39 @@ export default function CommunicationView() {
 
                     {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
                       <div className="review-checklist-item info">
-                        <span className="review-checklist-icon" aria-hidden="true">ℹ</span>
+                        <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
                         <span>
-                          {selectedRecipients.filter(r => !r.email).length} singers have no email configured and will skip this channel.
+                          <strong>{selectedRecipients.filter(r => !r.email).length} singers</strong> have no email configured and will skip this channel.
                         </span>
                       </div>
                     )}
 
                     {selectedRecipients.some(r => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
                       <div className="review-checklist-item info">
-                        <span className="review-checklist-icon" aria-hidden="true">ℹ</span>
+                        <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
                         <span>
-                          {selectedRecipients.filter(r => !r.phone).length} singers have no phone configured and will skip this channel.
+                          <strong>{selectedRecipients.filter(r => !r.phone).length} singers</strong> have no phone configured and will skip this channel.
                         </span>
                       </div>
                     )}
 
                     {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
                       <div className="review-checklist-item warning">
-                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
                         <span>
-                          <strong>Default physical address active.</strong>{' '}
-                          Please{' '}
+                          <strong>Default physical address active.</strong> Please{' '}
                           <button
                             type="button"
                             className="review-inline-link"
@@ -1047,45 +1078,57 @@ export default function CommunicationView() {
                     )}
 
                     <div className="review-checklist-item success">
-                      <span className="review-checklist-icon" aria-hidden="true">✓</span>
+                      <svg className="checklist-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
                       <span>Compliance footer will be attached.</span>
                     </div>
                   </div>
-                </section>
+                </AppCard>
 
-                {/* Card 3: Actions */}
-                <section className="review-card review-actions-card">
+                {/* Card 3: Sending Actions */}
+                <AppCard title="Sending Actions">
                   <div className="review-action-row">
                     <button
                       type="button"
-                      className="review-button review-button-ghost review-button-back"
+                      className="review-btn-action back"
                       onClick={() => setWizardStep('COMPOSE')}
                     >
-                      ← Back
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                      Back
                     </button>
 
                     <button
                       type="button"
-                      className="review-button review-button-ghost"
+                      className="review-btn-action test"
                       onClick={handleSendTest}
                       disabled={isSendingTest || isSending}
                       title={`Send email test to ${user?.email || 'your email'}`}
                     >
-                      <span aria-hidden="true">✉</span>
-                      {isSendingTest ? 'Sending test...' : 'Send test to me'}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                      </svg>
+                      {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
                     </button>
 
                     <button
                       type="button"
-                      className="review-button review-button-primary"
+                      className="review-btn-action primary"
                       onClick={sendMessage}
                       disabled={isSending || selectedRecipients.length === 0}
                     >
-                      <span aria-hidden="true">✉</span>
-                      {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} recipients`}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                      {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
                     </button>
                   </div>
-                </section>
+                </AppCard>
               </aside>
             </div>
           )}
