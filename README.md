@@ -67,6 +67,19 @@ Application admins are regular `users` records with `role` set to `admin`.
 Use the PocketBase admin UI to create a `users` record, set its password,
 turn on `verified`, and choose `admin` in the `role` field.
 
+## PocketBase Hooks
+
+PocketBase hook source lives in `pocketbase/pb_hooks_src/`.
+
+After editing hook source, run:
+
+```bash
+npm run generate:pb-hooks
+npm run check:pb-hooks
+```
+
+Do not edit generated files in `pocketbase/pb_hooks/` directly.
+
 ## Agent Hints
 
 - Keep API calls in `src/services/`, state coordination in `src/hooks/`, and presentational UI in `src/components/`.

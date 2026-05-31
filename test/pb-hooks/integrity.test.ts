@@ -20,7 +20,31 @@ test('Generated main.pb.js integrity', () => {
     assert.ok(content.includes('role") !== "admin"'), 'Should preserve admin-only route protection');
     assert.ok(!content.includes('"/api/generate-player-token"'), 'Should not duplicate player endpoint route');
     assert.ok(!content.includes('"/api/player-playlist"'), 'Should not duplicate player playlist route');
-    assert.ok(!content.includes('"/api/generate-rsvp-tokens"'), 'Should not duplicate RSVP endpoint routes');
+
+    const requiredRoutes = [
+        'routerAdd("POST", "/api/generate-rsvp-tokens"',
+        'routerAdd("POST", "/api/rsvp-details"',
+        'routerAdd("POST", "/api/quick-rsvp"',
+        'routerAdd("POST", "/api/unsubscribe"',
+        'routerAdd("POST", "/api/admin/bulk-update-rsvps"',
+        'routerAdd("POST", "/api/admin/bulk-upsert-attendance"',
+    ];
+
+    for (const route of requiredRoutes) {
+        assert.ok(content.includes(route), `Generated main file should contain ${route}`);
+    }
+
+    function countOccurrences(str: string, needle: string): number {
+        return str.split(needle).length - 1;
+    }
+
+    for (const route of requiredRoutes) {
+        assert.strictEqual(
+            countOccurrences(content, route),
+            1,
+            `Generated main file should contain exactly one registration for ${route}`,
+        );
+    }
 
     // 2. Self-containment markers (shared utils inlined into hooks)
     const hookMatches = content.match(/onRecordAfterCreateSuccess/g) || [];

@@ -43,6 +43,19 @@ function generate() {
     const calendarJs = ts.transpileModule(calendarEndpoint, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ESNext, removeComments: false } }).outputText.replace(/^import .* from .*$/gm, '').replace(/^export /gm, '').replace(/export\s+\{[^}]*\};/g, '').trim();
     const singerSeatingEndpoint = fs.readFileSync(path.join(SRC_DIR, 'singerSeatingEndpoint.ts'), 'utf8');
     const singerSeatingJs = ts.transpileModule(singerSeatingEndpoint, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ESNext, removeComments: false } }).outputText.replace(/^import .* from .*$/gm, '').replace(/^export /gm, '').replace(/export\s+\{[^}]*\};/g, '').trim();
+    
+    const rsvpEndpoint = fs.readFileSync(path.join(SRC_DIR, 'rsvpEndpoints.ts'), 'utf8');
+    let rsvpJs = ts.transpileModule(rsvpEndpoint, {
+        compilerOptions: {
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ESNext,
+            removeComments: false
+        }
+    }).outputText
+        .replace(/^import .* from .*$/gm, '')
+        .replace(/^export /gm, '')
+        .replace(/export\s+\{[^}]*\};/g, '')
+        .trim();
 
     const sharedUtils = `
 // --- SHARED UTILITIES ---
@@ -93,6 +106,8 @@ function parseSignedToken(token, requiredKeys) {
     return parts;
 }
 `.trim();
+
+    rsvpJs = rsvpJs.replace(/\/\/ __SHARED_UTILS__/g, () => sharedUtils);
 
     const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
@@ -210,6 +225,8 @@ onRecordAfterUpdateSuccess((e) => {
 }, "messages");
 
 // --- CUSTOM ENDPOINTS ---
+
+${rsvpJs}
 
 routerAdd("POST", "/api/queue/process", (e) => {
     // Shared Utils for Router
