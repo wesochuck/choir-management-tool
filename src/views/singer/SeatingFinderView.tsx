@@ -53,20 +53,17 @@ export default function SeatingFinderView() {
   const address = venue?.address;
 
   const myRoster = eventId ? myRosters[eventId] : undefined;
-  const myRsvp = myRoster?.rsvp || 'Pending';
-  const hasRsvpedYes = myRsvp === 'Yes';
+  const singerProfileId = myProfile?.id || myRoster?.profile || null;
 
   const assignments = chart?.assignments || {};
 
-  const noAssignmentMessage = !myProfile
-    ? 'No singer profile found for your login. Check with your director to connect your account.'
-    : !hasRsvpedYes
-      ? 'Seat assignments are only shown after you RSVP Yes for this event. Update your RSVP, or check with your director if you believe this is wrong.'
-      : 'No seat assignment has been published for your profile yet. Check with your director if you expected one.';
+  const noAssignmentMessage = !singerProfileId
+    ? 'No singer roster/profile link was found for your login. Check with your director to connect your account.'
+    : 'No seat assignment has been published for your roster entry yet. Check with your director if you expected one.';
 
   const seatLocation =
-    myProfile && hasRsvpedYes
-      ? Object.entries(assignments).find(([, id]) => id === myProfile.id)
+    singerProfileId
+      ? Object.entries(assignments).find(([, id]) => id === singerProfileId)
       : null;
 
   const [row, seat] = seatLocation
@@ -230,7 +227,7 @@ export default function SeatingFinderView() {
                       <div className="flex-row" style={{ gap: '10px' }}>
                         {Array.from({ length: count }).map((_, sIdx) => {
                           const singerId = assignments[`${rIdx}-${sIdx}`];
-                          const isMySeat = hasRsvpedYes && singerId === myProfile?.id;
+                          const isMySeat = singerId === singerProfileId;
                           const profile = singerId ? getSingerProfile(singerId) : null;
                           const initials = profile
                             ? getSingerInitials(singerId)
@@ -321,4 +318,3 @@ export default function SeatingFinderView() {
     </PageLayout>
   );
 }
-
