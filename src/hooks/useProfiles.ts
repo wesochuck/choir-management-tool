@@ -49,8 +49,10 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
   const unfilteredByVoicePartProfiles = useMemo(() => {
     return profiles.filter((p) => {
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
-      const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
-      return matchesStatus && matchesName;
+      const matchesNameOrEmail = !filters.name || 
+        p.name.toLowerCase().includes(filters.name.toLowerCase()) ||
+        (p.email || p.expand?.user?.email || '').toLowerCase().includes(filters.name.toLowerCase());
+      return matchesStatus && matchesNameOrEmail;
     });
   }, [profiles, filters.status, filters.name]);
 
@@ -58,8 +60,10 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
     return profiles.filter((p) => {
       const matchesVoice = matchesVoiceParts(p.voicePart, filters.voiceParts, voiceParts);
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
-      const matchesName = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
-      return matchesVoice && matchesStatus && matchesName;
+      const matchesNameOrEmail = !filters.name || 
+        p.name.toLowerCase().includes(filters.name.toLowerCase()) ||
+        (p.email || p.expand?.user?.email || '').toLowerCase().includes(filters.name.toLowerCase());
+      return matchesVoice && matchesStatus && matchesNameOrEmail;
     });
   }, [profiles, filters, voiceParts]);
 

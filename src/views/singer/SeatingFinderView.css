@@ -1,7 +1,7 @@
 /* SeatingFinderView.css */
 
 .stage-container {
-  background: radial-gradient(120% 120% at 50% 120%, rgba(74, 124, 89, 0.04) 0%, rgba(255, 255, 255, 1) 100%);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-xl) var(--space-lg);

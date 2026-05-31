@@ -251,7 +251,7 @@ export default function RosterView() {
             <div className="search-input-wrapper">
               <input
                 type="text"
-                placeholder="Search by name..."
+                placeholder="Search by name or email..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
                 className="card search-input"
