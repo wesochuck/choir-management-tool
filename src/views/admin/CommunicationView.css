@@ -406,11 +406,25 @@
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
 }
 
-.review-metric-tile:hover {
+.review-metric-tile:hover:not(:disabled) {
   transform: translateY(-2.5px);
   box-shadow: var(--shadow-sm);
+}
+
+.review-metric-tile:active:not(:disabled) {
+  transform: scale(0.96) translateY(0);
+  box-shadow: none;
+}
+
+.review-metric-tile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .metric-tile-header {

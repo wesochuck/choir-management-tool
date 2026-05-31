@@ -893,7 +893,18 @@ export default function CommunicationView() {
                   }
                 >
                   <div className="review-metric-grid">
-                    <div className="review-metric-tile total">
+                    <button
+                      type="button"
+                      className="review-metric-tile total"
+                      disabled={selectedRecipients.length === 0}
+                      onClick={() =>
+                        setRecipientPreviewList({
+                          isOpen: true,
+                          recipients: selectedRecipients,
+                          title: 'Recipient List (Total Audience)',
+                        })
+                      }
+                    >
                       <div className="metric-tile-header">
                         <svg className="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -905,9 +916,20 @@ export default function CommunicationView() {
                       </div>
                       <strong className="metric-tile-val">{recipientCounts.total}</strong>
                       <span className="metric-tile-desc">matched singers</span>
-                    </div>
+                    </button>
 
-                    <div className="review-metric-tile email">
+                    <button
+                      type="button"
+                      className="review-metric-tile email"
+                      disabled={selectedRecipients.filter(r => r.email?.trim()).length === 0}
+                      onClick={() =>
+                        setRecipientPreviewList({
+                          isOpen: true,
+                          recipients: selectedRecipients.filter(r => r.email?.trim()),
+                          title: 'Recipient List (Via Email)',
+                        })
+                      }
+                    >
                       <div className="metric-tile-header">
                         <svg className="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -917,9 +939,20 @@ export default function CommunicationView() {
                       </div>
                       <strong className="metric-tile-val">{recipientCounts.hasEmail}</strong>
                       <span className="metric-tile-desc">receive email</span>
-                    </div>
+                    </button>
 
-                    <div className="review-metric-tile sms">
+                    <button
+                      type="button"
+                      className="review-metric-tile sms"
+                      disabled={selectedRecipients.filter(r => r.phone?.trim()).length === 0}
+                      onClick={() =>
+                        setRecipientPreviewList({
+                          isOpen: true,
+                          recipients: selectedRecipients.filter(r => r.phone?.trim()),
+                          title: 'Recipient List (Via SMS)',
+                        })
+                      }
+                    >
                       <div className="metric-tile-header">
                         <svg className="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
@@ -929,7 +962,7 @@ export default function CommunicationView() {
                       </div>
                       <strong className="metric-tile-val">{recipientCounts.hasPhone}</strong>
                       <span className="metric-tile-desc">receive SMS text</span>
-                    </div>
+                    </button>
                   </div>
                 </AppCard>
 
