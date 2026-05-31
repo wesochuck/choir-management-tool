@@ -1,0 +1,261 @@
+/* SeatingFinderView.css */
+
+.stage-container {
+  background: radial-gradient(120% 120% at 50% 120%, rgba(74, 124, 89, 0.04) 0%, rgba(255, 255, 255, 1) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mirrored grid row rendering */
+.stage-rows-wrapper {
+  display: flex;
+  flex-direction: column-reverse; /* Key for mirroring! Row 1 (Index 0) will render at the bottom */
+  gap: 12px;
+  width: 100%;
+  margin-bottom: var(--space-xl);
+  align-items: center;
+}
+
+.stage-row {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.stage-row-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  width: 50px;
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.stage-row-label.label-right {
+  text-align: left;
+}
+
+/* Premium Seat bubble */
+.seat-node {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--surface);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.seat-node:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* Pulsing highlight for self */
+.seat-node.self {
+  border-color: var(--primary-deep) !important;
+  box-shadow: 0 0 0 4px rgba(74, 124, 89, 0.3);
+  animation: pulse-self 2s infinite;
+  z-index: 5;
+}
+
+@keyframes pulse-self {
+  0% {
+    box-shadow: 0 0 0 0px rgba(74, 124, 89, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(74, 124, 89, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(74, 124, 89, 0);
+  }
+}
+
+/* Interactive custom tooltips */
+.seat-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background-color: var(--text);
+  color: var(--surface);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 100;
+  transition: all 0.2s ease;
+}
+
+.seat-node:hover .seat-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.seat-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--text) transparent transparent transparent;
+}
+
+/* Stage Front Orienters graphic */
+.stage-front-orienter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--border);
+  position: relative;
+}
+
+.stage-podium-arc {
+  width: 240px;
+  height: 8px;
+  border-radius: 50%;
+  border-bottom: 2px solid var(--primary-deep);
+  opacity: 0.3;
+  margin-bottom: 4px;
+}
+
+.orienter-badges-wrapper {
+  display: flex;
+  gap: var(--space-xl);
+  justify-content: center;
+  align-items: center;
+}
+
+.orienter-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+  border: 1px solid rgba(74, 124, 89, 0.2);
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+}
+
+.orienter-badge.piano {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+/* Neighbors HUD styling */
+.neighbors-hud-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+@media (max-width: 640px) {
+  .neighbors-hud-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.neighbor-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.neighbor-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(74, 124, 89, 0.06);
+}
+
+.neighbor-direction-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.neighbor-card.empty .neighbor-direction-icon {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.neighbor-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.neighbor-label {
+  font-size: 0.675rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.neighbor-name {
+  font-weight: 700;
+  font-size: 0.925rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.neighbor-part {
+  font-size: 0.725rem;
+  color: var(--primary-deep);
+  font-weight: 600;
+}

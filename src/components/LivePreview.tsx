@@ -41,7 +41,7 @@ const EmailMockup: React.FC<EmailMockupProps> = ({
       display: 'flex',
       flexDirection: 'column',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      minHeight: '400px',
+      minHeight: '550px',
     }}
   >
     <div

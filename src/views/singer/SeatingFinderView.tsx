@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { profileService, type Profile } from '../../services/profileService';
+import './SeatingFinderView.css';
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
@@ -16,7 +17,17 @@ export default function SeatingFinderView() {
   }, []);
 
   const event = events.find(e => e.id === eventId);
-  const { chart, charts, activeChartId, setActiveChartId, rowCounts, isLoading: chartLoading } = useSeatingChart(eventId || '', event?.expand?.venue || null);
+  const { 
+    chart, 
+    charts, 
+    activeChartId, 
+    setActiveChartId, 
+    rowCounts, 
+    activeProfiles,
+    sections,
+    voiceParts,
+    isLoading: chartLoading 
+  } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
   const isLoading = eventsLoading || chartLoading;
 
@@ -29,12 +40,57 @@ export default function SeatingFinderView() {
   const seatLocation = myProfile ? Object.entries(chart?.assignments || {}).find(([, id]) => id === myProfile.id) : null;
   const [row, seat] = seatLocation ? seatLocation[0].split('-').map(Number) : [null, null];
 
+  // Helper to extract singer initials
+  const getSingerInitials = (singerId: string) => {
+    const profile = activeProfiles.find(p => p.id === singerId);
+    if (!profile || !profile.name) return '';
+    return profile.name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Helper to get section/voice part color
+  const getSingerColor = (singerId: string) => {
+    const profile = activeProfiles.find(p => p.id === singerId);
+    if (!profile) return 'var(--border)';
+    const vp = voiceParts.find(v => v.label === profile.voicePart);
+    const sectionCode = vp?.sectionCode || profile.voicePart[0];
+    const sec = sections.find(s => s.code === sectionCode);
+    return sec?.color || 'var(--primary)';
+  };
+
+  // Helper to get singer info
+  const getSingerProfile = (singerId: string) => {
+    return activeProfiles.find(p => p.id === singerId) || null;
+  };
+
+  // Calculations for Standing Neighbors defensively
+  let leftSinger: Profile | null = null;
+  let rightSinger: Profile | null = null;
+  let behindSinger: Profile | null = null;
+  let inFrontSinger: Profile | null = null;
+
+  if (row !== null && seat !== null && chart?.assignments) {
+    const leftId = chart.assignments[`${row}-${seat - 1}`];
+    const rightId = chart.assignments[`${row}-${seat + 1}`];
+    const behindId = chart.assignments[`${row + 1}-${seat}`];
+    const inFrontId = chart.assignments[`${row - 1}-${seat}`];
+
+    if (leftId) leftSinger = getSingerProfile(leftId);
+    if (rightId) rightSinger = getSingerProfile(rightId);
+    if (behindId) behindSinger = getSingerProfile(behindId);
+    if (inFrontId) inFrontSinger = getSingerProfile(inFrontId);
+  }
+
   return (
     <PageLayout 
       title="Find Your Seat" 
       subtitle={event.title || venue?.name || ''}
       backTo="/"
-      maxWidth="800px"
+      maxWidth="900px"
     >
       <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
         {charts.length > 1 && (
@@ -95,7 +151,7 @@ export default function SeatingFinderView() {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', padding: 'var(--space-md)' }}>
               <p className="text-muted">No assignment found for your profile yet. Check with your director!</p>
             </div>
           )}
@@ -103,29 +159,121 @@ export default function SeatingFinderView() {
 
         {!isOpenSeating && (
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-             <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Full Stage View</h3>
-             {isLoading ? (
-                <div style={{ textAlign: 'center' }} className="text-muted">Loading grid...</div>
-             ) : (
-                <div className="flex-col" style={{ gap: '4px' }}>
-                    {rowCounts.map((count, rIdx) => (
-                        <div key={rIdx} className="flex-row" style={{ gap: '4px', justifyContent: 'center' }}>
-                            {Array.from({ length: count }).map((_, sIdx) => {
-                                const isMySeat = chart?.assignments[`${rIdx}-${sIdx}`] === myProfile?.id;
-                                return (
-                                    <div key={sIdx} style={{ 
-                                        width: '12px', height: '12px', borderRadius: '2px',
-                                        backgroundColor: isMySeat ? 'var(--primary)' : 'var(--border)' 
-                                    }} />
-                                );
-                            })}
-                        </div>
-                    ))}
+            <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+              Interactive Stage Layout
+            </h3>
+            
+            {isLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading Stage Map...</div>
+            ) : (
+              <div className="stage-container">
+                {/* Mirrored Stage Grid Wrapper */}
+                <div className="stage-rows-wrapper">
+                  {rowCounts.map((count, rIdx) => (
+                    <div key={rIdx} className="stage-row">
+                      <span className="stage-row-label">Row {rIdx + 1}</span>
+                      
+                      <div className="flex-row" style={{ gap: '10px' }}>
+                        {Array.from({ length: count }).map((_, sIdx) => {
+                          const singerId = chart?.assignments[`${rIdx}-${sIdx}`];
+                          const isMySeat = singerId === myProfile?.id;
+                          const initials = singerId ? getSingerInitials(singerId) : '';
+                          const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
+                          const profile = singerId ? getSingerProfile(singerId) : null;
+
+                          return (
+                            <div 
+                              key={sIdx} 
+                              className={`seat-node ${isMySeat ? 'self' : ''}`}
+                              style={{ 
+                                borderColor: singerColor,
+                                color: singerId ? 'white' : 'var(--text-muted)',
+                                backgroundColor: singerId ? singerColor : 'white',
+                              }}
+                            >
+                              {initials || sIdx + 1}
+                              {profile && (
+                                <div className="seat-tooltip">
+                                  {profile.name} ({profile.voicePart})
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <span className="stage-row-label label-right">Row {rIdx + 1}</span>
+                    </div>
+                  ))}
                 </div>
-             )}
+
+                {/* Stage Front Orienters graphic at the bottom of the stage view */}
+                <div className="stage-front-orienter">
+                  <div className="stage-podium-arc"></div>
+                  <div className="orienter-badges-wrapper">
+                    <span className="orienter-badge piano">🎹 Piano Accompanist</span>
+                    <span className="orienter-badge">🎼 Director & Audience</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Standing Neighbors HUD Card */}
+        {!isOpenSeating && row !== null && seat !== null && (
+          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+              Standing Neighbors HUD
+            </h3>
+            
+            <div className="neighbors-hud-container">
+              
+              {/* Left Neighbor */}
+              <div className={`neighbor-card ${!leftSinger ? 'empty' : ''}`}>
+                <div className="neighbor-direction-icon">◀</div>
+                <div className="neighbor-details">
+                  <span className="neighbor-label">Standing to your Left</span>
+                  <span className="neighbor-name">{leftSinger?.name || 'Empty Seat'}</span>
+                  {leftSinger && <span className="neighbor-part">{leftSinger.voicePart}</span>}
+                </div>
+              </div>
+
+              {/* Right Neighbor */}
+              <div className={`neighbor-card ${!rightSinger ? 'empty' : ''}`}>
+                <div className="neighbor-direction-icon">▶</div>
+                <div className="neighbor-details">
+                  <span className="neighbor-label">Standing to your Right</span>
+                  <span className="neighbor-name">{rightSinger?.name || 'Empty Seat'}</span>
+                  {rightSinger && <span className="neighbor-part">{rightSinger.voicePart}</span>}
+                </div>
+              </div>
+
+              {/* Behind Neighbor */}
+              <div className={`neighbor-card ${!behindSinger ? 'empty' : ''}`}>
+                <div className="neighbor-direction-icon">▲</div>
+                <div className="neighbor-details">
+                  <span className="neighbor-label">Standing Behind you</span>
+                  <span className="neighbor-name">{behindSinger?.name || 'Empty Seat'}</span>
+                  {behindSinger && <span className="neighbor-part">{behindSinger.voicePart}</span>}
+                </div>
+              </div>
+
+              {/* In Front Neighbor */}
+              <div className={`neighbor-card ${!inFrontSinger ? 'empty' : ''}`}>
+                <div className="neighbor-direction-icon">▼</div>
+                <div className="neighbor-details">
+                  <span className="neighbor-label">Standing in Front of you</span>
+                  <span className="neighbor-name">{inFrontSinger?.name || 'Empty Seat'}</span>
+                  {inFrontSinger && <span className="neighbor-part">{inFrontSinger.voicePart}</span>}
+                </div>
+              </div>
+
+            </div>
           </div>
         )}
       </div>
     </PageLayout>
   );
 }
+

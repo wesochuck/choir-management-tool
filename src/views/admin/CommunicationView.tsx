@@ -856,7 +856,24 @@ export default function CommunicationView() {
               <AppCard title="Pre-Flight Review">
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                    <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
+                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ height: '28px', padding: '0 8px', fontSize: '12px' }}
+                        disabled={selectedRecipients.length === 0}
+                        onClick={() =>
+                          setRecipientPreviewList({
+                            isOpen: true,
+                            recipients: selectedRecipients,
+                            title: 'Recipients Selected for Send',
+                          })
+                        }
+                      >
+                        🔍 View List
+                      </button>
+                    </div>
                     <div className="review-summary-row">
                       <div className="review-summary-stat">
                         <span className="review-stat-value">{recipientCounts.total}</span>
@@ -870,22 +887,6 @@ export default function CommunicationView() {
                         <span className="review-stat-value">{recipientCounts.hasPhone}</span>
                         <span className="text-muted text-sm">Via SMS</span>
                       </div>
-                    </div>
-                    <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: '-8px' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        disabled={selectedRecipients.length === 0}
-                        onClick={() =>
-                          setRecipientPreviewList({
-                            isOpen: true,
-                            recipients: selectedRecipients,
-                            title: 'Recipients Selected for Send',
-                          })
-                        }
-                      >
-                        🔍 View Recipient List
-                      </button>
                     </div>
                   </div>
 
@@ -957,7 +958,7 @@ export default function CommunicationView() {
                       )}
                       {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
                         <div className="checklist-item warning">
-                          <span>⚠️</span> <strong>Default Mailing Address Active:</strong> You are currently using the default mock physical mailing address ("{commSettings.mailingAddress}"). Please update this in Communication Settings for CAN-SPAM legal compliance before sending.
+                          <span>⚠️</span> <strong>Default Mailing Address Active:</strong> You are currently using the default mock physical mailing address ("{commSettings.mailingAddress}"). Please <button type="button" onClick={() => { setTab('settings'); setEditingTemplate(null); }} style={{ background: 'none', border: 'none', color: '#991b1b', textDecoration: 'underline', padding: 0, font: 'inherit', cursor: 'pointer', fontWeight: 'bold', display: 'inline' }}>update this in settings</button> for CAN-SPAM legal compliance before sending.
                         </div>
                       )}
                       <div className="checklist-item success">

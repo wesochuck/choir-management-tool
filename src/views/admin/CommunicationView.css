@@ -272,7 +272,7 @@
 
 @media (min-width: 1024px) {
   .review-container {
-    grid-template-columns: 5.8fr 4.2fr;
+    grid-template-columns: 6.5fr 3.5fr;
     max-width: 1280px;
     margin: 0 auto;
   }

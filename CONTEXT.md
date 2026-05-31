@@ -78,6 +78,13 @@ A function that duplicates an existing Performance, copying its title, date/time
 ## Seating Chart
 A physical arrangement of singers in rows and columns on a stage or venue layout. A single performance can support multiple distinct seating charts, each identified by a custom user-defined name (e.g., "Chamber Choir", "Combined Finale"). Each seating chart is linked to a Seating Formation, which dynamically filters the unassigned singer pool and available seats to match only the voice parts or section buckets specified in that formation.
 
+## Standing Neighbors HUD
+A user interface component in the seating finder that displays the names and voice parts of the immediate standing neighbors (Left, Right, Behind, In Front) relative to the singer's assigned seat.
+
+## Seating Grid Mirroring
+A layout rendering strategy for the stage finder that positions Row 1 (the physical front row of the stage, closest to the director and audience) at the bottom of the screen, and the last row (the physical back row/tier) at the top of the screen, aligning with a singer's forward-facing perspective looking toward the podium.
+
+
 
 
 
