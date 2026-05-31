@@ -1,24 +1,14 @@
-import { useState, useEffect } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
-import { profileService, type Profile } from '../../services/profileService';
+import { type Profile } from '../../services/profileService';
 import './SeatingFinderView.css';
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
   const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
-  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
-  const [profilesLoading, setProfilesLoading] = useState(true);
-
-  useEffect(() => {
-    profileService.getActiveProfiles()
-      .then(setAllProfiles)
-      .catch(console.error)
-      .finally(() => setProfilesLoading(false));
-  }, []);
 
   const event = events.find(e => e.id === eventId);
 
@@ -28,13 +18,13 @@ export default function SeatingFinderView() {
     activeChartId, 
     setActiveChartId, 
     rowCounts, 
-    activeProfiles,
+    allProfiles,
     sections,
     voiceParts,
     isLoading: chartLoading 
   } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
-  const isLoading = eventsLoading || chartLoading || profilesLoading;
+  const isLoading = eventsLoading || chartLoading;
 
   if (isLoading) {
     return (
@@ -83,9 +73,17 @@ export default function SeatingFinderView() {
     ? seatLocation[0].split('-').map(Number)
     : [null, null];
 
+  // Build a profile lookup map from unfiltered profiles
+  const profilesById = new Map(allProfiles.map(profile => [profile.id, profile]));
+
+  // Helper to get singer info
+  const getSingerProfile = (singerId: string) => {
+    return profilesById.get(singerId) || null;
+  };
+
   // Helper to extract singer initials
   const getSingerInitials = (singerId: string) => {
-    const profile = activeProfiles.find(p => p.id === singerId);
+    const profile = getSingerProfile(singerId);
     if (!profile || !profile.name) return '';
     return profile.name
       .split(' ')
@@ -97,17 +95,12 @@ export default function SeatingFinderView() {
 
   // Helper to get section/voice part color
   const getSingerColor = (singerId: string) => {
-    const profile = activeProfiles.find(p => p.id === singerId);
-    if (!profile) return 'var(--border)';
+    const profile = getSingerProfile(singerId);
+    if (!profile) return 'var(--primary)';
     const vp = voiceParts.find(v => v.label === profile.voicePart);
     const sectionCode = vp?.sectionCode || profile.voicePart[0];
     const sec = sections.find(s => s.code === sectionCode);
     return sec?.color || 'var(--primary)';
-  };
-
-  // Helper to get singer info
-  const getSingerProfile = (singerId: string) => {
-    return allProfiles.find(p => p.id === singerId) || null;
   };
 
   type NeighborInfo =
@@ -244,11 +237,7 @@ export default function SeatingFinderView() {
                             : singerId
                               ? '•'
                               : '';
-                          const singerColor = profile
-                            ? getSingerColor(singerId)
-                            : singerId
-                              ? 'var(--primary)'
-                              : 'var(--border)';
+                          const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
 
                           return (
                             <div 
@@ -261,11 +250,15 @@ export default function SeatingFinderView() {
                               }}
                             >
                               {initials || ''}
-                              {profile && (
+                              {profile ? (
                                 <div className="seat-tooltip">
                                   {profile.name} ({profile.voicePart})
                                 </div>
-                              )}
+                              ) : singerId ? (
+                                <div className="seat-tooltip">
+                                  Assigned Singer
+                                </div>
+                              ) : null}
                             </div>
                           );
                         })}

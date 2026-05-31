@@ -32,6 +32,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   const [chart, setChart] = useState<SeatingChart | null>(null);
   const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
   const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [seatingSettings, setSeatingSettings] = useState<SeatingSettings>(DEFAULT_SEATING_SETTINGS);
   const [voicePartSettings, setVoicePartSettings] = useState<VoicePartSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -289,6 +290,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       optimisticAssignmentsRef.current = assignments;
       setOptimisticAssignments(assignments);
       setActiveProfiles(activeCurrent);
+      setAllProfiles(profiles);
       setSeatingSettings(sSettings);
       setVoicePartSettings(vpSettings);
       setError(null);
@@ -513,6 +515,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     reorderCharts,
     optimisticAssignments,
     activeProfiles,
+    allProfiles,
     sectionCounts,
     rowCounts,
     suggestions,
