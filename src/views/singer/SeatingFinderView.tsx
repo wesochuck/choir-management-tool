@@ -66,12 +66,7 @@ export default function SeatingFinderView() {
   const myRsvp = myRoster?.rsvp || 'Pending';
   const hasRsvpedYes = myRsvp === 'Yes';
 
-  const activeProfileIds = new Set(activeProfiles.map(p => p.id));
-  const visibleAssignments = Object.fromEntries(
-    Object.entries(chart?.assignments || {}).filter(([, singerId]) =>
-      activeProfileIds.has(singerId)
-    )
-  );
+  const assignments = chart?.assignments || {};
 
   const noAssignmentMessage = !myProfile
     ? 'No singer profile found for your login. Check with your director to connect your account.'
@@ -81,7 +76,7 @@ export default function SeatingFinderView() {
 
   const seatLocation =
     myProfile && hasRsvpedYes
-      ? Object.entries(visibleAssignments).find(([, id]) => id === myProfile.id)
+      ? Object.entries(assignments).find(([, id]) => id === myProfile.id)
       : null;
 
   const [row, seat] = seatLocation
@@ -118,7 +113,7 @@ export default function SeatingFinderView() {
   type NeighborInfo =
     | { status: 'empty'; profile: null }
     | { status: 'assigned'; profile: Profile }
-    | { status: 'hidden'; profile: null };
+    | { status: 'assignedUnknown'; profile: null };
 
   const getNeighborInfo = (singerId?: string): NeighborInfo => {
     if (!singerId) return { status: 'empty', profile: null };
@@ -126,7 +121,17 @@ export default function SeatingFinderView() {
     const profile = getSingerProfile(singerId);
     if (profile) return { status: 'assigned', profile };
 
-    return { status: 'hidden', profile: null };
+    return { status: 'assignedUnknown', profile: null };
+  };
+
+  const getNeighborName = (neighbor: NeighborInfo) => {
+    if (neighbor.status === 'empty') return 'Empty Seat';
+    if (neighbor.status === 'assignedUnknown') return 'Assigned Singer';
+    return neighbor.profile.name;
+  };
+
+  const getNeighborPart = (neighbor: NeighborInfo) => {
+    return neighbor.status === 'assigned' ? neighbor.profile.voicePart : null;
   };
 
   // Calculations for Standing Neighbors defensively
@@ -134,9 +139,8 @@ export default function SeatingFinderView() {
   let rightNeighbor: NeighborInfo = { status: 'empty', profile: null };
 
   if (row !== null && seat !== null) {
-    const rawAssignments = chart?.assignments || {};
-    const leftId = rawAssignments[`${row}-${seat - 1}`];
-    const rightId = rawAssignments[`${row}-${seat + 1}`];
+    const leftId = assignments[`${row}-${seat - 1}`];
+    const rightId = assignments[`${row}-${seat + 1}`];
 
     leftNeighbor = getNeighborInfo(leftId);
     rightNeighbor = getNeighborInfo(rightId);
@@ -232,12 +236,20 @@ export default function SeatingFinderView() {
                       
                       <div className="flex-row" style={{ gap: '10px' }}>
                         {Array.from({ length: count }).map((_, sIdx) => {
-                          const singerId = visibleAssignments[`${rIdx}-${sIdx}`];
+                          const singerId = assignments[`${rIdx}-${sIdx}`];
                           const isMySeat = hasRsvpedYes && singerId === myProfile?.id;
-                          const initials = singerId ? getSingerInitials(singerId) : '';
-                          const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
                           const profile = singerId ? getSingerProfile(singerId) : null;
- 
+                          const initials = profile
+                            ? getSingerInitials(singerId)
+                            : singerId
+                              ? '•'
+                              : '';
+                          const singerColor = profile
+                            ? getSingerColor(singerId)
+                            : singerId
+                              ? 'var(--primary)'
+                              : 'var(--border)';
+
                           return (
                             <div 
                               key={sIdx} 
@@ -290,14 +302,10 @@ export default function SeatingFinderView() {
                 <div className="neighbor-direction-icon">◀</div>
                 <div className="neighbor-details">
                   <span className="neighbor-label">Standing to your Left</span>
-                  <span className="neighbor-name">
-                    {leftNeighbor.status === 'empty'
-                      ? 'Empty Seat'
-                      : leftNeighbor.status === 'hidden'
-                        ? 'Assigned Singer'
-                        : leftNeighbor.profile.name}
-                  </span>
-                  {leftNeighbor.profile && <span className="neighbor-part">{leftNeighbor.profile.voicePart}</span>}
+                  <span className="neighbor-name">{getNeighborName(leftNeighbor)}</span>
+                  {getNeighborPart(leftNeighbor) && (
+                    <span className="neighbor-part">{getNeighborPart(leftNeighbor)}</span>
+                  )}
                 </div>
               </div>
 
@@ -306,14 +314,10 @@ export default function SeatingFinderView() {
                 <div className="neighbor-direction-icon">▶</div>
                 <div className="neighbor-details">
                   <span className="neighbor-label">Standing to your Right</span>
-                  <span className="neighbor-name">
-                    {rightNeighbor.status === 'empty'
-                      ? 'Empty Seat'
-                      : rightNeighbor.status === 'hidden'
-                        ? 'Assigned Singer'
-                        : rightNeighbor.profile.name}
-                  </span>
-                  {rightNeighbor.profile && <span className="neighbor-part">{rightNeighbor.profile.voicePart}</span>}
+                  <span className="neighbor-name">{getNeighborName(rightNeighbor)}</span>
+                  {getNeighborPart(rightNeighbor) && (
+                    <span className="neighbor-part">{getNeighborPart(rightNeighbor)}</span>
+                  )}
                 </div>
               </div>
 
