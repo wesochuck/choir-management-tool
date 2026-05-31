@@ -1,6 +1,16 @@
 import { type CommunicationRecipient } from '../services/communicationService';
 import { type Event } from '../services/eventService';
 
+export function escapeHtml(unsafe: string): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export const COMPLIANT_FOOTER_HTML = `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
   <p style="margin: 0 0 10px 0;">{{MAILING_ADDRESS}}</p>
@@ -94,7 +104,7 @@ export function resolvePreviewContent(
 
   // Recipient Placeholders
   const name = recipient?.name || 'Sample Singer';
-  result = result.replace(/{singerName}/g, name);
+  result = result.replace(/{singerName}/g, escapeHtml(name));
 
   // Event Placeholders
   const title = event?.title || event?.type || 'Sample Performance';
@@ -103,11 +113,11 @@ export function resolvePreviewContent(
   const location = event?.expand?.venue?.name || 'Main Concert Hall';
   const details = event?.details || 'Join us for an amazing evening of music and harmony!';
 
-  result = result.replace(/{eventTitle}/g, title);
-  result = result.replace(/{eventType}/g, type);
-  result = result.replace(/{eventDate}/g, date);
-  result = result.replace(/{eventLocation}/g, location);
-  result = result.replace(/{eventDetails}/g, details);
+  result = result.replace(/{eventTitle}/g, escapeHtml(title));
+  result = result.replace(/{eventType}/g, escapeHtml(type));
+  result = result.replace(/{eventDate}/g, escapeHtml(date));
+  result = result.replace(/{eventLocation}/g, escapeHtml(location));
+  result = result.replace(/{eventDetails}/g, escapeHtml(details));
 
   // RSVP Links - Injected as literal HTML
   const rsvpText = `
@@ -135,7 +145,7 @@ export function resolvePreviewContent(
     const question = pollQuestions[pollId] || 'Answer our quick question';
     return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-    <span style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${question}</span>
+    <span style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(question)}</span>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">(No login required)</p>
 </div>
   `;
