@@ -1,14 +1,24 @@
+import { useState, useEffect } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
-import { type Profile } from '../../services/profileService';
+import { profileService, type Profile } from '../../services/profileService';
 import './SeatingFinderView.css';
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
   const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [profilesLoading, setProfilesLoading] = useState(true);
+
+  useEffect(() => {
+    profileService.getActiveProfiles()
+      .then(setAllProfiles)
+      .catch(console.error)
+      .finally(() => setProfilesLoading(false));
+  }, []);
 
   const event = events.find(e => e.id === eventId);
 
@@ -24,7 +34,7 @@ export default function SeatingFinderView() {
     isLoading: chartLoading 
   } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
-  const isLoading = eventsLoading || chartLoading;
+  const isLoading = eventsLoading || chartLoading || profilesLoading;
 
   if (isLoading) {
     return (
@@ -102,7 +112,7 @@ export default function SeatingFinderView() {
 
   // Helper to get singer info
   const getSingerProfile = (singerId: string) => {
-    return activeProfiles.find(p => p.id === singerId) || null;
+    return allProfiles.find(p => p.id === singerId) || null;
   };
 
   type NeighborInfo =
@@ -122,20 +132,14 @@ export default function SeatingFinderView() {
   // Calculations for Standing Neighbors defensively
   let leftNeighbor: NeighborInfo = { status: 'empty', profile: null };
   let rightNeighbor: NeighborInfo = { status: 'empty', profile: null };
-  let behindNeighbor: NeighborInfo = { status: 'empty', profile: null };
-  let inFrontNeighbor: NeighborInfo = { status: 'empty', profile: null };
 
   if (row !== null && seat !== null) {
     const rawAssignments = chart?.assignments || {};
     const leftId = rawAssignments[`${row}-${seat - 1}`];
     const rightId = rawAssignments[`${row}-${seat + 1}`];
-    const behindId = rawAssignments[`${row + 1}-${seat}`];
-    const inFrontId = rawAssignments[`${row - 1}-${seat}`];
 
     leftNeighbor = getNeighborInfo(leftId);
     rightNeighbor = getNeighborInfo(rightId);
-    behindNeighbor = getNeighborInfo(behindId);
-    inFrontNeighbor = getNeighborInfo(inFrontId);
   }
 
   return (
@@ -200,7 +204,7 @@ export default function SeatingFinderView() {
                  Row {row + 1}
               </div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                 Seat {seat! + 1}
+                Seat {seat! + 1} <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-muted)' }}>({seat! + 1} from left, {rowCounts[row] - seat!} from right)</span>
               </div>
             </div>
           ) : (
@@ -310,38 +314,6 @@ export default function SeatingFinderView() {
                         : rightNeighbor.profile.name}
                   </span>
                   {rightNeighbor.profile && <span className="neighbor-part">{rightNeighbor.profile.voicePart}</span>}
-                </div>
-              </div>
-
-              {/* Behind Neighbor */}
-              <div className={`neighbor-card ${behindNeighbor.status === 'empty' ? 'empty' : ''}`}>
-                <div className="neighbor-direction-icon">▲</div>
-                <div className="neighbor-details">
-                  <span className="neighbor-label">Standing Behind you</span>
-                  <span className="neighbor-name">
-                    {behindNeighbor.status === 'empty'
-                      ? 'Empty Seat'
-                      : behindNeighbor.status === 'hidden'
-                        ? 'Assigned Singer'
-                        : behindNeighbor.profile.name}
-                  </span>
-                  {behindNeighbor.profile && <span className="neighbor-part">{behindNeighbor.profile.voicePart}</span>}
-                </div>
-              </div>
-
-              {/* In Front Neighbor */}
-              <div className={`neighbor-card ${inFrontNeighbor.status === 'empty' ? 'empty' : ''}`}>
-                <div className="neighbor-direction-icon">▼</div>
-                <div className="neighbor-details">
-                  <span className="neighbor-label">Standing in Front of you</span>
-                  <span className="neighbor-name">
-                    {inFrontNeighbor.status === 'empty'
-                      ? 'Empty Seat'
-                      : inFrontNeighbor.status === 'hidden'
-                        ? 'Assigned Singer'
-                        : inFrontNeighbor.profile.name}
-                  </span>
-                  {inFrontNeighbor.profile && <span className="neighbor-part">{inFrontNeighbor.profile.voicePart}</span>}
                 </div>
               </div>
 
