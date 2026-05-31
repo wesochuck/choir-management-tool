@@ -192,6 +192,11 @@ export default function CommunicationView() {
     );
   }, [content, editingTemplate, events, filters.eventId, selectedRecipients, messageType, commSettings.mailingAddress, pollQuestions]);
 
+  const selectedEvent = useMemo(() => events.find(e => e.id === filters.eventId) || null, [events, filters.eventId]);
+  const previewRecipient = useMemo(() => selectedRecipients[0] || null, [selectedRecipients]);
+  const renderedSubject = useMemo(() => resolvePreviewContent(subject, selectedEvent, previewRecipient), [subject, selectedEvent, previewRecipient]);
+  const renderedSmsBody = useMemo(() => resolvePreviewContent(content, selectedEvent, previewRecipient), [content, selectedEvent, previewRecipient]);
+
 
   const { upcomingTasks, pastTasks } = useMemo(() => {
     const upcoming: AutomatedTask[] = [];
@@ -839,161 +844,249 @@ export default function CommunicationView() {
           )}
 
           {wizardStep === 'REVIEW' && (
-            <div className="review-container">
-              <AppCard noPadding>
-                <div style={{ padding: '20px' }}>
+            <div className="review-send-grid">
+              <section className="review-preview-card" aria-label="Live preview">
+                <div className="review-preview-header">
+                  <span className="review-section-eyebrow">Live preview</span>
+
+                  <div className="preview-device-toggle" role="group" aria-label="Preview device">
+                    <button
+                      type="button"
+                      className={previewDevice === 'desktop' ? 'active' : ''}
+                      onClick={() => setPreviewDevice('desktop')}
+                    >
+                      Desktop
+                    </button>
+                    <button
+                      type="button"
+                      className={previewDevice === 'mobile' ? 'active' : ''}
+                      onClick={() => setPreviewDevice('mobile')}
+                    >
+                      Mobile
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`review-email-frame-wrapper ${previewDevice === 'mobile' ? 'mobile' : 'desktop'}`}>
                   <LivePreview
                     channel={messageType}
-                    subject={resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                    subject={renderedSubject}
                     bodyHtml={previewHtml}
-                    smsBody={resolvePreviewContent(content, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
-                    recipientName={selectedRecipients[0]?.name}
-                    recipientEmail={selectedRecipients[0]?.email}
+                    smsBody={renderedSmsBody}
+                    recipientName={previewRecipient?.name}
+                    recipientEmail={previewRecipient?.email}
                   />
                 </div>
-              </AppCard>
 
-              <AppCard title="Pre-Flight Review">
-                <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                  <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                    <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Recipient Summary</h4>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ height: '28px', padding: '0 8px', fontSize: '12px' }}
-                        disabled={selectedRecipients.length === 0}
-                        onClick={() =>
-                          setRecipientPreviewList({
-                            isOpen: true,
-                            recipients: selectedRecipients,
-                            title: 'Recipients Selected for Send',
-                          })
-                        }
-                      >
-                        🔍 View List
-                      </button>
-                    </div>
-                    <div className="review-summary-row">
-                      <div className="review-summary-stat">
-                        <span className="review-stat-value">{recipientCounts.total}</span>
-                        <span className="text-muted text-sm">Recipients Selected</span>
-                      </div>
-                      <div className="review-summary-stat divider">
-                        <span className="review-stat-value">{recipientCounts.hasEmail}</span>
-                        <span className="text-muted text-sm">Via Email</span>
-                      </div>
-                      <div className="review-summary-stat divider">
-                        <span className="review-stat-value">{recipientCounts.hasPhone}</span>
-                        <span className="text-muted text-sm">Via SMS</span>
-                      </div>
-                    </div>
+                <footer className="review-email-footer">
+                  <div>{commSettings.mailingAddress}</div>
+                  <div>You are receiving this message because you are part of our choir communications list.</div>
+                  <button type="button" className="review-unsubscribe-link">
+                    Unsubscribe
+                  </button>
+                </footer>
+              </section>
+
+              <aside className="review-side-stack">
+                {/* Card 1: Recipient summary */}
+                <section className="review-card">
+                  <div className="review-card-header">
+                    <h3>Recipient summary</h3>
+                    <button
+                      type="button"
+                      className="review-ghost-button"
+                      disabled={selectedRecipients.length === 0}
+                      onClick={() =>
+                        setRecipientPreviewList({
+                          isOpen: true,
+                          recipients: selectedRecipients,
+                          title: 'Recipients Selected for Send',
+                        })
+                      }
+                    >
+                      <span aria-hidden="true">☰</span>
+                      View list
+                    </button>
                   </div>
 
-                  <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                    <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Checklist</h4>
-                    <div className="review-checklist-card card">
-                      {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
-                        <div className="checklist-item warning">
-                          <span>⚠️</span>
-                          <span><strong>Subject is empty.</strong> Add a subject line for better open rates.</span>
-                        </div>
-                      )}
-                      {content.length < 10 && (
-                        <div className="checklist-item warning">
-                          <span>⚠️</span>
-                          <span><strong>Very short message body.</strong></span>
-                        </div>
-                      )}
-                      {selectedRecipients.length === 0 && (
-                        <div className="checklist-item warning">
-                          <span>❌</span>
-                          <span><strong>No recipients selected.</strong></span>
-                        </div>
-                      )}
+                  <div className="review-metric-grid">
+                    <div className="review-metric-tile">
+                      <strong>{recipientCounts.total}</strong>
+                      <span>Selected</span>
+                    </div>
 
-                      {!filters.eventId && (() => {
-                        const eventPlaceholders = [
-                          '{eventTitle}',
-                          '{eventType}',
-                          '{eventDate}',
-                          '{eventLocation}',
-                          '{eventDetails}',
-                          '{{PLAYER_LINK}}',
-                          '{{RSVP_LINKS}}'
-                        ];
-                        const combinedText = (subject + ' ' + content).toLowerCase();
-                        const foundPlaceholders = eventPlaceholders.filter(p => combinedText.includes(p.toLowerCase()));
-                        if (foundPlaceholders.length > 0) {
-                          return (
-                            <div className="checklist-item warning">
-                              <span>⚠️</span>
-                              <span><strong>No event selected</strong> but active event placeholders exist: <code>{foundPlaceholders.join(', ')}</code>.</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
+                    <div className="review-metric-tile">
+                      <strong>{recipientCounts.hasEmail}</strong>
+                      <span>Via email</span>
+                      <em className="channel-pill email">Email</em>
+                    </div>
 
-                      {filters.eventId && (() => {
-                        const selectedEvent = events.find(e => e.id === filters.eventId);
-                        const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
-                        const hasPlayerPlaceholder = content.toLowerCase().includes('{{player_link}}');
-                        
-                        if (!hasApprovedSetList && hasPlayerPlaceholder) {
-                           return (
-                            <div className="checklist-item warning">
-                              <span>⚠️</span>
-                              <span><strong>Practice player not approved.</strong> Set list is unapproved; <code>{"{{PLAYER_LINK}}"}</code> button will not render.</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
+                    <div className="review-metric-tile">
+                      <strong>{recipientCounts.hasPhone}</strong>
+                      <span>Via SMS</span>
+                      <em className="channel-pill sms">SMS</em>
+                    </div>
+                  </div>
+                </section>
 
-                      {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
-                        <div className="checklist-item info">
-                          <span>ℹ️</span>
-                          <span>{selectedRecipients.filter(r => !r.email).length} singers have no email configured and will skip this channel.</span>
-                        </div>
-                      )}
-                      {selectedRecipients.some(r => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
-                        <div className="checklist-item info">
-                          <span>ℹ️</span>
-                          <span>{selectedRecipients.filter(r => !r.phone).length} singers have no phone configured and will skip this channel.</span>
-                        </div>
-                      )}
-                      {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
-                        <div className="checklist-item warning">
-                          <span>⚠️</span>
-                          <span><strong>Default physical address active.</strong> Please <button type="button" onClick={() => { setTab('settings'); setEditingTemplate(null); }} style={{ background: 'none', border: 'none', color: '#991b1b', textDecoration: 'underline', padding: 0, font: 'inherit', cursor: 'pointer', fontWeight: 'bold', display: 'inline' }}>update this in settings</button> for CAN-SPAM legal compliance.</span>
-                        </div>
-                      )}
-                      <div className="checklist-item success">
-                        <span>✅</span>
-                        <span>Compliance footer will be attached.</span>
+                {/* Card 2: Pre-flight checklist */}
+                <section className="review-card">
+                  <div className="review-card-header">
+                    <h3>Pre-flight checklist</h3>
+                  </div>
+
+                  <div className="review-checklist-list">
+                    {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
+                      <div className="review-checklist-item warning">
+                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <span><strong>Subject is empty.</strong> Add a subject line for better open rates.</span>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                    {content.length < 10 && (
+                      <div className="review-checklist-item warning">
+                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <span><strong>Very short message body.</strong></span>
+                      </div>
+                    )}
+                    {selectedRecipients.length === 0 && (
+                      <div className="review-checklist-item warning">
+                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <span><strong>No recipients selected.</strong></span>
+                      </div>
+                    )}
 
-                  <div className="wizard-action-footer flex-responsive" style={{ justifyContent: 'space-between', width: '100%', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
-                    <button className="btn btn-ghost" onClick={() => setWizardStep('COMPOSE')}>← Back to Compose</button>
-                    <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
-                      <button 
-                        className="btn btn-secondary" 
-                        onClick={handleSendTest} 
-                        disabled={isSendingTest || isSending}
-                        title={`Send email test to ${user?.email || 'your email'}`}
-                      >
-                        {isSendingTest ? 'Sending Test...' : '🧪 Send Email Test to Me'}
-                      </button>
-                      <button className="btn btn-primary" onClick={sendMessage} disabled={isSending || selectedRecipients.length === 0}>
-                        {isSending ? 'Dispatching...' : `Send to ${selectedRecipients.length} Recipients`}
-                      </button>
+                    {!filters.eventId && (() => {
+                      const eventPlaceholders = [
+                        '{eventTitle}',
+                        '{eventType}',
+                        '{eventDate}',
+                        '{eventLocation}',
+                        '{eventDetails}',
+                        '{{PLAYER_LINK}}',
+                        '{{RSVP_LINKS}}'
+                      ];
+
+                      const combinedText = (subject + ' ' + content).toLowerCase();
+                      const foundPlaceholders = eventPlaceholders.filter(p =>
+                        combinedText.includes(p.toLowerCase())
+                      );
+
+                      if (foundPlaceholders.length > 0) {
+                        return (
+                          <div className="review-checklist-item warning">
+                            <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                            <span>
+                              <strong>No event selected</strong> but active event placeholders exist:{' '}
+                              <code>{foundPlaceholders.join(', ')}</code>.
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
+
+                    {filters.eventId && (() => {
+                      const hasApprovedSetList = selectedEvent
+                        ? selectedEvent.setListApproved !== false
+                        : false;
+                      const hasPlayerPlaceholder = content.toLowerCase().includes('{{player_link}}');
+
+                      if (!hasApprovedSetList && hasPlayerPlaceholder) {
+                        return (
+                          <div className="review-checklist-item warning">
+                            <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                            <span>
+                              <strong>Practice player not approved.</strong> Set list is unapproved;{' '}
+                              <code>{'{{PLAYER_LINK}}'}</code> button will not render.
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
+
+                    {selectedRecipients.some(r => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
+                      <div className="review-checklist-item info">
+                        <span className="review-checklist-icon" aria-hidden="true">ℹ</span>
+                        <span>
+                          {selectedRecipients.filter(r => !r.email).length} singers have no email configured and will skip this channel.
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedRecipients.some(r => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
+                      <div className="review-checklist-item info">
+                        <span className="review-checklist-icon" aria-hidden="true">ℹ</span>
+                        <span>
+                          {selectedRecipients.filter(r => !r.phone).length} singers have no phone configured and will skip this channel.
+                        </span>
+                      </div>
+                    )}
+
+                    {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
+                      <div className="review-checklist-item warning">
+                        <span className="review-checklist-icon" aria-hidden="true">⚠</span>
+                        <span>
+                          <strong>Default physical address active.</strong>{' '}
+                          Please{' '}
+                          <button
+                            type="button"
+                            className="review-inline-link"
+                            onClick={() => {
+                              setTab('settings');
+                              setEditingTemplate(null);
+                            }}
+                          >
+                            update this in settings
+                          </button>{' '}
+                          for CAN-SPAM legal compliance.
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="review-checklist-item success">
+                      <span className="review-checklist-icon" aria-hidden="true">✓</span>
+                      <span>Compliance footer will be attached.</span>
                     </div>
                   </div>
-                </div>
-              </AppCard>
+                </section>
+
+                {/* Card 3: Actions */}
+                <section className="review-card review-actions-card">
+                  <div className="review-action-row">
+                    <button
+                      type="button"
+                      className="review-button review-button-ghost review-button-back"
+                      onClick={() => setWizardStep('COMPOSE')}
+                    >
+                      ← Back
+                    </button>
+
+                    <button
+                      type="button"
+                      className="review-button review-button-ghost"
+                      onClick={handleSendTest}
+                      disabled={isSendingTest || isSending}
+                      title={`Send email test to ${user?.email || 'your email'}`}
+                    >
+                      <span aria-hidden="true">✉</span>
+                      {isSendingTest ? 'Sending test...' : 'Send test to me'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="review-button review-button-primary"
+                      onClick={sendMessage}
+                      disabled={isSending || selectedRecipients.length === 0}
+                    >
+                      <span aria-hidden="true">✉</span>
+                      {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} recipients`}
+                    </button>
+                  </div>
+                </section>
+              </aside>
             </div>
           )}
         </div>

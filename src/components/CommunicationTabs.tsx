@@ -12,8 +12,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   onTabChange,
   draftsCount,
 }) => {
-  const tabs: { value: CommunicationTab; label: string }[] = [
-    { value: 'compose', label: 'New Message' },
+  const secondaryTabs: { value: CommunicationTab; label: string }[] = [
     { value: 'automated', label: 'Automated' },
     { value: 'drafts', label: 'Drafts' },
     { value: 'history', label: 'History' },
@@ -22,38 +21,31 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 
   return (
     <div className="communication-tabs">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          className={`btn ${activeTab === tab.value ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => onTabChange(tab.value)}
-        >
-          {tab.label}
-          {tab.value === 'drafts' && draftsCount > 0 && (
-            <span
-              className="badge"
-              style={{
-                marginLeft: '6px',
-                backgroundColor: '#f59e0b',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '0.72rem',
-                minWidth: '18px',
-                height: '18px',
-                lineHeight: '18px',
-                padding: '0 5px',
-                borderRadius: '999px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {draftsCount}
-            </span>
-          )}
-        </button>
-      ))}
+      <div className="communication-tabs-secondary">
+        {secondaryTabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            className={`communication-tab-link ${activeTab === tab.value ? 'active' : ''}`}
+            onClick={() => onTabChange(tab.value)}
+          >
+            <span>{tab.label}</span>
+            {tab.value === 'drafts' && draftsCount > 0 && (
+              <span className="badge-count-bubble">{draftsCount}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className={`communication-tab-primary ${activeTab === 'compose' ? 'active' : ''}`}
+        onClick={() => onTabChange('compose')}
+      >
+        <span aria-hidden="true">+</span>
+        <span>New Message</span>
+      </button>
     </div>
   );
 };
+

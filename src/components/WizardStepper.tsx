@@ -19,25 +19,39 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
   onStepClick,
 }) => {
   return (
-    <div className="stepper-container">
-      {steps.map((step) => {
+    <div className="wizard-stepper" aria-label="Message creation progress">
+      {steps.map((step, index) => {
         const isCompleted = step.number < currentStep;
         const isActive = step.number === currentStep;
+        const isIncomplete = step.number > currentStep;
         const isDisabled = !isCompleted && !isActive && !step.isValid;
 
         return (
-          <button
-            key={step.number}
-            type="button"
-            disabled={isDisabled}
-            onClick={() => onStepClick(step.number)}
-            className={`step-btn ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-          >
-            <span className="step-number">{step.number}</span>
-            <span className="step-label">{step.label}</span>
-          </button>
+          <div key={step.id} className="wizard-stepper-item-wrap">
+            <button
+              type="button"
+              disabled={isDisabled}
+              className={[
+                'wizard-stepper-item',
+                isCompleted ? 'completed' : '',
+                isActive ? 'active' : '',
+                isIncomplete ? 'incomplete' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={() => onStepClick(step.number)}
+            >
+              <span className="wizard-stepper-circle">
+                {isCompleted ? '✓' : step.number}
+              </span>
+              <span className="wizard-stepper-label">{step.label}</span>
+            </button>
+
+            {index < steps.length - 1 && (
+              <span className="wizard-stepper-line" aria-hidden="true" />
+            )}
+          </div>
         );
       })}
     </div>
   );
 };
+
