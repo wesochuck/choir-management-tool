@@ -36,9 +36,8 @@ export default function PublicUnsubscribeView() {
         setStatus('success');
       } catch (err: unknown) {
         console.error('Unsubscribe error:', err);
-        const msg = err instanceof Error ? err.message : String(err);
         setStatus('error');
-        setErrorMessage(msg || 'Failed to process unsubscription. Please contact your choir administrator.');
+        setErrorMessage('This unsubscribe link is invalid or has expired. Please contact a choir administrator if you need help updating your message preferences.');
       }
     };
 

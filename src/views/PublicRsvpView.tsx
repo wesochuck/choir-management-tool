@@ -5,6 +5,7 @@ import { pb } from '../lib/pocketbase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { calendarUtils } from '../lib/calendar';
 import { formatInTimezone } from '../lib/timezone';
+import { useDialog } from '../contexts/DialogContext';
 
 interface EventDetails {
   id: string;
@@ -28,6 +29,7 @@ interface ProfileDetails {
 }
 
 export default function PublicRsvpView() {
+  const dialog = useDialog();
   const [searchParams] = useSearchParams();
   let token = searchParams.get('token') || '';
   const pParam = searchParams.get('p');
@@ -105,13 +107,9 @@ export default function PublicRsvpView() {
         }
 
         setStatus('success');
-      } catch (err: unknown) {
+      } catch {
         setStatus('error');
-        const errObj = err as { data?: { error?: string } } | null;
-        setErrorMessage(
-          errObj?.data?.error || 
-          'Failed to load secure RSVP details. The link may have expired or is invalid.'
-        );
+        setErrorMessage('This link is invalid or has expired. Please contact a choir administrator for a new link.');
       }
     };
 
@@ -131,7 +129,11 @@ export default function PublicRsvpView() {
       setIsConfirmed(true);
     } catch (err: unknown) {
       const errObj = err as { data?: { error?: string } } | null;
-      alert(errObj?.data?.error || 'Failed to record RSVP. Please try again.');
+      await dialog.showMessage({
+        title: 'Could not record RSVP',
+        message: errObj?.data?.error || 'Failed to record RSVP. Please try again.',
+        variant: 'danger',
+      });
     } finally {
       setIsUpdating(false);
     }

@@ -5,8 +5,10 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pollService, type PollDetails } from '../services/pollService';
 import { formatInTimezone } from '../lib/timezone';
 import { pb } from '../lib/pocketbase';
+import { useDialog } from '../contexts/DialogContext';
 
 export default function PublicPollView() {
+  const dialog = useDialog();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
 
@@ -66,7 +68,11 @@ export default function PublicPollView() {
       setSelectedResponse(val);
     } catch (err: unknown) {
       const errObj = err as { data?: { error?: string } } | null;
-      alert(errObj?.data?.error || 'Failed to record response. Please try again.');
+      await dialog.showMessage({
+        title: 'Could not record response',
+        message: errObj?.data?.error || 'Failed to record response. Please try again.',
+        variant: 'danger',
+      });
     } finally {
       setIsUpdating(false);
     }

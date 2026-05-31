@@ -1,4 +1,5 @@
 import PocketBase from 'pocketbase';
+import { shouldRedirectAuthErrorToLogin } from './authRedirect';
 
 type ViteEnv = Record<string, string | boolean | undefined> & { PROD?: boolean };
 
@@ -43,9 +44,13 @@ pb.afterSend = async (response, data) => {
     data?.message?.includes('loadAuthToken');
 
   if (isAuthError || isStaleToken400) {
-    console.warn("Stale or invalid session detected, clearing authStore.");
+    console.warn('Stale or invalid session detected, clearing authStore.');
     pb.authStore.clear();
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+
+    if (
+      typeof window !== 'undefined' &&
+      shouldRedirectAuthErrorToLogin(window.location.pathname)
+    ) {
       window.location.href = '/login';
     }
   }

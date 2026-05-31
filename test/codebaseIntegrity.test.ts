@@ -189,4 +189,12 @@ test('codebase integrity: no JSX IIFE anti-patterns in CommunicationView', () =>
   assert.ok(content.includes('<MessageHistory'), 'CommunicationView should use the MessageHistory component');
 });
 
+test('codebase integrity: PublicRsvpView does not use native alert dialogs', () => {
+  const file = resolveProjectPath('src/views/PublicRsvpView.tsx');
+  const content = fs.readFileSync(file, 'utf8');
+
+  assert.equal(content.includes('alert('), false);
+  assert.equal(content.includes('window.alert('), false);
+});
+
 
