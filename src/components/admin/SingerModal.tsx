@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
+import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { PhotoUploader } from '../common/PhotoUploader';
@@ -81,9 +81,45 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     onClose();
   };
 
+  const isValidEmail = (emailStr: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    const email = formData.email || '';
+    if (email.trim() && !isValidEmail(email.trim())) {
+      await dialog.showMessage({
+        title: 'Invalid Email Format',
+        message: 'Please enter a valid email address.',
+        variant: 'danger',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const hasExistingAccount = Boolean(initialData?.user);
+    const existingEmail = initialData ? getProfileEmail(initialData) : '';
+    const nextEmail = formData.email || '';
+    const willRemoveEmail = Boolean(existingEmail.trim()) && !nextEmail.trim();
+
+    if (hasExistingAccount && willRemoveEmail) {
+      const confirmed = await dialog.confirm({
+        title: 'Delete Member User Account?',
+        message: 'Clearing this email address completely deletes this user portal account. They will lose all login access. Proceed?',
+        confirmLabel: 'Delete Account',
+        cancelLabel: 'Cancel',
+        variant: 'danger',
+      });
+
+      if (!confirmed) {
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       await onSave(formData);
       onClose();

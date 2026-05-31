@@ -316,3 +316,66 @@ test('exportToCSV includes expanded user email and never undefined', () => {
   assert.doesNotMatch(csv, /undefined/);
 });
 
+test('profileService.createProfile with blank email does not create a users record and creates a profiles record with no linked user', async (t) => {
+  const originalCollection = pb.collection;
+
+  const mockCreateUser = t.mock.fn(async (payload: Record<string, unknown>) => {
+    return { id: 'user123', ...payload };
+  });
+
+  const mockCreateProfile = t.mock.fn(async (payload: Record<string, unknown>) => {
+    return { id: 'profile123', ...payload };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return {
+        create: mockCreateProfile,
+      } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return {
+        create: mockCreateUser,
+      } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    
+    const result = await profileService.createProfile({ name: 'No Email Singer', email: '' });
+    
+    assert.equal(mockCreateUser.mock.callCount(), 0);
+    assert.equal(mockCreateProfile.mock.callCount(), 1);
+    const createPayload = mockCreateProfile.mock.calls[0].arguments[0] as Record<string, unknown>;
+    assert.equal(createPayload.user, undefined);
+    assert.equal(result.name, 'No Email Singer');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('getProfileEmail returns empty string when user is null', () => {
+  const profile = {
+    ...baseProfileFixture,
+    user: null,
+    expand: {},
+  } as unknown as Profile;
+
+  assert.equal(getProfileEmail(profile), '');
+});
+
+test('email validation regex matches standard emails and rejects invalid ones', () => {
+  const isValidEmail = (emailStr: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  };
+
+  assert.equal(isValidEmail('test@example.com'), true);
+  assert.equal(isValidEmail('user.name+tag@domain.co.uk'), true);
+  assert.equal(isValidEmail('plainaddress'), false);
+  assert.equal(isValidEmail('@missingusername.com'), false);
+  assert.equal(isValidEmail('username@.missingdomain'), false);
+});
+
+

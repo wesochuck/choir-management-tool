@@ -3,7 +3,7 @@ import { retryOn429, type Retry429Options } from '../lib/networkSafety';
 import type { RecordModel } from 'pocketbase';
 
 export interface Profile extends RecordModel {
-  user: string;
+  user: string | null;
   name: string;
   phone: string;
   photo: string;

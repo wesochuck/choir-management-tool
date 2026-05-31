@@ -117,6 +117,42 @@ interface SentTaskStatusOptions {
   onRetry?: Retry429Options['onRetry'];
 }
 
+import { escapeHtml, sanitizeEmailSubject } from '../lib/textSafety';
+
+export function renderManualAttendanceReportSubject(params: {
+  template: string;
+  eventTitle: string;
+  eventDate: string;
+}): string {
+  return params.template
+    .replace(/{eventTitle}/g, () => sanitizeEmailSubject(params.eventTitle))
+    .replace(/{eventDate}/g, () => sanitizeEmailSubject(params.eventDate));
+}
+
+export function renderManualAttendanceReportTemplate(params: {
+  template: string;
+  eventTitle: string;
+  eventDate: string;
+  attendanceRate: string;
+  presentCount: number;
+  totalCount: number;
+  absenteeNames: string[];
+}): string {
+  const escapedAbsentees = params.absenteeNames.map(escapeHtml);
+  const safeAbsenteesList = escapedAbsentees.length > 0
+    ? escapedAbsentees.map((name) => `<li style="margin-bottom: 4px;">${name}</li>`).join('')
+    : '<li>None</li>';
+
+  return params.template
+    .replace(/{eventTitle}/g, () => escapeHtml(params.eventTitle))
+    .replace(/{eventDate}/g, () => escapeHtml(params.eventDate))
+    .replace(/{attendanceRate}/g, () => escapeHtml(params.attendanceRate))
+    .replace(/{presentCount}/g, () => escapeHtml(String(params.presentCount)))
+    .replace(/{totalCount}/g, () => escapeHtml(String(params.totalCount)))
+    .replace(/{absenteesList}/g, () => safeAbsenteesList)
+    .replace(/{thresholdWarningsSection}/g, () => '');
+}
+
 export const communicationService = {
   async getMessages() {
     return await pb.collection('messages').getFullList<MessageRecord>({
@@ -451,18 +487,22 @@ export const communicationService = {
 
     // Build Email Content
     const eventDateStr = new Date(event.date).toLocaleDateString();
-    const subject = commSettings.reportSubjectTemplate
-        .replace(/{eventTitle}/g, event.title || event.type)
-        .replace(/{eventDate}/g, eventDateStr);
 
-    const templateBody = commSettings.reportBodyTemplate
-        .replace(/{eventTitle}/g, event.title || event.type)
-        .replace(/{eventDate}/g, eventDateStr)
-        .replace(/{attendanceRate}/g, attendanceRate)
-        .replace(/{presentCount}/g, String(present))
-        .replace(/{totalCount}/g, String(total))
-        .replace(/{absenteesList}/g, absenteeNames.length > 0 ? absenteeNames.map(name => `<li style="margin-bottom: 4px;">${name}</li>`).join('') : '<li>None</li>')
-        .replace(/{thresholdWarningsSection}/g, ''); // Simplified for manual trigger
+    const subject = renderManualAttendanceReportSubject({
+      template: commSettings.reportSubjectTemplate,
+      eventTitle: event.title || event.type,
+      eventDate: eventDateStr,
+    });
+
+    const templateBody = renderManualAttendanceReportTemplate({
+      template: commSettings.reportBodyTemplate,
+      eventTitle: event.title || event.type,
+      eventDate: eventDateStr,
+      attendanceRate,
+      presentCount: present,
+      totalCount: total,
+      absenteeNames,
+    });
 
     const body = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
