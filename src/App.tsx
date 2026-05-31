@@ -3,31 +3,61 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { PageLayout } from './components/common/PageLayout';
 
-const LoginView = lazy(() => import('./views/LoginView'));
-const ResetPasswordView = lazy(() => import('./views/ResetPasswordView'));
-const RosterView = lazy(() => import('./views/admin/RosterView'));
-const EventsView = lazy(() => import('./views/admin/EventsView'));
-const EventRosterView = lazy(() => import('./views/admin/EventRosterView'));
-const VenuesView = lazy(() => import('./views/admin/VenuesView'));
-const SeatingView = lazy(() => import('./views/admin/SeatingView'));
-const AttendanceView = lazy(() => import('./views/admin/AttendanceView'));
-const AuditionsView = lazy(() => import('./views/admin/AuditionsView'));
-const SettingsView = lazy(() => import('./views/admin/SettingsView'));
-const CommunicationView = lazy(() => import('./views/admin/CommunicationView'));
-const SetListView = lazy(() => import('./views/admin/SetListView'));
-const ReportsView = lazy(() => import('./views/admin/ReportsView'));
-const MusicLibraryView = lazy(() => import('./views/admin/MusicLibraryView'));
-const AdminDashboardView = lazy(() => import('./views/admin/AdminDashboardView'));
-const PollsDashboardView = lazy(() => import('./views/admin/PollsDashboardView'));
-const RsvpDashboardView = lazy(() => import('./views/admin/RsvpDashboardView'));
-const SingerDashboardView = lazy(() => import('./views/singer/DashboardView'));
-const SeatingFinderView = lazy(() => import('./views/singer/SeatingFinderView'));
-const ProfileView = lazy(() => import('./views/singer/ProfileView'));
-const PublicAuditionView = lazy(() => import('./views/PublicAuditionView'));
-const PublicRsvpView = lazy(() => import('./views/PublicRsvpView'));
-const PublicPollView = lazy(() => import('./views/PublicPollView'));
-const PublicUnsubscribeView = lazy(() => import('./views/PublicUnsubscribeView'));
-const PublicPlayerView = lazy(() => import('./views/PublicPlayerView'));
+function lazyWithReload<T extends React.ComponentType<any>>(
+  importer: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await importer();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isChunkLoadError =
+        message.includes('Failed to fetch dynamically imported module') ||
+        message.includes('Importing a module script failed') ||
+        message.includes('Loading chunk') ||
+        message.includes('MIME type of "text/html"');
+
+      const now = Date.now();
+      const lastReload = Number(sessionStorage.getItem('chunk-load-timestamp') || '0');
+
+      if (isChunkLoadError && now - lastReload > 10000) {
+        sessionStorage.setItem('chunk-load-timestamp', String(now));
+        console.warn('Recovering from stale application chunk; refreshing once.', error);
+        window.location.reload();
+      }
+
+      console.error('Lazy-loaded route failed to load.', error);
+      throw error;
+    }
+  });
+}
+
+const LoginView = lazyWithReload(() => import('./views/LoginView'));
+const ResetPasswordView = lazyWithReload(() => import('./views/ResetPasswordView'));
+const RosterView = lazyWithReload(() => import('./views/admin/RosterView'));
+const EventsView = lazyWithReload(() => import('./views/admin/EventsView'));
+const EventRosterView = lazyWithReload(() => import('./views/admin/EventRosterView'));
+const VenuesView = lazyWithReload(() => import('./views/admin/VenuesView'));
+const SeatingView = lazyWithReload(() => import('./views/admin/SeatingView'));
+const AttendanceView = lazyWithReload(() => import('./views/admin/AttendanceView'));
+const AuditionsView = lazyWithReload(() => import('./views/admin/AuditionsView'));
+const SettingsView = lazyWithReload(() => import('./views/admin/SettingsView'));
+const CommunicationView = lazyWithReload(() => import('./views/admin/CommunicationView'));
+const SetListView = lazyWithReload(() => import('./views/admin/SetListView'));
+const ReportsView = lazyWithReload(() => import('./views/admin/ReportsView'));
+const MusicLibraryView = lazyWithReload(() => import('./views/admin/MusicLibraryView'));
+const AdminDashboardView = lazyWithReload(() => import('./views/admin/AdminDashboardView'));
+const PollsDashboardView = lazyWithReload(() => import('./views/admin/PollsDashboardView'));
+const RsvpDashboardView = lazyWithReload(() => import('./views/admin/RsvpDashboardView'));
+const SingerDashboardView = lazyWithReload(() => import('./views/singer/DashboardView'));
+const SeatingFinderView = lazyWithReload(() => import('./views/singer/SeatingFinderView'));
+const ProfileView = lazyWithReload(() => import('./views/singer/ProfileView'));
+const PublicAuditionView = lazyWithReload(() => import('./views/PublicAuditionView'));
+const PublicRsvpView = lazyWithReload(() => import('./views/PublicRsvpView'));
+const PublicPollView = lazyWithReload(() => import('./views/PublicPollView'));
+const PublicUnsubscribeView = lazyWithReload(() => import('./views/PublicUnsubscribeView'));
+const PublicPlayerView = lazyWithReload(() => import('./views/PublicPlayerView'));
+
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
@@ -60,11 +90,17 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
       return (
         <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>
           <h1>Something went wrong.</h1>
-          <p>Please refresh the page to try again.</p>
-          <button className="btn btn-primary" onClick={() => window.location.reload()}>Refresh</button>
+          <p>
+            The app may have been updated while your browser still had an older version cached.
+            Refresh the page to load the latest version.
+          </p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            Refresh Page
+          </button>
         </div>
       );
     }
+
     return this.props.children;
   }
 }

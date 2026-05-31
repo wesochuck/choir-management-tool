@@ -65,6 +65,8 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **No Type Suppression:** Do not silence type errors with `as any`, `// @ts-ignore`, `// eslint-disable`, or broad assertions unless the user explicitly approves it.
 *   **Typed Boundaries:** If a third-party API forces an untyped boundary, isolate it in a small adapter with a named type and a short comment explaining the boundary.
 *   **Verification:** Before finishing TypeScript work, run `npm run lint` or the relevant typecheck command and fix all `@typescript-eslint/no-explicit-any` violations introduced by the change.
+*   **Stale Asset Chunk Resilience (Lazy Loading):** When adding new route modules or lazy-loaded views, ALWAYS wrap the lazy-loading import statement using the `lazyWithReload(...)` helper defined in `src/App.tsx` instead of standard `lazy(...)`. This guarantees that if a redeployment deletes old hashed script assets, the application can recover automatically with a single session-cooldowned reload.
+
 
 ## Recurring Failure Prevention (MANDATORY)
 *   **Infrastructure Audit:** Every new agent MUST verify that `src/lib/pocketbase.ts` contains the `afterSend` interceptor for stale token resilience. If missing, implement it immediately before proceeding with any feature work.

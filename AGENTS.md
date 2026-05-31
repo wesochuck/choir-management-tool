@@ -118,3 +118,9 @@
     const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
     ```
+
+## Stale Asset Chunk Resilience (Lazy Loading)
+
+- **Standard Import Protection**: When creating new route modules or lazy-loaded views, ALWAYS wrap the lazy-loading import statement using the `lazyWithReload(...)` helper defined in `src/App.tsx` instead of standard React `lazy(...)`.
+- **Mitigation Rationale**: This guarantees that if a fresh deployment deletes old hashed script assets, the application can recover automatically with a single session-cooldowned page reload rather than getting stuck.
+
