@@ -41,6 +41,8 @@ function generate() {
     // Read root hooks
     const calendarEndpoint = fs.readFileSync(path.join(SRC_DIR, 'calendarEndpoint.ts'), 'utf8');
     const calendarJs = ts.transpileModule(calendarEndpoint, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ESNext, removeComments: false } }).outputText.replace(/^import .* from .*$/gm, '').replace(/^export /gm, '').replace(/export\s+\{[^}]*\};/g, '').trim();
+    const singerSeatingEndpoint = fs.readFileSync(path.join(SRC_DIR, 'singerSeatingEndpoint.ts'), 'utf8');
+    const singerSeatingJs = ts.transpileModule(singerSeatingEndpoint, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ESNext, removeComments: false } }).outputText.replace(/^import .* from .*$/gm, '').replace(/^export /gm, '').replace(/export\s+\{[^}]*\};/g, '').trim();
 
     const sharedUtils = `
 // --- SHARED UTILITIES ---
@@ -63,6 +65,8 @@ ${mailjetRenderer}
 ${queueProcessor}
 
 ${calendarJs}
+
+${singerSeatingJs}
 
 function getHmacSecret() {
     try {
@@ -301,6 +305,11 @@ routerAdd("POST", "/api/test-smtp", (e) => {
 routerAdd("GET", "/api/calendar/download", (e) => {
     ${sharedUtils}
     return handleCalendarDownload(e);
+});
+
+routerAdd("GET", "/api/singer/seating-profiles", (e) => {
+    ${sharedUtils}
+    return handleSingerSeatingProfiles(e);
 });
 `.trim();
 

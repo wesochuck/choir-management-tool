@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { PageLayout } from './components/common/PageLayout';
 
-function lazyWithReload<T extends React.ComponentType<any>>(
+function lazyWithReload<T extends React.ComponentType<Record<string, never>>>(
   importer: () => Promise<{ default: T }>
 ) {
   return lazy(async () => {

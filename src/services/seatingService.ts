@@ -13,6 +13,12 @@ export interface SeatingChart extends RecordModel {
   sortOrder?: number;
 }
 
+export interface SeatingSingerProfile {
+  id: string;
+  name: string;
+  voicePart: string;
+}
+
 export const seatingService = {
   async getChartsForPerformance(performanceId: string, venueId: string | null) {
     try {
@@ -72,6 +78,14 @@ export const seatingService = {
     return await pb.collection('pbc_seating_001').delete(id);
   },
 
+  async getSingerSeatingProfiles(performanceId: string, chartId: string): Promise<SeatingSingerProfile[]> {
+    const response = await pb.send<{ profiles?: SeatingSingerProfile[] }>('/api/singer/seating-profiles', {
+      method: 'GET',
+      query: { eventId: performanceId, chartId },
+    });
+    return response.profiles ?? [];
+  },
+
   /**
    * Proportional Seating Algorithm
    */
@@ -84,4 +98,3 @@ export const seatingService = {
     return calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, strategy);
   }
 };
-

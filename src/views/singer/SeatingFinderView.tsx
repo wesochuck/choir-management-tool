@@ -1,16 +1,24 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { type Profile } from '../../services/profileService';
+import { seatingService, type SeatingSingerProfile } from '../../services/seatingService';
 import './SeatingFinderView.css';
+
+type SingerDisplayProfile = Pick<Profile, 'id' | 'name' | 'voicePart'> | SeatingSingerProfile;
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
   const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
+  const [assignedSingerProfiles, setAssignedSingerProfiles] = useState<SeatingSingerProfile[]>([]);
 
   const event = events.find(e => e.id === eventId);
+  const venue = event?.expand?.venue;
+  const isOpenSeating = venue?.isOpenSeating;
+  const address = venue?.address;
 
   const { 
     chart, 
@@ -25,6 +33,38 @@ export default function SeatingFinderView() {
   } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
   const isLoading = eventsLoading || chartLoading;
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!eventId || !chart?.id || isOpenSeating) {
+      setAssignedSingerProfiles([]);
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    seatingService.getSingerSeatingProfiles(eventId, chart.id)
+      .then(profiles => {
+        if (!isCancelled) setAssignedSingerProfiles(profiles);
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to load seating profile names', err);
+        if (!isCancelled) setAssignedSingerProfiles([]);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [chart?.id, eventId, isOpenSeating]);
+
+  // Build a profile lookup map from available profile records plus limited seating display summaries.
+  const profilesById = useMemo(() => {
+    const map = new Map<string, SingerDisplayProfile>();
+    allProfiles.forEach(profile => map.set(profile.id, profile));
+    assignedSingerProfiles.forEach(profile => map.set(profile.id, profile));
+    return map;
+  }, [allProfiles, assignedSingerProfiles]);
 
   if (isLoading) {
     return (
@@ -48,10 +88,6 @@ export default function SeatingFinderView() {
     );
   }
 
-  const venue = event.expand?.venue;
-  const isOpenSeating = venue?.isOpenSeating;
-  const address = venue?.address;
-
   const myRoster = eventId ? myRosters[eventId] : undefined;
   const singerProfileId = myProfile?.id || myRoster?.profile || null;
 
@@ -69,9 +105,6 @@ export default function SeatingFinderView() {
   const [row, seat] = seatLocation
     ? seatLocation[0].split('-').map(Number)
     : [null, null];
-
-  // Build a profile lookup map from unfiltered profiles
-  const profilesById = new Map(allProfiles.map(profile => [profile.id, profile]));
 
   // Helper to get singer info
   const getSingerProfile = (singerId: string) => {
@@ -102,7 +135,7 @@ export default function SeatingFinderView() {
 
   type NeighborInfo =
     | { status: 'empty'; profile: null }
-    | { status: 'assigned'; profile: Profile }
+    | { status: 'assigned'; profile: SingerDisplayProfile }
     | { status: 'assignedUnknown'; profile: null };
 
   const getNeighborInfo = (singerId?: string): NeighborInfo => {

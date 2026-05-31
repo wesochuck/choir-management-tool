@@ -60,7 +60,7 @@ export interface PocketBaseRecord {
 
 export interface PocketBaseApp {
     findCollectionByNameOrId(nameOrId: string): unknown;
-    findFirstRecordByFilter(collection: string, filter: string): PocketBaseRecord;
+    findFirstRecordByFilter(collection: string, filter: string, params?: unknown): PocketBaseRecord;
     findRecordsByFilter(collection: string, filter: string, sort?: string, limit?: number, offset?: number, params?: unknown): PocketBaseRecord[];
     findRecordById(collection: string, id: string): PocketBaseRecord;
     save(record: PocketBaseRecord): void;
@@ -82,9 +82,9 @@ export interface PocketBaseRequestInfo {
 }
 
 export interface PocketBaseRequestEvent {
+    auth?: PocketBaseRecord;
     requestInfo(): PocketBaseRequestInfo;
     response: PocketBaseResponse;
     json(code: number, data: unknown): unknown;
     string(code: number, content: string): unknown;
 }
-
