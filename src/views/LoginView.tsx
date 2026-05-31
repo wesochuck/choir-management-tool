@@ -158,7 +158,7 @@ export default function LoginView() {
     try {
       await pb.collection('users').authWithOTP(otpId, otpCode.trim());
       navigate('/');
-    } catch (err: unknown) {
+    } catch {
       setError('Invalid or expired login code. Please check and try again.');
     } finally {
       setIsLoading(false);

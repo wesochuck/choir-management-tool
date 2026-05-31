@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { EventRosterTable } from '../src/components/admin/EventRosterTable';
+import { DialogProvider } from '../src/contexts/DialogContext';
 import type { Profile } from '../src/services/profileService';
 
 function createProfile(id: string, name: string, voicePart: string): Profile {
@@ -34,11 +35,15 @@ test('EventRosterTable renders event roster RSVP badge labels for each status', 
   ];
 
   const html = renderToStaticMarkup(
-    React.createElement(EventRosterTable, {
-      singers,
-      isUpdating: false,
-      onUpdateRSVP: async () => undefined,
-    })
+    React.createElement(
+      DialogProvider,
+      null,
+      React.createElement(EventRosterTable, {
+        singers,
+        isUpdating: false,
+        onUpdateRSVP: async () => undefined,
+      })
+    )
   );
 
   assert.equal(countOccurrences(html, '🟢 Attending'), 1);

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { updateProfilePhoto, deleteProfilePhoto, type Profile } from '../../services/profileService';
+import { useDialog } from '../../contexts/DialogContext';
 
 
 interface PhotoUploaderProps {
@@ -17,6 +18,12 @@ const SIZES = {
   lg: 120,
 };
 
+function revokeObjectUrl(url: string | null) {
+  if (url && url.startsWith('blob:')) {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   profileId,
   profileName,
@@ -26,10 +33,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   readOnlyOnDesktop = false,
 }) => {
   const px = SIZES[size];
+  const dialog = useDialog();
   const fileRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const previewObjectUrlRef = useRef<string | null>(null);
+  const displayObjectUrlRef = useRef<string | null>(null);
+  const cropSourceObjectUrlRef = useRef<string | null>(null);
 
   const [preview, setPreview] = useState<string | null>(null);
   const [rawFile, setRawFile] = useState<File | null>(null);
@@ -56,6 +68,9 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
   // Keep displayUrl in sync if the parent passes a new photo URL
   useEffect(() => {
+    revokeObjectUrl(displayObjectUrlRef.current);
+    displayObjectUrlRef.current = null;
+
     setDisplayUrl(currentPhotoUrl || '');
   }, [currentPhotoUrl]);
 
@@ -142,6 +157,20 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     };
   }, [showCamera, selectedDeviceId]);
 
+  // Unmount cleanup for object URLs
+  useEffect(() => {
+    return () => {
+      revokeObjectUrl(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = null;
+
+      revokeObjectUrl(displayObjectUrlRef.current);
+      displayObjectUrlRef.current = null;
+
+      revokeObjectUrl(cropSourceObjectUrlRef.current);
+      cropSourceObjectUrlRef.current = null;
+    };
+  }, []);
+
   // Drag and Drop event handlers
   const handleDragOver = (e: React.DragEvent) => {
     if (isMobile || readOnlyOnDesktop) return;
@@ -162,8 +191,10 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setRawFile(file);
-      const url = URL.createObjectURL(file);
-      setPreview(url);
+      revokeObjectUrl(previewObjectUrlRef.current);
+      const nextPreviewUrl = URL.createObjectURL(file);
+      previewObjectUrlRef.current = nextPreviewUrl;
+      setPreview(nextPreviewUrl);
       setShowCrop(true);
     }
   };
@@ -179,8 +210,10 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     setRawFile(file);
-    const url = URL.createObjectURL(file);
-    setPreview(url);
+    revokeObjectUrl(previewObjectUrlRef.current);
+    const nextPreviewUrl = URL.createObjectURL(file);
+    previewObjectUrlRef.current = nextPreviewUrl;
+    setPreview(nextPreviewUrl);
     setShowCrop(true);
     e.target.value = ''; // Reset input to allow re-selection
   };
@@ -191,8 +224,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       const fd = new FormData();
       fd.append('photo', file);
       const updated = await updateProfilePhoto(profileId, fd);
-      setDisplayUrl(URL.createObjectURL(file));
+      revokeObjectUrl(displayObjectUrlRef.current);
+      const nextDisplayUrl = URL.createObjectURL(file);
+      displayObjectUrlRef.current = nextDisplayUrl;
+      setDisplayUrl(nextDisplayUrl);
+
+      revokeObjectUrl(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = null;
       setPreview(null);
+
       setRawFile(null);
       setShowCrop(false);
       onSuccess?.(updated);
@@ -210,24 +250,52 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
   const handleCrop = async () => {
     if (!rawFile || !canvasRef.current) return;
+
+    revokeObjectUrl(cropSourceObjectUrlRef.current);
+
+    const sourceUrl = URL.createObjectURL(rawFile);
+    cropSourceObjectUrlRef.current = sourceUrl;
+
     const img = new Image();
+
     img.onload = async () => {
-      const canvas = canvasRef.current!;
-      const side = Math.min(img.width, img.height);
-      const cropX = (img.width - side) / 2;
-      const cropY = (img.height - side) / 2;
-      const outputSize = Math.min(side, 512);
-      canvas.width = outputSize;
-      canvas.height = outputSize;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, cropX, cropY, side, side, 0, 0, outputSize, outputSize);
-      canvas.toBlob(async (blob) => {
+      try {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const side = Math.min(img.width, img.height);
+        const cropX = (img.width - side) / 2;
+        const cropY = (img.height - side) / 2;
+        const outputSize = Math.min(side, 512);
+
+        canvas.width = outputSize;
+        canvas.height = outputSize;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.drawImage(img, cropX, cropY, side, side, 0, 0, outputSize, outputSize);
+
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, 'image/jpeg', 0.9);
+        });
+
         if (!blob) return;
-        const cropped = new File([blob], rawFile!.name, { type: 'image/jpeg' });
+
+        const cropped = new File([blob], rawFile.name, { type: 'image/jpeg' });
         await uploadFile(cropped);
-      }, 'image/jpeg', 0.9);
+      } finally {
+        revokeObjectUrl(cropSourceObjectUrlRef.current);
+        cropSourceObjectUrlRef.current = null;
+      }
     };
-    img.src = URL.createObjectURL(rawFile);
+
+    img.onerror = () => {
+      revokeObjectUrl(cropSourceObjectUrlRef.current);
+      cropSourceObjectUrlRef.current = null;
+    };
+
+    img.src = sourceUrl;
   };
 
   const handleCapture = () => {
@@ -254,7 +322,10 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         if (blob) {
           const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
           setRawFile(file);
-          setPreview(URL.createObjectURL(blob));
+          revokeObjectUrl(previewObjectUrlRef.current);
+          const nextPreviewUrl = URL.createObjectURL(blob);
+          previewObjectUrlRef.current = nextPreviewUrl;
+          setPreview(nextPreviewUrl);
           setShowCrop(true);
           
           if (streamRef.current) {
@@ -277,6 +348,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   };
 
   const handleCancel = () => {
+    revokeObjectUrl(previewObjectUrlRef.current);
+    previewObjectUrlRef.current = null;
+
+    revokeObjectUrl(cropSourceObjectUrlRef.current);
+    cropSourceObjectUrlRef.current = null;
+
     setPreview(null);
     setRawFile(null);
     setShowCrop(false);
@@ -285,19 +362,43 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const handleRemovePhoto = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to remove your profile photo?')) {
-      return;
-    }
+
+    const confirmed = await dialog.confirm({
+      title: 'Remove profile photo?',
+      message: 'Are you sure you want to remove your profile photo?',
+      confirmLabel: 'Remove photo',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
+
     setIsUploading(true);
     try {
       const updated = await deleteProfilePhoto(profileId);
+
+      revokeObjectUrl(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = null;
+
+      revokeObjectUrl(displayObjectUrlRef.current);
+      displayObjectUrlRef.current = null;
+
+      revokeObjectUrl(cropSourceObjectUrlRef.current);
+      cropSourceObjectUrlRef.current = null;
+
       setDisplayUrl('');
       setPreview(null);
       setRawFile(null);
       setShowCrop(false);
       onSuccess?.(updated);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to remove photo:', err);
+
+      await dialog.showMessage({
+        title: 'Could not remove photo',
+        message: 'The profile photo could not be removed. Please try again.',
+        variant: 'danger',
+      });
     } finally {
       setIsUploading(false);
     }
