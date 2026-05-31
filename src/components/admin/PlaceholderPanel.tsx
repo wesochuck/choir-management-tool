@@ -35,6 +35,7 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
 }) => {
   const visiblePlaceholders = PLACEHOLDERS.filter(p => {
     if (p.category === 'Recipient') return true;
+    if (p.tag.startsWith('{{POLL_LINK:')) return true; // Engagement polls don't require event context
     if (!hasEvent) return false;
     if (p.tag === '{{PLAYER_LINK}}') return hasApprovedSetList;
     return true;
