@@ -10,7 +10,7 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Mirrored grid row rendering */
@@ -35,7 +35,7 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 700;
-  width: 50px;
+  width: 56px;
   text-align: right;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -174,11 +174,6 @@
   user-select: none;
 }
 
-.orienter-badge.piano {
-  background-color: #f1f5f9;
-  color: #334155;
-  border-color: #cbd5e1;
-}
 
 /* Neighbors HUD styling */
 .neighbors-hud-container {

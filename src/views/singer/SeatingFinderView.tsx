@@ -105,22 +105,37 @@ export default function SeatingFinderView() {
     return activeProfiles.find(p => p.id === singerId) || null;
   };
 
+  type NeighborInfo =
+    | { status: 'empty'; profile: null }
+    | { status: 'assigned'; profile: Profile }
+    | { status: 'hidden'; profile: null };
+
+  const getNeighborInfo = (singerId?: string): NeighborInfo => {
+    if (!singerId) return { status: 'empty', profile: null };
+
+    const profile = getSingerProfile(singerId);
+    if (profile) return { status: 'assigned', profile };
+
+    return { status: 'hidden', profile: null };
+  };
+
   // Calculations for Standing Neighbors defensively
-  let leftSinger: Profile | null = null;
-  let rightSinger: Profile | null = null;
-  let behindSinger: Profile | null = null;
-  let inFrontSinger: Profile | null = null;
+  let leftNeighbor: NeighborInfo = { status: 'empty', profile: null };
+  let rightNeighbor: NeighborInfo = { status: 'empty', profile: null };
+  let behindNeighbor: NeighborInfo = { status: 'empty', profile: null };
+  let inFrontNeighbor: NeighborInfo = { status: 'empty', profile: null };
 
   if (row !== null && seat !== null) {
-    const leftId = visibleAssignments[`${row}-${seat - 1}`];
-    const rightId = visibleAssignments[`${row}-${seat + 1}`];
-    const behindId = visibleAssignments[`${row + 1}-${seat}`];
-    const inFrontId = visibleAssignments[`${row - 1}-${seat}`];
+    const rawAssignments = chart?.assignments || {};
+    const leftId = rawAssignments[`${row}-${seat - 1}`];
+    const rightId = rawAssignments[`${row}-${seat + 1}`];
+    const behindId = rawAssignments[`${row + 1}-${seat}`];
+    const inFrontId = rawAssignments[`${row - 1}-${seat}`];
 
-    if (leftId) leftSinger = getSingerProfile(leftId);
-    if (rightId) rightSinger = getSingerProfile(rightId);
-    if (behindId) behindSinger = getSingerProfile(behindId);
-    if (inFrontId) inFrontSinger = getSingerProfile(inFrontId);
+    leftNeighbor = getNeighborInfo(leftId);
+    rightNeighbor = getNeighborInfo(rightId);
+    behindNeighbor = getNeighborInfo(behindId);
+    inFrontNeighbor = getNeighborInfo(inFrontId);
   }
 
   return (
@@ -194,7 +209,7 @@ export default function SeatingFinderView() {
             </div>
           )}
         </AppCard>
-
+ 
         {!isOpenSeating && (
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
             <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
@@ -218,7 +233,7 @@ export default function SeatingFinderView() {
                           const initials = singerId ? getSingerInitials(singerId) : '';
                           const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
                           const profile = singerId ? getSingerProfile(singerId) : null;
-
+ 
                           return (
                             <div 
                               key={sIdx} 
@@ -244,12 +259,11 @@ export default function SeatingFinderView() {
                     </div>
                   ))}
                 </div>
-
+ 
                 {/* Stage Front Orienters graphic at the bottom of the stage view */}
                 <div className="stage-front-orienter">
                   <div className="stage-podium-arc"></div>
                   <div className="orienter-badges-wrapper">
-                    <span className="orienter-badge piano">🎹 Piano Accompanist</span>
                     <span className="orienter-badge">🎼 Director & Audience</span>
                   </div>
                 </div>
@@ -268,42 +282,66 @@ export default function SeatingFinderView() {
             <div className="neighbors-hud-container">
               
               {/* Left Neighbor */}
-              <div className={`neighbor-card ${!leftSinger ? 'empty' : ''}`}>
+              <div className={`neighbor-card ${leftNeighbor.status === 'empty' ? 'empty' : ''}`}>
                 <div className="neighbor-direction-icon">◀</div>
                 <div className="neighbor-details">
                   <span className="neighbor-label">Standing to your Left</span>
-                  <span className="neighbor-name">{leftSinger?.name || 'Empty Seat'}</span>
-                  {leftSinger && <span className="neighbor-part">{leftSinger.voicePart}</span>}
+                  <span className="neighbor-name">
+                    {leftNeighbor.status === 'empty'
+                      ? 'Empty Seat'
+                      : leftNeighbor.status === 'hidden'
+                        ? 'Assigned Singer'
+                        : leftNeighbor.profile.name}
+                  </span>
+                  {leftNeighbor.profile && <span className="neighbor-part">{leftNeighbor.profile.voicePart}</span>}
                 </div>
               </div>
 
               {/* Right Neighbor */}
-              <div className={`neighbor-card ${!rightSinger ? 'empty' : ''}`}>
+              <div className={`neighbor-card ${rightNeighbor.status === 'empty' ? 'empty' : ''}`}>
                 <div className="neighbor-direction-icon">▶</div>
                 <div className="neighbor-details">
                   <span className="neighbor-label">Standing to your Right</span>
-                  <span className="neighbor-name">{rightSinger?.name || 'Empty Seat'}</span>
-                  {rightSinger && <span className="neighbor-part">{rightSinger.voicePart}</span>}
+                  <span className="neighbor-name">
+                    {rightNeighbor.status === 'empty'
+                      ? 'Empty Seat'
+                      : rightNeighbor.status === 'hidden'
+                        ? 'Assigned Singer'
+                        : rightNeighbor.profile.name}
+                  </span>
+                  {rightNeighbor.profile && <span className="neighbor-part">{rightNeighbor.profile.voicePart}</span>}
                 </div>
               </div>
 
               {/* Behind Neighbor */}
-              <div className={`neighbor-card ${!behindSinger ? 'empty' : ''}`}>
+              <div className={`neighbor-card ${behindNeighbor.status === 'empty' ? 'empty' : ''}`}>
                 <div className="neighbor-direction-icon">▲</div>
                 <div className="neighbor-details">
                   <span className="neighbor-label">Standing Behind you</span>
-                  <span className="neighbor-name">{behindSinger?.name || 'Empty Seat'}</span>
-                  {behindSinger && <span className="neighbor-part">{behindSinger.voicePart}</span>}
+                  <span className="neighbor-name">
+                    {behindNeighbor.status === 'empty'
+                      ? 'Empty Seat'
+                      : behindNeighbor.status === 'hidden'
+                        ? 'Assigned Singer'
+                        : behindNeighbor.profile.name}
+                  </span>
+                  {behindNeighbor.profile && <span className="neighbor-part">{behindNeighbor.profile.voicePart}</span>}
                 </div>
               </div>
 
               {/* In Front Neighbor */}
-              <div className={`neighbor-card ${!inFrontSinger ? 'empty' : ''}`}>
+              <div className={`neighbor-card ${inFrontNeighbor.status === 'empty' ? 'empty' : ''}`}>
                 <div className="neighbor-direction-icon">▼</div>
                 <div className="neighbor-details">
                   <span className="neighbor-label">Standing in Front of you</span>
-                  <span className="neighbor-name">{inFrontSinger?.name || 'Empty Seat'}</span>
-                  {inFrontSinger && <span className="neighbor-part">{inFrontSinger.voicePart}</span>}
+                  <span className="neighbor-name">
+                    {inFrontNeighbor.status === 'empty'
+                      ? 'Empty Seat'
+                      : inFrontNeighbor.status === 'hidden'
+                        ? 'Assigned Singer'
+                        : inFrontNeighbor.profile.name}
+                  </span>
+                  {inFrontNeighbor.profile && <span className="neighbor-part">{inFrontNeighbor.profile.voicePart}</span>}
                 </div>
               </div>
 
