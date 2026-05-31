@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, type Profile } from '../src/services/profileService.ts';
+import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, getProfileEmail, type Profile } from '../src/services/profileService.ts';
 
 
 type CollectionMock = ReturnType<typeof pb.collection>;
@@ -246,5 +246,73 @@ test('profileService.updateProfile deletes user login when email is empty', asyn
   } finally {
     pb.collection = originalCollection;
   }
+});
+
+const baseProfileFixture = {
+  id: 'profile1',
+  collectionId: 'profiles',
+  collectionName: 'profiles',
+  created: '2026-01-01 00:00:00.000Z',
+  updated: '2026-01-01 00:00:00.000Z',
+  user: 'user1',
+  name: 'Jane Singer',
+  phone: '555-0100',
+  photo: '',
+  voicePart: 'S1',
+  globalStatus: 'Active',
+  notes: '',
+} satisfies Profile;
+
+test('getProfileEmail returns expanded user email', () => {
+  const profile = {
+    ...baseProfileFixture,
+    expand: {
+      user: {
+        id: 'user1',
+        collectionId: 'users',
+        collectionName: 'users',
+        created: '2026-01-01 00:00:00.000Z',
+        updated: '2026-01-01 00:00:00.000Z',
+        email: 'jane@example.org',
+        name: 'Jane Singer',
+        role: 'singer',
+      },
+    },
+  } satisfies Profile;
+
+  assert.equal(getProfileEmail(profile), 'jane@example.org');
+});
+
+test('getProfileEmail returns empty string without expanded user', () => {
+  assert.equal(getProfileEmail(baseProfileFixture), '');
+});
+
+test('exportToCSV includes expanded user email and never undefined', () => {
+  const csv = exportToCSV([
+    {
+      ...baseProfileFixture,
+      expand: {
+        user: {
+          id: 'user1',
+          collectionId: 'users',
+          collectionName: 'users',
+          created: '2026-01-01 00:00:00.000Z',
+          updated: '2026-01-01 00:00:00.000Z',
+          email: 'jane@example.org',
+          name: 'Jane Singer',
+          role: 'singer',
+        },
+      },
+    },
+    {
+      ...baseProfileFixture,
+      id: 'profile2',
+      user: '',
+      name: 'No Login Singer',
+    },
+  ]);
+
+  assert.match(csv, /jane@example\.org/);
+  assert.doesNotMatch(csv, /undefined/);
 });
 

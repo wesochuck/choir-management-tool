@@ -177,8 +177,12 @@ function escapeCsvField(value: unknown): string {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+export function getProfileEmail(profile: Profile): string {
+  return profile.expand?.user?.email || '';
+}
+
 function profileToCsvRow(profile: Profile): string {
-  const email = profile.email || profile.expand?.user?.email || '';
+  const email = getProfileEmail(profile);
   return [
     escapeCsvField(profile.name),
     escapeCsvField(email),

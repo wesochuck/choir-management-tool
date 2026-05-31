@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { profileService, type Profile, type ProfileInput } from '../services/profileService';
+import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../services/profileService';
 import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
 import { getHttpStatus, type Retry429Options } from '../lib/networkSafety';
@@ -47,22 +47,30 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
   }, [fetchProfiles]);
 
   const unfilteredByVoicePartProfiles = useMemo(() => {
+    const query = filters.name.trim().toLowerCase();
+
     return profiles.filter((p) => {
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
-      const matchesNameOrEmail = !filters.name || 
-        p.name.toLowerCase().includes(filters.name.toLowerCase()) ||
-        (p.email || p.expand?.user?.email || '').toLowerCase().includes(filters.name.toLowerCase());
+      const matchesNameOrEmail =
+        !query ||
+        p.name.toLowerCase().includes(query) ||
+        getProfileEmail(p).toLowerCase().includes(query);
+
       return matchesStatus && matchesNameOrEmail;
     });
   }, [profiles, filters.status, filters.name]);
 
   const filteredProfiles = useMemo(() => {
+    const query = filters.name.trim().toLowerCase();
+
     return profiles.filter((p) => {
       const matchesVoice = matchesVoiceParts(p.voicePart, filters.voiceParts, voiceParts);
       const matchesStatus = !filters.status || p.globalStatus === filters.status;
-      const matchesNameOrEmail = !filters.name || 
-        p.name.toLowerCase().includes(filters.name.toLowerCase()) ||
-        (p.email || p.expand?.user?.email || '').toLowerCase().includes(filters.name.toLowerCase());
+      const matchesNameOrEmail =
+        !query ||
+        p.name.toLowerCase().includes(query) ||
+        getProfileEmail(p).toLowerCase().includes(query);
+
       return matchesVoice && matchesStatus && matchesNameOrEmail;
     });
   }, [profiles, filters, voiceParts]);
