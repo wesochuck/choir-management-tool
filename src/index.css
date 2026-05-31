@@ -277,9 +277,13 @@ button {
   font-family: inherit;
 }
 
-/* Base Accessibility - Large tap targets */
-button, a, input, select {
+/* Base Accessibility - Large tap targets & auto-zoom prevention */
+button, a, input, select, textarea {
   min-height: 44px;
+}
+
+input, select, textarea {
+  font-size: 16px; /* Prevents auto-zoom on iOS Safari */
 }
 
 /* Custom Dropdown Styling to support Safari macOS/iOS and other platforms natively */

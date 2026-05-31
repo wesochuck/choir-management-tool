@@ -10,8 +10,7 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  overflow-x: visible;
-  overflow-y: hidden;
+  overflow: hidden;
 }
 
 /* Mirrored grid row rendering */
@@ -22,6 +21,13 @@
   width: 100%;
   margin-bottom: var(--space-xl);
   align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.stage-rows-wrapper::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
 }
 
 .stage-row {
