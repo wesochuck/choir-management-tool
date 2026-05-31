@@ -1,22 +1,17 @@
-import { useEffect, useState } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
-import { profileService, type Profile } from '../../services/profileService';
+import { type Profile } from '../../services/profileService';
 import './SeatingFinderView.css';
 
 export default function SeatingFinderView() {
   const { eventId } = useParams();
-  const { events, isLoading: eventsLoading } = useMyEvents();
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-
-  useEffect(() => {
-    profileService.getMyProfile().then(setMyProfile).catch(console.error);
-  }, []);
+  const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
 
   const event = events.find(e => e.id === eventId);
+
   const { 
     chart, 
     charts, 
@@ -31,14 +26,57 @@ export default function SeatingFinderView() {
 
   const isLoading = eventsLoading || chartLoading;
 
-  if (!event) return <div className="container" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Event not found.</div>;
+  if (isLoading) {
+    return (
+      <div
+        className="container"
+        style={{ padding: 'var(--space-xl)', textAlign: 'center' }}
+      >
+        Loading Seating Assignment...
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div
+        className="container"
+        style={{ padding: 'var(--space-xl)', textAlign: 'center' }}
+      >
+        Event not found.
+      </div>
+    );
+  }
 
   const venue = event.expand?.venue;
   const isOpenSeating = venue?.isOpenSeating;
   const address = venue?.address;
 
-  const seatLocation = myProfile ? Object.entries(chart?.assignments || {}).find(([, id]) => id === myProfile.id) : null;
-  const [row, seat] = seatLocation ? seatLocation[0].split('-').map(Number) : [null, null];
+  const myRoster = eventId ? myRosters[eventId] : undefined;
+  const myRsvp = myRoster?.rsvp || 'Pending';
+  const hasRsvpedYes = myRsvp === 'Yes';
+
+  const activeProfileIds = new Set(activeProfiles.map(p => p.id));
+  const visibleAssignments = Object.fromEntries(
+    Object.entries(chart?.assignments || {}).filter(([, singerId]) =>
+      activeProfileIds.has(singerId)
+    )
+  );
+
+  const noAssignmentMessage = !myProfile
+    ? 'No singer profile found for your login. Check with your director to connect your account.'
+    : !hasRsvpedYes
+      ? 'Seat assignments are only shown after you RSVP Yes for this event. Update your RSVP, or check with your director if you believe this is wrong.'
+      : 'No seat assignment has been published for your profile yet. Check with your director if you expected one.';
+
+  const seatLocation =
+    myProfile && hasRsvpedYes
+      ? Object.entries(visibleAssignments).find(([, id]) => id === myProfile.id)
+      : null;
+
+  const [row, seat] = seatLocation
+    ? seatLocation[0].split('-').map(Number)
+    : [null, null];
 
   // Helper to extract singer initials
   const getSingerInitials = (singerId: string) => {
@@ -73,11 +111,11 @@ export default function SeatingFinderView() {
   let behindSinger: Profile | null = null;
   let inFrontSinger: Profile | null = null;
 
-  if (row !== null && seat !== null && chart?.assignments) {
-    const leftId = chart.assignments[`${row}-${seat - 1}`];
-    const rightId = chart.assignments[`${row}-${seat + 1}`];
-    const behindId = chart.assignments[`${row + 1}-${seat}`];
-    const inFrontId = chart.assignments[`${row - 1}-${seat}`];
+  if (row !== null && seat !== null) {
+    const leftId = visibleAssignments[`${row}-${seat - 1}`];
+    const rightId = visibleAssignments[`${row}-${seat + 1}`];
+    const behindId = visibleAssignments[`${row + 1}-${seat}`];
+    const inFrontId = visibleAssignments[`${row - 1}-${seat}`];
 
     if (leftId) leftSinger = getSingerProfile(leftId);
     if (rightId) rightSinger = getSingerProfile(rightId);
@@ -152,7 +190,7 @@ export default function SeatingFinderView() {
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: 'var(--space-md)' }}>
-              <p className="text-muted">No assignment found for your profile yet. Check with your director!</p>
+              <p className="text-muted">{noAssignmentMessage}</p>
             </div>
           )}
         </AppCard>
@@ -175,8 +213,8 @@ export default function SeatingFinderView() {
                       
                       <div className="flex-row" style={{ gap: '10px' }}>
                         {Array.from({ length: count }).map((_, sIdx) => {
-                          const singerId = chart?.assignments[`${rIdx}-${sIdx}`];
-                          const isMySeat = singerId === myProfile?.id;
+                          const singerId = visibleAssignments[`${rIdx}-${sIdx}`];
+                          const isMySeat = hasRsvpedYes && singerId === myProfile?.id;
                           const initials = singerId ? getSingerInitials(singerId) : '';
                           const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
                           const profile = singerId ? getSingerProfile(singerId) : null;
@@ -191,7 +229,7 @@ export default function SeatingFinderView() {
                                 backgroundColor: singerId ? singerColor : 'white',
                               }}
                             >
-                              {initials || sIdx + 1}
+                              {initials || ''}
                               {profile && (
                                 <div className="seat-tooltip">
                                   {profile.name} ({profile.voicePart})
