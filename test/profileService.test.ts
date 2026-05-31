@@ -378,4 +378,227 @@ test('email validation regex matches standard emails and rejects invalid ones', 
   assert.equal(isValidEmail('username@.missingdomain'), false);
 });
 
+test('profileService.updateProfile clear email - save-order sequence', async (t) => {
+  const originalCollection = pb.collection;
+  const callOrder: string[] = [];
+
+  const mockGetOne = t.mock.fn(async (id: string) => {
+    return { id, name: 'John Doe', user: 'user123' };
+  });
+
+  const mockUpdateProfile = t.mock.fn(async (id: string, payload: Record<string, unknown>) => {
+    callOrder.push('profiles.update');
+    return { id, ...payload };
+  });
+
+  const mockDeleteUser = t.mock.fn(async () => {
+    callOrder.push('users.delete');
+    return true;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { getOne: mockGetOne, update: mockUpdateProfile } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return { delete: mockDeleteUser } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    const updated = await profileService.updateProfile('profile123', { name: 'John Doe', email: '' });
+
+    assert.deepEqual(callOrder, ['profiles.update', 'users.delete']);
+    assert.equal(updated.user, null);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('profileService.updateProfile clear email - profile update fails (no user delete)', async (t) => {
+  const originalCollection = pb.collection;
+  const mockGetOne = t.mock.fn(async (id: string) => {
+    return { id, name: 'John Doe', user: 'user123' };
+  });
+
+  const mockUpdateProfile = t.mock.fn(async () => {
+    throw new Error('Database Error');
+  });
+
+  const mockDeleteUser = t.mock.fn(async () => {
+    return true;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { getOne: mockGetOne, update: mockUpdateProfile } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return { delete: mockDeleteUser } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    await assert.rejects(
+      profileService.updateProfile('profile123', { name: 'John Doe', email: '' }),
+      /Database Error/
+    );
+    assert.equal(mockDeleteUser.mock.callCount(), 0);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('profileService.updateProfile singer without login -> add email succeeds', async (t) => {
+  const originalCollection = pb.collection;
+  const callOrder: string[] = [];
+
+  const mockGetOne = t.mock.fn(async (id: string) => {
+    return { id, name: 'John Doe', user: '' };
+  });
+
+  const mockCreateUser = t.mock.fn(async (payload: Record<string, unknown>) => {
+    callOrder.push('users.create');
+    return { id: 'new_user_id', ...payload };
+  });
+
+  const mockRequestPasswordReset = t.mock.fn(async () => {
+    callOrder.push('users.requestPasswordReset');
+    return true;
+  });
+
+  const mockUpdateProfile = t.mock.fn(async (id: string, payload: Record<string, unknown>) => {
+    callOrder.push('profiles.update');
+    return { id, ...payload };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { getOne: mockGetOne, update: mockUpdateProfile } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return {
+        create: mockCreateUser,
+        requestPasswordReset: mockRequestPasswordReset,
+      } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    const updated = await profileService.updateProfile('profile123', { name: 'John Doe', email: 'new@example.com' });
+
+    assert.deepEqual(callOrder, ['users.create', 'users.requestPasswordReset', 'profiles.update']);
+    assert.equal(updated.user, 'new_user_id');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('profileService.updateProfile singer without login -> add email -> password reset fails (user rolled back)', async (t) => {
+  const originalCollection = pb.collection;
+  const callOrder: string[] = [];
+
+  const mockGetOne = t.mock.fn(async (id: string) => {
+    return { id, name: 'John Doe', user: '' };
+  });
+
+  const mockCreateUser = t.mock.fn(async (payload: Record<string, unknown>) => {
+    callOrder.push('users.create');
+    return { id: 'new_user_id', ...payload };
+  });
+
+  const mockRequestPasswordReset = t.mock.fn(async () => {
+    throw new Error('SMTP Error');
+  });
+
+  const mockDeleteUser = t.mock.fn(async (id: string) => {
+    callOrder.push(`users.delete:${id}`);
+    return true;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { getOne: mockGetOne } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return {
+        create: mockCreateUser,
+        requestPasswordReset: mockRequestPasswordReset,
+        delete: mockDeleteUser,
+      } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    await assert.rejects(
+      profileService.updateProfile('profile123', { name: 'John Doe', email: 'new@example.com' }),
+      /SMTP Error/
+    );
+    assert.deepEqual(callOrder, ['users.create', 'users.delete:new_user_id']);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('profileService.updateProfile singer without login -> add email -> profile update fails (user rolled back)', async (t) => {
+  const originalCollection = pb.collection;
+  const callOrder: string[] = [];
+
+  const mockGetOne = t.mock.fn(async (id: string) => {
+    return { id, name: 'John Doe', user: '' };
+  });
+
+  const mockCreateUser = t.mock.fn(async (payload: Record<string, unknown>) => {
+    callOrder.push('users.create');
+    return { id: 'new_user_id', ...payload };
+  });
+
+  const mockRequestPasswordReset = t.mock.fn(async () => {
+    callOrder.push('users.requestPasswordReset');
+    return true;
+  });
+
+  const mockUpdateProfile = t.mock.fn(async () => {
+    throw new Error('Database Write Lock');
+  });
+
+  const mockDeleteUser = t.mock.fn(async (id: string) => {
+    callOrder.push(`users.delete:${id}`);
+    return true;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { getOne: mockGetOne, update: mockUpdateProfile } as unknown as CollectionMock;
+    }
+    if (name === 'users') {
+      return {
+        create: mockCreateUser,
+        requestPasswordReset: mockRequestPasswordReset,
+        delete: mockDeleteUser,
+      } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const { profileService } = await import('../src/services/profileService.ts');
+    await assert.rejects(
+      profileService.updateProfile('profile123', { name: 'John Doe', email: 'new@example.com' }),
+      /Database Write Lock/
+    );
+    assert.deepEqual(callOrder, ['users.create', 'users.requestPasswordReset', 'users.delete:new_user_id']);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
 

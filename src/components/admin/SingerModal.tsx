@@ -124,9 +124,13 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       await onSave(formData);
       onClose();
     } catch (err: unknown) {
+      let customMessage = formatPocketBaseError(err);
+      if (willRemoveEmail) {
+        customMessage = `Could not remove the login account. The singer profile was not changed. (${customMessage})`;
+      }
       await dialog.showMessage({
         title: 'Could Not Save Singer',
-        message: formatPocketBaseError(err),
+        message: customMessage,
       });
     } finally {
       setIsLoading(false);

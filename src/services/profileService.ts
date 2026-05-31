@@ -125,37 +125,63 @@ export const profileService = {
   async updateProfile(id: string, data: ProfileInput) {
     const { email, role, profile } = splitProfileInput(data);
     const current = await pb.collection('profiles').getOne<Profile>(id, { expand: 'user' });
-    let userId = current.user;
 
-    if (email === "") {
-      if (userId) {
-        await pb.collection('users').delete(userId).catch(() => undefined);
-        userId = '';
+    const currentUserId = current.user || '';
+    let nextUserId = currentUserId;
+    let userIdToDeleteAfterProfileUpdate = '';
+    let newlyCreatedUserId = '';
+
+    try {
+      if (email === '') {
+        if (currentUserId) {
+          nextUserId = '';
+          userIdToDeleteAfterProfileUpdate = currentUserId;
+        }
+      } else if (email) {
+        if (currentUserId) {
+          await pb.collection('users').update<UserAccount>(currentUserId, {
+            name: profile.name || current.name,
+            email,
+            role: role || 'singer',
+          });
+        } else {
+          const password = generateRandomPassword();
+          const user = await pb.collection('users').create<UserAccount>({
+            email,
+            password,
+            passwordConfirm: password,
+            role: role || 'singer',
+            name: profile.name || current.name || email,
+          });
+
+          nextUserId = user.id;
+          newlyCreatedUserId = user.id;
+
+          // Keep this inside the rollback boundary. If it fails, remove the new auth user.
+          await pb.collection('users').requestPasswordReset(email);
+        }
       }
-    } else if (email) {
-      if (userId) {
-        const userPayload: Partial<UserAccount> = {
-          name: profile.name || current.name,
-          email: email,
-          role: role || 'singer',
-        };
-        await pb.collection('users').update<UserAccount>(userId, userPayload);
-      } else {
-        const password = generateRandomPassword();
-        const user = await pb.collection('users').create<UserAccount>({
-          email,
-          password,
-          passwordConfirm: password,
-          role: role || 'singer',
-          name: profile.name || current.name || email,
-        });
-        userId = user.id;
-        // Automatically send the password setup email for the new user account
-        await pb.collection('users').requestPasswordReset(email);
+
+      // PocketBase reliably clears single relation fields with null.
+      const updatedProfile = await pb.collection('profiles').update<Profile>(id, {
+        ...profile,
+        user: nextUserId || null,
+      });
+
+      // Delete the old login only after the profile successfully drops the relation.
+      if (userIdToDeleteAfterProfileUpdate) {
+        await pb.collection('users').delete(userIdToDeleteAfterProfileUpdate).catch(() => undefined);
       }
+
+      return updatedProfile;
+    } catch (err) {
+      // Clean up newly created auth accounts if password reset or profile update fails.
+      if (newlyCreatedUserId) {
+        await pb.collection('users').delete(newlyCreatedUserId).catch(() => undefined);
+      }
+
+      throw err;
     }
-
-    return await pb.collection('profiles').update<Profile>(id, { ...profile, user: userId || null });
   },
 
   async deleteProfile(id: string) {
