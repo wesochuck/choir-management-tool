@@ -434,5 +434,125 @@ describe('playerService', () => {
       assert.strictEqual(result.files[0].trackKey, 'tutti');
       assert.strictEqual(result.files[0].availableTracks?.tutti, 'tutti.mp3');
     });
+
+    it('handles malformed parent mapping without throwing (Case A)', async () => {
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: [
+            { id: 'item1', type: 'piece', pieceId: 'piece-1', title: 'Broken Mapping Piece' }
+          ],
+          voiceParts: [],
+          pieces: [
+            {
+              id: 'piece-1',
+              title: 'Broken Mapping Piece',
+              audioTrackMapping: '{"tutti": "track.mp3"', // missing closing brace
+              collectionId: 'pbc_music_library_001',
+              collectionName: 'musicLibrary',
+            }
+          ]
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+      // The broken piece produces no playable file unless child movement tracks are valid.
+      assert.strictEqual(result.files.length, 0);
+    });
+
+    it('falls through to valid movement mappings when parent mapping is malformed (Case B)', async () => {
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: [
+            { id: 'item1', type: 'piece', pieceId: 'parent-1', title: 'Parent Piece' }
+          ],
+          voiceParts: [],
+          pieces: [
+            {
+              id: 'parent-1',
+              title: 'Parent Piece',
+              audioTrackMapping: '{"bad"',
+              collectionId: 'pbc_music_library_001',
+              collectionName: 'musicLibrary',
+            },
+            {
+              id: 'mvt-1',
+              parentId: 'parent-1',
+              title: 'Movement 1',
+              audioTrackMapping: '{"tutti":"movement.mp3"}',
+              collectionId: 'pbc_music_library_001',
+              collectionName: 'musicLibrary',
+            }
+          ]
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(result.files[0].pieceId, 'mvt-1');
+      assert.strictEqual(result.files[0].trackKey, 'tutti');
+      assert.strictEqual(result.files[0].streamUrl.includes('movement.mp3'), true);
+    });
+
+    it('decodes Goja byte-array mapping (Case C)', async () => {
+      const mappingString = JSON.stringify({ tutti: 'track.mp3' });
+      const gojaBytes = Array.from(mappingString).map((char) => char.charCodeAt(0));
+
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: [
+            { id: 'item1', type: 'piece', pieceId: 'piece-1', title: 'Goja Piece' }
+          ],
+          voiceParts: [],
+          pieces: [
+            {
+              id: 'piece-1',
+              title: 'Goja Piece',
+              audioTrackMapping: gojaBytes,
+              collectionId: 'pbc_music_library_001',
+              collectionName: 'musicLibrary',
+            }
+          ]
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(result.files[0].availableTracks?.tutti, 'track.mp3');
+    });
+
+    it('ignores non-string mapping values (Case D)', async () => {
+      pb.send = (async <T>(): Promise<T> => {
+        return {
+          event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
+          setList: [
+            { id: 'item1', type: 'piece', pieceId: 'piece-1', title: 'Mixed Piece' }
+          ],
+          voiceParts: [],
+          pieces: [
+            {
+              id: 'piece-1',
+              title: 'Mixed Piece',
+              audioTrackMapping: {
+                tutti: 123,
+                S1: 'soprano.mp3',
+                empty: '',
+              },
+              collectionId: 'pbc_music_library_001',
+              collectionName: 'musicLibrary',
+            }
+          ]
+        } as unknown as T;
+      }) as typeof pb.send;
+
+      const result = await playerService.fetchPlaylistByToken('some-token');
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(result.files[0].trackKey, 'S1');
+      assert.strictEqual(result.files[0].availableTracks?.S1, 'soprano.mp3');
+      assert.strictEqual(result.files[0].availableTracks?.tutti, undefined);
+      assert.strictEqual(result.files[0].availableTracks?.empty, undefined);
+    });
   });
 });

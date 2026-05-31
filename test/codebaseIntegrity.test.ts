@@ -197,4 +197,21 @@ test('codebase integrity: PublicRsvpView does not use native alert dialogs', () 
   assert.equal(content.includes('window.alert('), false);
 });
 
+test('codebase integrity: playerService uses defensive audioTrackMapping parsing', () => {
+  const serviceFile = resolveProjectPath('src/services/playerService.ts');
+  const content = fs.readFileSync(serviceFile, 'utf8');
+
+  assert.equal(
+    content.includes('JSON.parse(rawMapping)'),
+    false,
+    'playerService must not directly JSON.parse raw audioTrackMapping values'
+  );
+
+  assert.equal(
+    content.includes('JSON.parse(rawMMapping)'),
+    false,
+    'playerService must not directly JSON.parse movement audioTrackMapping values'
+  );
+});
+
 

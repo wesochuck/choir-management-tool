@@ -35,6 +35,22 @@ export interface PlayerPlaylist {
   allPieces: MusicPiece[];
 }
 
+function parseAudioTrackMapping(value: unknown): Record<string, string> {
+  const parsed = parseJsonField<Record<string, unknown>>(value);
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(parsed).filter((entry): entry is [string, string] => (
+      typeof entry[0] === 'string' &&
+      typeof entry[1] === 'string' &&
+      entry[1].trim() !== ''
+    ))
+  );
+}
+
 function normalizeSetListTitle(title: string | undefined): string {
   if (!title) return '';
   return title
@@ -74,8 +90,7 @@ function buildFilesFromPiece(
   piece: MusicPiece,
   allPieces: MusicPiece[]
 ): PlayerMediaFile[] {
-  const rawMapping = piece.audioTrackMapping || {};
-  const mapping: Record<string, string> = typeof rawMapping === 'string' ? JSON.parse(rawMapping) : rawMapping;
+  const mapping = parseAudioTrackMapping(piece.audioTrackMapping);
   const hasOwnTracks = Object.keys(mapping).length > 0;
 
   if (hasOwnTracks) {
@@ -113,8 +128,7 @@ function buildFilesFromPiece(
 
   const result: PlayerMediaFile[] = [];
   for (const m of movements) {
-    const rawMMapping = m.audioTrackMapping || {};
-    const mMapping: Record<string, string> = typeof rawMMapping === 'string' ? JSON.parse(rawMMapping) : rawMMapping;
+    const mMapping = parseAudioTrackMapping(m.audioTrackMapping);
     const mDefaultKey = mMapping['tutti'] ? 'tutti' : Object.keys(mMapping)[0];
     const mFilename = mMapping[mDefaultKey];
     if (!mFilename) continue;
@@ -166,13 +180,7 @@ export const playerService = {
     if (Array.isArray(rawPiecesList)) {
       pieces = rawPiecesList.map(item => {
         const p = item as Record<string, unknown>;
-        let mapping: Record<string, string> = {};
-        if (p.audioTrackMapping) {
-          const parsedMapping = parseJsonField<Record<string, string>>(p.audioTrackMapping);
-          if (parsedMapping && typeof parsedMapping === 'object') {
-            mapping = parsedMapping;
-          }
-        }
+        const mapping = parseAudioTrackMapping(p.audioTrackMapping);
         return {
           id: String(p.id || ''),
           parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
