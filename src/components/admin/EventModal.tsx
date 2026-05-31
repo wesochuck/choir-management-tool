@@ -36,6 +36,7 @@ export const EventModal: React.FC<EventModalProps> = ({
     date: utcToZonedInputValue(new Date(), timezone),
     type: 'Rehearsal',
     details: '',
+    callTime: '',
     parentPerformanceId: '',
     venue: '',
   });
@@ -80,6 +81,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         date: utcToZonedInputValue(new Date(), timezone),
         type: 'Rehearsal',
         details: '',
+        callTime: '',
         parentPerformanceId: '',
         venue: '',
       });
@@ -204,24 +206,26 @@ export const EventModal: React.FC<EventModalProps> = ({
       const dateChanged = formData.date !== formattedDate;
       const typeChanged = formData.type !== initialData.type;
       const detailsChanged = (formData.details || '') !== (initialData.details || '');
+      const callTimeChanged = (formData.callTime || '') !== (initialData.callTime || '');
       const parentChanged = (formData.parentPerformanceId || '') !== (initialData.parentPerformanceId || '');
       const venueChanged = (formData.venue || '') !== (initialData.venue || '');
       const rsvpChanged = Boolean(formData.isOpenForRSVP) !== Boolean(initialData.isOpenForRSVP);
       const auditionsChanged = isOpenAuditions !== initialOpenAuditions;
       
-      return titleChanged || dateChanged || typeChanged || detailsChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged;
+      return titleChanged || dateChanged || typeChanged || detailsChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged;
     } else {
       const hasTitle = Boolean(formData.title?.trim());
       const hasDetails = Boolean(formData.details?.trim());
       const hasVenue = Boolean(formData.venue);
       const hasParent = Boolean(formData.parentPerformanceId);
       const hasRsvp = Boolean(formData.isOpenForRSVP);
+      const hasCallTime = Boolean(formData.callTime);
       const isTypeChanged = formData.type !== 'Rehearsal';
       const hasBulkAdd = shouldBulkAdd;
       
       const hasInlineVenue = Boolean(newVenueName.trim() || newVenueRows.trim() || newVenueAddress.trim());
 
-      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || isTypeChanged || hasBulkAdd || hasInlineVenue;
+      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isTypeChanged || hasBulkAdd || hasInlineVenue;
     }
   }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, isOpenAuditions, initialOpenAuditions]);
 
@@ -333,6 +337,19 @@ export const EventModal: React.FC<EventModalProps> = ({
             />
           </div>
         </div>
+
+        {formData.type === 'Performance' && (
+          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <label className="text-label">Performance Call Time (Optional)</label>
+            <input 
+              type="time"
+              value={formData.callTime || ''} 
+              onChange={(e) => setFormData({ ...formData, callTime: e.target.value })} 
+              className="card"
+              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+            />
+          </div>
+        )}
 
         <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
           <input

@@ -840,6 +840,19 @@ export default function CommunicationView() {
 
           {wizardStep === 'REVIEW' && (
             <div className="review-container">
+              <AppCard noPadding>
+                <div style={{ padding: '20px' }}>
+                  <LivePreview
+                    channel={messageType}
+                    subject={resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                    bodyHtml={previewHtml}
+                    smsBody={resolvePreviewContent(content, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
+                    recipientName={selectedRecipients[0]?.name}
+                    recipientEmail={selectedRecipients[0]?.email}
+                  />
+                </div>
+              </AppCard>
+
               <AppCard title="Pre-Flight Review">
                 <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
@@ -969,19 +982,6 @@ export default function CommunicationView() {
                       </button>
                     </div>
                   </div>
-                </div>
-              </AppCard>
-
-              <AppCard noPadding>
-                <div style={{ padding: '20px' }}>
-                  <LivePreview
-                    channel={messageType}
-                    subject={resolvePreviewContent(subject, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
-                    bodyHtml={previewHtml}
-                    smsBody={resolvePreviewContent(content, events.find(e => e.id === filters.eventId) || null, selectedRecipients[0] || null)}
-                    recipientName={selectedRecipients[0]?.name}
-                    recipientEmail={selectedRecipients[0]?.email}
-                  />
                 </div>
               </AppCard>
             </div>

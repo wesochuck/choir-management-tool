@@ -77,6 +77,17 @@ export function renderMarkdown(text: string): string {
   return html;
 }
 
+function formatTime12h(timeStr?: string): string {
+  if (!timeStr) return '';
+  const match = timeStr.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return timeStr;
+  const hrs = parseInt(match[1], 10);
+  const mins = match[2];
+  const ampm = hrs >= 12 ? 'PM' : 'AM';
+  const displayHrs = hrs % 12 || 12;
+  return `${displayHrs}:${mins} ${ampm}`;
+}
+
 /**
  * Resolves placeholders for message preview.
  * This can handle both raw text (for subjects) and rendered HTML (for body).
@@ -101,12 +112,14 @@ export function resolvePreviewContent(
   const type = event?.type || 'Performance';
   const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
   const location = event?.expand?.venue?.name || 'Main Concert Hall';
+  const callTime = event?.callTime ? formatTime12h(event.callTime) : '';
   const details = event?.details || 'Join us for an amazing evening of music and harmony!';
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
   result = result.replace(/{eventDate}/g, date);
   result = result.replace(/{eventLocation}/g, location);
+  result = result.replace(/{eventCallTime}/g, callTime);
   result = result.replace(/{eventDetails}/g, details);
 
   // RSVP Links - Injected as literal HTML

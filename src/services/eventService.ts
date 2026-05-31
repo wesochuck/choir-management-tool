@@ -20,6 +20,7 @@ export interface Event extends RecordModel {
   date: string;
   type: 'Performance' | 'Rehearsal';
   details: string;
+  callTime?: string;
   parentPerformanceId: string;
   venue?: string;
   isOpenForRSVP?: boolean;

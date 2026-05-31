@@ -11,6 +11,17 @@ import { pb } from '../../lib/pocketbase';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 
+function formatTime12h(timeStr?: string): string {
+  if (!timeStr) return '';
+  const match = timeStr.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return timeStr;
+  const hrs = parseInt(match[1], 10);
+  const mins = match[2];
+  const ampm = hrs >= 12 ? 'PM' : 'AM';
+  const displayHrs = hrs % 12 || 12;
+  return `${displayHrs}:${mins} ${ampm}`;
+}
+
 interface EventCardProps {
   event: Event;
   rsvp?: 'Yes' | 'No' | 'Pending';
@@ -90,9 +101,28 @@ export const EventCard: React.FC<EventCardProps> = ({
         </div>
 
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <h3 className="text-label" style={{ margin: 0, color: 'var(--primary)' }}>
-            {formatInTimezone(event.date, timezone)}
-          </h3>
+          <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+            <h3 className="text-label" style={{ margin: 0, color: 'var(--primary)' }}>
+              {formatInTimezone(event.date, timezone)}
+            </h3>
+            {event.callTime && (
+              <span className="badge" style={{
+                backgroundColor: '#eef2ff',
+                color: '#4338ca',
+                border: '1px solid #c7d2fe',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                boxShadow: '0 1px 2px rgba(67, 56, 202, 0.05)'
+              }}>
+                📢 Call Time: {formatTime12h(event.callTime)}
+              </span>
+            )}
+          </div>
           {event.title && <div className="text-headline">{event.title}</div>}
           <div className="text-label">
             <a 

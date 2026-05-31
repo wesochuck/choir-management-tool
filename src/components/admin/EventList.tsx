@@ -3,6 +3,17 @@ import type { Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 
+function formatTime12h(timeStr?: string): string {
+  if (!timeStr) return '';
+  const match = timeStr.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return timeStr;
+  const hrs = parseInt(match[1], 10);
+  const mins = match[2];
+  const ampm = hrs >= 12 ? 'PM' : 'AM';
+  const displayHrs = hrs % 12 || 12;
+  return `${displayHrs}:${mins} ${ampm}`;
+}
+
 interface EventListProps {
   events: Event[];
   onEdit: (event: Event) => void;
@@ -73,6 +84,22 @@ export const EventList: React.FC<EventListProps> = ({
               <span className="text-label" style={{ color: 'var(--primary)' }}>
                 {formatInTimezone(e.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
+              {e.callTime && (
+                <span className="badge" style={{
+                  backgroundColor: '#eef2ff',
+                  color: '#4338ca',
+                  border: '1px solid #c7d2fe',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}>
+                  📢 Call: {formatTime12h(e.callTime)}
+                </span>
+              )}
             </div>
             {e.title && <div className="text-headline">{e.title}</div>}
             <div className="text-label">
