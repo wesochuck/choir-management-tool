@@ -14,22 +14,34 @@ function readGeneratedMain(): string {
     return fs.readFileSync(mainPath, 'utf8');
 }
 
-function extractRouteCallback(content: string, routePath: string): string {
-    const marker = `routerAdd("`;
-    const pathIndex = content.indexOf(`"${routePath}"`);
-    assert.notStrictEqual(pathIndex, -1, `Expected generated file to contain ${routePath}`);
+function extractCallbackAfterMarker(content: string, markerIndex: number, endMarker: string, label: string): string {
+    assert.notStrictEqual(markerIndex, -1, `Expected generated file to contain ${label}`);
 
-    const registrationStart = content.lastIndexOf(marker, pathIndex);
-    assert.notStrictEqual(registrationStart, -1, `Expected ${routePath} to be inside a routerAdd registration`);
-
-    const callbackStart = content.indexOf('=> {', pathIndex);
-    assert.notStrictEqual(callbackStart, -1, `Expected ${routePath} registration to use an arrow callback`);
+    const callbackStart = content.indexOf('=> {', markerIndex);
+    assert.notStrictEqual(callbackStart, -1, `Expected ${label} registration to use an arrow callback`);
     const openBrace = content.indexOf('{', callbackStart);
-    const registrationEnd = content.indexOf('\n});', openBrace);
-    assert.notStrictEqual(registrationEnd, -1, `Could not find route registration end for ${routePath}`);
+    const registrationEnd = content.indexOf(endMarker, openBrace);
+    assert.notStrictEqual(registrationEnd, -1, `Could not find registration end for ${label}`);
 
     return content.slice(openBrace + 1, registrationEnd);
 }
+
+function extractRouteCallback(content: string, routePath: string): string {
+    const pathIndex = content.indexOf(`"${routePath}"`);
+    return extractCallbackAfterMarker(content, pathIndex, '\n});', routePath);
+}
+
+function extractCronCallback(content: string, cronName: string): string {
+    const markerIndex = content.indexOf(`cronAdd("${cronName}"`);
+    return extractCallbackAfterMarker(content, markerIndex, '\n});', cronName);
+}
+
+function extractRecordHookCallback(content: string, hookName: string, collectionName: string): string {
+    const markerIndex = content.indexOf(`${hookName}((`);
+    return extractCallbackAfterMarker(content, markerIndex, `
+}, "${collectionName}");`, `${hookName} for ${collectionName}`);
+}
+
 
 test('Generated main.pb.js integrity', () => {
     const content = readGeneratedMain();
@@ -92,6 +104,53 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
     const testSmtpRoute = extractRouteCallback(content, '/api/test-smtp');
     assert.ok(!testSmtpRoute.includes('CALLBACK-LOCAL UTILITIES'), 'SMTP test route should not include any utility bundle because it does not call shared helpers');
+
+    const postEventReportCron = extractCronCallback(content, 'post_event_report');
+    assert.ok(postEventReportCron.includes('function parseJsonField'), 'Attendance report cron should contain JSON parsing utilities');
+    assert.ok(postEventReportCron.includes('function sanitizeEmailSubject'), 'Attendance report cron should contain email subject sanitization');
+    assert.ok(postEventReportCron.includes('function renderAttendanceReportBody'), 'Attendance report cron should contain attendance report renderer');
+    assert.ok(!postEventReportCron.includes('function processEmailQueue'), 'Attendance report cron should not contain unrelated queue processor utilities');
+
+    const processEmailQueueCron = extractCronCallback(content, 'process_email_queue_job');
+    assert.ok(processEmailQueueCron.includes('function processEmailQueue'), 'Email queue cron should contain queue processor utilities');
+    assert.ok(processEmailQueueCron.includes('function parseJsonField'), 'Email queue cron should contain JSON parsing utilities');
+    assert.ok(processEmailQueueCron.includes('function renderMarkdown'), 'Email queue cron should contain markdown rendering utilities');
+    assert.ok(processEmailQueueCron.includes('function compileMailjetHtml'), 'Email queue cron should contain Mailjet HTML rendering utilities');
+    assert.ok(!processEmailQueueCron.includes('function renderAttendanceReportBody'), 'Email queue cron should not contain unrelated attendance report renderer');
+
+    const createMessagesHook = extractRecordHookCallback(content, 'onRecordAfterCreateSuccess', 'messages');
+    assert.ok(createMessagesHook.includes('function shouldQueueMessage'), 'Create messages hook should contain queue eligibility utility');
+    assert.ok(createMessagesHook.includes('function enqueueBulkMessage'), 'Create messages hook should contain bulk enqueue utility');
+    assert.ok(createMessagesHook.includes('function parseJsonField'), 'Create messages hook should contain JSON parsing dependency');
+    assert.ok(!createMessagesHook.includes('function handleCalendarDownload'), 'Create messages hook should not contain unrelated calendar endpoint utilities');
+
+    const updateMessagesHook = extractRecordHookCallback(content, 'onRecordAfterUpdateSuccess', 'messages');
+    assert.ok(updateMessagesHook.includes('function shouldQueueMessage'), 'Update messages hook should contain queue eligibility utility');
+    assert.ok(updateMessagesHook.includes('function enqueueBulkMessage'), 'Update messages hook should contain bulk enqueue utility');
+    assert.ok(updateMessagesHook.includes('function parseJsonField'), 'Update messages hook should contain JSON parsing dependency');
+    assert.ok(!updateMessagesHook.includes('function handleSingerSeatingProfiles'), 'Update messages hook should not contain unrelated seating endpoint utilities');
+});
+
+test('post_event_report subject templating inserts dynamic values literally', () => {
+    const content = readGeneratedMain();
+    const postEventReportCron = extractCronCallback(content, 'post_event_report');
+
+    assert.ok(
+        postEventReportCron.includes('const eventTitle = String(event.get("title") || "");'),
+        'Attendance report cron should normalize event title before template replacement',
+    );
+    assert.ok(
+        postEventReportCron.includes('.replace(/{eventTitle}/g, () => eventTitle)'),
+        'Attendance report cron should use a functional replacer for eventTitle',
+    );
+    assert.ok(
+        postEventReportCron.includes('.replace(/{eventDate}/g, () => eventDateStr)'),
+        'Attendance report cron should use a functional replacer for eventDate',
+    );
+    assert.ok(
+        !postEventReportCron.includes('.replace(/{eventTitle}/g, event.get("title"))'),
+        'Attendance report cron should not use a dynamic replacement string for eventTitle',
+    );
 });
 
 test('Generated main.pb.js does not leak module syntax', () => {

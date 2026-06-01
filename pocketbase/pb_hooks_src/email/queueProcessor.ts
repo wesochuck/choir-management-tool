@@ -126,7 +126,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
 
             let subject = record.get("subject") as string || "";
-            subject = subject.replace(/{singerName}/g, sanitizeEmailSubject(recipientName));
+            subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
 
             // Fetch dynamic event details if enqueued under filters
             let event: PocketBaseRecord | null = null;
@@ -139,8 +139,8 @@ export function processEmailQueue(app: PocketBaseApp): void {
             }
 
             // Perform template placeholder resolutions (same engine as legacy)
-            htmlBody = htmlBody.replace(/{singerName}/g, escapeHtml(recipientName));
-            htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, escapeHtml(mailingAddress));
+            htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+            htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
 
             if (event) {
                 const eventDate = event.get("date") as string;
@@ -160,9 +160,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
                 // Resolve event placeholders in subject too
-                subject = subject.replace(/{eventTitle}/g, sanitizeEmailSubject(eventTitle))
-                                 .replace(/{eventType}/g, sanitizeEmailSubject(eventType))
-                                 .replace(/{eventDate}/g, sanitizeEmailSubject(dateShort));
+                subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                                 .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                                 .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
 
                 const eventInfoHtml = `
 <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
@@ -262,15 +262,15 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     `.trim();
                 }
 
-                htmlBody = htmlBody.replace(/{eventTitle}/g, escapeHtml(eventTitle))
-                                 .replace(/{eventType}/g, escapeHtml(eventType))
-                                 .replace(/{eventDate}/g, escapeHtml(dateShort))
-                                 .replace(/{eventLocation}/g, escapeHtml(venueName))
-                                 .replace(/{eventDetails}/g, escapeHtml(eventDetails))
-                                 .replace(/{{EVENT_INFO}}/g, eventInfoHtml)
-                                 .replace(/{eventInfo}/g, eventInfoHtml)
-                                 .replace(/{firstRehearsalCalendarLink}/g, firstRehearsalHtml)
-                                 .replace(/{eventCalendarLink}/g, eventCalendarHtml);
+                htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                                 .replace(/{eventType}/g, () => escapeHtml(eventType))
+                                 .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                                 .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                                 .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                                 .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                                 .replace(/{eventInfo}/g, () => eventInfoHtml)
+                                 .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                                 .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
 
                 if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
                     const payload = `e=${event.id}&p=${recipientId}`;
@@ -284,7 +284,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
-                    htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, rsvpHtml).replace(/{rsvpLinks}/g, rsvpHtml);
+                    htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                 }
 
                 if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
@@ -299,7 +299,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
 </div>
 `;
-                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, playerHtml).replace(/{playerLink}/g, playerHtml);
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
                 }
             } else {
                 // If there's no event context, clear out the player link placeholders
@@ -342,7 +342,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 const signature = $security.hs256(payload, secret);
                 const token = `${payload}&s=${signature}`;
                 unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
-                htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, unsubscribeUrl);
+                htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
             }
 
             // Final template layout wrap

@@ -322,7 +322,12 @@ events.forEach(event => {
     const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
     const eventDateObj = new Date(event.get("date"));
     const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear();
-    const subject = sanitizeEmailSubject(commSettings.reportSubjectTemplate.replace(/{eventTitle}/g, event.get("title")).replace(/{eventDate}/g, eventDateStr));
+    const eventTitle = String(event.get("title") || "");
+    const subject = sanitizeEmailSubject(
+        commSettings.reportSubjectTemplate
+            .replace(/{eventTitle}/g, () => eventTitle)
+            .replace(/{eventDate}/g, () => eventDateStr)
+    );
     const body = renderAttendanceReportBody({
         eventTitle: event.get("title"),
         eventDate: eventDateStr,
