@@ -15,6 +15,7 @@ declare class MailerMessage {
 
 declare const $security: {
     hs256(payload: string, secret: string): string;
+    randomString(length: number): string;
 };
 
 /**
@@ -40,22 +41,76 @@ export function processEmailQueue(app: PocketBaseApp): void {
         return;
     }
 
-    // Fetch oldest pending records to guarantee sequential order delivery
+    const EMAIL_QUEUE_BATCH_SIZE = 150;
+    const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+
+    // Stale Processing record recovery
+    try {
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Pending',
+                processingRunId = NULL,
+                processingStartedAt = NULL
+            WHERE status = 'Processing'
+              AND processingStartedAt < datetime('now', '-15 minutes')
+              AND (attempts IS NULL OR attempts < :maxAttempts)
+        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Failed',
+                processingRunId = NULL,
+                processingStartedAt = NULL
+            WHERE status = 'Processing'
+              AND processingStartedAt < datetime('now', '-15 minutes')
+              AND attempts >= :maxAttempts
+        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+    } catch (recoverErr) {
+        console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+    }
+
+    const runId = $security.randomString(20);
+    console.log("[Email Queue] Starting processing run: " + runId);
+
+    // Atomic SQLite-level claiming
+    try {
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Processing',
+                processingRunId = :runId,
+                processingStartedAt = datetime('now')
+            WHERE id IN (
+                SELECT id
+                FROM emailQueue
+                WHERE status = 'Pending'
+                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                ORDER BY created ASC
+                LIMIT :batchSize
+            )
+        `).bind({
+            runId: runId,
+            maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+            batchSize: EMAIL_QUEUE_BATCH_SIZE
+        }).execute();
+    } catch (claimErr) {
+        console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+        return;
+    }
+
     const records = app.findRecordsByFilter(
-        "emailQueue", 
-        "status = 'Pending' && attempts < 3", 
-        "", 
-        50, // Process in controlled batches of 50
+        "emailQueue",
+        `status = 'Processing' && processingRunId = '${runId}'`,
+        "created",
+        EMAIL_QUEUE_BATCH_SIZE,
         0
     );
 
-    if (!records || records.length === 0) return;
+    if (!records || records.length === 0) {
+        console.log("[Email Queue] No records claimed for run: " + runId);
+        return;
+    }
 
-    // Transition state immediately to prevent race conditions during async sending
-    records.forEach((r: PocketBaseRecord) => {
-        r.set("status", "Processing");
-        app.save(r);
-    });
+    console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
 
     // Build variables used for layout rendering
     const secret = getQueueHmacSecret(app);
@@ -362,6 +417,11 @@ export function processEmailQueue(app: PocketBaseApp): void {
 
             app.newMailClient().send(mailerMessage);
             record.set("status", "Sent");
+            record.set("sentAt", new Date().toISOString().replace('T', ' ').substring(0, 19));
+            record.set("processingRunId", "");
+            record.set("processingStartedAt", "");
+            record.set("errorMessage", "");
+            console.log(`[Email Queue] Sent record: ${record.id}`);
         } catch (err: unknown) {
             const rawAttempts = record.get("attempts");
             const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
@@ -369,7 +429,11 @@ export function processEmailQueue(app: PocketBaseApp): void {
             record.set("attempts", currentAttempts);
             const message = err instanceof Error ? err.message : String(err);
             record.set("errorMessage", message);
-            record.set("status", currentAttempts >= 3 ? "Failed" : "Pending");
+            const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
+            record.set("status", nextStatus);
+            record.set("processingRunId", "");
+            record.set("processingStartedAt", "");
+            console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
         } finally {
             app.save(record);
         }

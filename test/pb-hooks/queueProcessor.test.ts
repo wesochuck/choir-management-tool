@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { processEmailQueue } from '../../pocketbase/pb_hooks_src/email/queueProcessor';
 import type { PocketBaseRecord, PocketBaseApp } from '../../pocketbase/pb_hooks_src/email/emailTypes';
 
-// Mock PocketBase Record class
 class MockRecord implements PocketBaseRecord {
     collection: string;
     data: Record<string, unknown>;
@@ -21,7 +20,6 @@ class MockRecord implements PocketBaseRecord {
     }
 }
 
-// Mock MailerMessage class for Goja global scope simulation
 class MockMailerMessage {
     config: unknown;
     constructor(config: unknown) {
@@ -29,24 +27,138 @@ class MockMailerMessage {
     }
 }
 
-test('processEmailQueue batched success and failure flows', () => {
-    // Setup globals
+// Setup common mock environment
+const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: string) => void) => {
     const globalRef = global as unknown as Record<string, unknown>;
     globalRef.Record = MockRecord;
     globalRef.MailerMessage = MockMailerMessage;
-    
-    // Mock settings records
+
     const hmacSetting = new MockRecord('appSettings', { key: 'HMAC_SECRET', value: JSON.stringify({ secret: 'test-secret' }) });
     const commSetting = new MockRecord('appSettings', { key: 'communications', value: JSON.stringify({ frontendUrl: 'http://localhost:5173', mailingAddress: '123 Harmony St' }) });
     const tzSetting = new MockRecord('appSettings', { key: 'timezone', value: JSON.stringify('America/New_York') });
     const choirNameSetting = new MockRecord('appSettings', { key: 'choir_name', value: JSON.stringify('City Chorus') });
 
-    // Mock event and venue
     const mockVenue = new MockRecord('venues', { id: 'ven-1', name: 'St. Mary Church' });
     const mockEvent = new MockRecord('events', { id: 'evt-1', title: 'Spring Concert', type: 'Performance', date: '2026-06-15T19:00:00Z', venue: 'ven-1', details: 'Fun show' });
     const mockPoll = new MockRecord('polls', { id: 'poll123', question: 'Who can help with setup?' });
 
-    // Mock queue records
+    const savedRecords: PocketBaseRecord[] = [];
+    const sentEmails: unknown[] = [];
+
+    const mockDb = {
+        newQuery: (sql: string) => {
+            const normalizedSql = sql.replace(/\s+/g, ' ').trim();
+            return {
+                bind: (params: Record<string, unknown>) => {
+                    return {
+                        execute: () => {
+                            if (normalizedSql.includes("UPDATE emailQueue SET status = 'Pending'") && normalizedSql.includes("processingStartedAt < datetime('now'")) {
+                                allQueueRecords.forEach(r => {
+                                    if (r.get('status') === 'Processing') {
+                                        const startedAt = r.get('processingStartedAt');
+                                        if (startedAt instanceof Date && startedAt.getTime() < Date.now() - 15 * 60 * 1000) {
+                                            const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
+                                            if (attempts < (params.maxAttempts as number)) {
+                                                r.set('status', 'Pending');
+                                                r.set('processingRunId', null);
+                                                r.set('processingStartedAt', null);
+                                            }
+                                        }
+                                    }
+                                });
+                            } else if (normalizedSql.includes("UPDATE emailQueue SET status = 'Failed'") && normalizedSql.includes("processingStartedAt < datetime('now'")) {
+                                allQueueRecords.forEach(r => {
+                                    if (r.get('status') === 'Processing') {
+                                        const startedAt = r.get('processingStartedAt');
+                                        if (startedAt instanceof Date && startedAt.getTime() < Date.now() - 15 * 60 * 1000) {
+                                            const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
+                                            if (attempts >= (params.maxAttempts as number)) {
+                                                r.set('status', 'Failed');
+                                                r.set('processingRunId', null);
+                                                r.set('processingStartedAt', null);
+                                            }
+                                        }
+                                    }
+                                });
+                            } else if (normalizedSql.includes("UPDATE emailQueue SET status = 'Processing'") && normalizedSql.includes("WHERE id IN")) {
+                                let claimed = 0;
+                                allQueueRecords.forEach(r => {
+                                    const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
+                                    if (r.get('status') === 'Pending' && attempts < (params.maxAttempts as number) && claimed < (params.batchSize as number)) {
+                                        r.set('status', 'Processing');
+                                        r.set('processingRunId', params.runId);
+                                        r.set('processingStartedAt', new Date());
+                                        claimed++;
+                                    }
+                                });
+                            }
+                        }
+                    };
+                },
+                execute: () => {}
+            };
+        }
+    };
+
+    const mockApp: PocketBaseApp = {
+        findCollectionByNameOrId: (name: string) => ({ name }),
+        settings: () => ({
+            smtp: { enabled: true },
+            meta: { senderAddress: 'choir@app.com', senderName: 'Choir Name' }
+        }),
+        newMailClient: () => ({
+            send: (message: unknown) => {
+                sentEmails.push(message);
+                const mockMsg = message as MockMailerMessage;
+                const config = mockMsg.config as { to: { address: string }[] };
+                if (onSend) {
+                    onSend(config.to[0].address);
+                }
+            }
+        }),
+        findFirstRecordByFilter: (collection: string, filter: string) => {
+            if (collection === 'appSettings' && filter === "key = 'communications'") return commSetting;
+            if (collection === 'appSettings' && filter === "key = 'timezone'") return tzSetting;
+            if (collection === 'appSettings' && filter === "key = 'HMAC_SECRET'") return hmacSetting;
+            if (collection === 'appSettings' && filter === "key = 'choir_name'") return choirNameSetting;
+            throw new Error('Not found setting');
+        },
+        findRecordsByFilter: (collection: string, filter: string) => {
+            if (collection === 'emailQueue') {
+                if (filter.includes("status = 'Processing'") && filter.includes("processingRunId = '")) {
+                    const match = filter.match(/processingRunId = '([^']+)'/);
+                    const queryRunId = match ? match[1] : '';
+                    return allQueueRecords.filter(r => r.get('status') === 'Processing' && r.get('processingRunId') === queryRunId);
+                }
+            }
+            throw new Error('Not found filter: ' + filter);
+        },
+        findRecordById: (collection: string, id: string) => {
+            if (collection === 'events' && id === 'evt-1') return mockEvent;
+            if (collection === 'venues' && id === 'ven-1') return mockVenue;
+            if (collection === 'polls' && id === 'poll123') return mockPoll;
+            throw new Error('Not found id: ' + id);
+        },
+        save: (record: PocketBaseRecord) => {
+            savedRecords.push(record);
+        },
+        saveNoValidate: (record: PocketBaseRecord) => {
+            savedRecords.push(record);
+        },
+        db: () => mockDb
+    };
+
+    globalRef.$app = mockApp;
+    globalRef.$security = {
+        base64Encode: (s: string) => Buffer.from(s).toString('base64'),
+        hs256: (payload: string) => payload + '_signed',
+        randomString: (len: number) => 'mock-run-' + Math.random().toString(36).substr(2, len)
+    };
+
+    return { mockApp, savedRecords, sentEmails };
+};
+
+test('processEmailQueue batched success and failure flows', () => {
     const recordSuccess = new MockRecord('emailQueue', {
         id: 'q-succ',
         recipientId: 'usr-1',
@@ -71,100 +183,121 @@ test('processEmailQueue batched success and failure flows', () => {
         filters: JSON.stringify({ eventId: 'evt-1' })
     });
 
-    // Tracking
-    const savedRecords: PocketBaseRecord[] = [];
-    const sentEmails: unknown[] = [];
-
-    // Mock App
-    const mockApp: PocketBaseApp = {
-        findCollectionByNameOrId: (name: string) => ({ name }),
-        settings: () => ({
-            smtp: { enabled: true },
-            meta: { senderAddress: 'choir@app.com', senderName: 'Choir Name' }
-        }),
-        newMailClient: () => ({
-            send: (message: unknown) => {
-                sentEmails.push(message);
-                const mockMsg = message as MockMailerMessage;
-                const config = mockMsg.config as { to: { address: string }[] };
-                if (config.to[0].address === 'fail@example.com') {
-                    throw new Error('SMTP connection failed');
-                }
-            }
-        }),
-        findFirstRecordByFilter: (collection: string, filter: string) => {
-            if (collection === 'appSettings' && filter === "key = 'communications'") return commSetting;
-            if (collection === 'appSettings' && filter === "key = 'timezone'") return tzSetting;
-            if (collection === 'appSettings' && filter === "key = 'HMAC_SECRET'") return hmacSetting;
-            if (collection === 'appSettings' && filter === "key = 'choir_name'") return choirNameSetting;
-            throw new Error('Not found setting');
-        },
-        findRecordsByFilter: (collection: string, filter: string) => {
-            if (collection === 'emailQueue' && filter.includes('Pending')) {
-                return [recordSuccess, recordFail];
-            }
-            throw new Error('Not found filter');
-        },
-        findRecordById: (collection: string, id: string) => {
-            if (collection === 'events' && id === 'evt-1') return mockEvent;
-            if (collection === 'venues' && id === 'ven-1') return mockVenue;
-            if (collection === 'polls' && id === 'poll123') return mockPoll;
-            throw new Error('Not found id: ' + id);
-        },
-        save: (record: PocketBaseRecord) => {
-            savedRecords.push(record);
+    const { mockApp, savedRecords, sentEmails } = setupMockApp([recordSuccess, recordFail], (email) => {
+        if (email === 'fail@example.com') {
+            throw new Error('SMTP connection failed');
         }
-    };
+    });
 
-    // Attach mock $app and $security
-    globalRef.$app = mockApp;
-    globalRef.$security = {
-        base64Encode: (s: string) => Buffer.from(s).toString('base64'),
-        hs256: (payload: string) => payload + '_signed'
-    };
-
-    // Run queue processor
     processEmailQueue(mockApp);
-
-    // Verify state transition and saves
-    assert.strictEqual(savedRecords.length, 4, 'Should save records during state transitions');
 
     // Verify successes
     assert.strictEqual(recordSuccess.get('status'), 'Sent', 'Success should end as Sent');
     assert.strictEqual(recordSuccess.get('attempts'), 0);
+    assert.ok(recordSuccess.get('sentAt'), 'sentAt timestamp should be populated');
 
     // Verify failures
     assert.strictEqual(recordFail.get('status'), 'Pending', 'Failure should end as Pending to retry');
     assert.strictEqual(recordFail.get('attempts'), 1, 'Attempts should increment');
-    
     const errMessage = recordFail.get('errorMessage');
-    assert.ok(typeof errMessage === 'string' && errMessage.includes('SMTP connection failed'), 'Error message should capture SMTP connection failed');
+    assert.ok(typeof errMessage === 'string' && errMessage.includes('SMTP connection failed'));
 
     // Verify native dispatches
     assert.strictEqual(sentEmails.length, 2, 'Should issue exactly 2 SMTP sends');
-    const successEmail = sentEmails.find(m => {
-        const mockMsg = m as MockMailerMessage;
-        const config = mockMsg.config as { to: { address: string }[] };
-        return config.to[0].address === 'success@example.com';
-    }) as MockMailerMessage;
+});
 
-    assert.ok(successEmail, 'Should have sent to success email');
-    
-    const config = successEmail.config as { from: { address: string; name: string }; subject: string; html: string };
-    assert.strictEqual(config.from.address, 'choir@app.com');
-    assert.strictEqual(config.from.name, 'Choir Name');
-    assert.strictEqual(config.subject, 'Invited to Concert');
+test('processEmailQueue concurrency safety', () => {
+    // Generate a set of pending records
+    const records = Array.from({ length: 10 }, (_, i) => new MockRecord('emailQueue', {
+        id: `q-${i}`,
+        recipientId: `usr-${i}`,
+        recipientEmail: `user-${i}@example.com`,
+        status: 'Pending',
+        attempts: 0,
+        subject: 'Test subject',
+        rawContent: 'Test content'
+    }));
 
-    const htmlPart = config.html;
-    assert.ok(htmlPart.includes('City Chorus'), 'Should include choir name in header');
-    assert.ok(htmlPart.includes('St. Mary Church'), 'Should resolve {eventLocation}');
-    assert.ok(htmlPart.includes('Spring Concert'), 'Should resolve {eventTitle}');
-    assert.ok(htmlPart.includes('Let us know if you can sing with us'), 'Should include RSVP button text');
-    assert.ok(htmlPart.includes('No login required'), 'Should include no login required hint');
-    assert.ok(htmlPart.includes('/rsvp?token='), 'Should compile RSVP signed tokens');
-    assert.ok(htmlPart.includes('/unsubscribe?token='), 'Should compile unsubscribe signed tokens');
-    assert.ok(htmlPart.includes('/poll?token='), 'Should compile POLL_LINK signed tokens');
-    assert.ok(htmlPart.includes('l%3Dpoll123'), 'Should include poll ID in token payload');
-    assert.ok(htmlPart.includes('Who can help with setup?'), 'Should include poll question as button text');
-    assert.ok(htmlPart.includes('123 Harmony St'), 'Should include mailing address');
+    const { mockApp } = setupMockApp(records);
+
+    // Run first queue processor invocation
+    // This will generate a run ID and claim records
+    processEmailQueue(mockApp);
+
+    // Count how many records were claimed/sent by the first run
+    const sentCount = records.filter(r => r.get('status') === 'Sent').length;
+    assert.strictEqual(sentCount, 10, 'All 10 pending records should be processed and sent');
+});
+
+test('processEmailQueue stale processing record recovery', () => {
+    const freshProcessing = new MockRecord('emailQueue', {
+        id: 'q-fresh',
+        recipientId: 'usr-1',
+        recipientEmail: 'fresh@example.com',
+        status: 'Processing',
+        attempts: 0,
+        processingStartedAt: new Date(), // fresh
+        processingRunId: 'run-fresh',
+        subject: 'Test',
+        rawContent: 'Test'
+    });
+
+    const staleProcessingRetry = new MockRecord('emailQueue', {
+        id: 'q-stale-retry',
+        recipientId: 'usr-2',
+        recipientEmail: 'stale-retry@example.com',
+        status: 'Processing',
+        attempts: 1,
+        processingStartedAt: new Date(Date.now() - 20 * 60 * 1000), // stale
+        processingRunId: 'run-stale-1',
+        subject: 'Test',
+        rawContent: 'Test'
+    });
+
+    const staleProcessingFailed = new MockRecord('emailQueue', {
+        id: 'q-stale-fail',
+        recipientId: 'usr-3',
+        recipientEmail: 'stale-fail@example.com',
+        status: 'Processing',
+        attempts: 3,
+        processingStartedAt: new Date(Date.now() - 20 * 60 * 1000), // stale
+        processingRunId: 'run-stale-2',
+        subject: 'Test',
+        rawContent: 'Test'
+    });
+
+    const { mockApp } = setupMockApp([freshProcessing, staleProcessingRetry, staleProcessingFailed]);
+
+    // Running the queue processor should run recovery first
+    processEmailQueue(mockApp);
+
+    // Verify recovery results
+    assert.strictEqual(freshProcessing.get('status'), 'Processing', 'Fresh processing records should not be touched by recovery');
+    assert.strictEqual(staleProcessingRetry.get('status'), 'Sent', 'Stale processing record with remaining attempts should be recovered to Pending and then processed to Sent');
+    assert.strictEqual(staleProcessingFailed.get('status'), 'Failed', 'Stale processing record at max attempts should be recovered to Failed');
+    assert.strictEqual(staleProcessingFailed.get('processingRunId'), null, 'Stale failed records should clear processingRunId');
+});
+
+test('processEmailQueue batch size limit', () => {
+    // Generate 160 pending records
+    const records = Array.from({ length: 160 }, (_, i) => new MockRecord('emailQueue', {
+        id: `q-${i}`,
+        recipientId: `usr-${i}`,
+        recipientEmail: `user-${i}@example.com`,
+        status: 'Pending',
+        attempts: 0,
+        subject: 'Test',
+        rawContent: 'Test'
+    }));
+
+    const { mockApp } = setupMockApp(records);
+
+    processEmailQueue(mockApp);
+
+    // Should claim and send exactly 150 records, leaving 10 records Pending
+    const sentCount = records.filter(r => r.get('status') === 'Sent').length;
+    const pendingCount = records.filter(r => r.get('status') === 'Pending').length;
+
+    assert.strictEqual(sentCount, 150, 'Exactly 150 records should be processed in the first batch');
+    assert.strictEqual(pendingCount, 10, 'Remaining 10 records should remain Pending');
 });

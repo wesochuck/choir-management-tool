@@ -362,6 +362,7 @@ try {
     const record = e?.record;
     if (record && shouldQueueMessage(record)) {
         enqueueBulkMessage($app, record);
+        processEmailQueue($app);
     }
 } catch (hookErr) {
     console.log("[Hook Error] onRecordAfterCreateSuccess: " + hookErr);
@@ -374,6 +375,7 @@ try {
     const oldStatus = original ? original.get("status") : "";
     if (record && shouldQueueMessage(record, oldStatus)) {
         enqueueBulkMessage($app, record);
+        processEmailQueue($app);
     }
 } catch (hookErr) {
     console.log("[Hook Error] onRecordAfterUpdateSuccess: " + hookErr);

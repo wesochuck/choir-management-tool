@@ -51,6 +51,15 @@ export interface PocketBaseMailClient {
     send(message: unknown): void;
 }
 
+export interface PocketBaseQuery {
+    bind(params: Record<string, unknown>): PocketBaseQuery;
+    execute(): void;
+}
+
+export interface PocketBaseDb {
+    newQuery(sql: string): PocketBaseQuery;
+}
+
 // Strong type helpers to avoid using explicit 'any' in hook files
 export interface PocketBaseRecord {
     id: string;
@@ -67,6 +76,7 @@ export interface PocketBaseApp {
     saveNoValidate(record: PocketBaseRecord): void;
     settings(): PocketBaseSettings;
     newMailClient(): PocketBaseMailClient;
+    db(): PocketBaseDb;
 }
 
 export interface PocketBaseResponseHeader {
