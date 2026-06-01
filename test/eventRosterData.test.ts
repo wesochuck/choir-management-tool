@@ -72,6 +72,13 @@ describe('useEventRosterData pure helpers', () => {
   });
 
   describe('calculateSectionCounts', () => {
+    it('handles an empty array correctly', () => {
+      const counts = calculateSectionCounts([], mockSections, mockVoiceParts);
+      assert.strictEqual(counts['S'], 0);
+      assert.strictEqual(counts['A'], 0);
+      assert.strictEqual(counts['T'], 0);
+    });
+
     it('sums singers by section using voicePart definitions', () => {
       const mapped: MappedSinger[] = [
         { profile: mockProfiles[0], rsvp: 'Yes', roster: mockRosters[0] },
