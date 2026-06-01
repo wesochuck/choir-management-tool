@@ -33,10 +33,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   const [mapping, setMapping] = useState<MusicFieldMapping>({
     title: -1,
     composer: -1,
+    arranger: -1,
     copies: -1,
     catalogId: -1,
     duration: -1,
     notes: -1,
+    purchaseDate: -1,
   });
   const [mappedPieces, setMappedPieces] = useState<MappedMusicPiece[]>([]);
   
@@ -146,6 +148,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         const payload: Partial<MusicPieceInput> = {
           title: piece.data.title,
           composer: piece.data.composer || undefined,
+          arranger: piece.data.arranger || undefined,
+          purchaseDate: piece.data.purchaseDate || undefined,
           copies: piece.data.copies || undefined,
           catalogId: piece.data.catalogId || undefined,
           duration: piece.data.duration || undefined,
@@ -180,10 +184,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     setMapping({
       title: -1,
       composer: -1,
+      arranger: -1,
       copies: -1,
       catalogId: -1,
       duration: -1,
       notes: -1,
+      purchaseDate: -1,
     });
     setMappedPieces([]);
     setErrorsList([]);
@@ -231,11 +237,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
   const fieldsConfig: { key: MusicField; label: string; desc: string; required?: boolean }[] = [
     { key: 'title', label: 'Title', desc: 'Title of the piece', required: true },
-    { key: 'composer', label: 'Composer/Arranger', desc: 'Who composed or arranged the piece' },
+    { key: 'composer', label: 'Composer', desc: 'Who composed the piece (can also parse combined composer/arranger if arranger column skipped)' },
+    { key: 'arranger', label: 'Arranger', desc: 'Who arranged the piece (if separate column)' },
     { key: 'copies', label: 'Copies count', desc: 'Number of copies in the library' },
     { key: 'catalogId', label: 'Catalog ID', desc: 'Library unique identifier' },
     { key: 'duration', label: 'Duration', desc: 'e.g. 3:30 or 15m' },
     { key: 'notes', label: 'Notes', desc: 'Additional details or performances info' },
+    { key: 'purchaseDate', label: 'Purchase Date', desc: 'e.g. 2026-05, MM/YYYY, or May 2026' },
   ];
 
   return (
@@ -406,6 +414,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   <th style={{ width: '60px', textAlign: 'center' }}>Row</th>
                   <th>Title</th>
                   <th>Composer</th>
+                  <th>Arranger</th>
                   <th style={{ width: '80px', textAlign: 'center' }}>Copies</th>
                   <th style={{ width: '100px' }}>Catalog ID</th>
                   <th>Status / Errors</th>
@@ -432,6 +441,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                         </strong>
                       </td>
                       <td style={{ fontSize: '0.85rem' }}>{piece.data.composer || '-'}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{piece.data.arranger || '-'}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span className="text-xs" style={{ fontWeight: 600 }}>
                           {piece.data.copies !== undefined ? piece.data.copies : '-'}

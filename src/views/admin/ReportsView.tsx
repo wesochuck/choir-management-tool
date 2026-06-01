@@ -127,10 +127,11 @@ export default function ReportsView() {
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         downloadCSV(csvContent, `attendance_report_${summary.performance.title.replace(/\s+/g, '_')}.csv`);
     } else {
-        const headers = ['Title', 'Composer', 'Catalog ID', 'Total Performances', 'Last Performed'];
+        const headers = ['Title', 'Composer', 'Arranger', 'Catalog ID', 'Total Performances', 'Last Performed'];
         const rows = repertoireStats.map(s => [
             `"${s.piece.title.replace(/"/g, '""')}"`,
             `"${(s.piece.composer || '').replace(/"/g, '""')}"`,
+            `"${(s.piece.arranger || '').replace(/"/g, '""')}"`,
             `"${(s.piece.catalogId || '').replace(/"/g, '""')}"`,
             s.totalPerformances,
             s.lastPerformed ? s.lastPerformed.toLocaleDateString() : 'Never'
@@ -341,6 +342,7 @@ export default function ReportsView() {
                                 <tr>
                                     <th>Title</th>
                                     <th>Composer</th>
+                                    <th>Arranger</th>
                                     <th style={{ textAlign: 'center' }}>Total Performances</th>
                                     <th>Last Performed</th>
                                 </tr>
@@ -350,6 +352,7 @@ export default function ReportsView() {
                                     <tr key={stat.piece.id}>
                                         <td><strong>{stat.piece.title}</strong></td>
                                         <td>{stat.piece.composer || '-'}</td>
+                                        <td>{stat.piece.arranger || '-'}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             <span className="badge badge-performance">{stat.totalPerformances}</span>
                                         </td>

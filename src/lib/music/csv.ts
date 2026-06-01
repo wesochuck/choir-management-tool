@@ -64,7 +64,7 @@ export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[
 }
 
 export function exportMusicToCSV(pieces: MusicPiece[], options?: { genres?: MusicGenreDef[] }): string {
-  const header = ['Title', 'Composer', 'Voicing', 'Applies To', 'Genres'].join(',');
+  const header = ['Title', 'Composer', 'Arranger', 'Copies', 'Catalog ID', 'Duration', 'Voicing', 'Applies To', 'Genres', 'Purchase Date', 'Notes'].join(',');
   const rows = pieces.map(p => {
     const applicability = (!p.sectionBuckets || p.sectionBuckets.length === 0) 
       ? 'All' 
@@ -74,12 +74,24 @@ export function exportMusicToCSV(pieces: MusicPiece[], options?: { genres?: Musi
       ? p.genres?.map(id => options.genres!.find(g => g.id === id)?.label || id).join(';') || ''
       : p.genres?.join(';') || '';
 
+    const clean = (val: unknown) => {
+      if (val === undefined || val === null) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
     return [
-      `"${p.title || ''}"`,
-      `"${p.composer || ''}"`,
-      `"${p.voicing || ''}"`,
-      `"${applicability}"`,
-      `"${genreList}"`
+      clean(p.title),
+      clean(p.composer),
+      clean(p.arranger),
+      clean(p.copies),
+      clean(p.catalogId),
+      clean(p.duration),
+      clean(p.voicing),
+      clean(applicability),
+      clean(genreList),
+      clean(p.purchaseDate),
+      clean(p.notes)
     ].join(',');
   });
   return [header, ...rows].join('\n');

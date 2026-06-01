@@ -4,6 +4,8 @@ import type { Event } from '../services/eventService';
 export interface MusicPiece extends RecordModel {
   title: string;
   composer?: string;
+  arranger?: string;
+  purchaseDate?: string;
   copies?: number;
   catalogId?: string;
   duration?: string;

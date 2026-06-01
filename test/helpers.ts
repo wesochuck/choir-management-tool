@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { MusicPiece } from '../src/services/musicLibraryService';
 import type { SectionDef } from '../src/services/settingsService';
+import type { Event } from '../src/services/eventService';
 
 /**
  * Reusable recursive file scanner.
@@ -53,6 +54,25 @@ export function createMusicPieceFixture(overrides: Partial<MusicPiece> = {}): Mu
 }
 
 /**
+ * Fixture creator for Event objects.
+ */
+export function createEventFixture(overrides: Partial<Event> = {}): Event {
+  return {
+    id: 'event-' + Math.random().toString(36).substr(2, 9),
+    collectionId: 'pbc_events_001',
+    collectionName: 'events',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+    title: 'Default Event Title',
+    date: new Date().toISOString(),
+    type: 'Performance',
+    details: 'Default Event Details',
+    parentPerformanceId: '',
+    ...overrides
+  } as Event;
+}
+
+/**
  * Fixture creator for SectionDef objects.
  */
 export function createSectionDefFixture(overrides: Partial<SectionDef> = {}): SectionDef {
@@ -63,3 +83,4 @@ export function createSectionDefFixture(overrides: Partial<SectionDef> = {}): Se
     ...overrides
   };
 }
+

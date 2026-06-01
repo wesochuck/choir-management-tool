@@ -120,6 +120,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                     parentId: p.get("parentId"),
                     title: p.get("title"),
                     composer: p.get("composer"),
+                    arranger: p.get("arranger"),
                     duration: p.get("duration"),
                     created: p.get("created"),
                     updated: p.get("updated"),

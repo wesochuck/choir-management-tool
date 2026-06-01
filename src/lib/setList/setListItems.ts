@@ -127,8 +127,14 @@ export function resolveSetListDisplayRows(
     const parentPiece = linkedPiece?.parentId ? library.find(p => p.id === linkedPiece.parentId) : null;
 
     const displayTitle = item.title || linkedPiece?.title || '';
+    const linkedComposer = linkedPiece?.composer || parentPiece?.composer || '';
+    const linkedArranger = linkedPiece?.arranger || parentPiece?.arranger || '';
+    const combinedLinked = linkedComposer && linkedArranger 
+      ? `${linkedComposer} (arr. ${linkedArranger})` 
+      : (linkedComposer || linkedArranger);
+
     const displayComposer = item.type !== 'intermission' 
-      ? (item.composer || linkedPiece?.composer || parentPiece?.composer || '') 
+      ? (item.composer || combinedLinked || '') 
       : '';
     const rawDuration = item.duration || linkedPiece?.duration || '';
     const durationSeconds = parseDurationToSeconds(rawDuration);
@@ -203,7 +209,7 @@ export function filterMusicLibrarySuggestions(
   const q = query.trim().toLowerCase();
   if (!q) return [];
   return library
-    .filter(p => p.title.toLowerCase().includes(q) || p.composer?.toLowerCase().includes(q))
+    .filter(p => p.title.toLowerCase().includes(q) || p.composer?.toLowerCase().includes(q) || p.arranger?.toLowerCase().includes(q))
     .sort((a, b) => a.title.localeCompare(b.title))
     .slice(0, 10);
 }

@@ -59,6 +59,7 @@ export function buildVisibleMusicLibraryRows(
     result = result.filter(p => 
       p.title.toLowerCase().includes(lower) || 
       p.composer?.toLowerCase().includes(lower) ||
+      p.arranger?.toLowerCase().includes(lower) ||
       p.catalogId?.toLowerCase().includes(lower)
     );
   }

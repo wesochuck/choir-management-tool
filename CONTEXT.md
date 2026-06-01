@@ -90,8 +90,8 @@ The elapsed time since a music piece was last performed. In the music library, t
 ## Performance Recency Filter
 A search control in the music catalog that filters pieces based on how recently they were performed (e.g. within the last 1, 2, or 3 years, not performed for over 3 or 5 years, or never performed).
 
+## Composer
+The individual(s) who wrote the original musical work. Stored in the `composer` field of a music library piece.
 
-
-
-
-
+## Arranger
+The individual(s) who adapted or arranged the original musical work for a specific vocal setting or instrumentation. Stored in the new `arranger` field of a music library piece.

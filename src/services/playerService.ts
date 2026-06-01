@@ -12,6 +12,7 @@ export interface PlayerMediaFile {
   name: string;
   streamUrl: string;
   composer?: string;
+  arranger?: string;
   duration?: string;
   pieceId?: string;
   trackKey?: string;
@@ -111,6 +112,7 @@ function buildFilesFromPiece(
       baseId: itemId,
       name: itemTitle,
       composer: itemComposer || piece.composer,
+      arranger: piece.arranger,
       duration: itemDuration || piece.duration,
       pieceId: piece.id,
       trackKey: defaultTrackKey,
@@ -137,6 +139,7 @@ function buildFilesFromPiece(
       baseId: `${itemId}_${m.id}`,
       name: m.title || `${itemTitle} — Movement`,
       composer: m.composer || piece.composer,
+      arranger: m.arranger || piece.arranger,
       duration: m.duration,
       pieceId: m.id,
       trackKey: mDefaultKey,
@@ -186,6 +189,7 @@ export const playerService = {
           parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
           title: String(p.title || ''),
           composer: typeof p.composer === 'string' ? p.composer : undefined,
+          arranger: typeof p.arranger === 'string' ? p.arranger : undefined,
           duration: typeof p.duration === 'string' ? p.duration : undefined,
           created: typeof p.created === 'string' ? p.created : undefined,
           updated: typeof p.updated === 'string' ? p.updated : undefined,

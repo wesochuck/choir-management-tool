@@ -5,7 +5,7 @@ import {
   type MusicPieceWithPerformanceHistory 
 } from '../src/lib/music/performanceHistory';
 import { buildVisibleMusicLibraryRows } from '../src/lib/music/libraryRows';
-import { createMusicPieceFixture } from './helpers';
+import { createMusicPieceFixture, createEventFixture } from './helpers';
 
 describe('Performance Recency Filtering', () => {
   describe('getMostRecentPerformanceDate', () => {
@@ -27,10 +27,10 @@ describe('Performance Recency Filtering', () => {
         ...createMusicPieceFixture({ id: 'p1', title: 'Song 1' }),
         expand: {
           performances: [
-            { id: 'ev1', title: 'Event 1', date: '2024-05-01T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] },
-            { id: 'ev2', title: 'Event 2', date: 'invalid-date', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] },
-            { id: 'ev3', title: 'Event 3', date: '2025-06-01T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] },
-            { id: 'ev4', title: 'Event 4', date: '', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] }
+            createEventFixture({ id: 'ev1', title: 'Event 1', date: '2024-05-01T12:00:00Z', type: 'Performance' }),
+            createEventFixture({ id: 'ev2', title: 'Event 2', date: 'invalid-date', type: 'Performance' }),
+            createEventFixture({ id: 'ev3', title: 'Event 3', date: '2025-06-01T12:00:00Z', type: 'Performance' }),
+            createEventFixture({ id: 'ev4', title: 'Event 4', date: '', type: 'Performance' })
           ]
         }
       };
@@ -42,9 +42,9 @@ describe('Performance Recency Filtering', () => {
         ...createMusicPieceFixture({ id: 'p1', title: 'Song 1' }),
         expand: {
           performances: [
-            { id: 'ev1', title: 'Event 1', date: '2025-02-15T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] },
-            { id: 'ev2', title: 'Event 2', date: '2026-01-10T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] },
-            { id: 'ev3', title: 'Event 3', date: '2024-12-25T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] }
+            createEventFixture({ id: 'ev1', title: 'Event 1', date: '2025-02-15T12:00:00Z', type: 'Performance' }),
+            createEventFixture({ id: 'ev2', title: 'Event 2', date: '2026-01-10T12:00:00Z', type: 'Performance' }),
+            createEventFixture({ id: 'ev3', title: 'Event 3', date: '2024-12-25T12:00:00Z', type: 'Performance' })
           ]
         }
       };
@@ -63,7 +63,7 @@ describe('Performance Recency Filtering', () => {
       ...createMusicPieceFixture({ id: 'p_recent', title: 'Recent Performance' }),
       expand: {
         performances: [
-          { id: 'ev1', title: 'Event 1', date: '2025-11-30T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] }
+          createEventFixture({ id: 'ev1', title: 'Event 1', date: '2025-11-30T12:00:00Z', type: 'Performance' })
         ]
       }
     };
@@ -73,7 +73,7 @@ describe('Performance Recency Filtering', () => {
       ...createMusicPieceFixture({ id: 'p_med', title: 'Medium Recency' }),
       expand: {
         performances: [
-          { id: 'ev2', title: 'Event 2', date: '2023-11-30T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] }
+          createEventFixture({ id: 'ev2', title: 'Event 2', date: '2023-11-30T12:00:00Z', type: 'Performance' })
         ]
       }
     };
@@ -83,7 +83,7 @@ describe('Performance Recency Filtering', () => {
       ...createMusicPieceFixture({ id: 'p_old', title: 'Old Performance' }),
       expand: {
         performances: [
-          { id: 'ev3', title: 'Event 3', date: '2022-05-30T12:00:00Z', duration: 0, location: '', status: 'draft', description: '', type: 'concert', setList: [] }
+          createEventFixture({ id: 'ev3', title: 'Event 3', date: '2022-05-30T12:00:00Z', type: 'Performance' })
         ]
       }
     };

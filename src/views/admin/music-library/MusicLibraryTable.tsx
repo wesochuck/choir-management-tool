@@ -235,7 +235,11 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                         </div>
                     </div>
                 </td>
-                <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>{piece.composer || '-'}</td>
+                <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
+                    {piece.composer && piece.arranger 
+                        ? `${piece.composer} / arr. ${piece.arranger}` 
+                        : (piece.composer || piece.arranger || '-')}
+                </td>
                 <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
                     {piece.duration ? formatSecondsToDuration(parseDurationToSeconds(piece.duration)) : '-'}
                 </td>

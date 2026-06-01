@@ -10,6 +10,7 @@ import { formatSecondsToDuration, resolveCatalogLookupUrl, isValidDurationString
 import { LearningTracksEditor } from './LearningTracksEditor';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { zonedInputValueToUtc } from '../../../lib/timezone';
+import { AutocompleteInput } from '../../../components/admin/AutocompleteInput';
 import './MusicPieceModal.css';
 
 export interface MusicPieceModalProps {
@@ -44,13 +45,24 @@ export function MusicPieceModal({
     const { timezone } = useChoirSettings();
     const [title, setTitle] = useState('');
     const [composer, setComposer] = useState('');
+    const [arranger, setArranger] = useState('');
     const [duration, setDuration] = useState('');
+
+    const uniqueComposers = useMemo(() => {
+        return Array.from(new Set((allPieces || []).map(p => p.composer).filter(Boolean) as string[])).sort();
+    }, [allPieces]);
+
+    const uniqueArrangers = useMemo(() => {
+        return Array.from(new Set((allPieces || []).map(p => p.arranger).filter(Boolean) as string[])).sort();
+    }, [allPieces]);
     const [copies, setCopies] = useState<string>('');
     const [catalogId, setCatalogId] = useState('');
     const [sectionBuckets, setSectionBuckets] = useState<string[]>([]);
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
+    const [purchaseMonth, setPurchaseMonth] = useState('');
+    const [purchaseYear, setPurchaseYear] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
 
@@ -149,9 +161,25 @@ export function MusicPieceModal({
         if (piece) {
             setTitle(piece.title);
             setComposer(piece.composer || '');
+            setArranger(piece.arranger || '');
             setDuration(piece.duration || '');
             setCopies(piece.copies?.toString() || '');
             setCatalogId(piece.catalogId || '');
+            
+            if (piece.purchaseDate) {
+                const parts = piece.purchaseDate.split('-');
+                if (parts.length >= 2) {
+                    setPurchaseYear(parts[0]);
+                    setPurchaseMonth(parts[1]);
+                } else {
+                    setPurchaseYear('');
+                    setPurchaseMonth('');
+                }
+            } else {
+                setPurchaseYear('');
+                setPurchaseMonth('');
+            }
+
             setSectionBuckets(piece.sectionBuckets || []);
             setSelectedGenres(piece.genres || []);
             setSelectedPerformanceIds(piece.performances || []);
@@ -167,9 +195,12 @@ export function MusicPieceModal({
         } else {
             setTitle(initialTitle || '');
             setComposer('');
+            setArranger('');
             setDuration('');
             setCopies('');
             setCatalogId('');
+            setPurchaseYear('');
+            setPurchaseMonth('');
             setSectionBuckets([]);
             setSelectedGenres([]);
             setSelectedPerformanceIds([]);
@@ -199,10 +230,15 @@ export function MusicPieceModal({
         if (piece) {
             const titleChanged = title !== piece.title;
             const composerChanged = composer !== (piece.composer || '');
+            const arrangerChanged = arranger !== (piece.arranger || '');
             const durationChanged = duration !== (piece.duration || '');
             const copiesChanged = copies !== (piece.copies?.toString() || '');
             const catalogIdChanged = catalogId !== (piece.catalogId || '');
             const notesChanged = notes !== (piece.notes || '');
+            
+            const originalYear = piece.purchaseDate ? piece.purchaseDate.split('-')[0] : '';
+            const originalMonth = piece.purchaseDate ? piece.purchaseDate.split('-')[1] : '';
+            const purchaseDateChanged = purchaseMonth !== originalMonth || purchaseYear !== originalYear;
             
             const initialSections = [...(piece.sectionBuckets || [])].sort();
             const currentSections = [...sectionBuckets].sort();
@@ -216,10 +252,11 @@ export function MusicPieceModal({
             const currentPerformances = [...selectedPerformanceIds].sort();
             const performancesChanged = JSON.stringify(initialPerformances) !== JSON.stringify(currentPerformances);
 
-            return titleChanged || composerChanged || durationChanged || copiesChanged || catalogIdChanged || notesChanged || sectionsChanged || genresChanged || performancesChanged;
+            return titleChanged || composerChanged || arrangerChanged || durationChanged || copiesChanged || catalogIdChanged || notesChanged || sectionsChanged || genresChanged || performancesChanged || purchaseDateChanged;
         } else {
             const hasTitle = title !== (initialTitle || '');
             const hasComposer = Boolean(composer.trim());
+            const hasArranger = Boolean(arranger.trim());
             const hasDuration = Boolean(duration.trim());
             const hasCopies = Boolean(copies.trim());
             const hasCatalogId = Boolean(catalogId.trim());
@@ -229,10 +266,11 @@ export function MusicPieceModal({
             const hasPerformances = selectedPerformanceIds.length > 0;
             const hasTutti = tuttiFile !== null;
             const hasStagedMovements = localMovementsList.length > 0;
+            const hasPurchaseDate = Boolean(purchaseYear.trim()) || Boolean(purchaseMonth);
 
-            return hasTitle || hasComposer || hasDuration || hasCopies || hasCatalogId || hasNotes || hasSections || hasGenres || hasPerformances || hasTutti || hasStagedMovements;
+            return hasTitle || hasComposer || hasArranger || hasDuration || hasCopies || hasCatalogId || hasNotes || hasSections || hasGenres || hasPerformances || hasTutti || hasStagedMovements || hasPurchaseDate;
         }
-    }, [piece, title, composer, duration, copies, catalogId, notes, sectionBuckets, selectedGenres, selectedPerformanceIds, initialTitle, tuttiFile, localMovementsList]);
+    }, [piece, title, composer, arranger, duration, copies, catalogId, notes, sectionBuckets, selectedGenres, selectedPerformanceIds, initialTitle, tuttiFile, localMovementsList, purchaseYear, purchaseMonth]);
 
     const handleClose = async () => {
         if (isDirty) {
@@ -513,6 +551,7 @@ export function MusicPieceModal({
                 parentId: localPiece.id,
                 duration: newMovementDuration.trim() || undefined,
                 composer: composer || undefined,
+                arranger: arranger || undefined,
                 voicing: localPiece.voicing || undefined,
                 copies: copies ? parseInt(copies, 10) : undefined,
                 catalogId: catalogId || undefined,
@@ -547,9 +586,20 @@ export function MusicPieceModal({
                 return;
             }
 
+            let serializedPurchaseDate: string | undefined = undefined;
+            if (purchaseYear.trim()) {
+                const year = purchaseYear.trim();
+                const month = purchaseMonth ? purchaseMonth.padStart(2, '0') : '01';
+                serializedPurchaseDate = `${year}-${month}-01`;
+            } else {
+                serializedPurchaseDate = '';
+            }
+
             await onSave({
                 title,
                 composer,
+                arranger: arranger || undefined,
+                purchaseDate: serializedPurchaseDate,
                 duration: normalizedDuration || undefined,
                 copies: copies ? parseInt(copies, 10) : undefined,
                 catalogId,
@@ -692,9 +742,27 @@ export function MusicPieceModal({
                             <label className="text-label">Title</label>
                             <input required value={title} onChange={e => setTitle(e.target.value)} className="card music-piece-input" />
                         </div>
-                        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                            <label className="text-label">Composer/Arranger</label>
-                            <input value={composer} onChange={e => setComposer(e.target.value)} className="card music-piece-input" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Composer</label>
+                                <AutocompleteInput 
+                                    value={composer} 
+                                    onChange={setComposer} 
+                                    suggestions={uniqueComposers} 
+                                    placeholder="e.g. Ludwig van Beethoven" 
+                                    className="card music-piece-input" 
+                                />
+                            </div>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Arranger</label>
+                                <AutocompleteInput 
+                                    value={arranger} 
+                                    onChange={setArranger} 
+                                    suggestions={uniqueArrangers} 
+                                    placeholder="e.g. Alice Parker" 
+                                    className="card music-piece-input" 
+                                />
+                            </div>
                         </div>
                         {piece ? (
                             <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', margin: '4px 0' }}>
@@ -842,6 +910,43 @@ export function MusicPieceModal({
                                         Lookup ↗
                                     </a>
                                 )}
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Purchase Month</label>
+                                <select 
+                                    value={purchaseMonth} 
+                                    onChange={e => setPurchaseMonth(e.target.value)}
+                                    className="card music-piece-input"
+                                    style={{ height: '40px', padding: '0 10px', width: '100%' }}
+                                >
+                                    <option value="">-- Select Month --</option>
+                                    <option value="01">January</option>
+                                    <option value="02">February</option>
+                                    <option value="03">March</option>
+                                    <option value="04">April</option>
+                                    <option value="05">May</option>
+                                    <option value="06">June</option>
+                                    <option value="07">July</option>
+                                    <option value="08">August</option>
+                                    <option value="09">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <label className="text-label">Purchase Year</label>
+                                <input 
+                                    type="number" 
+                                    value={purchaseYear} 
+                                    onChange={e => setPurchaseYear(e.target.value)} 
+                                    placeholder="e.g. 2026" 
+                                    className="card music-piece-input"
+                                    min="1800"
+                                    max="2100"
+                                />
                             </div>
                         </div>
                         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>

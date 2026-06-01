@@ -61,13 +61,13 @@ describe('section-bucket applicability', () => {
 
 test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
   const pieces = [
-    createMusicPieceFixture({ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB' }),
+    createMusicPieceFixture({ id: '1', title: 'Hallelujah', composer: 'Handel', voicing: 'SATB', purchaseDate: '2026-05-01' }),
     createMusicPieceFixture({ id: '2', title: 'Restricted', composer: 'Comp', voicing: 'S', sectionBuckets: ['S', 'A'] })
   ];
   const csv = exportMusicToCSV(pieces);
-  assert.ok(csv.includes('Title,Composer,Voicing,Applies To'));
-  assert.ok(csv.includes('"Hallelujah","Handel","SATB","All"'));
-  assert.ok(csv.includes('"Restricted","Comp","S","S;A"'));
+  assert.ok(csv.includes('Title,Composer,Arranger,Copies,Catalog ID,Duration,Voicing,Applies To,Genres,Purchase Date,Notes'));
+  assert.ok(csv.includes('"Hallelujah","Handel","","","","","SATB","All","","2026-05-01",""'));
+  assert.ok(csv.includes('"Restricted","Comp","","","","","S","S;A","","",""'));
 });
 
 test('findDuplicates returns pieces with identical title and composer', () => {
