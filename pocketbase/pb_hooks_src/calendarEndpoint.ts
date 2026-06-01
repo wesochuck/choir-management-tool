@@ -60,6 +60,28 @@ function getChoirTimezoneLocal(app: PocketBaseApp): string {
     return timezone;
 }
 
+function getChoirNameLocal(app: PocketBaseApp): string {
+    try {
+        const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
+        const parsed = parseJsonField<string | Record<string, string>>(setting.get("value"));
+
+        if (typeof parsed === "string" && parsed.trim()) {
+            return parsed.trim();
+        }
+
+        if (parsed && typeof parsed === "object") {
+            const value = parsed.name || parsed.choirName || parsed.value;
+            if (typeof value === "string" && value.trim()) {
+                return value.trim();
+            }
+        }
+    } catch {
+        // ignore error
+    }
+
+    return "Choir";
+}
+
 /**
  * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
  * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
@@ -202,11 +224,16 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
         const dtstamp = new Date();
 
+        const choirName = getChoirNameLocal(app);
+        const calendarName = `${choirName} Schedule`;
+
         const icsContent = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//Choir Management Tool//EN',
             'CALSCALE:GREGORIAN',
+            `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
+            `X-WR-TIMEZONE:${timezone}`,
             'BEGIN:VEVENT',
             `UID:${uid}`,
             `DTSTAMP:${fmtUtc(dtstamp)}`,
@@ -220,8 +247,18 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             ''
         ].join('\r\n');
 
+        const filenameBase = calendarName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'choir-schedule';
+
+        const fileId = parts.e ? `event-${parts.e}` : `audition-${parts.a}`;
+
         e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-        e.response.header().set("Content-Disposition", `attachment; filename="${uid.split('@')[0]}.ics"`);
+        e.response.header().set(
+            "Content-Disposition",
+            `attachment; filename="${filenameBase}-${fileId}.ics"`
+        );
         
         return e.string(200, icsContent);
 
@@ -402,20 +439,28 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
             );
         });
 
+        const choirName = getChoirNameLocal(app);
+        const calendarName = `${choirName} Schedule`;
+
         const icsContent = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//Choir Management Tool//EN',
             'CALSCALE:GREGORIAN',
-            'X-WR-CALNAME:Choir Schedule',
+            `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
             'X-WR-TIMEZONE:' + timezone,
             vevents.join('\r\n'),
             'END:VCALENDAR',
             ''
         ].join('\r\n');
 
+        const filenameBase = calendarName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'choir-schedule';
+
         e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-        e.response.header().set("Content-Disposition", `attachment; filename="choir-schedule-${profile.id}.ics"`);
+        e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${profile.id}.ics"`);
         e.response.header().set("Cache-Control", "no-store, must-revalidate");
         
         return e.string(200, icsContent);

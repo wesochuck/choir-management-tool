@@ -198,24 +198,45 @@ export const profileService = {
     return await pb.collection('users').requestPasswordReset(email);
   },
 
-  async getCalendarFeedUrl(): Promise<string> {
+  async getCalendarFeedUrls(): Promise<CalendarFeedUrls> {
     const response = await pb.send<{ token: string }>('/api/singer/calendar-feed-url', {
-      method: 'GET'
+      method: 'GET',
     });
-    const baseUrl = pb.baseUrl || window.location.origin;
-    const feedUrl = `${baseUrl}/api/calendar/feed?token=${encodeURIComponent(response.token)}`;
-    return feedUrl.replace(/^http:/, 'webcal:').replace(/^https:/, 'webcal:');
+
+    return buildCalendarFeedUrls(pb.baseUrl || window.location.origin, response.token);
+  },
+
+  async getCalendarFeedUrl(): Promise<string> {
+    const urls = await this.getCalendarFeedUrls();
+    return urls.webcalUrl;
+  },
+
+  async resetCalendarFeedUrls(): Promise<CalendarFeedUrls> {
+    const response = await pb.send<{ token: string }>('/api/singer/calendar-feed-url/reset', {
+      method: 'POST',
+    });
+
+    return buildCalendarFeedUrls(pb.baseUrl || window.location.origin, response.token);
   },
 
   async resetCalendarFeedUrl(): Promise<string> {
-    const response = await pb.send<{ token: string }>('/api/singer/calendar-feed-url/reset', {
-      method: 'POST'
-    });
-    const baseUrl = pb.baseUrl || window.location.origin;
-    const feedUrl = `${baseUrl}/api/calendar/feed?token=${encodeURIComponent(response.token)}`;
-    return feedUrl.replace(/^http:/, 'webcal:').replace(/^https:/, 'webcal:');
+    const urls = await this.resetCalendarFeedUrls();
+    return urls.webcalUrl;
   },
 };
+
+export interface CalendarFeedUrls {
+  httpsUrl: string;
+  webcalUrl: string;
+}
+
+function buildCalendarFeedUrls(baseUrl: string, token: string): CalendarFeedUrls {
+  const httpsBaseUrl = baseUrl.replace(/^webcal:/, 'https:');
+  const httpsUrl = `${httpsBaseUrl}/api/calendar/feed?token=${encodeURIComponent(token)}`;
+  const webcalUrl = httpsUrl.replace(/^https?:/, 'webcal:');
+
+  return { httpsUrl, webcalUrl };
+}
 
 function escapeCsvField(value: unknown): string {
   const text = value == null ? '' : String(value);

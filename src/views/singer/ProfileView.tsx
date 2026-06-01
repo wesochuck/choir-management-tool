@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
-import { profileService, type Profile } from '../../services/profileService';
+import { profileService, type Profile, type CalendarFeedUrls } from '../../services/profileService';
 import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
@@ -18,7 +18,7 @@ export default function ProfileView() {
   const [prefSuccess, setPrefSuccess] = useState(false);
 
   // Calendar sync states
-  const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
+  const [calendarFeedUrls, setCalendarFeedUrls] = useState<CalendarFeedUrls | null>(null);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -26,8 +26,8 @@ export default function ProfileView() {
     if (!profileId) return;
     setIsCalendarLoading(true);
     try {
-      const url = await profileService.getCalendarFeedUrl();
-      setCalendarUrl(url);
+      const urls = await profileService.getCalendarFeedUrls();
+      setCalendarFeedUrls(urls);
     } catch {
       // ignore silently
     } finally {
@@ -35,10 +35,10 @@ export default function ProfileView() {
     }
   }, []);
 
-  const handleCopyLink = async () => {
-    if (!calendarUrl) return;
+  const handleCopyGoogleLink = async () => {
+    if (!calendarFeedUrls) return;
     try {
-      await navigator.clipboard.writeText(calendarUrl);
+      await navigator.clipboard.writeText(calendarFeedUrls.httpsUrl);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
@@ -57,8 +57,8 @@ export default function ProfileView() {
 
     setIsCalendarLoading(true);
     try {
-      const url = await profileService.resetCalendarFeedUrl();
-      setCalendarUrl(url);
+      const urls = await profileService.resetCalendarFeedUrls();
+      setCalendarFeedUrls(urls);
       await dialog.showMessage({
         title: 'Link Reset',
         message: 'Your calendar subscription link has been successfully reset. Please update the link in your calendar applications.',
@@ -316,43 +316,69 @@ export default function ProfileView() {
             </p>
 
             <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                <label className="text-label">Your Calendar Subscription URL</label>
-                {isCalendarLoading ? (
-                  <div className="text-xs text-muted" style={{ padding: 'var(--space-sm) 0' }}>Loading feed link...</div>
-                ) : calendarUrl ? (
-                  <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center', width: '100%' }}>
-                    <input
-                      readOnly
-                      value={calendarUrl}
-                      className="card"
+              {isCalendarLoading ? (
+                <div className="text-xs text-muted" style={{ padding: 'var(--space-sm) 0' }}>Loading feed links...</div>
+              ) : calendarFeedUrls ? (
+                <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                  {/* Action 1: Subscribe in Calendar App (webcalUrl) */}
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Subscribe Directly</label>
+                    <a
+                      href={calendarFeedUrls.webcalUrl}
+                      className="btn btn-primary"
                       style={{
-                        flex: 1,
-                        padding: '0 12px',
                         height: '40px',
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'var(--bg-muted)',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.85rem',
-                        textOverflow: 'ellipsis',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap'
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textDecoration: 'none',
+                        textAlign: 'center',
+                        width: '100%'
                       }}
-                      onClick={(e) => (e.target as HTMLInputElement).select()}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCopyLink}
-                      className={`btn ${isCopied ? 'btn-success' : 'btn-primary'}`}
-                      style={{ height: '40px', padding: '0 var(--space-md)', minWidth: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      {isCopied ? 'Copied! ✓' : 'Copy'}
-                    </button>
+                      Subscribe in Calendar App
+                    </a>
                   </div>
-                ) : (
-                  <div className="text-xs text-muted" style={{ color: 'var(--color-danger-text)' }}>Failed to load calendar link.</div>
-                )}
-              </div>
+
+                  {/* Action 2: Copy Google Calendar URL (httpsUrl) */}
+                  <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Google Calendar Setup</label>
+                    <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center', width: '100%' }}>
+                      <input
+                        readOnly
+                        value={calendarFeedUrls.httpsUrl}
+                        className="card"
+                        style={{
+                          flex: 1,
+                          padding: '0 12px',
+                          height: '40px',
+                          border: '1px solid var(--border)',
+                          backgroundColor: 'var(--bg-muted)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.85rem',
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCopyGoogleLink}
+                        className={`btn ${isCopied ? 'btn-success' : 'btn-primary'}`}
+                        style={{ height: '40px', padding: '0 var(--space-md)', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
+                      </button>
+                    </div>
+                    <span className="text-xs text-muted" style={{ fontSize: '0.75rem' }}>
+                      For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-muted" style={{ color: 'var(--color-danger-text)' }}>Failed to load calendar link.</div>
+              )}
 
               <div className="flex-row" style={{ justifyContent: 'flex-start', marginTop: 'var(--space-xs)' }}>
                 <button
