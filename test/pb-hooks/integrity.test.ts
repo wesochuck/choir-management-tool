@@ -260,3 +260,27 @@ test('Manual pb_hooks self-containment validation', () => {
         }
     }
 });
+
+test('Raw SQL queries in main.pb.js do not use raw colon parameter syntax', () => {
+    const content = readGeneratedMain();
+    const queryBlocks: string[] = [];
+    let startIdx = 0;
+    while (true) {
+        const newQueryIdx = content.indexOf('.newQuery(`', startIdx);
+        if (newQueryIdx === -1) break;
+        const endIdx = content.indexOf('`)', newQueryIdx);
+        if (endIdx !== -1) {
+            queryBlocks.push(content.slice(newQueryIdx, endIdx));
+        }
+        startIdx = newQueryIdx + 11;
+    }
+
+    for (const query of queryBlocks) {
+        const paramRegex = /(?<!:|{|[a-zA-Z]|\d):\b[a-zA-Z_]\w*\b/g;
+        const matches = query.match(paramRegex) || [];
+        if (matches.length > 0) {
+            assert.fail(`Found invalid raw SQL query parameter syntax: ${matches.join(', ')} in query: ${query}. Named query parameters in PocketBase db().newQuery must always be formatted as {:paramName} to parse correctly.`);
+        }
+    }
+});
+

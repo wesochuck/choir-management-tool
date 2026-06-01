@@ -54,7 +54,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 processingStartedAt = NULL
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
-              AND (attempts IS NULL OR attempts < :maxAttempts)
+              AND (attempts IS NULL OR attempts < {:maxAttempts})
         `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
 
         app.db().newQuery(`
@@ -64,7 +64,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 processingStartedAt = NULL
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
-              AND attempts >= :maxAttempts
+              AND attempts >= {:maxAttempts}
         `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
     } catch (recoverErr) {
         console.log("[Email Queue] Error recovering stale records: " + recoverErr);
@@ -121,15 +121,15 @@ export function processEmailQueue(app: PocketBaseApp): void {
             app.db().newQuery(`
                 UPDATE emailQueue
                 SET status = 'Processing',
-                    processingRunId = :runId,
+                    processingRunId = {:runId},
                     processingStartedAt = datetime('now')
                 WHERE id IN (
                     SELECT id
                     FROM emailQueue
                     WHERE status = 'Pending'
-                      AND (attempts IS NULL OR attempts < :maxAttempts)
+                      AND (attempts IS NULL OR attempts < {:maxAttempts})
                     ORDER BY created ASC
-                    LIMIT :batchSize
+                    LIMIT {:batchSize}
                 )
             `).bind({
                 runId: runId,

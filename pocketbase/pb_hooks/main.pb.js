@@ -680,7 +680,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
             app.db().newQuery(`
                 UPDATE emailQueue
@@ -689,7 +689,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= :maxAttempts
+                  AND attempts >= {:maxAttempts}
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         }
         catch (recoverErr) {
@@ -747,15 +747,15 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                 app.db().newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
-                        processingRunId = :runId,
+                        processingRunId = {:runId},
                         processingStartedAt = datetime('now')
                     WHERE id IN (
                         SELECT id
                         FROM emailQueue
                         WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < :maxAttempts)
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
                         ORDER BY created ASC
-                        LIMIT :batchSize
+                        LIMIT {:batchSize}
                     )
                 `).bind({
                     runId: runId,
@@ -1470,7 +1470,7 @@ onRecordAfterCreateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
             app.db().newQuery(`
                 UPDATE emailQueue
@@ -1479,7 +1479,7 @@ onRecordAfterCreateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= :maxAttempts
+                  AND attempts >= {:maxAttempts}
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         }
         catch (recoverErr) {
@@ -1537,15 +1537,15 @@ onRecordAfterCreateSuccess((e) => {
                 app.db().newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
-                        processingRunId = :runId,
+                        processingRunId = {:runId},
                         processingStartedAt = datetime('now')
                     WHERE id IN (
                         SELECT id
                         FROM emailQueue
                         WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < :maxAttempts)
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
                         ORDER BY created ASC
-                        LIMIT :batchSize
+                        LIMIT {:batchSize}
                     )
                 `).bind({
                     runId: runId,
@@ -2265,7 +2265,7 @@ onRecordAfterUpdateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
             app.db().newQuery(`
                 UPDATE emailQueue
@@ -2274,7 +2274,7 @@ onRecordAfterUpdateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= :maxAttempts
+                  AND attempts >= {:maxAttempts}
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         }
         catch (recoverErr) {
@@ -2332,15 +2332,15 @@ onRecordAfterUpdateSuccess((e) => {
                 app.db().newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
-                        processingRunId = :runId,
+                        processingRunId = {:runId},
                         processingStartedAt = datetime('now')
                     WHERE id IN (
                         SELECT id
                         FROM emailQueue
                         WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < :maxAttempts)
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
                         ORDER BY created ASC
-                        LIMIT :batchSize
+                        LIMIT {:batchSize}
                     )
                 `).bind({
                     runId: runId,
@@ -3021,7 +3021,7 @@ onRecordAfterCreateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
             app.db().newQuery(`
                 UPDATE emailQueue
@@ -3030,7 +3030,7 @@ onRecordAfterCreateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= :maxAttempts
+                  AND attempts >= {:maxAttempts}
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         }
         catch (recoverErr) {
@@ -3088,15 +3088,15 @@ onRecordAfterCreateSuccess((e) => {
                 app.db().newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
-                        processingRunId = :runId,
+                        processingRunId = {:runId},
                         processingStartedAt = datetime('now')
                     WHERE id IN (
                         SELECT id
                         FROM emailQueue
                         WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < :maxAttempts)
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
                         ORDER BY created ASC
-                        LIMIT :batchSize
+                        LIMIT {:batchSize}
                     )
                 `).bind({
                     runId: runId,
@@ -3852,7 +3852,7 @@ onRecordAfterUpdateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
             app.db().newQuery(`
                 UPDATE emailQueue
@@ -3861,7 +3861,7 @@ onRecordAfterUpdateSuccess((e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= :maxAttempts
+                  AND attempts >= {:maxAttempts}
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         }
         catch (recoverErr) {
@@ -3919,15 +3919,15 @@ onRecordAfterUpdateSuccess((e) => {
                 app.db().newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
-                        processingRunId = :runId,
+                        processingRunId = {:runId},
                         processingStartedAt = datetime('now')
                     WHERE id IN (
                         SELECT id
                         FROM emailQueue
                         WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < :maxAttempts)
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
                         ORDER BY created ASC
-                        LIMIT :batchSize
+                        LIMIT {:batchSize}
                     )
                 `).bind({
                     runId: runId,
@@ -4999,7 +4999,7 @@ function processEmailQueue(app) {
                 processingStartedAt = NULL
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
-              AND (attempts IS NULL OR attempts < :maxAttempts)
+              AND (attempts IS NULL OR attempts < {:maxAttempts})
         `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         app.db().newQuery(`
             UPDATE emailQueue
@@ -5008,7 +5008,7 @@ function processEmailQueue(app) {
                 processingStartedAt = NULL
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
-              AND attempts >= :maxAttempts
+              AND attempts >= {:maxAttempts}
         `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
     }
     catch (recoverErr) {
@@ -5066,15 +5066,15 @@ function processEmailQueue(app) {
             app.db().newQuery(`
                 UPDATE emailQueue
                 SET status = 'Processing',
-                    processingRunId = :runId,
+                    processingRunId = {:runId},
                     processingStartedAt = datetime('now')
                 WHERE id IN (
                     SELECT id
                     FROM emailQueue
                     WHERE status = 'Pending'
-                      AND (attempts IS NULL OR attempts < :maxAttempts)
+                      AND (attempts IS NULL OR attempts < {:maxAttempts})
                     ORDER BY created ASC
-                    LIMIT :batchSize
+                    LIMIT {:batchSize}
                 )
             `).bind({
                 runId: runId,
@@ -6141,7 +6141,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
             app.db().newQuery(`
                 UPDATE emailQueue
@@ -6150,7 +6150,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     processingStartedAt = NULL
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= :maxAttempts
+                  AND attempts >= {:maxAttempts}
             `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
         }
         catch (recoverErr) {
@@ -6208,15 +6208,15 @@ routerAdd("POST", "/api/queue/process", (e) => {
                 app.db().newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
-                        processingRunId = :runId,
+                        processingRunId = {:runId},
                         processingStartedAt = datetime('now')
                     WHERE id IN (
                         SELECT id
                         FROM emailQueue
                         WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < :maxAttempts)
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
                         ORDER BY created ASC
-                        LIMIT :batchSize
+                        LIMIT {:batchSize}
                     )
                 `).bind({
                     runId: runId,
