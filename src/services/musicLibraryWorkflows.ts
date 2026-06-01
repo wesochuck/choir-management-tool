@@ -32,19 +32,21 @@ export const musicLibraryWorkflows = {
     }
 
     if (options?.movements && options.movements.length > 0) {
-      for (const mov of options.movements) {
-        await musicLibraryService.createPiece({
-          title: mov.title,
-          duration: mov.duration || undefined,
-          parentId: parent.id,
-          composer: parent.composer || undefined,
-          voicing: parent.voicing || undefined,
-          copies: parent.copies !== undefined ? parent.copies : undefined,
-          catalogId: parent.catalogId || undefined,
-          genres: parent.genres || [],
-          performances: []
-        });
-      }
+      await Promise.all(
+        options.movements.map((mov) =>
+          musicLibraryService.createPiece({
+            title: mov.title,
+            duration: mov.duration || undefined,
+            parentId: parent.id,
+            composer: parent.composer || undefined,
+            voicing: parent.voicing || undefined,
+            copies: parent.copies !== undefined ? parent.copies : undefined,
+            catalogId: parent.catalogId || undefined,
+            genres: parent.genres || [],
+            performances: [],
+          })
+        )
+      );
     }
 
     return parent;
