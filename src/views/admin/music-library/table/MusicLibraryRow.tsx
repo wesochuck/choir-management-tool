@@ -5,7 +5,7 @@ import {
   formatSecondsToDuration,
   parseDurationToSeconds,
 } from '../../../../lib/musicPieceUtils';
-import { getMostRecentPerformanceDate } from '../../../../lib/music/performanceHistory';
+import { getEffectiveMostRecentPerformanceDate } from '../../../../lib/music/performanceHistory';
 import { MusicLibraryTitleCell } from './MusicLibraryTitleCell';
 import { MusicLibraryCatalogCell } from './MusicLibraryCatalogCell';
 import { MusicLibraryTracksCell } from './MusicLibraryTracksCell';
@@ -51,6 +51,7 @@ export function MusicLibraryRow({
   const isChild = isChildMovement;
   const totalMovementTracksCount = getMovementTrackCount(piece, allPieces);
   const hasTracks = hasAnyTracks(piece, allPieces);
+  const lastPerformedDate = getEffectiveMostRecentPerformanceDate(piece, allPieces);
 
   return (
     <tr
@@ -153,7 +154,7 @@ export function MusicLibraryRow({
           verticalAlign: 'middle',
         }}
       >
-        {getMostRecentPerformanceDate(piece) || '-'}
+        {lastPerformedDate || '-'}
       </td>
 
       {/* Column 8: Audio Tracks Control Status */}

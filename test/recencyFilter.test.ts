@@ -136,5 +136,37 @@ describe('Performance Recency Filtering', () => {
       assert.strictEqual(rows.length, 1);
       assert.strictEqual(rows[0].id, 'p_never');
     });
+
+    it('treats a child movement as recently performed when its parent was recently performed', () => {
+      const parent = {
+        ...createMusicPieceFixture({ id: 'parent', title: 'Parent' }),
+        expand: {
+          performances: [
+            createEventFixture({ id: 'ev1', title: 'Perf 1', date: '2025-11-30T12:00:00Z', type: 'Performance' })
+          ]
+        }
+      };
+      const child = createMusicPieceFixture({ id: 'child', title: 'Child', parentId: 'parent' });
+
+      // If showMovements is true, child is included
+      const rows = buildVisibleMusicLibraryRows([parent, child], { recencyFilter: 'within-1-year', showMovements: true, now });
+      assert.strictEqual(rows.length, 2);
+      assert.ok(rows.find(r => r.id === 'child'));
+    });
+
+    it('does not classify a child movement as never performed when its parent has performance history', () => {
+      const parent = {
+        ...createMusicPieceFixture({ id: 'parent', title: 'Parent' }),
+        expand: {
+          performances: [
+            createEventFixture({ id: 'ev1', title: 'Perf 1', date: '2025-11-30T12:00:00Z', type: 'Performance' })
+          ]
+        }
+      };
+      const child = createMusicPieceFixture({ id: 'child', title: 'Child', parentId: 'parent' });
+
+      const rows = buildVisibleMusicLibraryRows([parent, child], { recencyFilter: 'never', showMovements: true, now });
+      assert.strictEqual(rows.length, 0); // neither is "never performed" because child inherits parent's date
+    });
   });
 });

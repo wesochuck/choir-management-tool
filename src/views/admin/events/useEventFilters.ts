@@ -7,8 +7,10 @@ export function useEventFilters(events: Event[]) {
   const [activeTab, setActiveTab] = useState<EventsTab>('all');
   const [showPastEvents, setShowPastEvents] = useState(false);
 
+  const [now] = useState(() => Date.now());
+
   const filteredEvents = useMemo(() => {
-    const cutoffTime = Date.now() - 3 * 60 * 60 * 1000;
+    const cutoffTime = now - 3 * 60 * 60 * 1000;
 
     const filtered = events.filter((event) => {
       if (!showPastEvents) {
@@ -24,7 +26,7 @@ export function useEventFilters(events: Event[]) {
     return [...filtered].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
-  }, [events, activeTab, showPastEvents]);
+  }, [events, activeTab, showPastEvents, now]);
 
   return {
     activeTab,

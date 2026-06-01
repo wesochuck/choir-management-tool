@@ -61,6 +61,29 @@ export function formatMostRecentPerformanceDate(piece: MusicPieceWithPerformance
 }
 
 /**
+ * Resolves the effective most recent performance date, inheriting from parent if needed.
+ */
+export function getEffectiveMostRecentPerformanceDate(
+  piece: MusicPieceWithPerformanceHistory,
+  allPieces: MusicPieceWithPerformanceHistory[] = [],
+): string | null {
+  const ownDate = getMostRecentPerformanceDate(piece);
+  if (ownDate) return ownDate;
+
+  if (!piece.parentId) return null;
+
+  const expandedParent = piece.expand?.parentId as
+    | MusicPieceWithPerformanceHistory
+    | undefined;
+
+  const parent =
+    allPieces.find((candidate) => candidate.id === piece.parentId) ||
+    expandedParent;
+
+  return parent ? getMostRecentPerformanceDate(parent) : null;
+}
+
+/**
  * Formats the performance history of a music piece.
  * @param piece The music piece object.
  * @returns An array of formatted performance string titles with dates.

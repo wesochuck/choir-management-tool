@@ -2,7 +2,7 @@ import type { MusicPiece } from '../../types/musicLibrary';
 import { filterPiecesBySectionBucket } from './applicability';
 import { filterPiecesByGenre } from './genres';
 import {
-  getMostRecentPerformanceDate,
+  getEffectiveMostRecentPerformanceDate,
   type PerformanceRecencyFilter,
 } from './performanceHistory';
 
@@ -92,7 +92,7 @@ export function buildVisibleMusicLibraryRows(
   if (recencyFilter && recencyFilter !== 'all') {
     const referenceDate = now || new Date();
     result = result.filter(p => {
-      const mostRecent = getMostRecentPerformanceDate(p);
+      const mostRecent = getEffectiveMostRecentPerformanceDate(p, pieces);
 
       if (recencyFilter === 'never') {
         return mostRecent === null;
