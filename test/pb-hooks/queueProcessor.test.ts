@@ -123,11 +123,22 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
             if (collection === 'appSettings' && filter === "key = 'choir_name'") return choirNameSetting;
             throw new Error('Not found setting');
         },
-        findRecordsByFilter: (collection: string, filter: string) => {
+        findRecordsByFilter: (
+            collection: string,
+            filter: string,
+            _sort?: string,
+            _limit?: number,
+            _offset?: number,
+            params?: Record<string, unknown>
+        ) => {
             if (collection === 'emailQueue') {
-                if (filter.includes("status = 'Processing'") && filter.includes("processingRunId = '")) {
-                    const match = filter.match(/processingRunId = '([^']+)'/);
-                    const queryRunId = match ? match[1] : '';
+                if (filter.includes("status = 'Processing'") && filter.includes("processingRunId =")) {
+                    const queryRunId = typeof params?.runId === 'string'
+                        ? params.runId
+                        : (() => {
+                            const match = filter.match(/processingRunId = '([^']+)'/);
+                            return match ? match[1] : '';
+                        })();
                     return allQueueRecords.filter(r => r.get('status') === 'Processing' && r.get('processingRunId') === queryRunId);
                 }
             }
@@ -183,7 +194,7 @@ test('processEmailQueue batched success and failure flows', () => {
         filters: JSON.stringify({ eventId: 'evt-1' })
     });
 
-    const { mockApp, savedRecords, sentEmails } = setupMockApp([recordSuccess, recordFail], (email) => {
+    const { mockApp, sentEmails } = setupMockApp([recordSuccess, recordFail], (email) => {
         if (email === 'fail@example.com') {
             throw new Error('SMTP connection failed');
         }
@@ -278,9 +289,9 @@ test('processEmailQueue stale processing record recovery', () => {
     assert.strictEqual(staleProcessingFailed.get('processingRunId'), null, 'Stale failed records should clear processingRunId');
 });
 
-test('processEmailQueue batch size limit', () => {
-    // Generate 160 pending records
-    const records = Array.from({ length: 160 }, (_, i) => new MockRecord('emailQueue', {
+test('processEmailQueue batch window limit', () => {
+    // Generate 1000 pending records so one invocation can only drain up to 6*150 records.
+    const records = Array.from({ length: 1000 }, (_, i) => new MockRecord('emailQueue', {
         id: `q-${i}`,
         recipientId: `usr-${i}`,
         recipientEmail: `user-${i}@example.com`,
@@ -294,10 +305,10 @@ test('processEmailQueue batch size limit', () => {
 
     processEmailQueue(mockApp);
 
-    // Should claim and send exactly 150 records, leaving 10 records Pending
+    // Should claim and send exactly 900 records (6 batches), leaving 100 records Pending
     const sentCount = records.filter(r => r.get('status') === 'Sent').length;
     const pendingCount = records.filter(r => r.get('status') === 'Pending').length;
 
-    assert.strictEqual(sentCount, 150, 'Exactly 150 records should be processed in the first batch');
-    assert.strictEqual(pendingCount, 10, 'Remaining 10 records should remain Pending');
+    assert.strictEqual(sentCount, 900, 'Exactly 900 records should be processed in one invocation');
+    assert.strictEqual(pendingCount, 100, 'Remaining 100 records should remain Pending for the next invocation');
 });

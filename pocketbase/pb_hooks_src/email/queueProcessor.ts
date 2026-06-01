@@ -43,6 +43,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
 
     const EMAIL_QUEUE_BATCH_SIZE = 150;
     const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+    const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
 
     // Stale Processing record recovery
     try {
@@ -68,49 +69,6 @@ export function processEmailQueue(app: PocketBaseApp): void {
     } catch (recoverErr) {
         console.log("[Email Queue] Error recovering stale records: " + recoverErr);
     }
-
-    const runId = $security.randomString(20);
-    console.log("[Email Queue] Starting processing run: " + runId);
-
-    // Atomic SQLite-level claiming
-    try {
-        app.db().newQuery(`
-            UPDATE emailQueue
-            SET status = 'Processing',
-                processingRunId = :runId,
-                processingStartedAt = datetime('now')
-            WHERE id IN (
-                SELECT id
-                FROM emailQueue
-                WHERE status = 'Pending'
-                  AND (attempts IS NULL OR attempts < :maxAttempts)
-                ORDER BY created ASC
-                LIMIT :batchSize
-            )
-        `).bind({
-            runId: runId,
-            maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-            batchSize: EMAIL_QUEUE_BATCH_SIZE
-        }).execute();
-    } catch (claimErr) {
-        console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
-        return;
-    }
-
-    const records = app.findRecordsByFilter(
-        "emailQueue",
-        `status = 'Processing' && processingRunId = '${runId}'`,
-        "created",
-        EMAIL_QUEUE_BATCH_SIZE,
-        0
-    );
-
-    if (!records || records.length === 0) {
-        console.log("[Email Queue] No records claimed for run: " + runId);
-        return;
-    }
-
-    console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
 
     // Build variables used for layout rendering
     const secret = getQueueHmacSecret(app);
@@ -152,74 +110,124 @@ export function processEmailQueue(app: PocketBaseApp): void {
         // use default timezone
     }
 
-    records.forEach((record: PocketBaseRecord) => {
+    let totalClaimed = 0;
+
+    for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+        const runId = $security.randomString(20);
+        console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+
+        // Atomic SQLite-level claiming
         try {
-            const rawContent = record.get("rawContent") as string || "";
-            const recipientId = record.get("recipientId") as string;
-            const recipientEmail = record.get("recipientEmail") as string;
-            const recipientName = record.get("recipientName") as string || "Singer";
-            const filters = parseJsonField<Record<string, string>>(record.get("filters")) || {};
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Processing',
+                    processingRunId = :runId,
+                    processingStartedAt = datetime('now')
+                WHERE id IN (
+                    SELECT id
+                    FROM emailQueue
+                    WHERE status = 'Pending'
+                      AND (attempts IS NULL OR attempts < :maxAttempts)
+                    ORDER BY created ASC
+                    LIMIT :batchSize
+                )
+            `).bind({
+                runId: runId,
+                maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                batchSize: EMAIL_QUEUE_BATCH_SIZE
+            }).execute();
+        } catch (claimErr) {
+            console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+            return;
+        }
 
-            // Temporarily protect placeholders containing underscores from markdown parsing
-            const protectedContent = rawContent
-                .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+        const records = app.findRecordsByFilter(
+            "emailQueue",
+            "status = 'Processing' && processingRunId = {:runId}",
+            "created",
+            EMAIL_QUEUE_BATCH_SIZE,
+            0,
+            { runId }
+        );
 
-            let htmlBody = renderMarkdown(protectedContent);
-
-            // Restore protected placeholders
-            htmlBody = htmlBody
-                .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
-
-            let subject = record.get("subject") as string || "";
-            subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
-
-            // Fetch dynamic event details if enqueued under filters
-            let event: PocketBaseRecord | null = null;
-            if (filters && filters.eventId) {
-                try {
-                    event = app.findRecordById("events", filters.eventId);
-                } catch {
-                    // event not found
-                }
+        if (!records || records.length === 0) {
+            if (totalClaimed === 0) {
+                console.log("[Email Queue] No records claimed for run: " + runId);
             }
+            break;
+        }
 
-            // Perform template placeholder resolutions (same engine as legacy)
-            htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
-            htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+        totalClaimed += records.length;
+        console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
 
-            if (event) {
-                const eventDate = event.get("date") as string;
-                const eventTitle = (event.get("title") || event.get("type") || "Event") as string;
-                const eventType = (event.get("type") || "Performance") as string;
-                const eventDetails = (event.get("details") || "") as string;
-                let venueName = "TBD";
-                try {
-                    const venueRecord = app.findRecordById("venues", event.get("venue") as string);
-                    venueName = (venueRecord.get("name") || "TBD") as string;
-                } catch {
-                    // venue not found
+        records.forEach((record: PocketBaseRecord) => {
+            try {
+                const rawContent = record.get("rawContent") as string || "";
+                const recipientId = record.get("recipientId") as string;
+                const recipientEmail = record.get("recipientEmail") as string;
+                const recipientName = record.get("recipientName") as string || "Singer";
+                const filters = parseJsonField<Record<string, string>>(record.get("filters")) || {};
+
+                // Temporarily protect placeholders containing underscores from markdown parsing
+                const protectedContent = rawContent
+                    .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                    .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                    .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                    .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                    .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                    .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+
+                let htmlBody = renderMarkdown(protectedContent);
+
+                // Restore protected placeholders
+                htmlBody = htmlBody
+                    .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                    .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                    .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                    .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                    .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                    .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+
+                let subject = record.get("subject") as string || "";
+                subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+
+                // Fetch dynamic event details if enqueued under filters
+                let event: PocketBaseRecord | null = null;
+                if (filters && filters.eventId) {
+                    try {
+                        event = app.findRecordById("events", filters.eventId);
+                    } catch {
+                        // event not found
+                    }
                 }
 
-                const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                // Perform template placeholder resolutions (same engine as legacy)
+                htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
 
-                // Resolve event placeholders in subject too
-                subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
-                                 .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
-                                 .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                if (event) {
+                    const eventDate = event.get("date") as string;
+                    const eventTitle = (event.get("title") || event.get("type") || "Event") as string;
+                    const eventType = (event.get("type") || "Performance") as string;
+                    const eventDetails = (event.get("details") || "") as string;
+                    let venueName = "TBD";
+                    try {
+                        const venueRecord = app.findRecordById("venues", event.get("venue") as string);
+                        venueName = (venueRecord.get("name") || "TBD") as string;
+                    } catch {
+                        // venue not found
+                    }
 
-                const eventInfoHtml = `
+                    const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                    const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+                    // Resolve event placeholders in subject too
+                    subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                                    .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                                    .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+
+                    const eventInfoHtml = `
 <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
     <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
     <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
@@ -230,27 +238,27 @@ export function processEmailQueue(app: PocketBaseApp): void {
 </div>
 `;
 
-                // Optionally generate an "Add to Calendar" link for the first rehearsal
-                let firstRehearsalHtml = "";
-                if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
-                    try {
-                        const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
-                        if (rehearsals && rehearsals.length > 0) {
-                            const firstReh = rehearsals[0];
-                            const rehDate = firstReh.get("date") as string;
-                            const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                            const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                            
-                            // Generate a direct link to the backend ICS download route
-                            let icsLink = "";
-                            if (secret) {
-                                const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                const signature = $security.hs256(payload, secret);
-                                const token = `${payload}&s=${signature}`;
-                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                            }
+                    // Optionally generate an "Add to Calendar" link for the first rehearsal
+                    let firstRehearsalHtml = "";
+                    if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        try {
+                            const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                            if (rehearsals && rehearsals.length > 0) {
+                                const firstReh = rehearsals[0];
+                                const rehDate = firstReh.get("date") as string;
+                                const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
+                                const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                
+                                // Generate a direct link to the backend ICS download route
+                                let icsLink = "";
+                                if (secret) {
+                                    const payload = `e=${firstReh.id}&p=${recipientId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
 
-                            firstRehearsalHtml = `
+                                firstRehearsalHtml = `
 <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
@@ -262,47 +270,47 @@ export function processEmailQueue(app: PocketBaseApp): void {
     </td>
   </tr>
 </table>
-                            `.trim();
-                        }
-                    } catch {
-                        // Ignore rehearsals fetching or formatting errors
-                    }
-                }
-
-                // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                let eventCalendarHtml = "";
-                if (htmlBody.includes("{eventCalendarLink}")) {
-                    let icsLink = "";
-                    let slotDateLong = dateLong;
-                    let slotTimeStr = timeStr;
-
-                    if (secret) {
-                        const auditionId = filters.auditionId as string | undefined;
-                        if (auditionId) {
-                            const payload = `a=${auditionId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
-                            icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-
-                            try {
-                                const audition = app.findRecordById("auditions", auditionId);
-                                const auditionSlot = audition.get("scheduledTimeSlot") as string;
-                                if (auditionSlot) {
-                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
-                                }
-                            } catch {
-                                // Ignore audition record resolution/formatting errors
+                                `.trim();
                             }
-                        } else {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
-                            icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                        } catch {
+                            // Ignore rehearsals fetching or formatting errors
                         }
                     }
 
-                    eventCalendarHtml = `
+                    // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                    let eventCalendarHtml = "";
+                    if (htmlBody.includes("{eventCalendarLink}")) {
+                        let icsLink = "";
+                        let slotDateLong = dateLong;
+                        let slotTimeStr = timeStr;
+
+                        if (secret) {
+                            const auditionId = filters.auditionId as string | undefined;
+                            if (auditionId) {
+                                const payload = `a=${auditionId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+
+                                try {
+                                    const audition = app.findRecordById("auditions", auditionId);
+                                    const auditionSlot = audition.get("scheduledTimeSlot") as string;
+                                    if (auditionSlot) {
+                                        slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                    }
+                                } catch {
+                                    // Ignore audition record resolution/formatting errors
+                                }
+                            } else {
+                                const payload = `e=${event.id}&p=${recipientId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            }
+                        }
+
+                        eventCalendarHtml = `
 <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
   <tr>
     <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
@@ -314,128 +322,137 @@ export function processEmailQueue(app: PocketBaseApp): void {
     </td>
   </tr>
 </table>
-                    `.trim();
-                }
+                        `.trim();
+                    }
 
-                htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
-                                 .replace(/{eventType}/g, () => escapeHtml(eventType))
-                                 .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                                 .replace(/{eventLocation}/g, () => escapeHtml(venueName))
-                                 .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
-                                 .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
-                                 .replace(/{eventInfo}/g, () => eventInfoHtml)
-                                 .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
-                                 .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                    htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                                    .replace(/{eventType}/g, () => escapeHtml(eventType))
+                                    .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                                    .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                                    .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                                    .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                                    .replace(/{eventInfo}/g, () => eventInfoHtml)
+                                    .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                                    .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
 
-                if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                    const payload = `e=${event.id}&p=${recipientId}`;
-                    const signature = $security.hs256(payload, secret);
-                    const token = `${payload}&s=${signature}`;
-                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
-                    
-                    const rsvpHtml = `
+                    if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        const payload = `e=${event.id}&p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                        
+                        const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
     <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
-                    htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
-                }
+                        htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                    }
 
-                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                    const payload = `e=${event.id}`;
-                    const signature = $security.hs256(payload, secret);
-                    const token = `${payload}&s=${signature}`;
-                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
-                    
-                    const playerHtml = `
+                    if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        const payload = `e=${event.id}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                        
+                        const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
     <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
 </div>
 `;
-                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
-                }
-            } else {
-                // If there's no event context, clear out the player link placeholders
-                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                                   .replace(/{playerLink}/g, "");
-            }
-
-            // Resolve poll links: {{POLL_LINK:pollId}}
-            if (htmlBody.includes("{{POLL_LINK:") && secret) {
-                htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                    const payload = "l=" + pollId + "&p=" + recipientId;
-                    const signature = $security.hs256(payload, secret);
-                    const token = payload + "&s=" + signature;
-                    const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                    let pollButtonLabel = "Answer our quick question";
-
-                    try {
-                        const pollRecord = app.findRecordById("polls", pollId);
-                        const question = pollRecord?.get("question");
-                        if (typeof question === "string" && question.trim()) {
-                            pollButtonLabel = question.trim();
-                        }
-                    } catch {
-                        // keep safe fallback label if poll lookup fails
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
                     }
-                    
-                    return `
+                } else {
+                    // If there's no event context, clear out the player link placeholders
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                                    .replace(/{playerLink}/g, "");
+                }
+
+                // Resolve poll links: {{POLL_LINK:pollId}}
+                if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                        const payload = "l=" + pollId + "&p=" + recipientId;
+                        const signature = $security.hs256(payload, secret);
+                        const token = payload + "&s=" + signature;
+                        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                        let pollButtonLabel = "Answer our quick question";
+
+                        try {
+                            const pollRecord = app.findRecordById("polls", pollId);
+                            const question = pollRecord?.get("question");
+                            if (typeof question === "string" && question.trim()) {
+                                pollButtonLabel = question.trim();
+                            }
+                        } catch {
+                            // keep safe fallback label if poll lookup fails
+                        }
+                        
+                        return `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
     <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
 </div>
 `.trim();
+                    });
+                }
+
+                // Compile secure unsubscribe URL
+                let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                if (secret) {
+                    const payload = `p=${recipientId}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                    htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                }
+
+                // Final template layout wrap
+                const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                record.set("htmlBody", finalHtml);
+
+                // Dispatch natively via PocketBase SMTP Client
+                const mailerMessage = new MailerMessage({
+                    from: { 
+                        address: settings.meta.senderAddress || "no-reply@choir.management", 
+                        name: settings.meta.senderName || "Choir Management Tool" 
+                    },
+                    to: [{ address: recipientEmail, name: recipientName }],
+                    subject: subject,
+                    html: finalHtml
                 });
+
+                app.newMailClient().send(mailerMessage);
+                record.set("status", "Sent");
+                record.set("sentAt", new Date().toISOString());
+                record.set("processingRunId", null);
+                record.set("processingStartedAt", null);
+                record.set("errorMessage", "");
+                console.log(`[Email Queue] Sent record: ${record.id}`);
+            } catch (err: unknown) {
+                const rawAttempts = record.get("attempts");
+                const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                record.set("attempts", currentAttempts);
+                const message = err instanceof Error ? err.message : String(err);
+                record.set("errorMessage", message);
+                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
+                record.set("status", nextStatus);
+                record.set("processingRunId", null);
+                record.set("processingStartedAt", null);
+                console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+            } finally {
+                app.save(record);
             }
+        });
 
-            // Compile secure unsubscribe URL
-            let unsubscribeUrl = `${baseUrl}/unsubscribe`;
-            if (secret) {
-                const payload = `p=${recipientId}`;
-                const signature = $security.hs256(payload, secret);
-                const token = `${payload}&s=${signature}`;
-                unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
-                htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
-            }
-
-            // Final template layout wrap
-            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-            record.set("htmlBody", finalHtml);
-
-            // Dispatch natively via PocketBase SMTP Client
-            const mailerMessage = new MailerMessage({
-                from: { 
-                    address: settings.meta.senderAddress || "no-reply@choir.management", 
-                    name: settings.meta.senderName || "Choir Management Tool" 
-                },
-                to: [{ address: recipientEmail, name: recipientName }],
-                subject: subject,
-                html: finalHtml
-            });
-
-            app.newMailClient().send(mailerMessage);
-            record.set("status", "Sent");
-            record.set("sentAt", new Date().toISOString().replace('T', ' ').substring(0, 19));
-            record.set("processingRunId", "");
-            record.set("processingStartedAt", "");
-            record.set("errorMessage", "");
-            console.log(`[Email Queue] Sent record: ${record.id}`);
-        } catch (err: unknown) {
-            const rawAttempts = record.get("attempts");
-            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
-            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-            record.set("attempts", currentAttempts);
-            const message = err instanceof Error ? err.message : String(err);
-            record.set("errorMessage", message);
-            const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-            record.set("status", nextStatus);
-            record.set("processingRunId", "");
-            record.set("processingStartedAt", "");
-            console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
-        } finally {
-            app.save(record);
+        if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+            break;
         }
-    });
+    }
+
+    if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+        console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+    }
 }
