@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findNearestEvent, getSetListVisibility } from '../src/lib/eventUtils.ts';
+import { findNearestEvent, resolveInitialEventId, getSetListVisibility } from '../src/lib/eventUtils.ts';
 
 test('findNearestEvent returns null when events is empty', () => {
   const result = findNearestEvent([]);
@@ -156,4 +156,36 @@ test('getSetListVisibility: Rehearsal linked to parent with RSVP No/Pending hide
   assert.deepEqual(getSetListVisibility(rehearsal, { c1: { rsvp: 'No' } }, [concert, rehearsal]), { showSetList: false });
   assert.deepEqual(getSetListVisibility(rehearsal, { c1: { rsvp: 'Pending' } }, [concert, rehearsal]), { showSetList: false });
   assert.deepEqual(getSetListVisibility(rehearsal, {}, [concert, rehearsal]), { showSetList: false });
+});
+
+test('resolveInitialEventId returns urlEventId when it matches an event', () => {
+  const events = [
+    { id: 'e1', date: '2026-05-15T12:00:00Z' },
+    { id: 'e2', date: '2026-05-20T12:00:00Z' }
+  ];
+  assert.equal(resolveInitialEventId(events, 'e2'), 'e2');
+});
+
+test('resolveInitialEventId falls back to nearest event when urlEventId is not provided', () => {
+  const events = [
+    { id: 'past', date: '2026-05-15T12:00:00Z' },
+    { id: 'nearest', date: '2026-05-21T12:00:00Z' },
+    { id: 'future', date: '2026-05-28T12:00:00Z' }
+  ];
+  const relativeTo = new Date('2026-05-20T12:00:00Z');
+  assert.equal(resolveInitialEventId(events, undefined, relativeTo), 'nearest');
+});
+
+test('resolveInitialEventId falls back to nearest event when urlEventId is provided but not found', () => {
+  const events = [
+    { id: 'past', date: '2026-05-15T12:00:00Z' },
+    { id: 'nearest', date: '2026-05-21T12:00:00Z' }
+  ];
+  const relativeTo = new Date('2026-05-20T12:00:00Z');
+  assert.equal(resolveInitialEventId(events, 'missing-id', relativeTo), 'nearest');
+});
+
+test('resolveInitialEventId returns null when events array is empty', () => {
+  assert.equal(resolveInitialEventId([], 'some-id'), null);
+  assert.equal(resolveInitialEventId([]), null);
 });
