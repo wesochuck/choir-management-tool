@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
-import { getSetListVisibility } from '../../lib/eventUtils';
+import { getSetListVisibilityResult } from '../../lib/eventUtils';
 import type { EventRoster } from '../../services/rosterService';
 import { AppCard } from '../common/AppCard';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
@@ -41,7 +41,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 }) => {
   const { timezone } = useChoirSettings();
   const isPerformance = event.type === 'Performance';
-  const { showSetList, setList, headerLabel } = getSetListVisibility(event, myRosters, allEvents);
+  const { showSetList, setList, headerLabel } = getSetListVisibilityResult(event, myRosters, allEvents);
 
   const [library, setLibrary] = React.useState<MusicPiece[]>([]);
   const [playingTrack, setPlayingTrack] = React.useState<{ songId: string; label: string; url: string } | null>(null);

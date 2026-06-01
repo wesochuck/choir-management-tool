@@ -82,13 +82,21 @@ export function resolveInitialEventId<T extends EventLike>(
   return nearest ? nearest.id : null;
 }
 
+export function getSetListVisibility(event: EventLike | null | undefined, userRole: string): boolean {
+  if (!event) return false;
+  if (userRole === 'admin') return true;
+  if (event.isPublic) return true;
+  if (event.status !== 'published') return false;
+  return true;
+}
+
 export interface SetListVisibilityResult {
   showSetList: boolean;
   setList?: SetListItem[];
   headerLabel?: string;
 }
 
-export function getSetListVisibility(
+export function getSetListVisibilityResult(
   event: Event,
   myRosters: Record<string, Pick<EventRoster, 'rsvp'>> = {},
   allEvents: Event[] = []
