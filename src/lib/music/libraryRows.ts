@@ -1,6 +1,4 @@
 import type { MusicPiece } from '../../types/musicLibrary';
-import { filterPiecesBySectionBucket } from './applicability';
-import { filterPiecesByGenre } from './genres';
 import {
   getEffectiveMostRecentPerformanceDate,
   type PerformanceRecencyFilter,
@@ -11,11 +9,7 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   showDuplicatesOnly?: boolean;
   showMovements?: boolean;
   duplicateIds?: Set<string>;
-  /** @deprecated Use sectionFilters instead. */
-  sectionFilter?: string;
   sectionFilters?: string[];
-  /** @deprecated Use genreFilters instead. */
-  genreFilter?: string;
   genreFilters?: string[];
   recencyFilter?: PerformanceRecencyFilter;
   now?: Date;
@@ -34,9 +28,7 @@ export function buildVisibleMusicLibraryRows(
     showDuplicatesOnly = false, 
     showMovements = false, 
     duplicateIds = new Set<string>(),
-    sectionFilter = '',
     sectionFilters = [],
-    genreFilter = '',
     genreFilters = [],
     recencyFilter = 'all',
     now
@@ -72,8 +64,6 @@ export function buildVisibleMusicLibraryRows(
       }
       return p.sectionBuckets.some(code => sectionFilters.includes(code));
     });
-  } else if (sectionFilter) {
-    result = filterPiecesBySectionBucket(result, sectionFilter);
   }
 
   // 3b. Genre Filtering
@@ -84,8 +74,6 @@ export function buildVisibleMusicLibraryRows(
       }
       return p.genres.some(gId => genreFilters.includes(gId));
     });
-  } else if (genreFilter) {
-    result = filterPiecesByGenre(result, genreFilter);
   }
 
   // 3c. Performance Recency Filtering
