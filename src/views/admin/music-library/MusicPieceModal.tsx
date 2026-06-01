@@ -5,6 +5,7 @@ import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../.
 import { eventService, type Event } from '../../../services/eventService';
 import { venueService, type Venue } from '../../../services/venueService';
 import { getVoicePartsAndSections, type VoicePartDef, type SectionDef, type MusicGenreDef } from '../../../services/settingsService';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { pb } from '../../../lib/pocketbase';
 import { formatSecondsToDuration, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../../lib/musicPieceUtils';
 import { LearningTracksEditor } from './LearningTracksEditor';
@@ -27,6 +28,7 @@ export interface MusicPieceModalProps {
     allPieces?: MusicPiece[];
     allGenres: MusicGenreDef[];
     initialTitle?: string;
+    onCreateGenre?: (label: string) => Promise<MusicGenreDef>;
 }
 
 export function MusicPieceModal({ 
@@ -39,7 +41,8 @@ export function MusicPieceModal({
     onRefresh, 
     allPieces,
     allGenres,
-    initialTitle
+    initialTitle,
+    onCreateGenre
 }: MusicPieceModalProps) {
     const dialog = useDialog();
     const { timezone } = useChoirSettings();
@@ -576,6 +579,30 @@ export function MusicPieceModal({
         }
     };
 
+    const handleCreateGenreInline = async (label: string) => {
+        if (!onCreateGenre) {
+            throw new Error('Genre creation is not supported.');
+        }
+        const trimmed = label.trim();
+        if (!trimmed) {
+            throw new Error('Genre name cannot be empty.');
+        }
+
+        const existing = allGenres.find(g => g.label.toLowerCase() === trimmed.toLowerCase());
+        if (existing) {
+            if (!selectedGenres.includes(existing.id)) {
+                setSelectedGenres(prev => [...prev, existing.id]);
+            }
+            return { id: existing.id, label: existing.label };
+        }
+
+        const newGenre = await onCreateGenre(trimmed);
+        if (!selectedGenres.includes(newGenre.id)) {
+            setSelectedGenres(prev => [...prev, newGenre.id]);
+        }
+        return { id: newGenre.id, label: newGenre.label };
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
@@ -765,6 +792,38 @@ export function MusicPieceModal({
                                     suggestions={uniqueArrangers} 
                                     placeholder="e.g. Alice Parker" 
                                     className="card music-piece-input" 
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <MultiSelectDropdown
+                                    label="Applies to Sections"
+                                    options={sections.map(s => ({ id: s.code, label: s.name }))}
+                                    selectedIds={sectionBuckets}
+                                    onChange={setSectionBuckets}
+                                    placeholder="Sections"
+                                    allLabel="All Sections"
+                                />
+                                <span className="text-xs text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
+                                    {sectionBuckets.length === 0 
+                                        ? "Applies to all sections. Select to restrict." 
+                                        : `Restricted to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
+                                    }
+                                </span>
+                            </div>
+
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                                <MultiSelectDropdown
+                                    label="Genres"
+                                    options={allGenres.map(g => ({ id: g.id, label: g.label }))}
+                                    selectedIds={selectedGenres}
+                                    onChange={setSelectedGenres}
+                                    placeholder="Genres"
+                                    allLabel="No Genres Selected"
+                                    allowCreate={true}
+                                    onCreateOption={handleCreateGenreInline}
                                 />
                             </div>
                         </div>
@@ -961,59 +1020,7 @@ export function MusicPieceModal({
                             </span>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
-                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                <label className="text-label">Applies to Sections</label>
-                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--surface-muted, #f8fafc)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                                    {sections.map(section => (
-                                        <label key={section.code} className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={sectionBuckets.includes(section.code)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSectionBuckets(prev => [...prev, section.code]);
-                                                    } else {
-                                                        setSectionBuckets(prev => prev.filter(code => code !== section.code));
-                                                    }
-                                                }}
-                                                style={{ width: '15px', height: '15px', accentColor: 'var(--primary)' }}
-                                            />
-                                            <span className="text-sm" style={{ fontSize: '13px' }}>{section.name}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                <span className="text-xs text-muted" style={{ fontSize: '11px' }}>
-                                    {sectionBuckets.length === 0 
-                                        ? "Applies to all sections. Check to restrict." 
-                                        : `Restricted to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
-                                    }
-                                </span>
-                            </div>
 
-                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                <label className="text-label">Genres</label>
-                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-md)', padding: '8px 12px', backgroundColor: 'var(--surface-muted, #f8fafc)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                                    {allGenres.map(genre => (
-                                        <label key={genre.id} className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedGenres.includes(genre.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedGenres(prev => [...prev, genre.id]);
-                                                    } else {
-                                                        setSelectedGenres(prev => prev.filter(id => id !== genre.id));
-                                                    }
-                                                }}
-                                                style={{ width: '15px', height: '15px', accentColor: 'var(--primary)' }}
-                                            />
-                                            <span className="text-sm" style={{ fontSize: '13px' }}>{genre.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
                         {!piece && (
                             <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
                                 <label className="text-label">Tutti Practice Track (Optional)</label>

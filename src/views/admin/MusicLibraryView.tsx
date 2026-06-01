@@ -243,7 +243,41 @@ export default function MusicLibraryView() {
     }
   };
 
+  const handleCreateGenre = async (label: string): Promise<MusicGenreDef> => {
+    const trimmed = label.trim();
+    if (!trimmed) {
+      throw new Error('Genre name cannot be empty.');
+    }
 
+    const currentList = musicLibrarySettings.genres || [];
+    if (currentList.some(g => g.label.toLowerCase() === trimmed.toLowerCase())) {
+      throw new Error('Genre label already exists.');
+    }
+
+    const generatedId = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let finalId = generatedId;
+    let counter = 2;
+    while (currentList.some(g => g.id === finalId)) {
+      finalId = `${generatedId}-${counter}`;
+      counter++;
+    }
+
+    const newGenre: MusicGenreDef = { id: finalId, label: trimmed };
+    const updatedGenres = [...currentList, newGenre];
+
+    const updatedSettings = {
+      ...musicLibrarySettings,
+      genres: updatedGenres
+    };
+
+    await settingsService.saveMusicLibrarySettings(updatedSettings);
+
+    setMusicLibrarySettings(JSON.parse(JSON.stringify(updatedSettings)));
+    setInitialSettings(JSON.parse(JSON.stringify(updatedSettings)));
+    setConfiguredGenres(updatedGenres);
+
+    return newGenre;
+  };
 
   const duplicateIds = useMemo(() => {
     const dups = findDuplicates(pieces);
@@ -515,6 +549,7 @@ export default function MusicLibraryView() {
         onRefresh={loadData}
         allPieces={pieces}
         allGenres={configuredGenres}
+        onCreateGenre={handleCreateGenre}
       />
 
       <MusicImportModal

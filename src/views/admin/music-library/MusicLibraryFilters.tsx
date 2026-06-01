@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
@@ -52,40 +53,6 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     const sortedSections = React.useMemo(() => {
         return [...sections].sort((a, b) => a.name.localeCompare(b.name));
     }, [sections]);
-
-    const handleGenreToggle = (genreId: string) => {
-        const next = genreFilters.includes(genreId)
-            ? genreFilters.filter(id => id !== genreId)
-            : [...genreFilters, genreId];
-        onGenreFiltersChange(next);
-    };
-
-    const handleSectionToggle = (sectionCode: string) => {
-        const next = sectionFilters.includes(sectionCode)
-            ? sectionFilters.filter(code => code !== sectionCode)
-            : [...sectionFilters, sectionCode];
-        onSectionFiltersChange(next);
-    };
-
-    const isAllGenresActive = genreFilters.length === 0;
-    const isAllSectionsActive = sectionFilters.length === 0;
-
-    const pillStyle = (isActive: boolean) => ({
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '6px 14px',
-        borderRadius: '20px',
-        border: isActive ? '1px solid var(--primary, #1b4d3e)' : '1px solid var(--border)',
-        backgroundColor: isActive ? 'var(--primary-light, rgba(27, 77, 62, 0.08))' : 'var(--card-bg, #ffffff)',
-        color: isActive ? 'var(--primary, #1b4d3e)' : 'var(--text, #1e293b)',
-        fontWeight: isActive ? '600' : '500',
-        fontSize: '13px',
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: isActive ? '0 2px 4px rgba(27, 77, 62, 0.08)' : 'none',
-        outline: 'none',
-    });
 
     return (
         <div className="flex-col" style={{ padding: 'var(--space-md) var(--space-lg)', borderBottom: '1px solid var(--border)', gap: 'var(--space-md)' }}>
@@ -153,57 +120,31 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 </div>
             </div>
 
-            {/* Section Pills Row */}
-            <div className="flex-responsive" style={{ gap: 'var(--space-sm)', alignItems: 'flex-start' }}>
-                <span className="text-sm text-muted" style={{ fontWeight: 600, minWidth: '80px', marginTop: '6px' }}>Sections:</span>
-                <div className="flex-row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap', flex: 1 }}>
-                    <button
-                        type="button"
-                        style={pillStyle(isAllSectionsActive)}
-                        onClick={() => onSectionFiltersChange([])}
-                    >
-                        All Sections
-                    </button>
-                    {sortedSections.map(s => {
-                        const isActive = sectionFilters.includes(s.code);
-                        return (
-                            <button
-                                key={s.code}
-                                type="button"
-                                style={pillStyle(isActive)}
-                                onClick={() => handleSectionToggle(s.code)}
-                            >
-                                {s.name}
-                            </button>
-                        );
-                    })}
+            {/* Filter Dropdowns Row */}
+            <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'center', borderTop: '1px dashed var(--border)', paddingTop: 'var(--space-sm)' }}>
+                <div style={{ flex: '1 1 200px', display: 'flex', gap: 'var(--space-sm)', alignItems: 'center' }}>
+                    <span className="text-sm text-muted" style={{ fontWeight: 600, minWidth: '70px' }}>Sections:</span>
+                    <div style={{ flex: 1 }}>
+                        <MultiSelectDropdown
+                            options={sortedSections.map(s => ({ id: s.code, label: s.name }))}
+                            selectedIds={sectionFilters}
+                            onChange={onSectionFiltersChange}
+                            placeholder="Sections"
+                            allLabel="All Sections"
+                        />
+                    </div>
                 </div>
-            </div>
-
-            {/* Genre Pills Row */}
-            <div className="flex-responsive" style={{ gap: 'var(--space-sm)', alignItems: 'flex-start', borderTop: '1px dashed var(--border)', paddingTop: 'var(--space-sm)' }}>
-                <span className="text-sm text-muted" style={{ fontWeight: 600, minWidth: '80px', marginTop: '6px' }}>Genres:</span>
-                <div className="flex-row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap', flex: 1 }}>
-                    <button
-                        type="button"
-                        style={pillStyle(isAllGenresActive)}
-                        onClick={() => onGenreFiltersChange([])}
-                    >
-                        All Genres
-                    </button>
-                    {sortedGenres.map(g => {
-                        const isActive = genreFilters.includes(g.id);
-                        return (
-                            <button
-                                key={g.id}
-                                type="button"
-                                style={pillStyle(isActive)}
-                                onClick={() => handleGenreToggle(g.id)}
-                            >
-                                {g.label}
-                            </button>
-                        );
-                    })}
+                <div style={{ flex: '1 1 200px', display: 'flex', gap: 'var(--space-sm)', alignItems: 'center' }}>
+                    <span className="text-sm text-muted" style={{ fontWeight: 600, minWidth: '70px' }}>Genres:</span>
+                    <div style={{ flex: 1 }}>
+                        <MultiSelectDropdown
+                            options={sortedGenres.map(g => ({ id: g.id, label: g.label }))}
+                            selectedIds={genreFilters}
+                            onChange={onGenreFiltersChange}
+                            placeholder="Genres"
+                            allLabel="All Genres"
+                        />
+                    </div>
                 </div>
             </div>
         </div>

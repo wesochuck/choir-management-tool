@@ -78,6 +78,70 @@ describe('Music Library Row Building (P5)', () => {
     assert.ok(!rowsA.find(r => r.id === 'res'));
   });
 
+  it('respects multiple section filters and matches any selected section', () => {
+    const pS = createMusicPieceFixture({ id: 'pS', title: 'Section S', sectionBuckets: ['S'] });
+    const pA = createMusicPieceFixture({ id: 'pA', title: 'Section A', sectionBuckets: ['A'] });
+    const pB = createMusicPieceFixture({ id: 'pB', title: 'Section B', sectionBuckets: ['B'] });
+    const pieces = [pS, pA, pB];
+
+    const rows = buildVisibleMusicLibraryRows(pieces, { sectionFilters: ['S', 'A'] });
+    assert.strictEqual(rows.length, 2);
+    assert.ok(rows.find(r => r.id === 'pS'));
+    assert.ok(rows.find(r => r.id === 'pA'));
+    assert.ok(!rows.find(r => r.id === 'pB'));
+  });
+
+  it('pieces with empty sectionBuckets remain visible under section filters', () => {
+    const pS = createMusicPieceFixture({ id: 'pS', title: 'Section S', sectionBuckets: ['S'] });
+    const pEmpty = createMusicPieceFixture({ id: 'pEmpty', title: 'Empty Sections', sectionBuckets: [] });
+    const pNull = createMusicPieceFixture({ id: 'pNull', title: 'Null Sections', sectionBuckets: undefined });
+    const pieces = [pS, pEmpty, pNull];
+
+    const rows = buildVisibleMusicLibraryRows(pieces, { sectionFilters: ['S'] });
+    assert.strictEqual(rows.length, 3);
+    assert.ok(rows.find(r => r.id === 'pS'));
+    assert.ok(rows.find(r => r.id === 'pEmpty'));
+    assert.ok(rows.find(r => r.id === 'pNull'));
+  });
+
+  it('respects multiple genre filters and matches any selected genre', () => {
+    const pG1 = createMusicPieceFixture({ id: 'pG1', title: 'Genre 1', genres: ['sacred'] });
+    const pG2 = createMusicPieceFixture({ id: 'pG2', title: 'Genre 2', genres: ['pop'] });
+    const pG3 = createMusicPieceFixture({ id: 'pG3', title: 'Genre 3', genres: ['classical'] });
+    const pieces = [pG1, pG2, pG3];
+
+    const rows = buildVisibleMusicLibraryRows(pieces, { genreFilters: ['sacred', 'pop'] });
+    assert.strictEqual(rows.length, 2);
+    assert.ok(rows.find(r => r.id === 'pG1'));
+    assert.ok(rows.find(r => r.id === 'pG2'));
+    assert.ok(!rows.find(r => r.id === 'pG3'));
+  });
+
+  it('pieces with no genres are hidden when genre filters are active', () => {
+    const pG1 = createMusicPieceFixture({ id: 'pG1', title: 'Genre 1', genres: ['sacred'] });
+    const pNoGenres = createMusicPieceFixture({ id: 'pNoGenres', title: 'No Genres', genres: [] });
+    const pNullGenres = createMusicPieceFixture({ id: 'pNullGenres', title: 'Null Genres', genres: undefined });
+    const pieces = [pG1, pNoGenres, pNullGenres];
+
+    const rows = buildVisibleMusicLibraryRows(pieces, { genreFilters: ['sacred'] });
+    assert.strictEqual(rows.length, 1);
+    assert.ok(rows.find(r => r.id === 'pG1'));
+    assert.ok(!rows.find(r => r.id === 'pNoGenres'));
+    assert.ok(!rows.find(r => r.id === 'pNullGenres'));
+  });
+
+  it('combined section and genre filters both apply', () => {
+    const pBoth = createMusicPieceFixture({ id: 'pBoth', title: 'Both Match', sectionBuckets: ['S'], genres: ['sacred'] });
+    const pSecOnly = createMusicPieceFixture({ id: 'pSecOnly', title: 'Section Match Only', sectionBuckets: ['S'], genres: ['pop'] });
+    const pGenreOnly = createMusicPieceFixture({ id: 'pGenreOnly', title: 'Genre Match Only', sectionBuckets: ['A'], genres: ['sacred'] });
+    const pNeither = createMusicPieceFixture({ id: 'pNeither', title: 'Neither Match', sectionBuckets: ['A'], genres: ['pop'] });
+    const pieces = [pBoth, pSecOnly, pGenreOnly, pNeither];
+
+    const rows = buildVisibleMusicLibraryRows(pieces, { sectionFilters: ['S'], genreFilters: ['sacred'] });
+    assert.strictEqual(rows.length, 1);
+    assert.strictEqual(rows[0].id, 'pBoth');
+  });
+
   it('excludes pieces that possess a non-empty parentId when showMovements is false', () => {
     const pieces = [
       createMusicPieceFixture({ id: 'parent1', title: 'Parent 1' }),
