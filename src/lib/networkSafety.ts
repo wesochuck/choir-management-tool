@@ -78,6 +78,7 @@ export async function retryOn429<T>(
 
   let attempt = 0;
 
+  // @allow-sequential-await - Retry loops are inherently sequential by design.
   while (true) {
     try {
       return await run();
@@ -106,6 +107,7 @@ export async function mapWithConcurrency<T, R>(
   let nextIndex = 0;
 
   const worker = async () => {
+    // @allow-sequential-await - Concurrency worker queues sequentially process items one by one.
     while (true) {
       const currentIndex = nextIndex;
       nextIndex += 1;

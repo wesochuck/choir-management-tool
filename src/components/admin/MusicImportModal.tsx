@@ -138,6 +138,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     let successes = 0;
     const errors: typeof errorsList = [];
 
+    // @allow-sequential-await - Import runs sequentially to show live progress and handle partial success robustly.
     for (let i = 0; i < mappedPieces.length; i++) {
       const piece = mappedPieces[i];
       if (!piece.isValid) continue;

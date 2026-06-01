@@ -128,6 +128,7 @@ export default function PublicPlayerView() {
     
     const errorIds = new Set<string>();
     
+    // @allow-sequential-await - Downloading tracks sequentially ensures stable connection usage and a cleaner UI progress stream.
     for (const track of toDownload) {
       try {
         setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));

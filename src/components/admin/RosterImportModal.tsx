@@ -149,9 +149,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     const errors: typeof errorsList = [];
     const credentials: typeof credentialsList = [];
 
+    // @allow-sequential-await - Import runs sequentially to show live progress and handle partial success robustly.
     for (let i = 0; i < mappedSingers.length; i++) {
-      const singer = mappedSingers[i];
-      if (!singer.isValid) continue;
+       const singer = mappedSingers[i];
+       if (!singer.isValid) continue;
 
       setImportingIndex(i + 1);
       

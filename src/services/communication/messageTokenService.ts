@@ -62,32 +62,36 @@ export async function resolvePollPlaceholders(
     const commSettings = await settingsService.getCommunicationSettings();
     const baseUrl = commSettings.frontendUrl || window.location.origin;
 
-    for (const match of matches) {
-      const fullPlaceholder = match[0];
-      const pollId = match[1];
+    const results = await Promise.all(
+      matches.map(async (match) => {
+        const fullPlaceholder = match[0];
+        const pollId = match[1];
 
-      const { tokens } = await pb.send('/api/generate-poll-tokens', {
-        method: 'POST',
-        body: { pollId, profileIds: recipients.map((r) => r.id) },
-      });
+        const { tokens } = await pb.send('/api/generate-poll-tokens', {
+          method: 'POST',
+          body: { pollId, profileIds: recipients.map((r) => r.id) },
+        });
 
-      const firstRecipient = recipients[0];
-      const token = tokens[firstRecipient.id];
-      const pollLink = `${baseUrl}/poll?token=${encodeURIComponent(token)}`;
+        const firstRecipient = recipients[0];
+        const token = tokens[firstRecipient.id];
+        const pollLink = `${baseUrl}/poll?token=${encodeURIComponent(token)}`;
 
-      previewContent = previewContent.replace(
-        fullPlaceholder,
-        `(Poll Link for ${firstRecipient.name})\nLink: ${pollLink}\n(No login required)`
-      );
+        const replacement = `(Poll Link for ${firstRecipient.name})\nLink: ${pollLink}\n(No login required)`;
 
-      recipients.forEach((r) => {
-        const t = tokens[r.id];
-        logs.push(
-          `Personalized Poll Link (${pollId}) for ${r.name}: ${baseUrl}/poll?token=${encodeURIComponent(
+        const localLogs = recipients.map((r) => {
+          const t = tokens[r.id];
+          return `Personalized Poll Link (${pollId}) for ${r.name}: ${baseUrl}/poll?token=${encodeURIComponent(
             t
-          )}`
-        );
-      });
+          )}`;
+        });
+
+        return { fullPlaceholder, replacement, localLogs };
+      })
+    );
+
+    for (const res of results) {
+      previewContent = previewContent.replace(res.fullPlaceholder, res.replacement);
+      logs.push(...res.localLogs);
     }
 
     return { previewContent, logs };

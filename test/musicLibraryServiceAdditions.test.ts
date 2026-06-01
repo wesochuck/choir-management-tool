@@ -135,3 +135,56 @@ test('musicLibraryService.createPieceWithMovementsAndTutti uploads tutti file wh
     pb.collection = originalCollection;
   }
 });
+
+test('musicLibraryService.createPieceWithMovementsAndTutti creates child movements concurrently', async (t) => {
+  const originalCollection = pb.collection;
+  
+  let activeCalls = 0;
+  let maxConcurrentCalls = 0;
+
+  const mockCreate = t.mock.fn(async (data: Record<string, unknown>) => {
+    // Parent piece creation must happen first, is sequential.
+    if (!data.parentId) {
+      return { id: 'parent_1', ...data } as unknown as MusicPiece;
+    }
+
+    activeCalls++;
+    if (activeCalls > maxConcurrentCalls) {
+      maxConcurrentCalls = activeCalls;
+    }
+
+    // Yield control to let other concurrent promises start
+    await new Promise((resolve) => process.nextTick(resolve));
+
+    activeCalls--;
+    return { id: `piece_${activeCalls + 1}`, ...data } as unknown as MusicPiece;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'musicLibrary') {
+      return {
+        create: mockCreate
+      } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const parentData = {
+      title: 'Messiah Medley',
+      composer: 'G.F. Handel'
+    };
+
+    const movements = [
+      { title: 'Overture', duration: '3:00' },
+      { title: 'Comfort Ye', duration: '2:30' }
+    ];
+
+    await musicLibraryService.createPieceWithMovementsAndTutti(parentData, { movements });
+
+    // Assert that the movements were processed concurrently
+    assert.equal(maxConcurrentCalls, 2, 'The child movements should be created concurrently');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});

@@ -104,6 +104,7 @@ export async function downloadTrack(
     let receivedBytes = 0;
     const chunks: Uint8Array[] = [];
 
+    // @allow-sequential-await - Reading chunk by chunk from the stream reader must be sequential.
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -232,19 +233,19 @@ export async function listDownloadedTrackIds(): Promise<Set<string>> {
 export async function hydrateOfflineStatus(files: PlayerMediaFile[]): Promise<PlayerMediaFile[]> {
   try {
     const downloadedIds = await listDownloadedTrackIds();
-    const hydrated: PlayerMediaFile[] = [];
-    
-    for (const file of files) {
-      const isDownloaded = downloadedIds.has(file.id);
-      const offlineUrl = isDownloaded ? (await getOfflineTrackUrl(file.id) || undefined) : undefined;
-      
-      hydrated.push({
-        ...file,
-        isDownloaded,
-        offlineUrl,
-        downloadStatus: isDownloaded ? 'downloaded' : 'idle',
-      });
-    }
+    const hydrated = await Promise.all(
+      files.map(async (file) => {
+        const isDownloaded = downloadedIds.has(file.id);
+        const offlineUrl = isDownloaded ? (await getOfflineTrackUrl(file.id) || undefined) : undefined;
+        
+        return {
+          ...file,
+          isDownloaded,
+          offlineUrl,
+          downloadStatus: isDownloaded ? ('downloaded' as const) : ('idle' as const),
+        };
+      })
+    );
     return hydrated;
   } catch (err) {
     console.error('Failed to hydrate offline status:', err);

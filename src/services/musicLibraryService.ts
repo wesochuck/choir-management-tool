@@ -47,6 +47,7 @@ export const musicLibraryService = {
     const chunkSize = 50;
     const results: MusicPiece[] = [];
     
+    // @allow-sequential-await - Chunked loop is intentional to limit batch request rate.
     for (let i = 0; i < pieces.length; i += chunkSize) {
       const chunk = pieces.slice(i, i + chunkSize);
       const chunkResults = await Promise.all(
@@ -60,6 +61,7 @@ export const musicLibraryService = {
 
   async bulkDelete(ids: string[]) {
       const chunkSize = 50;
+      // @allow-sequential-await - Chunked loop is intentional to limit batch request rate.
       for (let i = 0; i < ids.length; i += chunkSize) {
           const chunk = ids.slice(i, i + chunkSize);
           await Promise.all(chunk.map(id => pb.collection('musicLibrary').delete(id)));
