@@ -6,8 +6,8 @@ import type { SectionDef, VoicePartDef } from '../src/services/settingsService';
 
 describe('getVisibleTrackKeys', () => {
     const sections: SectionDef[] = [
-        { code: 'S', name: 'Sopranos', allowedVoiceParts: ['S1', 'S2'] },
-        { code: 'A', name: 'Altos', allowedVoiceParts: ['A1', 'A2'] }
+        { code: 'S', name: 'Sopranos' },
+        { code: 'A', name: 'Altos' }
     ];
 
     const voiceParts: VoicePartDef[] = [

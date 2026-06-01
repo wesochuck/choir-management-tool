@@ -48,13 +48,17 @@ export function MusicPieceModal({
     const [arranger, setArranger] = useState('');
     const [duration, setDuration] = useState('');
 
-    const uniqueComposers = useMemo(() => {
-        return Array.from(new Set((allPieces || []).map(p => p.composer).filter(Boolean) as string[])).sort();
+    const uniquePeople = useMemo(() => {
+        const pool = new Set<string>();
+        (allPieces || []).forEach(p => {
+            if (p.composer) pool.add(p.composer);
+            if (p.arranger) pool.add(p.arranger);
+        });
+        return Array.from(pool).sort();
     }, [allPieces]);
 
-    const uniqueArrangers = useMemo(() => {
-        return Array.from(new Set((allPieces || []).map(p => p.arranger).filter(Boolean) as string[])).sort();
-    }, [allPieces]);
+    const uniqueComposers = uniquePeople;
+    const uniqueArrangers = uniquePeople;
     const [copies, setCopies] = useState<string>('');
     const [catalogId, setCatalogId] = useState('');
     const [sectionBuckets, setSectionBuckets] = useState<string[]>([]);

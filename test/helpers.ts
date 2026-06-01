@@ -79,7 +79,6 @@ export function createSectionDefFixture(overrides: Partial<SectionDef> = {}): Se
   return {
     code: 'S',
     name: 'Sopranos',
-    allowedVoiceParts: ['S1', 'S2'],
     ...overrides
   };
 }
