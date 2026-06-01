@@ -65,13 +65,19 @@ export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[
 
 export function exportMusicToCSV(pieces: MusicPiece[], options?: { genres?: MusicGenreDef[] }): string {
   const header = ['Title', 'Composer', 'Arranger', 'Copies', 'Catalog ID', 'Duration', 'Voicing', 'Applies To', 'Genres', 'Purchase Date', 'Notes'].join(',');
+
+  const genreMap = options?.genres?.reduce((acc, g) => {
+    acc.set(g.id, g.label);
+    return acc;
+  }, new Map<string, string>());
+
   const rows = pieces.map(p => {
     const applicability = (!p.sectionBuckets || p.sectionBuckets.length === 0) 
       ? 'All' 
       : p.sectionBuckets.join(';');
       
-    const genreList = options?.genres 
-      ? p.genres?.map(id => options.genres!.find(g => g.id === id)?.label || id).join(';') || ''
+    const genreList = genreMap
+      ? p.genres?.map(id => genreMap.get(id) || id).join(';') || ''
       : p.genres?.join(';') || '';
 
     const clean = (val: unknown) => {
