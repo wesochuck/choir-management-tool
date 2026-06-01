@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppCard } from '../../components/common/AppCard';
+import { pb } from '../../lib/pocketbase';
 import { settingsService, queueSettingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
@@ -246,7 +247,8 @@ function QueueWebhookSettings() {
     }
   };
 
-  const webhookUrl = `${window.location.origin}/api/queue/process?token=${token}`;
+  const pbBaseUrl = (pb.baseUrl || window.location.origin).replace(/\/+$/, '');
+  const webhookUrl = `${pbBaseUrl}/api/queue/process?token=${token}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(webhookUrl);
