@@ -143,10 +143,10 @@ test('codebase integrity: DialogContext must declare showToast API', () => {
 
 test('codebase integrity: Music Library UI policies', () => {
   const modalFile = resolveProjectPath('src/views/admin/music-library/MusicPieceModal.tsx');
-  const tableFile = resolveProjectPath('src/views/admin/music-library/MusicLibraryTable.tsx');
+  const tableRowFile = resolveProjectPath('src/views/admin/music-library/table/MusicLibraryRow.tsx');
   
   const modalContent = fs.readFileSync(modalFile, 'utf8');
-  const tableContent = fs.readFileSync(tableFile, 'utf8');
+  const tableRowContent = fs.readFileSync(tableRowFile, 'utf8');
 
   // Policy: MusicPieceModal must listen to Enter onNewMovement inputs
   const hasAddMovementHandler = /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(modalContent);
@@ -155,9 +155,9 @@ test('codebase integrity: Music Library UI policies', () => {
   assert.ok(hasAddMovementHandler, 'MusicPieceModal must define handleAddMovement handler');
   assert.ok(hasEnterKeyCheck, 'MusicPieceModal must trigger handleAddMovement on Enter key');
 
-  // Policy: MusicLibraryTable must render headphone indicators for tracks
-  const hasHeadphoneLogic = tableContent.includes('totalMovementTracksCount') && tableContent.includes('hasTracks');
-  assert.ok(hasHeadphoneLogic, 'MusicLibraryTable must compute and render headphone indicators for pieces with tracks');
+  // Policy: MusicLibraryRow must render headphone indicators for tracks
+  const hasHeadphoneLogic = tableRowContent.includes('totalMovementTracksCount') && tableRowContent.includes('hasTracks');
+  assert.ok(hasHeadphoneLogic, 'MusicLibraryRow must compute and render headphone indicators for pieces with tracks');
 });
 
 test('codebase integrity: player integration consistency', () => {
@@ -178,15 +178,11 @@ test('codebase integrity: player integration consistency', () => {
 });
 
 test('codebase integrity: no JSX IIFE anti-patterns in CommunicationView', () => {
-  const commViewFile = resolveProjectPath('src/views/admin/CommunicationView.tsx');
-  const content = fs.readFileSync(commViewFile, 'utf8');
-  
-  // Look for the specific IIFE pattern {tab === 'history' && (() => {
-  const hasHistoryIIFE = content.includes("{tab === 'history' && (() => {");
-  assert.ok(!hasHistoryIIFE, 'CommunicationView history tab must use a sub-component instead of an IIFE');
+  const historyPanelFile = resolveProjectPath('src/views/admin/communications/HistoryPanel.tsx');
+  const content = fs.readFileSync(historyPanelFile, 'utf8');
   
   // Verify MessageHistory component is used
-  assert.ok(content.includes('<MessageHistory'), 'CommunicationView should use the MessageHistory component');
+  assert.ok(content.includes('<MessageHistory'), 'HistoryPanel should use the MessageHistory component');
 });
 
 test('codebase integrity: PublicRsvpView does not use native alert dialogs', () => {

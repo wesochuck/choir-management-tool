@@ -47,6 +47,7 @@ test('phase 06 POLL-05: communication poll placeholder flow is integrated', () =
   const communicationService = readProjectFile('src/services/communicationService.ts');
   const placeholderPanel = readProjectFile('src/components/admin/PlaceholderPanel.tsx');
   const communicationView = readProjectFile('src/views/admin/CommunicationView.tsx');
+  const communicationModals = readProjectFile('src/views/admin/communications/CommunicationModals.tsx');
   const pollModal = readProjectFile('src/components/admin/PollSelectionModal.tsx');
   const previewUtils = readProjectFile('src/lib/communicationUtils.ts');
 
@@ -54,7 +55,7 @@ test('phase 06 POLL-05: communication poll placeholder flow is integrated', () =
   assert.match(communicationService, /\/api\/generate-poll-tokens/);
   assert.match(communicationService, /encodeURIComponent\(token\)/);
   assert.match(placeholderPanel, /\{\{POLL_LINK:pollId\}\}/);
-  assert.match(communicationView, /PollSelectionModal/);
+  assert.match(communicationModals, /PollSelectionModal/);
   assert.match(communicationView, /setIsPollModalOpen\(true\)/);
   assert.match(pollModal, /Create & Insert Poll/);
   assert.match(previewUtils, /Answer our quick question/);

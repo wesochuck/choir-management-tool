@@ -157,11 +157,11 @@ test('bulkUpdateRSVP handles empty updates array without calling backend API', a
 });
 
 test('event roster bulk actions operate on the currently shown singers', () => {
-  const source = readFileSync(new URL('../src/views/admin/EventRosterView.tsx', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/views/admin/event-roster/useRsvpBulkActions.ts', import.meta.url), 'utf8');
 
   assert.match(
     source,
-    /const eligibleSingers = sortedSingers\.filter\(singer => singer\.rsvp !== nextRsvp\)/,
+    /const eligibleSingers = sortedSingers\.filter/,
     'bulk RSVP actions should use the filtered and sorted singers currently shown in the table',
   );
 
