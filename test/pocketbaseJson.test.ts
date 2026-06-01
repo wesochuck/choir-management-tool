@@ -53,6 +53,11 @@ describe('PocketBase JSON Parsing Helpers', () => {
       assert.strictEqual(parseJsonField('{invalid}'), null);
     });
 
+    it('returns null for parse error on badly formed string', () => {
+      // Explicitly verifies the catch block returning null
+      assert.strictEqual(parseJsonField('bad json string'), null);
+    });
+
     it('returns array as-is if it cannot be decoded as string (fallback for standard lists)', () => {
       const list = ['a', 'b'];
       assert.deepStrictEqual(parseJsonField(list), list);
