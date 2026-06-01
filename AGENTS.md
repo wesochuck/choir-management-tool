@@ -119,6 +119,10 @@
     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
     ```
 
+- **Goja VM Named Query Parameter Placeholder Syntax (`{:param}`)**:
+  - *The Failure Mode:* Using SQL-native colon parameters (such as `:maxAttempts` or `:runId`) inside raw queries passed to `app.db().newQuery(...)` throws a Goja `missing named argument` exception, because PocketBase's underlying `dbx` Go package expects named variables to use the brace parameter format.
+  - *The Safe Pattern:* Always format named query parameters using curly braces (e.g. `{:maxAttempts}`, `{:runId}`) inside raw SQL queries before binding values.
+
 ## Stale Asset Chunk Resilience (Lazy Loading)
 
 - **Standard Import Protection**: When creating new route modules or lazy-loaded views, ALWAYS wrap the lazy-loading import statement using the `lazyWithReload(...)` helper defined in `src/App.tsx` instead of standard React `lazy(...)`.
