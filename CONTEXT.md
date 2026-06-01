@@ -95,3 +95,9 @@ The individual(s) who wrote the original musical work. Stored in the `composer` 
 
 ## Arranger
 The individual(s) who adapted or arranged the original musical work for a specific vocal setting or instrumentation. Stored in the new `arranger` field of a music library piece.
+
+## Calendar Subscription Feed
+A secure, personalized iCalendar (.ics) feed URL that allows singers to sync their choir event schedules (including rehearsals and performances) directly into external calendar applications.
+
+## Calendar Salt
+A unique, cryptographically random string stored on a singer's profile that is signed into their Calendar Subscription Feed URL. Re-generating this salt instantly invalidates any previously shared subscription links.

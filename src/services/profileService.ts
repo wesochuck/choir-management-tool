@@ -15,6 +15,7 @@ export interface Profile extends RecordModel {
   statusIsManual?: boolean;
   statusLastChangedAt?: string;
   statusChangeReason?: string;
+  calendarSalt?: string;
   expand?: {
     user?: UserAccount;
   };
@@ -195,6 +196,24 @@ export const profileService = {
 
   async requestPasswordReset(email: string) {
     return await pb.collection('users').requestPasswordReset(email);
+  },
+
+  async getCalendarFeedUrl(): Promise<string> {
+    const response = await pb.send<{ token: string }>('/api/singer/calendar-feed-url', {
+      method: 'GET'
+    });
+    const baseUrl = pb.baseUrl || window.location.origin;
+    const feedUrl = `${baseUrl}/api/calendar/feed?token=${encodeURIComponent(response.token)}`;
+    return feedUrl.replace(/^http:/, 'webcal:').replace(/^https:/, 'webcal:');
+  },
+
+  async resetCalendarFeedUrl(): Promise<string> {
+    const response = await pb.send<{ token: string }>('/api/singer/calendar-feed-url/reset', {
+      method: 'POST'
+    });
+    const baseUrl = pb.baseUrl || window.location.origin;
+    const feedUrl = `${baseUrl}/api/calendar/feed?token=${encodeURIComponent(response.token)}`;
+    return feedUrl.replace(/^http:/, 'webcal:').replace(/^https:/, 'webcal:');
   },
 };
 

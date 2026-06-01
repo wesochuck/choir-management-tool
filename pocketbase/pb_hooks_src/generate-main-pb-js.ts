@@ -92,7 +92,7 @@ function getHmacSecret() {
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string") return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0) return;
@@ -322,6 +322,21 @@ routerAdd("POST", "/api/test-smtp", (e) => {
 routerAdd("GET", "/api/calendar/download", (e) => {
     ${sharedUtils}
     return handleCalendarDownload(e);
+});
+
+routerAdd("GET", "/api/calendar/feed", (e) => {
+    ${sharedUtils}
+    return handleCalendarFeed(e);
+});
+
+routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
+    ${sharedUtils}
+    return handleCalendarFeedUrl(e);
+});
+
+routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
+    ${sharedUtils}
+    return handleCalendarFeedReset(e);
 });
 
 routerAdd("GET", "/api/singer/seating-profiles", (e) => {

@@ -64,6 +64,7 @@ export interface PocketBaseApp {
     findRecordsByFilter(collection: string, filter: string, sort?: string, limit?: number, offset?: number, params?: unknown): PocketBaseRecord[];
     findRecordById(collection: string, id: string): PocketBaseRecord;
     save(record: PocketBaseRecord): void;
+    saveNoValidate(record: PocketBaseRecord): void;
     settings(): PocketBaseSettings;
     newMailClient(): PocketBaseMailClient;
 }

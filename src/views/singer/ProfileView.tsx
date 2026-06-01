@@ -5,15 +5,75 @@ import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useDialog } from '../../contexts/DialogContext';
 
 export default function ProfileView() {
   const { user, updatePreferences } = useAuth();
+  const dialog = useDialog();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [prefSuccess, setPrefSuccess] = useState(false);
+
+  // Calendar sync states
+  const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
+  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const loadCalendarFeed = useCallback(async (profileId: string) => {
+    if (!profileId) return;
+    setIsCalendarLoading(true);
+    try {
+      const url = await profileService.getCalendarFeedUrl();
+      setCalendarUrl(url);
+    } catch {
+      // ignore silently
+    } finally {
+      setIsCalendarLoading(false);
+    }
+  }, []);
+
+  const handleCopyLink = async () => {
+    if (!calendarUrl) return;
+    try {
+      await navigator.clipboard.writeText(calendarUrl);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleResetLink = async () => {
+    const confirmReset = await dialog.confirm({
+      title: 'Reset Calendar Link',
+      message: 'Are you sure you want to reset your calendar subscription link? This will instantly invalidate your existing feed link on all your devices, and you will need to resubscribe using the new link.',
+      confirmLabel: 'Reset Link',
+      variant: 'danger',
+    });
+    if (!confirmReset) return;
+
+    setIsCalendarLoading(true);
+    try {
+      const url = await profileService.resetCalendarFeedUrl();
+      setCalendarUrl(url);
+      await dialog.showMessage({
+        title: 'Link Reset',
+        message: 'Your calendar subscription link has been successfully reset. Please update the link in your calendar applications.',
+        variant: 'info',
+      });
+    } catch {
+      await dialog.showMessage({
+        title: 'Reset Failed',
+        message: 'Failed to reset calendar link. Please try again.',
+        variant: 'danger',
+      });
+    } finally {
+      setIsCalendarLoading(false);
+    }
+  };
 
   const handlePreferenceChange = async (key: 'rosterSort' | 'attendanceSort' | 'rsvpSort', value: 'lastName' | 'voicePart') => {
     try {
@@ -48,6 +108,7 @@ export default function ProfileView() {
           setProfile(p);
           setName(p.name || currentUser.name || '');
           setPhone(p.phone || '');
+          loadCalendarFeed(p.id);
         } else {
           setProfile({
             id: '',
@@ -73,13 +134,14 @@ export default function ProfileView() {
         setName(p.name || '');
         setPhone(p.phone || '');
         setEmail(pb.authStore.record?.email || '');
+        loadCalendarFeed(p.id);
       }
     } catch {
       setError('Could not load your profile.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadCalendarFeed]);
 
   useEffect(() => {
     loadProfile();
@@ -246,6 +308,77 @@ export default function ProfileView() {
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+
+        {profile.id && (
+          <AppCard title="📅 Calendar Sync" style={{ width: '100%' }}>
+            <p className="text-xs text-muted" style={{ margin: 0, marginBottom: 'var(--space-md)' }}>
+              Subscribe to your personalized choir calendar to sync performances, rehearsals, call times, and set lists directly to your personal Google, Apple, or Outlook calendar.
+            </p>
+
+            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Your Calendar Subscription URL</label>
+                {isCalendarLoading ? (
+                  <div className="text-xs text-muted" style={{ padding: 'var(--space-sm) 0' }}>Loading feed link...</div>
+                ) : calendarUrl ? (
+                  <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center', width: '100%' }}>
+                    <input
+                      readOnly
+                      value={calendarUrl}
+                      className="card"
+                      style={{
+                        flex: 1,
+                        padding: '0 12px',
+                        height: '40px',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg-muted)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.85rem',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className={`btn ${isCopied ? 'btn-success' : 'btn-primary'}`}
+                      style={{ height: '40px', padding: '0 var(--space-md)', minWidth: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      {isCopied ? 'Copied! ✓' : 'Copy'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted" style={{ color: 'var(--color-danger-text)' }}>Failed to load calendar link.</div>
+                )}
+              </div>
+
+              <div className="flex-row" style={{ justifyContent: 'flex-start', marginTop: 'var(--space-xs)' }}>
+                <button
+                  type="button"
+                  onClick={handleResetLink}
+                  className="btn btn-ghost"
+                  style={{
+                    color: 'var(--color-danger-text)',
+                    border: '1px solid var(--color-danger-border)',
+                    fontSize: '0.85rem',
+                    padding: 'var(--space-xs) var(--space-md)',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer'
+                  }}
+                  disabled={isCalendarLoading}
+                >
+                  Reset Calendar Link...
+                </button>
+              </div>
+              <p className="text-xs text-muted" style={{ margin: 0, fontSize: '0.75rem', fontStyle: 'italic' }}>
+                Note: Resetting will invalidate any previous link you've set up on your devices. Only active rehearsals and concerts you haven't declined will sync.
+              </p>
+            </div>
+          </AppCard>
+        )}
 
         {user?.role === 'admin' && (
           <AppCard title="View Preferences" style={{ width: '100%' }}>
