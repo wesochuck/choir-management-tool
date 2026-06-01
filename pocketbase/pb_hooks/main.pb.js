@@ -2611,6 +2611,1648 @@ onRecordAfterUpdateSuccess((e) => {
     }
 }, "messages");
 
+onRecordAfterCreateSuccess((e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Unordered Lists
+        const lines = html.split("\n");
+        let inList = false;
+        const processedLines = lines.map(line => {
+            const listMatch = line.match(/^(\*|-)\s+(.*)/);
+            if (listMatch) {
+                const content = listMatch[2];
+                if (!inList) {
+                    inList = true;
+                    return `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                if (inList) {
+                    inList = false;
+                    return `</ul>${line}`;
+                }
+                return line;
+            }
+        });
+        if (inList)
+            processedLines.push("</ul>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            if (block.trim().startsWith("<ul"))
+                return block;
+            if (block.trim().startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    /**
+     * Retrieves HMAC secret for signature tokens.
+     */
+    function getQueueHmacSecret(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return (parsed && parsed.secret) ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function processEmailQueue(app) {
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        // Stale Processing record recovery
+        try {
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < :maxAttempts)
+            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= :maxAttempts
+            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+        }
+        catch (recoverErr) {
+            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+        }
+        const runId = $security.randomString(20);
+        console.log("[Email Queue] Starting processing run: " + runId);
+        // Atomic SQLite-level claiming
+        try {
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Processing',
+                    processingRunId = :runId,
+                    processingStartedAt = datetime('now')
+                WHERE id IN (
+                    SELECT id
+                    FROM emailQueue
+                    WHERE status = 'Pending'
+                      AND (attempts IS NULL OR attempts < :maxAttempts)
+                    ORDER BY created ASC
+                    LIMIT :batchSize
+                )
+            `).bind({
+                runId: runId,
+                maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                batchSize: EMAIL_QUEUE_BATCH_SIZE
+            }).execute();
+        }
+        catch (claimErr) {
+            console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+            return;
+        }
+        const records = app.findRecordsByFilter("emailQueue", `status = 'Processing' && processingRunId = '${runId}'`, "created", EMAIL_QUEUE_BATCH_SIZE, 0);
+        if (!records || records.length === 0) {
+            console.log("[Email Queue] No records claimed for run: " + runId);
+            return;
+        }
+        console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+        // Build variables used for layout rendering
+        const secret = getQueueHmacSecret(app);
+        let baseUrl = "http://localhost:5173";
+        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+        let choirName = "";
+        try {
+            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(commRecord.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_a) {
+            // use default baseUrl and mailingAddress
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // use default choirName
+        }
+        let timezone = "America/New_York";
+        try {
+            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+            const valueStr = tzSetting.get("value");
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === "string") {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === "object" && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_c) {
+            // use default timezone
+        }
+        records.forEach((record) => {
+            try {
+                const rawContent = record.get("rawContent") || "";
+                const recipientId = record.get("recipientId");
+                const recipientEmail = record.get("recipientEmail");
+                const recipientName = record.get("recipientName") || "Singer";
+                const filters = parseJsonField(record.get("filters")) || {};
+                // Temporarily protect placeholders containing underscores from markdown parsing
+                const protectedContent = rawContent
+                    .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                    .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                    .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                    .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                    .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                    .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                let htmlBody = renderMarkdown(protectedContent);
+                // Restore protected placeholders
+                htmlBody = htmlBody
+                    .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                    .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                    .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                    .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                    .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                    .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                let subject = record.get("subject") || "";
+                subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                // Fetch dynamic event details if enqueued under filters
+                let event = null;
+                if (filters && filters.eventId) {
+                    try {
+                        event = app.findRecordById("events", filters.eventId);
+                    }
+                    catch (_a) {
+                        // event not found
+                    }
+                }
+                // Perform template placeholder resolutions (same engine as legacy)
+                htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                if (event) {
+                    const eventDate = event.get("date");
+                    const eventTitle = (event.get("title") || event.get("type") || "Event");
+                    const eventType = (event.get("type") || "Performance");
+                    const eventDetails = (event.get("details") || "");
+                    let venueName = "TBD";
+                    try {
+                        const venueRecord = app.findRecordById("venues", event.get("venue"));
+                        venueName = (venueRecord.get("name") || "TBD");
+                    }
+                    catch (_b) {
+                        // venue not found
+                    }
+                    const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                    const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    // Resolve event placeholders in subject too
+                    subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                        .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                    const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${escapeHtml(venueName)}</strong>
+        </div>
+    </div>
+    `;
+                    // Optionally generate an "Add to Calendar" link for the first rehearsal
+                    let firstRehearsalHtml = "";
+                    if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        try {
+                            const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                            if (rehearsals && rehearsals.length > 0) {
+                                const firstReh = rehearsals[0];
+                                const rehDate = firstReh.get("date");
+                                const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
+                                const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                // Generate a direct link to the backend ICS download route
+                                let icsLink = "";
+                                if (secret) {
+                                    const payload = `e=${firstReh.id}&p=${recipientId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                                firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                `.trim();
+                            }
+                        }
+                        catch (_c) {
+                            // Ignore rehearsals fetching or formatting errors
+                        }
+                    }
+                    // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                    let eventCalendarHtml = "";
+                    if (htmlBody.includes("{eventCalendarLink}")) {
+                        let icsLink = "";
+                        let slotDateLong = dateLong;
+                        let slotTimeStr = timeStr;
+                        if (secret) {
+                            const auditionId = filters.auditionId;
+                            if (auditionId) {
+                                const payload = `a=${auditionId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                try {
+                                    const audition = app.findRecordById("auditions", auditionId);
+                                    const auditionSlot = audition.get("scheduledTimeSlot");
+                                    if (auditionSlot) {
+                                        slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                    }
+                                }
+                                catch (_d) {
+                                    // Ignore audition record resolution/formatting errors
+                                }
+                            }
+                            else {
+                                const payload = `e=${event.id}&p=${recipientId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            }
+                        }
+                        eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                        `.trim();
+                    }
+                    htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        .replace(/{eventType}/g, () => escapeHtml(eventType))
+                        .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                        .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                        .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                        .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                        .replace(/{eventInfo}/g, () => eventInfoHtml)
+                        .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                        .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                    if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        const payload = `e=${event.id}&p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                        const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                        htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                    }
+                    if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        const payload = `e=${event.id}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                        const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                    }
+                }
+                else {
+                    // If there's no event context, clear out the player link placeholders
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                        .replace(/{playerLink}/g, "");
+                }
+                // Resolve poll links: {{POLL_LINK:pollId}}
+                if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                        const payload = "l=" + pollId + "&p=" + recipientId;
+                        const signature = $security.hs256(payload, secret);
+                        const token = payload + "&s=" + signature;
+                        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                        let pollButtonLabel = "Answer our quick question";
+                        try {
+                            const pollRecord = app.findRecordById("polls", pollId);
+                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
+                            if (typeof question === "string" && question.trim()) {
+                                pollButtonLabel = question.trim();
+                            }
+                        }
+                        catch (_a) {
+                            // keep safe fallback label if poll lookup fails
+                        }
+                        return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                    });
+                }
+                // Compile secure unsubscribe URL
+                let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                if (secret) {
+                    const payload = `p=${recipientId}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                    htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                }
+                // Final template layout wrap
+                const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                record.set("htmlBody", finalHtml);
+                // Dispatch natively via PocketBase SMTP Client
+                const mailerMessage = new MailerMessage({
+                    from: {
+                        address: settings.meta.senderAddress || "no-reply@choir.management",
+                        name: settings.meta.senderName || "Choir Management Tool"
+                    },
+                    to: [{ address: recipientEmail, name: recipientName }],
+                    subject: subject,
+                    html: finalHtml
+                });
+                app.newMailClient().send(mailerMessage);
+                record.set("status", "Sent");
+                record.set("sentAt", new Date().toISOString().replace('T', ' ').substring(0, 19));
+                record.set("processingRunId", "");
+                record.set("processingStartedAt", "");
+                record.set("errorMessage", "");
+                console.log(`[Email Queue] Sent record: ${record.id}`);
+            }
+            catch (err) {
+                const rawAttempts = record.get("attempts");
+                const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                record.set("attempts", currentAttempts);
+                const message = err instanceof Error ? err.message : String(err);
+                record.set("errorMessage", message);
+                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
+                record.set("status", nextStatus);
+                record.set("processingRunId", "");
+                record.set("processingStartedAt", "");
+                console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+            }
+            finally {
+                app.save(record);
+            }
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    try {
+        const audition = e?.record;
+        if (!audition) return;
+
+        const contact = audition.get("contact") || "";
+        const isEmail = contact.includes("@") && contact.includes(".");
+
+        if (isEmail) {
+            const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Audition Confirmation' && isSystemTemplate = true");
+            if (!template) return;
+
+            const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+            const eventId = audition.get("performance") || "";
+            
+            function getChoirTimezone() {
+                let timezone = "America/New_York";
+                try {
+                    const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                    if (tzSetting) {
+                        const tzP = parseJsonField(tzSetting.get("value"));
+                        if (typeof tzP === "string") {
+                            timezone = tzP;
+                        } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                            timezone = tzP.timezone;
+                        }
+                    }
+                } catch (err) {}
+                return timezone;
+            }
+
+            function formatSlotFriendly(slot) {
+                if (!slot) return "";
+                try {
+                    const d = new Date(slot);
+                    if (isNaN(d.getTime())) return slot;
+
+                    const timezone = getChoirTimezone();
+                    const dateStr = formatInTimezone(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+                    const timeStr = formatInTimezone(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                    
+                    if (dateStr && timeStr) {
+                        return dateStr + " at " + timeStr;
+                    }
+                } catch (err) {}
+                return slot;
+            }
+
+            const requestedSlotsRaw = audition.get("requestedSlots");
+            const requestedSlots = parseJsonField(requestedSlotsRaw);
+            
+            let formattedTimeSlots = "Any";
+            if (Array.isArray(requestedSlots) && requestedSlots.length > 0) {
+                const formattedList = requestedSlots.map(function(slot) {
+                    return "- " + formatSlotFriendly(slot);
+                });
+                formattedTimeSlots = "\n" + formattedList.join("\n");
+            } else {
+                const legacySlot = audition.get("scheduledTimeSlot") || audition.get("timeSlot") || "";
+                if (legacySlot) {
+                    formattedTimeSlots = formatSlotFriendly(legacySlot);
+                }
+            }
+
+            let rawContent = template.get("content") || "";
+            rawContent = rawContent.replace(/{timeSlot}/g, formattedTimeSlots);
+
+            const queueRecord = new Record(queueCollection, {
+                recipientId: audition.id,
+                recipientEmail: contact.trim(),
+                recipientName: audition.get("name") || "Singer",
+                subject: template.get("subject") || "",
+                rawContent: rawContent,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({ 
+                    eventId: eventId, 
+                    type: "Automated Confirmation" 
+                })
+            });
+
+            $app.save(queueRecord);
+            processEmailQueue($app);
+        }
+    } catch (err) {
+        console.log("[Audition Confirmation Error] Failed to enqueue email: " + err);
+    }
+}, "auditions");
+
+onRecordAfterUpdateSuccess((e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Unordered Lists
+        const lines = html.split("\n");
+        let inList = false;
+        const processedLines = lines.map(line => {
+            const listMatch = line.match(/^(\*|-)\s+(.*)/);
+            if (listMatch) {
+                const content = listMatch[2];
+                if (!inList) {
+                    inList = true;
+                    return `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                if (inList) {
+                    inList = false;
+                    return `</ul>${line}`;
+                }
+                return line;
+            }
+        });
+        if (inList)
+            processedLines.push("</ul>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            if (block.trim().startsWith("<ul"))
+                return block;
+            if (block.trim().startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    /**
+     * Retrieves HMAC secret for signature tokens.
+     */
+    function getQueueHmacSecret(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return (parsed && parsed.secret) ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function processEmailQueue(app) {
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        // Stale Processing record recovery
+        try {
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < :maxAttempts)
+            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= :maxAttempts
+            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+        }
+        catch (recoverErr) {
+            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+        }
+        const runId = $security.randomString(20);
+        console.log("[Email Queue] Starting processing run: " + runId);
+        // Atomic SQLite-level claiming
+        try {
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Processing',
+                    processingRunId = :runId,
+                    processingStartedAt = datetime('now')
+                WHERE id IN (
+                    SELECT id
+                    FROM emailQueue
+                    WHERE status = 'Pending'
+                      AND (attempts IS NULL OR attempts < :maxAttempts)
+                    ORDER BY created ASC
+                    LIMIT :batchSize
+                )
+            `).bind({
+                runId: runId,
+                maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                batchSize: EMAIL_QUEUE_BATCH_SIZE
+            }).execute();
+        }
+        catch (claimErr) {
+            console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+            return;
+        }
+        const records = app.findRecordsByFilter("emailQueue", `status = 'Processing' && processingRunId = '${runId}'`, "created", EMAIL_QUEUE_BATCH_SIZE, 0);
+        if (!records || records.length === 0) {
+            console.log("[Email Queue] No records claimed for run: " + runId);
+            return;
+        }
+        console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+        // Build variables used for layout rendering
+        const secret = getQueueHmacSecret(app);
+        let baseUrl = "http://localhost:5173";
+        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+        let choirName = "";
+        try {
+            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(commRecord.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_a) {
+            // use default baseUrl and mailingAddress
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // use default choirName
+        }
+        let timezone = "America/New_York";
+        try {
+            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+            const valueStr = tzSetting.get("value");
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === "string") {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === "object" && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_c) {
+            // use default timezone
+        }
+        records.forEach((record) => {
+            try {
+                const rawContent = record.get("rawContent") || "";
+                const recipientId = record.get("recipientId");
+                const recipientEmail = record.get("recipientEmail");
+                const recipientName = record.get("recipientName") || "Singer";
+                const filters = parseJsonField(record.get("filters")) || {};
+                // Temporarily protect placeholders containing underscores from markdown parsing
+                const protectedContent = rawContent
+                    .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                    .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                    .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                    .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                    .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                    .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                let htmlBody = renderMarkdown(protectedContent);
+                // Restore protected placeholders
+                htmlBody = htmlBody
+                    .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                    .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                    .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                    .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                    .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                    .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                let subject = record.get("subject") || "";
+                subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                // Fetch dynamic event details if enqueued under filters
+                let event = null;
+                if (filters && filters.eventId) {
+                    try {
+                        event = app.findRecordById("events", filters.eventId);
+                    }
+                    catch (_a) {
+                        // event not found
+                    }
+                }
+                // Perform template placeholder resolutions (same engine as legacy)
+                htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                if (event) {
+                    const eventDate = event.get("date");
+                    const eventTitle = (event.get("title") || event.get("type") || "Event");
+                    const eventType = (event.get("type") || "Performance");
+                    const eventDetails = (event.get("details") || "");
+                    let venueName = "TBD";
+                    try {
+                        const venueRecord = app.findRecordById("venues", event.get("venue"));
+                        venueName = (venueRecord.get("name") || "TBD");
+                    }
+                    catch (_b) {
+                        // venue not found
+                    }
+                    const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                    const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    // Resolve event placeholders in subject too
+                    subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                        .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                    const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${escapeHtml(venueName)}</strong>
+        </div>
+    </div>
+    `;
+                    // Optionally generate an "Add to Calendar" link for the first rehearsal
+                    let firstRehearsalHtml = "";
+                    if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        try {
+                            const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                            if (rehearsals && rehearsals.length > 0) {
+                                const firstReh = rehearsals[0];
+                                const rehDate = firstReh.get("date");
+                                const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
+                                const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                // Generate a direct link to the backend ICS download route
+                                let icsLink = "";
+                                if (secret) {
+                                    const payload = `e=${firstReh.id}&p=${recipientId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                                firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                `.trim();
+                            }
+                        }
+                        catch (_c) {
+                            // Ignore rehearsals fetching or formatting errors
+                        }
+                    }
+                    // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                    let eventCalendarHtml = "";
+                    if (htmlBody.includes("{eventCalendarLink}")) {
+                        let icsLink = "";
+                        let slotDateLong = dateLong;
+                        let slotTimeStr = timeStr;
+                        if (secret) {
+                            const auditionId = filters.auditionId;
+                            if (auditionId) {
+                                const payload = `a=${auditionId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                try {
+                                    const audition = app.findRecordById("auditions", auditionId);
+                                    const auditionSlot = audition.get("scheduledTimeSlot");
+                                    if (auditionSlot) {
+                                        slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                    }
+                                }
+                                catch (_d) {
+                                    // Ignore audition record resolution/formatting errors
+                                }
+                            }
+                            else {
+                                const payload = `e=${event.id}&p=${recipientId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            }
+                        }
+                        eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                        `.trim();
+                    }
+                    htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        .replace(/{eventType}/g, () => escapeHtml(eventType))
+                        .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                        .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                        .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                        .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                        .replace(/{eventInfo}/g, () => eventInfoHtml)
+                        .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                        .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                    if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        const payload = `e=${event.id}&p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                        const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                        htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                    }
+                    if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        const payload = `e=${event.id}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                        const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                    }
+                }
+                else {
+                    // If there's no event context, clear out the player link placeholders
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                        .replace(/{playerLink}/g, "");
+                }
+                // Resolve poll links: {{POLL_LINK:pollId}}
+                if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                        const payload = "l=" + pollId + "&p=" + recipientId;
+                        const signature = $security.hs256(payload, secret);
+                        const token = payload + "&s=" + signature;
+                        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                        let pollButtonLabel = "Answer our quick question";
+                        try {
+                            const pollRecord = app.findRecordById("polls", pollId);
+                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
+                            if (typeof question === "string" && question.trim()) {
+                                pollButtonLabel = question.trim();
+                            }
+                        }
+                        catch (_a) {
+                            // keep safe fallback label if poll lookup fails
+                        }
+                        return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                    });
+                }
+                // Compile secure unsubscribe URL
+                let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                if (secret) {
+                    const payload = `p=${recipientId}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                    htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                }
+                // Final template layout wrap
+                const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                record.set("htmlBody", finalHtml);
+                // Dispatch natively via PocketBase SMTP Client
+                const mailerMessage = new MailerMessage({
+                    from: {
+                        address: settings.meta.senderAddress || "no-reply@choir.management",
+                        name: settings.meta.senderName || "Choir Management Tool"
+                    },
+                    to: [{ address: recipientEmail, name: recipientName }],
+                    subject: subject,
+                    html: finalHtml
+                });
+                app.newMailClient().send(mailerMessage);
+                record.set("status", "Sent");
+                record.set("sentAt", new Date().toISOString().replace('T', ' ').substring(0, 19));
+                record.set("processingRunId", "");
+                record.set("processingStartedAt", "");
+                record.set("errorMessage", "");
+                console.log(`[Email Queue] Sent record: ${record.id}`);
+            }
+            catch (err) {
+                const rawAttempts = record.get("attempts");
+                const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                record.set("attempts", currentAttempts);
+                const message = err instanceof Error ? err.message : String(err);
+                record.set("errorMessage", message);
+                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
+                record.set("status", nextStatus);
+                record.set("processingRunId", "");
+                record.set("processingStartedAt", "");
+                console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+            }
+            finally {
+                app.save(record);
+            }
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    try {
+        const audition = e?.record;
+        if (!audition) return;
+
+        const currentStatus = audition.get("status");
+
+        if (currentStatus === "Scheduled") {
+            const contact = audition.get("contact") || "";
+            const isEmail = contact.includes("@") && contact.includes(".");
+
+            if (isEmail) {
+                const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Audition Scheduled' && isSystemTemplate = true");
+                if (!template) return;
+
+                const eventId = audition.get("performance") || "";
+                const timeSlotVal = audition.get("scheduledTimeSlot") || audition.get("timeSlot") || "";
+                
+                function getChoirTimezone() {
+                    let timezone = "America/New_York";
+                    try {
+                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                        if (tzSetting) {
+                            const tzP = parseJsonField(tzSetting.get("value"));
+                            if (typeof tzP === "string") {
+                                timezone = tzP;
+                            } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                                timezone = tzP.timezone;
+                            }
+                        }
+                    } catch (err) {}
+                    return timezone;
+                }
+
+                function formatSlotFriendly(slot) {
+                    if (!slot) return "";
+                    try {
+                        const d = new Date(slot);
+                        if (isNaN(d.getTime())) return slot;
+
+                        const timezone = getChoirTimezone();
+                        const dateStr = formatInTimezone(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+                        const timeStr = formatInTimezone(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                        
+                        if (dateStr && timeStr) {
+                            return dateStr + " at " + timeStr;
+                        }
+                    } catch (err) {}
+                    return slot;
+                }
+
+                const formattedTimeSlot = timeSlotVal ? formatSlotFriendly(timeSlotVal) : "Any";
+                
+                let rawContent = template.get("content") || "";
+                rawContent = rawContent.replace(/{timeSlot}/g, formattedTimeSlot);
+
+                // Check if we already enqueued this scheduled email for this audition to prevent duplicates
+                const existing = $app.findRecordsByFilter(
+                    "emailQueue",
+                    "recipientId = {:auditionId} && subject = {:subject} && rawContent = {:rawContent}",
+                    "",
+                    1,
+                    0,
+                    { auditionId: audition.id, subject: template.get("subject") || "", rawContent: rawContent }
+                );
+
+                if (existing && existing.length > 0) {
+                    return; // Email already enqueued
+                }
+
+                const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: audition.id,
+                    recipientEmail: contact.trim(),
+                    recipientName: audition.get("name") || "Singer",
+                    subject: template.get("subject") || "",
+                    rawContent: rawContent,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({ 
+                        eventId: eventId, 
+                        auditionId: audition.id,
+                        type: "Automated Confirmation" 
+                    })
+                });
+
+                $app.save(queueRecord);
+                processEmailQueue($app);
+            }
+        }
+    } catch (err) {
+        console.log("[Audition Scheduled Error] Failed to enqueue email: " + err);
+    }
+}, "auditions");
+
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
@@ -2964,6 +4606,692 @@ function parseJsonField(val) {
     }
 }
 
+// --- Utility source: email/hookText.ts ---
+"use strict";
+function escapeHtml(str) {
+    if (!str)
+        return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+function sanitizeHtmlTemplateData(data) {
+    const sanitized = {};
+    const entries = Object.entries(data);
+    for (const [key, value] of entries) {
+        sanitized[key] = escapeHtml(value == null ? "" : String(value));
+    }
+    return sanitized;
+}
+function sanitizeEmailSubject(str) {
+    if (!str)
+        return "";
+    return String(str).replace(/[\r\n]+/g, " ").trim();
+}
+function normalizeBaseUrl(url) {
+    if (!url)
+        return "http://localhost:5173";
+    return String(url).trim().replace(/\/+$/g, "");
+}
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
+function formatInTimezone(date, timezone, options) {
+    if (!date)
+        return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
+    try {
+        // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+        if (typeof process === 'undefined' && typeof window === 'undefined') {
+            throw new Error("Goja VM: use custom formatting");
+        }
+        // Try native Intl first (V8 / browser / Node.js)
+        return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+    }
+    catch (_a) {
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+        // Case 4: Date only with weekday: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+    }
+}
+
+// --- Utility source: email/emailRendering.ts ---
+"use strict";
+function renderMarkdown(text) {
+    if (!text)
+        return "";
+    // Escape raw HTML first
+    let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    // Bold: **text** or __text__
+    html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+    // Italic: *text* or _text_
+    html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+    // Links: [text](url)
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
+    // Unordered Lists
+    const lines = html.split("\n");
+    let inList = false;
+    const processedLines = lines.map(line => {
+        const listMatch = line.match(/^(\*|-)\s+(.*)/);
+        if (listMatch) {
+            const content = listMatch[2];
+            if (!inList) {
+                inList = true;
+                return `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+            }
+            return `<li>${content}</li>`;
+        }
+        else {
+            if (inList) {
+                inList = false;
+                return `</ul>${line}`;
+            }
+            return line;
+        }
+    });
+    if (inList)
+        processedLines.push("</ul>");
+    html = processedLines.join("\n");
+    // Line breaks and paragraphs
+    const blocks = html.split(/\n\s*\n/);
+    html = blocks.map(block => {
+        if (block.trim().startsWith("<ul"))
+            return block;
+        if (block.trim().startsWith("<div"))
+            return block; // Keep footers/buttons intact
+        return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+    }).join("\n");
+    return html;
+}
+
+// --- Utility source: email/emailStyles.ts ---
+"use strict";
+const EMAIL_CSS = `
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+.wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+.container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+.content { padding: 32px; line-height: 1.6; font-size: 16px; }
+.footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+a { color: #4a7c59; text-decoration: underline; }
+.btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+`.trim();
+
+// --- Utility source: email/mailjetRenderer.ts ---
+"use strict";
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        ${EMAIL_CSS}
+    </style>
+</head>
+<body>
+    <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td class="header">
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            ${contentHtml}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                            <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                            <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `.trim();
+}
+
+// --- Utility source: email/queueProcessor.ts ---
+"use strict";
+/**
+ * Retrieves HMAC secret for signature tokens.
+ */
+function getQueueHmacSecret(app) {
+    try {
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(record.get("value"));
+        return (parsed && parsed.secret) ? parsed.secret : "";
+    }
+    catch (_a) {
+        return "";
+    }
+}
+function processEmailQueue(app) {
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+        return;
+    }
+    const EMAIL_QUEUE_BATCH_SIZE = 150;
+    const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+    // Stale Processing record recovery
+    try {
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Pending',
+                processingRunId = NULL,
+                processingStartedAt = NULL
+            WHERE status = 'Processing'
+              AND processingStartedAt < datetime('now', '-15 minutes')
+              AND (attempts IS NULL OR attempts < :maxAttempts)
+        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Failed',
+                processingRunId = NULL,
+                processingStartedAt = NULL
+            WHERE status = 'Processing'
+              AND processingStartedAt < datetime('now', '-15 minutes')
+              AND attempts >= :maxAttempts
+        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+    }
+    catch (recoverErr) {
+        console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+    }
+    const runId = $security.randomString(20);
+    console.log("[Email Queue] Starting processing run: " + runId);
+    // Atomic SQLite-level claiming
+    try {
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Processing',
+                processingRunId = :runId,
+                processingStartedAt = datetime('now')
+            WHERE id IN (
+                SELECT id
+                FROM emailQueue
+                WHERE status = 'Pending'
+                  AND (attempts IS NULL OR attempts < :maxAttempts)
+                ORDER BY created ASC
+                LIMIT :batchSize
+            )
+        `).bind({
+            runId: runId,
+            maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+            batchSize: EMAIL_QUEUE_BATCH_SIZE
+        }).execute();
+    }
+    catch (claimErr) {
+        console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+        return;
+    }
+    const records = app.findRecordsByFilter("emailQueue", `status = 'Processing' && processingRunId = '${runId}'`, "created", EMAIL_QUEUE_BATCH_SIZE, 0);
+    if (!records || records.length === 0) {
+        console.log("[Email Queue] No records claimed for run: " + runId);
+        return;
+    }
+    console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+    // Build variables used for layout rendering
+    const secret = getQueueHmacSecret(app);
+    let baseUrl = "http://localhost:5173";
+    let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
+    try {
+        const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+        const comms = parseJsonField(commRecord.get("value"));
+        if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+            baseUrl = comms.frontendUrl;
+        if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+            mailingAddress = comms.mailingAddress;
+    }
+    catch (_a) {
+        // use default baseUrl and mailingAddress
+    }
+    baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch (_b) {
+        // use default choirName
+    }
+    let timezone = "America/New_York";
+    try {
+        const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+        const valueStr = tzSetting.get("value");
+        const tzP = parseJsonField(valueStr);
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            }
+            else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
+    }
+    catch (_c) {
+        // use default timezone
+    }
+    records.forEach((record) => {
+        try {
+            const rawContent = record.get("rawContent") || "";
+            const recipientId = record.get("recipientId");
+            const recipientEmail = record.get("recipientEmail");
+            const recipientName = record.get("recipientName") || "Singer";
+            const filters = parseJsonField(record.get("filters")) || {};
+            // Temporarily protect placeholders containing underscores from markdown parsing
+            const protectedContent = rawContent
+                .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+            let htmlBody = renderMarkdown(protectedContent);
+            // Restore protected placeholders
+            htmlBody = htmlBody
+                .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+            let subject = record.get("subject") || "";
+            subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+            // Fetch dynamic event details if enqueued under filters
+            let event = null;
+            if (filters && filters.eventId) {
+                try {
+                    event = app.findRecordById("events", filters.eventId);
+                }
+                catch (_a) {
+                    // event not found
+                }
+            }
+            // Perform template placeholder resolutions (same engine as legacy)
+            htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+            htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+            if (event) {
+                const eventDate = event.get("date");
+                const eventTitle = (event.get("title") || event.get("type") || "Event");
+                const eventType = (event.get("type") || "Performance");
+                const eventDetails = (event.get("details") || "");
+                let venueName = "TBD";
+                try {
+                    const venueRecord = app.findRecordById("venues", event.get("venue"));
+                    venueName = (venueRecord.get("name") || "TBD");
+                }
+                catch (_b) {
+                    // venue not found
+                }
+                const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                // Resolve event placeholders in subject too
+                subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                    .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                    .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                const eventInfoHtml = `
+<div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+    <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+    <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+        📅 <strong>${escapeHtml(dateLong)}</strong><br>
+        ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+        📍 <strong>${escapeHtml(venueName)}</strong>
+    </div>
+</div>
+`;
+                // Optionally generate an "Add to Calendar" link for the first rehearsal
+                let firstRehearsalHtml = "";
+                if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                    try {
+                        const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                        if (rehearsals && rehearsals.length > 0) {
+                            const firstReh = rehearsals[0];
+                            const rehDate = firstReh.get("date");
+                            const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
+                            const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                            // Generate a direct link to the backend ICS download route
+                            let icsLink = "";
+                            if (secret) {
+                                const payload = `e=${firstReh.id}&p=${recipientId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            }
+                            firstRehearsalHtml = `
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+        <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+        ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
+                            `.trim();
+                        }
+                    }
+                    catch (_c) {
+                        // Ignore rehearsals fetching or formatting errors
+                    }
+                }
+                // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                let eventCalendarHtml = "";
+                if (htmlBody.includes("{eventCalendarLink}")) {
+                    let icsLink = "";
+                    let slotDateLong = dateLong;
+                    let slotTimeStr = timeStr;
+                    if (secret) {
+                        const auditionId = filters.auditionId;
+                        if (auditionId) {
+                            const payload = `a=${auditionId}`;
+                            const signature = $security.hs256(payload, secret);
+                            const token = `${payload}&s=${signature}`;
+                            icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            try {
+                                const audition = app.findRecordById("auditions", auditionId);
+                                const auditionSlot = audition.get("scheduledTimeSlot");
+                                if (auditionSlot) {
+                                    slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                    slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                }
+                            }
+                            catch (_d) {
+                                // Ignore audition record resolution/formatting errors
+                            }
+                        }
+                        else {
+                            const payload = `e=${event.id}&p=${recipientId}`;
+                            const signature = $security.hs256(payload, secret);
+                            const token = `${payload}&s=${signature}`;
+                            icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                        }
+                    }
+                    eventCalendarHtml = `
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+        <strong style="color: #4a7c59;">Save the Date:</strong><br>
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
+                    `.trim();
+                }
+                htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                    .replace(/{eventType}/g, () => escapeHtml(eventType))
+                    .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                    .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                    .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                    .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                    .replace(/{eventInfo}/g, () => eventInfoHtml)
+                    .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                    .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                    const payload = `e=${event.id}&p=${recipientId}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                    const rsvpHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                }
+                if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    const payload = `e=${event.id}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                    const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                }
+            }
+            else {
+                // If there's no event context, clear out the player link placeholders
+                htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                    .replace(/{playerLink}/g, "");
+            }
+            // Resolve poll links: {{POLL_LINK:pollId}}
+            if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                    const payload = "l=" + pollId + "&p=" + recipientId;
+                    const signature = $security.hs256(payload, secret);
+                    const token = payload + "&s=" + signature;
+                    const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                    let pollButtonLabel = "Answer our quick question";
+                    try {
+                        const pollRecord = app.findRecordById("polls", pollId);
+                        const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
+                        if (typeof question === "string" && question.trim()) {
+                            pollButtonLabel = question.trim();
+                        }
+                    }
+                    catch (_a) {
+                        // keep safe fallback label if poll lookup fails
+                    }
+                    return `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+</div>
+`.trim();
+                });
+            }
+            // Compile secure unsubscribe URL
+            let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+            if (secret) {
+                const payload = `p=${recipientId}`;
+                const signature = $security.hs256(payload, secret);
+                const token = `${payload}&s=${signature}`;
+                unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+            }
+            // Final template layout wrap
+            const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+            record.set("htmlBody", finalHtml);
+            // Dispatch natively via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+                from: {
+                    address: settings.meta.senderAddress || "no-reply@choir.management",
+                    name: settings.meta.senderName || "Choir Management Tool"
+                },
+                to: [{ address: recipientEmail, name: recipientName }],
+                subject: subject,
+                html: finalHtml
+            });
+            app.newMailClient().send(mailerMessage);
+            record.set("status", "Sent");
+            record.set("sentAt", new Date().toISOString().replace('T', ' ').substring(0, 19));
+            record.set("processingRunId", "");
+            record.set("processingStartedAt", "");
+            record.set("errorMessage", "");
+            console.log(`[Email Queue] Sent record: ${record.id}`);
+        }
+        catch (err) {
+            const rawAttempts = record.get("attempts");
+            const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+            const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+            record.set("attempts", currentAttempts);
+            const message = err instanceof Error ? err.message : String(err);
+            record.set("errorMessage", message);
+            const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
+            record.set("status", nextStatus);
+            record.set("processingRunId", "");
+            record.set("processingStartedAt", "");
+            console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+        }
+        finally {
+            app.save(record);
+        }
+    });
+}
+
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret() {
@@ -3069,6 +5397,7 @@ function parseSignedToken(token, requiredKeys) {
                         })
                     });
                     $app.save(queueRecord);
+                    processEmailQueue($app);
                 }
             }
             catch (emailErr) {

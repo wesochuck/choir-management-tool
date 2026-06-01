@@ -37,9 +37,28 @@ function extractCronCallback(content: string, cronName: string): string {
 }
 
 function extractRecordHookCallback(content: string, hookName: string, collectionName: string): string {
-    const markerIndex = content.indexOf(`${hookName}((`);
-    return extractCallbackAfterMarker(content, markerIndex, `
-}, "${collectionName}");`, `${hookName} for ${collectionName}`);
+    const hookMarker = `${hookName}((`;
+    const endMarker = `\n}, "${collectionName}");`;
+    
+    let startIdx = -1;
+    let cursor = 0;
+    while (true) {
+        const foundIdx = content.indexOf(hookMarker, cursor);
+        if (foundIdx === -1) break;
+        
+        const nextEnd = content.indexOf(endMarker, foundIdx);
+        if (nextEnd !== -1) {
+            const nextHook = content.indexOf(hookMarker, foundIdx + hookMarker.length);
+            if (nextHook === -1 || nextHook > nextEnd) {
+                startIdx = foundIdx;
+                break;
+            }
+        }
+        cursor = foundIdx + hookMarker.length;
+    }
+    
+    assert.notStrictEqual(startIdx, -1, `Could not find registration for ${hookName} on ${collectionName}`);
+    return extractCallbackAfterMarker(content, startIdx, endMarker, `${hookName} for ${collectionName}`);
 }
 
 
@@ -61,8 +80,8 @@ test('Generated main.pb.js integrity', () => {
 
     assert.strictEqual(countOccurrences(content, 'routerAdd('), 15, 'Generated main file should contain exactly 15 route registrations');
     assert.strictEqual(countOccurrences(content, 'cronAdd('), 2, 'Generated main file should contain exactly 2 cron registrations');
-    assert.strictEqual(countOccurrences(content, 'onRecordAfterCreateSuccess(('), 1, 'Generated main file should contain exactly one create hook registration');
-    assert.strictEqual(countOccurrences(content, 'onRecordAfterUpdateSuccess(('), 1, 'Generated main file should contain exactly one update hook registration');
+    assert.strictEqual(countOccurrences(content, 'onRecordAfterCreateSuccess(('), 2, 'Generated main file should contain exactly two create hook registrations');
+    assert.strictEqual(countOccurrences(content, 'onRecordAfterUpdateSuccess(('), 2, 'Generated main file should contain exactly two update hook registrations');
 
     const requiredRoutes = [
         'routerAdd("POST", "/api/generate-rsvp-tokens"',
@@ -87,7 +106,7 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
     assert.ok(!content.includes('// --- SHARED UTILITIES ---'), 'Generated file should not emit the old top-level sharedUtils block');
     assert.ok(!content.includes('__SHARED_UTILS__'), 'Generated file should not leak generator utility placeholders');
-    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 30, 'Fifteen utility-bearing callbacks should have start/end local utility markers');
+    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 34, 'Seventeen utility-bearing callbacks should have start/end local utility markers');
 
     const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
     assert.ok(!filePrelude.includes('function '), 'Generated file prelude should not contain top-level helper functions');
@@ -129,6 +148,14 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
     assert.ok(updateMessagesHook.includes('function enqueueBulkMessage'), 'Update messages hook should contain bulk enqueue utility');
     assert.ok(updateMessagesHook.includes('function parseJsonField'), 'Update messages hook should contain JSON parsing dependency');
     assert.ok(!updateMessagesHook.includes('function handleSingerSeatingProfiles'), 'Update messages hook should not contain unrelated seating endpoint utilities');
+
+    const createAuditionsHook = extractRecordHookCallback(content, 'onRecordAfterCreateSuccess', 'auditions');
+    assert.ok(createAuditionsHook.includes('function processEmailQueue'), 'Create auditions hook should contain processEmailQueue');
+    assert.ok(createAuditionsHook.includes('function parseJsonField'), 'Create auditions hook should contain parseJsonField');
+
+    const updateAuditionsHook = extractRecordHookCallback(content, 'onRecordAfterUpdateSuccess', 'auditions');
+    assert.ok(updateAuditionsHook.includes('function processEmailQueue'), 'Update auditions hook should contain processEmailQueue');
+    assert.ok(updateAuditionsHook.includes('function parseJsonField'), 'Update auditions hook should contain parseJsonField');
 });
 
 test('post_event_report subject templating inserts dynamic values literally', () => {

@@ -11,6 +11,7 @@ declare function routerAdd(method: string, path: string, handler: (e: PocketBase
 // TypeScript declarations for shared utilities inlined at runtime
 declare function getHmacSecret(): string;
 declare function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null;
+declare function processEmailQueue(app: PocketBaseApp): void;
 
 interface TxApp extends PocketBaseApp {
     delete(record: PocketBaseRecord): void;
@@ -281,6 +282,7 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
                     });
 
                     $app.save(queueRecord);
+                    processEmailQueue($app);
                 }
             } catch (emailErr) {
                 console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);

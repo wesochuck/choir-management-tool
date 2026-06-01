@@ -381,6 +381,188 @@ try {
     console.log("[Hook Error] onRecordAfterUpdateSuccess: " + hookErr);
 }`;
 
+    const auditionCreateHookBody = `
+try {
+    const audition = e?.record;
+    if (!audition) return;
+
+    const contact = audition.get("contact") || "";
+    const isEmail = contact.includes("@") && contact.includes(".");
+
+    if (isEmail) {
+        const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Audition Confirmation' && isSystemTemplate = true");
+        if (!template) return;
+
+        const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+        const eventId = audition.get("performance") || "";
+        
+        function getChoirTimezone() {
+            let timezone = "America/New_York";
+            try {
+                const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                if (tzSetting) {
+                    const tzP = parseJsonField(tzSetting.get("value"));
+                    if (typeof tzP === "string") {
+                        timezone = tzP;
+                    } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                        timezone = tzP.timezone;
+                    }
+                }
+            } catch (err) {}
+            return timezone;
+        }
+
+        function formatSlotFriendly(slot) {
+            if (!slot) return "";
+            try {
+                const d = new Date(slot);
+                if (isNaN(d.getTime())) return slot;
+
+                const timezone = getChoirTimezone();
+                const dateStr = formatInTimezone(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = formatInTimezone(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                
+                if (dateStr && timeStr) {
+                    return dateStr + " at " + timeStr;
+                }
+            } catch (err) {}
+            return slot;
+        }
+
+        const requestedSlotsRaw = audition.get("requestedSlots");
+        const requestedSlots = parseJsonField(requestedSlotsRaw);
+        
+        let formattedTimeSlots = "Any";
+        if (Array.isArray(requestedSlots) && requestedSlots.length > 0) {
+            const formattedList = requestedSlots.map(function(slot) {
+                return "- " + formatSlotFriendly(slot);
+            });
+            formattedTimeSlots = "\\n" + formattedList.join("\\n");
+        } else {
+            const legacySlot = audition.get("scheduledTimeSlot") || audition.get("timeSlot") || "";
+            if (legacySlot) {
+                formattedTimeSlots = formatSlotFriendly(legacySlot);
+            }
+        }
+
+        let rawContent = template.get("content") || "";
+        rawContent = rawContent.replace(/{timeSlot}/g, formattedTimeSlots);
+
+        const queueRecord = new Record(queueCollection, {
+            recipientId: audition.id,
+            recipientEmail: contact.trim(),
+            recipientName: audition.get("name") || "Singer",
+            subject: template.get("subject") || "",
+            rawContent: rawContent,
+            status: "Pending",
+            attempts: 0,
+            filters: JSON.stringify({ 
+                eventId: eventId, 
+                type: "Automated Confirmation" 
+            })
+        });
+
+        $app.save(queueRecord);
+        processEmailQueue($app);
+    }
+} catch (err) {
+    console.log("[Audition Confirmation Error] Failed to enqueue email: " + err);
+}`;
+
+    const auditionUpdateHookBody = `
+try {
+    const audition = e?.record;
+    if (!audition) return;
+
+    const currentStatus = audition.get("status");
+
+    if (currentStatus === "Scheduled") {
+        const contact = audition.get("contact") || "";
+        const isEmail = contact.includes("@") && contact.includes(".");
+
+        if (isEmail) {
+            const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Audition Scheduled' && isSystemTemplate = true");
+            if (!template) return;
+
+            const eventId = audition.get("performance") || "";
+            const timeSlotVal = audition.get("scheduledTimeSlot") || audition.get("timeSlot") || "";
+            
+            function getChoirTimezone() {
+                let timezone = "America/New_York";
+                try {
+                    const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                    if (tzSetting) {
+                        const tzP = parseJsonField(tzSetting.get("value"));
+                        if (typeof tzP === "string") {
+                            timezone = tzP;
+                        } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                            timezone = tzP.timezone;
+                        }
+                    }
+                } catch (err) {}
+                return timezone;
+            }
+
+            function formatSlotFriendly(slot) {
+                if (!slot) return "";
+                try {
+                    const d = new Date(slot);
+                    if (isNaN(d.getTime())) return slot;
+
+                    const timezone = getChoirTimezone();
+                    const dateStr = formatInTimezone(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+                    const timeStr = formatInTimezone(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                    
+                    if (dateStr && timeStr) {
+                        return dateStr + " at " + timeStr;
+                    }
+                } catch (err) {}
+                return slot;
+            }
+
+            const formattedTimeSlot = timeSlotVal ? formatSlotFriendly(timeSlotVal) : "Any";
+            
+            let rawContent = template.get("content") || "";
+            rawContent = rawContent.replace(/{timeSlot}/g, formattedTimeSlot);
+
+            // Check if we already enqueued this scheduled email for this audition to prevent duplicates
+            const existing = $app.findRecordsByFilter(
+                "emailQueue",
+                "recipientId = {:auditionId} && subject = {:subject} && rawContent = {:rawContent}",
+                "",
+                1,
+                0,
+                { auditionId: audition.id, subject: template.get("subject") || "", rawContent: rawContent }
+            );
+
+            if (existing && existing.length > 0) {
+                return; // Email already enqueued
+            }
+
+            const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+            const queueRecord = new Record(queueCollection, {
+                recipientId: audition.id,
+                recipientEmail: contact.trim(),
+                recipientName: audition.get("name") || "Singer",
+                subject: template.get("subject") || "",
+                rawContent: rawContent,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({ 
+                    eventId: eventId, 
+                    auditionId: audition.id,
+                    type: "Automated Confirmation" 
+                })
+            });
+
+            $app.save(queueRecord);
+            processEmailQueue($app);
+        }
+    }
+} catch (err) {
+    console.log("[Audition Scheduled Error] Failed to enqueue email: " + err);
+}`;
+
     const queueProcessBody = `
 const queryToken = e.requestInfo().query["token"] || "";
 let tokenValid = false;
@@ -477,6 +659,10 @@ ${renderCron('process_email_queue_job', '*/2 * * * *', processQueueBody)}
 ${renderRecordHook('onRecordAfterCreateSuccess', 'messages', createHookBody)}
 
 ${renderRecordHook('onRecordAfterUpdateSuccess', 'messages', updateHookBody)}
+
+${renderRecordHook('onRecordAfterCreateSuccess', 'auditions', auditionCreateHookBody)}
+
+${renderRecordHook('onRecordAfterUpdateSuccess', 'auditions', auditionUpdateHookBody)}
 
 // --- CUSTOM ENDPOINTS ---
 
