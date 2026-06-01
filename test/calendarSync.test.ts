@@ -5,13 +5,13 @@ import { profileService } from '../src/services/profileService.ts';
 
 test('profileService.getCalendarFeedUrl requests endpoint and converts to webcal with URI encoding', async (t) => {
   const originalSend = pb.send;
-  const mockSend = t.mock.fn(async (path: string, options?: any) => {
+  const mockSend = t.mock.fn(async (path: string, options?: unknown) => {
     assert.equal(path, '/api/singer/calendar-feed-url');
-    assert.equal(options?.method, 'GET');
+    assert.equal((options as Record<string, unknown> | undefined)?.method, 'GET');
     return { token: 'p=profile123&c=salt456&s=signature789' };
   });
 
-  pb.send = mockSend as any;
+  pb.send = mockSend as unknown as typeof pb.send;
 
   try {
     const feedUrl = await profileService.getCalendarFeedUrl();
@@ -27,13 +27,13 @@ test('profileService.getCalendarFeedUrl requests endpoint and converts to webcal
 
 test('profileService.resetCalendarFeedUrl requests reset endpoint and returns new encoded webcal link', async (t) => {
   const originalSend = pb.send;
-  const mockSend = t.mock.fn(async (path: string, options?: any) => {
+  const mockSend = t.mock.fn(async (path: string, options?: unknown) => {
     assert.equal(path, '/api/singer/calendar-feed-url/reset');
-    assert.equal(options?.method, 'POST');
+    assert.equal((options as Record<string, unknown> | undefined)?.method, 'POST');
     return { token: 'p=profile123&c=newSalt888&s=newSig999' };
   });
 
-  pb.send = mockSend as any;
+  pb.send = mockSend as unknown as typeof pb.send;
 
   try {
     const feedUrl = await profileService.resetCalendarFeedUrl();

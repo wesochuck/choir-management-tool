@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { rosterService } from '../../services/rosterService';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
@@ -9,8 +8,9 @@ import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
-import { getLastName } from '../../lib/stringUtils';
-import { getSectionFromVoicePart } from '../../lib/voicePartUtils';
+import { useRsvpBulkActions } from './event-roster/useRsvpBulkActions';
+import { useEventRosterExport } from './event-roster/useEventRosterExport';
+
 
 interface EventRosterViewProps {
   eventIdProp?: string;
@@ -52,8 +52,32 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     refreshRosters,
   } = useEventRosterData({ eventId, isInline });
 
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  // RSVP bulk actions hook
+  const {
+    isUpdating,
+    bulkProgress,
+    handleUpdateRSVP,
+    handleBulkUpdateRSVP,
+  } = useRsvpBulkActions({
+    eventId,
+    sortedSingers,
+    refreshRosters,
+    dialog,
+  });
+
+  // Event roster export hook
+  const { handleExportCSV } = useEventRosterExport({
+    event,
+    filteredSingers,
+    selectedVoiceParts,
+    searchQuery,
+    rsvpFilter,
+    voiceParts,
+    sections,
+    defaultExportSort: user?.preferences?.rsvpExportSort || 'section',
+    updatePreferences,
+    dialog,
+  });
 
   // Singer modal states
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
@@ -69,69 +93,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         ? prev.filter(p => p !== part)
         : [...prev, part]
     );
-  };
-
-  const handleUpdateRSVP = async (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => {
-    if (!eventId) return;
-    setIsUpdating(true);
-    try {
-      await rosterService.updateRSVP(eventId, profileId, nextRsvp);
-      await refreshRosters();
-    } catch (err: unknown) {
-      await dialog.showMessage({
-        title: 'Could Not Update RSVP',
-        message: err instanceof Error ? err.message : 'Failed to update RSVP status',
-        variant: 'danger',
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleBulkUpdateRSVP = async (nextRsvp: 'Yes' | 'No' | 'Pending') => {
-    if (!eventId || sortedSingers.length === 0) return;
-
-    const eligibleSingers = sortedSingers.filter(singer => singer.rsvp !== nextRsvp);
-    if (eligibleSingers.length === 0) {
-      dialog.showToast('Everyone shown already has that RSVP status.');
-      return;
-    }
-
-    const statusLabel = nextRsvp === 'Yes' ? 'Attending' : nextRsvp === 'No' ? 'Declined' : 'No Response';
-    const confirmed = await dialog.confirm({
-      title: `Bulk Mark ${statusLabel}`,
-      message: `Update ${eligibleSingers.length} displayed singer${eligibleSingers.length === 1 ? '' : 's'} to ${statusLabel}? This only affects the singers currently shown after your filters and search.`,
-      confirmLabel: `Mark ${statusLabel}`,
-      cancelLabel: 'Cancel',
-      variant: nextRsvp === 'No' ? 'warning' : 'info',
-    });
-
-    if (!confirmed) return;
-
-    setIsUpdating(true);
-    try {
-      await rosterService.bulkUpdateRSVP(
-        eventId,
-        eligibleSingers.map(singer => ({
-          profileId: singer.profile.id,
-          rsvp: nextRsvp,
-        })),
-        (current, total) => {
-          setBulkProgress({ current, total });
-        }
-      );
-      await refreshRosters();
-      dialog.showToast(`Updated ${eligibleSingers.length} RSVP${eligibleSingers.length === 1 ? '' : 's'}.`);
-    } catch (err: unknown) {
-      await dialog.showMessage({
-        title: 'Could Not Bulk Update RSVPs',
-        message: err instanceof Error ? err.message : 'Failed to update RSVP statuses',
-        variant: 'danger',
-      });
-    } finally {
-      setIsUpdating(false);
-      setBulkProgress(null);
-    }
   };
 
   const handlePhotoChange = () => {
@@ -162,162 +123,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     } catch (err) {
       console.error('Failed to delete singer profile', err);
     }
-  };
-
-  const handleExportCSV = async () => {
-    if (!event) return;
-
-    // --- Build filter summary string ---
-    const filterParts: string[] = [];
-    if (rsvpFilter !== 'All') {
-      const label = rsvpFilter === 'Yes' ? 'Attending' : rsvpFilter === 'No' ? 'Declined' : 'No Response';
-      filterParts.push(`RSVP: ${label}`);
-    }
-    if (selectedVoiceParts.length > 0) filterParts.push(`Voice Parts: ${selectedVoiceParts.join(', ')}`);
-    if (searchQuery.trim()) filterParts.push(`Search: "${searchQuery.trim()}"`);
-    const filterSummary = filterParts.length > 0
-      ? filterParts.join(' · ')
-      : 'No filters active — all singers included';
-
-    // Determine default sort from user preference
-    const defaultExportSort: 'lastName' | 'section' =
-      user?.preferences?.rsvpExportSort || 'section';
-
-    // We use a ref on a container div to read the select value at confirm time
-    let chosenSort: 'lastName' | 'section' = defaultExportSort;
-
-    const confirmed = await dialog.confirm({
-      title: 'Export RSVP Roster to CSV',
-      message: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ padding: '12px 14px', borderRadius: '8px', backgroundColor: 'var(--primary-light)', border: '1px solid rgba(74,117,89,0.2)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Exporting {filteredSingers.length} singer{filteredSingers.length !== 1 ? 's' : ''} currently shown
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--primary-deep)', fontWeight: 600 }}>
-              {filterSummary}
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
-              Sort Order
-            </label>
-            <select
-              id="rsvp-export-sort-select"
-              defaultValue={defaultExportSort}
-              onChange={(e) => { chosenSort = e.target.value as 'lastName' | 'section'; }}
-              style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', fontSize: '0.9rem', fontWeight: 600 }}
-            >
-              <option value="lastName">Last Name</option>
-              <option value="section">Section → Last Name</option>
-            </select>
-          </div>
-        </div>
-      ),
-      confirmLabel: '📥 Export CSV',
-      cancelLabel: 'Cancel',
-      variant: 'info',
-    });
-
-    if (!confirmed) return;
-
-    // Persist the chosen sort preference
-    await updatePreferences({ rsvpExportSort: chosenSort }).catch(() => undefined);
-
-    // --- Helper functions ---
-    const getSectionIndex = (voicePart: string) => {
-      const vpDef = voiceParts.find(vp => vp.label === voicePart);
-      const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
-      const idx = sections.findIndex(s => s.code === secCode);
-      return idx === -1 ? 999 : idx;
-    };
-
-    const getSingerSectionName = (voicePart: string) => {
-      const vpDef = voiceParts.find(vp => vp.label === voicePart);
-      const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
-      const secDef = sections.find(s => s.code === secCode);
-      return secDef ? secDef.name : (voicePart ? secCode : 'Unassigned');
-    };
-
-    const sortGroup = (singers: typeof filteredSingers) =>
-      [...singers].sort((a, b) => {
-        if (chosenSort === 'section') {
-          const idxA = getSectionIndex(a.profile.voicePart);
-          const idxB = getSectionIndex(b.profile.voicePart);
-          if (idxA !== idxB) return idxA - idxB;
-        }
-        const lastA = getLastName(a.profile.name);
-        const lastB = getLastName(b.profile.name);
-        const cmp = lastA.localeCompare(lastB);
-        if (cmp !== 0) return cmp;
-        return a.profile.name.localeCompare(b.profile.name);
-      });
-
-    // --- Build CSV ---
-    const rsvpGroups: Array<{ label: string; status: 'Yes' | 'No' | 'Pending' }> = [
-      { label: 'Attending (Yes)', status: 'Yes' },
-      { label: 'Declined (No)', status: 'No' },
-      { label: 'No Response (Pending)', status: 'Pending' },
-    ];
-
-    const q = (str: string) => {
-      let val = (str || '').replace(/"/g, '""');
-      if (val.match(/^[=+\-@]/)) {
-        val = "'" + val; // Add single quote to neutralize formula
-      }
-      return `"${val}"`;
-    };
-
-
-    const csvLines: string[] = [];
-    csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));
-
-    let firstGroup = true;
-    rsvpGroups.forEach((group) => {
-      const groupSingers = filteredSingers.filter(s => s.rsvp === group.status);
-      if (groupSingers.length === 0) return;
-
-      if (!firstGroup) csvLines.push('');
-      firstGroup = false;
-      csvLines.push([q(group.label), '', '', '', ''].join(','));
-
-      sortGroup(groupSingers).forEach(s => {
-        csvLines.push([
-          q(s.profile.name),
-          q(getSingerSectionName(s.profile.voicePart)),
-          q(s.profile.voicePart || 'Not sure'),
-          q(event.title || event.type || 'Event'),
-          q(s.rsvp),
-        ].join(','));
-      });
-    });
-
-    const sectionLeaders = filteredSingers.filter(s => s.profile.isSectionLeader === true);
-    if (sectionLeaders.length > 0) {
-      csvLines.push('');
-      csvLines.push('Section Leaders');
-      csvLines.push(['Name', 'Section', 'Voice Part', 'Event Title', 'RSVP Status'].join(','));
-      sortGroup(sectionLeaders).forEach(s => {
-        csvLines.push([
-          q(s.profile.name),
-          q(getSingerSectionName(s.profile.voicePart)),
-          q(s.profile.voicePart || 'Not sure'),
-          q(event.title || event.type || 'Event'),
-          q(s.rsvp),
-        ].join(','));
-      });
-    }
-
-    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    const sanitizedTitle = (event.title || event.type || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    link.setAttribute('download', `${sanitizedTitle}_rsvp_export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
