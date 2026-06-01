@@ -24,7 +24,13 @@ test('rsvp display eventRoster variant maps statuses', () => {
 test('global status display maps known statuses', () => {
   assert.deepEqual(getGlobalStatusDisplay('Active'), { label: 'Active', tone: 'success' });
   assert.deepEqual(getGlobalStatusDisplay('Idle'), { label: 'Idle', tone: 'warning' });
+  assert.deepEqual(getGlobalStatusDisplay('Leave'), { label: 'On Leave', tone: 'warning' });
   assert.deepEqual(getGlobalStatusDisplay('Inactive'), { label: 'Inactive', tone: 'muted' });
+});
+
+test('global status display handles unknown statuses', () => {
+  assert.deepEqual(getGlobalStatusDisplay('unknown-value'), { label: 'Unknown', tone: 'primary' });
+  assert.deepEqual(getGlobalStatusDisplay('Unknown'), { label: 'Unknown', tone: 'primary' });
 });
 
 test('unknown statuses return fallback display', () => {
