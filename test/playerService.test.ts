@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { playerService, type PlayerMediaFile } from '../src/services/playerService';
@@ -13,7 +12,7 @@ describe('playerService', () => {
     mock.restoreAll();
     
     // Mock pb.files.getURL
-    mock.method(pb.files, 'getURL', (piece: any, filename: string) => {
+    mock.method(pb.files, 'getURL', (piece: Partial<MusicPiece> & Record<string, unknown>, filename: string) => {
       return `https://pb.com/api/files/${piece.collectionName}/${piece.id}/${filename}`;
     });
 
@@ -272,9 +271,9 @@ describe('playerService', () => {
     });
 
     it('defensively parses stringified setList, voiceParts, and audioTrackMapping', async () => {
-      pb.send = (async <T>(path: string, options?: any): Promise<T> => {
+      pb.send = (async <T>(path: string, options?: Record<string, unknown>): Promise<T> => {
         assert.strictEqual(path, '/api/player-playlist');
-        assert.strictEqual(options?.query?.token, 'some-token');
+        assert.strictEqual((options?.query as Record<string, unknown>)?.token, 'some-token');
         return {
           event: { id: 'evt1', title: 'Concert', date: '2026-05-21' },
           setList: JSON.stringify([
