@@ -17,7 +17,8 @@ type UtilityBundleName =
     | 'queueProcessor'
     | 'calendarEndpoint'
     | 'singerSeatingEndpoint'
-    | 'hmacTokens';
+    | 'hmacTokens'
+    | 'timezone';
 
 type UtilityBundle = {
     files: string[];
@@ -77,7 +78,7 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     calendarEndpoint: {
         files: ['calendarEndpoint.ts'],
         symbols: ['handleCalendarDownload', 'handleCalendarFeed', 'handleCalendarFeedUrl', 'handleCalendarFeedReset'],
-        dependsOn: ['hookJson'],
+        dependsOn: ['hookJson', 'hookText', 'timezone'],
     },
     singerSeatingEndpoint: {
         files: ['singerSeatingEndpoint.ts'],
@@ -88,6 +89,11 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
         files: ['hmacTokens.ts'],
         symbols: ['getHmacSecret', 'parseSignedToken'],
         dependsOn: ['hookJson'],
+    },
+    timezone: {
+        files: ['timezone.ts'],
+        symbols: ['zonedInputValueToUtcLocal'],
+        dependsOn: ['hookText'],
     },
 };
 

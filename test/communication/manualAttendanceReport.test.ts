@@ -61,8 +61,8 @@ test('manual attendance report preserves dollar signs literally in body replacem
     absenteeNames: ['Singer $& $1 $$'],
   });
 
-  assert.ok(html.includes('Concert $& $1 $$'));
-  assert.ok(html.includes('Singer $& $1 $$'));
+  assert.ok(html.includes('Concert $&amp; $1 $$'));
+  assert.ok(html.includes('Singer $&amp; $1 $$'));
   assert.doesNotMatch(html, /{eventTitle}/);
   assert.doesNotMatch(html, /{absenteesList}/);
 });
