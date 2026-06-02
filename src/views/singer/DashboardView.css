@@ -253,3 +253,100 @@
   background-color: #f1f5f9;
   color: #475569;
 }
+
+/* Mobile Quick Action Panel */
+.mobile-singer-quick-panel {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-singer-quick-panel {
+    display: block;
+    margin-bottom: var(--space-lg);
+  }
+
+  .mobile-singer-quick-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .mobile-singer-quick-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .mobile-singer-quick-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .mobile-singer-quick-meta {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .mobile-singer-quick-actions,
+  .mobile-singer-quick-rsvp {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .mobile-singer-quick-actions .btn,
+  .mobile-singer-quick-rsvp .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mobile-singer-quick-notices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--border);
+  }
+
+  .mobile-singer-bulletin-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--primary);
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+
+/* Bottom Sheet for Mobile Modal */
+@media (max-width: 640px) {
+  .announcement-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .announcement-modal {
+    width: 100%;
+    max-width: none;
+    max-height: 90dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .announcement-modal-header,
+  .announcement-modal-body,
+  .announcement-modal-footer {
+    padding: var(--space-md);
+  }
+
+  .announcement-modal-title {
+    font-size: 1.1rem;
+  }
+}

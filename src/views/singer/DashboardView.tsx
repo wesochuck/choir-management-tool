@@ -70,6 +70,11 @@ export default function DashboardView() {
   if (error) return <div className="container" style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
 
   const upcomingEvents = events.filter(e => new Date(e.date) >= new Date());
+  
+  const nextEvent = upcomingEvents[0] ?? null;
+  const nextRoster = nextEvent ? myRosters[nextEvent.id] : undefined;
+  const hasPerformanceSeatLink = nextEvent?.type === 'Performance';
+  const latestAnnouncement = announcements[0] ?? null;
 
   const getFormattedDate = (dateStr: string) => {
     try {
@@ -96,6 +101,67 @@ export default function DashboardView() {
       maxWidth="1200px"
     >
       <div style={{ padding: 'var(--space-md) 0' }}>
+        {nextEvent && (
+          <section className="mobile-singer-quick-panel" aria-label="Singer quick actions">
+            <AppCard className="glass-card">
+              <div className="mobile-singer-quick-content">
+                <div className="mobile-singer-quick-eyebrow">Next up</div>
+                <div className="mobile-singer-quick-title">{nextEvent.title || nextEvent.type}</div>
+                <div className="mobile-singer-quick-meta">
+                  {getFormattedDate(nextEvent.date)}
+                  {nextEvent.expand?.venue?.name ? ` • ${nextEvent.expand.venue.name}` : ''}
+                </div>
+
+                <div className="mobile-singer-quick-actions">
+                  <Link to={`/player?eventId=${nextEvent.id}`} className="btn btn-primary">
+                    🎵 Practice
+                  </Link>
+
+                  {hasPerformanceSeatLink && (
+                    <Link to={`/seating/${nextEvent.id}`} className="btn btn-secondary">
+                      🪑 Seat
+                    </Link>
+                  )}
+                </div>
+
+                <div className="mobile-singer-quick-rsvp">
+                  <button
+                    type="button"
+                    onClick={() => updateRSVP(nextEvent.id, 'Yes')}
+                    className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                  >
+                    {nextRoster?.rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateRSVP(nextEvent.id, 'No')}
+                    className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                  >
+                    {nextRoster?.rsvp === 'No' ? '✗ Declining' : 'Decline'}
+                  </button>
+                </div>
+
+                {(activePolls.length > 0 || latestAnnouncement) && (
+                  <div className="mobile-singer-quick-notices">
+                    {activePolls.length > 0 && (
+                      <span>{activePolls.length} active poll{activePolls.length === 1 ? '' : 's'}</span>
+                    )}
+                    {latestAnnouncement && (
+                      <button
+                        type="button"
+                        className="mobile-singer-bulletin-link"
+                        onClick={() => setSelectedAnnouncement(latestAnnouncement)}
+                      >
+                        Latest bulletin: {latestAnnouncement.subject || 'Choir Update'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </AppCard>
+          </section>
+        )}
+
         <div className="dashboard-container">
           
           {/* Main timeline panel: Events */}
@@ -131,13 +197,13 @@ export default function DashboardView() {
                 </p>
                 <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
                   {upcomingEvents.length > 0 ? (
-                    <button 
-                      onClick={() => window.open(`/player?eventId=${upcomingEvents[0].id}`, '_blank')}
+                    <Link 
+                      to={`/player?eventId=${upcomingEvents[0].id}`}
                       className="btn"
-                      style={{ backgroundColor: 'white', color: 'var(--primary-deep)', fontWeight: 800, width: '100%', border: 'none' }}
+                      style={{ backgroundColor: 'white', color: 'var(--primary-deep)', fontWeight: 800, width: '100%', border: 'none', textAlign: 'center' }}
                     >
                       🎵 Launch Practice Player
-                    </button>
+                    </Link>
                   ) : (
                     <Link 
                       to="/player" 

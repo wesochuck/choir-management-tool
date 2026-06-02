@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
 import { getSetListVisibilityResult } from '../../lib/eventUtils';
@@ -30,34 +30,15 @@ export const EventCard: React.FC<EventCardProps> = ({
   voicePart
 }) => {
   const { timezone } = useChoirSettings();
+  const navigate = useNavigate();
   const isPerformance = event.type === 'Performance';
   const { showSetList, setList, headerLabel } = getSetListVisibilityResult(event, myRosters, allEvents);
 
   const [library, setLibrary] = React.useState<MusicPiece[]>([]);
   const [playingTrack, setPlayingTrack] = React.useState<{ songId: string; label: string; url: string } | null>(null);
-  const [isGeneratingToken, setIsGeneratingToken] = React.useState(false);
 
-  const handleOpenPlayer = async () => {
-    try {
-      setIsGeneratingToken(true);
-      // Since this is the singer dashboard, we are authenticated. 
-      // We can use the admin-only token generation API if we have permission,
-      // or we can just navigate to /player and let it handle auth.
-      // But the spec says standalone links use HMAC.
-      
-      // Let's check if there's a public way to get a player token or if we should 
-      // just pass the eventId if authenticated.
-      
-      // For now, let's assume the singer can generate their own practice token 
-      // via a dedicated endpoint or we just use eventId if auth is present.
-      
-      // Refined Approach: Redirect to /player?eventId=xxx if authenticated.
-      window.open(`/player?eventId=${event.id}`, '_blank');
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsGeneratingToken(false);
-    }
+  const handleOpenPlayer = () => {
+    navigate(`/player?eventId=${event.id}`);
   };
 
   React.useEffect(() => {
@@ -83,12 +64,12 @@ export const EventCard: React.FC<EventCardProps> = ({
               <button 
                 onClick={handleOpenPlayer}
                 className="btn btn-primary btn-sm"
-                disabled={isGeneratingToken}
               >
                 🎧 Practice Player
               </button>
             )}
         </div>
+
 
         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
           <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
