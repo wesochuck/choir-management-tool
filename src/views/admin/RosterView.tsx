@@ -364,6 +364,15 @@ export default function RosterView() {
                         </label>
                       );
                     })}
+                    <label className="voice-part-option-label" style={{ gridColumn: '1 / -1', marginTop: '4px', borderTop: '1px dashed var(--border)', paddingTop: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={(filters.voiceParts || []).includes('__STAFF__')}
+                        onChange={() => handleVoicePartToggle('__STAFF__')}
+                        className="voice-part-checkbox"
+                      />
+                      <span className={(filters.voiceParts || []).includes('__STAFF__') ? 'selected' : ''}>Staff / Admin (No Part)</span>
+                    </label>
                   </div>
                 </div>
               )}

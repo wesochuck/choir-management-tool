@@ -55,9 +55,9 @@ export default function AdminDashboardView() {
   const [pendingAuditions, setPendingAuditions] = useState<number | null>(null);
 
   useEffect(() => {
-    // 1. Fetch active singers count (globalStatus = "Active")
+    // 1. Fetch active singers count (globalStatus = "Active" AND voicePart != "")
     pb.collection('profiles').getList(1, 1, {
-      filter: pb.filter('globalStatus = {:status}', { status: 'Active' })
+      filter: pb.filter('globalStatus = {:status} && voicePart != ""', { status: 'Active' })
     })
     .then(res => setActiveSingers(res.totalItems))
     .catch(err => console.error('Failed to fetch active singers count:', err));

@@ -425,7 +425,12 @@ export default function ProfileView() {
                 </button>
               </div>
               <p className="text-xs text-muted" style={{ margin: 0, fontSize: '0.75rem', fontStyle: 'italic' }}>
-                Note: Resetting will invalidate any previous link you've set up on your devices. Only active rehearsals and concerts you haven't declined will sync.
+                Note: Resetting will invalidate any previous link you've set up on your devices.
+                {user?.role === 'admin' && !profile?.voicePart ? (
+                  <> Because you are an administrative-only account, this link provides a <strong>master schedule</strong> of all choir rehearsals and performances.</>
+                ) : (
+                  <> Only active rehearsals and concerts you haven't declined will sync.</>
+                )}
               </p>
             </div>
           </AppCard>

@@ -44,6 +44,9 @@ export function matchesVoiceParts(
   if (!filterParts || filterParts.length === 0) return true;
   
   return filterParts.some(filterPart => {
+    // 0. Special case for Administrative/Staff (no voice part)
+    if (filterPart === '__STAFF__') return !profilePart;
+
     // 1. Exact match on the voice part label
     if (profilePart === filterPart) return true;
 
@@ -52,7 +55,7 @@ export function matchesVoiceParts(
     if (vpDef && vpDef.sectionCode === filterPart) return true;
 
     // 3. Fallback regex match for unconfigured or custom legacy values
-    if (!vpDef) {
+    if (!vpDef && profilePart) {
       const derivedSection = getSectionFromVoicePart(profilePart);
       if (derivedSection === filterPart) return true;
     }
