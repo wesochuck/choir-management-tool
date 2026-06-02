@@ -10,10 +10,19 @@ import './SeatingFinderView.css';
 
 type SingerDisplayProfile = Pick<Profile, 'id' | 'name' | 'voicePart'> | SeatingSingerProfile;
 
+type SelectedSeatInfo = {
+  row: number;
+  seat: number;
+  status: 'empty' | 'assignedUnknown' | 'assigned' | 'self';
+  name?: string;
+  voicePart?: string;
+};
+
 export default function SeatingFinderView() {
   const { eventId } = useParams();
   const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
   const [assignedSingerProfiles, setAssignedSingerProfiles] = useState<SeatingSingerProfile[]>([]);
+  const [selectedSeat, setSelectedSeat] = useState<SelectedSeatInfo | null>(null);
 
   const event = events.find(e => e.id === eventId);
   const venue = event?.expand?.venue;
