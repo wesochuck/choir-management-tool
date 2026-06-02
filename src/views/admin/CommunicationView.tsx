@@ -126,61 +126,71 @@ export default function CommunicationView() {
   };
 
   const handleArchiveAutomatedTask = async (task: AutomatedTask) => {
-    const eventLabel = task.event.title || task.event.type;
+    try {
+      const eventLabel = task.event.title || task.event.type;
 
-    const confirmed = await dialog.confirm({
-      title: 'Archive Automated Message?',
-      message: `Archive this ${task.type.toLowerCase()} for "${eventLabel}" without sending it? It will be removed from upcoming automated tasks and kept in communications history.`,
-      confirmLabel: 'Archive',
-    });
+      const confirmed = await dialog.confirm({
+        title: 'Archive Automated Message?',
+        message: `Archive this ${task.type.toLowerCase()} for "${eventLabel}" without sending it? It will be removed from upcoming automated tasks and kept in communications history.`,
+        confirmLabel: 'Archive',
+      });
 
-    if (!confirmed) return;
+      if (!confirmed) return;
 
-    const getAutomatedTaskKeyPrefix = (taskType: AutomatedTask['type']) => {
-      if (taskType === 'RSVP Request') return 'rsvp';
-      if (taskType === 'Reminder') return 'reminder';
-      return 'report';
-    };
+      const getAutomatedTaskKeyPrefix = (taskType: AutomatedTask['type']) => {
+        if (taskType === 'RSVP Request') return 'rsvp';
+        if (taskType === 'Reminder') return 'reminder';
+        return 'report';
+      };
 
-    const getAutomatedTaskFilterType = (taskType: AutomatedTask['type']) => {
-      if (taskType === 'RSVP Request') return 'RSVP Invitation';
-      if (taskType === 'Reminder') return 'Automated Reminder';
-      return 'Automated Report';
-    };
+      const getAutomatedTaskFilterType = (taskType: AutomatedTask['type']) => {
+        if (taskType === 'RSVP Request') return 'RSVP Invitation';
+        if (taskType === 'Reminder') return 'Automated Reminder';
+        return 'Automated Report';
+      };
 
-    const taskKeyPrefix = getAutomatedTaskKeyPrefix(task.type);
+      const taskKeyPrefix = getAutomatedTaskKeyPrefix(task.type);
 
-    await communicationService.archiveMessage({
-      subject: `[Archived] ${task.type}: ${eventLabel}`,
-      content: `This automated ${task.type.toLowerCase()} for "${eventLabel}" was archived without sending.`,
-      type: 'Email',
-      recipients: [],
-      recipientIds: [],
-      filters: {
-        type: getAutomatedTaskFilterType(task.type),
-        eventId: task.event.id,
-        archived: true,
-        archivedReason: 'Archived manually by admin',
-        automatedTaskType: task.type,
-        archivedBy: user?.id || null,
-        archivedByEmail: user?.email || null,
-        archivedAt: new Date().toISOString(),
-      },
-      status: 'Archived',
-    });
+      await communicationService.archiveMessage({
+        subject: `[Archived] ${task.type}: ${eventLabel}`,
+        content: `This automated ${task.type.toLowerCase()} for "${eventLabel}" was archived without sending.`,
+        type: 'Email',
+        recipients: [],
+        recipientIds: [],
+        filters: {
+          type: getAutomatedTaskFilterType(task.type),
+          eventId: task.event.id,
+          archived: true,
+          archivedReason: 'Archived manually by admin',
+          automatedTaskType: task.type,
+          archivedBy: user?.id || null,
+          archivedByEmail: user?.email || null,
+          archivedAt: new Date().toISOString(),
+        },
+        status: 'Archived',
+      });
 
-    automated.setAutomatedTaskStatus((prev) => ({
-      ...prev,
-      [`${taskKeyPrefix}-${task.event.id}`]: 'archived',
-    }));
+      automated.setAutomatedTaskStatus((prev) => ({
+        ...prev,
+        [`${taskKeyPrefix}-${task.event.id}`]: 'archived',
+      }));
 
-    if (library.historyPage === 1) {
-      void library.refreshHistory(1);
-    } else {
-      library.setHistoryPage(1);
+      if (library.historyPage === 1) {
+        void library.refreshHistory(1);
+      } else {
+        library.setHistoryPage(1);
+      }
+
+      dialog.showToast('Automated message archived without sending.');
+    } catch (err: unknown) {
+      console.error('Failed to archive automated message', err);
+      const message = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to archive message: ' + message,
+        variant: 'danger',
+      });
     }
-
-    dialog.showToast('Automated message archived without sending.');
   };
 
   const handleCopyMessageAsDraft = (message: MessageRecord) => {

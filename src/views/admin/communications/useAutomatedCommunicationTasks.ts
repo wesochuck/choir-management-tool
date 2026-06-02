@@ -68,7 +68,11 @@ export function useAutomatedCommunicationTasks({
           id: `rsvp-${event.id}`,
           type: 'RSVP Request',
           event,
-          scheduledTime: new Date(event.created),
+          scheduledTime: event.created
+            ? new Date(event.created)
+            : event.date
+            ? new Date(event.date)
+            : new Date(),
           status: taskStatus,
         };
 
