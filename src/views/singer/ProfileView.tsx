@@ -161,9 +161,17 @@ export default function ProfileView() {
         // Update user record directly
         await pb.collection('users').update(currentUser.id, { name, email });
         
-        // If there's an associated profile, update it too
+        // If there's an associated profile, update it; otherwise create one.
         if (profile.id) {
           await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports });
+        } else {
+          await pb.collection('profiles').create({
+            user: currentUser.id,
+            name: name || currentUser.name || email,
+            receiveAttendanceReports,
+            voicePart: 'Administrator',
+            globalStatus: 'Active',
+          });
         }
       } else {
         // Update profile fields
