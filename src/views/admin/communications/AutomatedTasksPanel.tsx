@@ -64,22 +64,27 @@ export function AutomatedTasksPanel({
           {upcomingTasks.map((task) => (
             <div key={task.id} className="card automated-task-card">
               <div className="automated-task-header">
-                <span
-                  className={`badge ${
-                    task.type === 'Report'
-                      ? 'badge-concert'
-                      : task.type === 'RSVP Request'
-                      ? 'badge-concert'
-                      : 'badge-rehearsal'
-                  }`}
-                  style={{
-                    backgroundColor: task.type === 'RSVP Request' ? '#3b82f6' : undefined,
-                    color: task.type === 'RSVP Request' ? 'white' : undefined,
-                  }}
-                >
-                  {task.type}
+                <span className="automated-task-status-group">
+                  <span
+                    className={`badge automated-task-type-badge ${
+                      task.type === 'Report'
+                        ? 'badge-concert'
+                        : task.type === 'RSVP Request'
+                        ? 'badge-concert'
+                        : 'badge-rehearsal'
+                    }`}
+                    style={{
+                      backgroundColor: task.type === 'RSVP Request' ? '#3b82f6' : undefined,
+                      color: task.type === 'RSVP Request' ? 'white' : undefined,
+                    }}
+                  >
+                    {task.type}
+                  </span>
+                  <span className="badge automated-task-resolution-badge automated-task-resolution-scheduled">
+                    Scheduled
+                  </span>
                 </span>
-                <span className="text-muted text-xs">
+                <span className="automated-task-timestamp text-muted text-xs">
                   {task.type === 'RSVP Request'
                     ? 'Pending since:'
                     : task.type === 'Report'
@@ -178,27 +183,39 @@ export function AutomatedTasksPanel({
               style={{ opacity: 0.8 }}
             >
               <div className="automated-task-header">
-                <span
-                  className={`badge ${
-                    task.status === 'Sent'
-                      ? 'badge-concert'
-                      : task.status === 'Archived'
-                      ? 'badge-muted'
-                      : 'badge-rehearsal'
-                  }`}
-                  style={{
-                    backgroundColor:
+                <span className="automated-task-status-group">
+                  <span
+                    className={`badge automated-task-type-badge ${
                       task.status === 'Sent'
-                        ? undefined
+                        ? 'badge-concert'
                         : task.status === 'Archived'
-                        ? '#94a3b8'
-                        : 'var(--border)',
-                    color: task.status === 'Archived' ? 'white' : undefined,
-                  }}
-                >
-                  {task.type} {task.status === 'Sent' ? '(Sent)' : task.status === 'Archived' ? '(Archived)' : '(Passed)'}
+                        ? 'badge-muted'
+                        : 'badge-rehearsal'
+                    }`}
+                    style={{
+                      backgroundColor:
+                        task.status === 'Sent'
+                          ? undefined
+                          : task.status === 'Archived'
+                          ? '#94a3b8'
+                          : 'var(--border)',
+                      color: task.status === 'Archived' ? 'white' : undefined,
+                    }}
+                  >
+                    {task.type}
+                  </span>
+
+                  <span
+                    className={`badge automated-task-resolution-badge automated-task-resolution-${task.status.toLowerCase()}`}
+                  >
+                    {task.status === 'Sent'
+                      ? 'Sent'
+                      : task.status === 'Archived'
+                      ? 'Archived'
+                      : 'Passed'}
+                  </span>
                 </span>
-                <span className="text-muted text-xs">
+                <span className="automated-task-timestamp text-muted text-xs">
                   {task.status === 'Sent'
                     ? 'Processed at:'
                     : task.status === 'Archived'
