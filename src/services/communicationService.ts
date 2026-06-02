@@ -26,6 +26,7 @@ import { sendBulkMessage } from './communication/messageDispatchService';
 import {
   renderManualAttendanceReportSubject,
   renderManualAttendanceReportTemplate,
+  resolveAttendanceReportRecipients,
   triggerAttendanceReport,
 } from './communication/attendanceReportService';
 
@@ -69,6 +70,7 @@ export const communicationService = {
   getSentTaskStatuses,
   wasMessageSent,
   resolveRecipients,
+  resolveAttendanceReportRecipients,
   resolveRsvpPlaceholders,
   resolvePollPlaceholders,
   sendBulkMessage,
@@ -106,6 +108,7 @@ export const communicationService = {
   resolveRecipients: (
     filters: CommunicationFilters
   ) => Promise<CommunicationRecipient[]>;
+  resolveAttendanceReportRecipients: () => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (
     content: string,
     eventId: string,

@@ -11,6 +11,7 @@ export interface Profile extends RecordModel {
   globalStatus: 'Active' | 'Idle' | 'Inactive';
   notes: string;
   doNotEmail?: boolean;
+  receiveAttendanceReports?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
   statusLastChangedAt?: string;
@@ -30,6 +31,7 @@ export interface UserAccount extends RecordModel {
 export interface ProfileInput extends Partial<Profile> {
   email?: string;
   doNotEmail?: boolean;
+  receiveAttendanceReports?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
   role?: 'admin' | 'singer';

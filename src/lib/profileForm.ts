@@ -8,6 +8,7 @@ export const defaultProfileInput: ProfileInput = {
   globalStatus: 'Active',
   notes: '',
   doNotEmail: false,
+  receiveAttendanceReports: true,
   isSectionLeader: false,
   statusIsManual: false,
   role: 'singer',
@@ -23,6 +24,7 @@ export function profileToFormData(profile: Profile | null | undefined): ProfileI
     ...restProfile,
     email: profile.expand?.user?.email || '',
     doNotEmail: Boolean(profile.doNotEmail),
+    receiveAttendanceReports: profile.receiveAttendanceReports !== false,
     isSectionLeader: Boolean(profile.isSectionLeader),
     statusIsManual: Boolean(profile.statusIsManual),
     role: profile.expand?.user?.role || 'singer',
@@ -39,6 +41,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
       formData.globalStatus !== 'Active' ||
       formData.notes?.trim() ||
       formData.doNotEmail ||
+      formData.receiveAttendanceReports !== true ||
       formData.isSectionLeader ||
       formData.statusIsManual ||
       formData.role !== 'singer'
@@ -53,6 +56,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
     (formData.globalStatus || '') !== (initialData.globalStatus || '') ||
     (formData.notes || '') !== (initialData.notes || '') ||
     Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail) ||
+    (formData.receiveAttendanceReports !== false) !== (initialData.receiveAttendanceReports !== false) ||
     Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader) ||
     Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual) ||
     (formData.role || 'singer') !== (initialData.expand?.user?.role || 'singer') ||

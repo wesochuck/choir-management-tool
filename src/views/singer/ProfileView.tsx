@@ -90,6 +90,7 @@ export default function ProfileView() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
@@ -108,6 +109,7 @@ export default function ProfileView() {
           setProfile(p);
           setName(p.name || currentUser.name || '');
           setPhone(p.phone || '');
+          setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
           loadCalendarFeed(p.id);
         } else {
           setProfile({
@@ -161,7 +163,7 @@ export default function ProfileView() {
         
         // If there's an associated profile, update it too
         if (profile.id) {
-          await pb.collection('profiles').update(profile.id, { name });
+          await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports });
         }
       } else {
         // Update profile fields
@@ -245,6 +247,21 @@ export default function ProfileView() {
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             />
           </div>
+
+          {user?.role === 'admin' && (
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
+              <input
+                type="checkbox"
+                checked={receiveAttendanceReports}
+                onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
+                style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <div className="flex-col" style={{ gap: '2px' }}>
+                <span className="text-label" style={{ fontWeight: 600 }}>Receive attendance reports</span>
+                <span className="text-xs text-muted">Receive automated after-event reports for all events.</span>
+              </div>
+            </label>
+          )}
 
           {profile.id ? (
             <>

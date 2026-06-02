@@ -1,12 +1,11 @@
 import { pb } from '../../lib/pocketbase';
-import type { RecordModel } from 'pocketbase';
 import type { Event } from '../eventService';
-import { profileService } from '../profileService';
+import { profileService, type Profile } from '../profileService';
 import { rosterService } from '../rosterService';
 import { settingsService } from '../settingsService';
 import { escapeHtml, sanitizeEmailSubject } from '../../lib/textSafety';
 import { messageRepository } from './messageRepository';
-import type { MessageRecord } from './types';
+import type { MessageRecord, CommunicationRecipient } from './types';
 
 export function renderManualAttendanceReportSubject(params: {
   template: string;
@@ -43,12 +42,46 @@ export function renderManualAttendanceReportTemplate(params: {
     .replace(/{thresholdWarningsSection}/g, () => '');
 }
 
+export async function resolveAttendanceReportRecipients(): Promise<CommunicationRecipient[]> {
+  const profiles = await pb.collection('profiles').getFullList<Profile>({
+    filter: "user.role = 'admin' && user.email != '' && globalStatus != 'Inactive'",
+    expand: 'user',
+    sort: 'name',
+  });
+
+  return profiles
+    .filter((profile) => {
+      const email = profile.expand?.user?.email;
+      return (
+        !!email &&
+        profile.receiveAttendanceReports !== false &&
+        profile.doNotEmail !== true
+      );
+    })
+    .map((profile) => ({
+      id: profile.user || profile.id,
+      name:
+        profile.name ||
+        profile.expand?.user?.name ||
+        profile.expand?.user?.email ||
+        'Admin',
+      email: profile.expand?.user?.email || '',
+      phone: profile.phone || '',
+      voicePart: 'Admin',
+      globalStatus: 'Admin',
+    }));
+}
+
 export async function triggerAttendanceReport(eventId: string): Promise<MessageRecord> {
   const event = await pb.collection('events').getOne<Event>(eventId, { expand: 'venue' });
   const commSettings = await settingsService.getCommunicationSettings();
-  const admins = await pb.collection('users').getFullList({ filter: 'role = "admin"' });
+  const recipients = await resolveAttendanceReportRecipients();
 
-  if (admins.length === 0) throw new Error('No admins found to receive the report.');
+  if (recipients.length === 0) {
+    throw new Error(
+      'No admins are configured to receive attendance reports. Enable attendance reports on at least one admin profile.'
+    );
+  }
 
   // Aggregate Attendance
   const rosters = await rosterService.getEventRoster(eventId);
@@ -98,18 +131,6 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
             </div>
         </div>
     `;
-
-  const recipients = admins.map((admin) => {
-    const adminData = admin as RecordModel;
-    return {
-      id: admin.id,
-      name: adminData.name || admin.email || 'Admin',
-      email: admin.email,
-      phone: '',
-      voicePart: '',
-      globalStatus: 'Admin',
-    };
-  });
 
   return await messageRepository.saveMessage({
     subject,

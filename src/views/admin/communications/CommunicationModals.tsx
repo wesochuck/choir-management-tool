@@ -18,12 +18,16 @@ interface CommunicationModalsProps {
     isOpen: boolean;
     recipients: CommunicationRecipient[];
     title: string;
+    emptyMessage?: string;
+    helperText?: string;
   };
   setRecipientPreviewList: React.Dispatch<
     React.SetStateAction<{
       isOpen: boolean;
       recipients: CommunicationRecipient[];
       title: string;
+      emptyMessage?: string;
+      helperText?: string;
     }>
   >;
   isPollModalOpen: boolean;
@@ -144,16 +148,29 @@ export function CommunicationModals({
           className="flex-col"
           style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}
         >
-          {recipientPreviewList.recipients.map((r) => (
-            <div
-              key={r.id}
-              className="flex-row card"
-              style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}
-            >
-              <strong>{r.name}</strong>
-              <span className="text-muted text-xs">{r.voicePart}</span>
+          {recipientPreviewList.recipients.length === 0 ? (
+            <div className="card" style={{ padding: 'var(--space-md)', textAlign: 'center' }}>
+              <p className="text-muted" style={{ margin: 0 }}>
+                {recipientPreviewList.emptyMessage || 'No recipients found.'}
+              </p>
+              {recipientPreviewList.helperText && (
+                <p className="text-muted text-xs" style={{ marginTop: '8px', margin: 0 }}>
+                  {recipientPreviewList.helperText}
+                </p>
+              )}
             </div>
-          ))}
+          ) : (
+            recipientPreviewList.recipients.map((r) => (
+              <div
+                key={r.id}
+                className="flex-row card"
+                style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}
+              >
+                <strong>{r.name}</strong>
+                <span className="text-muted text-xs">{r.voicePart}</span>
+              </div>
+            ))
+          )}
         </div>
       </BaseModal>
 

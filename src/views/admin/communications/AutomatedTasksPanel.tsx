@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { communicationService } from '../../../services/communicationService';
 import { renderCommunicationTemplate, type CommunicationSettings } from '../../../services/settingsService';
 import type { AutomatedTask } from './types';
-import type { CommunicationRecipient } from '../../../services/communicationService';
 
 interface AutomatedTasksPanelProps {
   upcomingTasks: AutomatedTask[];
@@ -10,7 +8,7 @@ interface AutomatedTasksPanelProps {
   onDraftTaskMessage: (subjectText: string, bodyText: string, task: AutomatedTask) => void;
   onTriggerReport: (task: AutomatedTask) => Promise<void>;
   onArchiveTask: (task: AutomatedTask) => Promise<void>;
-  onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
+  onViewTaskRecipients: (task: AutomatedTask) => Promise<void>;
   commSettings: CommunicationSettings;
   isSending: boolean;
 }
@@ -21,7 +19,7 @@ export function AutomatedTasksPanel({
   onDraftTaskMessage,
   onTriggerReport,
   onArchiveTask,
-  onViewRecipients,
+  onViewTaskRecipients,
   commSettings,
   isSending,
 }: AutomatedTasksPanelProps) {
@@ -100,6 +98,11 @@ export function AutomatedTasksPanel({
                 <span className="text-muted text-xs">
                   {new Date(task.event.date).toLocaleString()}
                 </span>
+                {task.type === 'Report' && (
+                  <p className="text-muted text-xs" style={{ margin: 0, marginTop: '4px' }}>
+                    Sent only to admins who have opted in to attendance reports.
+                  </p>
+                )}
               </div>
               <div className="automated-task-footer">
                 <button
@@ -111,20 +114,10 @@ export function AutomatedTasksPanel({
                 </button>
                 <button
                   className="btn btn-ghost btn-sm"
-                  onClick={async () => {
-                    const r = await communicationService.resolveRecipients({
-                      eventId: task.event.id,
-                      rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All',
-                      voiceParts: [],
-                      globalStatus: 'Active',
-                    });
-                    onViewRecipients(
-                      r,
-                      `Expected Recipients for ${task.event.title || task.event.type}`
-                    );
-                  }}
+                  disabled={isSending || isArchiving === task.id}
+                  onClick={() => onViewTaskRecipients(task)}
                 >
-                  View Recipients
+                  {task.type === 'Report' ? 'View Admin Recipients' : 'View Recipients'}
                 </button>
                 <button
                   className="btn btn-primary btn-sm"

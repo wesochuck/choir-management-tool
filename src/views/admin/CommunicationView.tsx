@@ -57,10 +57,14 @@ export default function CommunicationView() {
     isOpen: boolean;
     recipients: CommunicationRecipient[];
     title: string;
+    emptyMessage?: string;
+    helperText?: string;
   }>({
     isOpen: false,
     recipients: [],
     title: '',
+    emptyMessage: undefined,
+    helperText: undefined,
   });
 
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
@@ -122,7 +126,54 @@ export default function CommunicationView() {
       isOpen: true,
       recipients,
       title,
+      emptyMessage: undefined,
+      helperText: undefined,
     });
+  };
+
+  const handleViewAutomatedTaskRecipients = async (task: AutomatedTask) => {
+    const eventLabel = task.event.title || task.event.type;
+
+    try {
+      if (task.type === 'Report') {
+        const recipients = await communicationService.resolveAttendanceReportRecipients();
+
+        setRecipientPreviewList({
+          isOpen: true,
+          recipients,
+          title: `Admins Receiving Report for ${eventLabel}`,
+          emptyMessage: 'No admins are currently opted in to receive attendance reports.',
+          helperText: 'Enable attendance reports on at least one admin profile to receive these messages.',
+        });
+
+        return;
+      }
+
+      const recipients = await communicationService.resolveRecipients({
+        eventId: task.event.id,
+        rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All',
+        voiceParts: [],
+        globalStatus: 'Active',
+      });
+
+      setRecipientPreviewList({
+        isOpen: true,
+        recipients,
+        title:
+          task.type === 'RSVP Request'
+            ? `Pending RSVP Recipients for ${eventLabel}`
+            : `Reminder Recipients for ${eventLabel}`,
+        emptyMessage: undefined,
+        helperText: undefined,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'Could Not Load Recipients',
+        message,
+        variant: 'danger',
+      });
+    }
   };
 
   const handleArchiveAutomatedTask = async (task: AutomatedTask) => {
@@ -339,7 +390,7 @@ export default function CommunicationView() {
             }
           }}
           onArchiveTask={handleArchiveAutomatedTask}
-          onViewRecipients={handleViewRecipients}
+          onViewTaskRecipients={handleViewAutomatedTaskRecipients}
           commSettings={library.commSettings}
           isSending={draft.isSending}
         />
