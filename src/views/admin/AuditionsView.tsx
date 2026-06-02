@@ -9,6 +9,8 @@ import { settingsService, type AuditionSettings } from '../../services/settingsS
 import { eventService, type Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
+import { pb } from '../../lib/pocketbase';
+import { type UserAccount } from '../../services/profileService';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -35,6 +37,7 @@ export default function AuditionsView() {
   const [auditions, setAuditions] = useState<Audition[]>([]);
   const [performances, setPerformances] = useState<Event[]>([]);
   const [settings, setSettings] = useState<AuditionSettings | null>(null);
+  const [admins, setAdmins] = useState<UserAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -141,14 +144,16 @@ export default function AuditionsView() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [auditionList, allEvents, auditionSettings] = await Promise.all([
+      const [auditionList, allEvents, auditionSettings, adminList] = await Promise.all([
         auditionService.getAuditions(),
         eventService.getEvents(),
         settingsService.getAuditionSettings(),
+        pb.collection('users').getFullList<UserAccount>({ filter: 'role = "admin"' })
       ]);
       setAuditions(auditionList);
       setPerformances(allEvents.filter(e => e.type === 'Performance'));
       setSettings(auditionSettings);
+      setAdmins(adminList);
       // Auto-expand settings to guide user if no audition times are set
       if (!auditionSettings.slots || auditionSettings.slots.length === 0) {
         setShowSettings(true);
@@ -442,6 +447,53 @@ export default function AuditionsView() {
                 className="card"
                 style={{ minHeight: '80px', resize: 'vertical' }}
               />
+            </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-sm)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
+              <label className="flex-row" style={{ gap: 'var(--space-sm)', alignSelf: 'flex-start', cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={settings.adminNotifyEnabled || false}
+                  onChange={(e) => setSettings({ 
+                    ...settings, 
+                    adminNotifyEnabled: e.target.checked,
+                    adminNotifyUsers: settings.adminNotifyUsers || []
+                  })}
+                  style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                />
+                <span className="text-label">Notify administrators of new submissions</span>
+              </label>
+
+              {settings.adminNotifyEnabled && (
+                <div className="flex-col" style={{ gap: 'var(--space-xs)', paddingLeft: '28px' }}>
+                  <span className="text-label text-muted" style={{ fontSize: '0.875rem' }}>Select Administrators to Notify</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                    {admins.map((admin) => {
+                      const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
+                      return (
+                        <label key={admin.id} className="flex-row" style={{ gap: '8px', cursor: 'pointer', alignItems: 'center', userSelect: 'none' }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const currentUsers = settings.adminNotifyUsers || [];
+                              const updatedUsers = e.target.checked
+                                ? [...currentUsers, admin.id]
+                                : currentUsers.filter(id => id !== admin.id);
+                              setSettings({ ...settings, adminNotifyUsers: updatedUsers });
+                            }}
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '0.9rem' }}>{admin.name} ({admin.email})</span>
+                        </label>
+                      );
+                    })}
+                    {admins.length === 0 && (
+                      <span className="text-muted text-xs">No administrative accounts found.</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button className="btn btn-primary" onClick={handleSaveSettings} disabled={isSavingSettings}>

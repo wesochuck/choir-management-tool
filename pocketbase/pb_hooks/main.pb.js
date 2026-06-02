@@ -3400,84 +3400,154 @@ onRecordAfterCreateSuccess((e) => {
         const contact = audition.get("contact") || "";
         const isEmail = contact.includes("@") && contact.includes(".");
 
+        function getChoirTimezone() {
+            let timezone = "America/New_York";
+            try {
+                const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                if (tzSetting) {
+                    const tzP = parseJsonField(tzSetting.get("value"));
+                    if (typeof tzP === "string") {
+                        timezone = tzP;
+                    } else if (typeof tzP === "object" && tzP && tzP.timezone) {
+                        timezone = tzP.timezone;
+                    }
+                }
+            } catch (err) {}
+            return timezone;
+        }
+
+        function formatSlotFriendly(slot) {
+            if (!slot) return "";
+            try {
+                const d = new Date(slot);
+                if (isNaN(d.getTime())) return slot;
+
+                const timezone = getChoirTimezone();
+                const dateStr = formatInTimezone(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = formatInTimezone(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                
+                if (dateStr && timeStr) {
+                    return dateStr + " at " + timeStr;
+                }
+            } catch (err) {}
+            return slot;
+        }
+
+        const requestedSlotsRaw = audition.get("requestedSlots");
+        const requestedSlots = parseJsonField(requestedSlotsRaw);
+        
+        let formattedTimeSlots = "Any";
+        if (Array.isArray(requestedSlots) && requestedSlots.length > 0) {
+            const formattedList = requestedSlots.map(function(slot) {
+                return "- " + formatSlotFriendly(slot);
+            });
+            formattedTimeSlots = "\n" + formattedList.join("\n");
+        } else {
+            const legacySlot = audition.get("scheduledTimeSlot") || audition.get("timeSlot") || "";
+            if (legacySlot) {
+                formattedTimeSlots = formatSlotFriendly(legacySlot);
+            }
+        }
+
+        const eventId = audition.get("performance") || "";
+
         if (isEmail) {
             const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Audition Confirmation' && isSystemTemplate = true");
-            if (!template) return;
+            if (template) {
+                const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+                let rawContent = template.get("content") || "";
+                rawContent = rawContent.replace(/{timeSlot}/g, formattedTimeSlots);
 
-            const queueCollection = $app.findCollectionByNameOrId("emailQueue");
-            const eventId = audition.get("performance") || "";
-            
-            function getChoirTimezone() {
-                let timezone = "America/New_York";
-                try {
-                    const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                    if (tzSetting) {
-                        const tzP = parseJsonField(tzSetting.get("value"));
-                        if (typeof tzP === "string") {
-                            timezone = tzP;
-                        } else if (typeof tzP === "object" && tzP && tzP.timezone) {
-                            timezone = tzP.timezone;
-                        }
-                    }
-                } catch (err) {}
-                return timezone;
-            }
-
-            function formatSlotFriendly(slot) {
-                if (!slot) return "";
-                try {
-                    const d = new Date(slot);
-                    if (isNaN(d.getTime())) return slot;
-
-                    const timezone = getChoirTimezone();
-                    const dateStr = formatInTimezone(d, timezone, { month: 'short', day: 'numeric', year: 'numeric' });
-                    const timeStr = formatInTimezone(d, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
-                    
-                    if (dateStr && timeStr) {
-                        return dateStr + " at " + timeStr;
-                    }
-                } catch (err) {}
-                return slot;
-            }
-
-            const requestedSlotsRaw = audition.get("requestedSlots");
-            const requestedSlots = parseJsonField(requestedSlotsRaw);
-            
-            let formattedTimeSlots = "Any";
-            if (Array.isArray(requestedSlots) && requestedSlots.length > 0) {
-                const formattedList = requestedSlots.map(function(slot) {
-                    return "- " + formatSlotFriendly(slot);
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: audition.id,
+                    recipientEmail: contact.trim(),
+                    recipientName: audition.get("name") || "Singer",
+                    subject: template.get("subject") || "",
+                    rawContent: rawContent,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({ 
+                        eventId: eventId, 
+                        type: "Automated Confirmation" 
+                    })
                 });
-                formattedTimeSlots = "\n" + formattedList.join("\n");
-            } else {
-                const legacySlot = audition.get("scheduledTimeSlot") || audition.get("timeSlot") || "";
-                if (legacySlot) {
-                    formattedTimeSlots = formatSlotFriendly(legacySlot);
+
+                $app.save(queueRecord);
+            }
+        }
+
+        // Admin Notification Logic
+        try {
+            const auditionSettings = $app.findFirstRecordByFilter("appSettings", "key = 'auditions'");
+            const settingsParsed = parseJsonField(auditionSettings.get("value"));
+            if (settingsParsed && settingsParsed.adminNotifyEnabled && Array.isArray(settingsParsed.adminNotifyUsers) && settingsParsed.adminNotifyUsers.length > 0) {
+                let frontendUrl = "http://localhost:5173";
+                try {
+                    const commSetting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+                    const commParsed = parseJsonField(commSetting.get("value"));
+                    if (commParsed && commParsed.frontendUrl) {
+                        frontendUrl = commParsed.frontendUrl.replace(/\/+$/, "");
+                    }
+                } catch (err) {}
+
+                let targetPerfName = "None";
+                if (eventId) {
+                    try {
+                        const perfRecord = $app.findRecordById("events", eventId);
+                        if (perfRecord) {
+                            targetPerfName = perfRecord.get("title") || "None";
+                        }
+                    } catch (err) {}
+                }
+
+                const cleanSlots = formattedTimeSlots.replace(/\n/g, "<br/>");
+                const adminEmailBody = [
+                    "<p>A new audition inquiry has been submitted.</p>",
+                    "<ul>",
+                    "  <li><strong>Name:</strong> " + escapeHtml(audition.get("name") || "") + "</li>",
+                    "  <li><strong>Contact:</strong> " + escapeHtml(contact) + "</li>",
+                    "  <li><strong>Voice Part:</strong> " + escapeHtml(audition.get("voicePart") || "Not specified") + "</li>",
+                    "  <li><strong>Target Performance:</strong> " + escapeHtml(targetPerfName) + "</li>",
+                    "  <li><strong>Requested Slots:</strong><br/>" + cleanSlots + "</li>",
+                    "  <li><strong>Experience:</strong><br/>" + escapeHtml(audition.get("experience") || "None provided").replace(/\n/g, "<br/>") + "</li>",
+                    "</ul>",
+                    "<p><a href=\"" + frontendUrl + "/admin/auditions\" style=\"display:inline-block;padding:10px 16px;background-color:#1b4d3e;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;\">Review Auditions Dashboard</a></p>"
+                ].join("");
+
+                const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+
+                for (let i = 0; i < settingsParsed.adminNotifyUsers.length; i++) {
+                    const adminId = settingsParsed.adminNotifyUsers[i];
+                    try {
+                        const adminRecord = $app.findRecordById("users", adminId);
+                        if (adminRecord && adminRecord.get("email")) {
+                            const adminQueueRecord = new Record(queueCollection, {
+                                recipientId: adminId,
+                                recipientEmail: adminRecord.get("email"),
+                                recipientName: adminRecord.get("name") || "Administrator",
+                                subject: "New Audition Submission: " + (audition.get("name") || ""),
+                                rawContent: adminEmailBody,
+                                status: "Pending",
+                                attempts: 0,
+                                filters: JSON.stringify({
+                                    auditionId: audition.id,
+                                    type: "Admin Notification"
+                                })
+                            });
+                            $app.save(adminQueueRecord);
+                        }
+                    } catch (adminErr) {
+                        console.log("[Audition Notification Error] Failed to query admin or save queue: " + adminErr);
+                    }
                 }
             }
-
-            let rawContent = template.get("content") || "";
-            rawContent = rawContent.replace(/{timeSlot}/g, formattedTimeSlots);
-
-            const queueRecord = new Record(queueCollection, {
-                recipientId: audition.id,
-                recipientEmail: contact.trim(),
-                recipientName: audition.get("name") || "Singer",
-                subject: template.get("subject") || "",
-                rawContent: rawContent,
-                status: "Pending",
-                attempts: 0,
-                filters: JSON.stringify({ 
-                    eventId: eventId, 
-                    type: "Automated Confirmation" 
-                })
-            });
-
-            $app.save(queueRecord);
-            processEmailQueue($app);
+        } catch (settingsErr) {
+            // Auditions settings not defined/found, or other configuration error
         }
+
+        processEmailQueue($app);
     } catch (err) {
-        console.log("[Audition Confirmation Error] Failed to enqueue email: " + err);
+        console.log("[Audition Confirmation/Notification Error] Failed to process hooks: " + err);
     }
 }, "auditions");
 

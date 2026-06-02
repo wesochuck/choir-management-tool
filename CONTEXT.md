@@ -101,3 +101,6 @@ A secure, personalized iCalendar (.ics) feed URL that allows singers to sync the
 
 ## Calendar Salt
 A unique, cryptographically random string stored on a singer's profile that is signed into their Calendar Subscription Feed URL. Re-generating this salt instantly invalidates any previously shared subscription links.
+
+## Audition Inquiry
+A request submitted by a prospective singer via the public audition form, detailing their name, contact information, preferred audition time slots, voice part, and musical experience.

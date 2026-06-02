@@ -13,6 +13,8 @@ export interface AuditionSettings {
   slots: string[];
   confirmationMessage: string;
   defaultPerformanceId?: string;
+  adminNotifyEnabled?: boolean;
+  adminNotifyUsers?: string[];
 }
 
 export interface CommunicationSettings {
@@ -80,6 +82,8 @@ export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
   slots: [],
   confirmationMessage: 'Thank you. A choir administrator will follow up with details.',
   defaultPerformanceId: '',
+  adminNotifyEnabled: false,
+  adminNotifyUsers: [],
 };
 
 export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
