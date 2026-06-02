@@ -156,7 +156,13 @@ export function ComposePanel({
       />
 
       {wizardStep === 'TARGETS' && (
-        <div className="targets-grid">
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="wizard-action-header" style={{ justifyContent: 'flex-end' }}>
+            <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
+              Next: Compose Message →
+            </button>
+          </div>
+          <div className="targets-grid">
           <AppCard
             title="Recipients"
             actions={
@@ -383,17 +389,35 @@ export function ComposePanel({
               </div>
             </AppCard>
 
-            <div className="wizard-action-footer">
+            <div className="wizard-action-footer" style={{ justifyContent: 'flex-end' }}>
               <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
                 Next: Compose Message →
               </button>
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {wizardStep === 'COMPOSE' && (
-        <div className="compose-grid">
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div
+            className="wizard-action-header flex-responsive"
+            style={{ justifyContent: 'space-between', width: '100%' }}
+          >
+            <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
+              ← Back to Recipients
+            </button>
+            <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
+              <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                {isSavingDraft ? 'Saving...' : 'Save Draft'}
+              </button>
+              <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
+                Next: Review & Send →
+              </button>
+            </div>
+          </div>
+          <div className="compose-grid">
           <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
             <AppCard title="Composer">
               <ComposeStep
@@ -446,10 +470,57 @@ export function ComposePanel({
             })()}
           />
         </div>
+      </div>
       )}
 
       {wizardStep === 'REVIEW' && (
-        <div className="review-send-grid">
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div
+            className="wizard-action-header flex-responsive"
+            style={{ justifyContent: 'space-between', width: '100%' }}
+          >
+            <button
+              type="button"
+              className="review-btn-action back"
+              onClick={() => setWizardStep('COMPOSE')}
+              style={{ margin: 0 }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ width: '14px', height: '14px', marginRight: '4px' }}
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Back
+            </button>
+            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+              <button
+                type="button"
+                className="review-btn-action test"
+                onClick={handleSendTest}
+                disabled={isSendingTest || isSending}
+                title={`Send email test to ${user?.email || 'your email'}`}
+                style={{ margin: 0 }}
+              >
+                {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
+              </button>
+              <button
+                type="button"
+                className="review-btn-action primary"
+                onClick={sendMessage}
+                disabled={isSending || selectedRecipients.length === 0}
+                style={{ margin: 0 }}
+              >
+                {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
+              </button>
+            </div>
+          </div>
+          <div className="review-send-grid">
           {/* Left Column: Unified Live Preview */}
           <div className="review-preview-section">
             <AppCard noPadding>
@@ -892,6 +963,7 @@ export function ComposePanel({
             </AppCard>
           </aside>
         </div>
+      </div>
       )}
     </div>
   );
