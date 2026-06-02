@@ -77,7 +77,7 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     calendarEndpoint: {
         files: ['calendarEndpoint.ts'],
         symbols: ['handleCalendarDownload', 'handleCalendarFeed', 'handleCalendarFeedUrl', 'handleCalendarFeedReset'],
-        dependsOn: ['hookJson'],
+        dependsOn: ['hookJson', 'hookText'],
     },
     singerSeatingEndpoint: {
         files: ['singerSeatingEndpoint.ts'],

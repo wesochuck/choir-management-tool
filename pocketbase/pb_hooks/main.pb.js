@@ -7083,6 +7083,184 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         }
     }
 
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -7146,13 +7324,15 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         try {
             const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
-            if (typeof parsed === "string" && parsed.trim()) {
-                return parsed.trim();
+            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            if (directName) {
+                return directName;
             }
             if (parsed && typeof parsed === "object") {
                 const value = parsed.name || parsed.choirName || parsed.value;
-                if (typeof value === "string" && value.trim()) {
-                    return value.trim();
+                const nestedName = safeTrim(value);
+                if (nestedName) {
+                    return nestedName;
                 }
             }
         }
@@ -7161,6 +7341,19 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         }
         return "Choir";
     }
+    function safeTrim(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/^\s+|\s+$/g, "");
+    }
+    function getLocalDatePart(date, timezone) {
+        const offsetInfo = getTimezoneOffsetInfo(date, timezone);
+        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const y = localDate.getUTCFullYear();
+        const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(localDate.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
     /**
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
@@ -7168,8 +7361,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        const str = String(dateStr);
-        let normalized = str.trim();
+        let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -7249,6 +7441,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             let title = "";
             let details = "";
             let uid = "";
+            let callTime = "";
             let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
@@ -7268,6 +7461,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
+                callTime = event.get("callTime") || "";
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
@@ -7298,6 +7492,15 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
+            const vevents = [];
+            if (callTime) {
+                const localDatePart = getLocalDatePart(start, timezone);
+                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                if (callStart.getTime() < start.getTime()) {
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                }
+            }
+            vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -7305,15 +7508,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 'CALSCALE:GREGORIAN',
                 `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
                 `X-WR-TIMEZONE:${timezone}`,
-                'BEGIN:VEVENT',
-                `UID:${uid}`,
-                `DTSTAMP:${fmtUtc(dtstamp)}`,
-                `DTSTART:${fmtUtc(start)}`,
-                `DTEND:${fmtUtc(end)}`,
-                `SUMMARY:${escapeIcsText(title)}`,
-                `LOCATION:${escapeIcsText(locationStr)}`,
-                `DESCRIPTION:${escapeIcsText(details)}`,
-                'END:VEVENT',
+                vevents.join('\r\n'),
                 'END:VCALENDAR',
                 ''
             ].join('\r\n');
@@ -7462,6 +7657,13 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 const description = descParts.join("\n");
                 const title = event.get("title");
                 const uid = `event-${event.id}@choir-management.local`;
+                if (callTime) {
+                    const localDatePart = getLocalDatePart(start, timezone);
+                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    if (callStart.getTime() < start.getTime()) {
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    }
+                }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
@@ -7590,6 +7792,184 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         }
     }
 
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -7653,13 +8033,15 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         try {
             const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
-            if (typeof parsed === "string" && parsed.trim()) {
-                return parsed.trim();
+            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            if (directName) {
+                return directName;
             }
             if (parsed && typeof parsed === "object") {
                 const value = parsed.name || parsed.choirName || parsed.value;
-                if (typeof value === "string" && value.trim()) {
-                    return value.trim();
+                const nestedName = safeTrim(value);
+                if (nestedName) {
+                    return nestedName;
                 }
             }
         }
@@ -7668,6 +8050,19 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         }
         return "Choir";
     }
+    function safeTrim(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/^\s+|\s+$/g, "");
+    }
+    function getLocalDatePart(date, timezone) {
+        const offsetInfo = getTimezoneOffsetInfo(date, timezone);
+        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const y = localDate.getUTCFullYear();
+        const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(localDate.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
     /**
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
@@ -7675,8 +8070,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        const str = String(dateStr);
-        let normalized = str.trim();
+        let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -7756,6 +8150,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             let title = "";
             let details = "";
             let uid = "";
+            let callTime = "";
             let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
@@ -7775,6 +8170,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
+                callTime = event.get("callTime") || "";
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
@@ -7805,6 +8201,15 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
+            const vevents = [];
+            if (callTime) {
+                const localDatePart = getLocalDatePart(start, timezone);
+                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                if (callStart.getTime() < start.getTime()) {
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                }
+            }
+            vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -7812,15 +8217,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 'CALSCALE:GREGORIAN',
                 `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
                 `X-WR-TIMEZONE:${timezone}`,
-                'BEGIN:VEVENT',
-                `UID:${uid}`,
-                `DTSTAMP:${fmtUtc(dtstamp)}`,
-                `DTSTART:${fmtUtc(start)}`,
-                `DTEND:${fmtUtc(end)}`,
-                `SUMMARY:${escapeIcsText(title)}`,
-                `LOCATION:${escapeIcsText(locationStr)}`,
-                `DESCRIPTION:${escapeIcsText(details)}`,
-                'END:VEVENT',
+                vevents.join('\r\n'),
                 'END:VCALENDAR',
                 ''
             ].join('\r\n');
@@ -7969,6 +8366,13 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 const description = descParts.join("\n");
                 const title = event.get("title");
                 const uid = `event-${event.id}@choir-management.local`;
+                if (callTime) {
+                    const localDatePart = getLocalDatePart(start, timezone);
+                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    if (callStart.getTime() < start.getTime()) {
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    }
+                }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
@@ -8097,6 +8501,184 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         }
     }
 
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -8160,13 +8742,15 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         try {
             const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
-            if (typeof parsed === "string" && parsed.trim()) {
-                return parsed.trim();
+            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            if (directName) {
+                return directName;
             }
             if (parsed && typeof parsed === "object") {
                 const value = parsed.name || parsed.choirName || parsed.value;
-                if (typeof value === "string" && value.trim()) {
-                    return value.trim();
+                const nestedName = safeTrim(value);
+                if (nestedName) {
+                    return nestedName;
                 }
             }
         }
@@ -8175,6 +8759,19 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         }
         return "Choir";
     }
+    function safeTrim(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/^\s+|\s+$/g, "");
+    }
+    function getLocalDatePart(date, timezone) {
+        const offsetInfo = getTimezoneOffsetInfo(date, timezone);
+        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const y = localDate.getUTCFullYear();
+        const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(localDate.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
     /**
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
@@ -8182,8 +8779,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        const str = String(dateStr);
-        let normalized = str.trim();
+        let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -8263,6 +8859,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             let title = "";
             let details = "";
             let uid = "";
+            let callTime = "";
             let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
@@ -8282,6 +8879,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
+                callTime = event.get("callTime") || "";
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
@@ -8312,6 +8910,15 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
+            const vevents = [];
+            if (callTime) {
+                const localDatePart = getLocalDatePart(start, timezone);
+                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                if (callStart.getTime() < start.getTime()) {
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                }
+            }
+            vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -8319,15 +8926,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 'CALSCALE:GREGORIAN',
                 `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
                 `X-WR-TIMEZONE:${timezone}`,
-                'BEGIN:VEVENT',
-                `UID:${uid}`,
-                `DTSTAMP:${fmtUtc(dtstamp)}`,
-                `DTSTART:${fmtUtc(start)}`,
-                `DTEND:${fmtUtc(end)}`,
-                `SUMMARY:${escapeIcsText(title)}`,
-                `LOCATION:${escapeIcsText(locationStr)}`,
-                `DESCRIPTION:${escapeIcsText(details)}`,
-                'END:VEVENT',
+                vevents.join('\r\n'),
                 'END:VCALENDAR',
                 ''
             ].join('\r\n');
@@ -8476,6 +9075,13 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 const description = descParts.join("\n");
                 const title = event.get("title");
                 const uid = `event-${event.id}@choir-management.local`;
+                if (callTime) {
+                    const localDatePart = getLocalDatePart(start, timezone);
+                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    if (callStart.getTime() < start.getTime()) {
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    }
+                }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
@@ -8604,6 +9210,184 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         }
     }
 
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -8667,13 +9451,15 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         try {
             const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
-            if (typeof parsed === "string" && parsed.trim()) {
-                return parsed.trim();
+            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            if (directName) {
+                return directName;
             }
             if (parsed && typeof parsed === "object") {
                 const value = parsed.name || parsed.choirName || parsed.value;
-                if (typeof value === "string" && value.trim()) {
-                    return value.trim();
+                const nestedName = safeTrim(value);
+                if (nestedName) {
+                    return nestedName;
                 }
             }
         }
@@ -8682,6 +9468,19 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         }
         return "Choir";
     }
+    function safeTrim(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/^\s+|\s+$/g, "");
+    }
+    function getLocalDatePart(date, timezone) {
+        const offsetInfo = getTimezoneOffsetInfo(date, timezone);
+        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const y = localDate.getUTCFullYear();
+        const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(localDate.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
     /**
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
@@ -8689,8 +9488,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        const str = String(dateStr);
-        let normalized = str.trim();
+        let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -8770,6 +9568,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             let title = "";
             let details = "";
             let uid = "";
+            let callTime = "";
             let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
@@ -8789,6 +9588,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
+                callTime = event.get("callTime") || "";
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
@@ -8819,6 +9619,15 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
+            const vevents = [];
+            if (callTime) {
+                const localDatePart = getLocalDatePart(start, timezone);
+                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                if (callStart.getTime() < start.getTime()) {
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                }
+            }
+            vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -8826,15 +9635,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 'CALSCALE:GREGORIAN',
                 `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
                 `X-WR-TIMEZONE:${timezone}`,
-                'BEGIN:VEVENT',
-                `UID:${uid}`,
-                `DTSTAMP:${fmtUtc(dtstamp)}`,
-                `DTSTART:${fmtUtc(start)}`,
-                `DTEND:${fmtUtc(end)}`,
-                `SUMMARY:${escapeIcsText(title)}`,
-                `LOCATION:${escapeIcsText(locationStr)}`,
-                `DESCRIPTION:${escapeIcsText(details)}`,
-                'END:VEVENT',
+                vevents.join('\r\n'),
                 'END:VCALENDAR',
                 ''
             ].join('\r\n');
@@ -8983,6 +9784,13 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 const description = descParts.join("\n");
                 const title = event.get("title");
                 const uid = `event-${event.id}@choir-management.local`;
+                if (callTime) {
+                    const localDatePart = getLocalDatePart(start, timezone);
+                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    if (callStart.getTime() < start.getTime()) {
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    }
+                }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);

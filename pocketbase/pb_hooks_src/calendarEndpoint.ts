@@ -1,5 +1,6 @@
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { parseJsonField } from './email/hookJson';
+import { getTimezoneOffsetInfo } from './email/hookText';
 
 declare const $app: PocketBaseApp;
 declare const $security: {
@@ -65,14 +66,16 @@ function getChoirNameLocal(app: PocketBaseApp): string {
         const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
         const parsed = parseJsonField<string | Record<string, string>>(setting.get("value"));
 
-        if (typeof parsed === "string" && parsed.trim()) {
-            return parsed.trim();
+        const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+        if (directName) {
+            return directName;
         }
 
         if (parsed && typeof parsed === "object") {
-            const value = parsed.name || parsed.choirName || parsed.value;
-            if (typeof value === "string" && value.trim()) {
-                return value.trim();
+            const value = (parsed as any).name || (parsed as any).choirName || (parsed as any).value;
+            const nestedName = safeTrim(value);
+            if (nestedName) {
+                return nestedName;
             }
         }
     } catch {
@@ -82,14 +85,27 @@ function getChoirNameLocal(app: PocketBaseApp): string {
     return "Choir";
 }
 
+function safeTrim(str: any): string {
+    if (!str) return "";
+    return String(str).replace(/^\s+|\s+$/g, "");
+}
+
+function getLocalDatePart(date: Date, timezone: string): string {
+    const offsetInfo = getTimezoneOffsetInfo(date, timezone);
+    const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+    const y = localDate.getUTCFullYear();
+    const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(localDate.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 /**
  * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
  * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
  */
 function parseSafeUtcDate(dateStr: string, timezone: string): Date {
     if (!dateStr) return new Date();
-    const str = String(dateStr);
-    let normalized = str.trim();
+    let normalized = safeTrim(dateStr);
     if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
         normalized = normalized.replace(" ", "T");
         if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -176,12 +192,13 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         let title = "";
         let details = "";
         let uid = "";
+        let callTime = "";
 
         let durationMinutes = 120;
 
         if (parts.e) {
             const event = app.findRecordById("events", parts.e);
-            
+
             try {
                 const venueId = event.get("venue") as string;
                 if (venueId) {
@@ -198,6 +215,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
             title = (event.get("title") as string) || (event.get("type") as string) || "Choir Event";
             details = (event.get("details") as string) || "";
+            callTime = (event.get("callTime") as string) || "";
             uid = `event-${event.id}@choir-management.local`;
         } else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
@@ -222,21 +240,36 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
             details = "Please arrive 10 minutes early to warm up.";
-            }
+        }
 
-            const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
-            const dtstamp = new Date();
+        const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
+        const dtstamp = new Date();
 
         const choirName = getChoirNameLocal(app);
         const calendarName = `${choirName} Schedule`;
 
-        const icsContent = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//Choir Management Tool//EN',
-            'CALSCALE:GREGORIAN',
-            `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
-            `X-WR-TIMEZONE:${timezone}`,
+        const vevents: string[] = [];
+
+        if (callTime) {
+            const localDatePart = getLocalDatePart(start, timezone);
+            const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+
+            if (callStart.getTime() < start.getTime()) {
+                vevents.push(
+                    'BEGIN:VEVENT',
+                    `UID:call-${uid}`,
+                    `DTSTAMP:${fmtUtc(dtstamp)}`,
+                    `DTSTART:${fmtUtc(callStart)}`,
+                    `DTEND:${fmtUtc(start)}`,
+                    `SUMMARY:Call: ${escapeIcsText(title)}`,
+                    `LOCATION:${escapeIcsText(locationStr)}`,
+                    `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`,
+                    'END:VEVENT'
+                );
+            }
+        }
+
+        vevents.push(
             'BEGIN:VEVENT',
             `UID:${uid}`,
             `DTSTAMP:${fmtUtc(dtstamp)}`,
@@ -245,7 +278,17 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             `SUMMARY:${escapeIcsText(title)}`,
             `LOCATION:${escapeIcsText(locationStr)}`,
             `DESCRIPTION:${escapeIcsText(details)}`,
-            'END:VEVENT',
+            'END:VEVENT'
+        );
+
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Choir Management Tool//EN',
+            'CALSCALE:GREGORIAN',
+            `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
+            `X-WR-TIMEZONE:${timezone}`,
+            vevents.join('\r\n'),
             'END:VCALENDAR',
             ''
         ].join('\r\n');
@@ -428,6 +471,25 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
             const description = descParts.join("\n");
             const title = event.get("title") as string;
             const uid = `event-${event.id}@choir-management.local`;
+
+            if (callTime) {
+                const localDatePart = getLocalDatePart(start, timezone);
+                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+
+                if (callStart.getTime() < start.getTime()) {
+                    vevents.push(
+                        'BEGIN:VEVENT',
+                        `UID:call-${uid}`,
+                        `DTSTAMP:${fmtUtc(dtstamp)}`,
+                        `DTSTART:${fmtUtc(callStart)}`,
+                        `DTEND:${fmtUtc(start)}`,
+                        `SUMMARY:Call: ${escapeIcsText(title)}`,
+                        `LOCATION:${escapeIcsText(locationStr)}`,
+                        `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`,
+                        'END:VEVENT'
+                    );
+                }
+            }
 
             vevents.push(
                 'BEGIN:VEVENT',
