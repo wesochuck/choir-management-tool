@@ -70,11 +70,11 @@ describe('Music Library Row Building (P5)', () => {
     const pieces = [...allPieces, restricted];
     
     // Filter by 'S' - should include unrestricted (p1, p2, etc) and 'res'
-    const rows = buildVisibleMusicLibraryRows(pieces, { sectionFilter: 'S' });
+    const rows = buildVisibleMusicLibraryRows(pieces, { sectionFilters: ['S'] });
     assert.ok(rows.find(r => r.id === 'res'));
     
     // Filter by 'A' - should NOT include 'res'
-    const rowsA = buildVisibleMusicLibraryRows(pieces, { sectionFilter: 'A' });
+    const rowsA = buildVisibleMusicLibraryRows(pieces, { sectionFilters: ['A'] });
     assert.ok(!rowsA.find(r => r.id === 'res'));
   });
 
