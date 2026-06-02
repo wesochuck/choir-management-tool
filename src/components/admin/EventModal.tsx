@@ -19,6 +19,9 @@ interface EventModalProps {
   onAddVenue: (data: Partial<Venue>) => Promise<Venue>;
 }
 
+const getDefaultDurationMinutes = (type: Event['type']) =>
+  type === 'Performance' ? 150 : 120;
+
 export const EventModal: React.FC<EventModalProps> = ({ 
   isOpen, 
   onClose, 
@@ -35,6 +38,7 @@ export const EventModal: React.FC<EventModalProps> = ({
     title: '',
     date: utcToZonedInputValue(new Date(), timezone),
     type: 'Rehearsal',
+    durationMinutes: 120,
     details: '',
     callTime: '',
     parentPerformanceId: '',
@@ -73,13 +77,18 @@ export const EventModal: React.FC<EventModalProps> = ({
   useEffect(() => {
     if (initialData) {
       const formattedDate = utcToZonedInputValue(initialData.date, timezone);
-      setFormData({ ...initialData, date: formattedDate });
+      setFormData({ 
+        ...initialData, 
+        date: formattedDate,
+        durationMinutes: initialData.durationMinutes || getDefaultDurationMinutes(initialData.type)
+      });
       setShouldBulkAdd(false);
     } else {
       setFormData({
         title: '',
         date: utcToZonedInputValue(new Date(), timezone),
         type: 'Rehearsal',
+        durationMinutes: 120,
         details: '',
         callTime: '',
         parentPerformanceId: '',
@@ -120,6 +129,18 @@ export const EventModal: React.FC<EventModalProps> = ({
     current.setDate(current.getDate() - (7 * (bulkCount - 1)));
     return current;
   }, [formData.date, bulkCount, bulkDay, bulkTime]);
+
+  const endTime = useMemo(() => {
+    if (!formData.date || !formData.durationMinutes) return null;
+    try {
+      const start = new Date(formData.date);
+      if (isNaN(start.getTime())) return null;
+      const end = new Date(start.getTime() + formData.durationMinutes * 60 * 1000);
+      return end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return null;
+    }
+  }, [formData.date, formData.durationMinutes]);
 
   useEffect(() => {
     if (isOpen && initialData && initialData.type === 'Performance') {
@@ -185,7 +206,8 @@ export const EventModal: React.FC<EventModalProps> = ({
         : undefined;
 
       const utcDate = zonedInputValueToUtc(formData.date || '', timezone);
-      await onSave({ ...formData, date: utcDate }, bulkConfig, isOpenAuditions);
+      const durationMinutes = formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal');
+      await onSave({ ...formData, date: utcDate, durationMinutes }, bulkConfig, isOpenAuditions);
       onClose();
     } catch (err: unknown) {
       await dialog.showMessage({
@@ -206,13 +228,14 @@ export const EventModal: React.FC<EventModalProps> = ({
       const dateChanged = formData.date !== formattedDate;
       const typeChanged = formData.type !== initialData.type;
       const detailsChanged = (formData.details || '') !== (initialData.details || '');
+      const durationChanged = (formData.durationMinutes || 0) !== (initialData.durationMinutes || 0);
       const callTimeChanged = (formData.callTime || '') !== (initialData.callTime || '');
       const parentChanged = (formData.parentPerformanceId || '') !== (initialData.parentPerformanceId || '');
       const venueChanged = (formData.venue || '') !== (initialData.venue || '');
       const rsvpChanged = Boolean(formData.isOpenForRSVP) !== Boolean(initialData.isOpenForRSVP);
       const auditionsChanged = isOpenAuditions !== initialOpenAuditions;
       
-      return titleChanged || dateChanged || typeChanged || detailsChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged;
+      return titleChanged || dateChanged || typeChanged || detailsChanged || durationChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged;
     } else {
       const hasTitle = Boolean(formData.title?.trim());
       const hasDetails = Boolean(formData.details?.trim());
@@ -220,12 +243,13 @@ export const EventModal: React.FC<EventModalProps> = ({
       const hasParent = Boolean(formData.parentPerformanceId);
       const hasRsvp = Boolean(formData.isOpenForRSVP);
       const hasCallTime = Boolean(formData.callTime);
+      const isDurationChanged = formData.durationMinutes !== 120;
       const isTypeChanged = formData.type !== 'Rehearsal';
       const hasBulkAdd = shouldBulkAdd;
       
       const hasInlineVenue = Boolean(newVenueName.trim() || newVenueRows.trim() || newVenueAddress.trim());
 
-      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isTypeChanged || hasBulkAdd || hasInlineVenue;
+      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isDurationChanged || isTypeChanged || hasBulkAdd || hasInlineVenue;
     }
   }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, isOpenAuditions, initialOpenAuditions]);
 
@@ -317,7 +341,23 @@ export const EventModal: React.FC<EventModalProps> = ({
             <label className="text-label">Type</label>
             <select 
               value={formData.type} 
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as 'Performance' | 'Rehearsal', parentPerformanceId: e.target.value === 'Performance' ? '' : formData.parentPerformanceId })}
+              onChange={(e) => {
+                const newType = e.target.value as 'Performance' | 'Rehearsal';
+                const oldType = formData.type || 'Rehearsal';
+                let newDuration = formData.durationMinutes;
+                
+                // If duration is missing or matches the old default, update to new default
+                if (!newDuration || newDuration === getDefaultDurationMinutes(oldType)) {
+                  newDuration = getDefaultDurationMinutes(newType);
+                }
+
+                setFormData({ 
+                  ...formData, 
+                  type: newType, 
+                  durationMinutes: newDuration,
+                  parentPerformanceId: newType === 'Performance' ? '' : formData.parentPerformanceId 
+                });
+              }}
               className="card"
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             >
@@ -336,6 +376,35 @@ export const EventModal: React.FC<EventModalProps> = ({
               style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             />
           </div>
+        </div>
+
+        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <label className="text-label">Event Duration</label>
+          <select 
+            value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
+            onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
+            className="card"
+            style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+          >
+            <option value={30}>30 minutes</option>
+            <option value={45}>45 minutes</option>
+            <option value={60}>1 hour</option>
+            <option value={75}>1 hour 15 mins</option>
+            <option value={90}>1.5 hours</option>
+            <option value={105}>1 hour 45 mins</option>
+            <option value={120}>2 hours</option>
+            <option value={135}>2 hours 15 mins</option>
+            <option value={150}>2.5 hours</option>
+            <option value={165}>2 hours 45 mins</option>
+            <option value={180}>3 hours</option>
+            <option value={210}>3.5 hours</option>
+            <option value={240}>4 hours</option>
+          </select>
+          {endTime && (
+            <div className="text-xs text-muted" style={{ marginTop: '2px', fontWeight: 500 }}>
+              Ends at approximately <span style={{ color: 'var(--primary)' }}>{endTime}</span>
+            </div>
+          )}
         </div>
 
         {formData.type === 'Performance' && (

@@ -7246,10 +7246,10 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             let venueAddress = "";
             let locationStr = "";
             let start = new Date();
-            let durationHours = 2;
             let title = "";
             let details = "";
             let uid = "";
+            let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
                 try {
@@ -7265,6 +7265,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 }
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 start = parseSafeUtcDate(event.get("date"), timezone);
+                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
                 uid = `event-${event.id}@choir-management.local`;
@@ -7272,7 +7273,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             else if (parts.a) {
                 const audition = app.findRecordById("auditions", parts.a);
                 start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
-                durationHours = 0.5; // 30 mins for audition
+                durationMinutes = 30; // 30 mins for audition
                 title = `Choir Audition: ${audition.get("name")}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
@@ -7293,7 +7294,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
                 details = "Please arrive 10 minutes early to warm up.";
             }
-            const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+            const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
@@ -7427,8 +7428,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 const start = parseSafeUtcDate(event.get("date"), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationHours = event.get("type") === "Performance" ? 2.5 : 2;
-                const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
                 const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
                 const typeText = event.get("type");
                 const callTime = event.get("callTime");
@@ -7752,10 +7753,10 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             let venueAddress = "";
             let locationStr = "";
             let start = new Date();
-            let durationHours = 2;
             let title = "";
             let details = "";
             let uid = "";
+            let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
                 try {
@@ -7771,6 +7772,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 }
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 start = parseSafeUtcDate(event.get("date"), timezone);
+                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
                 uid = `event-${event.id}@choir-management.local`;
@@ -7778,7 +7780,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             else if (parts.a) {
                 const audition = app.findRecordById("auditions", parts.a);
                 start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
-                durationHours = 0.5; // 30 mins for audition
+                durationMinutes = 30; // 30 mins for audition
                 title = `Choir Audition: ${audition.get("name")}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
@@ -7799,7 +7801,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
                 details = "Please arrive 10 minutes early to warm up.";
             }
-            const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+            const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
@@ -7933,8 +7935,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 const start = parseSafeUtcDate(event.get("date"), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationHours = event.get("type") === "Performance" ? 2.5 : 2;
-                const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
                 const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
                 const typeText = event.get("type");
                 const callTime = event.get("callTime");
@@ -8258,10 +8260,10 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             let venueAddress = "";
             let locationStr = "";
             let start = new Date();
-            let durationHours = 2;
             let title = "";
             let details = "";
             let uid = "";
+            let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
                 try {
@@ -8277,6 +8279,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 }
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 start = parseSafeUtcDate(event.get("date"), timezone);
+                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
                 uid = `event-${event.id}@choir-management.local`;
@@ -8284,7 +8287,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             else if (parts.a) {
                 const audition = app.findRecordById("auditions", parts.a);
                 start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
-                durationHours = 0.5; // 30 mins for audition
+                durationMinutes = 30; // 30 mins for audition
                 title = `Choir Audition: ${audition.get("name")}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
@@ -8305,7 +8308,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
                 details = "Please arrive 10 minutes early to warm up.";
             }
-            const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+            const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
@@ -8439,8 +8442,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 const start = parseSafeUtcDate(event.get("date"), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationHours = event.get("type") === "Performance" ? 2.5 : 2;
-                const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
                 const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
                 const typeText = event.get("type");
                 const callTime = event.get("callTime");
@@ -8764,10 +8767,10 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             let venueAddress = "";
             let locationStr = "";
             let start = new Date();
-            let durationHours = 2;
             let title = "";
             let details = "";
             let uid = "";
+            let durationMinutes = 120;
             if (parts.e) {
                 const event = app.findRecordById("events", parts.e);
                 try {
@@ -8783,6 +8786,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 }
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 start = parseSafeUtcDate(event.get("date"), timezone);
+                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
                 title = event.get("title") || event.get("type") || "Choir Event";
                 details = event.get("details") || "";
                 uid = `event-${event.id}@choir-management.local`;
@@ -8790,7 +8794,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             else if (parts.a) {
                 const audition = app.findRecordById("auditions", parts.a);
                 start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
-                durationHours = 0.5; // 30 mins for audition
+                durationMinutes = 30; // 30 mins for audition
                 title = `Choir Audition: ${audition.get("name")}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
@@ -8811,7 +8815,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
                 details = "Please arrive 10 minutes early to warm up.";
             }
-            const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+            const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
             const calendarName = `${choirName} Schedule`;
@@ -8945,8 +8949,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
                 const start = parseSafeUtcDate(event.get("date"), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationHours = event.get("type") === "Performance" ? 2.5 : 2;
-                const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
                 const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
                 const typeText = event.get("type");
                 const callTime = event.get("callTime");

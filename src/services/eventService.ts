@@ -19,6 +19,7 @@ export interface Event extends RecordModel {
   title: string;
   date: string;
   type: 'Performance' | 'Rehearsal';
+  durationMinutes?: number;
   details: string;
   callTime?: string;
   parentPerformanceId: string;
@@ -162,6 +163,7 @@ export const eventService = {
         title: `Rehearsal ${count - i}`,
         date: utcString,
         type: 'Rehearsal' as const,
+        durationMinutes: 120,
         parentPerformanceId: parentPerformance.id,
         venue: venue || parentPerformance.venue || null,
         details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`

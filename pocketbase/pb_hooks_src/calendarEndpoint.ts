@@ -173,10 +173,11 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         let venueAddress = "";
         let locationStr = "";
         let start = new Date();
-        let durationHours = 2;
         let title = "";
         let details = "";
         let uid = "";
+
+        let durationMinutes = 120;
 
         if (parts.e) {
             const event = app.findRecordById("events", parts.e);
@@ -194,13 +195,14 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
 
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : ((event.get("location") as string) || "");
             start = parseSafeUtcDate(event.get("date") as string, timezone);
+            durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
             title = (event.get("title") as string) || (event.get("type") as string) || "Choir Event";
             details = (event.get("details") as string) || "";
             uid = `event-${event.id}@choir-management.local`;
         } else if (parts.a) {
             const audition = app.findRecordById("auditions", parts.a);
             start = parseSafeUtcDate(audition.get("scheduledTimeSlot") as string, timezone);
-            durationHours = 0.5; // 30 mins for audition
+            durationMinutes = 30; // 30 mins for audition
             title = `Choir Audition: ${audition.get("name")}`;
             uid = `audition-${audition.id}@choir-management.local`;
 
@@ -220,10 +222,10 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
             }
             locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
             details = "Please arrive 10 minutes early to warm up.";
-        }
+            }
 
-        const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
-        const dtstamp = new Date();
+            const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
+            const dtstamp = new Date();
 
         const choirName = getChoirNameLocal(app);
         const calendarName = `${choirName} Schedule`;
@@ -387,8 +389,8 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
             const start = parseSafeUtcDate(event.get("date") as string, timezone);
             
             // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-            const durationHours = event.get("type") === "Performance" ? 2.5 : 2;
-            const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+            const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+            const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
 
             const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
             const typeText = event.get("type") as string;
