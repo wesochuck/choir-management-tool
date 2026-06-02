@@ -5,6 +5,7 @@ import {
   type CommunicationRecipient,
   type MessageRecord,
   type MessageType,
+  type AutomatedTaskStatusMap,
 } from '../../../services/communicationService';
 import type { ChoirUser } from '../../../types/auth';
 import type { CommunicationTab } from '../../../types/Communication';
@@ -20,7 +21,7 @@ interface UseCommunicationDraftArgs {
   setHistoryPage: (page: number) => void;
   refreshHistory: (page: number) => Promise<void> | void;
   setDrafts: React.Dispatch<React.SetStateAction<MessageRecord[]>>;
-  setSentTaskStatus: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setAutomatedTaskStatus: React.Dispatch<React.SetStateAction<AutomatedTaskStatusMap>>;
   dialog: ReturnType<typeof useDialog>;
   setTab: (tab: CommunicationTab) => void;
   setWizardStep: (step: WizardStep) => void;
@@ -34,7 +35,7 @@ export function useCommunicationDraft({
   setHistoryPage,
   refreshHistory,
   setDrafts,
-  setSentTaskStatus,
+  setAutomatedTaskStatus,
   dialog,
   setTab,
   setWizardStep,
@@ -155,8 +156,8 @@ export function useCommunicationDraft({
   };
 
   const handleResumeDraft = useCallback(
-    (draft: MessageRecord) => {
-      setActiveDraftId(draft.id);
+    (draft: MessageRecord, options?: { asCopy?: boolean }) => {
+      setActiveDraftId(options?.asCopy ? null : draft.id);
       setSubject(draft.subject);
       setContent(draft.content);
       setMessageType(draft.type);
@@ -282,7 +283,7 @@ export function useCommunicationDraft({
           filters.rsvp === 'Pending'
             ? `rsvp-${filters.eventId}`
             : `reminder-${filters.eventId}`;
-        setSentTaskStatus((prev) => ({ ...prev, [key]: true }));
+        setAutomatedTaskStatus((prev) => ({ ...prev, [key]: 'sent' }));
       }
 
       if (historyPage === 1) {

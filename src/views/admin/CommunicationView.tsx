@@ -27,6 +27,7 @@ import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
 import type {
+  AutomatedTask,
   CommunicationRouteState,
   WizardStep,
 } from './communications/types';
@@ -81,7 +82,7 @@ export default function CommunicationView() {
     setHistoryPage: library.setHistoryPage,
     refreshHistory: library.refreshHistory,
     setDrafts: library.setDrafts,
-    setSentTaskStatus: automated.setSentTaskStatus,
+    setAutomatedTaskStatus: automated.setAutomatedTaskStatus,
     dialog,
     setTab,
     setWizardStep,
@@ -122,6 +123,84 @@ export default function CommunicationView() {
       recipients,
       title,
     });
+  };
+
+  const handleArchiveAutomatedTask = async (task: AutomatedTask) => {
+    const eventLabel = task.event.title || task.event.type;
+
+    const confirmed = await dialog.confirm({
+      title: 'Archive Automated Message?',
+      message: `Archive this ${task.type.toLowerCase()} for "${eventLabel}" without sending it? It will be removed from upcoming automated tasks and kept in communications history.`,
+      confirmLabel: 'Archive',
+    });
+
+    if (!confirmed) return;
+
+    const getAutomatedTaskKeyPrefix = (taskType: AutomatedTask['type']) => {
+      if (taskType === 'RSVP Request') return 'rsvp';
+      if (taskType === 'Reminder') return 'reminder';
+      return 'report';
+    };
+
+    const getAutomatedTaskFilterType = (taskType: AutomatedTask['type']) => {
+      if (taskType === 'RSVP Request') return 'RSVP Invitation';
+      if (taskType === 'Reminder') return 'Automated Reminder';
+      return 'Automated Report';
+    };
+
+    const taskKeyPrefix = getAutomatedTaskKeyPrefix(task.type);
+
+    await communicationService.archiveMessage({
+      subject: `[Archived] ${task.type}: ${eventLabel}`,
+      content: `This automated ${task.type.toLowerCase()} for "${eventLabel}" was archived without sending.`,
+      type: 'Email',
+      recipients: [],
+      recipientIds: [],
+      filters: {
+        type: getAutomatedTaskFilterType(task.type),
+        eventId: task.event.id,
+        archived: true,
+        archivedReason: 'Archived manually by admin',
+        automatedTaskType: task.type,
+        archivedBy: user?.id || null,
+        archivedByEmail: user?.email || null,
+        archivedAt: new Date().toISOString(),
+      },
+      status: 'Archived',
+    });
+
+    automated.setAutomatedTaskStatus((prev) => ({
+      ...prev,
+      [`${taskKeyPrefix}-${task.event.id}`]: 'archived',
+    }));
+
+    if (library.historyPage === 1) {
+      void library.refreshHistory(1);
+    } else {
+      library.setHistoryPage(1);
+    }
+
+    dialog.showToast('Automated message archived without sending.');
+  };
+
+  const handleCopyMessageAsDraft = (message: MessageRecord) => {
+    const {
+      archived,
+      archivedReason,
+      archivedBy,
+      archivedByEmail,
+      archivedAt,
+      automatedTaskType,
+      ...cleanFilters
+    } = (message.filters || {}) as Record<string, unknown>;
+
+    draft.handleResumeDraft({
+      ...message,
+      subject: message.subject.replace(/^\[Archived\]\s*/, ''),
+      content: message.content,
+      filters: cleanFilters,
+      status: 'Draft',
+    }, { asCopy: true });
   };
 
   const handleDraftTaskMessage = (subjectText: string, bodyText: string) => {
@@ -232,9 +311,9 @@ export default function CommunicationView() {
               confirmLabel: 'Send Now',
             });
             if (confirmed) {
-              automated.setSentTaskStatus((prev) => ({
+              automated.setAutomatedTaskStatus((prev) => ({
                 ...prev,
-                [`report-${task.event.id}`]: true,
+                [`report-${task.event.id}`]: 'sent',
               }));
               try {
                 await communicationService.triggerAttendanceReport(task.event.id);
@@ -249,6 +328,7 @@ export default function CommunicationView() {
               }
             }
           }}
+          onArchiveTask={handleArchiveAutomatedTask}
           onViewRecipients={handleViewRecipients}
           commSettings={library.commSettings}
           isSending={draft.isSending}
@@ -283,7 +363,7 @@ export default function CommunicationView() {
           events={events}
           commSettings={library.commSettings}
           onViewDetails={setSelectedMessage}
-          onCopyDraft={draft.handleResumeDraft}
+          onCopyDraft={handleCopyMessageAsDraft}
           onViewRecipients={handleViewRecipients}
         />
       )}

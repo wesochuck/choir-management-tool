@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { communicationService } from '../../../services/communicationService';
 import { renderCommunicationTemplate, type CommunicationSettings } from '../../../services/settingsService';
 import type { AutomatedTask } from './types';
@@ -8,6 +9,7 @@ interface AutomatedTasksPanelProps {
   pastTasks: AutomatedTask[];
   onDraftTaskMessage: (subjectText: string, bodyText: string, task: AutomatedTask) => void;
   onTriggerReport: (task: AutomatedTask) => Promise<void>;
+  onArchiveTask: (task: AutomatedTask) => Promise<void>;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
   commSettings: CommunicationSettings;
   isSending: boolean;
@@ -18,10 +20,24 @@ export function AutomatedTasksPanel({
   pastTasks,
   onDraftTaskMessage,
   onTriggerReport,
+  onArchiveTask,
   onViewRecipients,
   commSettings,
   isSending,
 }: AutomatedTasksPanelProps) {
+  const [isArchiving, setIsArchiving] = useState<string | null>(null);
+
+  const handleArchive = async (task: AutomatedTask) => {
+    if (isArchiving) return;
+
+    setIsArchiving(task.id);
+    try {
+      await onArchiveTask(task);
+    } finally {
+      setIsArchiving(null);
+    }
+  };
+
   return (
     <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
       <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
@@ -83,6 +99,13 @@ export function AutomatedTasksPanel({
               <div className="automated-task-footer">
                 <button
                   className="btn btn-ghost btn-sm"
+                  disabled={isSending || isArchiving === task.id}
+                  onClick={() => handleArchive(task)}
+                >
+                  {isArchiving === task.id ? 'Archiving…' : 'Archive'}
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
                   onClick={async () => {
                     const r = await communicationService.resolveRecipients({
                       eventId: task.event.id,
@@ -100,7 +123,7 @@ export function AutomatedTasksPanel({
                 </button>
                 <button
                   className="btn btn-primary btn-sm"
-                  disabled={isSending}
+                  disabled={isSending || isArchiving === task.id}
                   onClick={async () => {
                     if (task.type === 'Report') {
                       await onTriggerReport(task);
@@ -157,16 +180,30 @@ export function AutomatedTasksPanel({
               <div className="automated-task-header">
                 <span
                   className={`badge ${
-                    task.status === 'Sent' ? 'badge-concert' : 'badge-rehearsal'
+                    task.status === 'Sent'
+                      ? 'badge-concert'
+                      : task.status === 'Archived'
+                      ? 'badge-muted'
+                      : 'badge-rehearsal'
                   }`}
                   style={{
-                    backgroundColor: task.status === 'Sent' ? undefined : 'var(--border)',
+                    backgroundColor:
+                      task.status === 'Sent'
+                        ? undefined
+                        : task.status === 'Archived'
+                        ? '#94a3b8'
+                        : 'var(--border)',
+                    color: task.status === 'Archived' ? 'white' : undefined,
                   }}
                 >
-                  {task.type} {task.status === 'Sent' ? '(Sent)' : '(Passed)'}
+                  {task.type} {task.status === 'Sent' ? '(Sent)' : task.status === 'Archived' ? '(Archived)' : '(Passed)'}
                 </span>
                 <span className="text-muted text-xs">
-                  {task.status === 'Sent' ? 'Processed at:' : 'Scheduled for:'}{' '}
+                  {task.status === 'Sent'
+                    ? 'Processed at:'
+                    : task.status === 'Archived'
+                    ? 'Resolved scheduled task:'
+                    : 'Scheduled for:'}{' '}
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>

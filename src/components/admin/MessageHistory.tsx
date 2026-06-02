@@ -51,6 +51,19 @@ export function MessageHistory({
               <div className="flex-col" style={{ gap: '4px' }}>
                 <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'center' }}>
                   <span className="badge badge-rehearsal" style={{ fontSize: '10px', padding: '2px 6px' }}>{message.type}</span>
+                  {message.status === 'Archived' && (
+                    <span
+                      className="badge badge-muted"
+                      style={{
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        backgroundColor: '#94a3b8',
+                        color: 'white',
+                      }}
+                    >
+                      Archived
+                    </span>
+                  )}
                   {isAutomated && <span className="badge badge-concert" style={{ fontSize: '10px', padding: '2px 6px', opacity: 0.8 }}>{mType}</span>}
                   <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
                 </div>

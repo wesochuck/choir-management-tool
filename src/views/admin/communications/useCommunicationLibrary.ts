@@ -33,7 +33,12 @@ export function useCommunicationLibrary() {
 
   const refreshHistory = useCallback(async (pageToFetch: number) => {
     try {
-      const result = await communicationService.getMessagesPaginated(pageToFetch, 5);
+      const historyFilter = "(status = 'Sent' || status = 'Archived')";
+      const result = await communicationService.getMessagesPaginated(
+        pageToFetch,
+        5,
+        historyFilter
+      );
       setHistory(result.items);
       setTotalPages(result.totalPages);
     } catch (err) {
@@ -48,6 +53,7 @@ export function useCommunicationLibrary() {
   useEffect(() => {
     const load = async () => {
       try {
+        const historyFilter = "(status = 'Sent' || status = 'Archived')";
         const [
           historyPageResult,
           loadedDrafts,
@@ -56,7 +62,7 @@ export function useCommunicationLibrary() {
           loadedConfig,
           loadedChoirName,
         ] = await Promise.all([
-          communicationService.getMessagesPaginated(1, 5),
+          communicationService.getMessagesPaginated(1, 5, historyFilter),
           communicationService.getDrafts(),
           communicationService.getTemplates(),
           settingsService.getCommunicationSettings(),

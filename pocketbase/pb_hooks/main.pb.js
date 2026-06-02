@@ -1154,14 +1154,14 @@ onRecordAfterCreateSuccess((e) => {
         if (!record)
             return false;
         const status = record.get("status") || "Sent";
-        if (status === "Draft")
+        if (status !== "Sent")
             return false;
         const type = record.get("type");
         if (type !== "Email" && type !== "Both")
             return false;
         // If update, check status transition to prevent duplicate enqueues
         if (oldStatus !== undefined) {
-            return status === "Sent" && oldStatus === "Draft";
+            return oldStatus !== "Sent";
         }
         return true;
     }
@@ -1996,14 +1996,14 @@ onRecordAfterUpdateSuccess((e) => {
         if (!record)
             return false;
         const status = record.get("status") || "Sent";
-        if (status === "Draft")
+        if (status !== "Sent")
             return false;
         const type = record.get("type");
         if (type !== "Email" && type !== "Both")
             return false;
         // If update, check status transition to prevent duplicate enqueues
         if (oldStatus !== undefined) {
-            return status === "Sent" && oldStatus === "Draft";
+            return oldStatus !== "Sent";
         }
         return true;
     }

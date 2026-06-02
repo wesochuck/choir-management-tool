@@ -87,8 +87,26 @@ export function CommunicationModals({
             </div>
             <div className="flex-col" style={{ gap: '2px' }}>
               <label className="text-label text-muted">Sent To</label>
-              <span>{selectedMessage.recipients.length} recipients</span>
+              <span>
+                {selectedMessage.status === 'Archived'
+                  ? 'No recipients because this message was archived before dispatch.'
+                  : `${selectedMessage.recipients.length} recipients`}
+              </span>
             </div>
+            {selectedMessage.status === 'Archived' && (
+              <div
+                className="card"
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#fffbeb',
+                  border: '1px solid #fcd34d',
+                  color: '#92400e',
+                  fontSize: '0.875rem',
+                }}
+              >
+                <strong>Archived:</strong> This automated message was archived without sending.
+              </div>
+            )}
             <div className="flex-col" style={{ gap: '2px' }}>
               <label className="text-label text-muted">Content</label>
               <div
