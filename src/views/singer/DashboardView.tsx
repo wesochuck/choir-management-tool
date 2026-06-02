@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { pollService, type SingerPoll } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
 import { communicationService, type MessageRecord } from '../../services/communicationService';
+import { renderMarkdown } from '../../lib/communicationUtils';
 import './DashboardView.css';
 
 export default function DashboardView() {
@@ -219,7 +220,7 @@ export default function DashboardView() {
                       <div 
                         className="bulletin-snippet"
                         dangerouslySetInnerHTML={{ 
-                          __html: ann.content.replace(/<[^>]*>/g, '').slice(0, 100) + '...' 
+                          __html: renderMarkdown(ann.content).replace(/<[^>]*>/g, '').slice(0, 100) + '...'
                         }} 
                       />
                     </div>
@@ -282,7 +283,7 @@ export default function DashboardView() {
             </div>
             <div className="announcement-modal-body message-preview-content">
               {/* Secure content rendering */}
-              <div dangerouslySetInnerHTML={{ __html: selectedAnnouncement.content }} />
+              <div dangerouslySetInnerHTML={{ __html: renderMarkdown(selectedAnnouncement.content) }} />
             </div>
             <div className="announcement-modal-footer">
               <button 
