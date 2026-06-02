@@ -18,15 +18,15 @@ const AUTOMATED_STATUS_FILTERS: Record<
   { typeFilter: string; paramPrefix: string }
 > = {
   'RSVP Request': {
-    typeFilter: '(filters.type = "RSVP Invitation" || filters.rsvp = "Pending")',
+    typeFilter: "(filters.type = 'RSVP Invitation' || filters.rsvp = 'Pending')",
     paramPrefix: 'rsvpEventId',
   },
   Reminder: {
-    typeFilter: 'filters.type = "Automated Reminder"',
+    typeFilter: "filters.type = 'Automated Reminder'",
     paramPrefix: 'reminderEventId',
   },
   Report: {
-    typeFilter: '(filters.type = "Automated Report" || filters.type = "Attendance Report")',
+    typeFilter: "(filters.type = 'Automated Report' || filters.type = 'Attendance Report')",
     paramPrefix: 'reportEventId',
   },
 };
@@ -80,7 +80,7 @@ export async function getAutomatedTaskStatuses(
       async (chunk, chunkIndex) => {
         const { clause, params } = buildEventIdClause(chunk, `${paramPrefix}${chunkIndex}_`);
         const filterStr = pb.filter(
-          `(status = "Sent" || status = "Archived") && ${typeFilter} && (${clause})`,
+          `(status = 'Sent' || status = 'Archived') && ${typeFilter} && (${clause})`,
           params
         );
 

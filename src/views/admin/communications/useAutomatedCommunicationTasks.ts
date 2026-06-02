@@ -56,16 +56,26 @@ export function useAutomatedCommunicationTasks({
 
       if (event.isOpenForRSVP && eventDate > now) {
         const resolution = automatedTaskStatus[`rsvp-${event.id}`] || 'pending';
-        const isResolved = resolution !== 'pending';
 
-        if (!isResolved) {
-          upcoming.push({
-            id: `rsvp-${event.id}`,
-            type: 'RSVP Request',
-            event,
-            scheduledTime: new Date(event.created),
-            status: 'Scheduled',
-          });
+        const taskStatus =
+          resolution === 'sent'
+            ? 'Sent'
+            : resolution === 'archived'
+            ? 'Archived'
+            : 'Scheduled';
+
+        const task: AutomatedTask = {
+          id: `rsvp-${event.id}`,
+          type: 'RSVP Request',
+          event,
+          scheduledTime: new Date(event.created),
+          status: taskStatus,
+        };
+
+        if (resolution === 'pending') {
+          upcoming.push(task);
+        } else {
+          past.push(task);
         }
       }
 

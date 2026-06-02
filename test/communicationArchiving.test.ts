@@ -1,6 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { communicationService } from '../src/services/communicationService.ts';
+import { shouldQueueMessage } from '../pocketbase/pb_hooks_src/email/messageHookRules.ts';
+
+test('shouldQueueMessage only returns true for Sent status', async () => {
+  const mockRecord = (data: Record<string, any>) => ({
+    get: (key: string) => data[key],
+  } as any);
+
+  const sentEmail = mockRecord({ status: 'Sent', type: 'Email' });
+  const archivedEmail = mockRecord({ status: 'Archived', type: 'Email' });
+  const draftEmail = mockRecord({ status: 'Draft', type: 'Email' });
+  const failedEmail = mockRecord({ status: 'Failed', type: 'Email' });
+  const sentBoth = mockRecord({ status: 'Sent', type: 'Both' });
+  const sentSms = mockRecord({ status: 'Sent', type: 'SMS' });
+
+  assert.equal(shouldQueueMessage(sentEmail), true, 'Sent Email should queue');
+  assert.equal(shouldQueueMessage(archivedEmail), false, 'Archived Email should NOT queue');
+  assert.equal(shouldQueueMessage(draftEmail), false, 'Draft Email should NOT queue');
+  assert.equal(shouldQueueMessage(failedEmail), false, 'Failed Email should NOT queue');
+  assert.equal(shouldQueueMessage(sentBoth), true, 'Sent Both should queue');
+  assert.equal(shouldQueueMessage(sentSms), false, 'Sent SMS should NOT queue');
+
+  // Test status transitions
+  assert.equal(shouldQueueMessage(sentEmail, 'Draft'), true, 'Draft -> Sent should queue');
+  assert.equal(shouldQueueMessage(sentEmail, 'Sent'), false, 'Sent -> Sent should NOT queue (prevent double send)');
+  assert.equal(shouldQueueMessage(archivedEmail, 'Draft'), false, 'Draft -> Archived should NOT queue');
+});
 
 test('getAutomatedTaskStatuses maps Archived records correctly', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');

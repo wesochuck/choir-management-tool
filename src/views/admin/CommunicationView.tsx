@@ -200,7 +200,7 @@ export default function CommunicationView() {
       content: message.content,
       filters: cleanFilters,
       status: 'Draft',
-    });
+    }, { asCopy: true });
   };
 
   const handleDraftTaskMessage = (subjectText: string, bodyText: string) => {

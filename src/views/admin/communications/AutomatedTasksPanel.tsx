@@ -199,7 +199,11 @@ export function AutomatedTasksPanel({
                   {task.type} {task.status === 'Sent' ? '(Sent)' : task.status === 'Archived' ? '(Archived)' : '(Passed)'}
                 </span>
                 <span className="text-muted text-xs">
-                  {task.status === 'Sent' ? 'Processed at:' : task.status === 'Archived' ? 'Archived at:' : 'Scheduled for:'}{' '}
+                  {task.status === 'Sent'
+                    ? 'Processed at:'
+                    : task.status === 'Archived'
+                    ? 'Resolved scheduled task:'
+                    : 'Scheduled for:'}{' '}
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>

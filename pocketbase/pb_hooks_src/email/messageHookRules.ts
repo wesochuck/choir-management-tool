@@ -14,15 +14,16 @@ declare class Record implements PocketBaseRecord {
  */
 export function shouldQueueMessage(record: PocketBaseRecord | null | undefined, oldStatus?: string): boolean {
     if (!record) return false;
+
     const status = record.get("status") as string || "Sent";
-    if (status === "Draft") return false;
+    if (status !== "Sent") return false;
 
     const type = record.get("type") as string;
     if (type !== "Email" && type !== "Both") return false;
 
     // If update, check status transition to prevent duplicate enqueues
     if (oldStatus !== undefined) {
-        return status === "Sent" && oldStatus === "Draft";
+        return oldStatus !== "Sent";
     }
 
     return true;

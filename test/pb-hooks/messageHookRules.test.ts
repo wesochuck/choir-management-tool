@@ -35,10 +35,12 @@ test('shouldQueueMessage validation and transitions', () => {
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'SMS')), false, 'SMS only should not queue');
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Email')), true, 'Sent Email should queue');
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Both')), true, 'Sent Both should queue');
-    assert.strictEqual(shouldQueueMessage(createRecord('Failed', 'Email')), true, 'Failed Email should queue (e.g. resend)');
+    assert.strictEqual(shouldQueueMessage(createRecord('Failed', 'Email')), false, 'Failed Email should NOT queue automatically');
+    assert.strictEqual(shouldQueueMessage(createRecord('Archived', 'Email')), false, 'Archived Email should NOT queue');
 
     // Test transition logic (create vs update checks)
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Email'), 'Draft'), true, 'Draft to Sent is allowed');
+    assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Email'), 'Failed'), true, 'Failed to Sent is allowed (resend)');
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Email'), 'Sent'), false, 'Sent to Sent is blocked (duplicate protection)');
     assert.strictEqual(shouldQueueMessage(createRecord('Draft', 'Email'), 'Draft'), false, 'Draft to Draft is blocked');
 });

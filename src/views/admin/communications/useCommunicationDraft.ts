@@ -156,8 +156,8 @@ export function useCommunicationDraft({
   };
 
   const handleResumeDraft = useCallback(
-    (draft: MessageRecord) => {
-      setActiveDraftId(draft.id);
+    (draft: MessageRecord, options?: { asCopy?: boolean }) => {
+      setActiveDraftId(options?.asCopy ? null : draft.id);
       setSubject(draft.subject);
       setContent(draft.content);
       setMessageType(draft.type);
