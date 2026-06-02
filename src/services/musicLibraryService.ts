@@ -66,17 +66,5 @@ export const musicLibraryService = {
           const chunk = ids.slice(i, i + chunkSize);
           await Promise.all(chunk.map(id => pb.collection('musicLibrary').delete(id)));
       }
-  },
-
-  /** @deprecated Use musicLibraryWorkflows.createPieceWithMovementsAndTutti instead */
-  async createPieceWithMovementsAndTutti(
-    data: Partial<MusicPieceInput>,
-    options?: {
-      tuttiFile?: File | null;
-      movements?: { title: string; duration?: string }[];
-    }
-  ) {
-    const { musicLibraryWorkflows } = await import('./musicLibraryWorkflows');
-    return musicLibraryWorkflows.createPieceWithMovementsAndTutti(data, options);
   }
 };
