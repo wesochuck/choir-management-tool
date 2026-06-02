@@ -1,6 +1,7 @@
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { parseJsonField } from './email/hookJson';
 import { getTimezoneOffsetInfo } from './email/hookText';
+import { zonedInputValueToUtcLocal } from './timezone';
 
 declare const $app: PocketBaseApp;
 declare const $security: {
@@ -252,7 +253,8 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
 
         if (callTime) {
             const localDatePart = getLocalDatePart(start, timezone);
-            const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+            const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+            const callStart = new Date(callStartIso);
 
             if (callStart.getTime() < start.getTime()) {
                 vevents.push(
@@ -474,7 +476,8 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
 
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
-                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                const callStart = new Date(callStartIso);
 
                 if (callStart.getTime() < start.getTime()) {
                     vevents.push(

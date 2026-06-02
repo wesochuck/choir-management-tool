@@ -7261,6 +7261,52 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         }
     }
 
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -7495,7 +7541,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
-                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
                     vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
@@ -7659,7 +7706,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
-                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                    const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
                         vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
@@ -7970,6 +8018,52 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         }
     }
 
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -8204,7 +8298,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
-                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
                     vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
@@ -8368,7 +8463,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
-                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                    const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
                         vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
@@ -8679,6 +8775,52 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         }
     }
 
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -8913,7 +9055,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
-                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
                     vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
@@ -9077,7 +9220,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
-                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                    const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
                         vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
@@ -9388,6 +9532,52 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         }
     }
 
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function getHmacSecretLocal(app) {
@@ -9622,7 +9812,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
-                const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
                     vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
@@ -9786,7 +9977,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
-                    const callStart = parseSafeUtcDate(`${localDatePart} ${callTime}`, timezone);
+                    const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
+                    const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
                         vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
