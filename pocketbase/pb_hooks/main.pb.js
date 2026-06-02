@@ -7168,7 +7168,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        let normalized = dateStr.trim();
+        const str = String(dateStr);
+        let normalized = str.trim();
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -7673,7 +7674,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        let normalized = dateStr.trim();
+        const str = String(dateStr);
+        let normalized = str.trim();
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -8178,7 +8180,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        let normalized = dateStr.trim();
+        const str = String(dateStr);
+        let normalized = str.trim();
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
@@ -8683,7 +8686,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     function parseSafeUtcDate(dateStr, timezone) {
         if (!dateStr)
             return new Date();
-        let normalized = dateStr.trim();
+        const str = String(dateStr);
+        let normalized = str.trim();
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
             normalized = normalized.replace(" ", "T");
             if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
