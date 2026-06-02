@@ -169,7 +169,7 @@ export default function ProfileView() {
             user: currentUser.id,
             name: name || currentUser.name || email,
             receiveAttendanceReports,
-            voicePart: 'Administrator',
+            voicePart: '',
             globalStatus: 'Active',
           });
         }

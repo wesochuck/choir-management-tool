@@ -72,8 +72,13 @@ export function formatPocketBaseError(err: unknown): string {
   if (error.data && typeof error.data === 'object' && Object.keys(error.data).length > 0) {
     const details = Object.entries(error.data)
       .map(([field, info]) => {
-        const code = info.code;
-        const msg = info.message;
+        // Skip if info is not a field-error object (e.g. if error.data is the entire response)
+        if (!info || typeof info !== 'object' || !('message' in info)) {
+          return null;
+        }
+
+        const code = (info as { code: string }).code;
+        const msg = (info as { message: string }).message;
         
         // Convert camelCase to capitalized words (e.g. voicePart -> Voice Part)
         const friendlyField = field
@@ -106,9 +111,10 @@ export function formatPocketBaseError(err: unknown): string {
         // Fallback to capitalizing field + default error message
         return `${friendlyField}: ${msg || 'Invalid value.'}`;
       })
+      .filter(Boolean)
       .join('\n');
       
-    return details;
+    if (details) return details;
   }
   
   return (err instanceof Error) ? err.message : 'An error occurred';
