@@ -139,6 +139,7 @@ export interface RsvpRecord {
 export interface ProfileWithStatus {
   id: string;
   globalStatus: string;
+  voicePart?: string;
 }
 
 export function filterProfilesByRsvpYes<T extends ProfileWithStatus>(
@@ -151,7 +152,7 @@ export function filterProfilesByRsvpYes<T extends ProfileWithStatus>(
       .map(r => r.profile)
   );
   return profiles.filter(
-    p => p.globalStatus === 'Active' && attendingProfileIds.has(p.id)
+    p => p.globalStatus === 'Active' && !!p.voicePart && attendingProfileIds.has(p.id)
   );
 }
 

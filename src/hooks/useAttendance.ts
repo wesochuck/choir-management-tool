@@ -47,21 +47,23 @@ export const useAttendance = (eventId: string) => {
       const parentRosterMap: Record<string, EventRoster> = {};
       parentRosters.forEach(r => parentRosterMap[r.profile] = r);
 
-      const combined: AttendanceItem[] = activeProfiles.map(p => {
-        const roster = rosterMap[p.id];
-        const parentRoster = parentRosterMap[p.id];
-        return {
-          id: roster?.id || `p_${p.id}`,
-          profileId: p.id,
-          name: p.name,
-          voicePart: p.voicePart,
-          attendance: roster?.attendance || 'Pending',
-          rsvp: currentEvent?.type === 'Rehearsal' ? (parentRoster?.rsvp || 'Pending') : (roster?.rsvp || 'Pending'),
-          rosterId: roster?.id,
-          folderNumber: parentRoster?.folderNumber || '',
-          folderReturned: parentRoster?.folderReturned || false,
-        };
-      });
+      const combined: AttendanceItem[] = activeProfiles
+        .filter(p => !!p.voicePart)
+        .map(p => {
+          const roster = rosterMap[p.id];
+          const parentRoster = parentRosterMap[p.id];
+          return {
+            id: roster?.id || `p_${p.id}`,
+            profileId: p.id,
+            name: p.name,
+            voicePart: p.voicePart,
+            attendance: roster?.attendance || 'Pending',
+            rsvp: currentEvent?.type === 'Rehearsal' ? (parentRoster?.rsvp || 'Pending') : (roster?.rsvp || 'Pending'),
+            rosterId: roster?.id,
+            folderNumber: parentRoster?.folderNumber || '',
+            folderReturned: parentRoster?.folderReturned || false,
+          };
+        });
 
       setItems(combined);
       setError(null);

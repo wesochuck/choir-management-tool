@@ -68,6 +68,7 @@ export async function resolveRecipients(
   }
 
   return profiles
+    .filter((profile: Profile) => !!profile.voicePart)
     .filter((profile: Profile) => !allowedProfileIds || allowedProfileIds.has(profile.id))
     .filter((profile: Profile) => !targetParts || targetParts.has(profile.voicePart))
     .filter((profile: Profile) => !filters.globalStatus || profile.globalStatus === filters.globalStatus)

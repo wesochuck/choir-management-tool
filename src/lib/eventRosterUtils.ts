@@ -18,15 +18,17 @@ export function mapSingersToRosters(activeProfiles: Profile[], eventRoster: Even
     }
   });
 
-  return activeProfiles.map(profile => {
-    const roster = profileRosterMap.get(profile.id);
-    const rsvp = roster?.rsvp || 'Pending';
-    return {
-      profile,
-      rsvp,
-      roster,
-    };
-  });
+  return activeProfiles
+    .filter(profile => !!profile.voicePart)
+    .map(profile => {
+      const roster = profileRosterMap.get(profile.id);
+      const rsvp = roster?.rsvp || 'Pending';
+      return {
+        profile,
+        rsvp,
+        roster,
+      };
+    });
 }
 
 export function calculateRsvpCounts(mappedSingers: MappedSinger[]) {

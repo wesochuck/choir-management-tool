@@ -2,6 +2,21 @@
 
 These foundational mandates MUST be followed by all agents working on this codebase to ensure technical integrity and prevent recurring infrastructure issues.
 
+## Administrative vs. Singer Account Handling
+*   **Singing Signal:** The presence of a non-empty `voicePart` is the primary signal that a profile should be treated as a "singer" in operational contexts.
+*   **Role-Based Distinction:** Accounts with the `admin` role are for system management. An administrator MAY also be a singer.
+*   **Administrator Nuance:**
+    *   **Singing Admin:** An admin with a `voicePart` assigned. They MUST be included in all singer-focused contexts.
+    *   **Administrative Only:** An admin with an empty `voicePart`. They MUST be excluded from singer-focused contexts.
+*   **Voice Part Optionality:** For the `admin` role, the `voicePart` field is optional. For the `singer` role, it is required.
+*   **Singer-Focused Exclusion:** Profiles with an empty `voicePart` MUST be excluded from singer-facing operational contexts, including:
+    *   Event RSVP lists and Roster views.
+    *   Attendance tracking interfaces.
+    *   Seating chart assignments and auto-paint logic.
+    *   Singer-targeted automated communications (RSVP requests, reminders).
+*   **Admin-Only Preferences:** The `receiveAttendanceReports` field is an admin-specific preference. It should only be exposed in UIs accessible to administrators and defaults to `true` for new admin-linked profiles.
+*   **Data Integrity:** When implementing new singer-focused features, always use a "profile has voice part" filter to determine eligibility rather than just checking the role.
+
 ## Pocketbase version
 * Always assume verison 0.36.9 is currently installed 
 
