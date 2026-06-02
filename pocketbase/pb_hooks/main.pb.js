@@ -783,23 +783,29 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
-                    // Temporarily protect placeholders containing underscores from markdown parsing
-                    const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                    let htmlBody = renderMarkdown(protectedContent);
-                    // Restore protected placeholders
-                    htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    let htmlBody = "";
+                    if (filters.contentType === "html") {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    }
                     let subject = record.get("subject") || "";
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
@@ -1573,23 +1579,29 @@ onRecordAfterCreateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
-                    // Temporarily protect placeholders containing underscores from markdown parsing
-                    const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                    let htmlBody = renderMarkdown(protectedContent);
-                    // Restore protected placeholders
-                    htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    let htmlBody = "";
+                    if (filters.contentType === "html") {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    }
                     let subject = record.get("subject") || "";
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
@@ -2368,23 +2380,29 @@ onRecordAfterUpdateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
-                    // Temporarily protect placeholders containing underscores from markdown parsing
-                    const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                    let htmlBody = renderMarkdown(protectedContent);
-                    // Restore protected placeholders
-                    htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    let htmlBody = "";
+                    if (filters.contentType === "html") {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    }
                     let subject = record.get("subject") || "";
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
@@ -3124,23 +3142,29 @@ onRecordAfterCreateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
-                    // Temporarily protect placeholders containing underscores from markdown parsing
-                    const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                    let htmlBody = renderMarkdown(protectedContent);
-                    // Restore protected placeholders
-                    htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    let htmlBody = "";
+                    if (filters.contentType === "html") {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    }
                     let subject = record.get("subject") || "";
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
@@ -3531,9 +3555,10 @@ onRecordAfterCreateSuccess((e) => {
                                 attempts: 0,
                                 filters: JSON.stringify({
                                     auditionId: audition.id,
-                                    type: "Admin Notification"
+                                    type: "Admin Notification",
+                                    contentType: "html"
                                 })
-                            });
+                                });
                             $app.save(adminQueueRecord);
                         }
                     } catch (adminErr) {
@@ -4025,23 +4050,29 @@ onRecordAfterUpdateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
-                    // Temporarily protect placeholders containing underscores from markdown parsing
-                    const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                    let htmlBody = renderMarkdown(protectedContent);
-                    // Restore protected placeholders
-                    htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    let htmlBody = "";
+                    if (filters.contentType === "html") {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    }
                     let subject = record.get("subject") || "";
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
@@ -5172,23 +5203,29 @@ function processEmailQueue(app) {
                 const recipientEmail = record.get("recipientEmail");
                 const recipientName = record.get("recipientName") || "Singer";
                 const filters = parseJsonField(record.get("filters")) || {};
-                // Temporarily protect placeholders containing underscores from markdown parsing
-                const protectedContent = rawContent
-                    .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                    .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                    .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                    .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                    .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                    .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                let htmlBody = renderMarkdown(protectedContent);
-                // Restore protected placeholders
-                htmlBody = htmlBody
-                    .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                    .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                    .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                    .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                    .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                    .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                let htmlBody = "";
+                if (filters.contentType === "html") {
+                    htmlBody = rawContent;
+                }
+                else {
+                    // Temporarily protect placeholders containing underscores from markdown parsing
+                    const protectedContent = rawContent
+                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                    htmlBody = renderMarkdown(protectedContent);
+                    // Restore protected placeholders
+                    htmlBody = htmlBody
+                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                }
                 let subject = record.get("subject") || "";
                 subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                 // Fetch dynamic event details if enqueued under filters
@@ -6314,23 +6351,29 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
-                    // Temporarily protect placeholders containing underscores from markdown parsing
-                    const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
-                    let htmlBody = renderMarkdown(protectedContent);
-                    // Restore protected placeholders
-                    htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    let htmlBody = "";
+                    if (filters.contentType === "html") {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                    }
                     let subject = record.get("subject") || "";
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters

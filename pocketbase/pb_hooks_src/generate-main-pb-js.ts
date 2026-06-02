@@ -520,9 +520,10 @@ try {
                             attempts: 0,
                             filters: JSON.stringify({
                                 auditionId: audition.id,
-                                type: "Admin Notification"
+                                type: "Admin Notification",
+                                contentType: "html"
                             })
-                        });
+                            });
                         $app.save(adminQueueRecord);
                     }
                 } catch (adminErr) {

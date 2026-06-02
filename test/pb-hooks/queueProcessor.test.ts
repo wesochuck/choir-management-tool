@@ -312,3 +312,54 @@ test('processEmailQueue batch window limit', () => {
     assert.strictEqual(sentCount, 900, 'Exactly 900 records should be processed in one invocation');
     assert.strictEqual(pendingCount, 100, 'Remaining 100 records should remain Pending for the next invocation');
 });
+
+test('processEmailQueue contentType: "html" bypasses markdown rendering', () => {
+    const htmlContent = '<p>Raw <strong>HTML</strong> content.</p><ul><li>One</li></ul>';
+    const recordHtml = new MockRecord('emailQueue', {
+        id: 'q-html',
+        recipientId: 'usr-1',
+        recipientEmail: 'html@example.com',
+        recipientName: 'HTML Member',
+        subject: 'HTML Test',
+        rawContent: htmlContent,
+        status: 'Pending',
+        attempts: 0,
+        filters: JSON.stringify({ contentType: 'html' })
+    });
+
+    const markdownContent = 'Standard **Markdown** content.';
+    const recordMarkdown = new MockRecord('emailQueue', {
+        id: 'q-md',
+        recipientId: 'usr-2',
+        recipientEmail: 'md@example.com',
+        recipientName: 'MD Member',
+        subject: 'MD Test',
+        rawContent: markdownContent,
+        status: 'Pending',
+        attempts: 0,
+        filters: JSON.stringify({})
+    });
+
+    const { mockApp, sentEmails } = setupMockApp([recordHtml, recordMarkdown]);
+
+    processEmailQueue(mockApp);
+
+    assert.strictEqual(recordHtml.get('status'), 'Sent');
+    assert.strictEqual(recordMarkdown.get('status'), 'Sent');
+
+    const htmlSent = sentEmails.find((e: any) => e.config.to[0].address === 'html@example.com') as any;
+    const mdSent = sentEmails.find((e: any) => e.config.to[0].address === 'md@example.com') as any;
+
+    // Verify HTML content was preserved exactly (not escaped by renderMarkdown)
+    // Note: compileMailjetHtml is called, so we check if the inner content is correct
+    // In MockApp, we don't have compileMailjetHtml actual implementation, it's bundled.
+    // But we can check what was set on the record's htmlBody if we want, or just trust the MailerMessage.
+    
+    // Actually, in the test environment, compileMailjetHtml is NOT defined unless we define it.
+    // Wait, how did the previous tests pass?
+    // Oh, the bundle includes it.
+
+    assert.ok(htmlSent.config.html.includes(htmlContent), 'HTML content should be preserved exactly');
+    assert.ok(mdSent.config.html.includes('<strong>Markdown</strong>'), 'Markdown should be rendered to HTML');
+    assert.ok(!mdSent.config.html.includes('**Markdown**'), 'Markdown should not be present in output');
+});
