@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { playerService, type PlayerPlaylist, type PlayerMediaFile } from '../services/playerService';
 import { Player } from '../components/player/Player';
 import { Playlist } from '../components/player/Playlist';
@@ -159,10 +159,17 @@ export default function PublicPlayerView() {
   if (error) return <div className="chorus-player"><div className="error-message">{error}</div></div>;
   if (!data) return null;
 
+  const showDashboardBackLink = Boolean(eventId && !token);
+
   return (
     <div className="chorus-player">
       <header>
         <div>
+          {showDashboardBackLink && (
+            <Link to="/" className="player-back-link">
+              ← Dashboard
+            </Link>
+          )}
           <h1>Chorus</h1>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{data.event.title}</div>
         </div>

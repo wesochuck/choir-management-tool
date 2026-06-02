@@ -249,5 +249,42 @@
   .chorus-player .playlist li {
     padding: 0.6rem 0.75rem;
     gap: 0.5rem;
+    min-height: 56px;
+  }
+
+  .chorus-player .track-download-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chorus-player .playlist-part-badge {
+    font-size: 0.55rem;
+    padding: 0.15rem 0.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chorus-player .playlist-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chorus-player .playlist-meta {
+    justify-content: space-between;
+  }
+
+  .chorus-player .playlist-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .chorus-player .playlist-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .chorus-player .playlist-actions .playlist-action-btn:only-child {
+    grid-column: 1 / -1;
   }
 }

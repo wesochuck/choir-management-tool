@@ -77,6 +77,20 @@
   text-transform: uppercase;
 }
 
+.chorus-player .player-back-link {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.chorus-player .player-back-link:hover {
+  color: var(--accent-color);
+}
+
 /* ── Player Card ────────────────────────── */
 
 .chorus-player .player-card {
