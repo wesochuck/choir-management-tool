@@ -349,11 +349,15 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <select 
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
-                required
+                required={formData.role !== 'admin'}
                 className="card"
                 style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               >
-                <option value="" disabled>-- Please Select --</option>
+                {formData.role === 'admin' ? (
+                  <option value="">-- Not Applicable (Admin) --</option>
+                ) : (
+                  <option value="" disabled>-- Please Select --</option>
+                )}
                 {voiceParts.map(v => (
                   <option key={v.label} value={v.label}>
                     {v.label} {v.fullName ? `(${v.fullName})` : ''}
