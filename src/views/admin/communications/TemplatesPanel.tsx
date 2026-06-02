@@ -205,6 +205,7 @@ export function TemplatesPanel({
                 >
                   <div
                     className="text-body message-preview-content"
+                    // @allow-dangerouslySetInnerHTML - previewHtml is pre-escaped by renderMarkdown/resolvePreviewContent (use with caution)
                     dangerouslySetInnerHTML={{
                       __html:
                         previewHtml ||

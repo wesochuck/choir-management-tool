@@ -85,6 +85,7 @@ const EmailMockup: React.FC<EmailMockupProps> = ({
     >
       <div
         className="text-body message-preview-content"
+        // @allow-dangerouslySetInnerHTML - bodyHtml is pre-escaped by renderMarkdown/resolvePreviewContent (use with caution)
         dangerouslySetInnerHTML={{
           __html: bodyHtml || '<p class="text-muted" style="text-align: center; padding: 40px 0;">No message content drafted yet.</p>',
         }}

@@ -2,8 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { JSDOM } from 'jsdom';
 import { getSrcFiles, resolveProjectPath } from './helpers.ts';
 import { decodeGoBytes, parseJsonField } from '../src/lib/pocketbaseJson.ts';
+
+const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+  url: 'http://localhost/',
+});
+globalThis.window = dom.window as unknown as Window & typeof globalThis;
+globalThis.document = dom.window.document;
+Object.defineProperty(globalThis, 'navigator', {
+  value: dom.window.navigator,
+});
+
+import { sanitizeHtml } from '../src/lib/textSafety.ts';
 
 test('codebase integrity: no deprecated pb.files.getUrl calls allowed', () => {
   const files = getSrcFiles(['.ts', '.tsx', '.js', '.jsx']);
@@ -209,5 +221,72 @@ test('codebase integrity: playerService uses defensive audioTrackMapping parsing
     'playerService must not directly JSON.parse movement audioTrackMapping values'
   );
 });
+
+test('textSafety: sanitizeHtml removes unsafe elements and attributes', () => {
+  // 1. Script injection
+  const scriptInput = '<p>Hello <script>alert(1)</script>World</p>';
+  const scriptOutput = sanitizeHtml(scriptInput);
+  assert.ok(!scriptOutput.includes('<script>'), 'Should strip script tags');
+  assert.ok(!scriptOutput.includes('alert'), 'Should strip script content');
+
+  // 2. Event handler injection
+  const eventInput = '<div class="alert" onclick="doEvil()">Warning</div>';
+  const eventOutput = sanitizeHtml(eventInput);
+  assert.ok(!eventOutput.includes('onclick'), 'Should strip inline event handlers');
+  assert.ok(eventOutput.includes('class="alert"'), 'Should preserve allowed attributes');
+
+  // 3. Malicious javascript url injection
+  const urlInput = '<a href="javascript:alert(1)">Click me</a>';
+  const urlOutput = sanitizeHtml(urlInput);
+  assert.ok(!urlOutput.includes('href="javascript:'), 'Should strip javascript: protocols');
+
+  // 4. Allowed tags and attributes
+  const allowedInput = '<p style="color: red;">Line <br> <strong>bold</strong> <em>italic</em> <a href="https://example.com" target="_blank">link</a></p>';
+  const allowedOutput = sanitizeHtml(allowedInput);
+  assert.strictEqual(allowedOutput, allowedInput, 'Should preserve safe tags and attributes');
+});
+
+test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
+  const files = getSrcFiles(['.ts', '.tsx']);
+  const srcDir = resolveProjectPath('src');
+  const violations: string[] = [];
+
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    if (!content.includes('dangerouslySetInnerHTML')) {
+      continue;
+    }
+
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      if (line.includes('dangerouslySetInnerHTML')) {
+        // Look for the preceding line (idx - 1) or current line (idx) containing @allow-dangerouslySetInnerHTML
+        const prevLine = idx > 0 ? lines[idx - 1] : '';
+        const currentLine = lines[idx];
+        const nextLine = idx < lines.length - 1 ? lines[idx + 1] : '';
+        const nextNextLine = idx < lines.length - 2 ? lines[idx + 2] : '';
+
+        const isBypassed = prevLine.includes('@allow-dangerouslySetInnerHTML') || currentLine.includes('@allow-dangerouslySetInnerHTML');
+        const isSanitized = currentLine.includes('sanitizeHtml(') || nextLine.includes('sanitizeHtml(') || nextNextLine.includes('sanitizeHtml(');
+
+        if (!isBypassed && !isSanitized) {
+          const relPath = path.relative(srcDir, file);
+          violations.push(`src/${relPath}:${idx + 1} -> "${line.trim()}"`);
+        }
+      }
+    });
+  }
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found dangerouslySetInnerHTML usage without sanitizeHtml or safety comment annotation:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nTo resolve, either wrap the input in 'sanitizeHtml(...)' OR add a preceding comment:\n` +
+      `// @allow-dangerouslySetInnerHTML - [explanation of safety, use with caution]`
+    );
+  }
+  assert.ok(true, 'All dangerouslySetInnerHTML usages are sanitized or annotated');
+});
+
 
 
