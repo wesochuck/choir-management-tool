@@ -1,5 +1,6 @@
 import { type CommunicationRecipient } from '../services/communicationService';
 import { type Event } from '../services/eventService';
+import { formatTime12h } from './dateUtils';
 
 export const COMPLIANT_FOOTER_HTML = `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
@@ -75,17 +76,6 @@ export function renderMarkdown(text: string): string {
   }).join('\n');
 
   return html;
-}
-
-function formatTime12h(timeStr?: string): string {
-  if (!timeStr) return '';
-  const match = timeStr.match(/^(\d{2}):(\d{2})$/);
-  if (!match) return timeStr;
-  const hrs = parseInt(match[1], 10);
-  const mins = match[2];
-  const ampm = hrs >= 12 ? 'PM' : 'AM';
-  const displayHrs = hrs % 12 || 12;
-  return `${displayHrs}:${mins} ${ampm}`;
 }
 
 /**
