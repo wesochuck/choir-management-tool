@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { musicLibraryService, type MusicPiece } from '../src/services/musicLibraryService.ts';
+import { type MusicPiece } from '../src/services/musicLibraryService.ts';
+import { musicLibraryWorkflows } from '../src/services/musicLibraryWorkflows.ts';
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
-test('musicLibraryService.createPieceWithMovementsAndTutti creates parent and sequential movements', async (t) => {
+test('musicLibraryWorkflows.createPieceWithMovementsAndTutti creates parent and sequential movements', async (t) => {
   const originalCollection = pb.collection;
   
   const createdPieces: Record<string, unknown>[] = [];
@@ -40,7 +41,7 @@ test('musicLibraryService.createPieceWithMovementsAndTutti creates parent and se
       { title: 'Comfort Ye', duration: '2:30' }
     ];
 
-    const result = await musicLibraryService.createPieceWithMovementsAndTutti(parentData, { movements });
+    const result = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(parentData, { movements });
 
     // Verify parent piece was returned
     assert.equal(result.title, 'Messiah Medley');
@@ -71,7 +72,7 @@ test('musicLibraryService.createPieceWithMovementsAndTutti creates parent and se
   }
 });
 
-test('musicLibraryService.createPieceWithMovementsAndTutti uploads tutti file when provided', async (t) => {
+test('musicLibraryWorkflows.createPieceWithMovementsAndTutti uploads tutti file when provided', async (t) => {
   const originalCollection = pb.collection;
 
   const mockCreate = t.mock.fn(async (data: Record<string, unknown>) => {
@@ -108,7 +109,7 @@ test('musicLibraryService.createPieceWithMovementsAndTutti uploads tutti file wh
     // Use a real file
     const mockTuttiFile = new File(['audio content'], 'tutti.mp3', { type: 'audio/mpeg' });
 
-    const result = await musicLibraryService.createPieceWithMovementsAndTutti(parentData, {
+    const result = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(parentData, {
       tuttiFile: mockTuttiFile
     });
 
@@ -136,7 +137,7 @@ test('musicLibraryService.createPieceWithMovementsAndTutti uploads tutti file wh
   }
 });
 
-test('musicLibraryService.createPieceWithMovementsAndTutti creates child movements concurrently', async (t) => {
+test('musicLibraryWorkflows.createPieceWithMovementsAndTutti creates child movements concurrently', async (t) => {
   const originalCollection = pb.collection;
   
   let activeCalls = 0;
@@ -180,7 +181,7 @@ test('musicLibraryService.createPieceWithMovementsAndTutti creates child movemen
       { title: 'Comfort Ye', duration: '2:30' }
     ];
 
-    await musicLibraryService.createPieceWithMovementsAndTutti(parentData, { movements });
+    await musicLibraryWorkflows.createPieceWithMovementsAndTutti(parentData, { movements });
 
     // Assert that the movements were processed concurrently
     assert.equal(maxConcurrentCalls, 2, 'The child movements should be created concurrently');
