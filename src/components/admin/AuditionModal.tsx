@@ -49,7 +49,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
   }, []);
 
   useEffect(() => {
-    if (!settings) return;
+    if (!settings || !isOpen) return;
 
     setActiveTab('info');
 
@@ -93,7 +93,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({ audition, isOpen, 
       setIsCustomTime(false);
       setCustomTimeVal('');
     }
-  }, [audition, settings]);
+  }, [audition, settings, isOpen]);
 
   const isDirty = useMemo(() => {
     if (audition) {

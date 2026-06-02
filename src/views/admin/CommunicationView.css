@@ -296,10 +296,18 @@
 
 /* Step 1: Targets */
 .targets-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-md);
-  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .targets-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: var(--space-lg);
+    align-items: start;
+  }
 }
 
 .template-gallery {
@@ -425,6 +433,22 @@
   border-bottom: 1px solid var(--border);
   padding-bottom: 12px;
   margin-bottom: 16px;
+}
+
+/* Step 2: Compose */
+.compose-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+@media (min-width: 1024px) {
+  .compose-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: var(--space-lg);
+    align-items: start;
+  }
 }
 
 /* Step 3: Review */
@@ -922,7 +946,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .communication-header {
     flex-direction: row;
     justify-content: space-between;
@@ -943,8 +967,10 @@
   }
 
   .targets-grid {
+    display: grid;
     grid-template-columns: 360px 1fr;
     gap: var(--space-lg);
+    align-items: start;
   }
 
   .template-gallery {
@@ -952,8 +978,10 @@
   }
 
   .compose-grid {
+    display: grid;
     grid-template-columns: 1fr 300px;
     gap: var(--space-lg);
+    align-items: start;
   }
 
   .wizard-action-footer {
