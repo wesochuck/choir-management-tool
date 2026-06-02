@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkValidation } from '../src/components/ComposeStep.tsx';
+import { checkValidation } from '../src/utils/communicationValidation.ts';
 
 test('checkValidation validation rules', () => {
   // Rule 1: Subject line required for email channel

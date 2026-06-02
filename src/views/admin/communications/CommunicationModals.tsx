@@ -1,4 +1,5 @@
 import React from 'react';
+import EasyMDE from 'easymde';
 import { BaseModal } from '../../../components/common/BaseModal';
 import { PollSelectionModal } from '../../../components/admin/PollSelectionModal';
 import type {
@@ -28,9 +29,8 @@ interface CommunicationModalsProps {
   isPollModalOpen: boolean;
   setIsPollModalOpen: (open: boolean) => void;
   setPollQuestions: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  content: string;
   setContent: React.Dispatch<React.SetStateAction<string>>;
-  textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
+  editorRef: React.MutableRefObject<EasyMDE | null>;
   events: Event[];
   commSettings: CommunicationSettings;
   editingTemplate?: Partial<TemplateRecord> | null;
@@ -47,9 +47,8 @@ export function CommunicationModals({
   isPollModalOpen,
   setIsPollModalOpen,
   setPollQuestions,
-  content,
   setContent,
-  textAreaRef,
+  editorRef,
   events,
   commSettings,
   editingTemplate,
@@ -145,30 +144,24 @@ export function CommunicationModals({
         onClose={() => setIsPollModalOpen(false)}
         onSelect={(pollId, pollQuestion) => {
           const tag = `{{POLL_LINK:${pollId}}}`;
-          if (textAreaRef.current) {
-            const { selectionStart, selectionEnd } = textAreaRef.current;
-            if (editingTemplate && setEditingTemplate) {
-              const currentContent = editingTemplate.content || '';
-              const newContent =
-                currentContent.substring(0, selectionStart) +
-                tag +
-                currentContent.substring(selectionEnd);
-              setEditingTemplate({ ...editingTemplate, content: newContent });
-            } else {
-              const newContent =
-                content.substring(0, selectionStart) + tag + content.substring(selectionEnd);
-              setContent(newContent);
-              setTimeout(() => {
-                if (textAreaRef.current) {
-                  textAreaRef.current.focus();
-                  textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd =
-                    selectionStart + tag.length;
-                }
-              }, 0);
-            }
+          const editor = editorRef.current;
+
+          if (editor) {
+            editor.codemirror.replaceSelection(tag);
+            editor.codemirror.focus();
+            // onChange handler in MarkdownEditor will trigger setContent/setEditingTemplate
           } else {
-            setContent((prev) => prev + tag);
+            // Fallback
+            if (editingTemplate && setEditingTemplate) {
+              setEditingTemplate({
+                ...editingTemplate,
+                content: (editingTemplate.content || '') + tag,
+              });
+            } else {
+              setContent((prev) => prev + tag);
+            }
           }
+          
           setPollQuestions((prev) => ({ ...prev, [pollId]: pollQuestion }));
           setIsPollModalOpen(false);
         }}

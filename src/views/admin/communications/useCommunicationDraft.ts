@@ -10,7 +10,7 @@ import type { ChoirUser } from '../../../types/auth';
 import type { CommunicationTab } from '../../../types/Communication';
 import type { WizardStep, CommunicationRouteState } from './types';
 import { useDialog } from '../../../contexts/DialogContext';
-import { checkValidation } from '../../../components/ComposeStep';
+import { checkValidation } from '../../../utils/communicationValidation';
 
 interface UseCommunicationDraftArgs {
   routeState: CommunicationRouteState | null;

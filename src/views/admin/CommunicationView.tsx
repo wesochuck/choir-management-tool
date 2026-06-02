@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import EasyMDE from 'easymde';
 import { useDialog } from '../../contexts/DialogContext';
 import { useEvents } from '../../hooks/useEvents';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
@@ -46,7 +47,7 @@ export default function CommunicationView() {
     routeState?.initialOpenReview || routeState?.openDraftId ? 'REVIEW' : 'TARGETS'
   );
 
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<EasyMDE | null>(null);
   const didResumeRef = useRef(false);
 
   const [selectedMessage, setSelectedMessage] = useState<MessageRecord | null>(null);
@@ -137,33 +138,26 @@ export default function CommunicationView() {
       return;
     }
 
-    if (!textAreaRef.current) return;
+    const editor = editorRef.current;
 
-    const { selectionStart, selectionEnd } = textAreaRef.current;
-
-    if (library.editingTemplate) {
-      const currentContent = library.editingTemplate.content || '';
-      const newContent =
-        currentContent.substring(0, selectionStart) + tag + currentContent.substring(selectionEnd);
-
-      library.setEditingTemplate({
-        ...library.editingTemplate,
-        content: newContent,
-      });
-    } else {
-      const newContent =
-        draft.content.substring(0, selectionStart) + tag + draft.content.substring(selectionEnd);
-
-      draft.setContent(newContent);
+    if (!editor) {
+      // Fallback if editor isn't loaded (unlikely in COMPOSE step)
+      if (library.editingTemplate) {
+        library.setEditingTemplate({
+          ...library.editingTemplate,
+          content: (library.editingTemplate.content || '') + tag,
+        });
+      } else {
+        draft.setContent((prev) => prev + tag);
+      }
+      return;
     }
 
-    setTimeout(() => {
-      if (textAreaRef.current) {
-        textAreaRef.current.focus();
-        textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd =
-          selectionStart + tag.length;
-      }
-    }, 0);
+    // Insert at cursor using EasyMDE's CodeMirror
+    editor.codemirror.replaceSelection(tag);
+    editor.codemirror.focus();
+
+    // The editor's change handler will trigger setContent/setEditingTemplate automatically via onChange
   };
 
   if (library.isLoading) {
@@ -215,7 +209,7 @@ export default function CommunicationView() {
           templates={library.templates}
           setTab={setTab}
           setEditingTemplate={library.setEditingTemplate}
-          textAreaRef={textAreaRef}
+          editorRef={editorRef}
           onInsertPlaceholder={insertPlaceholder}
           onViewRecipients={handleViewRecipients}
           user={user}
@@ -355,7 +349,7 @@ export default function CommunicationView() {
           setEditingTemplate={library.setEditingTemplate}
           previewHtml={preview.previewHtml}
           onInsertPlaceholder={insertPlaceholder}
-          textAreaRef={textAreaRef}
+          editorRef={editorRef}
           dialog={dialog}
         />
       )}
@@ -368,9 +362,8 @@ export default function CommunicationView() {
         isPollModalOpen={isPollModalOpen}
         setIsPollModalOpen={setIsPollModalOpen}
         setPollQuestions={draft.setPollQuestions}
-        content={draft.content}
         setContent={draft.setContent}
-        textAreaRef={textAreaRef}
+        editorRef={editorRef}
         events={events}
         commSettings={library.commSettings}
         editingTemplate={library.editingTemplate}
@@ -379,3 +372,4 @@ export default function CommunicationView() {
     </div>
   );
 }
+

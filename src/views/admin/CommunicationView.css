@@ -329,13 +329,62 @@
   font-size: 1.5rem;
 }
 
-/* Step 2: Compose */
-.compose-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-md);
-  align-items: start;
+/* EasyMDE Theme Overrides */
+.editor-toolbar {
+  border-top-left-radius: var(--radius-lg) !important;
+  border-top-right-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  border-bottom: none !important;
+  background-color: var(--bg) !important;
+  opacity: 1 !important;
 }
+
+.editor-toolbar button {
+  color: var(--text-muted) !important;
+}
+
+.editor-toolbar button.active,
+.editor-toolbar button:hover {
+  background-color: var(--primary-light) !important;
+  color: var(--primary-deep) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.CodeMirror {
+  border: 1px solid var(--border) !important;
+  border-bottom-left-radius: var(--radius-lg) !important;
+  border-bottom-right-radius: var(--radius-lg) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 1rem !important;
+  color: var(--text) !important;
+  padding: 8px !important;
+}
+
+.CodeMirror-focused {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2) !important;
+}
+
+.editor-statusbar {
+  display: none !important;
+}
+
+/* Wrapper for MarkdownEditor */
+.markdown-editor-wrapper {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.markdown-editor-wrapper.border-warning .CodeMirror {
+  border-color: var(--warning, #f59e0b) !important;
+}
+
+/* Ensure placeholder panel buttons work well with the new editor focus */
+.placeholder-panel-btn:active {
+  transform: scale(0.98);
+}
+
 
 .composer-form {
   display: flex;

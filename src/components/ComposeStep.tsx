@@ -1,52 +1,8 @@
 import React from 'react';
+import { MarkdownEditor } from './common/MarkdownEditor';
+import EasyMDE from 'easymde';
 
-export interface ValidationWarning {
-  field: string;
-  message: string;
-  type: 'warning' | 'error';
-}
-
-export const checkValidation = (
-  messageBody: string,
-  subject: string,
-  currentChannel: 'Email' | 'SMS' | 'Both',
-  selectedEventId: string
-): ValidationWarning[] => {
-  const warnings: ValidationWarning[] = [];
-  
-  const eventPlaceholders = [
-    '{eventTitle}',
-    '{eventType}',
-    '{eventDate}',
-    '{eventLocation}',
-    '{eventDetails}',
-    '{playerLink}',
-    '{rsvpLinks}'
-  ];
-
-  if ((currentChannel === 'Email' || currentChannel === 'Both') && !subject.trim()) {
-    warnings.push({
-      field: 'subject',
-      message: 'Subject line required for email messages.',
-      type: 'error',
-    });
-  }
-
-  const hasPlaceholder = eventPlaceholders.some(placeholder => 
-    messageBody.toLowerCase().includes(placeholder.toLowerCase()) || 
-    subject.toLowerCase().includes(placeholder.toLowerCase())
-  );
-
-  if (hasPlaceholder && !selectedEventId) {
-    warnings.push({
-      field: 'body',
-      message: 'This message uses event placeholders, but no event context is selected.',
-      type: 'warning',
-    });
-  }
-
-  return warnings;
-};
+import { type ValidationWarning } from '../utils/communicationValidation';
 
 interface ComposeStepProps {
   subject: string;
@@ -55,7 +11,7 @@ interface ComposeStepProps {
   onMessageTypeChange: (val: 'Email' | 'SMS' | 'Both') => void;
   content: string;
   onContentChange: (val: string) => void;
-  textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
+  editorRef: React.MutableRefObject<EasyMDE | null>;
   warnings: ValidationWarning[];
 }
 
@@ -66,7 +22,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
   onMessageTypeChange,
   content,
   onContentChange,
-  textAreaRef,
+  editorRef,
   warnings,
 }) => {
   const subjectWarning = warnings.find(w => w.field === 'subject');
@@ -107,12 +63,13 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
       </div>
       <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
         <label className="text-label">Message Body (Markdown Supported)</label>
-        <textarea
-          ref={textAreaRef}
-          className={`card composer-textarea ${bodyWarning ? 'border-warning' : ''}`}
+        <MarkdownEditor
+          instanceRef={editorRef}
+          className={bodyWarning ? 'border-warning' : ''}
           value={content}
-          onChange={(e) => onContentChange(e.target.value)}
+          onChange={onContentChange}
           placeholder="Compose your message here..."
+          minHeight="350px"
         />
         {bodyWarning && (
           <span className="validation-warning-text" style={{ color: 'var(--warning, #f59e0b)', fontSize: '12px', marginTop: '2px' }}>
@@ -123,3 +80,4 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
     </div>
   );
 };
+

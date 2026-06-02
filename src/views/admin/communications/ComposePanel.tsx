@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import { WizardStepper } from '../../../components/WizardStepper';
 import { TemplateGrid } from '../../../components/TemplateGrid';
@@ -16,7 +17,7 @@ import type { SectionDef, CommunicationSettings } from '../../../services/settin
 import type { WizardStep } from './types';
 import { mapToMessageTemplate } from './templateMapping';
 import { resolvePreviewContent } from '../../../lib/communicationUtils';
-import type { ValidationWarning } from '../../../components/ComposeStep';
+import type { ValidationWarning } from '../../../utils/communicationValidation';
 
 interface ComposePanelProps {
   wizardStep: WizardStep;
@@ -63,7 +64,7 @@ interface ComposePanelProps {
   sendMessage: () => Promise<void>;
   onInsertPlaceholder: (tag: string) => void;
 
-  textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
+  editorRef: React.MutableRefObject<EasyMDE | null>;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
   user: import('../../../types/auth').ChoirUser | null;
 }
@@ -101,10 +102,11 @@ export function ComposePanel({
   handleSendTest,
   sendMessage,
   onInsertPlaceholder,
-  textAreaRef,
+  editorRef,
   onViewRecipients,
   user,
 }: ComposePanelProps) {
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -427,7 +429,7 @@ export function ComposePanel({
                 onMessageTypeChange={setMessageType}
                 content={content}
                 onContentChange={setContent}
-                textAreaRef={textAreaRef}
+                editorRef={editorRef}
                 warnings={warnings}
               />
             </AppCard>

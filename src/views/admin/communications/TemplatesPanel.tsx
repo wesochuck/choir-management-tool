@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import { PlaceholderPanel } from '../../../components/admin/PlaceholderPanel';
+import { MarkdownEditor } from '../../../components/common/MarkdownEditor';
 import {
   communicationService,
   type TemplateRecord,
@@ -20,7 +22,7 @@ export interface TemplatesPanelProps {
   dialog: ReturnType<typeof useDialog>;
   previewHtml: string;
   onInsertPlaceholder: (tag: string) => void;
-  textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
+  editorRef: React.MutableRefObject<EasyMDE | null>;
 }
 
 export function TemplatesPanel({
@@ -32,7 +34,7 @@ export function TemplatesPanel({
   dialog,
   previewHtml,
   onInsertPlaceholder,
-  textAreaRef,
+  editorRef,
 }: TemplatesPanelProps) {
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
@@ -94,18 +96,19 @@ export function TemplatesPanel({
 
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Template Body (Markdown Supported)</label>
-                <textarea
-                  ref={textAreaRef}
-                  className="card composer-textarea"
+                <MarkdownEditor
+                  instanceRef={editorRef}
                   value={editingTemplate.content || ''}
-                  onChange={(e) =>
-                    setEditingTemplate({ ...editingTemplate, content: e.target.value })
+                  onChange={(val) =>
+                    setEditingTemplate({ ...editingTemplate, content: val })
                   }
                   placeholder="Hello {singerName},&#10;&#10;Details: {eventDetails}"
+                  minHeight="250px"
                 />
               </div>
             </div>
           </AppCard>
+
 
           <AppCard
             title="Template Preview"

@@ -1,4 +1,5 @@
 import React from 'react';
+import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import type { CommunicationSettings } from '../../../services/settingsService';
 import type { TemplateRecord } from '../../../services/communicationService';
@@ -24,7 +25,7 @@ export interface SettingsPanelProps {
   >;
   previewHtml: string;
   onInsertPlaceholder: (tag: string) => void;
-  textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
+  editorRef: React.MutableRefObject<EasyMDE | null>;
   dialog: ReturnType<typeof useDialog>;
 }
 
@@ -43,7 +44,7 @@ export function SettingsPanel({
   setEditingTemplate,
   previewHtml,
   onInsertPlaceholder,
-  textAreaRef,
+  editorRef,
   dialog,
 }: SettingsPanelProps) {
   return (
@@ -57,7 +58,7 @@ export function SettingsPanel({
           dialog={dialog}
           previewHtml={previewHtml}
           onInsertPlaceholder={onInsertPlaceholder}
-          textAreaRef={textAreaRef}
+          editorRef={editorRef}
         />
       ) : (
         <>
@@ -89,8 +90,9 @@ export function SettingsPanel({
             dialog={dialog}
             previewHtml={previewHtml}
             onInsertPlaceholder={onInsertPlaceholder}
-            textAreaRef={textAreaRef}
+            editorRef={editorRef}
           />
+
 
           <AppCard title="Test Server SMTP Connection">
             <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
