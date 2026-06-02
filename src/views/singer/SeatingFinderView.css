@@ -55,6 +55,8 @@
 
 /* Premium Seat bubble */
 .seat-node {
+  appearance: none;
+  padding: 0;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -76,6 +78,11 @@
   transform: scale(1.2);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   z-index: 10;
+}
+
+.seat-node.selected {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 3px;
 }
 
 /* Pulsing highlight for self */
@@ -261,3 +268,76 @@
   color: var(--primary-deep);
   font-weight: 600;
 }
+
+.stage-scroll-hint {
+  display: none;
+}
+
+.selected-seat-card {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .stage-container {
+    padding: var(--space-lg) var(--space-sm);
+    align-items: stretch;
+  }
+
+  .stage-scroll-hint {
+    display: block;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-sm);
+  }
+
+  .stage-rows-wrapper {
+    align-items: flex-start;
+    scrollbar-width: thin;
+  }
+
+  .stage-rows-wrapper::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+  }
+
+  .stage-row {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .seat-tooltip {
+    display: none;
+  }
+
+  .selected-seat-card {
+    display: block;
+  }
+
+  .selected-seat-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .selected-seat-eyebrow {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+  }
+
+  .selected-seat-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .selected-seat-meta {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+}
+

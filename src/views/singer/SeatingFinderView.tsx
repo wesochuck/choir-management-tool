@@ -169,6 +169,41 @@ export default function SeatingFinderView() {
     rightNeighbor = getNeighborInfo(rightId);
   }
 
+  const handleSeatSelect = (
+    rowIndex: number,
+    seatIndex: number,
+    singerId?: string
+  ) => {
+    const isSelf = singerId === singerProfileId;
+    const profile = singerId ? getSingerProfile(singerId) : null;
+
+    if (!singerId) {
+      setSelectedSeat({
+        row: rowIndex,
+        seat: seatIndex,
+        status: 'empty',
+      });
+      return;
+    }
+
+    if (profile) {
+      setSelectedSeat({
+        row: rowIndex,
+        seat: seatIndex,
+        status: isSelf ? 'self' : 'assigned',
+        name: profile.name,
+        voicePart: profile.voicePart,
+      });
+      return;
+    }
+
+    setSelectedSeat({
+      row: rowIndex,
+      seat: seatIndex,
+      status: 'assignedUnknown',
+    });
+  };
+
   return (
     <PageLayout 
       title="Find Your Seat" 
@@ -270,14 +305,25 @@ export default function SeatingFinderView() {
                           const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
 
                           return (
-                            <div 
-                              key={sIdx} 
-                              className={`seat-node ${isMySeat ? 'self' : ''}`}
+                            <button
+                              key={sIdx}
+                              type="button"
+                              className={`seat-node ${isMySeat ? 'self' : ''} ${
+                                selectedSeat?.row === rIdx && selectedSeat?.seat === sIdx ? 'selected' : ''
+                              }`}
                               style={{ 
                                 borderColor: singerColor,
                                 color: singerId ? 'white' : 'var(--text-muted)',
                                 backgroundColor: singerId ? singerColor : 'white',
                               }}
+                              onClick={() => handleSeatSelect(rIdx, sIdx, singerId)}
+                              aria-label={
+                                profile
+                                  ? `Row ${rIdx + 1}, seat ${sIdx + 1}, ${profile.name}, ${profile.voicePart}`
+                                  : singerId
+                                    ? `Row ${rIdx + 1}, seat ${sIdx + 1}, assigned singer`
+                                    : `Row ${rIdx + 1}, seat ${sIdx + 1}, empty`
+                              }
                             >
                               {initials || ''}
                               {profile ? (
@@ -289,7 +335,7 @@ export default function SeatingFinderView() {
                                   Assigned Singer
                                 </div>
                               ) : null}
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -309,6 +355,39 @@ export default function SeatingFinderView() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Selected Seat Card */}
+        {!isOpenSeating && selectedSeat && (
+          <AppCard className="selected-seat-card">
+            <div className="selected-seat-content">
+              <div>
+                <div className="selected-seat-eyebrow">
+                  Row {selectedSeat.row + 1} • Seat {selectedSeat.seat + 1}
+                </div>
+                <div className="selected-seat-title">
+                  {selectedSeat.status === 'empty' && 'Empty seat'}
+                  {selectedSeat.status === 'assignedUnknown' && 'Assigned singer'}
+                  {selectedSeat.status === 'assigned' && selectedSeat.name}
+                  {selectedSeat.status === 'self' && 'Your seat'}
+                </div>
+                {selectedSeat.status === 'self' && selectedSeat.name && (
+                  <div className="selected-seat-meta">{selectedSeat.name}</div>
+                )}
+                {selectedSeat.voicePart && (
+                  <div className="selected-seat-meta">{selectedSeat.voicePart}</div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setSelectedSeat(null)}
+              >
+                Clear
+              </button>
+            </div>
+          </AppCard>
         )}
 
         {/* Standing Neighbors HUD Card */}
