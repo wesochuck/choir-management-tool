@@ -8,7 +8,7 @@ export interface AutomatedTask {
   type: 'Reminder' | 'Report' | 'RSVP Request';
   event: Event;
   scheduledTime: Date;
-  status: 'Scheduled' | 'Sent';
+  status: 'Scheduled' | 'Sent' | 'Archived';
   recipientCount?: number;
 }
 

@@ -80,6 +80,15 @@ async function saveMessage(data: SendMessageInput) {
   return await pb.collection('messages').create<MessageRecord>(data);
 }
 
+async function archiveMessage(data: SendMessageInput) {
+  const payload = {
+    ...data,
+    status: 'Archived' as const,
+  };
+
+  return await pb.collection('messages').create<MessageRecord>(payload);
+}
+
 export const messageRepository = {
   getMessages,
   getMessagesPaginated,
@@ -93,4 +102,5 @@ export const messageRepository = {
   getConfig,
   saveConfig,
   saveMessage,
+  archiveMessage,
 };

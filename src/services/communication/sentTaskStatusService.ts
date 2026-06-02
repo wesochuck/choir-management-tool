@@ -5,6 +5,7 @@ import {
   retryOn429,
 } from '../../lib/networkSafety';
 import type {
+  AutomatedTaskStatusMap,
   AutomatedTaskType,
   MessageRecord,
   SentTaskStatusOptions,
@@ -46,39 +47,49 @@ const readFilterEventId = (value: unknown): string | null => {
   return typeof rawEventId === 'string' && rawEventId ? rawEventId : null;
 };
 
-export async function getSentTaskStatuses(
+export async function getAutomatedTaskStatuses(
   eventIds: string[],
   options: SentTaskStatusOptions = {}
-): Promise<Record<string, boolean>> {
+): Promise<AutomatedTaskStatusMap> {
   const uniqueEventIds = [...new Set(eventIds.filter((eventId) => !!eventId))];
-  const statusMap: Record<string, boolean> = {};
+  const statusMap: AutomatedTaskStatusMap = {};
 
   uniqueEventIds.forEach((eventId) => {
-    statusMap[`rsvp-${eventId}`] = false;
-    statusMap[`reminder-${eventId}`] = false;
-    statusMap[`report-${eventId}`] = false;
+    statusMap[`rsvp-${eventId}`] = 'pending';
+    statusMap[`reminder-${eventId}`] = 'pending';
+    statusMap[`report-${eventId}`] = 'pending';
   });
 
   if (uniqueEventIds.length === 0) {
     return statusMap;
   }
 
-  const getEventIdsForType = async (type: AutomatedTaskType): Promise<Set<string>> => {
-    const seenEventIds = new Set<string>();
+  const resolveTasksForType = async (type: AutomatedTaskType): Promise<void> => {
     const { typeFilter, paramPrefix } = AUTOMATED_STATUS_FILTERS[type];
     const chunks = chunkArray(uniqueEventIds, EVENT_ID_CHUNK_SIZE);
+
+    const keyPrefix =
+      type === 'RSVP Request'
+        ? 'rsvp'
+        : type === 'Reminder'
+        ? 'reminder'
+        : 'report';
 
     await mapWithConcurrency(
       chunks,
       async (chunk, chunkIndex) => {
         const { clause, params } = buildEventIdClause(chunk, `${paramPrefix}${chunkIndex}_`);
-        const filterStr = pb.filter(`status = "Sent" && ${typeFilter} && (${clause})`, params);
+        const filterStr = pb.filter(
+          `(status = "Sent" || status = "Archived") && ${typeFilter} && (${clause})`,
+          params
+        );
 
         const records = await retryOn429(
           () =>
             pb.collection('messages').getFullList<MessageRecord>({
               filter: filterStr,
-              fields: 'id,filters',
+              sort: '-created',
+              fields: 'id,status,filters',
             }),
           {
             maxRetries: 3,
@@ -90,32 +101,39 @@ export async function getSentTaskStatuses(
 
         records.forEach((record) => {
           const eventId = readFilterEventId(record.filters);
-          if (eventId) seenEventIds.add(eventId);
+          if (eventId) {
+            const key = `${keyPrefix}-${eventId}`;
+            // If a real send is already recorded, never overwrite it with an archive record.
+            if (statusMap[key] !== 'sent') {
+              statusMap[key] = record.status === 'Archived' ? 'archived' : 'sent';
+            }
+          }
         });
       },
       { concurrency: EVENT_STATUS_FETCH_CONCURRENCY }
     );
-
-    return seenEventIds;
   };
 
-  const [rsvpEventIds, reminderEventIds, reportEventIds] = await Promise.all([
-    getEventIdsForType('RSVP Request'),
-    getEventIdsForType('Reminder'),
-    getEventIdsForType('Report'),
+  await Promise.all([
+    resolveTasksForType('RSVP Request'),
+    resolveTasksForType('Reminder'),
+    resolveTasksForType('Report'),
   ]);
 
-  rsvpEventIds.forEach((eventId) => {
-    statusMap[`rsvp-${eventId}`] = true;
-  });
-  reminderEventIds.forEach((eventId) => {
-    statusMap[`reminder-${eventId}`] = true;
-  });
-  reportEventIds.forEach((eventId) => {
-    statusMap[`report-${eventId}`] = true;
-  });
-
   return statusMap;
+}
+
+/** @deprecated Use getAutomatedTaskStatuses instead */
+export async function getSentTaskStatuses(
+  eventIds: string[],
+  options: SentTaskStatusOptions = {}
+): Promise<Record<string, boolean>> {
+  const statuses = await getAutomatedTaskStatuses(eventIds, options);
+  const result: Record<string, boolean> = {};
+  Object.keys(statuses).forEach((key) => {
+    result[key] = statuses[key] === 'sent';
+  });
+  return result;
 }
 
 export async function wasMessageSent(filter: {
@@ -124,14 +142,14 @@ export async function wasMessageSent(filter: {
 }): Promise<boolean> {
   if (!filter.eventId || !filter.type) return false;
   try {
-    const statuses = await getSentTaskStatuses([filter.eventId]);
+    const statuses = await getAutomatedTaskStatuses([filter.eventId]);
     const keyPrefix =
       filter.type === 'RSVP Request'
         ? 'rsvp'
         : filter.type === 'Reminder'
         ? 'reminder'
         : 'report';
-    return statuses[`${keyPrefix}-${filter.eventId}`] || false;
+    return statuses[`${keyPrefix}-${filter.eventId}`] === 'sent';
   } catch {
     return false;
   }

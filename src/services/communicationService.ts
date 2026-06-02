@@ -14,6 +14,7 @@ import {
 import { messageRepository } from './communication/messageRepository';
 import { resolveRecipients } from './communication/recipientResolver';
 import {
+  getAutomatedTaskStatuses,
   getSentTaskStatuses,
   wasMessageSent,
 } from './communication/sentTaskStatusService';
@@ -35,6 +36,8 @@ export type {
   RsvpFilter,
   MessageStatus,
   AutomatedTaskType,
+  AutomatedTaskResolutionStatus,
+  AutomatedTaskStatusMap,
   CommunicationRecipient,
   CommunicationFilters,
   MessageRecord,
@@ -57,10 +60,12 @@ import type {
   SendMessageResult,
   TemplateRecord,
   SentTaskStatusOptions,
+  AutomatedTaskStatusMap,
 } from './communication/types';
 
 export const communicationService = {
   ...messageRepository,
+  getAutomatedTaskStatuses,
   getSentTaskStatuses,
   wasMessageSent,
   resolveRecipients,
@@ -77,6 +82,10 @@ export const communicationService = {
     perPage: number,
     filterString?: string
   ) => Promise<ListResult<MessageRecord>>;
+  getAutomatedTaskStatuses: (
+    eventIds: string[],
+    options?: SentTaskStatusOptions
+  ) => Promise<AutomatedTaskStatusMap>;
   getSentTaskStatuses: (
     eventIds: string[],
     options?: SentTaskStatusOptions
@@ -107,6 +116,7 @@ export const communicationService = {
     recipients: CommunicationRecipient[]
   ) => Promise<{ previewContent: string; logs: string[] }>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
+  archiveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   sendBulkMessage: (
     data: SendMessageInput,
     draftId?: string
