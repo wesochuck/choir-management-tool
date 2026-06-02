@@ -702,6 +702,8 @@ export default function AuditionsView() {
         isOpen={isModalOpen}
         onClose={() => { setEditingAudition(null); setIsModalOpen(false); }}
         onSave={handleSaveAudition}
+        settings={settings}
+        performances={performances}
       />
 
       <BaseModal
