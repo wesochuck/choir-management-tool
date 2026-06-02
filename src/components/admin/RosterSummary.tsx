@@ -56,15 +56,23 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
     return { partCounts: pc, sectionCounts: sc, sectionsList: sectionsListToUse };
   }, [profiles, voiceParts, sections]);
 
-  const total = profiles.length;
+  const singerTotal = profiles.filter(p => !!p.voicePart).length;
+  const staffTotal = profiles.length - singerTotal;
 
   return (
     <AppCard 
       title="Voice Part Balance"
       actions={
-        <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
-          Total: {total} Singers
-        </span>
+        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
+            {singerTotal} Singers
+          </span>
+          {staffTotal > 0 && (
+            <span className="badge badge-muted" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px', backgroundColor: 'var(--border)', color: 'var(--text-muted)' }}>
+              {staffTotal} Staff
+            </span>
+          )}
+        </div>
       }
       style={{ gap: 'var(--space-md)' }}
     >
