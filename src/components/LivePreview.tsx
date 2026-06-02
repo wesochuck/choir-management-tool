@@ -7,12 +7,16 @@ interface LivePreviewProps {
   smsBody: string;
   recipientName?: string;
   recipientEmail?: string;
+  senderName?: string;
+  senderEmail?: string;
 }
 
 interface EmailMockupProps {
   previewDevice: 'desktop' | 'mobile';
   recipientName: string;
   recipientEmail: string;
+  senderName: string;
+  senderEmail: string;
   subject: string;
   bodyHtml: string;
 }
@@ -26,6 +30,8 @@ const EmailMockup: React.FC<EmailMockupProps> = ({
   previewDevice,
   recipientName,
   recipientEmail,
+  senderName,
+  senderEmail,
   subject,
   bodyHtml,
 }) => (
@@ -57,7 +63,9 @@ const EmailMockup: React.FC<EmailMockupProps> = ({
     >
       <div style={{ display: 'flex', color: '#64748b' }}>
         <span style={{ width: '60px', fontWeight: 600 }}>From:</span>
-        <span style={{ color: '#1e293b' }}>Choir Management &lt;no-reply@choir.management&gt;</span>
+        <span style={{ color: '#1e293b' }}>
+          {senderName} &lt;{senderEmail}&gt;
+        </span>
       </div>
       <div style={{ display: 'flex', color: '#64748b' }}>
         <span style={{ width: '60px', fontWeight: 600 }}>To:</span>
@@ -154,6 +162,8 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
   smsBody,
   recipientName = 'Active Choir Members',
   recipientEmail = 'singers@yourchoir.org',
+  senderName = 'Choir Management',
+  senderEmail = 'no-reply@choir.management',
 }) => {
   const [activeTab, setActiveTab] = useState<'email' | 'sms'>(
     channel === 'SMS' ? 'sms' : 'email'
@@ -227,6 +237,8 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
             previewDevice={previewDevice}
             recipientName={recipientName}
             recipientEmail={recipientEmail}
+            senderName={senderName}
+            senderEmail={senderEmail}
             subject={subject}
             bodyHtml={bodyHtml}
           />
@@ -237,3 +249,4 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
     </div>
   );
 };
+

@@ -16,7 +16,6 @@ import type { Event } from '../../../services/eventService';
 import type { SectionDef, CommunicationSettings } from '../../../services/settingsService';
 import type { WizardStep } from './types';
 import { mapToMessageTemplate } from './templateMapping';
-import { resolvePreviewContent } from '../../../lib/communicationUtils';
 import type { ValidationWarning } from '../../../utils/communicationValidation';
 
 interface ComposePanelProps {
@@ -67,6 +66,8 @@ interface ComposePanelProps {
   editorRef: React.MutableRefObject<EasyMDE | null>;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
   user: import('../../../types/auth').ChoirUser | null;
+  choirName: string;
+  senderEmail: string;
 }
 
 export function ComposePanel({
@@ -105,7 +106,10 @@ export function ComposePanel({
   editorRef,
   onViewRecipients,
   user,
+  choirName,
+  senderEmail,
 }: ComposePanelProps) {
+
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -141,7 +145,7 @@ export function ComposePanel({
       <WizardStepper
         steps={[
           { number: 1, id: 'TARGETS', label: 'Recipients', isValid: true },
-          { number: 2, id: 'COMPOSE', label: 'Compose & Preview', isValid: true },
+          { number: 2, id: 'COMPOSE', label: 'Compose', isValid: true },
           {
             number: 3,
             id: 'REVIEW',
@@ -420,58 +424,45 @@ export function ComposePanel({
             </div>
           </div>
           <div className="compose-grid">
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-            <AppCard title="Composer">
-              <ComposeStep
-                subject={subject}
-                onSubjectChange={setSubject}
-                messageType={messageType}
-                onMessageTypeChange={setMessageType}
-                content={content}
-                onContentChange={setContent}
-                editorRef={editorRef}
-                warnings={warnings}
-              />
-            </AppCard>
-
-            <AppCard noPadding>
-              <div style={{ padding: '24px' }}>
-                <LivePreview
-                  channel={messageType}
-                  subject={resolvePreviewContent(subject, selectedEvent, previewRecipient)}
-                  bodyHtml={previewHtml}
-                  smsBody={resolvePreviewContent(content, selectedEvent, previewRecipient)}
-                  recipientName={previewRecipient?.name}
-                  recipientEmail={previewRecipient?.email}
+            <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+              <AppCard title="Composer">
+                <ComposeStep
+                  subject={subject}
+                  onSubjectChange={setSubject}
+                  messageType={messageType}
+                  onMessageTypeChange={setMessageType}
+                  content={content}
+                  onContentChange={setContent}
+                  editorRef={editorRef}
+                  warnings={warnings}
                 />
-              </div>
-            </AppCard>
+              </AppCard>
 
-            <div
-              className="wizard-action-footer flex-responsive"
-              style={{ justifyContent: 'space-between', width: '100%' }}
-            >
-              <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
-                ← Back to Recipients
-              </button>
-              <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
-                <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
-                  {isSavingDraft ? 'Saving...' : 'Save Draft'}
+              <div
+                className="wizard-action-footer flex-responsive"
+                style={{ justifyContent: 'space-between', width: '100%' }}
+              >
+                <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
+                  ← Back to Recipients
                 </button>
-                <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
-                  Next: Review & Send →
-                </button>
+                <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
+                  <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                    {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                  </button>
+                  <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
+                    Next: Review & Send →
+                  </button>
+                </div>
               </div>
             </div>
+            <PlaceholderPanel
+              onInsert={onInsertPlaceholder}
+              hasEvent={!!filters.eventId}
+              hasApprovedSetList={(() => {
+                return selectedEvent ? selectedEvent.setListApproved !== false : false;
+              })()}
+            />
           </div>
-          <PlaceholderPanel
-            onInsert={onInsertPlaceholder}
-            hasEvent={!!filters.eventId}
-            hasApprovedSetList={(() => {
-              return selectedEvent ? selectedEvent.setListApproved !== false : false;
-            })()}
-          />
-        </div>
       </div>
       )}
 
@@ -534,6 +525,8 @@ export function ComposePanel({
                   smsBody={renderedSmsBody}
                   recipientName={previewRecipient?.name}
                   recipientEmail={previewRecipient?.email}
+                  senderName={choirName}
+                  senderEmail={senderEmail}
                 />
               </div>
             </AppCard>

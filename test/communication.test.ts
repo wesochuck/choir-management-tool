@@ -143,6 +143,31 @@ test('frontend renderMarkdown - link security whitelisting and escaping', () => 
   assert.ok(!escapeQuotes.includes('onclick="alert(1)"'));
 });
 
+test('frontend renderMarkdown - headings and ordered lists', () => {
+  // Headings
+  const h1 = renderMarkdown('# Heading 1');
+  assert.ok(h1.includes('<h1'));
+  assert.ok(h1.includes('Heading 1'));
+
+  const h2 = renderMarkdown('## Heading 2');
+  assert.ok(h2.includes('<h2'));
+  assert.ok(h2.includes('Heading 2'));
+
+  // Ordered Lists
+  const ol = renderMarkdown('1. First item\n2. Second item');
+  assert.ok(ol.includes('<ol'));
+  assert.ok(ol.includes('<li>First item</li>'));
+  assert.ok(ol.includes('<li>Second item</li>'));
+  assert.ok(ol.includes('</ol>'));
+
+  // Mixed Lists
+  const mixed = renderMarkdown('* Unordered\n1. Ordered');
+  assert.ok(mixed.includes('<ul'));
+  assert.ok(mixed.includes('</ul>'));
+  assert.ok(mixed.includes('<ol'));
+  assert.ok(mixed.includes('</ol>'));
+});
+
 test('communicationService.getMessagesPaginated calls pocketbase with expected limits', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalCollection = pb.collection;

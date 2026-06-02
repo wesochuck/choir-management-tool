@@ -6,8 +6,10 @@ import {
 } from '../../../services/communicationService';
 import {
   DEFAULT_COMMUNICATION_SETTINGS,
+  DEFAULT_COMMUNICATION_CONFIG,
   settingsService,
   type CommunicationSettings,
+  type CommunicationConfig,
 } from '../../../services/settingsService';
 
 export function useCommunicationLibrary() {
@@ -17,6 +19,9 @@ export function useCommunicationLibrary() {
   const [templates, setTemplates] = useState<TemplateRecord[]>([]);
   const [commSettings, setCommSettings] =
     useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
+  const [commConfig, setCommConfig] =
+    useState<CommunicationConfig>(DEFAULT_COMMUNICATION_CONFIG);
+  const [choirName, setChoirName] = useState<string>('Choir Management');
 
   const [editingTemplate, setEditingTemplate] =
     useState<Partial<TemplateRecord> | null>(null);
@@ -48,11 +53,15 @@ export function useCommunicationLibrary() {
           loadedDrafts,
           loadedTemplates,
           loadedSettings,
+          loadedConfig,
+          loadedChoirName,
         ] = await Promise.all([
           communicationService.getMessagesPaginated(1, 5),
           communicationService.getDrafts(),
           communicationService.getTemplates(),
           settingsService.getCommunicationSettings(),
+          settingsService.getCommunicationConfig(),
+          settingsService.getChoirName(),
         ]);
 
         setHistory(historyPageResult.items);
@@ -60,6 +69,8 @@ export function useCommunicationLibrary() {
         setDrafts(loadedDrafts);
         setTemplates(loadedTemplates);
         setCommSettings(loadedSettings);
+        setCommConfig(loadedConfig);
+        if (loadedChoirName) setChoirName(loadedChoirName);
       } catch (err) {
         console.error('Failed to load initial communication data', err);
       } finally {
@@ -81,6 +92,8 @@ export function useCommunicationLibrary() {
     setTemplates,
     commSettings,
     setCommSettings,
+    commConfig,
+    choirName,
     editingTemplate,
     setEditingTemplate,
     historyPage,
@@ -92,3 +105,4 @@ export function useCommunicationLibrary() {
     setIsSavingConfig,
   };
 }
+

@@ -27,6 +27,8 @@ export interface SettingsPanelProps {
   onInsertPlaceholder: (tag: string) => void;
   editorRef: React.MutableRefObject<EasyMDE | null>;
   dialog: ReturnType<typeof useDialog>;
+  choirName: string;
+  senderEmail: string;
 }
 
 export function SettingsPanel({
@@ -46,6 +48,8 @@ export function SettingsPanel({
   onInsertPlaceholder,
   editorRef,
   dialog,
+  choirName,
+  senderEmail,
 }: SettingsPanelProps) {
   return (
     <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
@@ -59,6 +63,8 @@ export function SettingsPanel({
           previewHtml={previewHtml}
           onInsertPlaceholder={onInsertPlaceholder}
           editorRef={editorRef}
+          choirName={choirName}
+          senderEmail={senderEmail}
         />
       ) : (
         <>
@@ -91,7 +97,10 @@ export function SettingsPanel({
             previewHtml={previewHtml}
             onInsertPlaceholder={onInsertPlaceholder}
             editorRef={editorRef}
+            choirName={choirName}
+            senderEmail={senderEmail}
           />
+
 
 
           <AppCard title="Test Server SMTP Connection">

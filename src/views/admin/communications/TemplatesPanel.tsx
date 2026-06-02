@@ -23,6 +23,8 @@ export interface TemplatesPanelProps {
   previewHtml: string;
   onInsertPlaceholder: (tag: string) => void;
   editorRef: React.MutableRefObject<EasyMDE | null>;
+  choirName: string;
+  senderEmail: string;
 }
 
 export function TemplatesPanel({
@@ -35,8 +37,11 @@ export function TemplatesPanel({
   previewHtml,
   onInsertPlaceholder,
   editorRef,
+  choirName,
+  senderEmail,
 }: TemplatesPanelProps) {
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+
 
   if (editingTemplate) {
     return (
@@ -184,7 +189,7 @@ export function TemplatesPanel({
                   <div style={{ display: 'flex', color: '#64748b' }}>
                     <span style={{ width: '60px', fontWeight: 600 }}>From:</span>
                     <span style={{ color: '#1e293b' }}>
-                      Choir Management &lt;no-reply@choir.management&gt;
+                      {choirName} &lt;{senderEmail}&gt;
                     </span>
                   </div>
                   <div style={{ display: 'flex', color: '#64748b' }}>

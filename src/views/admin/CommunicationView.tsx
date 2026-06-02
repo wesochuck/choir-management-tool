@@ -213,6 +213,8 @@ export default function CommunicationView() {
           onInsertPlaceholder={insertPlaceholder}
           onViewRecipients={handleViewRecipients}
           user={user}
+          choirName={library.choirName}
+          senderEmail={library.commConfig.smtp.from || 'no-reply@choir.management'}
         />
       )}
 
@@ -351,6 +353,8 @@ export default function CommunicationView() {
           onInsertPlaceholder={insertPlaceholder}
           editorRef={editorRef}
           dialog={dialog}
+          choirName={library.choirName}
+          senderEmail={library.commConfig.smtp.from || 'no-reply@choir.management'}
         />
       )}
 
