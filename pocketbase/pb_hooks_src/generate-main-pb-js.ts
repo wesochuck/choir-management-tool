@@ -17,7 +17,8 @@ type UtilityBundleName =
     | 'queueProcessor'
     | 'calendarEndpoint'
     | 'singerSeatingEndpoint'
-    | 'hmacTokens';
+    | 'hmacTokens'
+    | 'timezone';
 
 type UtilityBundle = {
     files: string[];
