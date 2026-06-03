@@ -18,6 +18,7 @@ export default function DashboardView() {
   const [announcements, setAnnouncements] = useState<MessageRecord[]>([]);
   const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
     if (myProfile?.id) {
@@ -73,6 +74,10 @@ export default function DashboardView() {
         .finally(() => setIsAnnouncementsLoading(false));
     }
   }, [myProfile?.id]);
+
+  useEffect(() => {
+    setCurrentTime(Date.now());
+  }, [events]);
 
   const handlePollResponse = async (pollId: string, status: 'Yes' | 'No') => {
     if (!myProfile?.id) return;
@@ -137,7 +142,7 @@ export default function DashboardView() {
   const isNextEventClosed = nextEvent ? (
     nextEvent.type === 'Performance' 
       ? !nextEvent.isOpenForRSVP 
-      : new Date(nextEvent.date).getTime() < Date.now()
+      : new Date(nextEvent.date).getTime() < currentTime
   ) : false;
 
   const nextEventLabels = nextEvent?.type === 'Rehearsal' ? {
@@ -435,4 +440,3 @@ export default function DashboardView() {
     </PageLayout>
   );
 }
-

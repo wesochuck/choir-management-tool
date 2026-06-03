@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveAttendanceReportRecipients, triggerAttendanceReport } from '../src/services/communication/attendanceReportService.ts';
 import { messageRepository } from '../src/services/communication/messageRepository.ts';
+import type { MessageRecord } from '../src/services/communication/types.ts';
 
 test('resolveAttendanceReportRecipients filters correctly', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
@@ -80,7 +81,7 @@ test('resolveAttendanceReportRecipients filters correctly', async () => {
       };
     }
     return originalCollection.call(pb, name);
-  }) as any;
+  }) as unknown as typeof pb.collection;
 
   try {
     const recipients = await resolveAttendanceReportRecipients();
@@ -123,8 +124,11 @@ test('triggerAttendanceReport throws if no recipients', async () => {
     if (name === 'events') {
       return { getOne: async () => ({ id: 'e1', date: new Date().toISOString(), title: 'Test' }) };
     }
+    if (name === 'appSettings') {
+      return { getFirstListItem: async () => ({ id: 'settings-communications', value: {} }) };
+    }
     return originalCollection.call(pb, name);
-  }) as any;
+  }) as unknown as typeof pb.collection;
 
   try {
     await assert.rejects(
@@ -141,10 +145,10 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
   const originalCollection = pb.collection;
   const originalSaveMessage = messageRepository.saveMessage;
 
-  let savedMessage: any = null;
+  let savedMessage: MessageRecord | null = null;
   messageRepository.saveMessage = async (data) => {
-    savedMessage = data;
-    return {} as any;
+    savedMessage = data as MessageRecord;
+    return { id: 'm1', created: '', ...data } as MessageRecord;
   };
 
   pb.collection = ((name: string) => {
@@ -165,8 +169,11 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
     if (name === 'eventRosters') {
       return { getFullList: async () => [{ id: 'r1', attendance: 'Present', profile: 'p1' }] };
     }
+    if (name === 'appSettings') {
+      return { getFirstListItem: async () => ({ id: 'settings-communications', value: {} }) };
+    }
     return originalCollection.call(pb, name);
-  }) as any;
+  }) as unknown as typeof pb.collection;
 
   try {
     await triggerAttendanceReport('e1');

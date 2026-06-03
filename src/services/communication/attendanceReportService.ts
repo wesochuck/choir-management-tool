@@ -61,8 +61,9 @@ export async function resolveAttendanceReportRecipients(): Promise<Communication
         profile.doNotEmail !== true
       );
     })
-    .map((profile) => {
-      const user = profile.expand?.user!;
+    .flatMap((profile) => {
+      const user = profile.expand?.user;
+      if (!user?.email) return [];
       return {
         id: profile.user || profile.id,
         name:

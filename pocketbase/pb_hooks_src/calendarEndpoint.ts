@@ -49,7 +49,8 @@ function getChoirNameLocal(app: PocketBaseApp): string {
         }
 
         if (parsed && typeof parsed === "object") {
-            const value = (parsed as any).name || (parsed as any).choirName || (parsed as any).value;
+            const parsedRecord = parsed as Record<string, unknown>;
+            const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
             const nestedName = safeTrim(value);
             if (nestedName) {
                 return nestedName;
@@ -62,7 +63,7 @@ function getChoirNameLocal(app: PocketBaseApp): string {
     return "Choir";
 }
 
-function safeTrim(str: any): string {
+function safeTrim(str: unknown): string {
     if (!str) return "";
     return String(str).replace(/^\s+|\s+$/g, "");
 }
@@ -576,5 +577,4 @@ export function handleCalendarFeedReset(e: PocketBaseRequestEvent): unknown {
         return e.json(500, { error: "Failed to reset calendar feed: " + String(err) });
     }
 }
-
 
