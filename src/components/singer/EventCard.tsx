@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Event } from '../../services/eventService';
 import { calendarUtils } from '../../lib/calendar';
-import { getSetListVisibilityResult } from '../../lib/eventUtils';
+import { getSingerSetListPreview } from '../../lib/eventUtils';
 import type { EventRoster } from '../../services/rosterService';
 import { AppCard } from '../common/AppCard';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
@@ -37,47 +37,47 @@ export const EventCard: React.FC<EventCardProps> = ({
     yes: rsvp === 'Yes' ? '✓ Attending' : "I'll be there",
     no: rsvp === 'No' ? '✗ Absence Reported' : 'Report absence'
   };
-  const { showSetList, setList } = getSetListVisibilityResult(event, myRosters, allEvents);
+  const previewData = getSingerSetListPreview(event, myRosters, allEvents);
 
   React.useEffect(() => {
     setNow(Date.now());
   }, [event.id]);
 
   const handleOpenPlayer = () => {
-    navigate(`/player?eventId=${event.id}`);
+    navigate(`/player?eventId=${previewData.playerId}`);
   };
 
   return (
     <AppCard noPadding>
       <div className="flex-col" style={{ padding: 'var(--space-lg)', gap: 'var(--space-md)' }}>
         <div className="event-card-top-row flex-row" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-           <span className={`badge ${isPerformance ? 'badge-performance' : 'badge-rehearsal'}`}>
-              {event.type}
-            </span>
-            <div className="flex-row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => calendarUtils.generateICS(event)}
-                className="btn btn-ghost btn-sm"
-              >
-                📅 Add
-              </button>
-              {showSetList && setList && setList.length > 0 && (
-                <button 
-                  onClick={handleOpenPlayer}
-                  className="btn btn-primary btn-sm"
-                >
-                  🎧 Practice
-                </button>
-              )}
-              {isPerformance && (
-                <Link 
-                  to={`/seating/${event.id}`}
-                  className="btn btn-secondary btn-sm"
-                >
-                  🪑 Seating
-                </Link>
-              )}
-            </div>
+            <span className={`badge ${isPerformance ? 'badge-performance' : 'badge-rehearsal'}`}>
+               {event.type}
+             </span>
+             <div className="flex-row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+               <button 
+                 onClick={() => calendarUtils.generateICS(event)}
+                 className="btn btn-ghost btn-sm"
+               >
+                 📅 Add
+               </button>
+               {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
+                 <button 
+                   onClick={handleOpenPlayer}
+                   className="btn btn-primary btn-sm"
+                 >
+                   🎧 Practice
+                 </button>
+               )}
+               {isPerformance && (
+                 <Link 
+                   to={`/seating/${event.id}`}
+                   className="btn btn-secondary btn-sm"
+                 >
+                   🪑 Seating
+                 </Link>
+               )}
+             </div>
         </div>
 
 
@@ -117,6 +117,46 @@ export const EventCard: React.FC<EventCardProps> = ({
           </div>
           {event.details && <p className="text-muted text-sm">{event.details}</p>}
         </div>
+
+        {previewData.visible && previewData.setList.length > 0 && (
+          <div
+            className="setlist-preview-box"
+            style={{
+              padding: 'var(--space-md)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              margin: 'var(--space-sm) 0',
+              background: 'var(--surface)',
+            }}
+          >
+            <h5 style={{ margin: '0 0 var(--space-xs) 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              📋 {previewData.label}
+            </h5>
+
+            <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
+              {previewData.setList.slice(0, 6).map((item, idx) => {
+                const rawItem = item as unknown as Record<string, unknown>;
+                const itemTitle = (rawItem.title || rawItem.pieceTitle || 'Untitled Piece') as string;
+                return (
+                  <li key={item.id || `${itemTitle}-${idx}`} style={{ marginBottom: '4px' }}>
+                    <strong>{itemTitle}</strong>
+                    {item.composer && (
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                        {' '}— {item.composer}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+
+            {previewData.setList.length > 6 && (
+              <small style={{ display: 'block', marginTop: 'var(--space-xs)', color: 'var(--text-muted)', fontWeight: 'bold' }}>
+                + {previewData.setList.length - 6} more in the Practice Player
+              </small>
+            )}
+          </div>
+        )}
 
         <div className="event-card-rsvp-actions flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
           <button 

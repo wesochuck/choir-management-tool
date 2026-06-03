@@ -90,57 +90,88 @@ export function getSetListVisibility(event: EventLike | null | undefined, userRo
   return true;
 }
 
-export interface SetListVisibilityResult {
-  showSetList: boolean;
-  setList?: SetListItem[];
-  headerLabel?: string;
+export interface SingerSetListPreviewResult {
+  visible: boolean;
+  setList: SetListItem[];
+  label: string;
+  playerId: string;
+}
+
+export function getSingerSetListPreview(
+  event: Event,
+  myRosters: Record<string, Pick<EventRoster, 'rsvp'>> = {},
+  allEvents: Event[] = []
+): SingerSetListPreviewResult {
+  const defaultResult: SingerSetListPreviewResult = {
+    visible: false,
+    setList: [],
+    label: '',
+    playerId: event.id,
+  };
+
+  const eventRsvp = myRosters?.[event.id]?.rsvp;
+
+  // 1. Performance Processing Logic
+  if (event.type === 'Performance') {
+    if (event.setListApproved === false || eventRsvp !== 'Yes') return defaultResult;
+    const setList = event.setList || [];
+    if (setList.length === 0) return defaultResult;
+
+    return {
+      visible: true,
+      setList,
+      label: 'Performance Set List',
+      playerId: event.id,
+    };
+  }
+
+  // 2. Rehearsal Processing Logic
+  if (event.type === 'Rehearsal') {
+    const parent = allEvents.find(e => e.id === event.parentPerformanceId) || event.expand?.parentPerformanceId;
+    const parentRsvp = parent ? myRosters?.[parent.id]?.rsvp : undefined;
+
+    // Singer must be attending either the rehearsal itself or the main show context
+    if (eventRsvp !== 'Yes' && parentRsvp !== 'Yes') return defaultResult;
+
+    // Check rehearsal-specific focus pieces first
+    const rehearsalSetList = event.setList || [];
+    if (rehearsalSetList.length > 0) {
+      if (event.setListApproved === false) return defaultResult;
+      return {
+        visible: true,
+        setList: rehearsalSetList,
+        label: 'Rehearsal Focus Pieces',
+        playerId: event.id,
+      };
+    }
+
+    // Fall back to the parent performance set list if no rehearsal-specific list exists
+    const parentSetList = parent?.setList || [];
+    if (parent && parentSetList.length > 0 && parent.setListApproved !== false) {
+      return {
+        visible: true,
+        setList: parentSetList,
+        label: `Set List for ${parent.title || 'Concert'}`,
+        playerId: parent.id,
+      };
+    }
+  }
+
+  return defaultResult;
 }
 
 export function getSetListVisibilityResult(
   event: Event,
   myRosters: Record<string, Pick<EventRoster, 'rsvp'>> = {},
   allEvents: Event[] = []
-): SetListVisibilityResult {
-  if (!event) return { showSetList: false };
-
-  const isPerformance = event.type === 'Performance';
-  const isRehearsal = event.type === 'Rehearsal';
-
-  if (isPerformance) {
-    if (event.setListApproved === false) {
-      return { showSetList: false };
-    }
-    const rsvp = myRosters?.[event.id]?.rsvp;
-    if (rsvp === 'Yes') {
-      return {
-        showSetList: true,
-        setList: event.setList || [],
-        headerLabel: 'Set List'
-      };
-    }
+) {
+  const result = getSingerSetListPreview(event, myRosters, allEvents);
+  if (!result.visible) {
     return { showSetList: false };
   }
-
-  if (isRehearsal) {
-    const parentId = event.parentPerformanceId;
-    if (!parentId) return { showSetList: false };
-
-    const parentPerformance = allEvents.find(e => e.id === parentId) || event.expand?.parentPerformanceId;
-    if (!parentPerformance) return { showSetList: false };
-
-    if (parentPerformance.setListApproved === false) {
-      return { showSetList: false };
-    }
-
-    const parentRsvp = myRosters?.[parentId]?.rsvp;
-    if (parentRsvp === 'Yes') {
-      return {
-        showSetList: true,
-        setList: parentPerformance.setList || [],
-        headerLabel: `Set List for ${parentPerformance.title || 'Concert'}`
-      };
-    }
-  }
-
-  return { showSetList: false };
+  return {
+    showSetList: result.visible,
+    setList: result.setList,
+    headerLabel: result.label === 'Performance Set List' ? 'Set List' : result.label,
+  };
 }

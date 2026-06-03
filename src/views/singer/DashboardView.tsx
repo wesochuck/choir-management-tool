@@ -155,8 +155,7 @@ export default function DashboardView() {
 
   return (
     <PageLayout 
-      title="Upcoming Events" 
-      subtitle="Please let us know if you can make it!"
+      title="Singer Dashboard" 
       actions={
         <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
           <Link to="/profile" className="btn btn-ghost">My Profile</Link>
@@ -240,6 +239,7 @@ export default function DashboardView() {
           
           {/* Main timeline panel: Events */}
           <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neutral-dark)', margin: '0 0 var(--space-xs) 0' }}>Upcoming Events</h2>
             {upcomingEvents.map((e) => (
               <EventCard 
                 key={e.id} 
