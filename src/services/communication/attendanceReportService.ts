@@ -43,33 +43,38 @@ export function renderManualAttendanceReportTemplate(params: {
 }
 
 export async function resolveAttendanceReportRecipients(): Promise<CommunicationRecipient[]> {
+  // Fetch profiles broadly with expanded users to avoid PocketBase relation filter issues in production
   const profiles = await pb.collection('profiles').getFullList<Profile>({
-    filter: "user.role = 'admin' && user.email != '' && globalStatus != 'Inactive'",
     expand: 'user',
     sort: 'name',
   });
 
   return profiles
     .filter((profile) => {
-      const email = profile.expand?.user?.email;
+      const user = profile.expand?.user;
       return (
-        !!email &&
+        user?.role === 'admin' &&
+        !!user.email &&
+        profile.globalStatus !== 'Inactive' &&
         profile.receiveAttendanceReports !== false &&
         profile.doNotEmail !== true
       );
     })
-    .map((profile) => ({
-      id: profile.user || profile.id,
-      name:
-        profile.name ||
-        profile.expand?.user?.name ||
-        profile.expand?.user?.email ||
-        'Admin',
-      email: profile.expand?.user?.email || '',
-      phone: profile.phone || '',
-      voicePart: 'Admin',
-      globalStatus: 'Admin',
-    }));
+    .map((profile) => {
+      const user = profile.expand?.user!;
+      return {
+        id: profile.user || profile.id,
+        name:
+          profile.name ||
+          user.name ||
+          user.email ||
+          'Admin',
+        email: user.email,
+        phone: profile.phone || '',
+        voicePart: 'Admin',
+        globalStatus: 'Admin',
+      };
+    });
 }
 
 export async function triggerAttendanceReport(eventId: string): Promise<MessageRecord> {
