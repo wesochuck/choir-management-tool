@@ -294,3 +294,38 @@ test('Raw SQL queries in main.pb.js do not use raw colon parameter syntax', () =
     }
 });
 
+test('Generated main.pb.js contains no top-level function helper definitions outside callbacks', () => {
+    const content = readGeneratedMain();
+    
+    // We parse the file sequentially and track brace depth to ensure any "function <name>" 
+    // keyword is declared only at a brace depth of >= 1 (inside a callback/cron closure block).
+    let braceDepth = 0;
+    const lines = content.split('\n');
+    
+    lines.forEach((line, idx) => {
+        // Simple brace counting
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === '{') braceDepth++;
+            if (line[i] === '}') braceDepth--;
+        }
+        
+        const trimmed = line.trim();
+        if (trimmed.startsWith('function ') && braceDepth <= 1) {
+            // A function declaration starting at brace depth 0 (or 1 if the brace opening is on the same line after the function keyword)
+            // is defined in the global scope of main.pb.js.
+            // Safe inline callback utilities will always be inside route registrations, which start with:
+            // routerAdd(..., (e) => {
+            // inside which the brace depth is already >= 1 before the function is declared.
+            // If braceDepth <= 0 (or 1 and the function itself is on this line, meaning it wasn't opened in a parent block), it's global.
+            const hasPrecedingOpeningBrace = line.includes('{') && line.indexOf('{') > line.indexOf('function');
+            const actualDepthBeforeLine = braceDepth - (line.match(/{/g) || []).length + (line.match(/}/g) || []).length;
+            
+            if (actualDepthBeforeLine === 0) {
+                assert.fail(`CRITICAL: Found top-level function declaration at line ${idx + 1} of main.pb.js: "${trimmed}". Registered callbacks must contain all their helper utilities locally inside the callback wrapper to prevent ReferenceError issues on PocketHost.`);
+            }
+        }
+    });
+});
+
+
+
