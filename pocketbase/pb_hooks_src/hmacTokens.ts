@@ -19,14 +19,28 @@ export function getHmacSecret(): string {
     }
 }
 
+/**
+ * Enforces strict payload property serialization order for Player links.
+ */
+export function getPlayerPayload(eventId: string): string {
+    return `e=${eventId}`;
+}
+
+/**
+ * Enforces strict payload property serialization order for Event+Recipient links (RSVP, Calendar).
+ */
+export function getEventRecipientPayload(eventId: string, recipientId: string): string {
+    return `e=${eventId}&p=${recipientId}`;
+}
+
 export function generateSignedPlayerToken(eventId: string, secret: string): string {
-    const payload = `e=${eventId}`;
+    const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
 
 export function generateSignedEventRecipientToken(eventId: string, recipientId: string, secret: string): string {
-    const payload = `e=${eventId}&p=${recipientId}`;
+    const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }

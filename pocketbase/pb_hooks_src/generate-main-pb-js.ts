@@ -87,7 +87,7 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     },
     hmacTokens: {
         files: ['hmacTokens.ts'],
-        symbols: ['getHmacSecret', 'generateSignedPlayerToken', 'generateSignedEventRecipientToken', 'parseSignedToken'],
+        symbols: ['getHmacSecret', 'getPlayerPayload', 'getEventRecipientPayload', 'generateSignedPlayerToken', 'generateSignedEventRecipientToken', 'parseSignedToken'],
         dependsOn: ['hookJson'],
     },
     timezone: {

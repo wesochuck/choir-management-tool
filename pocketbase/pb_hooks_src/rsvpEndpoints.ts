@@ -13,6 +13,7 @@ declare function routerAdd(method: string, path: string, handler: (e: PocketBase
 declare function getHmacSecret(): string;
 declare function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null;
 declare function generateSignedEventRecipientToken(eventId: string, recipientId: string, secret: string): string;
+declare function getEventRecipientPayload(eventId: string, recipientId: string): string;
 declare function processEmailQueue(app: PocketBaseApp): void;
 
 interface TxApp extends PocketBaseApp {
@@ -78,7 +79,7 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const payload = `e=${parts.e}&p=${parts.p}`;
+    const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
@@ -214,7 +215,7 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const payload = `e=${parts.e}&p=${parts.p}`;
+    const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {

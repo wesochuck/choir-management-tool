@@ -1,6 +1,6 @@
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { parseJsonField } from './email/hookJson';
-import { getHmacSecret, parseSignedToken } from './hmacTokens';
+import { getHmacSecret, parseSignedToken, getPlayerPayload, getEventRecipientPayload } from './hmacTokens';
 import { getTimezoneOffsetInfo } from './email/hookText';
 import { zonedInputValueToUtcLocal } from './timezone';
 
@@ -147,11 +147,11 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
     // Determine payload signature
     let payload: string;
     if (parts.e && parts.p) {
-        payload = `e=${parts.e}&p=${parts.p}`;
-    } else if (parts.a) {
-        payload = `a=${parts.a}`;
+        payload = getEventRecipientPayload(parts.e, parts.p);
+    } else if (parts.e) {
+        payload = getPlayerPayload(parts.e);
     } else {
-        return e.json(400, { error: "Invalid token structure" });
+        return e.json(400, { error: "Invalid token payload" });
     }
 
     const expectedSignature = $security.hs256(payload, secret);

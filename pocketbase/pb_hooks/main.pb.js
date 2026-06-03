@@ -700,13 +700,19 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -1559,13 +1565,19 @@ onRecordAfterCreateSuccess((e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -2423,13 +2435,19 @@ onRecordAfterUpdateSuccess((e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -3248,13 +3266,19 @@ onRecordAfterCreateSuccess((e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -4219,13 +4243,19 @@ onRecordAfterUpdateSuccess((e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -4792,13 +4822,19 @@ function getHmacSecret() {
         return "";
     }
 }
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
 function generateSignedPlayerToken(eventId, secret) {
-    const payload = `e=${eventId}`;
+    const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
 function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-    const payload = `e=${eventId}&p=${recipientId}`;
+    const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -4903,13 +4939,19 @@ function getHmacSecret() {
         return "";
     }
 }
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
 function generateSignedPlayerToken(eventId, secret) {
-    const payload = `e=${eventId}`;
+    const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
 function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-    const payload = `e=${eventId}&p=${recipientId}`;
+    const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -4952,7 +4994,7 @@ function parseSignedToken(token, requiredKeys) {
     catch (_a) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
-    const payload = `e=${parts.e}&p=${parts.p}`;
+    const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
         console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
@@ -5453,13 +5495,19 @@ function getHmacSecret() {
         return "";
     }
 }
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
 function generateSignedPlayerToken(eventId, secret) {
-    const payload = `e=${eventId}`;
+    const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
 function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-    const payload = `e=${eventId}&p=${recipientId}`;
+    const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -5892,7 +5940,7 @@ function processEmailQueue(app) {
     catch (_a) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
-    const payload = `e=${parts.e}&p=${parts.p}`;
+    const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
         console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
@@ -6021,13 +6069,19 @@ function getHmacSecret() {
         return "";
     }
 }
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
 function generateSignedPlayerToken(eventId, secret) {
-    const payload = `e=${eventId}`;
+    const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
 function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-    const payload = `e=${eventId}&p=${recipientId}`;
+    const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -6641,13 +6695,19 @@ routerAdd("POST", "/api/queue/process", (e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -7244,13 +7304,19 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -7317,7 +7383,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         if (!secret) {
             return e.json(500, { error: "HMAC_SECRET not configured" });
         }
-        const payload = `e=${parts.e}`;
+        const payload = getPlayerPayload(parts.e);
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
             return e.json(401, { error: "Invalid signature" });
@@ -7451,13 +7517,19 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
     function generateSignedPlayerToken(eventId, secret) {
-        const payload = `e=${eventId}`;
+        const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
     function generateSignedEventRecipientToken(eventId, recipientId, secret) {
-        const payload = `e=${eventId}&p=${recipientId}`;
+        const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -7524,7 +7596,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         if (!secret) {
             return e.json(500, { error: "HMAC_SECRET not configured" });
         }
-        const payload = `e=${parts.e}`;
+        const payload = getPlayerPayload(parts.e);
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
             return e.json(401, { error: "Invalid signature" });
@@ -7999,13 +8071,13 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
         }
-        else if (parts.a) {
-            payload = `a=${parts.a}`;
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -8726,13 +8798,13 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
         }
-        else if (parts.a) {
-            payload = `a=${parts.a}`;
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -9453,13 +9525,13 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
         }
-        else if (parts.a) {
-            payload = `a=${parts.a}`;
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -10180,13 +10252,13 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
         }
-        else if (parts.a) {
-            payload = `a=${parts.a}`;
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {

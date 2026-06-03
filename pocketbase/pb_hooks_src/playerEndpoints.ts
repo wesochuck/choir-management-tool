@@ -1,5 +1,5 @@
 import { parseJsonField, decodeGoBytes } from './email/hookJson';
-import { getHmacSecret, generateSignedPlayerToken } from './hmacTokens';
+import { getHmacSecret, generateSignedPlayerToken, getPlayerPayload } from './hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent } from './email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -67,7 +67,7 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const payload = `e=${parts.e}`;
+    const payload = getPlayerPayload(parts.e);
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
