@@ -9,6 +9,8 @@ interface CheckInListProps {
   onUpdateFolder: (profileId: string, folderNumber: string, folderReturned: boolean) => Promise<void>;
   onEdit: (profileId: string) => void;
   sortBy: 'lastName' | 'voicePart';
+  missCounts?: Record<string, number>;
+  maxRehearsalMisses?: number;
 }
 
 // Local sub-component to manage Folder number input state cleanly without lag
@@ -65,7 +67,9 @@ const CheckInRow: React.FC<{
   onSetAttendance: (profileId: string, next: 'Present' | 'Absent' | 'Pending') => Promise<void>;
   onUpdateFolder: (profileId: string, folderNumber: string, folderReturned: boolean) => Promise<void>;
   onEdit: (profileId: string) => void;
-}> = ({ item, onSetAttendance, onUpdateFolder, onEdit }) => {
+  missCounts?: Record<string, number>;
+  maxRehearsalMisses?: number;
+}> = ({ item, onSetAttendance, onUpdateFolder, onEdit, missCounts, maxRehearsalMisses }) => {
   const navigate = useNavigate();
   const isPresent = item.attendance === 'Present';
   const isAbsent = item.attendance === 'Absent';
@@ -145,6 +149,22 @@ const CheckInRow: React.FC<{
               >
                 {item.voicePart}
               </span>
+              {missCounts && missCounts[item.profileId] !== undefined && missCounts[item.profileId] > 0 && (
+                <span
+                  className="badge"
+                  style={{
+                    fontSize: '9px',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '#fee2e2' : '#fef3c7',
+                    color: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '#991b1b' : '#92400e',
+                    border: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '1px solid #fca5a5' : '1px solid #fde68a',
+                    fontWeight: 800
+                  }}
+                >
+                  ⚠️ {missCounts[item.profileId]} missed
+                </span>
+              )}
             </div>
           </div>
           <div className="admin-checkin-status-summary">
@@ -278,7 +298,7 @@ const compareLastNames = (a: string, b: string): number => {
 
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 
-export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance, onUpdateFolder, onEdit, sortBy }) => {
+export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance, onUpdateFolder, onEdit, sortBy, missCounts, maxRehearsalMisses }) => {
   const { voiceParts } = useVoiceParts();
 
   const voicePartOrder = useMemo(() => {
@@ -357,6 +377,8 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
             onSetAttendance={onSetAttendance}
             onUpdateFolder={onUpdateFolder}
             onEdit={onEdit}
+            missCounts={missCounts}
+            maxRehearsalMisses={maxRehearsalMisses}
           />
         </React.Fragment>
       );

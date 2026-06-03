@@ -45,6 +45,7 @@ export interface RosterSettings {
   statusAutomationEnabled?: boolean;
   statusAutomationMissThreshold?: number;
   statusAutomationRecoveryEnabled?: boolean;
+  maxRehearsalMisses?: number;
 }
 
 export interface MusicGenreDef {
@@ -151,6 +152,7 @@ export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   statusAutomationEnabled: true,
   statusAutomationMissThreshold: 3,
   statusAutomationRecoveryEnabled: true,
+  maxRehearsalMisses: 3,
 };
 
 export const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {

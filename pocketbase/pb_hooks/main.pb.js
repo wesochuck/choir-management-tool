@@ -228,12 +228,18 @@ cronAdd("post_event_report", "0 * * * *", () => {
     "use strict";
     function renderAttendanceReportBody(data) {
         const safe = sanitizeHtmlTemplateData(data);
+        const exceededLimitSection = data.exceededLimitListHtml ? `
+        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 20px 0;" />
+        <h3 style="color: #b45309; margin-top: 0;">Singers Exceeding Rehearsal Miss Limit</h3>
+        ${data.exceededLimitListHtml}
+        ` : '';
         return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
         <h2>Attendance Report</h2>
         <p>Event: ${safe.eventTitle}</p>
         <p>Date: ${safe.eventDate}</p>
         <p>Attendance Rate: ${safe.attendanceRate}% (${safe.presentCount}/${safe.totalCount} present)</p>
+        ${exceededLimitSection}
         <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
         <div style="font-size: 12px; color: #94a3b8; text-align: center;">
             <p style="margin: 0 0 10px 0;">${safe.mailingAddress}</p>
@@ -269,6 +275,86 @@ cronAdd("post_event_report", "0 * * * *", () => {
     }
 
     events.forEach(event => {
+        // 1. Resolve linked performance & auto-finalize unmarked attendance for performing singers
+        const isPerformance = event.get("type") === "Performance";
+        const linkedPerfId = isPerformance ? event.id : event.get("parentPerformanceId");
+
+        let maxRehearsalMisses = 3;
+        try {
+            const rosterSettingRecord = $app.findFirstRecordByFilter("appSettings", "key = 'roster'");
+            const parsed = parseJsonField(rosterSettingRecord.get("value"));
+            if (parsed && parsed.maxRehearsalMisses !== undefined) {
+                maxRehearsalMisses = Number(parsed.maxRehearsalMisses);
+            }
+        } catch (e) {}
+
+        if (linkedPerfId) {
+            let linkedPerformance = null;
+            try {
+                linkedPerformance = $app.findRecordById("events", linkedPerfId);
+            } catch (e) {}
+
+            if (linkedPerformance) {
+                const activeProfiles = $app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
+
+                activeProfiles.forEach(profile => {
+                    let perfRsvpYes = false;
+                    try {
+                        const perfRosters = $app.findRecordsByFilter(
+                            "eventRosters",
+                            "event = {:perfId} && profile = {:profileId}",
+                            "",
+                            1,
+                            0,
+                            { perfId: linkedPerfId, profileId: profile.id }
+                        );
+                        if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
+                            perfRsvpYes = true;
+                        }
+                    } catch (e) {}
+
+                    if (perfRsvpYes) {
+                        let rosterRecord = null;
+                        try {
+                            const rosters = $app.findRecordsByFilter(
+                                "eventRosters",
+                                "event = {:eventId} && profile = {:profileId}",
+                                "",
+                                1,
+                                0,
+                                { eventId: event.id, profileId: profile.id }
+                            );
+                            if (rosters && rosters.length > 0) {
+                                rosterRecord = rosters[0];
+                            }
+                        } catch (e) {}
+
+                        if (!rosterRecord) {
+                            const rosterCollection = $app.findCollectionByNameOrId("eventRosters");
+                            rosterRecord = new Record(rosterCollection, {
+                                event: event.id,
+                                profile: profile.id,
+                                rsvp: "Pending",
+                                attendance: "Absent"
+                            });
+                            try {
+                                $app.save(rosterRecord);
+                            } catch (e) {
+                                console.log("Failed to auto-create Absent roster record: " + e);
+                            }
+                        } else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
+                            rosterRecord.set("attendance", "Absent");
+                            try {
+                                $app.save(rosterRecord);
+                            } catch (e) {
+                                console.log("Failed to auto-update roster record to Absent: " + e);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
         if (!rosters || rosters.length === 0) return;
 
@@ -283,13 +369,86 @@ cronAdd("post_event_report", "0 * * * *", () => {
                 .replace(/{eventTitle}/g, () => eventTitle)
                 .replace(/{eventDate}/g, () => eventDateStr)
         );
+
+        // Calculate exceeded limit section
+        let exceededLimitListHtml = "";
+        if (linkedPerfId) {
+            const cycleRehearsals = $app.findRecordsByFilter(
+                "events",
+                "parentPerformanceId = {:perfId} && type = 'Rehearsal'",
+                "date",
+                200,
+                0,
+                { perfId: linkedPerfId }
+            );
+
+            if (cycleRehearsals && cycleRehearsals.length > 0) {
+                const cycleRehearsalIds = cycleRehearsals.map(r => r.id);
+                const activeProfiles = $app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
+                const exceededSingers = [];
+
+                activeProfiles.forEach(profile => {
+                    let perfRsvpYes = false;
+                    try {
+                        const perfRosters = $app.findRecordsByFilter(
+                            "eventRosters",
+                            "event = {:perfId} && profile = {:profileId}",
+                            "",
+                            1,
+                            0,
+                            { perfId: linkedPerfId, profileId: profile.id }
+                        );
+                        if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
+                            perfRsvpYes = true;
+                        }
+                    } catch (e) {}
+
+                    if (perfRsvpYes) {
+                        let missCount = 0;
+                        cycleRehearsalIds.forEach(rehId => {
+                            try {
+                                const rehRosters = $app.findRecordsByFilter(
+                                    "eventRosters",
+                                    "event = {:rehId} && profile = {:profileId}",
+                                    "",
+                                    1,
+                                    0,
+                                    { rehId: rehId, profileId: profile.id }
+                                );
+                                if (rehRosters && rehRosters.length > 0) {
+                                    const r = rehRosters[0];
+                                    if (r.get("rsvp") === "No" || r.get("attendance") === "Absent") {
+                                        missCount++;
+                                    }
+                                }
+                            } catch (e) {}
+                        });
+
+                        if (missCount > maxRehearsalMisses) {
+                            exceededSingers.push({
+                                name: profile.get("name"),
+                                missCount: missCount
+                            });
+                        }
+                    }
+                });
+
+                if (exceededSingers.length > 0) {
+                    exceededLimitListHtml = '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' + 
+                        exceededSingers.map(s => '<li style="margin-bottom: 4px;"><strong>' + escapeHtml(s.name) + '</strong>: ' + s.missCount + ' missed rehearsals (Limit: ' + maxRehearsalMisses + ')</li>').join('') + 
+                        '</ul>';
+                }
+            }
+        }
+
         const body = renderAttendanceReportBody({
             eventTitle: event.get("title"),
             eventDate: eventDateStr,
             attendanceRate: attendanceRate,
             presentCount: present,
             totalCount: total,
-            mailingAddress: commSettings.mailingAddress
+            mailingAddress: commSettings.mailingAddress,
+            exceededLimitListHtml: exceededLimitListHtml || undefined
         });
 
         try {

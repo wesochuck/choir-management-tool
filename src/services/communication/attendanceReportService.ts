@@ -25,6 +25,7 @@ export function renderManualAttendanceReportTemplate(params: {
   presentCount: number;
   totalCount: number;
   absenteeNames: string[];
+  thresholdWarningsSection?: string;
 }): string {
   const escapedAbsentees = params.absenteeNames.map(escapeHtml);
   const safeAbsenteesList =
@@ -39,7 +40,7 @@ export function renderManualAttendanceReportTemplate(params: {
     .replace(/{presentCount}/g, () => escapeHtml(String(params.presentCount)))
     .replace(/{totalCount}/g, () => escapeHtml(String(params.totalCount)))
     .replace(/{absenteesList}/g, () => safeAbsenteesList)
-    .replace(/{thresholdWarningsSection}/g, () => '');
+    .replace(/{thresholdWarningsSection}/g, () => params.thresholdWarningsSection || '');
 }
 
 export async function resolveAttendanceReportRecipients(): Promise<CommunicationRecipient[]> {
@@ -82,6 +83,8 @@ export async function resolveAttendanceReportRecipients(): Promise<Communication
 export async function triggerAttendanceReport(eventId: string): Promise<MessageRecord> {
   const event = await pb.collection('events').getOne<Event>(eventId, { expand: 'venue' });
   const commSettings = await settingsService.getCommunicationSettings();
+  const rosterSettings = await settingsService.getRosterSettings();
+  const maxRehearsalMisses = rosterSettings?.maxRehearsalMisses ?? 3;
   const recipients = await resolveAttendanceReportRecipients();
 
   if (recipients.length === 0) {
@@ -90,7 +93,46 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
     );
   }
 
-  // Aggregate Attendance
+  const isPerformance = event.type === 'Performance';
+  const linkedPerfId = isPerformance ? event.id : event.parentPerformanceId;
+
+  // 1. Auto-finalize unmarked attendance to 'Absent' for performing singers
+  if (linkedPerfId) {
+    const activeProfiles = await pb.collection('profiles').getFullList<Profile>({
+      filter: 'voicePart != "" && globalStatus != "Inactive"',
+      sort: 'name',
+    });
+
+    const perfRosters = await rosterService.getEventRoster(linkedPerfId);
+    const performingProfileIds = new Set(
+      perfRosters.filter(r => r.rsvp === 'Yes').map(r => r.profile)
+    );
+
+    const eventRosters = await rosterService.getEventRoster(eventId);
+    const eventRosterMap = new Map(eventRosters.map(r => [r.profile, r]));
+
+    await Promise.all(
+      activeProfiles.map(async (profile) => {
+        if (performingProfileIds.has(profile.id)) {
+          const roster = eventRosterMap.get(profile.id);
+          if (!roster) {
+            await pb.collection('eventRosters').create({
+              event: eventId,
+              profile: profile.id,
+              rsvp: 'Pending',
+              attendance: 'Absent'
+            });
+          } else if (roster.attendance === 'Pending') {
+            await pb.collection('eventRosters').update(roster.id, {
+              attendance: 'Absent'
+            });
+          }
+        }
+      })
+    );
+  }
+
+  // Aggregate Attendance (re-fetched after auto-finalization)
   const rosters = await rosterService.getEventRoster(eventId);
   if (rosters.length === 0) throw new Error('No roster data found for this event.');
 
@@ -104,6 +146,61 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
 
   const absenteeNames = absentees.map((r) => profileMap.get(r.profile)?.name || 'Unknown Singer');
   const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : '0';
+
+  // Calculate threshold warnings section
+  let thresholdWarningsSection = '';
+  if (linkedPerfId) {
+    const cycleRehearsals = await pb.collection('events').getFullList<Event>({
+      filter: pb.filter('parentPerformanceId = {:perfId} && type = "Rehearsal"', { perfId: linkedPerfId }),
+      sort: 'date'
+    });
+
+    if (cycleRehearsals.length > 0) {
+      const cycleRehearsalIds = cycleRehearsals.map(r => r.id);
+      const activeProfiles = await pb.collection('profiles').getFullList<Profile>({
+        filter: 'voicePart != "" && globalStatus != "Inactive"',
+        sort: 'name',
+      });
+      const perfRosters = await rosterService.getEventRoster(linkedPerfId);
+      const performingProfileIds = new Set(
+        perfRosters.filter(r => r.rsvp === 'Yes').map(r => r.profile)
+      );
+
+      const exceededSingers: { name: string; missCount: number }[] = [];
+
+      const cycleRehearsalsRosters = await Promise.all(
+        cycleRehearsalIds.map(rehId => rosterService.getEventRoster(rehId))
+      );
+
+      for (const profile of activeProfiles) {
+        if (performingProfileIds.has(profile.id)) {
+          let missCount = 0;
+          cycleRehearsalIds.forEach((_, index) => {
+            const rehRosters = cycleRehearsalsRosters[index];
+            const r = rehRosters.find(x => x.profile === profile.id);
+            if (r && (r.rsvp === 'No' || r.attendance === 'Absent')) {
+              missCount++;
+            }
+          });
+
+          if (missCount > maxRehearsalMisses) {
+            exceededSingers.push({ name: profile.name, missCount });
+          }
+        }
+      }
+
+      if (exceededSingers.length > 0) {
+        thresholdWarningsSection = `
+          <div style="margin-top: 20px; padding: 15px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; color: #b45309;">
+            <h4 style="margin: 0 0 10px 0; font-size: 16px; color: #b45309;">Singers Exceeding Rehearsal Miss Limit</h4>
+            <ul style="padding-left: 20px; margin: 0;">
+              ${exceededSingers.map(s => `<li style="margin-bottom: 4px;"><strong>${escapeHtml(s.name)}</strong>: ${s.missCount} missed rehearsals (Limit: ${maxRehearsalMisses})</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+    }
+  }
 
   // Build Email Content
   const eventDateStr = new Date(event.date).toLocaleDateString();
@@ -122,6 +219,7 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
     presentCount: present,
     totalCount: total,
     absenteeNames,
+    thresholdWarningsSection,
   });
 
   const body = `

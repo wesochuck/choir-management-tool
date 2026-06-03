@@ -19,6 +19,8 @@ interface RosterSettingsTabProps {
   setConfigAutomationMissThreshold: (value: number) => void;
   configAutomationRecoveryEnabled: boolean;
   setConfigAutomationRecoveryEnabled: (value: boolean) => void;
+  configMaxRehearsalMisses: number;
+  setConfigMaxRehearsalMisses: (value: number) => void;
   configSections: SectionDef[];
   setConfigSections: (sections: SectionDef[]) => void;
   configVoiceParts: VoicePartDef[];
@@ -50,6 +52,8 @@ export function RosterSettingsTab({
   setConfigAutomationMissThreshold,
   configAutomationRecoveryEnabled,
   setConfigAutomationRecoveryEnabled,
+  configMaxRehearsalMisses,
+  setConfigMaxRehearsalMisses,
   configSections,
   setConfigSections,
   configVoiceParts,
@@ -87,6 +91,8 @@ export function RosterSettingsTab({
         setConfigAutomationMissThreshold={setConfigAutomationMissThreshold}
         configAutomationRecoveryEnabled={configAutomationRecoveryEnabled}
         setConfigAutomationRecoveryEnabled={setConfigAutomationRecoveryEnabled}
+        configMaxRehearsalMisses={configMaxRehearsalMisses}
+        setConfigMaxRehearsalMisses={setConfigMaxRehearsalMisses}
       />
 
       <SeasonManagementSettings
