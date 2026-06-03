@@ -238,7 +238,7 @@ test('textSafety: sanitizeHtml removes unsafe elements and attributes', () => {
   // 3. Malicious javascript url injection
   const urlInput = '<a href="javascript:alert(1)">Click me</a>';
   const urlOutput = sanitizeHtml(urlInput);
-  assert.ok(!urlOutput.includes('href="javascript:'), 'Should strip javascript: protocols');
+  assert.strictEqual(urlOutput, '<a>Click me</a>', 'Should completely strip unsafe href attributes');
 
   // 4. Allowed tags and attributes
   const allowedInput = '<p style="color: red;">Line <br> <strong>bold</strong> <em>italic</em> <a href="https://example.com" target="_blank">link</a></p>';
