@@ -218,7 +218,7 @@ export default function SeatingFinderView() {
       title="Find Your Seat" 
       subtitle={event.title || venue?.name || ''}
       backTo="/"
-      maxWidth="900px"
+      maxWidth="1100px"
     >
       <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
         {charts.length > 1 && (
@@ -301,7 +301,7 @@ export default function SeatingFinderView() {
                     <div key={rIdx} className="stage-row">
                       <span className="stage-row-label">Row {rIdx + 1}</span>
                       
-                      <div className="flex-row" style={{ gap: '10px' }}>
+                      <div className="stage-seat-row">
                         {Array.from({ length: count }).map((_, sIdx) => {
                           const singerId = assignments[`${rIdx}-${sIdx}`];
                           const isMySeat = singerId === singerProfileId;

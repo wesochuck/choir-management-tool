@@ -1,5 +1,6 @@
 /* SeatingFinderView.css */
 
+/* Prevent main presentation window from clipping active seat tooltips */
 .stage-container {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -10,56 +11,85 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
-/* Mirrored grid row rendering */
+/* Enable smooth horizontal swiping while containing vertical layouts */
 .stage-rows-wrapper {
   display: flex;
-  flex-direction: column-reverse; /* Key for mirroring! Row 1 (Index 0) will render at the bottom */
+  flex-direction: column-reverse;
   gap: 12px;
   width: 100%;
   margin-bottom: var(--space-xl);
-  align-items: center;
+  align-items: stretch;
   overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  overflow-y: visible;
+  padding: 4px 0 10px;
+  scrollbar-width: thin;
 }
 
+/* Enforce native visible track scrollbars for desktop interfaces */
 .stage-rows-wrapper::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
+  display: block;
+  height: 8px;
+}
+.stage-rows-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+.stage-rows-wrapper::-webkit-scrollbar-track {
+  background: transparent;
 }
 
+/* Isolate rows into clean grids with structured outer labels */
 .stage-row {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 64px max-content 64px;
   align-items: center;
+  column-gap: 12px;
+  justify-content: center;
+  width: max-content;
+  min-width: max-content;
+  margin: 0 auto;
 }
 
+/* Standardize side layout metrics to stop content clipping */
 .stage-row-label {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 700;
-  width: 56px;
+  width: auto;
+  min-width: 64px;
   text-align: right;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   user-select: none;
+  white-space: nowrap;
 }
-
 .stage-row-label.label-right {
   text-align: left;
 }
 
-/* Premium Seat bubble */
+/* Stabilize the horizontal inner seat collection row */
+.stage-seat-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-width: max-content;
+}
+
+/* Enforce non-shrinking circular dimensions to eliminate ovals */
 .seat-node {
   appearance: none;
   padding: 0;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  min-width: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
   background-color: var(--surface);
   border: 2px solid var(--border);
   display: flex;
