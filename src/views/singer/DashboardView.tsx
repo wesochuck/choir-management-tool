@@ -46,8 +46,9 @@ export default function DashboardView() {
             msg.recipients?.some(r => r.id === myProfile.id)
           );
 
+          const recent = filtered.slice(0, 5);
           const resolved = await Promise.all(
-            filtered.map(async (msg) => {
+            recent.map(async (msg) => {
               let content = msg.content;
               const eventId = msg.filters?.eventId as string | undefined;
 
@@ -66,7 +67,7 @@ export default function DashboardView() {
             })
           );
 
-          setAnnouncements(resolved.slice(0, 5));
+          setAnnouncements(resolved);
         })
         .catch(err => console.error('Failed to load announcements', err))
         .finally(() => setIsAnnouncementsLoading(false));

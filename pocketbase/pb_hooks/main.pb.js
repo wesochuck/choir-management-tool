@@ -6561,7 +6561,13 @@ function parseSignedToken(token, requiredKeys) {
     }
     let baseUrl = "";
     try {
-        const commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
+        let commSettings;
+        try {
+            commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+        }
+        catch (_e) {
+            commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
+        }
         if (commSettings) {
             const parsed = parseJsonField(commSettings.get("value"));
             if (parsed && typeof parsed.frontendUrl === "string") {
@@ -6583,7 +6589,7 @@ function parseSignedToken(token, requiredKeys) {
         const token = generateSignedEventRecipientToken($app, eventId, profile.id, secret);
         const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
         const replacement = "(RSVP Link for " + (profile.get("name") || "Singer") + ")\nLink: " + rsvpLink + "\n(No login required)";
-        content = content.replace("{{RSVP_LINKS}}", replacement);
+        content = content.replace(/{{RSVP_LINKS}}/g, replacement);
     }
     // Resolve Poll links
     const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
@@ -7440,6 +7446,12 @@ function processEmailQueue(app) {
     const eventId = data.eventId;
     const rsvp = data.rsvp;
     const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
+    if (rsvpNote.length > 1000) {
+        return e.json(400, {
+            error: "Your note cannot exceed 1000 characters.",
+            code: "RSVP_NOTE_TOO_LONG",
+        });
+    }
     if (rsvp !== "Yes" && rsvp !== "No" && rsvp !== "Pending") {
         return e.json(400, { error: "Invalid rsvp status" });
     }

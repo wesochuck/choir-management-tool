@@ -203,7 +203,7 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
   }
 });
 
-test('updateRSVP deletes record if set to Pending and no other important data exists', async (t) => {
+test('updateMyRSVP deletes record if set to Pending and no other important data exists', async (t) => {
   const originalSend = pb.send;
   const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
     assert.equal(path, '/api/singer/rsvp');
@@ -221,7 +221,7 @@ test('updateRSVP deletes record if set to Pending and no other important data ex
   pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Pending');
+    const result = await rosterService.updateMyRSVP('event_1', 'Pending');
     assert.equal(result.rsvp, 'Pending');
     assert.equal(sendMock.mock.callCount(), 1);
   } finally {
@@ -229,7 +229,7 @@ test('updateRSVP deletes record if set to Pending and no other important data ex
   }
 });
 
-test('updateRSVP updates record (does not delete) if set to Pending but other important data exists', async (t) => {
+test('updateMyRSVP updates record (does not delete) if set to Pending but other important data exists', async (t) => {
   const originalSend = pb.send;
   const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
     assert.equal(path, '/api/singer/rsvp');
@@ -247,7 +247,7 @@ test('updateRSVP updates record (does not delete) if set to Pending but other im
   pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Pending');
+    const result = await rosterService.updateMyRSVP('event_1', 'Pending');
     assert.equal(result.rsvp, 'Pending');
     assert.equal(sendMock.mock.callCount(), 1);
   } finally {
@@ -255,7 +255,7 @@ test('updateRSVP updates record (does not delete) if set to Pending but other im
   }
 });
 
-test('updateRSVP updates record normally if set to Yes or No', async (t) => {
+test('updateMyRSVP updates record normally if set to Yes or No', async (t) => {
   const originalSend = pb.send;
   const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
     assert.equal(path, '/api/singer/rsvp');
@@ -273,7 +273,7 @@ test('updateRSVP updates record normally if set to Yes or No', async (t) => {
   pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Yes');
+    const result = await rosterService.updateMyRSVP('event_1', 'Yes');
     assert.equal(result.rsvp, 'Yes');
     assert.equal(sendMock.mock.callCount(), 1);
   } finally {
@@ -281,7 +281,7 @@ test('updateRSVP updates record normally if set to Yes or No', async (t) => {
   }
 });
 
-test('updateRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async (t) => {
+test('updateMyRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async (t) => {
   const originalSend = pb.send;
   const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
     assert.equal(path, '/api/singer/rsvp');
@@ -300,7 +300,7 @@ test('updateRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async 
   pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Yes');
+    const result = await rosterService.updateMyRSVP('event_1', 'Yes');
     assert.equal(result.rsvp, 'Yes');
     assert.equal(result.rsvpNote, '');
     assert.equal(sendMock.mock.callCount(), 1);
@@ -309,7 +309,7 @@ test('updateRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async 
   }
 });
 
-test('updateRSVP saves rsvpNote when RSVP is No', async (t) => {
+test('updateMyRSVP saves rsvpNote when RSVP is No', async (t) => {
   const originalSend = pb.send;
   const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
     assert.equal(path, '/api/singer/rsvp');
@@ -328,7 +328,7 @@ test('updateRSVP saves rsvpNote when RSVP is No', async (t) => {
   pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'No', 'Sickness');
+    const result = await rosterService.updateMyRSVP('event_1', 'No', 'Sickness');
     assert.equal(result.rsvp, 'No');
     assert.equal(result.rsvpNote, 'Sickness');
     assert.equal(sendMock.mock.callCount(), 1);

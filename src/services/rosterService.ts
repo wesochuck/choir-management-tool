@@ -81,11 +81,73 @@ export const rosterService = {
     });
   },
 
-  async updateRSVP(eventId: string, _profileId: string, rsvp: RsvpStatus, rsvpNote = '') {
+  async updateMyRSVP(eventId: string, rsvp: RsvpStatus, rsvpNote = '') {
     return await pb.send<EventRoster>('/api/singer/rsvp', {
       method: 'POST',
       body: { eventId, rsvp, rsvpNote },
     });
+  },
+
+  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus, rsvpNote = '') {
+    try {
+      const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
+        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+      );
+      if (rsvp === 'Pending') {
+        const attendance = existing.attendance || 'Pending';
+        const folderNumber = (existing.folderNumber || '').trim();
+        const folderReturned = existing.folderReturned;
+        const seatId = (existing.seatId || '').trim();
+
+        const hasOtherData = attendance !== 'Pending' ||
+                             folderNumber !== '' ||
+                             folderReturned ||
+                             seatId !== '';
+        if (!hasOtherData) {
+          await pb.collection('eventRosters').delete(existing.id);
+          return {
+            id: '',
+            event: eventId,
+            profile: profileId,
+            rsvp: 'Pending',
+            attendance: 'Pending',
+            folderReturned: false,
+          } as EventRoster;
+        } else {
+          return await pb.collection('eventRosters').update<EventRoster>(existing.id, {
+            rsvp: 'Pending',
+            rsvpNote: '',
+          });
+        }
+      } else {
+        return await pb.collection('eventRosters').update<EventRoster>(existing.id, {
+          rsvp,
+          rsvpNote: rsvp === 'No' ? rsvpNote : '',
+        });
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
+        if (rsvp === 'Pending') {
+          return {
+            id: '',
+            event: eventId,
+            profile: profileId,
+            rsvp: 'Pending',
+            attendance: 'Pending',
+            folderReturned: false,
+          } as EventRoster;
+        }
+        return await pb.collection('eventRosters').create<EventRoster>({
+          event: eventId,
+          profile: profileId,
+          rsvp,
+          rsvpNote: rsvp === 'No' ? rsvpNote : '',
+          attendance: 'Pending',
+          folderReturned: false,
+        });
+      }
+      throw err;
+    }
   },
 
   async getEventRoster(eventId: string) {
