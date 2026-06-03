@@ -240,7 +240,12 @@ test('textSafety: sanitizeHtml removes unsafe elements and attributes', () => {
   const urlOutput = sanitizeHtml(urlInput);
   assert.ok(!urlOutput.includes('href="javascript:'), 'Should strip javascript: protocols');
 
-  // 4. Allowed tags and attributes
+  // 4. Bypassed malicious javascript url injection (control characters)
+  const bypassUrlInput = '<a href="java&#x09;script:alert(1)">Click me</a>';
+  const bypassUrlOutput = sanitizeHtml(bypassUrlInput);
+  assert.ok(!bypassUrlOutput.includes('href="java'), 'Should strip javascript: protocols even with control characters');
+
+  // 5. Allowed tags and attributes
   const allowedInput = '<p style="color: red;">Line <br> <strong>bold</strong> <em>italic</em> <a href="https://example.com" target="_blank">link</a></p>';
   const allowedOutput = sanitizeHtml(allowedInput);
   assert.strictEqual(allowedOutput, allowedInput, 'Should preserve safe tags and attributes');

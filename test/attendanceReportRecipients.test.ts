@@ -100,6 +100,11 @@ test('triggerAttendanceReport throws if no recipients', async () => {
     if (name === 'events') {
       return { getOne: async () => ({ id: 'e1', date: new Date().toISOString(), title: 'Test' }) };
     }
+    if (name === 'appSettings') {
+      return {
+        getFirstListItem: async () => null,
+      };
+    }
     return originalCollection.call(pb, name);
   }) as any;
 
@@ -141,6 +146,11 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
     }
     if (name === 'eventRosters') {
       return { getFullList: async () => [{ id: 'r1', attendance: 'Present', profile: 'p1' }] };
+    }
+    if (name === 'appSettings') {
+      return {
+        getFirstListItem: async () => null,
+      };
     }
     return originalCollection.call(pb, name);
   }) as any;

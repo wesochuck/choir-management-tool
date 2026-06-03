@@ -116,7 +116,9 @@ export function sanitizeHtml(htmlStr: string): string {
             
             // Block javascript: and data: protocol URIs in links/sources
             if (attrName === 'href' || attrName === 'src') {
-              const val = attr.value.trim();
+              // Strip control characters and spaces to prevent bypasses like `java\tscript:`
+              // eslint-disable-next-line no-control-regex
+              const val = attr.value.replace(/[\x00-\x20]/g, '');
               if (/^(javascript|data|vbscript):/i.test(val)) {
                 continue;
               }
