@@ -81,7 +81,7 @@ export const rosterService = {
     });
   },
 
-  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus) {
+  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus, rsvpNote = '') {
     // Find existing or create new
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
@@ -105,7 +105,9 @@ export const rosterService = {
       }
 
       const updateData: Partial<EventRoster> = { rsvp };
-      if (rsvp !== 'No') {
+      if (rsvp === 'No') {
+        updateData.rsvpNote = rsvpNote;
+      } else {
         updateData.rsvpNote = '';
       }
 
@@ -130,7 +132,7 @@ export const rosterService = {
           event: eventId,
           profile: profileId,
           rsvp,
-          rsvpNote: '',
+          rsvpNote: rsvp === 'No' ? rsvpNote : '',
           attendance: 'Pending',
           folderReturned: false,
         });

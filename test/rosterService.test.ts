@@ -370,3 +370,47 @@ test('updateRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async 
     pb.collection = originalCollection;
   }
 });
+
+test('updateRSVP saves rsvpNote when RSVP is No', async (t) => {
+  const originalCollection = pb.collection;
+  const getFirstListItem = t.mock.fn(async () => ({
+    id: 'roster_1',
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: 'Pending',
+    attendance: 'Pending',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+  const update = t.mock.fn(async (id: string, data: Partial<EventRoster>) => ({
+    id,
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: data.rsvp,
+    rsvpNote: data.rsvpNote,
+    attendance: 'Pending',
+    folderNumber: '',
+    folderReturned: false,
+    seatId: '',
+  }));
+
+  pb.collection = function (name: string) {
+    if (name === 'eventRosters') {
+      return { getFirstListItem, update } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'No', 'Sickness');
+    assert.equal(result.rsvp, 'No');
+    assert.equal(result.rsvpNote, 'Sickness');
+    assert.equal(update.mock.callCount(), 1);
+    
+    const updateArgs = update.mock.calls[0].arguments[1] as Partial<EventRoster>;
+    assert.equal(updateArgs.rsvpNote, 'Sickness');
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
