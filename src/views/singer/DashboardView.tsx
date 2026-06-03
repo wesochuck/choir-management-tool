@@ -78,7 +78,8 @@ export default function DashboardView() {
         message: 'Please provide a brief reason for your absence from this rehearsal.',
         placeholder: 'e.g. Family emergency, work travel, illness...',
         confirmLabel: 'Submit RSVP',
-        required: true
+        required: true,
+        maxLength: 1000
       });
 
       if (note === null) return; // User cancelled prompt

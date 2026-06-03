@@ -17,6 +17,7 @@ interface ConfirmOptions extends MessageOptions {
 interface PromptOptions extends ConfirmOptions {
   placeholder?: string;
   required?: boolean;
+  maxLength?: number;
 }
 
 interface DialogContextValue {
@@ -173,23 +174,31 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
             {activeDialog?.options.message}
           </div>
           {activeDialog?.type === 'prompt' && (
-            <textarea
-              autoFocus
-              value={promptValue}
-              onChange={(e) => setPromptValue(e.target.value)}
-              placeholder={activeDialog.options.placeholder}
-              style={{
-                width: '100%',
-                minHeight: '80px',
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border)',
-                fontFamily: 'inherit',
-                fontSize: '0.9rem',
-                resize: 'vertical',
-                boxSizing: 'border-box'
-              }}
-            />
+            <div className="flex-col" style={{ gap: '4px' }}>
+              <textarea
+                autoFocus
+                value={promptValue}
+                onChange={(e) => setPromptValue(e.target.value)}
+                placeholder={activeDialog.options.placeholder}
+                maxLength={activeDialog.options.maxLength}
+                style={{
+                  width: '100%',
+                  minHeight: '80px',
+                  padding: '10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'inherit',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  boxSizing: 'border-box'
+                }}
+              />
+              {activeDialog.options.maxLength && (
+                <div style={{ textAlign: 'right', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {promptValue.length} / {activeDialog.options.maxLength}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </BaseModal>
