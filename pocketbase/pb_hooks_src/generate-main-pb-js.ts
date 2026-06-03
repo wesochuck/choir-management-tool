@@ -18,7 +18,9 @@ type UtilityBundleName =
     | 'calendarEndpoint'
     | 'singerSeatingEndpoint'
     | 'hmacTokens'
-    | 'timezone';
+    | 'timezone'
+    | 'rsvpValidation'
+    | 'playerEndpoints';
 
 type UtilityBundle = {
     files: string[];
@@ -99,6 +101,10 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
         files: ['playerEndpoints.ts'],
         symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist'],
         dependsOn: ['hmacTokens', 'hookJson'],
+    },
+    rsvpValidation: {
+        files: ['rsvpValidation.ts'],
+        symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
     },
 };
 
