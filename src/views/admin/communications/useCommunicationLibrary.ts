@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { pb } from '../../../lib/pocketbase';
 import {
   communicationService,
   type MessageRecord,
@@ -28,16 +29,25 @@ export function useCommunicationLibrary() {
 
   const [historyPage, setHistoryPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
 
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
-  const refreshHistory = useCallback(async (pageToFetch: number) => {
+  const refreshHistory = useCallback(async (pageToFetch: number, query = '') => {
     try {
-      const historyFilter = "(status = 'Sent' || status = 'Archived')";
+      const baseFilter = "(status = 'Sent' || status = 'Archived')";
+      let filterString = baseFilter;
+
+      if (query.trim()) {
+        filterString = pb.filter(`(${baseFilter} && (subject ~ {:query} || content ~ {:query} || type ~ {:query}))`, {
+          query: query.trim()
+        });
+      }
+
       const result = await communicationService.getMessagesPaginated(
         pageToFetch,
         5,
-        historyFilter
+        filterString
       );
       setHistory(result.items);
       setTotalPages(result.totalPages);
@@ -47,13 +57,17 @@ export function useCommunicationLibrary() {
   }, []);
 
   useEffect(() => {
-    void refreshHistory(historyPage);
-  }, [historyPage, refreshHistory]);
+    void refreshHistory(historyPage, historySearchQuery);
+  }, [historyPage, historySearchQuery, refreshHistory]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historySearchQuery]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const historyFilter = "(status = 'Sent' || status = 'Archived')";
+        const baseFilter = "(status = 'Sent' || status = 'Archived')";
         const [
           historyPageResult,
           loadedDrafts,
@@ -62,7 +76,7 @@ export function useCommunicationLibrary() {
           loadedConfig,
           loadedChoirName,
         ] = await Promise.all([
-          communicationService.getMessagesPaginated(1, 5, historyFilter),
+          communicationService.getMessagesPaginated(1, 5, baseFilter),
           communicationService.getDrafts(),
           communicationService.getTemplates(),
           settingsService.getCommunicationSettings(),
@@ -106,6 +120,8 @@ export function useCommunicationLibrary() {
     setHistoryPage,
     totalPages,
     setTotalPages,
+    historySearchQuery,
+    setHistorySearchQuery,
     refreshHistory,
     isSavingConfig,
     setIsSavingConfig,
