@@ -5160,17 +5160,24 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
             console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
             return;
         }
+        if (!template) {
+            console.log("[RSVP Decline Hook Error] RSVP Decline Notice template is null");
+            return;
+        }
         let event = null;
         let eventTitle = "Event";
         try {
             event = app.findRecordById("events", eventId);
-            eventTitle = (event.get("title") || event.get("type") || "Event");
+            if (event) {
+                eventTitle = (event.get("title") || event.get("type") || "Event");
+            }
         }
         catch (err) {
             console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
         }
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
         const singerName = (profile.get("name") || "Singer");
+        const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf) => {
             const userId = adminProf.get("user");
             if (!userId || adminUserIds.indexOf(userId) === -1) {
@@ -5182,8 +5189,8 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
                 return;
             }
             const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-            let subject = template.get("subject") || "";
-            let content = template.get("content") || "";
+            let subject = finalTemplate.get("subject") || "";
+            let content = finalTemplate.get("content") || "";
             subject = subject.replace(/{declinedSingerName}/g, singerName)
                 .replace(/{eventTitle}/g, eventTitle);
             content = content.replace(/{adminName}/g, adminName)
@@ -6273,17 +6280,24 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
             console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
             return;
         }
+        if (!template) {
+            console.log("[RSVP Decline Hook Error] RSVP Decline Notice template is null");
+            return;
+        }
         let event = null;
         let eventTitle = "Event";
         try {
             event = app.findRecordById("events", eventId);
-            eventTitle = (event.get("title") || event.get("type") || "Event");
+            if (event) {
+                eventTitle = (event.get("title") || event.get("type") || "Event");
+            }
         }
         catch (err) {
             console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
         }
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
         const singerName = (profile.get("name") || "Singer");
+        const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf) => {
             const userId = adminProf.get("user");
             if (!userId || adminUserIds.indexOf(userId) === -1) {
@@ -6295,8 +6309,8 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
                 return;
             }
             const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-            let subject = template.get("subject") || "";
-            let content = template.get("content") || "";
+            let subject = finalTemplate.get("subject") || "";
+            let content = finalTemplate.get("content") || "";
             subject = subject.replace(/{declinedSingerName}/g, singerName)
                 .replace(/{eventTitle}/g, eventTitle);
             content = content.replace(/{adminName}/g, adminName)
@@ -7873,17 +7887,24 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
             console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
             return;
         }
+        if (!template) {
+            console.log("[RSVP Decline Hook Error] RSVP Decline Notice template is null");
+            return;
+        }
         let event = null;
         let eventTitle = "Event";
         try {
             event = app.findRecordById("events", eventId);
-            eventTitle = (event.get("title") || event.get("type") || "Event");
+            if (event) {
+                eventTitle = (event.get("title") || event.get("type") || "Event");
+            }
         }
         catch (err) {
             console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
         }
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
         const singerName = (profile.get("name") || "Singer");
+        const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf) => {
             const userId = adminProf.get("user");
             if (!userId || adminUserIds.indexOf(userId) === -1) {
@@ -7895,8 +7916,8 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
                 return;
             }
             const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-            let subject = template.get("subject") || "";
-            let content = template.get("content") || "";
+            let subject = finalTemplate.get("subject") || "";
+            let content = finalTemplate.get("content") || "";
             subject = subject.replace(/{declinedSingerName}/g, singerName)
                 .replace(/{eventTitle}/g, eventTitle);
             content = content.replace(/{adminName}/g, adminName)

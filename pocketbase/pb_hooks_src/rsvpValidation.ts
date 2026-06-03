@@ -1,4 +1,8 @@
-import type { PocketBaseRecord } from './email/emailTypes';
+import type { PocketBaseRecord, PocketBaseApp } from './email/emailTypes';
+import { processEmailQueue } from './email/queueProcessor';
+
+declare const Record: new (collection: unknown, data?: unknown) => PocketBaseRecord;
+
 
 export function parsePocketBaseDate(dateValue: unknown): Date | null {
     const raw = String(dateValue || "").trim();
@@ -114,11 +118,18 @@ export function notifyAdminsOfDecline(app: any, eventId: string, profile: Pocket
             return;
         }
 
+        if (!template) {
+            console.log("[RSVP Decline Hook Error] RSVP Decline Notice template is null");
+            return;
+        }
+
         let event: PocketBaseRecord | null = null;
         let eventTitle = "Event";
         try {
             event = app.findRecordById("events", eventId);
-            eventTitle = (event.get("title") || event.get("type") || "Event") as string;
+            if (event) {
+                eventTitle = (event.get("title") || event.get("type") || "Event") as string;
+            }
         } catch (err) {
             console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
         }
@@ -126,6 +137,7 @@ export function notifyAdminsOfDecline(app: any, eventId: string, profile: Pocket
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
         const singerName = (profile.get("name") || "Singer") as string;
 
+        const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf: any) => {
             const userId = adminProf.get("user") as string;
             if (!userId || adminUserIds.indexOf(userId) === -1) {
@@ -140,8 +152,8 @@ export function notifyAdminsOfDecline(app: any, eventId: string, profile: Pocket
 
             const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator") as string;
 
-            let subject = (template.get("subject") as string) || "";
-            let content = (template.get("content") as string) || "";
+            let subject = (finalTemplate.get("subject") as string) || "";
+            let content = (finalTemplate.get("content") as string) || "";
 
             subject = subject.replace(/{declinedSingerName}/g, singerName)
                              .replace(/{eventTitle}/g, eventTitle);

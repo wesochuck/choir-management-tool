@@ -24,7 +24,8 @@ interface AppWithTransaction {
 import {
     parsePocketBaseDate,
     validateSingerRsvpWindow,
-    getRsvpWindowInfo
+    getRsvpWindowInfo,
+    notifyAdminsOfDecline
 } from './rsvpValidation';
 export { parsePocketBaseDate };
 

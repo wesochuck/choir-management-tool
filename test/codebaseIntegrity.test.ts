@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { JSDOM } from 'jsdom';
-import { getSrcFiles, resolveProjectPath } from './helpers.ts';
+import { getSrcFiles, resolveProjectPath, getFilesRecursively } from './helpers.ts';
 import { decodeGoBytes, parseJsonField } from '../src/lib/pocketbaseJson.ts';
 
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
@@ -295,7 +295,7 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
 
 test('codebase integrity: profiles do not have direct email fields', () => {
   // Backend files (hooks, endpoints, utilities)
-  const backendFiles = getSrcFiles(['.ts', '.js'], resolveProjectPath('pocketbase/pb_hooks_src'));
+  const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), ['.ts', '.js']);
   const backendViolations: string[] = [];
 
   for (const file of backendFiles) {
@@ -319,8 +319,9 @@ test('codebase integrity: profiles do not have direct email fields', () => {
   }
 
   // Frontend files
-  const frontendFiles = getSrcFiles(['.ts', '.tsx'], resolveProjectPath('src'));
+  const frontendFiles = getSrcFiles(['.ts', '.tsx']);
   const frontendViolations: string[] = [];
+
 
   for (const file of frontendFiles) {
     if (file.endsWith('profileService.ts')) continue; // Exclude definition of getProfileEmail / splitProfileInput
