@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateSignedPlayerToken, getHmacSecret } from '../../pocketbase/pb_hooks_src/hmacTokens.ts';
+import { generateSignedPlayerToken, getHmacSecret, generateSignedEventRecipientToken } from '../../pocketbase/pb_hooks_src/hmacTokens.ts';
 
 // Mock PocketBase globals
 (global as any).$security = {
@@ -23,14 +23,22 @@ import { generateSignedPlayerToken, getHmacSecret } from '../../pocketbase/pb_ho
 
 test('generateSignedPlayerToken produces consistent tokens', () => {
     const eventId = 'event123';
-    const secret = 'secret456';
-    const token = generateSignedPlayerToken(eventId, secret);
+    const token = generateSignedPlayerToken((global as any).$app, eventId);
     
     // Format should be e=eventId&s=signature
-    assert.strictEqual(token, `e=event123&s=sig_e=event123_secret456`);
+    assert.strictEqual(token, `e=event123&s=sig_e=event123_test_secret`);
 });
 
 test('getHmacSecret retrieves secret from appSettings', () => {
-    const secret = getHmacSecret();
+    const secret = getHmacSecret((global as any).$app);
     assert.strictEqual(secret, 'test_secret');
+});
+
+test('generateSignedEventRecipientToken produces consistent tokens', () => {
+    const eventId = 'event123';
+    const recipientId = 'rec456';
+    const token = generateSignedEventRecipientToken((global as any).$app, eventId, recipientId);
+    
+    // Format should be e=eventId&p=recipientId&s=signature
+    assert.strictEqual(token, `e=event123&p=rec456&s=sig_e=event123&p=rec456_test_secret`);
 });

@@ -59,7 +59,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
     }
 
     // Build variables used for layout rendering
-    const secret = getHmacSecret();
+    const secret = getHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
     let choirName = "";
@@ -294,7 +294,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                     // Ignore audition record resolution/formatting errors
                                 }
                             } else {
-                                const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
+                                const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                         }
@@ -325,7 +325,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                     .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
 
                     if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                        const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
+                        const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         
                         const rsvpHtml = `
@@ -338,7 +338,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     }
 
                     if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                        const token = generateSignedPlayerToken(event.id, secret);
+                        const token = generateSignedPlayerToken(app, event.id, secret);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         
                         const playerHtml = `

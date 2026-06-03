@@ -10,9 +10,9 @@ declare const Record: new (collection: unknown, data?: unknown) => PocketBaseRec
 declare function routerAdd(method: string, path: string, handler: (e: PocketBaseRequestEvent) => unknown): void;
 
 // TypeScript declarations for shared utilities inlined at runtime
-declare function getHmacSecret(): string;
+declare function getHmacSecret(app: PocketBaseApp): string;
 declare function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null;
-declare function generateSignedEventRecipientToken(eventId: string, recipientId: string, secret: string): string;
+declare function generateSignedEventRecipientToken(app: PocketBaseApp, eventId: string, recipientId: string, secret?: string): string;
 declare function getEventRecipientPayload(eventId: string, recipientId: string): string;
 declare function processEmailQueue(app: PocketBaseApp): void;
 
@@ -42,7 +42,7 @@ routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
 
     let secret: string;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret) throw new Error("Missing secret");
     } catch {
         return e.json(500, { error: "HMAC_SECRET not configured" });
@@ -50,7 +50,7 @@ routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
 
     const tokens: Record<string, string> = {};
     (profileIds as string[]).forEach(pId => {
-        tokens[pId] = generateSignedEventRecipientToken(eventId as string, pId, secret);
+        tokens[pId] = generateSignedEventRecipientToken($app, eventId as string, pId, secret);
     });
 
     return e.json(200, { tokens });
@@ -73,7 +73,7 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
 
     let secret: string;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret) throw new Error("Missing secret");
     } catch {
         return e.json(500, { error: "HMAC_SECRET not configured" });
@@ -209,7 +209,7 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
 
     let secret: string;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret) throw new Error("Missing secret");
     } catch {
         return e.json(500, { error: "HMAC_SECRET not configured" });
@@ -320,7 +320,7 @@ routerAdd("POST", "/api/unsubscribe", (e) => {
 
     let secret: string;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret) throw new Error("Missing secret");
     } catch {
         return e.json(500, { error: "HMAC_SECRET not configured" });

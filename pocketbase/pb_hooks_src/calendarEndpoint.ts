@@ -139,7 +139,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    const secret = getHmacSecret();
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "Configuration error" });
     }
