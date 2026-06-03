@@ -525,7 +525,7 @@ export function handleCalendarFeedUrl(e: PocketBaseRequestEvent): unknown {
 
     const app = $app;
     try {
-        const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+        const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
         let salt = profile.get("calendarSalt") as string;
         if (!salt) {
             salt = $security.randomString(16);
@@ -556,7 +556,7 @@ export function handleCalendarFeedReset(e: PocketBaseRequestEvent): unknown {
 
     const app = $app;
     try {
-        const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+        const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
         
         // Generate new salt
         const salt = $security.randomString(16);
