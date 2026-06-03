@@ -95,11 +95,27 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart || '--'}</span>
                   </td>
                   <td data-label="RSVP Status" style={{ textAlign: 'center' }}>
-                    <StatusBadge
-                      label={rsvpDisplay.label}
-                      tone={rsvpDisplay.tone}
-                      size="sm"
-                    />
+                    <div className="flex-col" style={{ alignItems: 'center', gap: '4px' }}>
+                      <StatusBadge
+                        label={rsvpDisplay.label}
+                        tone={rsvpDisplay.tone}
+                        size="sm"
+                      />
+                      {s.roster?.rsvpNote && s.rsvp === 'No' && (
+                        <div 
+                          className="text-xs" 
+                          style={{ 
+                            color: 'var(--text-muted)', 
+                            maxWidth: '160px', 
+                            lineHeight: 1.3,
+                            fontStyle: 'italic',
+                            fontWeight: 400
+                          }}
+                        >
+                          "{s.roster.rsvpNote}"
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td data-label="Actions" style={{ textAlign: 'right' }}>
                     <div className="flex-row" style={{ gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>

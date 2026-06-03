@@ -7,6 +7,7 @@ export interface EventRoster extends RecordModel {
   event: string;
   rsvp: 'Yes' | 'No' | 'Pending';
   attendance: 'Present' | 'Absent' | 'Pending';
+  rsvpNote?: string;
   seatId: string;
   folderNumber: string;
   folderReturned: boolean;
@@ -80,7 +81,7 @@ export const rosterService = {
     });
   },
 
-  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus) {
+  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus, rsvpNote = '') {
     // Find existing or create new
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
@@ -99,10 +100,18 @@ export const rosterService = {
         return {
           ...existing,
           rsvp: 'Pending',
+          rsvpNote: '',
         } as EventRoster;
       }
 
-      return await pb.collection('eventRosters').update<EventRoster>(existing.id, { rsvp });
+      const updateData: Partial<EventRoster> = { rsvp };
+      if (rsvp === 'No') {
+        updateData.rsvpNote = rsvpNote;
+      } else {
+        updateData.rsvpNote = '';
+      }
+
+      return await pb.collection('eventRosters').update<EventRoster>(existing.id, updateData);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
         // If it doesn't exist and we want to set it to Pending, no need to create a database record
@@ -113,6 +122,7 @@ export const rosterService = {
             profile: profileId,
             rsvp: 'Pending',
             attendance: 'Pending',
+            rsvpNote: '',
             folderNumber: '',
             folderReturned: false,
             seatId: '',
@@ -122,6 +132,7 @@ export const rosterService = {
           event: eventId,
           profile: profileId,
           rsvp,
+          rsvpNote: rsvp === 'No' ? rsvpNote : '',
           attendance: 'Pending',
           folderReturned: false,
         });

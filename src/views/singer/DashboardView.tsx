@@ -8,9 +8,11 @@ import { pollService, type SingerPoll } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
 import { communicationService, type MessageRecord } from '../../services/communicationService';
 import { sanitizeHtml } from '../../lib/textSafety';
+import { useDialog } from '../../contexts/DialogContext';
 import './DashboardView.css';
 
 export default function DashboardView() {
+  const dialog = useDialog();
   const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
   const [activePolls, setActivePolls] = useState<SingerPoll[]>([]);
   const [announcements, setAnnouncements] = useState<MessageRecord[]>([]);
@@ -63,6 +65,28 @@ export default function DashboardView() {
       // Revert on error
       const list = await pollService.getActivePollsForSinger(myProfile.id);
       setActivePolls(list);
+    }
+  };
+
+  const handleUpdateRSVP = async (eventId: string, rsvp: 'Yes' | 'No') => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    if (event.type === 'Rehearsal' && rsvp === 'No') {
+      const note = await dialog.prompt({
+        title: 'RSVP Note Required',
+        message: 'Please provide a brief reason for your absence from this rehearsal.',
+        placeholder: 'e.g. Family emergency, work travel, illness...',
+        confirmLabel: 'Submit RSVP',
+        required: true,
+        maxLength: 1000
+      });
+
+      if (note === null) return; // User cancelled prompt
+
+      await updateRSVP(eventId, rsvp, note);
+    } else {
+      await updateRSVP(eventId, rsvp);
     }
   };
 
@@ -127,14 +151,14 @@ export default function DashboardView() {
                 <div className="mobile-singer-quick-rsvp">
                   <button
                     type="button"
-                    onClick={() => updateRSVP(nextEvent.id, 'Yes')}
+                    onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
                   >
                     {nextRoster?.rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateRSVP(nextEvent.id, 'No')}
+                    onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
                   >
                     {nextRoster?.rsvp === 'No' ? '✗ Declining' : 'Decline'}
@@ -171,7 +195,7 @@ export default function DashboardView() {
                 key={e.id} 
                 event={e} 
                 rsvp={myRosters[e.id]?.rsvp} 
-                onRSVP={(rsvp) => updateRSVP(e.id, rsvp)} 
+                onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)} 
                 allEvents={events}
                 myRosters={myRosters}
                 voicePart={myProfile?.voicePart}

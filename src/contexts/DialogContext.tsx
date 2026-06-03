@@ -14,30 +14,43 @@ interface ConfirmOptions extends MessageOptions {
   cancelLabel?: string;
 }
 
+interface PromptOptions extends ConfirmOptions {
+  placeholder?: string;
+  required?: boolean;
+  maxLength?: number;
+}
+
 interface DialogContextValue {
   showMessage: (options: MessageOptions) => Promise<void>;
   confirm: (options: ConfirmOptions) => Promise<boolean>;
+  prompt: (options: PromptOptions) => Promise<string | null>;
   showToast: (message: string, duration?: number) => void;
 }
 
 interface ActiveDialog {
-  type: 'message' | 'confirm';
-  options: ConfirmOptions;
-  resolve: (value: boolean) => void;
+  type: 'message' | 'confirm' | 'prompt';
+  options: PromptOptions;
+  resolve: (value: any) => void;
 }
 
 const DialogContext = createContext<DialogContextValue | null>(null);
 
 export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeDialog, setActiveDialog] = useState<ActiveDialog | null>(null);
+  const [promptValue, setPromptValue] = useState('');
   const [toast, setToast] = useState<{ message: string; id: number } | null>(null);
 
-  const closeDialog = useCallback((value: boolean) => {
+  const closeDialog = useCallback((value: boolean | string | null) => {
     setActiveDialog((current) => {
-      current?.resolve(value);
+      if (current?.type === 'prompt' && typeof value === 'boolean') {
+        current.resolve(value ? promptValue : null);
+      } else {
+        current?.resolve(value);
+      }
       return null;
     });
-  }, []);
+    setPromptValue('');
+  }, [promptValue]);
 
   const showMessage = useCallback((options: MessageOptions) => {
     return new Promise<void>((resolve) => {
@@ -59,6 +72,17 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
+  const prompt = useCallback((options: PromptOptions) => {
+    return new Promise<string | null>((resolve) => {
+      setPromptValue('');
+      setActiveDialog({
+        type: 'prompt',
+        options,
+        resolve,
+      });
+    });
+  }, []);
+
   const showToast = useCallback((message: string, duration = 3000) => {
     const id = Date.now();
     setToast({ message, id });
@@ -67,7 +91,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
     }, duration);
   }, []);
 
-  const value = useMemo(() => ({ showMessage, confirm, showToast }), [showMessage, confirm, showToast]);
+  const value = useMemo(() => ({ showMessage, confirm, prompt, showToast }), [showMessage, confirm, prompt, showToast]);
   const variant = activeDialog?.options.variant || 'info';
 
   return (
@@ -119,14 +143,14 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
 
       <BaseModal
         isOpen={Boolean(activeDialog)}
-        onClose={() => closeDialog(false)}
+        onClose={() => closeDialog(null)}
         title={activeDialog?.options.title || ''}
         maxWidth="440px"
         footer={
           activeDialog && (
             <>
-              {activeDialog.type === 'confirm' && (
-                <button className="btn btn-ghost" onClick={() => closeDialog(false)}>
+              {(activeDialog.type === 'confirm' || activeDialog.type === 'prompt') && (
+                <button className="btn btn-ghost" onClick={() => closeDialog(null)}>
                   {activeDialog.options.cancelLabel || 'Cancel'}
                 </button>
               )}
@@ -136,16 +160,46 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                   variant === 'warning' ? 'btn-secondary' : 
                   'btn-primary'
                 }`}
+                disabled={activeDialog.type === 'prompt' && activeDialog.options.required && !promptValue.trim()}
                 onClick={() => closeDialog(true)}
               >
-                {activeDialog.options.confirmLabel || (activeDialog.type === 'confirm' ? 'Confirm' : 'OK')}
+                {activeDialog.options.confirmLabel || (activeDialog.type === 'confirm' || activeDialog.type === 'prompt' ? 'Confirm' : 'OK')}
               </button>
             </>
           )
         }
       >
-        <div className="text-body" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-          {activeDialog?.options.message}
+        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="text-body" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+            {activeDialog?.options.message}
+          </div>
+          {activeDialog?.type === 'prompt' && (
+            <div className="flex-col" style={{ gap: '4px' }}>
+              <textarea
+                autoFocus
+                value={promptValue}
+                onChange={(e) => setPromptValue(e.target.value)}
+                placeholder={activeDialog.options.placeholder}
+                maxLength={activeDialog.options.maxLength}
+                style={{
+                  width: '100%',
+                  minHeight: '80px',
+                  padding: '10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'inherit',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  boxSizing: 'border-box'
+                }}
+              />
+              {activeDialog.options.maxLength && (
+                <div style={{ textAlign: 'right', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {promptValue.length} / {activeDialog.options.maxLength}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </BaseModal>
     </DialogContext.Provider>

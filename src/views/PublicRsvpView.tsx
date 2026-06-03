@@ -44,6 +44,7 @@ export default function PublicRsvpView() {
   
   // RSVP State
   const [selectedRsvp, setSelectedRsvp] = useState<'Yes' | 'No'>('Yes');
+  const [rsvpNote, setRsvpNote] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showRehearsals, setShowRehearsals] = useState(false);
@@ -71,6 +72,7 @@ export default function PublicRsvpView() {
           event: EventDetails;
           profile: ProfileDetails;
           currentRsvp: 'Yes' | 'No' | 'Pending';
+          currentRsvpNote: string;
           rehearsals: EventDetails[];
         }>('/api/rsvp-details', {
           method: 'POST',
@@ -90,6 +92,7 @@ export default function PublicRsvpView() {
         setProfile(res.profile);
         setTimezone(tz);
         setRehearsals(res.rehearsals);
+        setRsvpNote(res.currentRsvpNote || "");
 
         // Determine default selection and whether we skip confirmation
         if (initialRsvp) {
@@ -116,16 +119,41 @@ export default function PublicRsvpView() {
     void loadDetails();
   }, [token, initialRsvp]);
 
-  const handleConfirmRsvp = async (rsvpVal: 'Yes' | 'No') => {
-    if (!token || isUpdating) return;
+  const handleConfirmRsvp = async (rsvpVal: 'Yes' | 'No', note: string = rsvpNote) => {
+    if (!token || isUpdating || !event) return;
+
+    // Client-side validation
+    if (event.type === 'Rehearsal' && rsvpVal === 'No' && !note.trim()) {
+      await dialog.showMessage({
+        title: 'Note Required',
+        message: 'Please include a note explaining why you cannot attend this rehearsal.',
+        variant: 'danger',
+      });
+      setSelectedRsvp('No'); // Ensure the note field is shown
+      return;
+    }
+
+    if (note.trim().length > 1000) {
+      await dialog.showMessage({
+        title: 'Note Too Long',
+        message: 'Your note cannot exceed 1000 characters.',
+        variant: 'danger',
+      });
+      return;
+    }
 
     setIsUpdating(true);
     try {
       await pb.send('/api/quick-rsvp', {
         method: 'POST',
-        body: { token, rsvp: rsvpVal }
+        body: { 
+          token, 
+          rsvp: rsvpVal,
+          rsvpNote: rsvpVal === 'No' ? note.trim() : ''
+        }
       });
       setSelectedRsvp(rsvpVal);
+      setRsvpNote(rsvpVal === 'No' ? note.trim() : '');
       setIsConfirmed(true);
     } catch (err: unknown) {
       const errObj = err as { data?: { error?: string } } | null;
@@ -339,6 +367,33 @@ export default function PublicRsvpView() {
 
               {/* Interactive Buttons */}
               <div className="flex-col" style={{ gap: '12px' }}>
+                {event.type === 'Rehearsal' && selectedRsvp === 'No' && (
+                  <div className="flex-col" style={{ gap: '8px', marginBottom: '8px', textAlign: 'left' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--neutral-text)' }}>
+                      Why are you unable to attend?
+                    </label>
+                    <textarea
+                      value={rsvpNote}
+                      onChange={(e) => setRsvpNote(e.target.value)}
+                      placeholder="Briefly let the admins know why you cannot make this rehearsal."
+                      style={{ 
+                        width: '100%', 
+                        minHeight: '100px', 
+                        padding: '12px', 
+                        borderRadius: 'var(--radius-md)', 
+                        border: '1px solid var(--border)',
+                        fontSize: '0.9rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical',
+                        boxSizing: 'border-box'
+                      }}
+                      maxLength={1000}
+                    />
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                      This note is visible to choir admins.
+                    </p>
+                  </div>
+                )}
                 <p className="text-muted" style={{ fontSize: '0.85rem', margin: 0, textAlign: 'center' }}>
                   Are you planning to attend?
                 </p>
@@ -359,7 +414,13 @@ export default function PublicRsvpView() {
                     {isUpdating && selectedRsvp === 'Yes' ? 'Confirming...' : 'Yes, I Will Attend'}
                   </button>
                   <button
-                    onClick={() => handleConfirmRsvp('No')}
+                    onClick={() => {
+                      if (event.type === 'Rehearsal' && selectedRsvp !== 'No') {
+                        setSelectedRsvp('No');
+                      } else {
+                        handleConfirmRsvp('No');
+                      }
+                    }}
                     disabled={isUpdating}
                     className="btn btn-danger"
                     style={{
@@ -373,7 +434,7 @@ export default function PublicRsvpView() {
                       border: selectedRsvp === 'No' ? '2px solid #991b1b' : '1px solid var(--border)'
                     }}
                   >
-                    {isUpdating && selectedRsvp === 'No' ? 'Confirming...' : 'No, I Cannot Attend'}
+                    {isUpdating && selectedRsvp === 'No' ? 'Confirming...' : (event.type === 'Rehearsal' && selectedRsvp === 'No' ? 'Confirm RSVP Decline' : 'No, I Cannot Attend')}
                   </button>
                 </div>
               </div>
@@ -454,6 +515,43 @@ export default function PublicRsvpView() {
 
               {/* Modify State & Actions */}
               <div className="flex-col" style={{ gap: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
+                {event.type === 'Rehearsal' && selectedRsvp === 'No' && (
+                  <div className="flex-col" style={{ gap: '8px', marginBottom: '8px', textAlign: 'left' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--neutral-text)' }}>
+                      Why are you unable to attend?
+                    </label>
+                    <textarea
+                      value={rsvpNote}
+                      onChange={(e) => setRsvpNote(e.target.value)}
+                      placeholder="Briefly let the admins know why you cannot make this rehearsal."
+                      style={{ 
+                        width: '100%', 
+                        minHeight: '80px', 
+                        padding: '12px', 
+                        borderRadius: 'var(--radius-md)', 
+                        border: '1px solid var(--border)',
+                        fontSize: '0.9rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical',
+                        boxSizing: 'border-box'
+                      }}
+                      maxLength={1000}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                        This note is visible to choir admins.
+                      </p>
+                      <button 
+                        onClick={() => handleConfirmRsvp('No')}
+                        disabled={isUpdating}
+                        className="btn btn-primary"
+                        style={{ height: '36px', fontWeight: 700, padding: '0 16px', fontSize: '0.85rem' }}
+                      >
+                        {isUpdating ? 'Saving...' : 'Save Note'}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex-col" style={{ gap: '6px' }}>
                   <label className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
                     Need to change your response?
@@ -481,7 +579,13 @@ export default function PublicRsvpView() {
                       {isUpdating && isAttending ? 'Updating...' : 'I Will Attend'}
                     </button>
                     <button
-                      onClick={() => handleConfirmRsvp('No')}
+                      onClick={() => {
+                        if (event.type === 'Rehearsal' && selectedRsvp !== 'No') {
+                          setSelectedRsvp('No');
+                        } else {
+                          handleConfirmRsvp('No');
+                        }
+                      }}
                       disabled={isUpdating}
                       className="btn"
                       style={{
