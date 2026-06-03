@@ -46,6 +46,47 @@ function validateSingerRsvpWindow(event: PocketBaseRecord): { ok: true } | { ok:
     return { ok: true };
 }
 
+function getRsvpWindowInfo(event: PocketBaseRecord): {
+    canSubmit: boolean;
+    isReadOnly: boolean;
+    reason: string;
+} {
+    const eventType = String(event.get("type") || "");
+
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "The RSVP window for this performance is closed. Your current response is shown below.",
+        };
+    }
+
+    if (eventType === "Rehearsal") {
+        const eventDate = new Date(String(event.get("date") || ""));
+        if (Number.isNaN(eventDate.getTime())) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "Invalid rehearsal date.",
+            };
+        }
+
+        if (eventDate.getTime() < Date.now()) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This rehearsal has already passed.",
+            };
+        }
+    }
+
+    return {
+        canSubmit: true,
+        isReadOnly: false,
+        reason: "",
+    };
+}
+
 
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
     // __SHARED_UTILS__
@@ -126,10 +167,8 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
         }
 
         const event = $app.findRecordById("events", parts.e);
-        const windowValidation = validateSingerRsvpWindow(event);
-        if (!windowValidation.ok) {
-            return e.json(windowValidation.status, { error: windowValidation.error });
-        }
+        const rsvpWindow = getRsvpWindowInfo(event);
+
         let venueName = "";
         let venueAddress = "";
         try {
@@ -196,6 +235,7 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
                 date: event.get("date") || "",
                 details: event.get("details") || "",
                 location: event.get("location") || "",
+                isOpenForRSVP: !!event.get("isOpenForRSVP"),
                 expand: {
                     venue: {
                         name: venueName,
@@ -210,8 +250,10 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
             },
             currentRsvp,
             currentRsvpNote,
-            rehearsals
+            rehearsals,
+            rsvpWindow
         });
+
     } catch (err) {
         console.log("[RSVP Details Error] Failed to fetch details: " + err);
         return e.json(404, { error: "We could not find this RSVP record. Link may be expired. Please request a new RSVP link." });
