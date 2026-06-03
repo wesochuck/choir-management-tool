@@ -9,6 +9,7 @@ export const defaultProfileInput: ProfileInput = {
   notes: '',
   doNotEmail: false,
   receiveAttendanceReports: true,
+  receiveRsvpDeclineNotices: false,
   isSectionLeader: false,
   statusIsManual: false,
   role: 'singer',
@@ -25,6 +26,7 @@ export function profileToFormData(profile: Profile | null | undefined): ProfileI
     email: profile.expand?.user?.email || '',
     doNotEmail: Boolean(profile.doNotEmail),
     receiveAttendanceReports: profile.receiveAttendanceReports !== false,
+    receiveRsvpDeclineNotices: Boolean(profile.receiveRsvpDeclineNotices),
     isSectionLeader: Boolean(profile.isSectionLeader),
     statusIsManual: Boolean(profile.statusIsManual),
     role: profile.expand?.user?.role || 'singer',
@@ -42,6 +44,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
       formData.notes?.trim() ||
       formData.doNotEmail ||
       formData.receiveAttendanceReports !== true ||
+      formData.receiveRsvpDeclineNotices ||
       formData.isSectionLeader ||
       formData.statusIsManual ||
       formData.role !== 'singer'
@@ -57,6 +60,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
     (formData.notes || '') !== (initialData.notes || '') ||
     Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail) ||
     (formData.receiveAttendanceReports !== false) !== (initialData.receiveAttendanceReports !== false) ||
+    Boolean(formData.receiveRsvpDeclineNotices) !== Boolean(initialData.receiveRsvpDeclineNotices) ||
     Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader) ||
     Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual) ||
     (formData.role || 'singer') !== (initialData.expand?.user?.role || 'singer') ||

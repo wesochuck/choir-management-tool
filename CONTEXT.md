@@ -24,6 +24,9 @@ The attendance response provided by or assigned to a singer for a specific event
 ## RSVP Balance
 A real-time breakdown of RSVP statuses grouped by voice parts. This allows directors to quickly identify imbalances (e.g., zero or low Tenor 1 attendance) before rehearsals or performances.
 
+## RSVP Decline Notice
+An automated email notification sent to administrators who have opted to receive alerts when a singer declines a rehearsal or performance RSVP. It includes the singer's name, voice part, the event, and any reason or note provided by the singer.
+
 ## Catalog Lookup URL Template
 A configurable URL format defined in settings that enables automatic linking of music piece Catalog IDs to external publisher/sheet music databases (e.g. J.W. Pepper). The placeholder `{catalogId}` is replaced dynamically with the piece's specific catalog number to build the hyperlink.
 

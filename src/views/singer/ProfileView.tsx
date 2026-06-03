@@ -91,6 +91,7 @@ export default function ProfileView() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
+  const [receiveRsvpDeclineNotices, setReceiveRsvpDeclineNotices] = useState(false);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
@@ -110,6 +111,7 @@ export default function ProfileView() {
           setName(p.name || currentUser.name || '');
           setPhone(p.phone || '');
           setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
+          setReceiveRsvpDeclineNotices(Boolean(p.receiveRsvpDeclineNotices));
           loadCalendarFeed(p.id);
         } else {
           setProfile({
@@ -128,6 +130,7 @@ export default function ProfileView() {
           });
           setName(currentUser.name || '');
           setPhone('');
+          setReceiveRsvpDeclineNotices(false);
         }
         setEmail(currentUser.email || '');
       } else {
@@ -163,12 +166,13 @@ export default function ProfileView() {
         
         // If there's an associated profile, update it; otherwise create one.
         if (profile.id) {
-          await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports });
+          await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports, receiveRsvpDeclineNotices });
         } else {
           await pb.collection('profiles').create({
             user: currentUser.id,
             name: name || currentUser.name || email,
             receiveAttendanceReports,
+            receiveRsvpDeclineNotices,
             voicePart: '',
             globalStatus: 'Active',
           });
@@ -257,18 +261,33 @@ export default function ProfileView() {
           </div>
 
           {user?.role === 'admin' && (
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
-              <input
-                type="checkbox"
-                checked={receiveAttendanceReports}
-                onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
-                style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <div className="flex-col" style={{ gap: '2px' }}>
-                <span className="text-label" style={{ fontWeight: 600 }}>Receive attendance reports</span>
-                <span className="text-xs text-muted">Receive automated after-event reports for all events.</span>
-              </div>
-            </label>
+            <>
+              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
+                <input
+                  type="checkbox"
+                  checked={receiveAttendanceReports}
+                  onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <div className="flex-col" style={{ gap: '2px' }}>
+                  <span className="text-label" style={{ fontWeight: 600 }}>Receive attendance reports</span>
+                  <span className="text-xs text-muted">Receive automated after-event reports for all events.</span>
+                </div>
+              </label>
+
+              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
+                <input
+                  type="checkbox"
+                  checked={receiveRsvpDeclineNotices}
+                  onChange={(e) => setReceiveRsvpDeclineNotices(e.target.checked)}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <div className="flex-col" style={{ gap: '2px' }}>
+                  <span className="text-label" style={{ fontWeight: 600 }}>Receive RSVP decline notifications</span>
+                  <span className="text-xs text-muted">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
+                </div>
+              </label>
+            </>
           )}
 
           {profile.id ? (

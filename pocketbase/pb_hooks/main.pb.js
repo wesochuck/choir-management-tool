@@ -4827,6 +4827,80 @@ onRecordAfterUpdateSuccess((e) => {
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
+function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
+    const voicePart = profile.get("voicePart") || "";
+    // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
+    if (!voicePart) {
+        return;
+    }
+    try {
+        const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+        if (!adminUsers || adminUsers.length === 0)
+            return;
+        const adminUserIds = adminUsers.map(u => u.id);
+        const adminProfiles = app.findRecordsByFilter("profiles", "receiveRsvpDeclineNotices = true && globalStatus != 'Inactive'", "");
+        if (!adminProfiles || adminProfiles.length === 0)
+            return;
+        let template = null;
+        try {
+            template = app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Decline Notice' && isSystemTemplate = true");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
+            return;
+        }
+        let event = null;
+        let eventTitle = "Event";
+        try {
+            event = app.findRecordById("events", eventId);
+            eventTitle = (event.get("title") || event.get("type") || "Event");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
+        }
+        const queueCollection = app.findCollectionByNameOrId("emailQueue");
+        const singerName = (profile.get("name") || "Singer");
+        adminProfiles.forEach(adminProf => {
+            const userId = adminProf.get("user");
+            if (!userId || adminUserIds.indexOf(userId) === -1) {
+                return;
+            }
+            const adminUser = adminUsers.find(u => u.id === userId);
+            const recipientEmail = adminUser ? adminUser.get("email") : "";
+            if (!recipientEmail || adminProf.get("doNotEmail")) {
+                return;
+            }
+            const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+            let subject = template.get("subject") || "";
+            let content = template.get("content") || "";
+            subject = subject.replace(/{declinedSingerName}/g, singerName)
+                .replace(/{eventTitle}/g, eventTitle);
+            content = content.replace(/{adminName}/g, adminName)
+                .replace(/{declinedSingerName}/g, singerName)
+                .replace(/{voicePart}/g, voicePart)
+                .replace(/{rsvpNote}/g, rsvpNote || "None provided");
+            const queueRecord = new Record(queueCollection, {
+                recipientId: adminProf.id,
+                recipientEmail: recipientEmail,
+                recipientName: adminName,
+                subject: subject,
+                rawContent: content,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({
+                    eventId: eventId,
+                    type: "Automated Decline Notice"
+                })
+            });
+            app.save(queueRecord);
+        });
+        // Trigger queue processor to dispatch emails immediately
+        processEmailQueue(app);
+    }
+    catch (err) {
+        console.log("[RSVP Decline Hook Error] Failed to process decline notifications: " + err);
+    }
+}
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -6253,7 +6327,17 @@ function getRsvpWindowInfo(event) {
         if (normalizedRsvp === "Yes" && oldRsvp !== "Yes") {
             try {
                 const profile = $app.findRecordById("profiles", parts.p);
-                const recipientEmail = profile.get("email");
+                let recipientEmail = "";
+                const userId = profile.get("user");
+                if (userId) {
+                    try {
+                        const userRec = $app.findRecordById("users", userId);
+                        recipientEmail = userRec.get("email") || "";
+                    }
+                    catch (err) {
+                        console.log("[RSVP Confirmation Error] Failed to resolve email for profile " + parts.p + ": " + err);
+                    }
+                }
                 if (recipientEmail && !profile.get("doNotEmail")) {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
                     const queueCollection = $app.findCollectionByNameOrId("emailQueue");
@@ -6276,6 +6360,16 @@ function getRsvpWindowInfo(event) {
             }
             catch (emailErr) {
                 console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+            }
+        }
+        // Notify admins if RSVP changed to No
+        if (normalizedRsvp === "No" && oldRsvp !== "No") {
+            try {
+                const profile = $app.findRecordById("profiles", parts.p);
+                notifyAdminsOfDecline($app, parts.e, profile, rsvpNote);
+            }
+            catch (declineErr) {
+                console.log("[RSVP Decline Hook Error] Failed to process quick-rsvp decline notice: " + declineErr);
             }
         }
     }
@@ -7786,7 +7880,17 @@ function getRsvpWindowInfo(event) {
             // Enqueue confirmation email if RSVP changed to Yes
             if (rsvp === "Yes" && oldRsvp !== "Yes") {
                 try {
-                    const recipientEmail = profile.get("email");
+                    let recipientEmail = "";
+                    const userId = profile.get("user");
+                    if (userId) {
+                        try {
+                            const userRec = $app.findRecordById("users", userId);
+                            recipientEmail = userRec.get("email") || "";
+                        }
+                        catch (err) {
+                            console.log("[RSVP Confirmation Error] Failed to resolve email for profile " + profile.id + ": " + err);
+                        }
+                    }
                     if (recipientEmail && !profile.get("doNotEmail")) {
                         const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
                         const queueCollection = $app.findCollectionByNameOrId("emailQueue");
@@ -7809,6 +7913,15 @@ function getRsvpWindowInfo(event) {
                 }
                 catch (emailErr) {
                     console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+                }
+            }
+            // Notify admins if RSVP changed to No
+            if (rsvp === "No" && oldRsvp !== "No") {
+                try {
+                    notifyAdminsOfDecline($app, eventId, profile, rsvpNote);
+                }
+                catch (declineErr) {
+                    console.log("[RSVP Decline Hook Error] Failed to process singer/rsvp decline notice: " + declineErr);
                 }
             }
         }
@@ -9918,7 +10031,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             let salt = profile.get("calendarSalt");
             if (!salt) {
                 salt = $security.randomString(16);
@@ -9945,7 +10058,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             // Generate new salt
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
@@ -10649,7 +10762,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             let salt = profile.get("calendarSalt");
             if (!salt) {
                 salt = $security.randomString(16);
@@ -10676,7 +10789,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             // Generate new salt
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
@@ -11380,7 +11493,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             let salt = profile.get("calendarSalt");
             if (!salt) {
                 salt = $security.randomString(16);
@@ -11407,7 +11520,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             // Generate new salt
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
@@ -12111,7 +12224,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             let salt = profile.get("calendarSalt");
             if (!salt) {
                 salt = $security.randomString(16);
@@ -12138,7 +12251,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", `user = '${authRecord.id}'`);
+            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
             // Generate new salt
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
