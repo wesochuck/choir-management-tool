@@ -134,7 +134,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             </h5>
 
             <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
-              {previewData.setList.slice(0, 6).map((item, idx) => {
+              {previewData.setList.map((item, idx) => {
                 const rawItem = item as unknown as Record<string, unknown>;
                 const itemTitle = (rawItem.title || rawItem.pieceTitle || 'Untitled Piece') as string;
                 return (
@@ -149,12 +149,6 @@ export const EventCard: React.FC<EventCardProps> = ({
                 );
               })}
             </ol>
-
-            {previewData.setList.length > 6 && (
-              <small style={{ display: 'block', marginTop: 'var(--space-xs)', color: 'var(--text-muted)', fontWeight: 'bold' }}>
-                + {previewData.setList.length - 6} more in the Practice Player
-              </small>
-            )}
           </div>
         )}
 
