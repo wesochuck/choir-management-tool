@@ -1,4 +1,3 @@
-import { generateSignedEventRecipientToken } from './hmacTokens';
 import { parseJsonField } from './email/hookJson';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 
@@ -10,19 +9,16 @@ declare const $security: {
 declare const Record: new (collection: unknown, data?: unknown) => PocketBaseRecord;
 declare function routerAdd(method: string, path: string, handler: (e: PocketBaseRequestEvent) => unknown): void;
 
-// TypeScript declarations for shared utilities inlined at runtime
-declare function getHmacSecret(app: PocketBaseApp): string;
-declare function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null;
-declare function generateSignedEventRecipientToken(app: PocketBaseApp, eventId: string, recipientId: string, secret?: string): string;
-declare function getEventRecipientPayload(eventId: string, recipientId: string): string;
-declare function processEmailQueue(app: PocketBaseApp): void;
-
-interface TxApp extends PocketBaseApp {
-    delete(record: PocketBaseRecord): void;
-}
+import {
+    getHmacSecret,
+    parseSignedToken,
+    generateSignedEventRecipientToken,
+    getEventRecipientPayload
+} from './hmacTokens';
+import { processEmailQueue } from './email/queueProcessor';
 
 interface AppWithTransaction {
-    runInTransaction(callback: (txApp: TxApp) => void): void;
+    runInTransaction(callback: (txApp: PocketBaseApp) => void): void;
 }
 
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
@@ -582,12 +578,11 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
     }
 
     const data = e.requestInfo().body;
-    let content = data.content;
-    const eventId = data.eventId;
-
-    if (typeof content !== "string") {
+    if (typeof data.content !== "string") {
         return e.json(400, { error: "Missing or invalid content parameter" });
     }
+    let content: string = data.content;
+    const eventId = typeof data.eventId === "string" ? data.eventId : undefined;
 
     let profile: PocketBaseRecord;
     try {
@@ -618,8 +613,9 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
     }
 
     if (!baseUrl) {
-        const host = e.requestInfo().headers["host"] || "localhost:8080";
-        const proto = e.requestInfo().headers["x-forwarded-proto"] || "http";
+        const requestInfo = e.requestInfo();
+        const host = requestInfo.headers?.["host"] || "localhost:8080";
+        const proto = requestInfo.headers?.["x-forwarded-proto"] || "http";
         baseUrl = proto + "://" + host;
     }
 
@@ -647,4 +643,161 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
     }
 
     return e.json(200, { resolvedContent: content });
+});
+
+routerAdd("POST", "/api/singer/rsvp", (e) => {
+    // __SHARED_UTILS__
+
+    const authRecord = e.auth;
+    if (!authRecord) {
+        return e.json(401, { error: "Unauthorized" });
+    }
+
+    const data = e.requestInfo().body;
+    if (typeof data.eventId !== "string" || typeof data.rsvp !== "string") {
+        return e.json(400, { error: "Missing eventId or rsvp" });
+    }
+    const eventId: string = data.eventId;
+    const rsvp: string = data.rsvp;
+    const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
+
+    if (rsvp !== "Yes" && rsvp !== "No" && rsvp !== "Pending") {
+        return e.json(400, { error: "Invalid rsvp status" });
+    }
+
+    let profile: PocketBaseRecord;
+    try {
+        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+    } catch {
+        return e.json(404, { error: "Profile not found" });
+    }
+
+    let event: PocketBaseRecord;
+    try {
+        event = $app.findRecordById("events", eventId);
+        if (!event.get("isOpenForRSVP")) {
+            return e.json(410, { error: "RSVP window for this event is closed." });
+        }
+    } catch {
+        return e.json(404, { error: "Event not found" });
+    }
+
+    if (event.get("type") === "Rehearsal" && rsvp === "No" && !rsvpNote) {
+        return e.json(400, {
+            error: "Please include a note explaining why you cannot attend this rehearsal.",
+            code: "RSVP_NOTE_REQUIRED",
+        });
+    }
+
+    try {
+        const matches = $app.findRecordsByFilter(
+            "eventRosters",
+            "event = {:e} && profile = {:p}",
+            "",
+            2,
+            0,
+            { e: eventId, p: profile.id }
+        ) || [];
+
+        let roster = matches.length > 0 ? matches[0] : null;
+
+        if (rsvp === "Pending") {
+            if (roster) {
+                const hasOtherData = roster.get("attendance") !== "Pending" ||
+                                     Boolean((roster.get("folderNumber") as string || "").trim()) ||
+                                     roster.get("folderReturned") ||
+                                     Boolean((roster.get("seatId") as string || "").trim());
+
+                if (!hasOtherData) {
+                    $app.delete(roster);
+                    return e.json(200, {
+                        id: "",
+                        event: eventId,
+                        profile: profile.id,
+                        rsvp: "Pending",
+                        attendance: "Pending",
+                        folderReturned: false,
+                    });
+                } else {
+                    roster.set("rsvp", "Pending");
+                    roster.set("rsvpNote", "");
+                    $app.save(roster);
+                }
+            } else {
+                return e.json(200, {
+                    id: "",
+                    event: eventId,
+                    profile: profile.id,
+                    rsvp: "Pending",
+                    attendance: "Pending",
+                    folderReturned: false,
+                });
+            }
+        } else {
+            const oldRsvp = roster ? roster.get("rsvp") : "";
+            if (!roster) {
+                const collection = $app.findCollectionByNameOrId("eventRosters");
+                roster = new Record(collection);
+                roster.set("event", eventId);
+                roster.set("profile", profile.id);
+                roster.set("attendance", "Pending");
+                roster.set("folderReturned", false);
+            }
+
+            roster.set("rsvp", rsvp);
+            if (rsvp === "No") {
+                roster.set("rsvpNote", rsvpNote);
+            } else {
+                roster.set("rsvpNote", "");
+            }
+
+            $app.save(roster);
+
+            // Enqueue confirmation email if RSVP changed to Yes
+            if (rsvp === "Yes" && oldRsvp !== "Yes") {
+                try {
+                    const recipientEmail = profile.get("email");
+                    if (recipientEmail && !profile.get("doNotEmail")) {
+                        const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
+                        const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+
+                        const queueRecord = new Record(queueCollection, {
+                            recipientId: profile.id,
+                            recipientEmail: recipientEmail,
+                            recipientName: profile.get("name") || "Singer",
+                            subject: template.get("subject") || "",
+                            rawContent: template.get("content") || "",
+                            status: "Pending",
+                            attempts: 0,
+                            filters: JSON.stringify({
+                                eventId: eventId,
+                                type: "Automated Confirmation"
+                            })
+                        });
+
+                        $app.save(queueRecord);
+                        processEmailQueue($app);
+                    }
+                } catch (emailErr) {
+                    console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+                }
+            }
+        }
+
+        return e.json(200, {
+            id: roster.id,
+            event: roster.get("event"),
+            profile: roster.get("profile"),
+            rsvp: roster.get("rsvp"),
+            rsvpNote: roster.get("rsvpNote") || "",
+            attendance: roster.get("attendance"),
+            folderReturned: !!roster.get("folderReturned"),
+            seatId: roster.get("seatId") || "",
+            folderNumber: roster.get("folderNumber") || "",
+        });
+
+    } catch (err) {
+        console.log("[Singer RSVP Error] Failed to update RSVP: " + err);
+        return e.json(500, { error: "Failed to update RSVP" });
+    }
 });
