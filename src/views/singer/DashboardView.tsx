@@ -40,12 +40,34 @@ export default function DashboardView() {
     if (myProfile?.id) {
       setIsAnnouncementsLoading(true);
       communicationService.getMessages()
-        .then(list => {
+        .then(async list => {
           // Client-side filter to only show messages where the user is a recipient
           const filtered = list.filter(msg => 
             msg.recipients?.some(r => r.id === myProfile.id)
           );
-          setAnnouncements(filtered.slice(0, 5));
+
+          const recent = filtered.slice(0, 5);
+          const resolved = await Promise.all(
+            recent.map(async (msg) => {
+              let content = msg.content;
+              const eventId = msg.filters?.eventId as string | undefined;
+
+              if (content.includes('{{RSVP_LINKS}}') || content.includes('{{POLL_LINK:')) {
+                try {
+                  content = await communicationService.resolveSingerPlaceholders(content, eventId);
+                } catch (err) {
+                  console.error('Failed to resolve placeholders for message', msg.id, err);
+                }
+              }
+
+              return {
+                ...msg,
+                content,
+              };
+            })
+          );
+
+          setAnnouncements(resolved);
         })
         .catch(err => console.error('Failed to load announcements', err))
         .finally(() => setIsAnnouncementsLoading(false));

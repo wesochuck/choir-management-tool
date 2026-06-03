@@ -5,6 +5,7 @@
 // - encodeURIComponent(token)
 
 import type { ListResult } from 'pocketbase';
+import { pb } from '../lib/pocketbase';
 import type { Event } from './eventService';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
@@ -73,6 +74,13 @@ export const communicationService = {
   resolveAttendanceReportRecipients,
   resolveRsvpPlaceholders,
   resolvePollPlaceholders,
+  resolveSingerPlaceholders: async (content: string, eventId?: string): Promise<string> => {
+    const response = await pb.send<{ resolvedContent: string }>('/api/singer/resolve-placeholders', {
+      method: 'POST',
+      body: { content, eventId },
+    });
+    return response.resolvedContent;
+  },
   sendBulkMessage,
   triggerAttendanceReport,
   defaultConfig: DEFAULT_COMMUNICATION_CONFIG,
@@ -118,6 +126,7 @@ export const communicationService = {
     content: string,
     recipients: CommunicationRecipient[]
   ) => Promise<{ previewContent: string; logs: string[] }>;
+  resolveSingerPlaceholders: (content: string, eventId?: string) => Promise<string>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   archiveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   sendBulkMessage: (
