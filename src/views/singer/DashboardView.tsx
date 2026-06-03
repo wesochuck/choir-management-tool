@@ -6,7 +6,7 @@ import { PageLayout } from '../../components/common/PageLayout';
 import { Link } from 'react-router-dom';
 import { pollService, type SingerPoll } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
-import { communicationService, type MessageRecord } from '../../services/communicationService';
+import { communicationService, type MessageRecord, type CommunicationRecipient } from '../../services/communicationService';
 import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import './DashboardView.css';
@@ -40,12 +40,44 @@ export default function DashboardView() {
     if (myProfile?.id) {
       setIsAnnouncementsLoading(true);
       communicationService.getMessages()
-        .then(list => {
+        .then(async list => {
           // Client-side filter to only show messages where the user is a recipient
           const filtered = list.filter(msg => 
             msg.recipients?.some(r => r.id === myProfile.id)
           );
-          setAnnouncements(filtered.slice(0, 5));
+
+          const recipient: CommunicationRecipient = {
+            id: myProfile.id,
+            name: myProfile.name,
+            email: myProfile.expand?.user?.email || '',
+            phone: myProfile.phone,
+            voicePart: myProfile.voicePart,
+            globalStatus: myProfile.globalStatus,
+          };
+
+          const resolved = await Promise.all(
+            filtered.map(async (msg) => {
+              let content = msg.content;
+              const eventId = msg.filters?.eventId as string | undefined;
+
+              if (content.includes('{{RSVP_LINKS}}') && eventId) {
+                const res = await communicationService.resolveRsvpPlaceholders(content, eventId, [recipient]);
+                content = res.previewContent;
+              }
+
+              if (content.includes('{{POLL_LINK:')) {
+                const res = await communicationService.resolvePollPlaceholders(content, [recipient]);
+                content = res.previewContent;
+              }
+
+              return {
+                ...msg,
+                content,
+              };
+            })
+          );
+
+          setAnnouncements(resolved.slice(0, 5));
         })
         .catch(err => console.error('Failed to load announcements', err))
         .finally(() => setIsAnnouncementsLoading(false));

@@ -133,8 +133,6 @@ export const rosterService = {
           profile: profileId,
           rsvp,
           rsvpNote: rsvp === 'No' ? rsvpNote : '',
-          attendance: 'Pending',
-          folderReturned: false,
         });
       }
       throw err;
