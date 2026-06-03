@@ -245,7 +245,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = "";
                                 if (secret) {
-                                    const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
 

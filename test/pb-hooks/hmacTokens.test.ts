@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateSignedPlayerToken, getHmacSecret, generateSignedEventRecipientToken } from '../../pocketbase/pb_hooks_src/hmacTokens.ts';
+import { generateSignedPlayerToken, getHmacSecret, generateSignedEventRecipientToken, generateSignedAuditionToken } from '../../pocketbase/pb_hooks_src/hmacTokens.ts';
 
 // Mock PocketBase globals
 (global as any).$security = {
@@ -41,4 +41,12 @@ test('generateSignedEventRecipientToken produces consistent tokens', () => {
     
     // Format should be e=eventId&p=recipientId&s=signature
     assert.strictEqual(token, `e=event123&p=rec456&s=sig_e=event123&p=rec456_test_secret`);
+});
+
+test('generateSignedAuditionToken produces consistent tokens', () => {
+    const auditionId = 'aud789';
+    const token = generateSignedAuditionToken((global as any).$app, auditionId);
+    
+    // Format should be a=auditionId&s=signature
+    assert.strictEqual(token, `a=aud789&s=sig_a=aud789_test_secret`);
 });

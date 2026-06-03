@@ -29,6 +29,13 @@ export function getEventRecipientPayload(eventId: string, recipientId: string): 
     return `e=${eventId}&p=${recipientId}`;
 }
 
+/**
+ * Enforces strict payload property serialization order for Audition calendar links.
+ */
+export function getAuditionPayload(auditionId: string): string {
+    return `a=${auditionId}`;
+}
+
 export function generateSignedPlayerToken(app: PocketBaseApp, eventId: string, secretOverride?: string): string {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -39,6 +46,13 @@ export function generateSignedPlayerToken(app: PocketBaseApp, eventId: string, s
 export function generateSignedEventRecipientToken(app: PocketBaseApp, eventId: string, recipientId: string, secretOverride?: string): string {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+
+export function generateSignedAuditionToken(app: PocketBaseApp, auditionId: string, secretOverride?: string): string {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }

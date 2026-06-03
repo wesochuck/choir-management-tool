@@ -30,7 +30,7 @@ export function handleGeneratePlayerToken(e: PocketBaseRequestEvent): void {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const token = generateSignedPlayerToken($app, eventId as string);
+    const token = generateSignedPlayerToken($app, eventId as string, secret);
 
     return e.json(200, { token });
 }

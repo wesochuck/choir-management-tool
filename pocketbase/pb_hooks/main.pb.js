@@ -706,6 +706,9 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -715,6 +718,12 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -943,7 +952,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -1573,6 +1582,9 @@ onRecordAfterCreateSuccess((e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -1582,6 +1594,12 @@ onRecordAfterCreateSuccess((e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -1810,7 +1828,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -2445,6 +2463,9 @@ onRecordAfterUpdateSuccess((e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -2454,6 +2475,12 @@ onRecordAfterUpdateSuccess((e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -2682,7 +2709,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -3278,6 +3305,9 @@ onRecordAfterCreateSuccess((e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -3287,6 +3317,12 @@ onRecordAfterCreateSuccess((e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -3515,7 +3551,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -4257,6 +4293,9 @@ onRecordAfterUpdateSuccess((e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -4266,6 +4305,12 @@ onRecordAfterUpdateSuccess((e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -4494,7 +4539,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -4838,6 +4883,9 @@ function getPlayerPayload(eventId) {
 function getEventRecipientPayload(eventId, recipientId) {
     return `e=${eventId}&p=${recipientId}`;
 }
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -4847,6 +4895,12 @@ function generateSignedPlayerToken(app, eventId, secretOverride) {
 function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -4957,6 +5011,9 @@ function getPlayerPayload(eventId) {
 function getEventRecipientPayload(eventId, recipientId) {
     return `e=${eventId}&p=${recipientId}`;
 }
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -4966,6 +5023,12 @@ function generateSignedPlayerToken(app, eventId, secretOverride) {
 function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -5515,6 +5578,9 @@ function getPlayerPayload(eventId) {
 function getEventRecipientPayload(eventId, recipientId) {
     return `e=${eventId}&p=${recipientId}`;
 }
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -5524,6 +5590,12 @@ function generateSignedPlayerToken(app, eventId, secretOverride) {
 function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -5752,7 +5824,7 @@ function processEmailQueue(app) {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = "";
                                 if (secret) {
-                                    const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                                 firstRehearsalHtml = `
@@ -6091,6 +6163,9 @@ function getPlayerPayload(eventId) {
 function getEventRecipientPayload(eventId, recipientId) {
     return `e=${eventId}&p=${recipientId}`;
 }
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -6100,6 +6175,12 @@ function generateSignedPlayerToken(app, eventId, secretOverride) {
 function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
@@ -6719,6 +6800,9 @@ routerAdd("POST", "/api/queue/process", (e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -6728,6 +6812,12 @@ routerAdd("POST", "/api/queue/process", (e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -6956,7 +7046,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -7330,6 +7420,9 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -7339,6 +7432,12 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -7379,7 +7478,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         if (!secret) {
             return e.json(500, { error: "HMAC_SECRET not configured" });
         }
-        const token = generateSignedPlayerToken($app, eventId);
+        const token = generateSignedPlayerToken($app, eventId, secret);
         return e.json(200, { token });
     }
     function handlePlayerPlaylist(e) {
@@ -7545,6 +7644,9 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     function getEventRecipientPayload(eventId, recipientId) {
         return `e=${eventId}&p=${recipientId}`;
     }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -7554,6 +7656,12 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
@@ -7594,7 +7702,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         if (!secret) {
             return e.json(500, { error: "HMAC_SECRET not configured" });
         }
-        const token = generateSignedPlayerToken($app, eventId);
+        const token = generateSignedPlayerToken($app, eventId, secret);
         return e.json(200, { token });
     }
     function handlePlayerPlaylist(e) {
@@ -8100,6 +8208,9 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         else if (parts.e) {
             payload = getPlayerPayload(parts.e);
         }
+        else if (parts.a) {
+            payload = getAuditionPayload(parts.a);
+        }
         else {
             return e.json(400, { error: "Invalid token payload" });
         }
@@ -8207,11 +8318,11 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -8827,6 +8938,9 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         else if (parts.e) {
             payload = getPlayerPayload(parts.e);
         }
+        else if (parts.a) {
+            payload = getAuditionPayload(parts.a);
+        }
         else {
             return e.json(400, { error: "Invalid token payload" });
         }
@@ -8934,11 +9048,11 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -9554,6 +9668,9 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         else if (parts.e) {
             payload = getPlayerPayload(parts.e);
         }
+        else if (parts.a) {
+            payload = getAuditionPayload(parts.a);
+        }
         else {
             return e.json(400, { error: "Invalid token payload" });
         }
@@ -9661,11 +9778,11 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -10281,6 +10398,9 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         else if (parts.e) {
             payload = getPlayerPayload(parts.e);
         }
+        else if (parts.a) {
+            payload = getAuditionPayload(parts.a);
+        }
         else {
             return e.json(400, { error: "Invalid token payload" });
         }
@@ -10388,11 +10508,11 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
