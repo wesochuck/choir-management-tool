@@ -77,7 +77,11 @@ export default function ResourcesView() {
         // Explicitly clear URL field
         formData.append('url', '');
       } else {
-        formData.append('url', url.trim());
+        let formattedUrl = url.trim();
+        if (formattedUrl && !/^https?:\/\//i.test(formattedUrl)) {
+          formattedUrl = `https://${formattedUrl}`;
+        }
+        formData.append('url', formattedUrl);
         // Explicitly clear File field if switching to link
         formData.append('file', '');
       }
@@ -217,15 +221,15 @@ export default function ResourcesView() {
               <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Link URL</label>
                 <input
-                  type="url"
+                  type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   required
-                  placeholder="https://drive.google.com/..."
+                  placeholder="drive.google.com/..."
                   className="card"
                   style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
                 />
-                <span className="text-xs text-muted">Enter a valid URL starting with http:// or https://</span>
+                <span className="text-xs text-muted">Enter a link URL. https:// will be prepended if missing.</span>
               </div>
             )}
 
