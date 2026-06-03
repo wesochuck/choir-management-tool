@@ -25,12 +25,12 @@ export function handleGeneratePlayerToken(e: PocketBaseRequestEvent): void {
         return e.json(400, { error: "Missing eventId" });
     }
 
-    const secret = getHmacSecret();
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const token = generateSignedPlayerToken(eventId as string, secret);
+    const token = generateSignedPlayerToken($app, eventId as string, secret);
 
     return e.json(200, { token });
 }
@@ -62,7 +62,7 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    const secret = getHmacSecret();
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }

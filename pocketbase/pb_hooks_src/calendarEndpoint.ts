@@ -1,6 +1,6 @@
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { parseJsonField } from './email/hookJson';
-import { getHmacSecret, parseSignedToken, getPlayerPayload, getEventRecipientPayload } from './hmacTokens';
+import { getHmacSecret, parseSignedToken, getPlayerPayload, getEventRecipientPayload, getAuditionPayload } from './hmacTokens';
 import { getTimezoneOffsetInfo } from './email/hookText';
 import { zonedInputValueToUtcLocal } from './timezone';
 
@@ -139,7 +139,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    const secret = getHmacSecret();
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "Configuration error" });
     }
@@ -150,6 +150,8 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         payload = getEventRecipientPayload(parts.e, parts.p);
     } else if (parts.e) {
         payload = getPlayerPayload(parts.e);
+    } else if (parts.a) {
+        payload = getAuditionPayload(parts.a);
     } else {
         return e.json(400, { error: "Invalid token payload" });
     }
@@ -299,12 +301,12 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
         return e.json(400, { error: "Missing token" });
     }
 
-    const parts = parseSignedTokenLocal(token as string, ["p", "c", "s"]);
+    const parts = parseSignedToken(token as string, ["p", "c", "s"]);
     if (!parts) {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    const secret = getHmacSecretLocal(app);
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "Configuration error" });
     }
