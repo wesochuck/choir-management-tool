@@ -204,9 +204,11 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     const eventType = (event.get("type") || "Performance") as string;
                     const eventDetails = (event.get("details") || "") as string;
                     let venueName = "TBD";
+                    let venueAddress = "";
                     try {
                         const venueRecord = app.findRecordById("venues", event.get("venue") as string);
                         venueName = (venueRecord.get("name") || "TBD") as string;
+                        venueAddress = (venueRecord.get("address") || "") as string;
                     } catch {
                         // venue not found
                     }
@@ -220,13 +222,19 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                     .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                                     .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
 
+                    let locationHtml = escapeHtml(venueName);
+                    if (venueAddress.trim()) {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                        locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                    }
+
                     const eventInfoHtml = `
 <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
     <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
     <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
         📅 <strong>${escapeHtml(dateLong)}</strong><br>
         ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-        📍 <strong>${escapeHtml(venueName)}</strong>
+        📍 <strong>${locationHtml}</strong>
     </div>
 </div>
 `;
@@ -317,7 +325,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                                     .replace(/{eventType}/g, () => escapeHtml(eventType))
                                     .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                                    .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                                    .replace(/{eventLocation}/g, () => locationHtml)
                                     .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                                     .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                                     .replace(/{eventInfo}/g, () => eventInfoHtml)

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { processEmailQueue } from '../../pocketbase/pb_hooks_src/email/queueProcessor';
-import type { PocketBaseRecord, PocketBaseApp } from '../../pocketbase/pb_hooks_src/email/emailTypes';
+import type { PocketBaseRecord, PocketBaseApp, PocketBaseQuery } from '../../pocketbase/pb_hooks_src/email/emailTypes';
 
 class MockRecord implements PocketBaseRecord {
     collection: string;
@@ -38,65 +38,73 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
     const tzSetting = new MockRecord('appSettings', { key: 'timezone', value: JSON.stringify('America/New_York') });
     const choirNameSetting = new MockRecord('appSettings', { key: 'choir_name', value: JSON.stringify('City Chorus') });
 
-    const mockVenue = new MockRecord('venues', { id: 'ven-1', name: 'St. Mary Church' });
+    const mockVenue = new MockRecord('venues', { id: 'ven-1', name: 'St. Mary Church', address: '123 Church St, Cityville' });
     const mockEvent = new MockRecord('events', { id: 'evt-1', title: 'Spring Concert', type: 'Performance', date: '2026-06-15T19:00:00Z', venue: 'ven-1', details: 'Fun show' });
     const mockPoll = new MockRecord('polls', { id: 'poll123', question: 'Who can help with setup?' });
 
     const savedRecords: PocketBaseRecord[] = [];
-    const sentEmails: unknown[] = [];
+    interface SentEmail {
+        config: {
+            to: { address: string; name?: string }[];
+            html: string;
+            subject: string;
+        };
+    }
+    const sentEmails: SentEmail[] = [];
 
     const mockDb = {
         newQuery: (sql: string) => {
             const normalizedSql = sql.replace(/\s+/g, ' ').trim();
-            return {
+            let boundParams: Record<string, unknown> = {};
+            const query: PocketBaseQuery = {
                 bind: (params: Record<string, unknown>) => {
-                    return {
-                        execute: () => {
-                            if (normalizedSql.includes("UPDATE emailQueue SET status = 'Pending'") && normalizedSql.includes("processingStartedAt < datetime('now'")) {
-                                allQueueRecords.forEach(r => {
-                                    if (r.get('status') === 'Processing') {
-                                        const startedAt = r.get('processingStartedAt');
-                                        if (startedAt instanceof Date && startedAt.getTime() < Date.now() - 15 * 60 * 1000) {
-                                            const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
-                                            if (attempts < (params.maxAttempts as number)) {
-                                                r.set('status', 'Pending');
-                                                r.set('processingRunId', null);
-                                                r.set('processingStartedAt', null);
-                                            }
-                                        }
-                                    }
-                                });
-                            } else if (normalizedSql.includes("UPDATE emailQueue SET status = 'Failed'") && normalizedSql.includes("processingStartedAt < datetime('now'")) {
-                                allQueueRecords.forEach(r => {
-                                    if (r.get('status') === 'Processing') {
-                                        const startedAt = r.get('processingStartedAt');
-                                        if (startedAt instanceof Date && startedAt.getTime() < Date.now() - 15 * 60 * 1000) {
-                                            const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
-                                            if (attempts >= (params.maxAttempts as number)) {
-                                                r.set('status', 'Failed');
-                                                r.set('processingRunId', null);
-                                                r.set('processingStartedAt', null);
-                                            }
-                                        }
-                                    }
-                                });
-                            } else if (normalizedSql.includes("UPDATE emailQueue SET status = 'Processing'") && normalizedSql.includes("WHERE id IN")) {
-                                let claimed = 0;
-                                allQueueRecords.forEach(r => {
-                                    const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
-                                    if (r.get('status') === 'Pending' && attempts < (params.maxAttempts as number) && claimed < (params.batchSize as number)) {
-                                        r.set('status', 'Processing');
-                                        r.set('processingRunId', params.runId);
-                                        r.set('processingStartedAt', new Date());
-                                        claimed++;
-                                    }
-                                });
-                            }
-                        }
-                    };
+                    boundParams = { ...boundParams, ...params };
+                    return query;
                 },
-                execute: () => {}
+                execute: () => {
+                    if (normalizedSql.includes("UPDATE emailQueue SET status = 'Pending'") && normalizedSql.includes("processingStartedAt < datetime('now'")) {
+                        allQueueRecords.forEach(r => {
+                            if (r.get('status') === 'Processing') {
+                                const startedAt = r.get('processingStartedAt');
+                                if (startedAt instanceof Date && startedAt.getTime() < Date.now() - 15 * 60 * 1000) {
+                                    const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
+                                    if (attempts < (boundParams.maxAttempts as number)) {
+                                        r.set('status', 'Pending');
+                                        r.set('processingRunId', null);
+                                        r.set('processingStartedAt', null);
+                                    }
+                                }
+                            }
+                        });
+                    } else if (normalizedSql.includes("UPDATE emailQueue SET status = 'Failed'") && normalizedSql.includes("processingStartedAt < datetime('now'")) {
+                        allQueueRecords.forEach(r => {
+                            if (r.get('status') === 'Processing') {
+                                const startedAt = r.get('processingStartedAt');
+                                if (startedAt instanceof Date && startedAt.getTime() < Date.now() - 15 * 60 * 1000) {
+                                    const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
+                                    if (attempts >= (boundParams.maxAttempts as number)) {
+                                        r.set('status', 'Failed');
+                                        r.set('processingRunId', null);
+                                        r.set('processingStartedAt', null);
+                                    }
+                                }
+                            }
+                        });
+                    } else if (normalizedSql.includes("UPDATE emailQueue SET status = 'Processing'") && normalizedSql.includes("WHERE id IN")) {
+                        let claimed = 0;
+                        allQueueRecords.forEach(r => {
+                            const attempts = typeof r.get('attempts') === 'number' ? r.get('attempts') as number : 0;
+                            if (r.get('status') === 'Pending' && attempts < (boundParams.maxAttempts as number) && claimed < (boundParams.batchSize as number)) {
+                                r.set('status', 'Processing');
+                                r.set('processingRunId', boundParams.runId);
+                                r.set('processingStartedAt', new Date());
+                                claimed++;
+                            }
+                        });
+                    }
+                }
             };
+            return query;
         }
     };
 
@@ -108,7 +116,7 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
         }),
         newMailClient: () => ({
             send: (message: unknown) => {
-                sentEmails.push(message);
+                sentEmails.push(message as SentEmail);
                 const mockMsg = message as MockMailerMessage;
                 const config = mockMsg.config as { to: { address: string }[] };
                 if (onSend) {
@@ -155,6 +163,9 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
         },
         saveNoValidate: (record: PocketBaseRecord) => {
             savedRecords.push(record);
+        },
+        delete: (_record: PocketBaseRecord) => {
+            // Not used in queue processor tests, but required by interface
         },
         db: () => mockDb
     };
@@ -206,6 +217,12 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.strictEqual(recordSuccess.get('status'), 'Sent', 'Success should end as Sent');
     assert.strictEqual(recordSuccess.get('attempts'), 0);
     assert.ok(recordSuccess.get('sentAt'), 'sentAt timestamp should be populated');
+
+    // Verify Google Maps location links in HTML
+    const successEmail = sentEmails.find((e: any) => e.config.to[0].address === 'success@example.com') as any;
+    assert.ok(successEmail, 'Should have sent an email to success recipient');
+    assert.ok(successEmail.config.html.includes('https://www.google.com/maps/search/?api=1&amp;query=123%20Church%20St%2C%20Cityville'), 'Should include Google Maps URL with encoded address');
+    assert.ok(successEmail.config.html.includes('St. Mary Church'), 'Should include the venue name inside the link');
 
     // Verify failures
     assert.strictEqual(recordFail.get('status'), 'Pending', 'Failure should end as Pending to retry');
@@ -359,7 +376,7 @@ test('processEmailQueue contentType: "html" bypasses markdown rendering', () => 
     // Wait, how did the previous tests pass?
     // Oh, the bundle includes it.
 
-    assert.ok(htmlSent.config.html.includes(htmlContent), 'HTML content should be preserved exactly');
-    assert.ok(mdSent.config.html.includes('<strong>Markdown</strong>'), 'Markdown should be rendered to HTML');
-    assert.ok(!mdSent.config.html.includes('**Markdown**'), 'Markdown should not be present in output');
+    assert.ok(htmlSent && htmlSent.config.html.includes(htmlContent), 'HTML content should be preserved exactly');
+    assert.ok(mdSent && mdSent.config.html.includes('<strong>Markdown</strong>'), 'Markdown should be rendered to HTML');
+    assert.ok(mdSent && !mdSent.config.html.includes('**Markdown**'), 'Markdown should not be present in output');
 });

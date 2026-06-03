@@ -916,9 +916,11 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
                         let venueName = "TBD";
+                        let venueAddress = "";
                         try {
                             const venueRecord = app.findRecordById("venues", event.get("venue"));
                             venueName = (venueRecord.get("name") || "TBD");
+                            venueAddress = (venueRecord.get("address") || "");
                         }
                         catch (_b) {
                             // venue not found
@@ -930,13 +932,18 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
                         const eventInfoHtml = `
     <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
         <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
         <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
             📅 <strong>${escapeHtml(dateLong)}</strong><br>
             ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${escapeHtml(venueName)}</strong>
+            📍 <strong>${locationHtml}</strong>
         </div>
     </div>
     `;
@@ -1022,7 +1029,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                            .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -1793,9 +1800,11 @@ onRecordAfterCreateSuccess((e) => {
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
                         let venueName = "TBD";
+                        let venueAddress = "";
                         try {
                             const venueRecord = app.findRecordById("venues", event.get("venue"));
                             venueName = (venueRecord.get("name") || "TBD");
+                            venueAddress = (venueRecord.get("address") || "");
                         }
                         catch (_b) {
                             // venue not found
@@ -1807,13 +1816,18 @@ onRecordAfterCreateSuccess((e) => {
                         subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
                         const eventInfoHtml = `
     <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
         <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
         <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
             📅 <strong>${escapeHtml(dateLong)}</strong><br>
             ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${escapeHtml(venueName)}</strong>
+            📍 <strong>${locationHtml}</strong>
         </div>
     </div>
     `;
@@ -1899,7 +1913,7 @@ onRecordAfterCreateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                            .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -2675,9 +2689,11 @@ onRecordAfterUpdateSuccess((e) => {
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
                         let venueName = "TBD";
+                        let venueAddress = "";
                         try {
                             const venueRecord = app.findRecordById("venues", event.get("venue"));
                             venueName = (venueRecord.get("name") || "TBD");
+                            venueAddress = (venueRecord.get("address") || "");
                         }
                         catch (_b) {
                             // venue not found
@@ -2689,13 +2705,18 @@ onRecordAfterUpdateSuccess((e) => {
                         subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
                         const eventInfoHtml = `
     <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
         <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
         <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
             📅 <strong>${escapeHtml(dateLong)}</strong><br>
             ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${escapeHtml(venueName)}</strong>
+            📍 <strong>${locationHtml}</strong>
         </div>
     </div>
     `;
@@ -2781,7 +2802,7 @@ onRecordAfterUpdateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                            .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -3518,9 +3539,11 @@ onRecordAfterCreateSuccess((e) => {
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
                         let venueName = "TBD";
+                        let venueAddress = "";
                         try {
                             const venueRecord = app.findRecordById("venues", event.get("venue"));
                             venueName = (venueRecord.get("name") || "TBD");
+                            venueAddress = (venueRecord.get("address") || "");
                         }
                         catch (_b) {
                             // venue not found
@@ -3532,13 +3555,18 @@ onRecordAfterCreateSuccess((e) => {
                         subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
                         const eventInfoHtml = `
     <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
         <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
         <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
             📅 <strong>${escapeHtml(dateLong)}</strong><br>
             ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${escapeHtml(venueName)}</strong>
+            📍 <strong>${locationHtml}</strong>
         </div>
     </div>
     `;
@@ -3624,7 +3652,7 @@ onRecordAfterCreateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                            .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -4507,9 +4535,11 @@ onRecordAfterUpdateSuccess((e) => {
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
                         let venueName = "TBD";
+                        let venueAddress = "";
                         try {
                             const venueRecord = app.findRecordById("venues", event.get("venue"));
                             venueName = (venueRecord.get("name") || "TBD");
+                            venueAddress = (venueRecord.get("address") || "");
                         }
                         catch (_b) {
                             // venue not found
@@ -4521,13 +4551,18 @@ onRecordAfterUpdateSuccess((e) => {
                         subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
                         const eventInfoHtml = `
     <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
         <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
         <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
             📅 <strong>${escapeHtml(dateLong)}</strong><br>
             ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${escapeHtml(venueName)}</strong>
+            📍 <strong>${locationHtml}</strong>
         </div>
     </div>
     `;
@@ -4613,7 +4648,7 @@ onRecordAfterUpdateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                            .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -5958,9 +5993,11 @@ function processEmailQueue(app) {
                     const eventType = (event.get("type") || "Performance");
                     const eventDetails = (event.get("details") || "");
                     let venueName = "TBD";
+                    let venueAddress = "";
                     try {
                         const venueRecord = app.findRecordById("venues", event.get("venue"));
                         venueName = (venueRecord.get("name") || "TBD");
+                        venueAddress = (venueRecord.get("address") || "");
                     }
                     catch (_b) {
                         // venue not found
@@ -5972,13 +6009,18 @@ function processEmailQueue(app) {
                     subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                         .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                         .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                    let locationHtml = escapeHtml(venueName);
+                    if (venueAddress.trim()) {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                        locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                    }
                     const eventInfoHtml = `
 <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
     <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
     <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
         📅 <strong>${escapeHtml(dateLong)}</strong><br>
         ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-        📍 <strong>${escapeHtml(venueName)}</strong>
+        📍 <strong>${locationHtml}</strong>
     </div>
 </div>
 `;
@@ -6064,7 +6106,7 @@ function processEmailQueue(app) {
                     htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                         .replace(/{eventType}/g, () => escapeHtml(eventType))
                         .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                        .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                        .replace(/{eventLocation}/g, () => locationHtml)
                         .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                         .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                         .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -7565,9 +7607,11 @@ function processEmailQueue(app) {
                     const eventType = (event.get("type") || "Performance");
                     const eventDetails = (event.get("details") || "");
                     let venueName = "TBD";
+                    let venueAddress = "";
                     try {
                         const venueRecord = app.findRecordById("venues", event.get("venue"));
                         venueName = (venueRecord.get("name") || "TBD");
+                        venueAddress = (venueRecord.get("address") || "");
                     }
                     catch (_b) {
                         // venue not found
@@ -7579,13 +7623,18 @@ function processEmailQueue(app) {
                     subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                         .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                         .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                    let locationHtml = escapeHtml(venueName);
+                    if (venueAddress.trim()) {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                        locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                    }
                     const eventInfoHtml = `
 <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
     <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
     <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
         📅 <strong>${escapeHtml(dateLong)}</strong><br>
         ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-        📍 <strong>${escapeHtml(venueName)}</strong>
+        📍 <strong>${locationHtml}</strong>
     </div>
 </div>
 `;
@@ -7671,7 +7720,7 @@ function processEmailQueue(app) {
                     htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                         .replace(/{eventType}/g, () => escapeHtml(eventType))
                         .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                        .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                        .replace(/{eventLocation}/g, () => locationHtml)
                         .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                         .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                         .replace(/{eventInfo}/g, () => eventInfoHtml)
@@ -8719,9 +8768,11 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
                         let venueName = "TBD";
+                        let venueAddress = "";
                         try {
                             const venueRecord = app.findRecordById("venues", event.get("venue"));
                             venueName = (venueRecord.get("name") || "TBD");
+                            venueAddress = (venueRecord.get("address") || "");
                         }
                         catch (_b) {
                             // venue not found
@@ -8733,13 +8784,18 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
                         const eventInfoHtml = `
     <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
         <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
         <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
             📅 <strong>${escapeHtml(dateLong)}</strong><br>
             ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${escapeHtml(venueName)}</strong>
+            📍 <strong>${locationHtml}</strong>
         </div>
     </div>
     `;
@@ -8825,7 +8881,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                            .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)

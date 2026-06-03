@@ -112,7 +112,8 @@ export function resolvePreviewContent(
   event: Event | null,
   recipient: CommunicationRecipient | null,
   mailingAddress: string = '123 Choir St, Harmony City, HC 12345',
-  pollQuestions: Record<string, string> = {}
+  pollQuestions: Record<string, string> = {},
+  isHtml: boolean = false
 ): string {
   if (!content) return '';
 
@@ -126,7 +127,14 @@ export function resolvePreviewContent(
   const title = event?.title || event?.type || 'Sample Performance';
   const type = event?.type || 'Performance';
   const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  const location = event?.expand?.venue?.name || 'Main Concert Hall';
+  const venueName = event?.expand?.venue?.name || 'Main Concert Hall';
+  const venueAddress = event?.expand?.venue?.address || '';
+  
+  let location = venueName;
+  if (isHtml && venueAddress.trim()) {
+    location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${venueName}</a>`;
+  }
+
   const callTime = event?.callTime ? formatTime12h(event.callTime) : '';
   const details = event?.details || 'Join us for an amazing evening of music and harmony!';
 
@@ -199,5 +207,5 @@ export function getRenderedPreview(
   }
 
   // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
-  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions);
+  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions, true);
 }
