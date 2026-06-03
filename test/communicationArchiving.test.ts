@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { communicationService } from '../src/services/communicationService.ts';
 import { shouldQueueMessage } from '../pocketbase/pb_hooks_src/email/messageHookRules.ts';
+import type { PocketBaseRecord } from '../pocketbase/pb_hooks_src/email/emailTypes.ts';
 
 test('shouldQueueMessage only returns true for Sent status', async () => {
-  const mockRecord = (data: Record<string, any>) => ({
+  const mockRecord = (data: Record<string, unknown>) => ({
     get: (key: string) => data[key],
-  } as any);
+  } as unknown as PocketBaseRecord);
 
   const sentEmail = mockRecord({ status: 'Sent', type: 'Email' });
   const archivedEmail = mockRecord({ status: 'Archived', type: 'Email' });
@@ -110,12 +111,12 @@ test('archiveMessage creates an Archived record and does not call sendBulkMessag
   const originalCollection = pb.collection;
   
   let createCalled = false;
-  let createPayload: any = null;
+  let createPayload: Record<string, unknown> | null = null;
 
   pb.collection = ((name: string) => {
     if (name === 'messages') {
       return {
-        create: async (data: any) => {
+        create: async (data: Record<string, unknown>) => {
           createCalled = true;
           createPayload = data;
           return { id: 'new-archived-id', ...data };

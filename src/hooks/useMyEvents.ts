@@ -38,10 +38,10 @@ export const useMyEvents = () => {
     fetchData();
   }, []);
 
-  const updateRSVP = async (eventId: string, rsvp: 'Yes' | 'No') => {
+  const updateRSVP = async (eventId: string, rsvp: 'Yes' | 'No', rsvpNote = '') => {
     if (!myProfile) throw new Error('No profile found for current user');
     try {
-      const updated = await rosterService.updateRSVP(eventId, myProfile.id, rsvp);
+      const updated = await rosterService.updateMyRSVP(eventId, rsvp, rsvpNote);
       setMyRosters(prev => ({ ...prev, [eventId]: updated }));
     } catch (err: unknown) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update RSVP');

@@ -7,6 +7,7 @@ export interface EventRoster extends RecordModel {
   event: string;
   rsvp: 'Yes' | 'No' | 'Pending';
   attendance: 'Present' | 'Absent' | 'Pending';
+  rsvpNote?: string;
   seatId: string;
   folderNumber: string;
   folderReturned: boolean;
@@ -80,32 +81,52 @@ export const rosterService = {
     });
   },
 
-  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus) {
-    // Find existing or create new
+  async updateMyRSVP(eventId: string, rsvp: RsvpStatus, rsvpNote = '') {
+    return await pb.send<EventRoster>('/api/singer/rsvp', {
+      method: 'POST',
+      body: { eventId, rsvp, rsvpNote },
+    });
+  },
+
+  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus, rsvpNote = '') {
     try {
       const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
         pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
       );
+      if (rsvp === 'Pending') {
+        const attendance = existing.attendance || 'Pending';
+        const folderNumber = (existing.folderNumber || '').trim();
+        const folderReturned = existing.folderReturned;
+        const seatId = (existing.seatId || '').trim();
 
-      // If we are resetting the RSVP to 'Pending', check if there is other useful data.
-      // If not, we can safely delete the record to keep the DB clean and avoid stale entries.
-      const hasOtherData = existing.attendance !== 'Pending' ||
-                           Boolean(existing.folderNumber && existing.folderNumber.trim() !== '') ||
-                           existing.folderReturned ||
-                           Boolean(existing.seatId && existing.seatId.trim() !== '');
-
-      if (rsvp === 'Pending' && !hasOtherData) {
-        await pb.collection('eventRosters').delete(existing.id);
-        return {
-          ...existing,
-          rsvp: 'Pending',
-        } as EventRoster;
+        const hasOtherData = attendance !== 'Pending' ||
+                             folderNumber !== '' ||
+                             folderReturned ||
+                             seatId !== '';
+        if (!hasOtherData) {
+          await pb.collection('eventRosters').delete(existing.id);
+          return {
+            id: '',
+            event: eventId,
+            profile: profileId,
+            rsvp: 'Pending',
+            attendance: 'Pending',
+            folderReturned: false,
+          } as EventRoster;
+        } else {
+          return await pb.collection('eventRosters').update<EventRoster>(existing.id, {
+            rsvp: 'Pending',
+            rsvpNote: '',
+          });
+        }
+      } else {
+        return await pb.collection('eventRosters').update<EventRoster>(existing.id, {
+          rsvp,
+          rsvpNote: rsvp === 'No' ? rsvpNote : '',
+        });
       }
-
-      return await pb.collection('eventRosters').update<EventRoster>(existing.id, { rsvp });
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
-        // If it doesn't exist and we want to set it to Pending, no need to create a database record
         if (rsvp === 'Pending') {
           return {
             id: '',
@@ -113,15 +134,14 @@ export const rosterService = {
             profile: profileId,
             rsvp: 'Pending',
             attendance: 'Pending',
-            folderNumber: '',
             folderReturned: false,
-            seatId: '',
-          } as unknown as EventRoster;
+          } as EventRoster;
         }
         return await pb.collection('eventRosters').create<EventRoster>({
           event: eventId,
           profile: profileId,
           rsvp,
+          rsvpNote: rsvp === 'No' ? rsvpNote : '',
           attendance: 'Pending',
           folderReturned: false,
         });

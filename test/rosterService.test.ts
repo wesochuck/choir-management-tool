@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pb } from '../src/lib/pocketbase.ts';
-import { rosterService, type EventRoster } from '../src/services/rosterService.ts';
+import { rosterService } from '../src/services/rosterService.ts';
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
@@ -203,125 +203,136 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
   }
 });
 
-test('updateRSVP deletes record if set to Pending and no other important data exists', async (t) => {
-  const originalCollection = pb.collection;
-  const getFirstListItem = t.mock.fn(async () => ({
-    id: 'roster_1',
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: 'Yes',
-    attendance: 'Pending',
-    folderNumber: '',
-    folderReturned: false,
-    seatId: '',
-  }));
-  const deleteMock = t.mock.fn(async () => {});
-  const update = t.mock.fn(async () => {
-    throw new Error('Should not update');
+test('updateMyRSVP deletes record if set to Pending and no other important data exists', async (t) => {
+  const originalSend = pb.send;
+  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
+    assert.equal(path, '/api/singer/rsvp');
+    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Pending', rsvpNote: '' });
+    return {
+      id: '',
+      event: 'event_1',
+      profile: 'profile_1',
+      rsvp: 'Pending',
+      attendance: 'Pending',
+      folderReturned: false,
+    };
   });
 
-  pb.collection = function (name: string) {
-    if (name === 'eventRosters') {
-      return { getFirstListItem, delete: deleteMock, update } as unknown as CollectionMock;
-    }
-    return originalCollection.call(pb, name);
-  };
+  pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Pending');
+    const result = await rosterService.updateMyRSVP('event_1', 'Pending');
     assert.equal(result.rsvp, 'Pending');
-    assert.equal(getFirstListItem.mock.callCount(), 1);
-    assert.equal(deleteMock.mock.callCount(), 1);
-    assert.equal(update.mock.callCount(), 0);
+    assert.equal(sendMock.mock.callCount(), 1);
   } finally {
-    pb.collection = originalCollection;
+    pb.send = originalSend;
   }
 });
 
-test('updateRSVP updates record (does not delete) if set to Pending but other important data exists', async (t) => {
-  const originalCollection = pb.collection;
-  const getFirstListItem = t.mock.fn(async () => ({
-    id: 'roster_1',
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: 'Yes',
-    attendance: 'Present',
-    folderNumber: '',
-    folderReturned: false,
-    seatId: '',
-  }));
-  const deleteMock = t.mock.fn(async () => {
-    throw new Error('Should not delete');
+test('updateMyRSVP updates record (does not delete) if set to Pending but other important data exists', async (t) => {
+  const originalSend = pb.send;
+  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
+    assert.equal(path, '/api/singer/rsvp');
+    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Pending', rsvpNote: '' });
+    return {
+      id: 'roster_1',
+      event: 'event_1',
+      profile: 'profile_1',
+      rsvp: 'Pending',
+      attendance: 'Present',
+      folderReturned: false,
+    };
   });
-  const update = t.mock.fn(async (id: string, data: Partial<EventRoster>) => ({
-    id,
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: data.rsvp,
-    attendance: 'Present',
-    folderNumber: '',
-    folderReturned: false,
-    seatId: '',
-  }));
 
-  pb.collection = function (name: string) {
-    if (name === 'eventRosters') {
-      return { getFirstListItem, delete: deleteMock, update } as unknown as CollectionMock;
-    }
-    return originalCollection.call(pb, name);
-  };
+  pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Pending');
+    const result = await rosterService.updateMyRSVP('event_1', 'Pending');
     assert.equal(result.rsvp, 'Pending');
-    assert.equal(getFirstListItem.mock.callCount(), 1);
-    assert.equal(deleteMock.mock.callCount(), 0);
-    assert.equal(update.mock.callCount(), 1);
+    assert.equal(sendMock.mock.callCount(), 1);
   } finally {
-    pb.collection = originalCollection;
+    pb.send = originalSend;
   }
 });
 
-test('updateRSVP updates record normally if set to Yes or No', async (t) => {
-  const originalCollection = pb.collection;
-  const getFirstListItem = t.mock.fn(async () => ({
-    id: 'roster_1',
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: 'Pending',
-    attendance: 'Pending',
-    folderNumber: '',
-    folderReturned: false,
-    seatId: '',
-  }));
-  const deleteMock = t.mock.fn(async () => {
-    throw new Error('Should not delete');
+test('updateMyRSVP updates record normally if set to Yes or No', async (t) => {
+  const originalSend = pb.send;
+  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
+    assert.equal(path, '/api/singer/rsvp');
+    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Yes', rsvpNote: '' });
+    return {
+      id: 'roster_1',
+      event: 'event_1',
+      profile: 'profile_1',
+      rsvp: 'Yes',
+      attendance: 'Pending',
+      folderReturned: false,
+    };
   });
-  const update = t.mock.fn(async (id: string, data: Partial<EventRoster>) => ({
-    id,
-    event: 'event_1',
-    profile: 'profile_1',
-    rsvp: data.rsvp,
-    attendance: 'Pending',
-    folderNumber: '',
-    folderReturned: false,
-    seatId: '',
-  }));
 
-  pb.collection = function (name: string) {
-    if (name === 'eventRosters') {
-      return { getFirstListItem, delete: deleteMock, update } as unknown as CollectionMock;
-    }
-    return originalCollection.call(pb, name);
-  };
+  pb.send = sendMock as unknown as typeof pb.send;
 
   try {
-    const result = await rosterService.updateRSVP('event_1', 'profile_1', 'Yes');
+    const result = await rosterService.updateMyRSVP('event_1', 'Yes');
     assert.equal(result.rsvp, 'Yes');
-    assert.equal(getFirstListItem.mock.callCount(), 1);
-    assert.equal(deleteMock.mock.callCount(), 0);
-    assert.equal(update.mock.callCount(), 1);
+    assert.equal(sendMock.mock.callCount(), 1);
   } finally {
-    pb.collection = originalCollection;
+    pb.send = originalSend;
+  }
+});
+
+test('updateMyRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async (t) => {
+  const originalSend = pb.send;
+  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
+    assert.equal(path, '/api/singer/rsvp');
+    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Yes', rsvpNote: '' });
+    return {
+      id: 'roster_1',
+      event: 'event_1',
+      profile: 'profile_1',
+      rsvp: 'Yes',
+      rsvpNote: '',
+      attendance: 'Pending',
+      folderReturned: false,
+    };
+  });
+
+  pb.send = sendMock as unknown as typeof pb.send;
+
+  try {
+    const result = await rosterService.updateMyRSVP('event_1', 'Yes');
+    assert.equal(result.rsvp, 'Yes');
+    assert.equal(result.rsvpNote, '');
+    assert.equal(sendMock.mock.callCount(), 1);
+  } finally {
+    pb.send = originalSend;
+  }
+});
+
+test('updateMyRSVP saves rsvpNote when RSVP is No', async (t) => {
+  const originalSend = pb.send;
+  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
+    assert.equal(path, '/api/singer/rsvp');
+    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'No', rsvpNote: 'Sickness' });
+    return {
+      id: 'roster_1',
+      event: 'event_1',
+      profile: 'profile_1',
+      rsvp: 'No',
+      rsvpNote: 'Sickness',
+      attendance: 'Pending',
+      folderReturned: false,
+    };
+  });
+
+  pb.send = sendMock as unknown as typeof pb.send;
+
+  try {
+    const result = await rosterService.updateMyRSVP('event_1', 'No', 'Sickness');
+    assert.equal(result.rsvp, 'No');
+    assert.equal(result.rsvpNote, 'Sickness');
+    assert.equal(sendMock.mock.callCount(), 1);
+  } finally {
+    pb.send = originalSend;
   }
 });

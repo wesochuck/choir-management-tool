@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveAttendanceReportRecipients, triggerAttendanceReport } from '../src/services/communication/attendanceReportService.ts';
 import { messageRepository } from '../src/services/communication/messageRepository.ts';
+import type { MessageRecord } from '../src/services/communication/types.ts';
 
 test('resolveAttendanceReportRecipients filters correctly', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
@@ -61,29 +62,52 @@ test('resolveAttendanceReportRecipients filters correctly', async () => {
       doNotEmail: false,
       globalStatus: 'Inactive',
       expand: { user: { email: 'admin6@example.org', role: 'admin' } }
+    },
+    {
+      id: 'p7',
+      user: 'u7',
+      name: 'Admin No Email',
+      receiveAttendanceReports: true,
+      doNotEmail: false,
+      globalStatus: 'Active',
+      expand: { user: { email: '', role: 'admin' } }
     }
   ];
 
   pb.collection = ((name: string) => {
     if (name === 'profiles') {
       return {
-        getFullList: async () => mockProfiles.filter(p => 
-          p.expand.user.role === 'admin' && p.expand.user.email !== '' && p.globalStatus !== 'Inactive'
-        )
+        getFullList: async () => mockProfiles
       };
     }
     return originalCollection.call(pb, name);
-  }) as any;
+  }) as unknown as typeof pb.collection;
 
   try {
     const recipients = await resolveAttendanceReportRecipients();
-    assert.equal(recipients.length, 2);
-    assert.ok(recipients.find(r => r.email === 'admin1@example.org'));
-    assert.ok(recipients.find(r => r.email === 'admin2@example.org'));
-    assert.ok(!recipients.find(r => r.email === 'admin3@example.org'));
-    assert.ok(!recipients.find(r => r.email === 'admin4@example.org'));
-    assert.ok(!recipients.find(r => r.email === 'singer1@example.org'));
-    assert.ok(!recipients.find(r => r.email === 'admin6@example.org'));
+    
+    // Case 1: includes linked active admin with email and receiveAttendanceReports = true (admin1)
+    assert.ok(recipients.find(r => r.email === 'admin1@example.org'), 'Should include admin1');
+    
+    // Case 2: includes admin when receiveAttendanceReports is unset (admin2)
+    assert.ok(recipients.find(r => r.email === 'admin2@example.org'), 'Should include admin2 (default true)');
+    
+    // Case 3: excludes admin when receiveAttendanceReports = false (admin3)
+    assert.ok(!recipients.find(r => r.email === 'admin3@example.org'), 'Should exclude admin3 (opted out)');
+    
+    // Case 4: excludes admin when doNotEmail = true (admin4)
+    assert.ok(!recipients.find(r => r.email === 'admin4@example.org'), 'Should exclude admin4 (doNotEmail)');
+    
+    // Case 5: excludes inactive admin (admin6)
+    assert.ok(!recipients.find(r => r.email === 'admin6@example.org'), 'Should exclude admin6 (inactive)');
+
+    // Case 6: excludes singer users (singer1)
+    assert.ok(!recipients.find(r => r.email === 'singer1@example.org'), 'Should exclude singer1');
+
+    // Case 7: excludes profiles with no expanded user email (admin7)
+    assert.ok(!recipients.find(r => r.id === 'u7'), 'Should exclude admin7 (no email)');
+
+    assert.equal(recipients.length, 2, 'Total recipients should be 2');
   } finally {
     pb.collection = originalCollection;
   }
@@ -101,12 +125,10 @@ test('triggerAttendanceReport throws if no recipients', async () => {
       return { getOne: async () => ({ id: 'e1', date: new Date().toISOString(), title: 'Test' }) };
     }
     if (name === 'appSettings') {
-      return {
-        getFirstListItem: async () => null,
-      };
+      return { getFirstListItem: async () => ({ id: 'settings-communications', value: {} }) };
     }
     return originalCollection.call(pb, name);
-  }) as any;
+  }) as unknown as typeof pb.collection;
 
   try {
     await assert.rejects(
@@ -123,10 +145,10 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
   const originalCollection = pb.collection;
   const originalSaveMessage = messageRepository.saveMessage;
 
-  let savedMessage: any = null;
+  let savedMessage: MessageRecord | null = null;
   messageRepository.saveMessage = async (data) => {
-    savedMessage = data;
-    return {} as any;
+    savedMessage = data as MessageRecord;
+    return { id: 'm1', created: '', ...data } as MessageRecord;
   };
 
   pb.collection = ((name: string) => {
@@ -148,12 +170,10 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
       return { getFullList: async () => [{ id: 'r1', attendance: 'Present', profile: 'p1' }] };
     }
     if (name === 'appSettings') {
-      return {
-        getFirstListItem: async () => null,
-      };
+      return { getFirstListItem: async () => ({ id: 'settings-communications', value: {} }) };
     }
     return originalCollection.call(pb, name);
-  }) as any;
+  }) as unknown as typeof pb.collection;
 
   try {
     await triggerAttendanceReport('e1');

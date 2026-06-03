@@ -152,6 +152,7 @@ const CheckInRow: React.FC<{
             {item.rsvp === 'Yes' && <span>RSVP</span>}
             <span>Folder {item.folderNumber || '--'}</span>
             <span>{item.folderReturned ? 'Returned' : 'Not returned'}</span>
+            {item.rsvpNote && <span style={{ color: '#b91c1c', fontWeight: 600 }}>📝 {item.rsvpNote}</span>}
           </div>
           <div className="admin-checkin-primary-hint">
             {isPresent ? 'Checked in' : isAbsent ? 'Marked absent' : 'Tap card to mark present'}

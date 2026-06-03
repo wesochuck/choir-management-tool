@@ -1,5 +1,6 @@
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { parseJsonField } from './email/hookJson';
+import { getHmacSecret, parseSignedToken, getPlayerPayload, getEventRecipientPayload, getAuditionPayload } from './hmacTokens';
 import { getTimezoneOffsetInfo } from './email/hookText';
 import { zonedInputValueToUtcLocal } from './timezone';
 
@@ -9,31 +10,6 @@ declare const $security: {
     equal(a: string, b: string): boolean;
     randomString(length: number): string;
 };
-
-function getHmacSecretLocal(app: PocketBaseApp): string {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField<{ secret: string }>(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    } catch { return ""; }
-}
-
-function parseSignedTokenLocal(token: string, requiredKeys: string[]): Record<string, string> | null {
-    if (!token || typeof token !== "string") return null;
-    const parts: Record<string, string> = {};
-    const allowed: Record<string, boolean> = { s: true, e: true, p: true, a: true, c: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
-        if (idx <= 0) return;
-        const key = segment.slice(0, idx);
-        if (!allowed[key]) return;
-        parts[key] = segment.slice(idx + 1);
-    });
-    for (let i = 0; i < requiredKeys.length; i++) {
-        if (!parts[requiredKeys[i]]) return null;
-    }
-    return parts;
-}
 
 function escapeIcsText(value = '') {
     return String(value)
@@ -73,7 +49,8 @@ function getChoirNameLocal(app: PocketBaseApp): string {
         }
 
         if (parsed && typeof parsed === "object") {
-            const value = (parsed as any).name || (parsed as any).choirName || (parsed as any).value;
+            const parsedRecord = parsed as Record<string, unknown>;
+            const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
             const nestedName = safeTrim(value);
             if (nestedName) {
                 return nestedName;
@@ -86,7 +63,7 @@ function getChoirNameLocal(app: PocketBaseApp): string {
     return "Choir";
 }
 
-function safeTrim(str: any): string {
+function safeTrim(str: unknown): string {
     if (!str) return "";
     return String(str).replace(/^\s+|\s+$/g, "");
 }
@@ -158,12 +135,12 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         return e.json(400, { error: "Missing token" });
     }
 
-    const parts = parseSignedTokenLocal(token as string, ["s"]);
+    const parts = parseSignedToken(token as string, ["s"]);
     if (!parts) {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    const secret = getHmacSecretLocal(app);
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "Configuration error" });
     }
@@ -171,11 +148,13 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
     // Determine payload signature
     let payload: string;
     if (parts.e && parts.p) {
-        payload = `e=${parts.e}&p=${parts.p}`;
+        payload = getEventRecipientPayload(parts.e, parts.p);
+    } else if (parts.e) {
+        payload = getPlayerPayload(parts.e);
     } else if (parts.a) {
-        payload = `a=${parts.a}`;
+        payload = getAuditionPayload(parts.a);
     } else {
-        return e.json(400, { error: "Invalid token structure" });
+        return e.json(400, { error: "Invalid token payload" });
     }
 
     const expectedSignature = $security.hs256(payload, secret);
@@ -323,12 +302,12 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
         return e.json(400, { error: "Missing token" });
     }
 
-    const parts = parseSignedTokenLocal(token as string, ["p", "c", "s"]);
+    const parts = parseSignedToken(token as string, ["p", "c", "s"]);
     if (!parts) {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    const secret = getHmacSecretLocal(app);
+    const secret = getHmacSecret($app);
     if (!secret) {
         return e.json(500, { error: "Configuration error" });
     }
@@ -598,5 +577,4 @@ export function handleCalendarFeedReset(e: PocketBaseRequestEvent): unknown {
         return e.json(500, { error: "Failed to reset calendar feed: " + String(err) });
     }
 }
-
 

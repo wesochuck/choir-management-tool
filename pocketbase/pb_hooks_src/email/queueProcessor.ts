@@ -1,4 +1,5 @@
 import { parseJsonField } from './hookJson';
+import { getHmacSecret, generateSignedPlayerToken, generateSignedEventRecipientToken } from '../hmacTokens';
 import type { PocketBaseRecord, PocketBaseApp } from './emailTypes';
 import { escapeHtml, sanitizeEmailSubject, normalizeBaseUrl, formatInTimezone } from './hookText';
 import { renderMarkdown } from './emailRendering';
@@ -17,19 +18,6 @@ declare const $security: {
     hs256(payload: string, secret: string): string;
     randomString(length: number): string;
 };
-
-/**
- * Retrieves HMAC secret for signature tokens.
- */
-function getQueueHmacSecret(app: PocketBaseApp): string {
-    try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField<Record<string, string>>(record.get("value"));
-        return (parsed && parsed.secret) ? parsed.secret : "";
-    } catch {
-        return "";
-    }
-}
 
 /**
  * Batches and dispatches pending emails from the queue using PocketBase's built-in SMTP Mailer.
@@ -71,7 +59,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
     }
 
     // Build variables used for layout rendering
-    const secret = getQueueHmacSecret(app);
+    const secret = getHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
     let choirName = "";
@@ -257,9 +245,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = "";
                                 if (secret) {
-                                    const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
 
@@ -308,9 +294,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                     // Ignore audition record resolution/formatting errors
                                 }
                             } else {
-                                const payload = `e=${event.id}&p=${recipientId}`;
-                                const signature = $security.hs256(payload, secret);
-                                const token = `${payload}&s=${signature}`;
+                                const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                         }
@@ -341,9 +325,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                     .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
 
                     if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                        const payload = `e=${event.id}&p=${recipientId}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
+                        const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         
                         const rsvpHtml = `
@@ -356,9 +338,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     }
 
                     if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                        const payload = `e=${event.id}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
+                        const token = generateSignedPlayerToken(app, event.id, secret);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         
                         const playerHtml = `

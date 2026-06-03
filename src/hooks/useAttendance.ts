@@ -10,6 +10,7 @@ export interface AttendanceItem {
   voicePart: string;
   attendance: 'Present' | 'Absent' | 'Pending';
   rsvp: 'Yes' | 'No' | 'Pending';
+  rsvpNote?: string;
   rosterId?: string;
   folderNumber: string;
   folderReturned: boolean;
@@ -58,7 +59,8 @@ export const useAttendance = (eventId: string) => {
             name: p.name,
             voicePart: p.voicePart,
             attendance: roster?.attendance || 'Pending',
-            rsvp: currentEvent?.type === 'Rehearsal' ? (parentRoster?.rsvp || 'Pending') : (roster?.rsvp || 'Pending'),
+            rsvp: roster?.rsvp || 'Pending',
+            rsvpNote: roster?.rsvpNote || '',
             rosterId: roster?.id,
             folderNumber: parentRoster?.folderNumber || '',
             folderReturned: parentRoster?.folderReturned || false,
@@ -90,9 +92,8 @@ export const useAttendance = (eventId: string) => {
     ));
 
     try {
-      const targetEventId = event?.type === 'Performance' ? eventId : event?.parentPerformanceId;
-      if (!targetEventId) throw new Error("No parent performance linked to this rehearsal to record RSVP.");
-      await rosterService.updateRSVP(targetEventId, profileId, nextRsvp);
+      // Record the RSVP against the current event (Rehearsal or Performance)
+      await rosterService.updateRSVP(eventId, profileId, nextRsvp);
     } catch (err: unknown) {
       // Revert on failure
       setItems(prev => prev.map(item => 

@@ -688,21 +688,68 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret(app) {
         try {
             const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -737,7 +784,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret(app);
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -905,9 +952,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -955,9 +1000,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -985,9 +1028,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -998,9 +1039,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -1525,21 +1564,68 @@ onRecordAfterCreateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret(app) {
         try {
             const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -1574,7 +1660,7 @@ onRecordAfterCreateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret(app);
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -1742,9 +1828,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -1792,9 +1876,7 @@ onRecordAfterCreateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -1822,9 +1904,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -1835,9 +1915,7 @@ onRecordAfterCreateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -2367,21 +2445,68 @@ onRecordAfterUpdateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret(app) {
         try {
             const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -2416,7 +2541,7 @@ onRecordAfterUpdateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret(app);
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -2584,9 +2709,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -2634,9 +2757,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -2664,9 +2785,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -2677,9 +2796,7 @@ onRecordAfterUpdateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -3170,21 +3287,68 @@ onRecordAfterCreateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret(app) {
         try {
             const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -3219,7 +3383,7 @@ onRecordAfterCreateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret(app);
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -3387,9 +3551,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -3437,9 +3599,7 @@ onRecordAfterCreateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -3467,9 +3627,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -3480,9 +3638,7 @@ onRecordAfterCreateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4119,21 +4275,68 @@ onRecordAfterUpdateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret(app) {
         try {
             const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -4168,7 +4371,7 @@ onRecordAfterUpdateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret(app);
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -4336,9 +4539,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -4386,9 +4587,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -4416,9 +4615,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4429,9 +4626,7 @@ onRecordAfterUpdateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4672,15 +4867,42 @@ function parseJsonField(val) {
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret() {
+function getHmacSecret(app) {
     try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
     catch (_a) {
         return "";
     }
+}
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
@@ -4715,7 +4937,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     let secret;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret)
             throw new Error("Missing secret");
     }
@@ -4724,9 +4946,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     const tokens = {};
     profileIds.forEach(pId => {
-        const payload = `e=${eventId}&p=${pId}`;
-        const signature = $security.hs256(payload, secret);
-        tokens[pId] = `${payload}&s=${signature}`;
+        tokens[pId] = generateSignedEventRecipientToken($app, eventId, pId, secret);
     });
     return e.json(200, { tokens });
 });
@@ -4775,15 +4995,42 @@ function parseJsonField(val) {
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret() {
+function getHmacSecret(app) {
     try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
     catch (_a) {
         return "";
     }
+}
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
@@ -4805,6 +5052,85 @@ function parseSignedToken(token, requiredKeys) {
     }
     return parts;
 }
+
+// --- Utility source: rsvpValidation.ts ---
+"use strict";
+function parsePocketBaseDate(dateValue) {
+    const raw = String(dateValue || "").trim();
+    if (!raw)
+        return null;
+    const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
+    const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized + "Z"
+        : normalized;
+    try {
+        const parsed = new Date(withTimezone);
+        if (!Number.isNaN(parsed.getTime()))
+            return parsed;
+    }
+    catch (_a) {
+        // Goja can be stricter than browsers for date strings; fall back below.
+    }
+    try {
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    catch (_b) {
+        return null;
+    }
+}
+function validateSingerRsvpWindow(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
+            return { ok: false, status: 400, error: "Invalid rehearsal date." };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return { ok: false, status: 410, error: "This rehearsal has already passed." };
+        }
+    }
+    return { ok: true };
+}
+function getRsvpWindowInfo(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "The RSVP window for this performance is closed. Your current response is shown below.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "Invalid rehearsal date.",
+            };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This rehearsal has already passed.",
+            };
+        }
+    }
+    return {
+        canSubmit: true,
+        isReadOnly: false,
+        reason: "",
+    };
+}
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
     const token = data.token;
@@ -4817,14 +5143,14 @@ function parseSignedToken(token, requiredKeys) {
     }
     let secret;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret)
             throw new Error("Missing secret");
     }
     catch (_a) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
-    const payload = `e=${parts.e}&p=${parts.p}`;
+    const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
         console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
@@ -4846,9 +5172,7 @@ function parseSignedToken(token, requiredKeys) {
             console.log("[RSVP Error] Failed to fetch venues: " + venueFetchErr);
         }
         const event = $app.findRecordById("events", parts.e);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "This RSVP window has closed for this event. Contact choir admins if you need help." });
-        }
+        const rsvpWindow = getRsvpWindowInfo(event);
         let venueName = "";
         let venueAddress = "";
         try {
@@ -4898,9 +5222,11 @@ function parseSignedToken(token, requiredKeys) {
             }
         }
         let currentRsvp = "Pending";
+        let currentRsvpNote = "";
         try {
             const roster = $app.findFirstRecordByFilter("eventRosters", "event = {:e} && profile = {:p}", { e: parts.e, p: parts.p });
             currentRsvp = roster.get("rsvp") || "Pending";
+            currentRsvpNote = roster.get("rsvpNote") || "";
         }
         catch (rosterErr) {
             console.log("[RSVP Details] No existing roster found for event " + parts.e + " and profile " + parts.p + ": " + rosterErr);
@@ -4913,6 +5239,7 @@ function parseSignedToken(token, requiredKeys) {
                 date: event.get("date") || "",
                 details: event.get("details") || "",
                 location: event.get("location") || "",
+                isOpenForRSVP: !!event.get("isOpenForRSVP"),
                 expand: {
                     venue: {
                         name: venueName,
@@ -4926,7 +5253,9 @@ function parseSignedToken(token, requiredKeys) {
                 voicePart: profile.get("voicePart") || ""
             },
             currentRsvp,
-            rehearsals
+            currentRsvpNote,
+            rehearsals,
+            rsvpWindow
         });
     }
     catch (err) {
@@ -5313,21 +5642,68 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
     `.trim();
 }
 
-// --- Utility source: email/queueProcessor.ts ---
+// --- Utility source: hmacTokens.ts ---
 "use strict";
-/**
- * Retrieves HMAC secret for signature tokens.
- */
-function getQueueHmacSecret(app) {
+function getHmacSecret(app) {
     try {
         const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
-        return (parsed && parsed.secret) ? parsed.secret : "";
+        return parsed && parsed.secret ? parsed.secret : "";
     }
     catch (_a) {
         return "";
     }
 }
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function parseSignedToken(token, requiredKeys) {
+    if (!token || typeof token !== "string")
+        return null;
+    const parts = {};
+    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    token.split("&").forEach(segment => {
+        const idx = segment.indexOf("=");
+        if (idx <= 0)
+            return;
+        const key = segment.slice(0, idx);
+        if (!allowed[key])
+            return;
+        parts[key] = segment.slice(idx + 1);
+    });
+    for (let i = 0; i < requiredKeys.length; i++) {
+        if (!parts[requiredKeys[i]])
+            return null;
+    }
+    return parts;
+}
+
+// --- Utility source: email/queueProcessor.ts ---
+"use strict";
 function processEmailQueue(app) {
     const settings = app.settings();
     if (!settings.smtp || !settings.smtp.enabled) {
@@ -5362,7 +5738,7 @@ function processEmailQueue(app) {
         console.log("[Email Queue] Error recovering stale records: " + recoverErr);
     }
     // Build variables used for layout rendering
-    const secret = getQueueHmacSecret(app);
+    const secret = getHmacSecret(app);
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
     let choirName = "";
@@ -5530,9 +5906,7 @@ function processEmailQueue(app) {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = "";
                                 if (secret) {
-                                    const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                                 firstRehearsalHtml = `
@@ -5580,9 +5954,7 @@ function processEmailQueue(app) {
                                 }
                             }
                             else {
-                                const payload = `e=${event.id}&p=${recipientId}`;
-                                const signature = $security.hs256(payload, secret);
-                                const token = `${payload}&s=${signature}`;
+                                const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                         }
@@ -5610,9 +5982,7 @@ function processEmailQueue(app) {
                         .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                         .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                     if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                        const payload = `e=${event.id}&p=${recipientId}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
+                        const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -5623,9 +5993,7 @@ function processEmailQueue(app) {
                         htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                     }
                     if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                        const payload = `e=${event.id}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
+                        const token = generateSignedPlayerToken(app, event.id, secret);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -5723,44 +6091,97 @@ function processEmailQueue(app) {
     }
 }
 
-// --- Utility source: hmacTokens.ts ---
+// --- Utility source: rsvpValidation.ts ---
 "use strict";
-function getHmacSecret() {
+function parsePocketBaseDate(dateValue) {
+    const raw = String(dateValue || "").trim();
+    if (!raw)
+        return null;
+    const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
+    const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized + "Z"
+        : normalized;
     try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
+        const parsed = new Date(withTimezone);
+        if (!Number.isNaN(parsed.getTime()))
+            return parsed;
     }
     catch (_a) {
-        return "";
+        // Goja can be stricter than browsers for date strings; fall back below.
+    }
+    try {
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    catch (_b) {
+        return null;
     }
 }
-function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
-        return null;
-    const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
-        if (idx <= 0)
-            return;
-        const key = segment.slice(0, idx);
-        if (!allowed[key])
-            return;
-        parts[key] = segment.slice(idx + 1);
-    });
-    for (let i = 0; i < requiredKeys.length; i++) {
-        if (!parts[requiredKeys[i]])
-            return null;
+function validateSingerRsvpWindow(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
+        };
     }
-    return parts;
+    if (eventType === "Rehearsal") {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
+            return { ok: false, status: 400, error: "Invalid rehearsal date." };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return { ok: false, status: 410, error: "This rehearsal has already passed." };
+        }
+    }
+    return { ok: true };
+}
+function getRsvpWindowInfo(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "The RSVP window for this performance is closed. Your current response is shown below.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "Invalid rehearsal date.",
+            };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This rehearsal has already passed.",
+            };
+        }
+    }
+    return {
+        canSubmit: true,
+        isReadOnly: false,
+        reason: "",
+    };
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
     const token = data.token;
     const rsvp = data.rsvp;
+    const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
     if (!token || !rsvp || typeof token !== "string") {
         return e.json(400, { error: "Missing RSVP details. Please use full RSVP link from your email." });
+    }
+    if (rsvpNote.length > 1000) {
+        return e.json(400, {
+            error: "Your note cannot exceed 1000 characters.",
+            code: "RSVP_NOTE_TOO_LONG",
+        });
     }
     const parts = parseSignedToken(token, ["e", "p", "s"]);
     if (!parts) {
@@ -5768,28 +6189,37 @@ function parseSignedToken(token, requiredKeys) {
     }
     let secret;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret)
             throw new Error("Missing secret");
     }
     catch (_a) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
-    const payload = `e=${parts.e}&p=${parts.p}`;
+    const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
         console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
         console.log("[RSVP Debug] Expected: " + expectedSignature + ", Received: " + parts.s);
         return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
+    let event;
     try {
-        const event = $app.findRecordById("events", parts.e);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "RSVP window for this event is closed. Contact choir admins for assistance." });
-        }
+        event = $app.findRecordById("events", parts.e);
     }
     catch (_b) {
         return e.json(404, { error: "Event not found. RSVP link may be expired." });
+    }
+    const windowValidation = validateSingerRsvpWindow(event);
+    if (!windowValidation.ok) {
+        return e.json(windowValidation.status, { error: windowValidation.error });
+    }
+    const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
+    if (event.get("type") === "Rehearsal" && normalizedRsvp === "No" && !rsvpNote) {
+        return e.json(400, {
+            error: "Please include a note explaining why you cannot attend this rehearsal.",
+            code: "RSVP_NOTE_REQUIRED",
+        });
     }
     try {
         const matches = $app.findRecordsByFilter("eventRosters", "event = {:e} && profile = {:p}", "", 2, 0, { e: parts.e, p: parts.p }) || [];
@@ -5803,8 +6233,13 @@ function parseSignedToken(token, requiredKeys) {
             roster.set("folderReturned", false);
         }
         const oldRsvp = roster.get("rsvp");
-        const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
         roster.set("rsvp", normalizedRsvp);
+        if (normalizedRsvp === "No") {
+            roster.set("rsvpNote", rsvpNote);
+        }
+        else {
+            roster.set("rsvpNote", "");
+        }
         $app.save(roster);
         // Enqueue confirmation email if RSVP changed to Yes
         if (normalizedRsvp === "Yes" && oldRsvp !== "Yes") {
@@ -5894,15 +6329,42 @@ function parseJsonField(val) {
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret() {
+function getHmacSecret(app) {
     try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
     catch (_a) {
         return "";
     }
+}
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
@@ -5936,7 +6398,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     let secret;
     try {
-        secret = getHmacSecret();
+        secret = getHmacSecret($app);
         if (!secret)
             throw new Error("Missing secret");
     }
@@ -5999,11 +6461,15 @@ routerAdd("POST", "/api/admin/bulk-update-rsvps", (e) => {
                         }
                         else if (existing.get("rsvp") !== 'Pending') {
                             existing.set("rsvp", "Pending");
+                            existing.set("rsvpNote", "");
                             tx.save(existing);
                         }
                     }
                     else if (existing.get("rsvp") !== u.rsvp) {
                         existing.set("rsvp", u.rsvp);
+                        if (u.rsvp !== "No") {
+                            existing.set("rsvpNote", "");
+                        }
                         tx.save(existing);
                     }
                 }
@@ -6120,6 +6586,1236 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
     catch (err) {
         console.log("[Bulk Attendance Hook Error]: " + String(err));
         return e.json(500, { error: "Failed to bulk upsert attendance: " + String(err) });
+    }
+});
+routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+// --- Utility source: email/hookJson.ts ---
+"use strict";
+function decodeGoBytes(val) {
+    if (!val)
+        return "";
+    if (typeof val === 'string')
+        return val;
+    if (typeof val === 'object') {
+        // Check if it's a byte array (only numbers)
+        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+            try {
+                let str = "";
+                for (let i = 0; i < val.length; i++) {
+                    str += String.fromCharCode(val[i]);
+                }
+                return str;
+            }
+            catch (_a) {
+                // Ignore decoding errors
+            }
+        }
+        return val;
+    }
+    return String(val);
+}
+function parseJsonField(val) {
+    if (!val)
+        return null;
+    const decoded = decodeGoBytes(val);
+    if (!decoded)
+        return null;
+    if (typeof decoded === 'object')
+        return decoded;
+    try {
+        return JSON.parse(decoded);
+    }
+    catch (_a) {
+        return null;
+    }
+}
+
+// --- Utility source: hmacTokens.ts ---
+"use strict";
+function getHmacSecret(app) {
+    try {
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(record.get("value"));
+        return parsed && parsed.secret ? parsed.secret : "";
+    }
+    catch (_a) {
+        return "";
+    }
+}
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function parseSignedToken(token, requiredKeys) {
+    if (!token || typeof token !== "string")
+        return null;
+    const parts = {};
+    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    token.split("&").forEach(segment => {
+        const idx = segment.indexOf("=");
+        if (idx <= 0)
+            return;
+        const key = segment.slice(0, idx);
+        if (!allowed[key])
+            return;
+        parts[key] = segment.slice(idx + 1);
+    });
+    for (let i = 0; i < requiredKeys.length; i++) {
+        if (!parts[requiredKeys[i]])
+            return null;
+    }
+    return parts;
+}
+// --- END CALLBACK-LOCAL UTILITIES ---
+    var _a, _b;
+    const authRecord = e.auth;
+    if (!authRecord) {
+        return e.json(401, { error: "Unauthorized" });
+    }
+    const data = e.requestInfo().body;
+    if (typeof data.content !== "string") {
+        return e.json(400, { error: "Missing or invalid content parameter" });
+    }
+    let content = data.content;
+    const eventId = typeof data.eventId === "string" ? data.eventId : undefined;
+    let profile;
+    try {
+        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+    }
+    catch (_c) {
+        return e.json(404, { error: "Profile not found" });
+    }
+    let secret;
+    try {
+        secret = getHmacSecret($app);
+        if (!secret)
+            throw new Error("Missing secret");
+    }
+    catch (_d) {
+        return e.json(500, { error: "HMAC_SECRET not configured" });
+    }
+    let baseUrl = "";
+    try {
+        let commSettings;
+        try {
+            commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+        }
+        catch (_e) {
+            commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
+        }
+        if (commSettings) {
+            const parsed = parseJsonField(commSettings.get("value"));
+            if (parsed && typeof parsed.frontendUrl === "string") {
+                baseUrl = parsed.frontendUrl;
+            }
+        }
+    }
+    catch (err) {
+        console.log("[Resolve Placeholders Hook Error] Failed to read communication settings: " + err);
+    }
+    if (!baseUrl) {
+        const requestInfo = e.requestInfo();
+        const host = ((_a = requestInfo.headers) === null || _a === void 0 ? void 0 : _a["host"]) || "localhost:8080";
+        const proto = ((_b = requestInfo.headers) === null || _b === void 0 ? void 0 : _b["x-forwarded-proto"]) || "http";
+        baseUrl = proto + "://" + host;
+    }
+    // Resolve RSVP links
+    if (content.indexOf("{{RSVP_LINKS}}") !== -1 && eventId && typeof eventId === "string") {
+        const token = generateSignedEventRecipientToken($app, eventId, profile.id, secret);
+        const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
+        const replacement = "(RSVP Link for " + (profile.get("name") || "Singer") + ")\nLink: " + rsvpLink + "\n(No login required)";
+        content = content.replace(/{{RSVP_LINKS}}/g, replacement);
+    }
+    // Resolve Poll links
+    const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
+    let match;
+    while ((match = pollRegex.exec(content)) !== null) {
+        const fullPlaceholder = match[0];
+        const pollId = match[1];
+        const payload = "l=" + pollId + "&p=" + profile.id;
+        const signature = $security.hs256(payload, secret);
+        const token = payload + "&s=" + signature;
+        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+        const replacement = "(Poll Link for " + (profile.get("name") || "Singer") + ")\nLink: " + pollLink + "\n(No login required)";
+        content = content.replace(fullPlaceholder, replacement);
+        pollRegex.lastIndex = 0; // Reset index since we replaced content
+    }
+    return e.json(200, { resolvedContent: content });
+});
+routerAdd("POST", "/api/singer/rsvp", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+// --- Utility source: email/hookJson.ts ---
+"use strict";
+function decodeGoBytes(val) {
+    if (!val)
+        return "";
+    if (typeof val === 'string')
+        return val;
+    if (typeof val === 'object') {
+        // Check if it's a byte array (only numbers)
+        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+            try {
+                let str = "";
+                for (let i = 0; i < val.length; i++) {
+                    str += String.fromCharCode(val[i]);
+                }
+                return str;
+            }
+            catch (_a) {
+                // Ignore decoding errors
+            }
+        }
+        return val;
+    }
+    return String(val);
+}
+function parseJsonField(val) {
+    if (!val)
+        return null;
+    const decoded = decodeGoBytes(val);
+    if (!decoded)
+        return null;
+    if (typeof decoded === 'object')
+        return decoded;
+    try {
+        return JSON.parse(decoded);
+    }
+    catch (_a) {
+        return null;
+    }
+}
+
+// --- Utility source: email/hookText.ts ---
+"use strict";
+function escapeHtml(str) {
+    if (!str)
+        return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+function sanitizeHtmlTemplateData(data) {
+    const sanitized = {};
+    const entries = Object.entries(data);
+    for (const [key, value] of entries) {
+        sanitized[key] = escapeHtml(value == null ? "" : String(value));
+    }
+    return sanitized;
+}
+function sanitizeEmailSubject(str) {
+    if (!str)
+        return "";
+    return String(str).replace(/[\r\n]+/g, " ").trim();
+}
+function normalizeBaseUrl(url) {
+    if (!url)
+        return "http://localhost:5173";
+    return String(url).trim().replace(/\/+$/g, "");
+}
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
+function formatInTimezone(date, timezone, options) {
+    if (!date)
+        return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
+    try {
+        // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+        if (typeof process === 'undefined' && typeof window === 'undefined') {
+            throw new Error("Goja VM: use custom formatting");
+        }
+        // Try native Intl first (V8 / browser / Node.js)
+        return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+    }
+    catch (_a) {
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+        // Case 4: Date only with weekday: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+    }
+}
+
+// --- Utility source: email/emailRendering.ts ---
+"use strict";
+function renderMarkdown(text) {
+    if (!text)
+        return "";
+    // Escape raw HTML first
+    let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+    html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+        const level = hashes.length;
+        // Using inline styles for headings for better email client compatibility
+        const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+        return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+    });
+    // Bold: **text** or __text__
+    html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+    // Italic: *text* or _text_
+    html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+    // Links: [text](url)
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
+    // Lists (Ordered and Unordered)
+    const lines = html.split("\n");
+    let inUl = false;
+    let inOl = false;
+    const processedLines = lines.map(line => {
+        const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+        const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+        if (ulMatch) {
+            const content = ulMatch[2];
+            let prefix = "";
+            if (inOl) {
+                inOl = false;
+                prefix = "</ol>";
+            }
+            if (!inUl) {
+                inUl = true;
+                return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+            }
+            return `<li>${content}</li>`;
+        }
+        else if (olMatch) {
+            const content = olMatch[2];
+            let prefix = "";
+            if (inUl) {
+                inUl = false;
+                prefix = "</ul>";
+            }
+            if (!inOl) {
+                inOl = true;
+                return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+            }
+            return `<li>${content}</li>`;
+        }
+        else {
+            let result = line;
+            if (inUl) {
+                inUl = false;
+                result = "</ul>" + line;
+            }
+            if (inOl) {
+                inOl = false;
+                result = "</ol>" + line;
+            }
+            return result;
+        }
+    });
+    if (inUl)
+        processedLines.push("</ul>");
+    if (inOl)
+        processedLines.push("</ol>");
+    html = processedLines.join("\n");
+    // Line breaks and paragraphs
+    const blocks = html.split(/\n\s*\n/);
+    html = blocks.map(block => {
+        const trimmed = block.trim();
+        if (!trimmed)
+            return "";
+        if (trimmed.startsWith("<ul"))
+            return block;
+        if (trimmed.startsWith("<ol"))
+            return block;
+        if (trimmed.match(/^<h\d/))
+            return block;
+        if (trimmed.startsWith("<div"))
+            return block; // Keep footers/buttons intact
+        return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+    }).join("\n");
+    return html;
+}
+
+// --- Utility source: email/emailStyles.ts ---
+"use strict";
+const EMAIL_CSS = `
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+.wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+.container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+.content { padding: 32px; line-height: 1.6; font-size: 16px; }
+.footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+a { color: #4a7c59; text-decoration: underline; }
+.btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+`.trim();
+
+// --- Utility source: email/mailjetRenderer.ts ---
+"use strict";
+function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+    const displayTitle = headerTitle || "Choir Management";
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        ${EMAIL_CSS}
+    </style>
+</head>
+<body>
+    <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td class="header">
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            ${contentHtml}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                            <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                            <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `.trim();
+}
+
+// --- Utility source: hmacTokens.ts ---
+"use strict";
+function getHmacSecret(app) {
+    try {
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(record.get("value"));
+        return parsed && parsed.secret ? parsed.secret : "";
+    }
+    catch (_a) {
+        return "";
+    }
+}
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function parseSignedToken(token, requiredKeys) {
+    if (!token || typeof token !== "string")
+        return null;
+    const parts = {};
+    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    token.split("&").forEach(segment => {
+        const idx = segment.indexOf("=");
+        if (idx <= 0)
+            return;
+        const key = segment.slice(0, idx);
+        if (!allowed[key])
+            return;
+        parts[key] = segment.slice(idx + 1);
+    });
+    for (let i = 0; i < requiredKeys.length; i++) {
+        if (!parts[requiredKeys[i]])
+            return null;
+    }
+    return parts;
+}
+
+// --- Utility source: email/queueProcessor.ts ---
+"use strict";
+function processEmailQueue(app) {
+    const settings = app.settings();
+    if (!settings.smtp || !settings.smtp.enabled) {
+        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+        return;
+    }
+    const EMAIL_QUEUE_BATCH_SIZE = 150;
+    const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+    const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+    // Stale Processing record recovery
+    try {
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Pending',
+                processingRunId = NULL,
+                processingStartedAt = NULL
+            WHERE status = 'Processing'
+              AND processingStartedAt < datetime('now', '-15 minutes')
+              AND (attempts IS NULL OR attempts < {:maxAttempts})
+        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+        app.db().newQuery(`
+            UPDATE emailQueue
+            SET status = 'Failed',
+                processingRunId = NULL,
+                processingStartedAt = NULL
+            WHERE status = 'Processing'
+              AND processingStartedAt < datetime('now', '-15 minutes')
+              AND attempts >= {:maxAttempts}
+        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+    }
+    catch (recoverErr) {
+        console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+    }
+    // Build variables used for layout rendering
+    const secret = getHmacSecret(app);
+    let baseUrl = "http://localhost:5173";
+    let mailingAddress = "123 Choir St, Harmony City, HC 12345";
+    let choirName = "";
+    try {
+        const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+        const comms = parseJsonField(commRecord.get("value"));
+        if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+            baseUrl = comms.frontendUrl;
+        if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+            mailingAddress = comms.mailingAddress;
+    }
+    catch (_a) {
+        // use default baseUrl and mailingAddress
+    }
+    baseUrl = normalizeBaseUrl(baseUrl);
+    try {
+        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get("value"));
+        if (val)
+            choirName = val;
+    }
+    catch (_b) {
+        // use default choirName
+    }
+    let timezone = "America/New_York";
+    try {
+        const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+        const valueStr = tzSetting.get("value");
+        const tzP = parseJsonField(valueStr);
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            }
+            else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
+    }
+    catch (_c) {
+        // use default timezone
+    }
+    let totalClaimed = 0;
+    for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+        const runId = $security.randomString(20);
+        console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+        // Atomic SQLite-level claiming
+        try {
+            app.db().newQuery(`
+                UPDATE emailQueue
+                SET status = 'Processing',
+                    processingRunId = {:runId},
+                    processingStartedAt = datetime('now')
+                WHERE id IN (
+                    SELECT id
+                    FROM emailQueue
+                    WHERE status = 'Pending'
+                      AND (attempts IS NULL OR attempts < {:maxAttempts})
+                    ORDER BY created ASC
+                    LIMIT {:batchSize}
+                )
+            `).bind({
+                runId: runId,
+                maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                batchSize: EMAIL_QUEUE_BATCH_SIZE
+            }).execute();
+        }
+        catch (claimErr) {
+            console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+            return;
+        }
+        const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+        if (!records || records.length === 0) {
+            if (totalClaimed === 0) {
+                console.log("[Email Queue] No records claimed for run: " + runId);
+            }
+            break;
+        }
+        totalClaimed += records.length;
+        console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+        records.forEach((record) => {
+            try {
+                const rawContent = record.get("rawContent") || "";
+                const recipientId = record.get("recipientId");
+                const recipientEmail = record.get("recipientEmail");
+                const recipientName = record.get("recipientName") || "Singer";
+                const filters = parseJsonField(record.get("filters")) || {};
+                let htmlBody = "";
+                if (filters.contentType === "html") {
+                    htmlBody = rawContent;
+                }
+                else {
+                    // Temporarily protect placeholders containing underscores from markdown parsing
+                    const protectedContent = rawContent
+                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                    htmlBody = renderMarkdown(protectedContent);
+                    // Restore protected placeholders
+                    htmlBody = htmlBody
+                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                }
+                let subject = record.get("subject") || "";
+                subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                // Fetch dynamic event details if enqueued under filters
+                let event = null;
+                if (filters && filters.eventId) {
+                    try {
+                        event = app.findRecordById("events", filters.eventId);
+                    }
+                    catch (_a) {
+                        // event not found
+                    }
+                }
+                // Perform template placeholder resolutions (same engine as legacy)
+                htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                if (event) {
+                    const eventDate = event.get("date");
+                    const eventTitle = (event.get("title") || event.get("type") || "Event");
+                    const eventType = (event.get("type") || "Performance");
+                    const eventDetails = (event.get("details") || "");
+                    let venueName = "TBD";
+                    try {
+                        const venueRecord = app.findRecordById("venues", event.get("venue"));
+                        venueName = (venueRecord.get("name") || "TBD");
+                    }
+                    catch (_b) {
+                        // venue not found
+                    }
+                    const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                    const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    // Resolve event placeholders in subject too
+                    subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                        .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                    const eventInfoHtml = `
+<div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+    <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+    <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+        📅 <strong>${escapeHtml(dateLong)}</strong><br>
+        ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+        📍 <strong>${escapeHtml(venueName)}</strong>
+    </div>
+</div>
+`;
+                    // Optionally generate an "Add to Calendar" link for the first rehearsal
+                    let firstRehearsalHtml = "";
+                    if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        try {
+                            const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                            if (rehearsals && rehearsals.length > 0) {
+                                const firstReh = rehearsals[0];
+                                const rehDate = firstReh.get("date");
+                                const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
+                                const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                // Generate a direct link to the backend ICS download route
+                                let icsLink = "";
+                                if (secret) {
+                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                                firstRehearsalHtml = `
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+        <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+        ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
+                                `.trim();
+                            }
+                        }
+                        catch (_c) {
+                            // Ignore rehearsals fetching or formatting errors
+                        }
+                    }
+                    // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                    let eventCalendarHtml = "";
+                    if (htmlBody.includes("{eventCalendarLink}")) {
+                        let icsLink = "";
+                        let slotDateLong = dateLong;
+                        let slotTimeStr = timeStr;
+                        if (secret) {
+                            const auditionId = filters.auditionId;
+                            if (auditionId) {
+                                const payload = `a=${auditionId}`;
+                                const signature = $security.hs256(payload, secret);
+                                const token = `${payload}&s=${signature}`;
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                try {
+                                    const audition = app.findRecordById("auditions", auditionId);
+                                    const auditionSlot = audition.get("scheduledTimeSlot");
+                                    if (auditionSlot) {
+                                        slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                    }
+                                }
+                                catch (_d) {
+                                    // Ignore audition record resolution/formatting errors
+                                }
+                            }
+                            else {
+                                const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                            }
+                        }
+                        eventCalendarHtml = `
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+  <tr>
+    <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+        <strong style="color: #4a7c59;">Save the Date:</strong><br>
+        ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+    </td>
+    <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+        ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+    </td>
+  </tr>
+</table>
+                        `.trim();
+                    }
+                    htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        .replace(/{eventType}/g, () => escapeHtml(eventType))
+                        .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                        .replace(/{eventLocation}/g, () => escapeHtml(venueName))
+                        .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                        .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                        .replace(/{eventInfo}/g, () => eventInfoHtml)
+                        .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                        .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                    if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                        const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                        const rsvpHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+</div>
+`;
+                        htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                    }
+                    if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        const token = generateSignedPlayerToken(app, event.id, secret);
+                        const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                        const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                    }
+                }
+                else {
+                    // If there's no event context, clear out the player link placeholders
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
+                        .replace(/{playerLink}/g, "");
+                }
+                // Resolve poll links: {{POLL_LINK:pollId}}
+                if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                        const payload = "l=" + pollId + "&p=" + recipientId;
+                        const signature = $security.hs256(payload, secret);
+                        const token = payload + "&s=" + signature;
+                        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+                        let pollButtonLabel = "Answer our quick question";
+                        try {
+                            const pollRecord = app.findRecordById("polls", pollId);
+                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
+                            if (typeof question === "string" && question.trim()) {
+                                pollButtonLabel = question.trim();
+                            }
+                        }
+                        catch (_a) {
+                            // keep safe fallback label if poll lookup fails
+                        }
+                        return `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+</div>
+`.trim();
+                    });
+                }
+                // Compile secure unsubscribe URL
+                let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                if (secret) {
+                    const payload = `p=${recipientId}`;
+                    const signature = $security.hs256(payload, secret);
+                    const token = `${payload}&s=${signature}`;
+                    unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                    htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                }
+                // Final template layout wrap
+                const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                record.set("htmlBody", finalHtml);
+                // Dispatch natively via PocketBase SMTP Client
+                const mailerMessage = new MailerMessage({
+                    from: {
+                        address: settings.meta.senderAddress || "no-reply@choir.management",
+                        name: settings.meta.senderName || "Choir Management Tool"
+                    },
+                    to: [{ address: recipientEmail, name: recipientName }],
+                    subject: subject,
+                    html: finalHtml
+                });
+                app.newMailClient().send(mailerMessage);
+                record.set("status", "Sent");
+                record.set("sentAt", new Date().toISOString());
+                record.set("processingRunId", null);
+                record.set("processingStartedAt", null);
+                record.set("errorMessage", "");
+                console.log(`[Email Queue] Sent record: ${record.id}`);
+            }
+            catch (err) {
+                const rawAttempts = record.get("attempts");
+                const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                record.set("attempts", currentAttempts);
+                const message = err instanceof Error ? err.message : String(err);
+                record.set("errorMessage", message);
+                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
+                record.set("status", nextStatus);
+                record.set("processingRunId", null);
+                record.set("processingStartedAt", null);
+                console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+            }
+            finally {
+                app.save(record);
+            }
+        });
+        if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+            break;
+        }
+    }
+    if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+        console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+    }
+}
+
+// --- Utility source: rsvpValidation.ts ---
+"use strict";
+function parsePocketBaseDate(dateValue) {
+    const raw = String(dateValue || "").trim();
+    if (!raw)
+        return null;
+    const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
+    const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized + "Z"
+        : normalized;
+    try {
+        const parsed = new Date(withTimezone);
+        if (!Number.isNaN(parsed.getTime()))
+            return parsed;
+    }
+    catch (_a) {
+        // Goja can be stricter than browsers for date strings; fall back below.
+    }
+    try {
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    catch (_b) {
+        return null;
+    }
+}
+function validateSingerRsvpWindow(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
+            return { ok: false, status: 400, error: "Invalid rehearsal date." };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return { ok: false, status: 410, error: "This rehearsal has already passed." };
+        }
+    }
+    return { ok: true };
+}
+function getRsvpWindowInfo(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "The RSVP window for this performance is closed. Your current response is shown below.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "Invalid rehearsal date.",
+            };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This rehearsal has already passed.",
+            };
+        }
+    }
+    return {
+        canSubmit: true,
+        isReadOnly: false,
+        reason: "",
+    };
+}
+// --- END CALLBACK-LOCAL UTILITIES ---
+    const authRecord = e.auth;
+    if (!authRecord) {
+        return e.json(401, { error: "Unauthorized" });
+    }
+    const data = e.requestInfo().body;
+    if (typeof data.eventId !== "string" || typeof data.rsvp !== "string") {
+        return e.json(400, { error: "Missing eventId or rsvp" });
+    }
+    const eventId = data.eventId;
+    const rsvp = data.rsvp;
+    const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
+    if (rsvpNote.length > 1000) {
+        return e.json(400, {
+            error: "Your note cannot exceed 1000 characters.",
+            code: "RSVP_NOTE_TOO_LONG",
+        });
+    }
+    if (rsvp !== "Yes" && rsvp !== "No" && rsvp !== "Pending") {
+        return e.json(400, { error: "Invalid rsvp status" });
+    }
+    let profile;
+    try {
+        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+    }
+    catch (_a) {
+        return e.json(404, { error: "Profile not found" });
+    }
+    let event;
+    try {
+        event = $app.findRecordById("events", eventId);
+    }
+    catch (_b) {
+        return e.json(404, { error: "Event not found" });
+    }
+    const windowValidation = validateSingerRsvpWindow(event);
+    if (!windowValidation.ok) {
+        return e.json(windowValidation.status, { error: windowValidation.error });
+    }
+    if (event.get("type") === "Rehearsal" && rsvp === "No" && !rsvpNote) {
+        return e.json(400, {
+            error: "Please include a note explaining why you cannot attend this rehearsal.",
+            code: "RSVP_NOTE_REQUIRED",
+        });
+    }
+    try {
+        const matches = $app.findRecordsByFilter("eventRosters", "event = {:e} && profile = {:p}", "", 2, 0, { e: eventId, p: profile.id }) || [];
+        let roster = matches.length > 0 ? matches[0] : null;
+        if (rsvp === "Pending") {
+            if (roster) {
+                const hasOtherData = roster.get("attendance") !== "Pending" ||
+                    Boolean((roster.get("folderNumber") || "").trim()) ||
+                    roster.get("folderReturned") ||
+                    Boolean((roster.get("seatId") || "").trim());
+                if (!hasOtherData) {
+                    $app.delete(roster);
+                    return e.json(200, {
+                        id: "",
+                        event: eventId,
+                        profile: profile.id,
+                        rsvp: "Pending",
+                        attendance: "Pending",
+                        folderReturned: false,
+                    });
+                }
+                else {
+                    roster.set("rsvp", "Pending");
+                    roster.set("rsvpNote", "");
+                    $app.save(roster);
+                }
+            }
+            else {
+                return e.json(200, {
+                    id: "",
+                    event: eventId,
+                    profile: profile.id,
+                    rsvp: "Pending",
+                    attendance: "Pending",
+                    folderReturned: false,
+                });
+            }
+        }
+        else {
+            const oldRsvp = roster ? roster.get("rsvp") : "";
+            if (!roster) {
+                const collection = $app.findCollectionByNameOrId("eventRosters");
+                roster = new Record(collection);
+                roster.set("event", eventId);
+                roster.set("profile", profile.id);
+                roster.set("attendance", "Pending");
+                roster.set("folderReturned", false);
+            }
+            roster.set("rsvp", rsvp);
+            if (rsvp === "No") {
+                roster.set("rsvpNote", rsvpNote);
+            }
+            else {
+                roster.set("rsvpNote", "");
+            }
+            $app.save(roster);
+            // Enqueue confirmation email if RSVP changed to Yes
+            if (rsvp === "Yes" && oldRsvp !== "Yes") {
+                try {
+                    const recipientEmail = profile.get("email");
+                    if (recipientEmail && !profile.get("doNotEmail")) {
+                        const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
+                        const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+                        const queueRecord = new Record(queueCollection, {
+                            recipientId: profile.id,
+                            recipientEmail: recipientEmail,
+                            recipientName: profile.get("name") || "Singer",
+                            subject: template.get("subject") || "",
+                            rawContent: template.get("content") || "",
+                            status: "Pending",
+                            attempts: 0,
+                            filters: JSON.stringify({
+                                eventId: eventId,
+                                type: "Automated Confirmation"
+                            })
+                        });
+                        $app.save(queueRecord);
+                        processEmailQueue($app);
+                    }
+                }
+                catch (emailErr) {
+                    console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+                }
+            }
+        }
+        return e.json(200, {
+            id: roster.id,
+            event: roster.get("event"),
+            profile: roster.get("profile"),
+            rsvp: roster.get("rsvp"),
+            rsvpNote: roster.get("rsvpNote") || "",
+            attendance: roster.get("attendance"),
+            folderReturned: !!roster.get("folderReturned"),
+            seatId: roster.get("seatId") || "",
+            folderNumber: roster.get("folderNumber") || "",
+        });
+    }
+    catch (err) {
+        console.log("[Singer RSVP Error] Failed to update RSVP: " + err);
+        return e.json(500, { error: "Failed to update RSVP" });
     }
 });
 
@@ -6502,21 +8198,68 @@ routerAdd("POST", "/api/queue/process", (e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret(app) {
         try {
             const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -6551,7 +8294,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret(app);
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -6719,9 +8462,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -6769,9 +8510,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -6799,9 +8538,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -6812,9 +8549,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -7038,6 +8773,454 @@ routerAdd("POST", "/api/test-smtp", (e) => {
         $app.newMailClient().send(message);
         return e.json(200, { success: true });
     } catch (err) { return e.json(500, { error: "SMTP failed" }); }
+});
+
+routerAdd("POST", "/api/generate-player-token", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: playerEndpoints.ts ---
+    "use strict";
+    function handleGeneratePlayerToken(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden: Admins only" });
+        }
+        const data = e.requestInfo().body;
+        const eventId = data.eventId;
+        if (!eventId) {
+            return e.json(400, { error: "Missing eventId" });
+        }
+        const secret = getHmacSecret($app);
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const token = generateSignedPlayerToken($app, eventId, secret);
+        return e.json(200, { token });
+    }
+    function handlePlayerPlaylist(e) {
+        let token = e.requestInfo().query.token;
+        const sParam = e.requestInfo().query.s;
+        if (token && sParam && !token.includes('s=')) {
+            token = `${token}&s=${sParam}`;
+        }
+        if (!token) {
+            return e.json(400, { error: "Missing token" });
+        }
+        const parts = {};
+        token.split('&').forEach(part => {
+            const kv = part.split('=');
+            if (kv.length === 2) {
+                parts[kv[0]] = kv[1];
+            }
+        });
+        if (!parts.e || !parts.s) {
+            return e.json(400, { error: "Invalid token format" });
+        }
+        const secret = getHmacSecret($app);
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const payload = getPlayerPayload(parts.e);
+        const expectedSignature = $security.hs256(payload, secret);
+        if (!$security.equal(parts.s, expectedSignature)) {
+            return e.json(401, { error: "Invalid signature" });
+        }
+        try {
+            const event = $app.findRecordById("events", parts.e);
+            const rawSetList = event.get("setList");
+            let setList = parseJsonField(rawSetList);
+            if (!Array.isArray(setList)) {
+                setList = [];
+            }
+            // Fetch all pieces from the music library to allow title-based fallback matching on the client side
+            let pieces = [];
+            try {
+                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
+                pieces = allPieces.map(p => {
+                    const rawMapping = p.get("audioTrackMapping");
+                    let mapping = parseJsonField(rawMapping);
+                    if (!mapping || typeof mapping !== 'object') {
+                        mapping = {};
+                    }
+                    return {
+                        id: p.id,
+                        parentId: p.get("parentId"),
+                        title: p.get("title"),
+                        composer: p.get("composer"),
+                        arranger: p.get("arranger"),
+                        duration: p.get("duration"),
+                        created: p.get("created"),
+                        updated: p.get("updated"),
+                        audioTrackMapping: mapping,
+                        collectionId: "pbc_music_library_001",
+                        collectionName: "musicLibrary"
+                    };
+                });
+            }
+            catch (_a) {
+                // Fallback to empty list if querying fails
+            }
+            // Include voice parts configuration for the selector
+            let voiceParts = [];
+            try {
+                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
+                const rawVal = vpRecord.get("value");
+                const parsedVal = parseJsonField(rawVal);
+                if (parsedVal && parsedVal.voiceParts) {
+                    voiceParts = parsedVal.voiceParts;
+                }
+            }
+            catch (_b) {
+                // Fallback to empty if not found
+            }
+            return e.json(200, {
+                event: {
+                    id: event.id,
+                    title: event.get("title"),
+                    date: event.get("date")
+                },
+                setList: setList,
+                pieces: pieces,
+                voiceParts: voiceParts
+            });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
+            console.log("Error in /api/player-playlist: " + message + stack);
+            return e.json(404, {
+                error: "Event or related pieces not found",
+                details: message
+            });
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleGeneratePlayerToken(e);
+});
+
+routerAdd("GET", "/api/player-playlist", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: playerEndpoints.ts ---
+    "use strict";
+    function handleGeneratePlayerToken(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden: Admins only" });
+        }
+        const data = e.requestInfo().body;
+        const eventId = data.eventId;
+        if (!eventId) {
+            return e.json(400, { error: "Missing eventId" });
+        }
+        const secret = getHmacSecret($app);
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const token = generateSignedPlayerToken($app, eventId, secret);
+        return e.json(200, { token });
+    }
+    function handlePlayerPlaylist(e) {
+        let token = e.requestInfo().query.token;
+        const sParam = e.requestInfo().query.s;
+        if (token && sParam && !token.includes('s=')) {
+            token = `${token}&s=${sParam}`;
+        }
+        if (!token) {
+            return e.json(400, { error: "Missing token" });
+        }
+        const parts = {};
+        token.split('&').forEach(part => {
+            const kv = part.split('=');
+            if (kv.length === 2) {
+                parts[kv[0]] = kv[1];
+            }
+        });
+        if (!parts.e || !parts.s) {
+            return e.json(400, { error: "Invalid token format" });
+        }
+        const secret = getHmacSecret($app);
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const payload = getPlayerPayload(parts.e);
+        const expectedSignature = $security.hs256(payload, secret);
+        if (!$security.equal(parts.s, expectedSignature)) {
+            return e.json(401, { error: "Invalid signature" });
+        }
+        try {
+            const event = $app.findRecordById("events", parts.e);
+            const rawSetList = event.get("setList");
+            let setList = parseJsonField(rawSetList);
+            if (!Array.isArray(setList)) {
+                setList = [];
+            }
+            // Fetch all pieces from the music library to allow title-based fallback matching on the client side
+            let pieces = [];
+            try {
+                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
+                pieces = allPieces.map(p => {
+                    const rawMapping = p.get("audioTrackMapping");
+                    let mapping = parseJsonField(rawMapping);
+                    if (!mapping || typeof mapping !== 'object') {
+                        mapping = {};
+                    }
+                    return {
+                        id: p.id,
+                        parentId: p.get("parentId"),
+                        title: p.get("title"),
+                        composer: p.get("composer"),
+                        arranger: p.get("arranger"),
+                        duration: p.get("duration"),
+                        created: p.get("created"),
+                        updated: p.get("updated"),
+                        audioTrackMapping: mapping,
+                        collectionId: "pbc_music_library_001",
+                        collectionName: "musicLibrary"
+                    };
+                });
+            }
+            catch (_a) {
+                // Fallback to empty list if querying fails
+            }
+            // Include voice parts configuration for the selector
+            let voiceParts = [];
+            try {
+                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
+                const rawVal = vpRecord.get("value");
+                const parsedVal = parseJsonField(rawVal);
+                if (parsedVal && parsedVal.voiceParts) {
+                    voiceParts = parsedVal.voiceParts;
+                }
+            }
+            catch (_b) {
+                // Fallback to empty if not found
+            }
+            return e.json(200, {
+                event: {
+                    id: event.id,
+                    title: event.get("title"),
+                    date: event.get("date")
+                },
+                setList: setList,
+                pieces: pieces,
+                voiceParts: voiceParts
+            });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
+            console.log("Error in /api/player-playlist: " + message + stack);
+            return e.json(404, {
+                error: "Event or related pieces not found",
+                details: message
+            });
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handlePlayerPlaylist(e);
 });
 
 routerAdd("GET", "/api/calendar/download", (e) => {
@@ -7309,36 +9492,6 @@ routerAdd("GET", "/api/calendar/download", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -7375,7 +9528,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -7455,24 +9609,27 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
+        }
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else if (parts.a) {
-            payload = `a=${parts.a}`;
+            payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -7578,11 +9735,11 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -8066,36 +10223,6 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -8132,7 +10259,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -8212,24 +10340,27 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
+        }
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else if (parts.a) {
-            payload = `a=${parts.a}`;
+            payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -8335,11 +10466,11 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -8823,36 +10954,6 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -8889,7 +10990,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -8969,24 +11071,27 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
+        }
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else if (parts.a) {
-            payload = `a=${parts.a}`;
+            payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -9092,11 +11197,11 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -9580,36 +11685,6 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -9646,7 +11721,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -9726,24 +11802,27 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
         // Determine payload signature
         let payload;
         if (parts.e && parts.p) {
-            payload = `e=${parts.e}&p=${parts.p}`;
+            payload = getEventRecipientPayload(parts.e, parts.p);
+        }
+        else if (parts.e) {
+            payload = getPlayerPayload(parts.e);
         }
         else if (parts.a) {
-            payload = `a=${parts.a}`;
+            payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token structure" });
+            return e.json(400, { error: "Invalid token payload" });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
@@ -9849,11 +11928,11 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ["p", "c", "s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }

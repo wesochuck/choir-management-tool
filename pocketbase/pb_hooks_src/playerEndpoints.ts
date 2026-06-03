@@ -1,4 +1,36 @@
-routerAdd("POST", "/api/generate-player-token", (e) => {
+import { parseJsonField } from './email/hookJson';
+import { getHmacSecret, generateSignedPlayerToken, getPlayerPayload } from './hmacTokens';
+import type { PocketBaseApp, PocketBaseRequestEvent } from './email/emailTypes';
+
+declare const $app: PocketBaseApp;
+declare const $security: {
+    hs256(payload: string, secret: string): string;
+    equal(a: string, b: string): boolean;
+};
+
+interface MusicLibraryPayload {
+    id: string;
+    parentId: unknown;
+    title: unknown;
+    composer: unknown;
+    arranger: unknown;
+    duration: unknown;
+    created: unknown;
+    updated: unknown;
+    audioTrackMapping: unknown;
+    collectionId: string;
+    collectionName: string;
+}
+
+interface VoicePartsSetting {
+    voiceParts?: unknown[];
+}
+
+/**
+ * Endpoint: POST /api/generate-player-token
+ * Admins only.
+ */
+export function handleGeneratePlayerToken(e: PocketBaseRequestEvent): void {
     const authRecord = e.auth;
     if (!authRecord || authRecord.get("role") !== "admin") {
         return e.json(403, { error: "Forbidden: Admins only" });
@@ -11,57 +43,23 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         return e.json(400, { error: "Missing eventId" });
     }
 
-    let secret = "";
-    try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        secret = record.get("value").secret;
-    } catch (err) {
+    const secret = getHmacSecret($app);
+    if (!secret) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const payload = `e=${eventId}`;
-    const signature = $security.hs256(payload, secret);
-    const token = `${payload}&s=${signature}`;
+    const token = generateSignedPlayerToken($app, eventId as string, secret);
 
     return e.json(200, { token });
-});
+}
 
-routerAdd("GET", "/api/player-playlist", (e) => {
-    // Helper to safely convert Go byte slices to JS strings
-    function decodeGoBytes(val) {
-        if (!val) return "";
-        if (typeof val === 'string') return val;
-        try {
-            if (typeof val === 'object') {
-                let str = "";
-                const len = val.length;
-                if (typeof len === 'number') {
-                    for (let i = 0; i < len; i++) {
-                        str += String.fromCharCode(val[i]);
-                    }
-                    return str;
-                }
-            }
-        } catch (err) {
-            // ignore
-        }
-        return JSON.stringify(val);
-    }
-
-    // Safely parse JSON columns
-    function parseJsonField(val) {
-        if (!val) return null;
-        const str = decodeGoBytes(val);
-        if (!str) return null;
-        try {
-            return JSON.parse(str);
-        } catch (err) {
-            return null;
-        }
-    }
-
-    let token = e.requestInfo().query.token;
-    const sParam = e.requestInfo().query.s;
+/**
+ * Endpoint: GET /api/player-playlist
+ * Public with signed token.
+ */
+export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
+    let token = e.requestInfo().query.token as string;
+    const sParam = e.requestInfo().query.s as string;
     if (token && sParam && !token.includes('s=')) {
         token = `${token}&s=${sParam}`;
     }
@@ -70,7 +68,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         return e.json(400, { error: "Missing token" });
     }
 
-    const parts = {};
+    const parts: Record<string, string> = {};
     token.split('&').forEach(part => {
         const kv = part.split('=');
         if (kv.length === 2) {
@@ -82,15 +80,12 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         return e.json(400, { error: "Invalid token format" });
     }
 
-    let secret = "";
-    try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        secret = record.get("value").secret;
-    } catch (err) {
+    const secret = getHmacSecret($app);
+    if (!secret) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
 
-    const payload = `e=${parts.e}`;
+    const payload = getPlayerPayload(parts.e);
     const expectedSignature = $security.hs256(payload, secret);
 
     if (!$security.equal(parts.s, expectedSignature)) {
@@ -106,7 +101,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         }
         
         // Fetch all pieces from the music library to allow title-based fallback matching on the client side
-        let pieces = [];
+        let pieces: MusicLibraryPayload[] = [];
         try {
             const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
             pieces = allPieces.map(p => {
@@ -129,20 +124,20 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                     collectionName: "musicLibrary"
                 };
             });
-        } catch (err) {
+        } catch {
             // Fallback to empty list if querying fails
         }
 
         // Include voice parts configuration for the selector
-        let voiceParts = [];
+        let voiceParts: unknown[] = [];
         try {
             const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
             const rawVal = vpRecord.get("value");
-            const parsedVal = parseJsonField(rawVal);
+            const parsedVal = parseJsonField<VoicePartsSetting>(rawVal);
             if (parsedVal && parsedVal.voiceParts) {
                 voiceParts = parsedVal.voiceParts;
             }
-        } catch (e) {
+        } catch {
             // Fallback to empty if not found
         }
 
@@ -156,11 +151,13 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             pieces: pieces,
             voiceParts: voiceParts
         });
-    } catch (err) {
-        console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
+        console.log("Error in /api/player-playlist: " + message + stack);
         return e.json(404, { 
             error: "Event or related pieces not found", 
-            details: err.message || String(err)
+            details: message
         });
     }
-});
+}

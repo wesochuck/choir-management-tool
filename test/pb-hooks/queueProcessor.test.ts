@@ -347,8 +347,8 @@ test('processEmailQueue contentType: "html" bypasses markdown rendering', () => 
     assert.strictEqual(recordHtml.get('status'), 'Sent');
     assert.strictEqual(recordMarkdown.get('status'), 'Sent');
 
-    const htmlSent = sentEmails.find((e: any) => e.config.to[0].address === 'html@example.com') as any;
-    const mdSent = sentEmails.find((e: any) => e.config.to[0].address === 'md@example.com') as any;
+    const htmlSent = sentEmails.find((email) => email.config.to[0].address === 'html@example.com');
+    const mdSent = sentEmails.find((email) => email.config.to[0].address === 'md@example.com');
 
     // Verify HTML content was preserved exactly (not escaped by renderMarkdown)
     // Note: compileMailjetHtml is called, so we check if the inner content is correct

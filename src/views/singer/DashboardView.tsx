@@ -8,14 +8,17 @@ import { pollService, type SingerPoll } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
 import { communicationService, type MessageRecord } from '../../services/communicationService';
 import { sanitizeHtml } from '../../lib/textSafety';
+import { useDialog } from '../../contexts/DialogContext';
 import './DashboardView.css';
 
 export default function DashboardView() {
+  const dialog = useDialog();
   const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
   const [activePolls, setActivePolls] = useState<SingerPoll[]>([]);
   const [announcements, setAnnouncements] = useState<MessageRecord[]>([]);
   const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
     if (myProfile?.id) {
@@ -38,17 +41,43 @@ export default function DashboardView() {
     if (myProfile?.id) {
       setIsAnnouncementsLoading(true);
       communicationService.getMessages()
-        .then(list => {
+        .then(async list => {
           // Client-side filter to only show messages where the user is a recipient
           const filtered = list.filter(msg => 
             msg.recipients?.some(r => r.id === myProfile.id)
           );
-          setAnnouncements(filtered.slice(0, 5));
+
+          const recent = filtered.slice(0, 5);
+          const resolved = await Promise.all(
+            recent.map(async (msg) => {
+              let content = msg.content;
+              const eventId = msg.filters?.eventId as string | undefined;
+
+              if (content.includes('{{RSVP_LINKS}}') || content.includes('{{POLL_LINK:')) {
+                try {
+                  content = await communicationService.resolveSingerPlaceholders(content, eventId);
+                } catch (err) {
+                  console.error('Failed to resolve placeholders for message', msg.id, err);
+                }
+              }
+
+              return {
+                ...msg,
+                content,
+              };
+            })
+          );
+
+          setAnnouncements(resolved);
         })
         .catch(err => console.error('Failed to load announcements', err))
         .finally(() => setIsAnnouncementsLoading(false));
     }
   }, [myProfile?.id]);
+
+  useEffect(() => {
+    setCurrentTime(Date.now());
+  }, [events]);
 
   const handlePollResponse = async (pollId: string, status: 'Yes' | 'No') => {
     if (!myProfile?.id) return;
@@ -63,6 +92,28 @@ export default function DashboardView() {
       // Revert on error
       const list = await pollService.getActivePollsForSinger(myProfile.id);
       setActivePolls(list);
+    }
+  };
+
+  const handleUpdateRSVP = async (eventId: string, rsvp: 'Yes' | 'No') => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    if (event.type === 'Rehearsal' && rsvp === 'No') {
+      const note = await dialog.prompt({
+        title: 'RSVP Note Required',
+        message: 'Please provide a brief reason for your absence from this rehearsal.',
+        placeholder: 'e.g. Family emergency, work travel, illness...',
+        confirmLabel: 'Submit RSVP',
+        required: true,
+        maxLength: 1000
+      });
+
+      if (note === null) return; // User cancelled prompt
+
+      await updateRSVP(eventId, rsvp, note);
+    } else {
+      await updateRSVP(eventId, rsvp);
     }
   };
 
@@ -86,6 +137,20 @@ export default function DashboardView() {
     } catch {
       return '';
     }
+  };
+
+  const isNextEventClosed = nextEvent ? (
+    nextEvent.type === 'Performance' 
+      ? !nextEvent.isOpenForRSVP 
+      : new Date(nextEvent.date).getTime() < currentTime
+  ) : false;
+
+  const nextEventLabels = nextEvent?.type === 'Rehearsal' ? {
+    yes: nextRoster?.rsvp === 'Yes' ? '✓ Attending' : "I'll be there",
+    no: nextRoster?.rsvp === 'No' ? '✗ Absence Reported' : 'Report absence'
+  } : {
+    yes: nextRoster?.rsvp === 'Yes' ? '✓ Attending' : 'Attend',
+    no: nextRoster?.rsvp === 'No' ? '✗ Declining' : 'Decline'
   };
 
   return (
@@ -127,19 +192,28 @@ export default function DashboardView() {
                 <div className="mobile-singer-quick-rsvp">
                   <button
                     type="button"
-                    onClick={() => updateRSVP(nextEvent.id, 'Yes')}
+                    onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                    disabled={isNextEventClosed}
                   >
-                    {nextRoster?.rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
+                    {nextEventLabels.yes}
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateRSVP(nextEvent.id, 'No')}
+                    onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                    disabled={isNextEventClosed}
                   >
-                    {nextRoster?.rsvp === 'No' ? '✗ Declining' : 'Decline'}
+                    {nextEventLabels.no}
                   </button>
                 </div>
+                {isNextEventClosed && (
+                  <div className="text-xs text-muted" style={{ textAlign: 'center', marginTop: 'var(--space-xs)' }}>
+                    {nextEvent.type === 'Performance' 
+                      ? 'The RSVP window for this performance is closed.' 
+                      : 'This rehearsal has already passed.'}
+                  </div>
+                )}
 
                 {(activePolls.length > 0 || latestAnnouncement) && (
                   <div className="mobile-singer-quick-notices">
@@ -171,7 +245,7 @@ export default function DashboardView() {
                 key={e.id} 
                 event={e} 
                 rsvp={myRosters[e.id]?.rsvp} 
-                onRSVP={(rsvp) => updateRSVP(e.id, rsvp)} 
+                onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)} 
                 allEvents={events}
                 myRosters={myRosters}
                 voicePart={myProfile?.voicePart}
@@ -188,44 +262,6 @@ export default function DashboardView() {
           {/* Right sidebar: Quick widgets */}
           <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
             
-            {/* Practice Center CTA */}
-            <AppCard className="practice-widget-card" style={{ padding: 'var(--space-lg)' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                <h3 className="widget-title" style={{ margin: 0, fontSize: '1.25rem' }}>🎧 Practice Center</h3>
-                <p className="text-muted-white" style={{ margin: 0, lineHeight: 1.4 }}>
-                  Access learning tracks, markoffs, and practice lists. Practice offline anytime!
-                </p>
-                <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                  {upcomingEvents.length > 0 ? (
-                    <Link 
-                      to={`/player?eventId=${upcomingEvents[0].id}`}
-                      className="btn"
-                      style={{ backgroundColor: 'white', color: 'var(--primary-deep)', fontWeight: 800, width: '100%', border: 'none', textAlign: 'center' }}
-                    >
-                      🎵 Launch Practice Player
-                    </Link>
-                  ) : (
-                    <Link 
-                      to="/player" 
-                      className="btn"
-                      style={{ backgroundColor: 'white', color: 'var(--primary-deep)', fontWeight: 800, width: '100%', border: 'none', textAlign: 'center' }}
-                    >
-                      🎵 Open Practice Player
-                    </Link>
-                  )}
-                  {upcomingEvents.length > 0 && upcomingEvents[0].type === 'Performance' && (
-                    <Link 
-                      to={`/seating/${upcomingEvents[0].id}`}
-                      className="btn"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 600, width: '100%', textAlign: 'center' }}
-                    >
-                      🪑 View Seating Roster
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </AppCard>
-
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
               <AppCard className="glass-card" title="📊 Quick Polls" style={{ backgroundColor: 'var(--primary-light)' }}>
@@ -366,4 +402,3 @@ export default function DashboardView() {
     </PageLayout>
   );
 }
-

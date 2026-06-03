@@ -9,9 +9,19 @@
     gap: var(--space-sm);
   }
 
+  /* Actions container in top row */
+  .event-card-top-row > div {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
   .event-card-top-row .btn {
     width: 100%;
     justify-content: center;
+    padding: 6px 4px;
+    font-size: 0.75rem;
   }
 
   .event-card-setlist-toggle {
@@ -43,10 +53,5 @@
   .event-card-rsvp-actions .btn {
     width: 100%;
     min-height: 44px;
-  }
-
-  .event-card-seat-link {
-    min-height: 44px;
-    justify-content: center;
   }
 }

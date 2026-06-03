@@ -74,6 +74,7 @@ export interface PocketBaseApp {
     findRecordById(collection: string, id: string): PocketBaseRecord;
     save(record: PocketBaseRecord): void;
     saveNoValidate(record: PocketBaseRecord): void;
+    delete(record: PocketBaseRecord): void;
     settings(): PocketBaseSettings;
     newMailClient(): PocketBaseMailClient;
     db(): PocketBaseDb;
@@ -90,6 +91,7 @@ export interface PocketBaseResponse {
 export interface PocketBaseRequestInfo {
     query: Record<string, unknown>;
     body: Record<string, unknown>;
+    headers?: Record<string, string>;
 }
 
 export interface PocketBaseRequestEvent {

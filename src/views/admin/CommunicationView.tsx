@@ -245,15 +245,13 @@ export default function CommunicationView() {
   };
 
   const handleCopyMessageAsDraft = (message: MessageRecord) => {
-    const {
-      archived,
-      archivedReason,
-      archivedBy,
-      archivedByEmail,
-      archivedAt,
-      automatedTaskType,
-      ...cleanFilters
-    } = (message.filters || {}) as Record<string, unknown>;
+    const cleanFilters = { ...((message.filters || {}) as Record<string, unknown>) };
+    delete cleanFilters.archived;
+    delete cleanFilters.archivedReason;
+    delete cleanFilters.archivedBy;
+    delete cleanFilters.archivedByEmail;
+    delete cleanFilters.archivedAt;
+    delete cleanFilters.automatedTaskType;
 
     draft.handleResumeDraft({
       ...message,
@@ -421,6 +419,8 @@ export default function CommunicationView() {
           historyPage={library.historyPage}
           totalPages={library.totalPages}
           setHistoryPage={library.setHistoryPage}
+          historySearchQuery={library.historySearchQuery}
+          onHistorySearchChange={library.setHistorySearchQuery}
           events={events}
           commSettings={library.commSettings}
           onViewDetails={setSelectedMessage}
@@ -517,4 +517,3 @@ export default function CommunicationView() {
     </div>
   );
 }
-
