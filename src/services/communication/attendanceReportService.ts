@@ -43,7 +43,8 @@ export function renderManualAttendanceReportTemplate(params: {
 }
 
 export async function resolveAttendanceReportRecipients(): Promise<CommunicationRecipient[]> {
-  // Fetch profiles broadly with expanded users to avoid PocketBase relation filter issues in production
+  // Avoid filtering on expanded relation fields here; in production PocketBase returned
+  // zero rows for user.role/user.email relation filters even when expand=user succeeded.
   const profiles = await pb.collection('profiles').getFullList<Profile>({
     expand: 'user',
     sort: 'name',
