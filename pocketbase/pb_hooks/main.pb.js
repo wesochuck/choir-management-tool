@@ -5145,9 +5145,11 @@ function parseSignedToken(token, requiredKeys) {
             }
         }
         let currentRsvp = "Pending";
+        let currentRsvpNote = "";
         try {
             const roster = $app.findFirstRecordByFilter("eventRosters", "event = {:e} && profile = {:p}", { e: parts.e, p: parts.p });
             currentRsvp = roster.get("rsvp") || "Pending";
+            currentRsvpNote = roster.get("rsvpNote") || "";
         }
         catch (rosterErr) {
             console.log("[RSVP Details] No existing roster found for event " + parts.e + " and profile " + parts.p + ": " + rosterErr);
@@ -5173,6 +5175,7 @@ function parseSignedToken(token, requiredKeys) {
                 voicePart: profile.get("voicePart") || ""
             },
             currentRsvp,
+            currentRsvpNote,
             rehearsals
         });
     }
@@ -6012,8 +6015,15 @@ function processEmailQueue(app) {
     const data = e.requestInfo().body;
     const token = data.token;
     const rsvp = data.rsvp;
+    const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
     if (!token || !rsvp || typeof token !== "string") {
         return e.json(400, { error: "Missing RSVP details. Please use full RSVP link from your email." });
+    }
+    if (rsvpNote.length > 1000) {
+        return e.json(400, {
+            error: "Your note cannot exceed 1000 characters.",
+            code: "RSVP_NOTE_TOO_LONG",
+        });
     }
     const parts = parseSignedToken(token, ["e", "p", "s"]);
     if (!parts) {
@@ -6035,14 +6045,22 @@ function processEmailQueue(app) {
         console.log("[RSVP Debug] Expected: " + expectedSignature + ", Received: " + parts.s);
         return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
     }
+    let event;
     try {
-        const event = $app.findRecordById("events", parts.e);
+        event = $app.findRecordById("events", parts.e);
         if (!event.get("isOpenForRSVP")) {
             return e.json(410, { error: "RSVP window for this event is closed. Contact choir admins for assistance." });
         }
     }
     catch (_b) {
         return e.json(404, { error: "Event not found. RSVP link may be expired." });
+    }
+    const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
+    if (event.get("type") === "Rehearsal" && normalizedRsvp === "No" && !rsvpNote) {
+        return e.json(400, {
+            error: "Please include a note explaining why you cannot attend this rehearsal.",
+            code: "RSVP_NOTE_REQUIRED",
+        });
     }
     try {
         const matches = $app.findRecordsByFilter("eventRosters", "event = {:e} && profile = {:p}", "", 2, 0, { e: parts.e, p: parts.p }) || [];
@@ -6056,8 +6074,13 @@ function processEmailQueue(app) {
             roster.set("folderReturned", false);
         }
         const oldRsvp = roster.get("rsvp");
-        const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
         roster.set("rsvp", normalizedRsvp);
+        if (normalizedRsvp === "No") {
+            roster.set("rsvpNote", rsvpNote);
+        }
+        else {
+            roster.set("rsvpNote", "");
+        }
         $app.save(roster);
         // Enqueue confirmation email if RSVP changed to Yes
         if (normalizedRsvp === "Yes" && oldRsvp !== "Yes") {
@@ -6279,11 +6302,15 @@ routerAdd("POST", "/api/admin/bulk-update-rsvps", (e) => {
                         }
                         else if (existing.get("rsvp") !== 'Pending') {
                             existing.set("rsvp", "Pending");
+                            existing.set("rsvpNote", "");
                             tx.save(existing);
                         }
                     }
                     else if (existing.get("rsvp") !== u.rsvp) {
                         existing.set("rsvp", u.rsvp);
+                        if (u.rsvp !== "No") {
+                            existing.set("rsvpNote", "");
+                        }
                         tx.save(existing);
                     }
                 }

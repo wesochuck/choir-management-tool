@@ -10,6 +10,7 @@ export interface AttendanceItem {
   voicePart: string;
   attendance: 'Present' | 'Absent' | 'Pending';
   rsvp: 'Yes' | 'No' | 'Pending';
+  rsvpNote?: string;
   rosterId?: string;
   folderNumber: string;
   folderReturned: boolean;
@@ -59,6 +60,7 @@ export const useAttendance = (eventId: string) => {
             voicePart: p.voicePart,
             attendance: roster?.attendance || 'Pending',
             rsvp: currentEvent?.type === 'Rehearsal' ? (parentRoster?.rsvp || 'Pending') : (roster?.rsvp || 'Pending'),
+            rsvpNote: roster?.rsvpNote || '',
             rosterId: roster?.id,
             folderNumber: parentRoster?.folderNumber || '',
             folderReturned: parentRoster?.folderReturned || false,
