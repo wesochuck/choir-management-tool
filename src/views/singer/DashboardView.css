@@ -31,40 +31,6 @@
   border-color: rgba(74, 124, 89, 0.3);
 }
 
-/* Practice center visual styling */
-.practice-widget-card {
-  background: linear-gradient(135deg, var(--primary-deep) 0%, var(--primary) 100%);
-  color: var(--surface);
-  border: none;
-  overflow: hidden;
-  position: relative;
-}
-
-.practice-widget-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  pointer-events: none;
-}
-
-.practice-widget-card .widget-title {
-  color: var(--surface);
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.practice-widget-card .text-muted-white {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.875rem;
-}
-
 /* Bulletins and announcements */
 .bulletin-feed {
   display: flex;

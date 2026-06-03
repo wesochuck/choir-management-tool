@@ -262,44 +262,6 @@ export default function DashboardView() {
           {/* Right sidebar: Quick widgets */}
           <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
             
-            {/* Practice Center CTA */}
-            <AppCard className="practice-widget-card" style={{ padding: 'var(--space-lg)' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                <h3 className="widget-title" style={{ margin: 0, fontSize: '1.25rem' }}>🎧 Practice Center</h3>
-                <p className="text-muted-white" style={{ margin: 0, lineHeight: 1.4 }}>
-                  Access learning tracks, markoffs, and practice lists. Practice offline anytime!
-                </p>
-                <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                  {upcomingEvents.length > 0 ? (
-                    <Link 
-                      to={`/player?eventId=${upcomingEvents[0].id}`}
-                      className="btn"
-                      style={{ backgroundColor: 'white', color: 'var(--primary-deep)', fontWeight: 800, width: '100%', border: 'none', textAlign: 'center' }}
-                    >
-                      🎵 Launch Practice Player
-                    </Link>
-                  ) : (
-                    <Link 
-                      to="/player" 
-                      className="btn"
-                      style={{ backgroundColor: 'white', color: 'var(--primary-deep)', fontWeight: 800, width: '100%', border: 'none', textAlign: 'center' }}
-                    >
-                      🎵 Open Practice Player
-                    </Link>
-                  )}
-                  {upcomingEvents.length > 0 && upcomingEvents[0].type === 'Performance' && (
-                    <Link 
-                      to={`/seating/${upcomingEvents[0].id}`}
-                      className="btn"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 600, width: '100%', textAlign: 'center' }}
-                    >
-                      🪑 View Seating Roster
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </AppCard>
-
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
               <AppCard className="glass-card" title="📊 Quick Polls" style={{ backgroundColor: 'var(--primary-light)' }}>

@@ -65,24 +65,34 @@ export const EventCard: React.FC<EventCardProps> = ({
   return (
     <AppCard noPadding>
       <div className="flex-col" style={{ padding: 'var(--space-lg)', gap: 'var(--space-md)' }}>
-        <div className="event-card-top-row flex-row" style={{ justifyContent: 'space-between', width: '100%' }}>
+        <div className="event-card-top-row flex-row" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
            <span className={`badge ${isPerformance ? 'badge-performance' : 'badge-rehearsal'}`}>
               {event.type}
             </span>
-            <button 
-              onClick={() => calendarUtils.generateICS(event)}
-              className="btn btn-ghost btn-sm"
-            >
-              📅 Add to Calendar
-            </button>
-            {showSetList && setList && setList.length > 0 && (
+            <div className="flex-row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <button 
-                onClick={handleOpenPlayer}
-                className="btn btn-primary btn-sm"
+                onClick={() => calendarUtils.generateICS(event)}
+                className="btn btn-ghost btn-sm"
               >
-                🎧 Practice Player
+                📅 Add
               </button>
-            )}
+              {showSetList && setList && setList.length > 0 && (
+                <button 
+                  onClick={handleOpenPlayer}
+                  className="btn btn-primary btn-sm"
+                >
+                  🎧 Practice
+                </button>
+              )}
+              {isPerformance && (
+                <Link 
+                  to={`/seating/${event.id}`}
+                  className="btn btn-secondary btn-sm"
+                >
+                  🪑 Seating
+                </Link>
+              )}
+            </div>
         </div>
 
 
@@ -381,16 +391,6 @@ export const EventCard: React.FC<EventCardProps> = ({
               ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
               : 'This rehearsal has already passed.'}
           </div>
-        )}
-
-        {isPerformance && (
-          <Link 
-            to={`/seating/${event.id}`}
-            className="btn btn-secondary event-card-seat-link"
-            style={{ width: '100%' }}
-          >
-            🪑 Find My Seat
-          </Link>
         )}
       </div>
     </AppCard>
