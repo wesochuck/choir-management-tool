@@ -248,7 +248,6 @@ export default function DashboardView() {
                 onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)} 
                 allEvents={events}
                 myRosters={myRosters}
-                voicePart={myProfile?.voicePart}
               />
             ))}
 
