@@ -46,6 +46,7 @@ const CommunicationView = lazyWithReload(() => import('./views/admin/Communicati
 const SetListView = lazyWithReload(() => import('./views/admin/SetListView'));
 const ReportsView = lazyWithReload(() => import('./views/admin/ReportsView'));
 const MusicLibraryView = lazyWithReload(() => import('./views/admin/MusicLibraryView'));
+const ResourcesView = lazyWithReload(() => import('./views/admin/ResourcesView'));
 const AdminDashboardView = lazyWithReload(() => import('./views/admin/AdminDashboardView'));
 const PollsDashboardView = lazyWithReload(() => import('./views/admin/PollsDashboardView'));
 const RsvpDashboardView = lazyWithReload(() => import('./views/admin/RsvpDashboardView'));
@@ -228,6 +229,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Communications" backTo="/">
                 <CommunicationView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/resources" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Singer Resources" backTo="/">
+                <ResourcesView />
               </PageLayout>
             </ProtectedRoute>
           } />

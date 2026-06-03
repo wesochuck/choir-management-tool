@@ -104,3 +104,7 @@ A unique, cryptographically random string stored on a singer's profile that is s
 
 ## Audition Inquiry
 A request submitted by a prospective singer via the public audition form, detailing their name, contact information, preferred audition time slots, voice part, and musical experience.
+
+## Singer Resource
+A document (such as a PDF handbook) or an external hyperlink (such as a Google Drive folder) managed by administrators and made available to all active singers under the Resources section of their dashboard.
+

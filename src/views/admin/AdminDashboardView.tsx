@@ -32,7 +32,8 @@ const dashboardSections = [
     dotColor: "var(--section-teal)",
     links: [
       { to: '/admin/library', icon: '🎼', iconClass: 'ic-teal', label: 'Music Library', desc: 'Catalog, repertoire, and CSV import' },
-      { to: '/admin/setlists', icon: '📋', iconClass: 'ic-teal', label: 'Set Lists', desc: 'Build and reorder event music' }
+      { to: '/admin/setlists', icon: '📋', iconClass: 'ic-teal', label: 'Set Lists', desc: 'Build and reorder event music' },
+      { to: '/admin/resources', icon: '📂', iconClass: 'ic-teal', label: 'Singer Resources', desc: 'Upload documents and links for singers' }
     ]
   },
   {

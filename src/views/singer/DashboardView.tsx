@@ -9,6 +9,7 @@ import { AppCard } from '../../components/common/AppCard';
 import { communicationService, type MessageRecord } from '../../services/communicationService';
 import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
+import { resourceService, type SingerResource } from '../../services/resourceService';
 import './DashboardView.css';
 
 export default function DashboardView() {
@@ -19,6 +20,8 @@ export default function DashboardView() {
   const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [resources, setResources] = useState<SingerResource[]>([]);
+  const [isResourcesLoading, setIsResourcesLoading] = useState(false);
 
   useEffect(() => {
     if (myProfile?.id) {
@@ -78,6 +81,14 @@ export default function DashboardView() {
   useEffect(() => {
     setCurrentTime(Date.now());
   }, [events]);
+
+  useEffect(() => {
+    setIsResourcesLoading(true);
+    resourceService.getResources()
+      .then(list => setResources(list))
+      .catch(err => console.error('Failed to load resources', err))
+      .finally(() => setIsResourcesLoading(false));
+  }, []);
 
   const handlePollResponse = async (pollId: string, status: 'Yes' | 'No') => {
     if (!myProfile?.id) return;
@@ -332,31 +343,30 @@ export default function DashboardView() {
               )}
             </AppCard>
 
-            {/* Resources Locker Widget */}
-            <AppCard className="glass-card" title="📂 Resources Locker">
-              <div className="resource-locker-list">
-                <a href="/profile" className="resource-locker-item">
-                  <span className="resource-icon">👤</span> My Singer Profile
-                </a>
-                <a 
-                  href="https://www.google.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="resource-locker-item"
-                >
-                  <span className="resource-icon">📖</span> Choir Singer Handbook
-                </a>
-                {events.length > 0 && events.find(e => e.expand?.venue?.address) && (
-                  <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(events.find(e => e.expand?.venue?.address)?.expand?.venue?.address || '')}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="resource-locker-item"
-                  >
-                    <span className="resource-icon">📍</span> Primary Venue Location
-                  </a>
-                )}
-              </div>
+            {/* Resources Widget */}
+            <AppCard className="glass-card" title="📂 Resources">
+              {isResourcesLoading ? (
+                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>Loading resources...</div>
+              ) : resources.length > 0 ? (
+                <div className="resource-locker-list">
+                  {resources.map(res => {
+                    const href = res.url || (res.file ? resourceService.getResourceFileUrl(res, res.file) : '#');
+                    return (
+                      <a 
+                        key={res.id}
+                        href={href} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="resource-locker-item"
+                      >
+                        <span className="resource-icon">{res.url ? '🔗' : '📄'}</span> {res.title}
+                      </a>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>No resources available.</div>
+              )}
             </AppCard>
 
           </div>
