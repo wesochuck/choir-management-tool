@@ -171,8 +171,8 @@ export default function SeatingFinderView() {
   let rightNeighbor: NeighborInfo = { status: 'empty', profile: null };
 
   if (row !== null && seat !== null) {
-    const leftId = assignments[`${row}-${seat - 1}`];
-    const rightId = assignments[`${row}-${seat + 1}`];
+    const leftId = assignments[`${row}-${seat + 1}`];
+    const rightId = assignments[`${row}-${seat - 1}`];
 
     leftNeighbor = getNeighborInfo(leftId);
     rightNeighbor = getNeighborInfo(rightId);
@@ -275,7 +275,7 @@ export default function SeatingFinderView() {
                  Row {row + 1}
               </div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                Seat {seat! + 1} <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-muted)' }}>({seat! + 1} from left, {rowCounts[row] - seat!} from right)</span>
+                Seat {seat! + 1} <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-muted)' }}>({seat! + 1} from left, {rowCounts[row] - seat!} from right, looking at stage)</span>
               </div>
             </div>
           ) : (
@@ -403,7 +403,7 @@ export default function SeatingFinderView() {
         {!isOpenSeating && row !== null && seat !== null && (
           <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
             <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-              Standing Neighbors HUD
+              Standing Neighbors HUD (Facing Director)
             </h3>
             
             <div className="neighbors-hud-container">
