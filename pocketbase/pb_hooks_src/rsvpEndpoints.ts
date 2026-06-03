@@ -21,6 +21,30 @@ interface AppWithTransaction {
     runInTransaction(callback: (txApp: PocketBaseApp) => void): void;
 }
 
+function parsePocketBaseDate(dateValue: unknown): Date | null {
+    const raw = String(dateValue || "").trim();
+    if (!raw) return null;
+
+    const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
+    const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized + "Z"
+        : normalized;
+
+    try {
+        const parsed = new Date(withTimezone);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+    } catch {
+        // Goja can be stricter than browsers for date strings; fall back below.
+    }
+
+    try {
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    } catch {
+        return null;
+    }
+}
+
 function validateSingerRsvpWindow(event: PocketBaseRecord): { ok: true } | { ok: false; status: number; error: string } {
     const eventType = String(event.get("type") || "");
 
@@ -33,8 +57,8 @@ function validateSingerRsvpWindow(event: PocketBaseRecord): { ok: true } | { ok:
     }
 
     if (eventType === "Rehearsal") {
-        const eventDate = new Date(String(event.get("date") || ""));
-        if (Number.isNaN(eventDate.getTime())) {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
             return { ok: false, status: 400, error: "Invalid rehearsal date." };
         }
 
@@ -62,8 +86,8 @@ function getRsvpWindowInfo(event: PocketBaseRecord): {
     }
 
     if (eventType === "Rehearsal") {
-        const eventDate = new Date(String(event.get("date") || ""));
-        if (Number.isNaN(eventDate.getTime())) {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
             return {
                 canSubmit: false,
                 isReadOnly: true,
@@ -304,12 +328,12 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     let event: PocketBaseRecord;
     try {
         event = $app.findRecordById("events", parts.e);
-        const windowValidation = validateSingerRsvpWindow(event);
-        if (!windowValidation.ok) {
-            return e.json(windowValidation.status, { error: windowValidation.error });
-        }
     } catch {
         return e.json(404, { error: "Event not found. RSVP link may be expired." });
+    }
+    const windowValidation = validateSingerRsvpWindow(event);
+    if (!windowValidation.ok) {
+        return e.json(windowValidation.status, { error: windowValidation.error });
     }
 
     const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
@@ -757,12 +781,12 @@ routerAdd("POST", "/api/singer/rsvp", (e) => {
     let event: PocketBaseRecord;
     try {
         event = $app.findRecordById("events", eventId);
-        const windowValidation = validateSingerRsvpWindow(event);
-        if (!windowValidation.ok) {
-            return e.json(windowValidation.status, { error: windowValidation.error });
-        }
     } catch {
         return e.json(404, { error: "Event not found" });
+    }
+    const windowValidation = validateSingerRsvpWindow(event);
+    if (!windowValidation.ok) {
+        return e.json(windowValidation.status, { error: windowValidation.error });
     }
 
     if (event.get("type") === "Rehearsal" && rsvp === "No" && !rsvpNote) {

@@ -32,8 +32,9 @@ export const EventCard: React.FC<EventCardProps> = ({
 }) => {
   const { timezone } = useChoirSettings();
   const navigate = useNavigate();
+  const [now, setNow] = React.useState(() => Date.now());
   const isPerformance = event.type === 'Performance';
-  const isWindowClosed = isPerformance ? !event.isOpenForRSVP : (new Date(event.date).getTime() < Date.now());
+  const isWindowClosed = isPerformance ? !event.isOpenForRSVP : (new Date(event.date).getTime() < now);
   const labels = isPerformance ? {
     yes: rsvp === 'Yes' ? '✓ Attending' : 'Attend',
     no: rsvp === 'No' ? '✗ Declining' : 'Decline'
@@ -46,6 +47,10 @@ export const EventCard: React.FC<EventCardProps> = ({
   const [library, setLibrary] = React.useState<MusicPiece[]>([]);
   const [playingTrack, setPlayingTrack] = React.useState<{ songId: string; label: string; url: string } | null>(null);
   const [isSetListExpanded, setIsSetListExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    setNow(Date.now());
+  }, [event.id]);
 
   const handleOpenPlayer = () => {
     navigate(`/player?eventId=${event.id}`);

@@ -1,5 +1,5 @@
 import { parseJsonField } from './email/hookJson';
-import type { PocketBaseRecord, PocketBaseApp } from './email/emailTypes';
+import type { PocketBaseApp } from './email/emailTypes';
 
 declare const $security: {
     hs256(payload: string, secret: string): string;

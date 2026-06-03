@@ -1,4 +1,4 @@
-import { parseJsonField, decodeGoBytes } from './email/hookJson';
+import { parseJsonField } from './email/hookJson';
 import { getHmacSecret, generateSignedPlayerToken, getPlayerPayload } from './hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent } from './email/emailTypes';
 
@@ -7,6 +7,24 @@ declare const $security: {
     hs256(payload: string, secret: string): string;
     equal(a: string, b: string): boolean;
 };
+
+interface MusicLibraryPayload {
+    id: string;
+    parentId: unknown;
+    title: unknown;
+    composer: unknown;
+    arranger: unknown;
+    duration: unknown;
+    created: unknown;
+    updated: unknown;
+    audioTrackMapping: unknown;
+    collectionId: string;
+    collectionName: string;
+}
+
+interface VoicePartsSetting {
+    voiceParts?: unknown[];
+}
 
 /**
  * Endpoint: POST /api/generate-player-token
@@ -83,7 +101,7 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
         }
         
         // Fetch all pieces from the music library to allow title-based fallback matching on the client side
-        let pieces: any[] = [];
+        let pieces: MusicLibraryPayload[] = [];
         try {
             const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
             pieces = allPieces.map(p => {
@@ -106,20 +124,20 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
                     collectionName: "musicLibrary"
                 };
             });
-        } catch (err) {
+        } catch {
             // Fallback to empty list if querying fails
         }
 
         // Include voice parts configuration for the selector
-        let voiceParts: any[] = [];
+        let voiceParts: unknown[] = [];
         try {
             const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
             const rawVal = vpRecord.get("value");
-            const parsedVal = parseJsonField<any>(rawVal);
+            const parsedVal = parseJsonField<VoicePartsSetting>(rawVal);
             if (parsedVal && parsedVal.voiceParts) {
                 voiceParts = parsedVal.voiceParts;
             }
-        } catch (e) {
+        } catch {
             // Fallback to empty if not found
         }
 
@@ -133,13 +151,13 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
             pieces: pieces,
             voiceParts: voiceParts
         });
-    } catch (err) {
-        // @ts-ignore
-        console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
+        console.log("Error in /api/player-playlist: " + message + stack);
         return e.json(404, { 
             error: "Event or related pieces not found", 
-            // @ts-ignore
-            details: err.message || String(err)
+            details: message
         });
     }
 }

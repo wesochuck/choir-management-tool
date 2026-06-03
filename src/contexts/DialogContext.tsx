@@ -27,11 +27,10 @@ interface DialogContextValue {
   showToast: (message: string, duration?: number) => void;
 }
 
-interface ActiveDialog {
-  type: 'message' | 'confirm' | 'prompt';
-  options: PromptOptions;
-  resolve: (value: any) => void;
-}
+type ActiveDialog =
+  | { type: 'message'; options: MessageOptions; resolve: () => void }
+  | { type: 'confirm'; options: ConfirmOptions; resolve: (value: boolean) => void }
+  | { type: 'prompt'; options: PromptOptions; resolve: (value: string | null) => void };
 
 const DialogContext = createContext<DialogContextValue | null>(null);
 
@@ -42,11 +41,18 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
 
   const closeDialog = useCallback((value: boolean | string | null) => {
     setActiveDialog((current) => {
-      if (current?.type === 'prompt' && typeof value === 'boolean') {
-        current.resolve(value ? promptValue : null);
-      } else {
-        current?.resolve(value);
+      if (!current) {
+        return null;
       }
+
+      if (current.type === 'message') {
+        current.resolve();
+      } else if (current.type === 'confirm') {
+        current.resolve(value === true);
+      } else {
+        current.resolve(typeof value === 'boolean' ? (value ? promptValue : null) : value);
+      }
+
       return null;
     });
     setPromptValue('');

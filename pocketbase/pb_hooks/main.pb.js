@@ -4822,6 +4822,30 @@ onRecordAfterUpdateSuccess((e) => {
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
+function parsePocketBaseDate(dateValue) {
+    const raw = String(dateValue || "").trim();
+    if (!raw)
+        return null;
+    const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
+    const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized + "Z"
+        : normalized;
+    try {
+        const parsed = new Date(withTimezone);
+        if (!Number.isNaN(parsed.getTime()))
+            return parsed;
+    }
+    catch (_a) {
+        // Goja can be stricter than browsers for date strings; fall back below.
+    }
+    try {
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    catch (_b) {
+        return null;
+    }
+}
 function validateSingerRsvpWindow(event) {
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
@@ -4832,8 +4856,8 @@ function validateSingerRsvpWindow(event) {
         };
     }
     if (eventType === "Rehearsal") {
-        const eventDate = new Date(String(event.get("date") || ""));
-        if (Number.isNaN(eventDate.getTime())) {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
             return { ok: false, status: 400, error: "Invalid rehearsal date." };
         }
         if (eventDate.getTime() < Date.now()) {
@@ -4852,8 +4876,8 @@ function getRsvpWindowInfo(event) {
         };
     }
     if (eventType === "Rehearsal") {
-        const eventDate = new Date(String(event.get("date") || ""));
-        if (Number.isNaN(eventDate.getTime())) {
+        const eventDate = parsePocketBaseDate(event.get("date"));
+        if (!eventDate) {
             return {
                 canSubmit: false,
                 isReadOnly: true,
@@ -6100,13 +6124,13 @@ function processEmailQueue(app) {
     let event;
     try {
         event = $app.findRecordById("events", parts.e);
-        const windowValidation = validateSingerRsvpWindow(event);
-        if (!windowValidation.ok) {
-            return e.json(windowValidation.status, { error: windowValidation.error });
-        }
     }
     catch (_b) {
         return e.json(404, { error: "Event not found. RSVP link may be expired." });
+    }
+    const windowValidation = validateSingerRsvpWindow(event);
+    if (!windowValidation.ok) {
+        return e.json(windowValidation.status, { error: windowValidation.error });
     }
     const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
     if (event.get("type") === "Rehearsal" && normalizedRsvp === "No" && !rsvpNote) {
@@ -7518,13 +7542,13 @@ function processEmailQueue(app) {
     let event;
     try {
         event = $app.findRecordById("events", eventId);
-        const windowValidation = validateSingerRsvpWindow(event);
-        if (!windowValidation.ok) {
-            return e.json(windowValidation.status, { error: windowValidation.error });
-        }
     }
     catch (_b) {
         return e.json(404, { error: "Event not found" });
+    }
+    const windowValidation = validateSingerRsvpWindow(event);
+    if (!windowValidation.ok) {
+        return e.json(windowValidation.status, { error: windowValidation.error });
     }
     if (event.get("type") === "Rehearsal" && rsvp === "No" && !rsvpNote) {
         return e.json(400, {
@@ -8772,7 +8796,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
                     };
                 });
             }
-            catch (err) {
+            catch (_a) {
                 // Fallback to empty list if querying fails
             }
             // Include voice parts configuration for the selector
@@ -8785,7 +8809,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
                     voiceParts = parsedVal.voiceParts;
                 }
             }
-            catch (e) {
+            catch (_b) {
                 // Fallback to empty if not found
             }
             return e.json(200, {
@@ -8800,12 +8824,12 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             });
         }
         catch (err) {
-            // @ts-ignore
-            console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+            const message = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
+            console.log("Error in /api/player-playlist: " + message + stack);
             return e.json(404, {
                 error: "Event or related pieces not found",
-                // @ts-ignore
-                details: err.message || String(err)
+                details: message
             });
         }
     }
@@ -8996,7 +9020,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                     };
                 });
             }
-            catch (err) {
+            catch (_a) {
                 // Fallback to empty list if querying fails
             }
             // Include voice parts configuration for the selector
@@ -9009,7 +9033,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
                     voiceParts = parsedVal.voiceParts;
                 }
             }
-            catch (e) {
+            catch (_b) {
                 // Fallback to empty if not found
             }
             return e.json(200, {
@@ -9024,12 +9048,12 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             });
         }
         catch (err) {
-            // @ts-ignore
-            console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+            const message = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
+            console.log("Error in /api/player-playlist: " + message + stack);
             return e.json(404, {
                 error: "Event or related pieces not found",
-                // @ts-ignore
-                details: err.message || String(err)
+                details: message
             });
         }
     }
@@ -9343,7 +9367,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -10073,7 +10098,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -10803,7 +10829,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
@@ -11533,7 +11560,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 return directName;
             }
             if (parsed && typeof parsed === "object") {
-                const value = parsed.name || parsed.choirName || parsed.value;
+                const parsedRecord = parsed;
+                const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
                 if (nestedName) {
                     return nestedName;
