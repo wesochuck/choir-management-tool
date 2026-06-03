@@ -1,18 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mock PocketBase globals before importing the file
-const globalRecord = globalThis as Record<string, unknown>;
-globalRecord.routerAdd = () => {};
-globalRecord.Record = class {};
-globalRecord.$security = {
-    hs256: () => '',
-    equal: () => true
-};
-globalRecord.$app = {};
-
-// Dynamically import to ensure mock globals are defined beforehand
-const { parsePocketBaseDate } = await import('../../pocketbase/pb_hooks_src/rsvpEndpoints.ts');
+import { parsePocketBaseDate } from '../../pocketbase/pb_hooks_src/rsvpValidation.ts';
 
 describe('parsePocketBaseDate', () => {
     test('parses 2026-06-03 19:00:00.000Z (space separator, Z suffix)', () => {
