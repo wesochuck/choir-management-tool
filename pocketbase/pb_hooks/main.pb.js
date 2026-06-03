@@ -4822,6 +4822,58 @@ onRecordAfterUpdateSuccess((e) => {
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
+function validateSingerRsvpWindow(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = new Date(String(event.get("date") || ""));
+        if (Number.isNaN(eventDate.getTime())) {
+            return { ok: false, status: 400, error: "Invalid rehearsal date." };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return { ok: false, status: 410, error: "This rehearsal has already passed." };
+        }
+    }
+    return { ok: true };
+}
+function getRsvpWindowInfo(event) {
+    const eventType = String(event.get("type") || "");
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "The RSVP window for this performance is closed. Your current response is shown below.",
+        };
+    }
+    if (eventType === "Rehearsal") {
+        const eventDate = new Date(String(event.get("date") || ""));
+        if (Number.isNaN(eventDate.getTime())) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "Invalid rehearsal date.",
+            };
+        }
+        if (eventDate.getTime() < Date.now()) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This rehearsal has already passed.",
+            };
+        }
+    }
+    return {
+        canSubmit: true,
+        isReadOnly: false,
+        reason: "",
+    };
+}
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -5093,9 +5145,7 @@ function parseSignedToken(token, requiredKeys) {
             console.log("[RSVP Error] Failed to fetch venues: " + venueFetchErr);
         }
         const event = $app.findRecordById("events", parts.e);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "This RSVP window has closed for this event. Contact choir admins if you need help." });
-        }
+        const rsvpWindow = getRsvpWindowInfo(event);
         let venueName = "";
         let venueAddress = "";
         try {
@@ -5162,6 +5212,7 @@ function parseSignedToken(token, requiredKeys) {
                 date: event.get("date") || "",
                 details: event.get("details") || "",
                 location: event.get("location") || "",
+                isOpenForRSVP: !!event.get("isOpenForRSVP"),
                 expand: {
                     venue: {
                         name: venueName,
@@ -5176,7 +5227,8 @@ function parseSignedToken(token, requiredKeys) {
             },
             currentRsvp,
             currentRsvpNote,
-            rehearsals
+            rehearsals,
+            rsvpWindow
         });
     }
     catch (err) {
@@ -6048,8 +6100,9 @@ function processEmailQueue(app) {
     let event;
     try {
         event = $app.findRecordById("events", parts.e);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "RSVP window for this event is closed. Contact choir admins for assistance." });
+        const windowValidation = validateSingerRsvpWindow(event);
+        if (!windowValidation.ok) {
+            return e.json(windowValidation.status, { error: windowValidation.error });
         }
     }
     catch (_b) {
@@ -7465,8 +7518,9 @@ function processEmailQueue(app) {
     let event;
     try {
         event = $app.findRecordById("events", eventId);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "RSVP window for this event is closed." });
+        const windowValidation = validateSingerRsvpWindow(event);
+        if (!windowValidation.ok) {
+            return e.json(windowValidation.status, { error: windowValidation.error });
         }
     }
     catch (_b) {

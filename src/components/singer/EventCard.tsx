@@ -33,6 +33,14 @@ export const EventCard: React.FC<EventCardProps> = ({
   const { timezone } = useChoirSettings();
   const navigate = useNavigate();
   const isPerformance = event.type === 'Performance';
+  const isWindowClosed = isPerformance ? !event.isOpenForRSVP : (new Date(event.date).getTime() < Date.now());
+  const labels = isPerformance ? {
+    yes: rsvp === 'Yes' ? '✓ Attending' : 'Attend',
+    no: rsvp === 'No' ? '✗ Declining' : 'Decline'
+  } : {
+    yes: rsvp === 'Yes' ? '✓ Attending' : "I'll be there",
+    no: rsvp === 'No' ? '✗ Absence Reported' : 'Report absence'
+  };
   const { showSetList, setList, headerLabel } = getSetListVisibilityResult(event, myRosters, allEvents);
 
   const [library, setLibrary] = React.useState<MusicPiece[]>([]);
@@ -349,17 +357,26 @@ export const EventCard: React.FC<EventCardProps> = ({
             onClick={() => onRSVP('Yes')}
             className={`btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
             style={{ flex: 1 }}
+            disabled={isWindowClosed}
           >
-            {rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
+            {labels.yes}
           </button>
           <button 
             onClick={() => onRSVP('No')}
             className={`btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
             style={{ flex: 1 }}
+            disabled={isWindowClosed}
           >
-            {rsvp === 'No' ? '✗ Declining' : 'Decline'}
+            {labels.no}
           </button>
         </div>
+        {isWindowClosed && (
+          <div className="rsvp-closed-message text-center text-xs text-muted" style={{ marginTop: 'var(--space-xs)', textAlign: 'center', width: '100%' }}>
+            {isPerformance 
+              ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
+              : 'This rehearsal has already passed.'}
+          </div>
+        )}
 
         {isPerformance && (
           <Link 

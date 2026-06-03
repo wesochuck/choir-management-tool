@@ -14,6 +14,7 @@ interface EventDetails {
   date: string;
   details?: string;
   location?: string;
+  isOpenForRSVP?: boolean;
   expand?: {
     venue?: {
       name: string;
@@ -44,10 +45,20 @@ export default function PublicRsvpView() {
   
   // RSVP State
   const [selectedRsvp, setSelectedRsvp] = useState<'Yes' | 'No'>('Yes');
+  const [dbRsvp, setDbRsvp] = useState<'Yes' | 'No' | 'Pending'>('Pending');
   const [rsvpNote, setRsvpNote] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showRehearsals, setShowRehearsals] = useState(false);
+  const [rsvpWindow, setRsvpWindow] = useState<{
+    canSubmit: boolean;
+    isReadOnly: boolean;
+    reason: string;
+  }>({
+    canSubmit: true,
+    isReadOnly: false,
+    reason: '',
+  });
 
   // Loaded Details
   const [event, setEvent] = useState<EventDetails | null>(null);
@@ -74,6 +85,11 @@ export default function PublicRsvpView() {
           currentRsvp: 'Yes' | 'No' | 'Pending';
           currentRsvpNote: string;
           rehearsals: EventDetails[];
+          rsvpWindow?: {
+            canSubmit: boolean;
+            isReadOnly: boolean;
+            reason: string;
+          };
         }>('/api/rsvp-details', {
           method: 'POST',
           body: { token }
@@ -93,6 +109,12 @@ export default function PublicRsvpView() {
         setTimezone(tz);
         setRehearsals(res.rehearsals);
         setRsvpNote(res.currentRsvpNote || "");
+        setDbRsvp(res.currentRsvp || "Pending");
+        setRsvpWindow(res.rsvpWindow || {
+          canSubmit: true,
+          isReadOnly: false,
+          reason: '',
+        });
 
         // Determine default selection and whether we skip confirmation
         if (initialRsvp) {
@@ -110,9 +132,10 @@ export default function PublicRsvpView() {
         }
 
         setStatus('success');
-      } catch {
+      } catch (err: unknown) {
         setStatus('error');
-        setErrorMessage('This link is invalid or has expired. Please contact a choir administrator for a new link.');
+        const errObj = err as { data?: { error?: string } } | null;
+        setErrorMessage(errObj?.data?.error || 'This link is invalid or has expired. Please contact a choir administrator for a new link.');
       }
     };
 
@@ -153,6 +176,7 @@ export default function PublicRsvpView() {
         }
       });
       setSelectedRsvp(rsvpVal);
+      setDbRsvp(rsvpVal);
       setRsvpNote(rsvpVal === 'No' ? note.trim() : '');
       setIsConfirmed(true);
     } catch (err: unknown) {
@@ -219,6 +243,9 @@ export default function PublicRsvpView() {
                 </div>
               );
             })}
+            <p className="text-muted" style={{ margin: 'var(--space-xs) 0 0', textAlign: 'center', fontSize: '0.75rem' }}>
+              Need to report a rehearsal absence? Please use your singer dashboard.
+            </p>
           </div>
         )}
       </div>
@@ -325,7 +352,111 @@ export default function PublicRsvpView() {
       <div style={{ margin: 'auto', width: '100%', maxWidth: '540px' }}>
         <AppCard style={{ width: '100%', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', border: '1px solid rgba(74, 117, 89, 0.15)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
           
-          {!isConfirmed ? (
+          {rsvpWindow.isReadOnly && (
+            <div className="card" style={{ padding: 'var(--space-md)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--neutral-bg)' }}>
+              <p className="text-muted" style={{ margin: 0 }}>
+                {rsvpWindow.reason}
+              </p>
+              {event?.type === 'Performance' && (
+                <p className="text-muted" style={{ margin: 'var(--space-xs) 0 0', fontSize: '0.75rem' }}>
+                  You can still report future rehearsal absences from your singer dashboard.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!rsvpWindow.canSubmit ? (
+            /* Read-Only Screen */
+            <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+              <div className="flex-col" style={{ alignItems: 'center', textAlign: 'center', gap: 'var(--space-xs)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>📅</div>
+                <h1 className="text-display" style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--primary-deep)' }}>
+                  RSVP Details
+                </h1>
+                <p className="text-muted" style={{ margin: 0, fontSize: '0.95rem' }}>
+                  Hello <strong style={{ color: 'var(--neutral-text)' }}>{profile.name}</strong>, the details for this event are shown below.
+                </p>
+              </div>
+
+              {/* Event Details Summary */}
+              <div className="flex-col" style={{ gap: 'var(--space-sm)', backgroundColor: 'var(--neutral-bg)', border: '1px solid var(--border)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
+                <span className={`badge ${event.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ alignSelf: 'flex-start', fontSize: '10px', padding: '3px 8px' }}>
+                  {event.type}
+                </span>
+                <h2 className="text-headline" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                  {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
+                </h2>
+                
+                <div className="flex-col" style={{ gap: '6px', fontSize: '0.9rem', color: 'var(--neutral-text)', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span>📅</span>
+                    <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span>⏰</span>
+                    <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <span>📍</span>
+                    <span><strong>{event.expand?.venue?.name || event.location}</strong></span>
+                  </div>
+                </div>
+
+                {event.details && (
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '10px', fontSize: '0.85rem', color: 'var(--neutral-muted)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {event.details}
+                  </div>
+                )}
+              </div>
+
+              {renderRehearsalsList()}
+
+              {/* Show the singer’s current response as read-only */}
+              <div className="card" style={{ padding: 'var(--space-md)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: '#ffffff', textAlign: 'center' }}>
+                <div className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--neutral-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your response</div>
+                <div className="text-headline" style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '8px', color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
+                  {dbRsvp === 'Yes'
+                    ? 'Attending'
+                    : dbRsvp === 'No'
+                    ? 'Declining'
+                    : 'No response recorded'}
+                </div>
+                {dbRsvp === 'No' && rsvpNote && (
+                  <div style={{ marginTop: '12px', fontSize: '0.9rem', color: 'var(--neutral-text)', borderTop: '1px solid var(--border)', paddingTop: '8px', textAlign: 'left' }}>
+                    <strong>Note:</strong> {rsvpNote}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-responsive" style={{ gap: 'var(--space-sm)', width: '100%', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
+                {dbRsvp === 'Yes' && (
+                  <button 
+                    onClick={handleDownloadCalendar}
+                    className="btn btn-secondary" 
+                    style={{ flex: 1, height: '44px', fontWeight: 700, justifyContent: 'center', gap: '6px' }}
+                  >
+                    📅 Add to Calendar (.ics)
+                  </button>
+                )}
+                <a 
+                  href="/login" 
+                  className="btn btn-ghost" 
+                  style={{ 
+                    flex: 1, 
+                    height: '44px', 
+                    fontWeight: 700, 
+                    justifyContent: 'center', 
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    border: '1px solid var(--border)'
+                  }}
+                >
+                  Sign In to Portal
+                </a>
+              </div>
+            </div>
+          ) : !isConfirmed ? (
             /* Confirmation Screen (Prevents pre-clicks, verifies human action) */
             <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
               <div className="flex-col" style={{ alignItems: 'center', textAlign: 'center', gap: 'var(--space-xs)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
