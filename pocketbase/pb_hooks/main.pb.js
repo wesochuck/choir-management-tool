@@ -688,21 +688,51 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret() {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -737,7 +767,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -905,9 +935,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -955,9 +983,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -985,9 +1011,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -998,9 +1022,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -1525,21 +1547,51 @@ onRecordAfterCreateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret() {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -1574,7 +1626,7 @@ onRecordAfterCreateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -1742,9 +1794,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -1792,9 +1842,7 @@ onRecordAfterCreateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -1822,9 +1870,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -1835,9 +1881,7 @@ onRecordAfterCreateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -2367,21 +2411,51 @@ onRecordAfterUpdateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret() {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -2416,7 +2490,7 @@ onRecordAfterUpdateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -2584,9 +2658,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -2634,9 +2706,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -2664,9 +2734,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -2677,9 +2745,7 @@ onRecordAfterUpdateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -3170,21 +3236,51 @@ onRecordAfterCreateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret() {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -3219,7 +3315,7 @@ onRecordAfterCreateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -3387,9 +3483,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -3437,9 +3531,7 @@ onRecordAfterCreateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -3467,9 +3559,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -3480,9 +3570,7 @@ onRecordAfterCreateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4119,21 +4207,51 @@ onRecordAfterUpdateSuccess((e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret() {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -4168,7 +4286,7 @@ onRecordAfterUpdateSuccess((e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -4336,9 +4454,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -4386,9 +4502,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -4416,9 +4530,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4429,9 +4541,7 @@ onRecordAfterUpdateSuccess((e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4682,6 +4792,16 @@ function getHmacSecret() {
         return "";
     }
 }
+function generateSignedPlayerToken(eventId, secret) {
+    const payload = `e=${eventId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+    const payload = `e=${eventId}&p=${recipientId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
@@ -4724,9 +4844,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     const tokens = {};
     profileIds.forEach(pId => {
-        const payload = `e=${eventId}&p=${pId}`;
-        const signature = $security.hs256(payload, secret);
-        tokens[pId] = `${payload}&s=${signature}`;
+        tokens[pId] = generateSignedEventRecipientToken(eventId, pId, secret);
     });
     return e.json(200, { tokens });
 });
@@ -4784,6 +4902,16 @@ function getHmacSecret() {
     catch (_a) {
         return "";
     }
+}
+function generateSignedPlayerToken(eventId, secret) {
+    const payload = `e=${eventId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+    const payload = `e=${eventId}&p=${recipientId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
@@ -5313,21 +5441,51 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
     `.trim();
 }
 
-// --- Utility source: email/queueProcessor.ts ---
+// --- Utility source: hmacTokens.ts ---
 "use strict";
-/**
- * Retrieves HMAC secret for signature tokens.
- */
-function getQueueHmacSecret(app) {
+function getHmacSecret() {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
-        return (parsed && parsed.secret) ? parsed.secret : "";
+        return parsed && parsed.secret ? parsed.secret : "";
     }
     catch (_a) {
         return "";
     }
 }
+function generateSignedPlayerToken(eventId, secret) {
+    const payload = `e=${eventId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+    const payload = `e=${eventId}&p=${recipientId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function parseSignedToken(token, requiredKeys) {
+    if (!token || typeof token !== "string")
+        return null;
+    const parts = {};
+    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    token.split("&").forEach(segment => {
+        const idx = segment.indexOf("=");
+        if (idx <= 0)
+            return;
+        const key = segment.slice(0, idx);
+        if (!allowed[key])
+            return;
+        parts[key] = segment.slice(idx + 1);
+    });
+    for (let i = 0; i < requiredKeys.length; i++) {
+        if (!parts[requiredKeys[i]])
+            return null;
+    }
+    return parts;
+}
+
+// --- Utility source: email/queueProcessor.ts ---
+"use strict";
 function processEmailQueue(app) {
     const settings = app.settings();
     if (!settings.smtp || !settings.smtp.enabled) {
@@ -5362,7 +5520,7 @@ function processEmailQueue(app) {
         console.log("[Email Queue] Error recovering stale records: " + recoverErr);
     }
     // Build variables used for layout rendering
-    const secret = getQueueHmacSecret(app);
+    const secret = getHmacSecret();
     let baseUrl = "http://localhost:5173";
     let mailingAddress = "123 Choir St, Harmony City, HC 12345";
     let choirName = "";
@@ -5530,9 +5688,7 @@ function processEmailQueue(app) {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = "";
                                 if (secret) {
-                                    const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                                 firstRehearsalHtml = `
@@ -5580,9 +5736,7 @@ function processEmailQueue(app) {
                                 }
                             }
                             else {
-                                const payload = `e=${event.id}&p=${recipientId}`;
-                                const signature = $security.hs256(payload, secret);
-                                const token = `${payload}&s=${signature}`;
+                                const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                         }
@@ -5610,9 +5764,7 @@ function processEmailQueue(app) {
                         .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                         .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                     if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                        const payload = `e=${event.id}&p=${recipientId}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
+                        const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -5623,9 +5775,7 @@ function processEmailQueue(app) {
                         htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                     }
                     if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                        const payload = `e=${event.id}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
+                        const token = generateSignedPlayerToken(event.id, secret);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -5721,39 +5871,6 @@ function processEmailQueue(app) {
     if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
         console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
     }
-}
-
-// --- Utility source: hmacTokens.ts ---
-"use strict";
-function getHmacSecret() {
-    try {
-        const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
-}
-function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
-        return null;
-    const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
-        if (idx <= 0)
-            return;
-        const key = segment.slice(0, idx);
-        if (!allowed[key])
-            return;
-        parts[key] = segment.slice(idx + 1);
-    });
-    for (let i = 0; i < requiredKeys.length; i++) {
-        if (!parts[requiredKeys[i]])
-            return null;
-    }
-    return parts;
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
@@ -5903,6 +6020,16 @@ function getHmacSecret() {
     catch (_a) {
         return "";
     }
+}
+function generateSignedPlayerToken(eventId, secret) {
+    const payload = `e=${eventId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+    const payload = `e=${eventId}&p=${recipientId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
@@ -6502,21 +6629,51 @@ routerAdd("POST", "/api/queue/process", (e) => {
         `.trim();
     }
 
-    // --- Utility source: email/queueProcessor.ts ---
+    // --- Utility source: hmacTokens.ts ---
     "use strict";
-    /**
-     * Retrieves HMAC secret for signature tokens.
-     */
-    function getQueueHmacSecret(app) {
+    function getHmacSecret() {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
-            return (parsed && parsed.secret) ? parsed.secret : "";
+            return parsed && parsed.secret ? parsed.secret : "";
         }
         catch (_a) {
             return "";
         }
     }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
     function processEmailQueue(app) {
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
@@ -6551,7 +6708,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             console.log("[Email Queue] Error recovering stale records: " + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getQueueHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = "http://localhost:5173";
         let mailingAddress = "123 Choir St, Harmony City, HC 12345";
         let choirName = "";
@@ -6719,9 +6876,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = "";
                                     if (secret) {
-                                        const payload = `e=${firstReh.id}&p=${recipientId}`;
-                                        const signature = $security.hs256(payload, secret);
-                                        const token = `${payload}&s=${signature}`;
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -6769,9 +6924,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     }
                                 }
                                 else {
-                                    const payload = `e=${event.id}&p=${recipientId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -6799,9 +6952,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
-                            const payload = `e=${event.id}&p=${recipientId}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedEventRecipientToken(event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -6812,9 +6963,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
                         if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
-                            const payload = `e=${event.id}`;
-                            const signature = $security.hs256(payload, secret);
-                            const token = `${payload}&s=${signature}`;
+                            const token = generateSignedPlayerToken(event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -7038,6 +7187,420 @@ routerAdd("POST", "/api/test-smtp", (e) => {
         $app.newMailClient().send(message);
         return e.json(200, { success: true });
     } catch (err) { return e.json(500, { error: "SMTP failed" }); }
+});
+
+routerAdd("POST", "/api/generate-player-token", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret() {
+        try {
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: playerEndpoints.ts ---
+    "use strict";
+    function handleGeneratePlayerToken(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden: Admins only" });
+        }
+        const data = e.requestInfo().body;
+        const eventId = data.eventId;
+        if (!eventId) {
+            return e.json(400, { error: "Missing eventId" });
+        }
+        const secret = getHmacSecret();
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const token = generateSignedPlayerToken(eventId, secret);
+        return e.json(200, { token });
+    }
+    function handlePlayerPlaylist(e) {
+        let token = e.requestInfo().query.token;
+        const sParam = e.requestInfo().query.s;
+        if (token && sParam && !token.includes('s=')) {
+            token = `${token}&s=${sParam}`;
+        }
+        if (!token) {
+            return e.json(400, { error: "Missing token" });
+        }
+        const parts = {};
+        token.split('&').forEach(part => {
+            const kv = part.split('=');
+            if (kv.length === 2) {
+                parts[kv[0]] = kv[1];
+            }
+        });
+        if (!parts.e || !parts.s) {
+            return e.json(400, { error: "Invalid token format" });
+        }
+        const secret = getHmacSecret();
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const payload = `e=${parts.e}`;
+        const expectedSignature = $security.hs256(payload, secret);
+        if (!$security.equal(parts.s, expectedSignature)) {
+            return e.json(401, { error: "Invalid signature" });
+        }
+        try {
+            const event = $app.findRecordById("events", parts.e);
+            const rawSetList = event.get("setList");
+            let setList = parseJsonField(rawSetList);
+            if (!Array.isArray(setList)) {
+                setList = [];
+            }
+            // Fetch all pieces from the music library to allow title-based fallback matching on the client side
+            let pieces = [];
+            try {
+                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
+                pieces = allPieces.map(p => {
+                    const rawMapping = p.get("audioTrackMapping");
+                    let mapping = parseJsonField(rawMapping);
+                    if (!mapping || typeof mapping !== 'object') {
+                        mapping = {};
+                    }
+                    return {
+                        id: p.id,
+                        parentId: p.get("parentId"),
+                        title: p.get("title"),
+                        composer: p.get("composer"),
+                        arranger: p.get("arranger"),
+                        duration: p.get("duration"),
+                        created: p.get("created"),
+                        updated: p.get("updated"),
+                        audioTrackMapping: mapping,
+                        collectionId: "pbc_music_library_001",
+                        collectionName: "musicLibrary"
+                    };
+                });
+            }
+            catch (err) {
+                // Fallback to empty list if querying fails
+            }
+            // Include voice parts configuration for the selector
+            let voiceParts = [];
+            try {
+                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
+                const rawVal = vpRecord.get("value");
+                const parsedVal = parseJsonField(rawVal);
+                if (parsedVal && parsedVal.voiceParts) {
+                    voiceParts = parsedVal.voiceParts;
+                }
+            }
+            catch (e) {
+                // Fallback to empty if not found
+            }
+            return e.json(200, {
+                event: {
+                    id: event.id,
+                    title: event.get("title"),
+                    date: event.get("date")
+                },
+                setList: setList,
+                pieces: pieces,
+                voiceParts: voiceParts
+            });
+        }
+        catch (err) {
+            // @ts-ignore
+            console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+            return e.json(404, {
+                error: "Event or related pieces not found",
+                // @ts-ignore
+                details: err.message || String(err)
+            });
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleGeneratePlayerToken(e);
+});
+
+routerAdd("GET", "/api/player-playlist", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret() {
+        try {
+            const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function generateSignedPlayerToken(eventId, secret) {
+        const payload = `e=${eventId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId, secret) {
+        const payload = `e=${eventId}&p=${recipientId}`;
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: playerEndpoints.ts ---
+    "use strict";
+    function handleGeneratePlayerToken(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden: Admins only" });
+        }
+        const data = e.requestInfo().body;
+        const eventId = data.eventId;
+        if (!eventId) {
+            return e.json(400, { error: "Missing eventId" });
+        }
+        const secret = getHmacSecret();
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const token = generateSignedPlayerToken(eventId, secret);
+        return e.json(200, { token });
+    }
+    function handlePlayerPlaylist(e) {
+        let token = e.requestInfo().query.token;
+        const sParam = e.requestInfo().query.s;
+        if (token && sParam && !token.includes('s=')) {
+            token = `${token}&s=${sParam}`;
+        }
+        if (!token) {
+            return e.json(400, { error: "Missing token" });
+        }
+        const parts = {};
+        token.split('&').forEach(part => {
+            const kv = part.split('=');
+            if (kv.length === 2) {
+                parts[kv[0]] = kv[1];
+            }
+        });
+        if (!parts.e || !parts.s) {
+            return e.json(400, { error: "Invalid token format" });
+        }
+        const secret = getHmacSecret();
+        if (!secret) {
+            return e.json(500, { error: "HMAC_SECRET not configured" });
+        }
+        const payload = `e=${parts.e}`;
+        const expectedSignature = $security.hs256(payload, secret);
+        if (!$security.equal(parts.s, expectedSignature)) {
+            return e.json(401, { error: "Invalid signature" });
+        }
+        try {
+            const event = $app.findRecordById("events", parts.e);
+            const rawSetList = event.get("setList");
+            let setList = parseJsonField(rawSetList);
+            if (!Array.isArray(setList)) {
+                setList = [];
+            }
+            // Fetch all pieces from the music library to allow title-based fallback matching on the client side
+            let pieces = [];
+            try {
+                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
+                pieces = allPieces.map(p => {
+                    const rawMapping = p.get("audioTrackMapping");
+                    let mapping = parseJsonField(rawMapping);
+                    if (!mapping || typeof mapping !== 'object') {
+                        mapping = {};
+                    }
+                    return {
+                        id: p.id,
+                        parentId: p.get("parentId"),
+                        title: p.get("title"),
+                        composer: p.get("composer"),
+                        arranger: p.get("arranger"),
+                        duration: p.get("duration"),
+                        created: p.get("created"),
+                        updated: p.get("updated"),
+                        audioTrackMapping: mapping,
+                        collectionId: "pbc_music_library_001",
+                        collectionName: "musicLibrary"
+                    };
+                });
+            }
+            catch (err) {
+                // Fallback to empty list if querying fails
+            }
+            // Include voice parts configuration for the selector
+            let voiceParts = [];
+            try {
+                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
+                const rawVal = vpRecord.get("value");
+                const parsedVal = parseJsonField(rawVal);
+                if (parsedVal && parsedVal.voiceParts) {
+                    voiceParts = parsedVal.voiceParts;
+                }
+            }
+            catch (e) {
+                // Fallback to empty if not found
+            }
+            return e.json(200, {
+                event: {
+                    id: event.id,
+                    title: event.get("title"),
+                    date: event.get("date")
+                },
+                setList: setList,
+                pieces: pieces,
+                voiceParts: voiceParts
+            });
+        }
+        catch (err) {
+            // @ts-ignore
+            console.log("Error in /api/player-playlist: " + err + (err.stack ? "\n" + err.stack : ""));
+            return e.json(404, {
+                error: "Event or related pieces not found",
+                // @ts-ignore
+                details: err.message || String(err)
+            });
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handlePlayerPlaylist(e);
 });
 
 routerAdd("GET", "/api/calendar/download", (e) => {
@@ -7309,36 +7872,6 @@ routerAdd("GET", "/api/calendar/download", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -7455,11 +7988,11 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -8066,36 +8599,6 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -8212,11 +8715,11 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -8823,36 +9326,6 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -8969,11 +9442,11 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -9580,36 +10053,6 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
 
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
-    function getHmacSecretLocal(app) {
-        try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
-    }
-    function parseSignedTokenLocal(token, requiredKeys) {
-        if (!token || typeof token !== "string")
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
     function escapeIcsText(value = '') {
         return String(value)
             .replace(/\\/g, '\\\\')
@@ -9726,11 +10169,11 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!token) {
             return e.json(400, { error: "Missing token" });
         }
-        const parts = parseSignedTokenLocal(token, ["s"]);
+        const parts = parseSignedToken(token, ["s"]);
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecretLocal(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }

@@ -5,6 +5,10 @@ declare const $app: {
     findFirstRecordByFilter(collection: string, filter: string): PocketBaseRecord;
 };
 
+declare const $security: {
+    hs256(payload: string, secret: string): string;
+};
+
 export function getHmacSecret(): string {
     try {
         const record = $app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
@@ -13,6 +17,18 @@ export function getHmacSecret(): string {
     } catch {
         return "";
     }
+}
+
+export function generateSignedPlayerToken(eventId: string, secret: string): string {
+    const payload = `e=${eventId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+
+export function generateSignedEventRecipientToken(eventId: string, recipientId: string, secret: string): string {
+    const payload = `e=${eventId}&p=${recipientId}`;
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
 }
 
 export function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null {

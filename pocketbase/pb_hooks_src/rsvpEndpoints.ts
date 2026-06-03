@@ -1,3 +1,4 @@
+import { generateSignedEventRecipientToken } from './hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -11,6 +12,7 @@ declare function routerAdd(method: string, path: string, handler: (e: PocketBase
 // TypeScript declarations for shared utilities inlined at runtime
 declare function getHmacSecret(): string;
 declare function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null;
+declare function generateSignedEventRecipientToken(eventId: string, recipientId: string, secret: string): string;
 declare function processEmailQueue(app: PocketBaseApp): void;
 
 interface TxApp extends PocketBaseApp {
@@ -47,9 +49,7 @@ routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
 
     const tokens: Record<string, string> = {};
     (profileIds as string[]).forEach(pId => {
-        const payload = `e=${eventId}&p=${pId}`;
-        const signature = $security.hs256(payload, secret);
-        tokens[pId] = `${payload}&s=${signature}`;
+        tokens[pId] = generateSignedEventRecipientToken(eventId as string, pId, secret);
     });
 
     return e.json(200, { tokens });

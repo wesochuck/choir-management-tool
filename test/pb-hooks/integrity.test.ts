@@ -75,10 +75,10 @@ test('Generated main.pb.js integrity', () => {
     assert.ok(content.includes('shouldQueueMessage'), 'Should utilize shouldQueueMessage check');
     assert.ok(content.includes('enqueueBulkMessage'), 'Should utilize enqueueBulkMessage explosion');
     assert.ok(content.includes('role") !== "admin"'), 'Should preserve admin-only route protection');
-    assert.ok(!content.includes('"/api/generate-player-token"'), 'Should not duplicate player endpoint route');
-    assert.ok(!content.includes('"/api/player-playlist"'), 'Should not duplicate player playlist route');
+    assert.ok(content.includes('"/api/generate-player-token"'), 'Should include player endpoint route');
+    assert.ok(content.includes('"/api/player-playlist"'), 'Should include player playlist route');
 
-    assert.strictEqual(countOccurrences(content, 'routerAdd('), 15, 'Generated main file should contain exactly 15 route registrations');
+    assert.strictEqual(countOccurrences(content, 'routerAdd('), 17, 'Generated main file should contain exactly 17 route registrations');
     assert.strictEqual(countOccurrences(content, 'cronAdd('), 2, 'Generated main file should contain exactly 2 cron registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterCreateSuccess(('), 2, 'Generated main file should contain exactly two create hook registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterUpdateSuccess(('), 2, 'Generated main file should contain exactly two update hook registrations');
@@ -106,7 +106,7 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
     assert.ok(!content.includes('// --- SHARED UTILITIES ---'), 'Generated file should not emit the old top-level sharedUtils block');
     assert.ok(!content.includes('__SHARED_UTILS__'), 'Generated file should not leak generator utility placeholders');
-    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 34, 'Seventeen utility-bearing callbacks should have start/end local utility markers');
+    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 38, 'Nineteen utility-bearing callbacks should have start/end local utility markers');
 
     const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
     assert.ok(!filePrelude.includes('function '), 'Generated file prelude should not contain top-level helper functions');
@@ -156,6 +156,14 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
     const updateAuditionsHook = extractRecordHookCallback(content, 'onRecordAfterUpdateSuccess', 'auditions');
     assert.ok(updateAuditionsHook.includes('function processEmailQueue'), 'Update auditions hook should contain processEmailQueue');
     assert.ok(updateAuditionsHook.includes('function parseJsonField'), 'Update auditions hook should contain parseJsonField');
+
+    const generatePlayerTokenRoute = extractRouteCallback(content, '/api/generate-player-token');
+    assert.ok(generatePlayerTokenRoute.includes('function handleGeneratePlayerToken'), 'Generate player token route should contain its handler');
+    assert.ok(generatePlayerTokenRoute.includes('function generateSignedPlayerToken'), 'Generate player token route should contain token generator');
+
+    const playerPlaylistRoute = extractRouteCallback(content, '/api/player-playlist');
+    assert.ok(playerPlaylistRoute.includes('function handlePlayerPlaylist'), 'Player playlist route should contain its handler');
+    assert.ok(playerPlaylistRoute.includes('function getHmacSecret'), 'Player playlist route should contain secret retriever');
 });
 
 test('post_event_report subject templating inserts dynamic values literally', () => {

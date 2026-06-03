@@ -73,7 +73,7 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     queueProcessor: {
         files: ['email/queueProcessor.ts'],
         symbols: ['processEmailQueue'],
-        dependsOn: ['hookJson', 'hookText', 'emailRendering', 'mailjetRenderer'],
+        dependsOn: ['hookJson', 'hookText', 'emailRendering', 'mailjetRenderer', 'hmacTokens'],
     },
     calendarEndpoint: {
         files: ['calendarEndpoint.ts'],
@@ -87,13 +87,18 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     },
     hmacTokens: {
         files: ['hmacTokens.ts'],
-        symbols: ['getHmacSecret', 'parseSignedToken'],
+        symbols: ['getHmacSecret', 'generateSignedPlayerToken', 'generateSignedEventRecipientToken', 'parseSignedToken'],
         dependsOn: ['hookJson'],
     },
     timezone: {
         files: ['timezone.ts'],
         symbols: ['zonedInputValueToUtcLocal'],
         dependsOn: ['hookText'],
+    },
+    playerEndpoints: {
+        files: ['playerEndpoints.ts'],
+        symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist'],
+        dependsOn: ['hmacTokens', 'hookJson'],
     },
 };
 
@@ -752,6 +757,10 @@ ${renderRoute('GET', '/api/admin/queue-settings', queueSettingsBody)}
 ${renderRoute('POST', '/api/admin/queue-settings/generate', queueSettingsGenerateBody)}
 
 ${renderRoute('POST', '/api/test-smtp', testSmtpBody)}
+
+${renderRoute('POST', '/api/generate-player-token', 'return handleGeneratePlayerToken(e);')}
+
+${renderRoute('GET', '/api/player-playlist', 'return handlePlayerPlaylist(e);')}
 
 ${renderRoute('GET', '/api/calendar/download', 'return handleCalendarDownload(e);')}
 
