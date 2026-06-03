@@ -37,6 +37,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     yes: rsvp === 'Yes' ? '✓ Attending' : "I'll be there",
     no: rsvp === 'No' ? '✗ Absence Reported' : 'Report absence'
   };
+  const [submittingStatus, setSubmittingStatus] = React.useState<'Yes' | 'No' | null>(null);
   const previewData = getSingerSetListPreview(event, myRosters, allEvents);
 
   React.useEffect(() => {
@@ -45,6 +46,15 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   const handleOpenPlayer = () => {
     navigate(`/player?eventId=${previewData.playerId}`);
+  };
+
+  const handleRSVP = async (status: 'Yes' | 'No') => {
+    setSubmittingStatus(status);
+    try {
+      await onRSVP(status);
+    } finally {
+      setSubmittingStatus(null);
+    }
   };
 
   return (
@@ -154,20 +164,20 @@ export const EventCard: React.FC<EventCardProps> = ({
 
         <div className="event-card-rsvp-actions flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
           <button 
-            onClick={() => onRSVP('Yes')}
+            onClick={() => handleRSVP('Yes')}
             className={`btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
             style={{ flex: 1 }}
-            disabled={isWindowClosed}
+            disabled={isWindowClosed || submittingStatus !== null}
           >
-            {labels.yes}
+            {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
           </button>
           <button 
-            onClick={() => onRSVP('No')}
+            onClick={() => handleRSVP('No')}
             className={`btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
             style={{ flex: 1 }}
-            disabled={isWindowClosed}
+            disabled={isWindowClosed || submittingStatus !== null}
           >
-            {labels.no}
+            {submittingStatus === 'No' ? 'Processing...' : labels.no}
           </button>
         </div>
         {isWindowClosed && (

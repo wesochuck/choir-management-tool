@@ -22,6 +22,7 @@ export default function DashboardView() {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [resources, setResources] = useState<SingerResource[]>([]);
   const [isResourcesLoading, setIsResourcesLoading] = useState(false);
+  const [submittingRsvpStatus, setSubmittingRsvpStatus] = useState<'Yes' | 'No' | null>(null);
 
   useEffect(() => {
     if (myProfile?.id) {
@@ -110,21 +111,26 @@ export default function DashboardView() {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
-    if (event.type === 'Rehearsal' && rsvp === 'No') {
-      const note = await dialog.prompt({
-        title: 'RSVP Note Required',
-        message: 'Please provide a brief reason for your absence from this rehearsal.',
-        placeholder: 'e.g. Family emergency, work travel, illness...',
-        confirmLabel: 'Submit RSVP',
-        required: true,
-        maxLength: 1000
-      });
+    setSubmittingRsvpStatus(rsvp);
+    try {
+      if (event.type === 'Rehearsal' && rsvp === 'No') {
+        const note = await dialog.prompt({
+          title: 'RSVP Note Required',
+          message: 'Please provide a brief reason for your absence from this rehearsal.',
+          placeholder: 'e.g. Family emergency, work travel, illness...',
+          confirmLabel: 'Submit RSVP',
+          required: true,
+          maxLength: 1000
+        });
 
-      if (note === null) return; // User cancelled prompt
+        if (note === null) return; // User cancelled prompt
 
-      await updateRSVP(eventId, rsvp, note);
-    } else {
-      await updateRSVP(eventId, rsvp);
+        await updateRSVP(eventId, rsvp, note);
+      } else {
+        await updateRSVP(eventId, rsvp);
+      }
+    } finally {
+      setSubmittingRsvpStatus(null);
     }
   };
 
@@ -204,17 +210,17 @@ export default function DashboardView() {
                     type="button"
                     onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
-                    disabled={isNextEventClosed}
+                    disabled={isNextEventClosed || submittingRsvpStatus !== null}
                   >
-                    {nextEventLabels.yes}
+                    {submittingRsvpStatus === 'Yes' ? 'Processing...' : nextEventLabels.yes}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
-                    disabled={isNextEventClosed}
+                    disabled={isNextEventClosed || submittingRsvpStatus !== null}
                   >
-                    {nextEventLabels.no}
+                    {submittingRsvpStatus === 'No' ? 'Processing...' : nextEventLabels.no}
                   </button>
                 </div>
                 {isNextEventClosed && (
