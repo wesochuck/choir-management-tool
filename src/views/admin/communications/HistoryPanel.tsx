@@ -8,6 +8,8 @@ interface HistoryPanelProps {
   historyPage: number;
   totalPages: number;
   setHistoryPage: (page: number) => void;
+  historySearchQuery: string;
+  onHistorySearchChange: (query: string) => void;
   events: Event[];
   commSettings: CommunicationSettings;
   onViewDetails: (message: MessageRecord) => void;
@@ -23,6 +25,8 @@ export function HistoryPanel({
   historyPage,
   totalPages,
   setHistoryPage,
+  historySearchQuery,
+  onHistorySearchChange,
   events,
   commSettings,
   onViewDetails,
@@ -35,6 +39,8 @@ export function HistoryPanel({
       currentPage={historyPage}
       totalPages={totalPages}
       onPageChange={setHistoryPage}
+      historySearchQuery={historySearchQuery}
+      onHistorySearchChange={onHistorySearchChange}
       onViewDetails={onViewDetails}
       onCopyDraft={onCopyDraft}
       onViewRecipients={onViewRecipients}

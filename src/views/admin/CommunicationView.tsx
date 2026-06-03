@@ -421,6 +421,8 @@ export default function CommunicationView() {
           historyPage={library.historyPage}
           totalPages={library.totalPages}
           setHistoryPage={library.setHistoryPage}
+          historySearchQuery={library.historySearchQuery}
+          onHistorySearchChange={library.setHistorySearchQuery}
           events={events}
           commSettings={library.commSettings}
           onViewDetails={setSelectedMessage}
