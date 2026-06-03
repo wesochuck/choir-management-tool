@@ -293,5 +293,57 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
   assert.ok(true, 'All dangerouslySetInnerHTML usages are sanitized or annotated');
 });
 
+test('codebase integrity: profiles do not have direct email fields', () => {
+  // Backend files (hooks, endpoints, utilities)
+  const backendFiles = getSrcFiles(['.ts', '.js'], resolveProjectPath('pocketbase/pb_hooks_src'));
+  const backendViolations: string[] = [];
+
+  for (const file of backendFiles) {
+    if (file.endsWith('generate-main-pb-js.ts')) continue; // Exclude generation script which contains test cases/string configurations
+    const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      // Look for profile.get("email") or profile.email where it is assumed to be a field on the profile itself
+      if (line.includes('.get("email")') && (line.includes('profile') || line.includes('recipient') && !line.includes('adminRecord') && !line.includes('userRec') && !line.includes('adminUser') && !line.includes('user'))) {
+        backendViolations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`);
+      }
+    });
+  }
+
+  if (backendViolations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found direct profile email field access in backend hooks:\n` +
+      backendViolations.map(v => `  - ${v}`).join('\n') +
+      `\n\nThe 'profiles' collection does not have a native 'email' field. Retrieve it from the related 'users' record instead.`
+    );
+  }
+
+  // Frontend files
+  const frontendFiles = getSrcFiles(['.ts', '.tsx'], resolveProjectPath('src'));
+  const frontendViolations: string[] = [];
+
+  for (const file of frontendFiles) {
+    if (file.endsWith('profileService.ts')) continue; // Exclude definition of getProfileEmail / splitProfileInput
+    const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      if (line.includes('profile.email') && !line.includes('profileService')) {
+        frontendViolations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`);
+      }
+    });
+  }
+
+  if (frontendViolations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found direct profile.email access in frontend:\n` +
+      frontendViolations.map(v => `  - ${v}`).join('\n') +
+      `\n\nUse 'getProfileEmail(profile)' from profileService to resolve the linked user email.`
+    );
+  }
+
+  assert.ok(true, 'No direct profile email reads found');
+});
+
+
 
 

@@ -4827,80 +4827,6 @@ onRecordAfterUpdateSuccess((e) => {
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
-function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
-    const voicePart = profile.get("voicePart") || "";
-    // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
-    if (!voicePart) {
-        return;
-    }
-    try {
-        const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
-        if (!adminUsers || adminUsers.length === 0)
-            return;
-        const adminUserIds = adminUsers.map(u => u.id);
-        const adminProfiles = app.findRecordsByFilter("profiles", "receiveRsvpDeclineNotices = true && globalStatus != 'Inactive'", "");
-        if (!adminProfiles || adminProfiles.length === 0)
-            return;
-        let template = null;
-        try {
-            template = app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Decline Notice' && isSystemTemplate = true");
-        }
-        catch (err) {
-            console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
-            return;
-        }
-        let event = null;
-        let eventTitle = "Event";
-        try {
-            event = app.findRecordById("events", eventId);
-            eventTitle = (event.get("title") || event.get("type") || "Event");
-        }
-        catch (err) {
-            console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
-        }
-        const queueCollection = app.findCollectionByNameOrId("emailQueue");
-        const singerName = (profile.get("name") || "Singer");
-        adminProfiles.forEach(adminProf => {
-            const userId = adminProf.get("user");
-            if (!userId || adminUserIds.indexOf(userId) === -1) {
-                return;
-            }
-            const adminUser = adminUsers.find(u => u.id === userId);
-            const recipientEmail = adminUser ? adminUser.get("email") : "";
-            if (!recipientEmail || adminProf.get("doNotEmail")) {
-                return;
-            }
-            const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-            let subject = template.get("subject") || "";
-            let content = template.get("content") || "";
-            subject = subject.replace(/{declinedSingerName}/g, singerName)
-                .replace(/{eventTitle}/g, eventTitle);
-            content = content.replace(/{adminName}/g, adminName)
-                .replace(/{declinedSingerName}/g, singerName)
-                .replace(/{voicePart}/g, voicePart)
-                .replace(/{rsvpNote}/g, rsvpNote || "None provided");
-            const queueRecord = new Record(queueCollection, {
-                recipientId: adminProf.id,
-                recipientEmail: recipientEmail,
-                recipientName: adminName,
-                subject: subject,
-                rawContent: content,
-                status: "Pending",
-                attempts: 0,
-                filters: JSON.stringify({
-                    eventId: eventId,
-                    type: "Automated Decline Notice"
-                })
-            });
-            app.save(queueRecord);
-        });
-        // Trigger queue processor to dispatch emails immediately
-        processEmailQueue(app);
-    }
-    catch (err) {
-        console.log("[RSVP Decline Hook Error] Failed to process decline notifications: " + err);
-    }
-}
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -5211,6 +5137,80 @@ function getRsvpWindowInfo(event) {
         isReadOnly: false,
         reason: "",
     };
+}
+function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
+    const voicePart = profile.get("voicePart") || "";
+    // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
+    if (!voicePart) {
+        return;
+    }
+    try {
+        const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+        if (!adminUsers || adminUsers.length === 0)
+            return;
+        const adminUserIds = adminUsers.map((u) => u.id);
+        const adminProfiles = app.findRecordsByFilter("profiles", "receiveRsvpDeclineNotices = true && globalStatus != 'Inactive'", "");
+        if (!adminProfiles || adminProfiles.length === 0)
+            return;
+        let template = null;
+        try {
+            template = app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Decline Notice' && isSystemTemplate = true");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
+            return;
+        }
+        let event = null;
+        let eventTitle = "Event";
+        try {
+            event = app.findRecordById("events", eventId);
+            eventTitle = (event.get("title") || event.get("type") || "Event");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
+        }
+        const queueCollection = app.findCollectionByNameOrId("emailQueue");
+        const singerName = (profile.get("name") || "Singer");
+        adminProfiles.forEach((adminProf) => {
+            const userId = adminProf.get("user");
+            if (!userId || adminUserIds.indexOf(userId) === -1) {
+                return;
+            }
+            const adminUser = adminUsers.find((u) => u.id === userId);
+            const recipientEmail = adminUser ? adminUser.get("email") : "";
+            if (!recipientEmail || adminProf.get("doNotEmail")) {
+                return;
+            }
+            const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+            let subject = template.get("subject") || "";
+            let content = template.get("content") || "";
+            subject = subject.replace(/{declinedSingerName}/g, singerName)
+                .replace(/{eventTitle}/g, eventTitle);
+            content = content.replace(/{adminName}/g, adminName)
+                .replace(/{declinedSingerName}/g, singerName)
+                .replace(/{voicePart}/g, voicePart)
+                .replace(/{rsvpNote}/g, rsvpNote || "None provided");
+            const queueRecord = new Record(queueCollection, {
+                recipientId: adminProf.id,
+                recipientEmail: recipientEmail,
+                recipientName: adminName,
+                subject: subject,
+                rawContent: content,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({
+                    eventId: eventId,
+                    type: "Automated Decline Notice"
+                })
+            });
+            app.save(queueRecord);
+        });
+        // Trigger queue processor to dispatch emails immediately
+        processEmailQueue(app);
+    }
+    catch (err) {
+        console.log("[RSVP Decline Hook Error] Failed to process decline notifications: " + err);
+    }
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
@@ -6250,6 +6250,80 @@ function getRsvpWindowInfo(event) {
         isReadOnly: false,
         reason: "",
     };
+}
+function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
+    const voicePart = profile.get("voicePart") || "";
+    // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
+    if (!voicePart) {
+        return;
+    }
+    try {
+        const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+        if (!adminUsers || adminUsers.length === 0)
+            return;
+        const adminUserIds = adminUsers.map((u) => u.id);
+        const adminProfiles = app.findRecordsByFilter("profiles", "receiveRsvpDeclineNotices = true && globalStatus != 'Inactive'", "");
+        if (!adminProfiles || adminProfiles.length === 0)
+            return;
+        let template = null;
+        try {
+            template = app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Decline Notice' && isSystemTemplate = true");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
+            return;
+        }
+        let event = null;
+        let eventTitle = "Event";
+        try {
+            event = app.findRecordById("events", eventId);
+            eventTitle = (event.get("title") || event.get("type") || "Event");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
+        }
+        const queueCollection = app.findCollectionByNameOrId("emailQueue");
+        const singerName = (profile.get("name") || "Singer");
+        adminProfiles.forEach((adminProf) => {
+            const userId = adminProf.get("user");
+            if (!userId || adminUserIds.indexOf(userId) === -1) {
+                return;
+            }
+            const adminUser = adminUsers.find((u) => u.id === userId);
+            const recipientEmail = adminUser ? adminUser.get("email") : "";
+            if (!recipientEmail || adminProf.get("doNotEmail")) {
+                return;
+            }
+            const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+            let subject = template.get("subject") || "";
+            let content = template.get("content") || "";
+            subject = subject.replace(/{declinedSingerName}/g, singerName)
+                .replace(/{eventTitle}/g, eventTitle);
+            content = content.replace(/{adminName}/g, adminName)
+                .replace(/{declinedSingerName}/g, singerName)
+                .replace(/{voicePart}/g, voicePart)
+                .replace(/{rsvpNote}/g, rsvpNote || "None provided");
+            const queueRecord = new Record(queueCollection, {
+                recipientId: adminProf.id,
+                recipientEmail: recipientEmail,
+                recipientName: adminName,
+                subject: subject,
+                rawContent: content,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({
+                    eventId: eventId,
+                    type: "Automated Decline Notice"
+                })
+            });
+            app.save(queueRecord);
+        });
+        // Trigger queue processor to dispatch emails immediately
+        processEmailQueue(app);
+    }
+    catch (err) {
+        console.log("[RSVP Decline Hook Error] Failed to process decline notifications: " + err);
+    }
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
@@ -7776,6 +7850,80 @@ function getRsvpWindowInfo(event) {
         isReadOnly: false,
         reason: "",
     };
+}
+function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
+    const voicePart = profile.get("voicePart") || "";
+    // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
+    if (!voicePart) {
+        return;
+    }
+    try {
+        const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+        if (!adminUsers || adminUsers.length === 0)
+            return;
+        const adminUserIds = adminUsers.map((u) => u.id);
+        const adminProfiles = app.findRecordsByFilter("profiles", "receiveRsvpDeclineNotices = true && globalStatus != 'Inactive'", "");
+        if (!adminProfiles || adminProfiles.length === 0)
+            return;
+        let template = null;
+        try {
+            template = app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Decline Notice' && isSystemTemplate = true");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find RSVP Decline Notice template: " + err);
+            return;
+        }
+        let event = null;
+        let eventTitle = "Event";
+        try {
+            event = app.findRecordById("events", eventId);
+            eventTitle = (event.get("title") || event.get("type") || "Event");
+        }
+        catch (err) {
+            console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
+        }
+        const queueCollection = app.findCollectionByNameOrId("emailQueue");
+        const singerName = (profile.get("name") || "Singer");
+        adminProfiles.forEach((adminProf) => {
+            const userId = adminProf.get("user");
+            if (!userId || adminUserIds.indexOf(userId) === -1) {
+                return;
+            }
+            const adminUser = adminUsers.find((u) => u.id === userId);
+            const recipientEmail = adminUser ? adminUser.get("email") : "";
+            if (!recipientEmail || adminProf.get("doNotEmail")) {
+                return;
+            }
+            const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+            let subject = template.get("subject") || "";
+            let content = template.get("content") || "";
+            subject = subject.replace(/{declinedSingerName}/g, singerName)
+                .replace(/{eventTitle}/g, eventTitle);
+            content = content.replace(/{adminName}/g, adminName)
+                .replace(/{declinedSingerName}/g, singerName)
+                .replace(/{voicePart}/g, voicePart)
+                .replace(/{rsvpNote}/g, rsvpNote || "None provided");
+            const queueRecord = new Record(queueCollection, {
+                recipientId: adminProf.id,
+                recipientEmail: recipientEmail,
+                recipientName: adminName,
+                subject: subject,
+                rawContent: content,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({
+                    eventId: eventId,
+                    type: "Automated Decline Notice"
+                })
+            });
+            app.save(queueRecord);
+        });
+        // Trigger queue processor to dispatch emails immediately
+        processEmailQueue(app);
+    }
+    catch (err) {
+        console.log("[RSVP Decline Hook Error] Failed to process decline notifications: " + err);
+    }
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
     const authRecord = e.auth;

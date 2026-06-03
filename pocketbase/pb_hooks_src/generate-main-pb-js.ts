@@ -104,7 +104,7 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     },
     rsvpValidation: {
         files: ['rsvpValidation.ts'],
-        symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
+        symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo', 'notifyAdminsOfDecline'],
     },
 };
 

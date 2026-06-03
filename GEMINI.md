@@ -47,6 +47,8 @@ These foundational mandates MUST be followed by all agents working on this codeb
     const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
     ```
+*   **Profile Email Retrieval:** The `profiles` collection does not have a native `email` field. All user emails reside in the linked `users` collection. Never attempt to read `profile.email` or `profile.get("email")` directly on a profile record. On the backend, fetch the related user record via the `user` relation field first. On the frontend, always use the `getProfileEmail(profile)` helper from `profileService` or read from the expanded relation `profile.expand?.user?.email`.
+
 
 ## Hosted PocketBase Workflow
 *   **Required:** Add a corresponding JavaScript migration script in `pocketbase/pb_migrations/` for any database schema changes. This ensures the hosted/remote PocketBase environment can be updated through the project's normal deployment process.

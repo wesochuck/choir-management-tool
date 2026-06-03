@@ -128,3 +128,10 @@
 - **Standard Import Protection**: When creating new route modules or lazy-loaded views, ALWAYS wrap the lazy-loading import statement using the `lazyWithReload(...)` helper defined in `src/App.tsx` instead of standard React `lazy(...)`.
 - **Mitigation Rationale**: This guarantees that if a fresh deployment deletes old hashed script assets, the application can recover automatically with a single session-cooldowned page reload rather than getting stuck.
 
+## Profile Email Field Retrieval Rule
+
+- **The Failure Mode**: The `profiles` collection does not contain a native `email` field; emails are stored exclusively on the related `users` record. Reading `.get("email")` or `.email` directly from a profile record will return `undefined` or `""` and silently break operations such as automated notification dispatches.
+- **The Safe Pattern (Backend)**: In backend hooks or endpoints (e.g. `pb_hooks_src/`), resolve the profile's related user record using the `user` relation field, then retrieve the email address from that user record.
+- **The Safe Pattern (Frontend)**: In frontend React views, services, or hooks, always resolve the email via the `getProfileEmail(profile)` helper from `src/services/profileService.ts` rather than reading `profile.email` directly.
+
+
