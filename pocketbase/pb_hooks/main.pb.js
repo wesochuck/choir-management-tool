@@ -692,7 +692,8 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -1568,7 +1569,8 @@ onRecordAfterCreateSuccess((e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -2449,7 +2451,8 @@ onRecordAfterUpdateSuccess((e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -3291,7 +3294,8 @@ onRecordAfterCreateSuccess((e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -4279,7 +4283,8 @@ onRecordAfterUpdateSuccess((e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -4869,7 +4874,8 @@ function parseJsonField(val) {
 "use strict";
 function getHmacSecret(app) {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
@@ -4997,7 +5003,8 @@ function parseJsonField(val) {
 "use strict";
 function getHmacSecret(app) {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
@@ -5646,7 +5653,8 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 "use strict";
 function getHmacSecret(app) {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
@@ -6331,7 +6339,8 @@ function parseJsonField(val) {
 "use strict";
 function getHmacSecret(app) {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
@@ -6635,7 +6644,8 @@ function parseJsonField(val) {
 "use strict";
 function getHmacSecret(app) {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
@@ -7149,7 +7159,8 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 "use strict";
 function getHmacSecret(app) {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     }
@@ -8202,7 +8213,8 @@ routerAdd("POST", "/api/queue/process", (e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -8822,7 +8834,8 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -9046,7 +9059,8 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     "use strict";
     function getHmacSecret(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
             const parsed = parseJsonField(record.get("value"));
             return parsed && parsed.secret ? parsed.secret : "";
         }
@@ -9613,7 +9627,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -9739,7 +9753,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -9911,7 +9925,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 profile.set("calendarSalt", salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -9936,7 +9950,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -10344,7 +10358,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -10470,7 +10484,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -10642,7 +10656,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 profile.set("calendarSalt", salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -10667,7 +10681,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -11075,7 +11089,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -11201,7 +11215,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -11373,7 +11387,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 profile.set("calendarSalt", salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -11398,7 +11412,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -11806,7 +11820,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -11932,7 +11946,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!parts) {
             return e.json(400, { error: "Invalid token format" });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret(app);
         if (!secret) {
             return e.json(500, { error: "Configuration error" });
         }
@@ -12104,7 +12118,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 profile.set("calendarSalt", salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }
@@ -12129,7 +12143,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const salt = $security.randomString(16);
             profile.set("calendarSalt", salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecretLocal(app);
+            const secret = getHmacSecret(app);
             if (!secret) {
                 return e.json(500, { error: "Configuration error" });
             }

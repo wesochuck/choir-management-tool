@@ -5,9 +5,12 @@ declare const $security: {
     hs256(payload: string, secret: string): string;
 };
 
-export function getHmacSecret(app: PocketBaseApp): string {
+declare const $app: PocketBaseApp;
+
+export function getHmacSecret(app?: PocketBaseApp): string {
     try {
-        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const appInstance = app || $app;
+        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
         const parsed = parseJsonField<{ secret?: string }>(record.get("value"));
         return parsed && parsed.secret ? parsed.secret : "";
     } catch {
