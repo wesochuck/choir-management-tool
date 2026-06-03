@@ -21,6 +21,32 @@ interface AppWithTransaction {
     runInTransaction(callback: (txApp: PocketBaseApp) => void): void;
 }
 
+function validateSingerRsvpWindow(event: PocketBaseRecord): { ok: true } | { ok: false; status: number; error: string } {
+    const eventType = String(event.get("type") || "");
+
+    if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
+        };
+    }
+
+    if (eventType === "Rehearsal") {
+        const eventDate = new Date(String(event.get("date") || ""));
+        if (Number.isNaN(eventDate.getTime())) {
+            return { ok: false, status: 400, error: "Invalid rehearsal date." };
+        }
+
+        if (eventDate.getTime() < Date.now()) {
+            return { ok: false, status: 410, error: "This rehearsal has already passed." };
+        }
+    }
+
+    return { ok: true };
+}
+
+
 routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
     // __SHARED_UTILS__
 
@@ -100,8 +126,9 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
         }
 
         const event = $app.findRecordById("events", parts.e);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "This RSVP window has closed for this event. Contact choir admins if you need help." });
+        const windowValidation = validateSingerRsvpWindow(event);
+        if (!windowValidation.ok) {
+            return e.json(windowValidation.status, { error: windowValidation.error });
         }
         let venueName = "";
         let venueAddress = "";
@@ -235,8 +262,9 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     let event: PocketBaseRecord;
     try {
         event = $app.findRecordById("events", parts.e);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "RSVP window for this event is closed. Contact choir admins for assistance." });
+        const windowValidation = validateSingerRsvpWindow(event);
+        if (!windowValidation.ok) {
+            return e.json(windowValidation.status, { error: windowValidation.error });
         }
     } catch {
         return e.json(404, { error: "Event not found. RSVP link may be expired." });
@@ -687,8 +715,9 @@ routerAdd("POST", "/api/singer/rsvp", (e) => {
     let event: PocketBaseRecord;
     try {
         event = $app.findRecordById("events", eventId);
-        if (!event.get("isOpenForRSVP")) {
-            return e.json(410, { error: "RSVP window for this event is closed." });
+        const windowValidation = validateSingerRsvpWindow(event);
+        if (!windowValidation.ok) {
+            return e.json(windowValidation.status, { error: windowValidation.error });
         }
     } catch {
         return e.json(404, { error: "Event not found" });

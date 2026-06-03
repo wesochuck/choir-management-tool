@@ -110,9 +110,10 @@ export default function PublicRsvpView() {
         }
 
         setStatus('success');
-      } catch {
+      } catch (err: unknown) {
         setStatus('error');
-        setErrorMessage('This link is invalid or has expired. Please contact a choir administrator for a new link.');
+        const errObj = err as { data?: { error?: string } } | null;
+        setErrorMessage(errObj?.data?.error || 'This link is invalid or has expired. Please contact a choir administrator for a new link.');
       }
     };
 

@@ -134,6 +134,20 @@ export default function DashboardView() {
     }
   };
 
+  const isNextEventClosed = nextEvent ? (
+    nextEvent.type === 'Performance' 
+      ? !nextEvent.isOpenForRSVP 
+      : new Date(nextEvent.date).getTime() < Date.now()
+  ) : false;
+
+  const nextEventLabels = nextEvent?.type === 'Rehearsal' ? {
+    yes: nextRoster?.rsvp === 'Yes' ? '✓ Attending' : "I'll be there",
+    no: nextRoster?.rsvp === 'No' ? '✗ Absence Reported' : 'Report absence'
+  } : {
+    yes: nextRoster?.rsvp === 'Yes' ? '✓ Attending' : 'Attend',
+    no: nextRoster?.rsvp === 'No' ? '✗ Declining' : 'Decline'
+  };
+
   return (
     <PageLayout 
       title="Upcoming Events" 
@@ -175,17 +189,26 @@ export default function DashboardView() {
                     type="button"
                     onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                    disabled={isNextEventClosed}
                   >
-                    {nextRoster?.rsvp === 'Yes' ? '✓ Attending' : 'Attend'}
+                    {nextEventLabels.yes}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
                     className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                    disabled={isNextEventClosed}
                   >
-                    {nextRoster?.rsvp === 'No' ? '✗ Declining' : 'Decline'}
+                    {nextEventLabels.no}
                   </button>
                 </div>
+                {isNextEventClosed && (
+                  <div className="text-xs text-muted" style={{ textAlign: 'center', marginTop: 'var(--space-xs)' }}>
+                    {nextEvent.type === 'Performance' 
+                      ? 'The RSVP window for this performance is closed.' 
+                      : 'This rehearsal has already passed.'}
+                  </div>
+                )}
 
                 {(activePolls.length > 0 || latestAnnouncement) && (
                   <div className="mobile-singer-quick-notices">
