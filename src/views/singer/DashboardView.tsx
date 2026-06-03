@@ -6,7 +6,7 @@ import { PageLayout } from '../../components/common/PageLayout';
 import { Link } from 'react-router-dom';
 import { pollService, type SingerPoll } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
-import { communicationService, type MessageRecord, type CommunicationRecipient } from '../../services/communicationService';
+import { communicationService, type MessageRecord } from '../../services/communicationService';
 import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import './DashboardView.css';
@@ -46,28 +46,17 @@ export default function DashboardView() {
             msg.recipients?.some(r => r.id === myProfile.id)
           );
 
-          const recipient: CommunicationRecipient = {
-            id: myProfile.id,
-            name: myProfile.name,
-            email: myProfile.expand?.user?.email || '',
-            phone: myProfile.phone,
-            voicePart: myProfile.voicePart,
-            globalStatus: myProfile.globalStatus,
-          };
-
           const resolved = await Promise.all(
             filtered.map(async (msg) => {
               let content = msg.content;
               const eventId = msg.filters?.eventId as string | undefined;
 
-              if (content.includes('{{RSVP_LINKS}}') && eventId) {
-                const res = await communicationService.resolveRsvpPlaceholders(content, eventId, [recipient]);
-                content = res.previewContent;
-              }
-
-              if (content.includes('{{POLL_LINK:')) {
-                const res = await communicationService.resolvePollPlaceholders(content, [recipient]);
-                content = res.previewContent;
+              if (content.includes('{{RSVP_LINKS}}') || content.includes('{{POLL_LINK:')) {
+                try {
+                  content = await communicationService.resolveSingerPlaceholders(content, eventId);
+                } catch (err) {
+                  console.error('Failed to resolve placeholders for message', msg.id, err);
+                }
               }
 
               return {

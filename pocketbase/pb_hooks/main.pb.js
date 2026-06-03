@@ -6429,6 +6429,176 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
         return e.json(500, { error: "Failed to bulk upsert attendance: " + String(err) });
     }
 });
+routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+// --- Utility source: email/hookJson.ts ---
+"use strict";
+function decodeGoBytes(val) {
+    if (!val)
+        return "";
+    if (typeof val === 'string')
+        return val;
+    if (typeof val === 'object') {
+        // Check if it's a byte array (only numbers)
+        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+            try {
+                let str = "";
+                for (let i = 0; i < val.length; i++) {
+                    str += String.fromCharCode(val[i]);
+                }
+                return str;
+            }
+            catch (_a) {
+                // Ignore decoding errors
+            }
+        }
+        return val;
+    }
+    return String(val);
+}
+function parseJsonField(val) {
+    if (!val)
+        return null;
+    const decoded = decodeGoBytes(val);
+    if (!decoded)
+        return null;
+    if (typeof decoded === 'object')
+        return decoded;
+    try {
+        return JSON.parse(decoded);
+    }
+    catch (_a) {
+        return null;
+    }
+}
+
+// --- Utility source: hmacTokens.ts ---
+"use strict";
+function getHmacSecret(app) {
+    try {
+        const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+        const parsed = parseJsonField(record.get("value"));
+        return parsed && parsed.secret ? parsed.secret : "";
+    }
+    catch (_a) {
+        return "";
+    }
+}
+function getPlayerPayload(eventId) {
+    return `e=${eventId}`;
+}
+function getEventRecipientPayload(eventId, recipientId) {
+    return `e=${eventId}&p=${recipientId}`;
+}
+function getAuditionPayload(auditionId) {
+    return `a=${auditionId}`;
+}
+function generateSignedPlayerToken(app, eventId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getPlayerPayload(eventId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getEventRecipientPayload(eventId, recipientId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function generateSignedAuditionToken(app, auditionId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getAuditionPayload(auditionId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+function parseSignedToken(token, requiredKeys) {
+    if (!token || typeof token !== "string")
+        return null;
+    const parts = {};
+    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    token.split("&").forEach(segment => {
+        const idx = segment.indexOf("=");
+        if (idx <= 0)
+            return;
+        const key = segment.slice(0, idx);
+        if (!allowed[key])
+            return;
+        parts[key] = segment.slice(idx + 1);
+    });
+    for (let i = 0; i < requiredKeys.length; i++) {
+        if (!parts[requiredKeys[i]])
+            return null;
+    }
+    return parts;
+}
+// --- END CALLBACK-LOCAL UTILITIES ---
+    const authRecord = e.auth;
+    if (!authRecord) {
+        return e.json(401, { error: "Unauthorized" });
+    }
+    const data = e.requestInfo().body;
+    let content = data.content;
+    const eventId = data.eventId;
+    if (typeof content !== "string") {
+        return e.json(400, { error: "Missing or invalid content parameter" });
+    }
+    let profile;
+    try {
+        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+    }
+    catch (_a) {
+        return e.json(404, { error: "Profile not found" });
+    }
+    let secret;
+    try {
+        secret = getHmacSecret($app);
+        if (!secret)
+            throw new Error("Missing secret");
+    }
+    catch (_b) {
+        return e.json(500, { error: "HMAC_SECRET not configured" });
+    }
+    let baseUrl = "";
+    try {
+        const commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
+        if (commSettings) {
+            const parsed = parseJsonField(commSettings.get("value"));
+            if (parsed && typeof parsed.frontendUrl === "string") {
+                baseUrl = parsed.frontendUrl;
+            }
+        }
+    }
+    catch (err) {
+        console.log("[Resolve Placeholders Hook Error] Failed to read communication settings: " + err);
+    }
+    if (!baseUrl) {
+        const host = e.requestInfo().headers["host"] || "localhost:8080";
+        const proto = e.requestInfo().headers["x-forwarded-proto"] || "http";
+        baseUrl = proto + "://" + host;
+    }
+    // Resolve RSVP links
+    if (content.indexOf("{{RSVP_LINKS}}") !== -1 && eventId && typeof eventId === "string") {
+        const token = generateSignedEventRecipientToken($app, eventId, profile.id, secret);
+        const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
+        const replacement = "(RSVP Link for " + (profile.get("name") || "Singer") + ")\nLink: " + rsvpLink + "\n(No login required)";
+        content = content.replace("{{RSVP_LINKS}}", replacement);
+    }
+    // Resolve Poll links
+    const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
+    let match;
+    while ((match = pollRegex.exec(content)) !== null) {
+        const fullPlaceholder = match[0];
+        const pollId = match[1];
+        const payload = "l=" + pollId + "&p=" + profile.id;
+        const signature = $security.hs256(payload, secret);
+        const token = payload + "&s=" + signature;
+        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+        const replacement = "(Poll Link for " + (profile.get("name") || "Singer") + ")\nLink: " + pollLink + "\n(No login required)";
+        content = content.replace(fullPlaceholder, replacement);
+        pollRegex.lastIndex = 0; // Reset index since we replaced content
+    }
+    return e.json(200, { resolvedContent: content });
+});
 
 routerAdd("POST", "/api/queue/process", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---

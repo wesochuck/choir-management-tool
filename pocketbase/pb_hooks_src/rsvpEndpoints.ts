@@ -1,4 +1,5 @@
 import { generateSignedEventRecipientToken } from './hmacTokens';
+import { parseJsonField } from './email/hookJson';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -570,4 +571,80 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
         console.log("[Bulk Attendance Hook Error]: " + String(err));
         return e.json(500, { error: "Failed to bulk upsert attendance: " + String(err) });
     }
+});
+
+routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
+    // __SHARED_UTILS__
+
+    const authRecord = e.auth;
+    if (!authRecord) {
+        return e.json(401, { error: "Unauthorized" });
+    }
+
+    const data = e.requestInfo().body;
+    let content = data.content;
+    const eventId = data.eventId;
+
+    if (typeof content !== "string") {
+        return e.json(400, { error: "Missing or invalid content parameter" });
+    }
+
+    let profile: PocketBaseRecord;
+    try {
+        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+    } catch {
+        return e.json(404, { error: "Profile not found" });
+    }
+
+    let secret: string;
+    try {
+        secret = getHmacSecret($app);
+        if (!secret) throw new Error("Missing secret");
+    } catch {
+        return e.json(500, { error: "HMAC_SECRET not configured" });
+    }
+
+    let baseUrl = "";
+    try {
+        const commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
+        if (commSettings) {
+            const parsed = parseJsonField<{ frontendUrl?: string }>(commSettings.get("value"));
+            if (parsed && typeof parsed.frontendUrl === "string") {
+                baseUrl = parsed.frontendUrl;
+            }
+        }
+    } catch (err) {
+        console.log("[Resolve Placeholders Hook Error] Failed to read communication settings: " + err);
+    }
+
+    if (!baseUrl) {
+        const host = e.requestInfo().headers["host"] || "localhost:8080";
+        const proto = e.requestInfo().headers["x-forwarded-proto"] || "http";
+        baseUrl = proto + "://" + host;
+    }
+
+    // Resolve RSVP links
+    if (content.indexOf("{{RSVP_LINKS}}") !== -1 && eventId && typeof eventId === "string") {
+        const token = generateSignedEventRecipientToken($app, eventId, profile.id, secret);
+        const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
+        const replacement = "(RSVP Link for " + (profile.get("name") || "Singer") + ")\nLink: " + rsvpLink + "\n(No login required)";
+        content = content.replace("{{RSVP_LINKS}}", replacement);
+    }
+
+    // Resolve Poll links
+    const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
+    let match;
+    while ((match = pollRegex.exec(content)) !== null) {
+        const fullPlaceholder = match[0];
+        const pollId = match[1];
+        const payload = "l=" + pollId + "&p=" + profile.id;
+        const signature = $security.hs256(payload, secret);
+        const token = payload + "&s=" + signature;
+        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
+        const replacement = "(Poll Link for " + (profile.get("name") || "Singer") + ")\nLink: " + pollLink + "\n(No login required)";
+        content = content.replace(fullPlaceholder, replacement);
+        pollRegex.lastIndex = 0; // Reset index since we replaced content
+    }
+
+    return e.json(200, { resolvedContent: content });
 });
