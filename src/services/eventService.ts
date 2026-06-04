@@ -94,7 +94,13 @@ export const eventService = {
         filter: pb.filter('parentPerformanceId = {:id}', { id }),
       });
       if (rehearsals.length > 0) {
-        await Promise.all(rehearsals.map((r) => pb.collection('events').delete(r.id)));
+        const batch = pb.createBatch();
+        for (const r of rehearsals) {
+          batch.collection('events').delete(r.id);
+        }
+        batch.collection('events').delete(id);
+        await batch.send();
+        return true;
       }
     } catch (err) {
       console.warn('Failed to cascade delete rehearsals client-side:', err);

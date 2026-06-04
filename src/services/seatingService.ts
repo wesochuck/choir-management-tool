@@ -78,6 +78,14 @@ export const seatingService = {
     return await pb.collection('pbc_seating_001').delete(id);
   },
 
+  async reorderCharts(orderedIds: string[]) {
+    const batch = pb.createBatch();
+    orderedIds.forEach((id, index) => {
+      batch.collection('pbc_seating_001').update(id, { sortOrder: index });
+    });
+    await batch.send();
+  },
+
   async getSingerSeatingProfiles(performanceId: string, chartId: string): Promise<SeatingSingerProfile[]> {
     const response = await pb.send<{ profiles?: SeatingSingerProfile[] }>('/api/singer/seating-profiles', {
       method: 'GET',

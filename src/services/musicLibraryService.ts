@@ -31,40 +31,49 @@ export const musicLibraryService = {
       const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
         filter: pb.filter('parentId = {:id}', { id })
       });
-      await Promise.all(
-        children.map(child =>
-          pb.collection('musicLibrary').update(child.id, { parentId: '' })
-        )
-      );
+      if (children.length > 0) {
+        const batch = pb.createBatch();
+        for (const child of children) {
+          batch.collection('musicLibrary').update(child.id, { parentId: '' });
+        }
+        batch.collection('musicLibrary').delete(id);
+        await batch.send();
+        return true;
+      }
     }
     return await pb.collection('musicLibrary').delete(id);
   },
 
   async bulkCreate(pieces: Partial<MusicPieceInput>[]) {
-    // For bulk imports, since we might have many records, we'll loop and create.
-    // In a real production app with thousands of rows, you'd want to chunk this
-    // or use a custom endpoint, but for now we'll rely on Promise.all with some chunking to avoid overloading.
+    // For bulk imports, we chunk operations to manage connection locking on SQLite.
+    // Using PocketBase Batch API ensures each chunk is created within a single atomic transaction.
     const chunkSize = 50;
     const results: MusicPiece[] = [];
     
     // @allow-sequential-await - Chunked loop is intentional to limit batch request rate.
     for (let i = 0; i < pieces.length; i += chunkSize) {
       const chunk = pieces.slice(i, i + chunkSize);
-      const chunkResults = await Promise.all(
-        chunk.map(piece => pb.collection('musicLibrary').create<MusicPiece>(piece))
-      );
-      results.push(...chunkResults);
+      const batch = pb.createBatch();
+      for (const piece of chunk) {
+        batch.collection('musicLibrary').create(piece);
+      }
+      const batchResults = await batch.send();
+      results.push(...batchResults.map(res => res.body as MusicPiece));
     }
     
     return results;
   },
 
   async bulkDelete(ids: string[]) {
-      const chunkSize = 50;
-      // @allow-sequential-await - Chunked loop is intentional to limit batch request rate.
-      for (let i = 0; i < ids.length; i += chunkSize) {
-          const chunk = ids.slice(i, i + chunkSize);
-          await Promise.all(chunk.map(id => pb.collection('musicLibrary').delete(id)));
+    const chunkSize = 50;
+    // @allow-sequential-await - Chunked loop is intentional to limit batch request rate.
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize);
+      const batch = pb.createBatch();
+      for (const id of chunk) {
+        batch.collection('musicLibrary').delete(id);
       }
+      await batch.send();
+    }
   }
 };

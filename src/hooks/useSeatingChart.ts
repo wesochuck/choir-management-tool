@@ -494,11 +494,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   };
 
   const reorderCharts = async (orderedIds: string[]) => {
-    await Promise.all(
-      orderedIds.map((id, index) =>
-        seatingService.saveChart({ id, sortOrder: index } as Partial<SeatingChart>)
-      )
-    );
+    await seatingService.reorderCharts(orderedIds);
     await fetchData();
   };
 

@@ -66,6 +66,8 @@ test('eventService.bulkCreateRehearsals throws on invalid performance date', asy
 
 test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
   const originalCollection = pb.collection;
+  const originalCreateBatch = pb.createBatch;
+  
   const mockGetFullList = t.mock.fn(async () => {
     return [
       { id: 'rehearsal_1', title: 'Rehearsal 1', parentPerformanceId: 'perf_123' },
@@ -87,6 +89,24 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
     return originalCollection.call(pb, name);
   };
 
+  const mockBatchSend = t.mock.fn(async () => {
+    return [];
+  });
+
+  // Mock pocketbase batch
+  pb.createBatch = function () {
+    return {
+      collection: (colName: string) => {
+        return {
+          delete: (id: string) => {
+            mockDelete(id);
+          }
+        } as any;
+      },
+      send: mockBatchSend
+    } as any;
+  };
+
   try {
     await eventService.deleteEvent('perf_123');
 
@@ -100,6 +120,7 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
     assert.equal(mockDelete.mock.calls[2].arguments[0], 'perf_123');
   } finally {
     pb.collection = originalCollection;
+    pb.createBatch = originalCreateBatch;
   }
 });
 
@@ -110,7 +131,7 @@ test('eventService.createEventWithRehearsals rolls back event creation on bulk r
     return { id: 'new_perf_123', ...(data as Record<string, unknown>) };
   });
 
-  const mockDelete = t.mock.fn(async () => {
+  const mockDelete = t.mock.fn(async (id?: string) => {
     return true;
   });
 

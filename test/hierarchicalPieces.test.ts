@@ -65,7 +65,9 @@ test('resolvePieceMetadata prefers child fields if child fields are populated', 
 
 test('musicLibraryService.deletePiece with unlinkChildren option updates children parentId to empty', async (t) => {
   const originalCollection = pb.collection;
-  const mockDelete = t.mock.fn(async () => {
+  const originalCreateBatch = pb.createBatch;
+  
+  const mockDelete = t.mock.fn(async (id?: string) => {
     return true;
   });
   
@@ -80,7 +82,7 @@ test('musicLibraryService.deletePiece with unlinkChildren option updates childre
     return { id, ...data } as unknown as MusicPiece;
   });
 
-  // Mock pocketbase
+  // Mock pocketbase collection
   pb.collection = function (name: string) {
     if (name === 'musicLibrary') {
       return {
@@ -90,6 +92,27 @@ test('musicLibraryService.deletePiece with unlinkChildren option updates childre
       } as unknown as CollectionMock;
     }
     return originalCollection.call(pb, name);
+  };
+
+  const mockBatchSend = t.mock.fn(async () => {
+    return [];
+  });
+
+  // Mock pocketbase batch
+  pb.createBatch = function () {
+    return {
+      collection: (colName: string) => {
+        return {
+          update: (id: string, data: Record<string, unknown>) => {
+            mockUpdate(id, data);
+          },
+          delete: (id: string) => {
+            mockDelete(id);
+          }
+        } as any;
+      },
+      send: mockBatchSend
+    } as any;
   };
 
   try {
@@ -110,5 +133,6 @@ test('musicLibraryService.deletePiece with unlinkChildren option updates childre
     assert.deepEqual(secondUpdateCallArgs[1], { parentId: '' });
   } finally {
     pb.collection = originalCollection;
+    pb.createBatch = originalCreateBatch;
   }
 });
