@@ -48,6 +48,15 @@ describe('Music Library Row Building (P5)', () => {
     assert.strictEqual(rows[0].id, 'p2');
   });
 
+  it('filters by search term (notes)', () => {
+    const pWithNotes = createMusicPieceFixture({ id: 'pNotes', title: 'Medley', notes: 'Contains Silent Night' });
+    const pieces = [...allPieces, pWithNotes];
+    const rows = buildVisibleMusicLibraryRows(pieces, { searchTerm: 'Silent Night' });
+    assert.strictEqual(rows.length, 1);
+    assert.strictEqual(rows[0].id, 'pNotes');
+  });
+
+
   it('filters by duplicates only', () => {
     const duplicateIds = new Set(['p1']);
     const rows = buildVisibleMusicLibraryRows(allPieces, { showDuplicatesOnly: true, duplicateIds });

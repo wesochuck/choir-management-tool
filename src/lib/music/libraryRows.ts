@@ -67,7 +67,8 @@ export function buildVisibleMusicLibraryRows(
       p.title.toLowerCase().includes(lower) || 
       p.composer?.toLowerCase().includes(lower) ||
       p.arranger?.toLowerCase().includes(lower) ||
-      p.catalogId?.toLowerCase().includes(lower)
+      p.catalogId?.toLowerCase().includes(lower) ||
+      p.notes?.toLowerCase().includes(lower)
     );
   }
 
