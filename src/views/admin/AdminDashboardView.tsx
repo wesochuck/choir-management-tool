@@ -115,7 +115,6 @@ export default function AdminDashboardView() {
         <div className="admin-dashboard-hero-container">
           <div className="admin-dashboard-hero-welcome">
             <h1>{greeting}</h1>
-            <p>Welcome to your choir command center. Keep track of membership, music, and schedules.</p>
           </div>
 
           <div className="admin-dashboard-stats-row">

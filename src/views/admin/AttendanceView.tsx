@@ -38,8 +38,7 @@ export default function AttendanceView() {
   const [isEventExpanded, setIsEventExpanded] = useState(false);
   
   // Sorting preference state
-  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart' | 'section'>('lastName');
-  const sortBy = user?.preferences?.attendanceSort || defaultSort;
+  const sortBy = user?.preferences?.attendanceSort || 'lastName';
   const handleSortChange = (val: 'lastName' | 'voicePart' | 'section') => {
     updatePreferences({ attendanceSort: val });
   };
@@ -55,14 +54,6 @@ export default function AttendanceView() {
   const { labels: voicePartLabels } = useVoiceParts();
 
   useEffect(() => {
-    settingsService.getAttendanceSettings()
-      .then((settings) => {
-        setDefaultSort(settings.defaultSort);
-      })
-      .catch((err) => {
-        console.error('Failed to load attendance settings', err);
-      });
-
     settingsService.getRosterSettings()
       .then(settings => {
         if (settings?.maxRehearsalMisses !== undefined) {

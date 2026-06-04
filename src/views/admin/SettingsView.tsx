@@ -45,22 +45,19 @@ export default function SettingsView() {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
   const [homepageUrl, setHomepageUrl] = useState('');
-  const [attendanceSort, setAttendanceSort] = useState<'lastName' | 'voicePart' | 'section'>('lastName');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [initialChoirName, setInitialChoirName] = useState('');
   const [initialTimezone, setInitialTimezone] = useState('America/New_York');
   const [initialHomepageUrl, setInitialHomepageUrl] = useState('');
-  const [initialAttendanceSort, setInitialAttendanceSort] = useState<'lastName' | 'voicePart' | 'section'>('lastName');
 
   useEffect(() => {
     const load = async () => {
-      const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedAttendanceSettings] = await Promise.all([
+      const [loadedChoirName, loadedTimezone, loadedHomepageUrl] = await Promise.all([
         settingsService.getChoirName(),
         settingsService.getTimezone(),
-        settingsService.getHomepageUrl(),
-        settingsService.getAttendanceSettings()
+        settingsService.getHomepageUrl()
       ]);
       setChoirName(loadedChoirName);
       setInitialChoirName(loadedChoirName);
@@ -68,10 +65,6 @@ export default function SettingsView() {
       setInitialTimezone(loadedTimezone);
       setHomepageUrl(loadedHomepageUrl);
       setInitialHomepageUrl(loadedHomepageUrl);
-      
-      const sort = loadedAttendanceSettings?.defaultSort || 'lastName';
-      setAttendanceSort(sort);
-      setInitialAttendanceSort(sort);
       setIsLoading(false);
     };
 
@@ -83,16 +76,15 @@ export default function SettingsView() {
 
   const isDirty = useMemo(() => {
     return calculateSettingsDirty(
-      { choirName: initialChoirName, timezone: initialTimezone, homepageUrl: initialHomepageUrl, attendanceSort: initialAttendanceSort },
-      { choirName, timezone, homepageUrl, attendanceSort }
+      { choirName: initialChoirName, timezone: initialTimezone, homepageUrl: initialHomepageUrl },
+      { choirName, timezone, homepageUrl }
     );
-  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl, initialAttendanceSort, attendanceSort]);
+  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl]);
 
   const handleGlobalDiscard = () => {
     setChoirName(initialChoirName);
     setTimezone(initialTimezone);
     setHomepageUrl(initialHomepageUrl);
-    setAttendanceSort(initialAttendanceSort);
   };
 
   const handleSave = async () => {
@@ -103,15 +95,13 @@ export default function SettingsView() {
       await Promise.all([
         settingsService.saveChoirName(choirName),
         settingsService.saveTimezone(timezone),
-        settingsService.saveHomepageUrl(homepageUrl),
-        settingsService.saveAttendanceSettings({ defaultSort: attendanceSort })
+        settingsService.saveHomepageUrl(homepageUrl)
       ]);
       setContextChoirName(choirName);
       setContextTimezone(timezone);
       setInitialChoirName(choirName);
       setInitialTimezone(timezone);
       setInitialHomepageUrl(homepageUrl);
-      setInitialAttendanceSort(attendanceSort);
       setMessage('System settings saved.');
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
@@ -210,35 +200,7 @@ export default function SettingsView() {
         </div>
       </AppCard>
 
-      <AppCard title="Attendance Settings">
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label" htmlFor="attendance-default-sort">Default Attendance Sort</label>
-          <select
-            id="attendance-default-sort"
-            value={attendanceSort}
-            onChange={(event) => setAttendanceSort(event.target.value as 'lastName' | 'voicePart' | 'section')}
-            className="card"
-            style={{
-              width: '100%',
-              maxWidth: '400px',
-              padding: '0 12px',
-              height: '40px',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--card-bg, #ffffff)',
-              color: 'inherit',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="lastName">Last Name</option>
-            <option value="voicePart">Voice Part + Last Name</option>
-            <option value="section">Section + Last Name</option>
-          </select>
-          <p className="text-muted" style={{ margin: 0 }}>
-            Choose the default sorting method used when opening the attendance check-in list.
-          </p>
-        </div>
-      </AppCard>
+      {/* Attendance default sorting is configured individually per admin in their profile preferences */}
 
       <QueueWebhookSettings />
 

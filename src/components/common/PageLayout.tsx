@@ -23,6 +23,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
             {backTo && (
               <Link to={backTo} className="admin-back-btn">← Back</Link>
             )}
+            <Link to="/" className="admin-back-btn" title="Dashboard">🏠 Home</Link>
             <div className="admin-header-titles">
               <h2 className="admin-header-title">{title}</h2>
               {subtitle && <p className="admin-header-subtitle">{subtitle}</p>}

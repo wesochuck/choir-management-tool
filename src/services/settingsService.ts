@@ -33,9 +33,6 @@ export interface CommunicationSettings {
   reportBodyTemplate: string;
 }
 
-export interface AttendanceSettings {
-  defaultSort: 'lastName' | 'voicePart' | 'section';
-}
 
 export interface RosterSettings {
   defaultStatus: string;
@@ -140,9 +137,6 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
   ].join('\n'),
 };
 
-export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettings = {
-  defaultSort: 'lastName',
-};
 
 export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultStatus: '',
@@ -246,14 +240,6 @@ export const settingsService = {
     return await upsertSetting('communications_config', value, false);
   },
 
-  async getAttendanceSettings() {
-    const setting = await getSetting<AttendanceSettings>('attendance');
-    return { ...DEFAULT_ATTENDANCE_SETTINGS, ...setting?.value };
-  },
-
-  async saveAttendanceSettings(value: AttendanceSettings) {
-    return await upsertSetting('attendance', value, false);
-  },
 
   async getRosterSettings() {
     const setting = await getSetting<RosterSettings>('roster');
