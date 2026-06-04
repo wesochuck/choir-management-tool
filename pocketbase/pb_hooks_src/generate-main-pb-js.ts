@@ -6,7 +6,7 @@ import ts from 'typescript';
 const SRC_DIR = path.join(process.cwd(), 'pocketbase/pb_hooks_src');
 const OUTPUT_FILE = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
 
-type UtilityBundleName =
+export type UtilityBundleName =
     | 'hookJson'
     | 'hookText'
     | 'emailRendering'
@@ -24,7 +24,7 @@ type UtilityBundleName =
     | 'attendanceFinalizer'
     | 'playerEndpoints';
 
-type UtilityBundle = {
+export type UtilityBundle = {
     files: string[];
     symbols: string[];
     dependsOn?: UtilityBundleName[];
@@ -35,7 +35,7 @@ type CallbackOptions = {
     excludeBundles?: UtilityBundleName[];
 };
 
-const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
+export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     hookJson: {
         files: ['email/hookJson.ts'],
         symbols: ['decodeGoBytes', 'parseJsonField'],
@@ -107,7 +107,7 @@ const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     adminNotifications: {
         files: ['adminNotifications.ts'],
         symbols: ['notifyAdminsOfDecline'],
-        dependsOn: ['queueProcessor'],
+        dependsOn: ['queueProcessor', 'hookText'],
     },
     attendanceFinalizer: {
         files: ['attendanceFinalizer.ts'],

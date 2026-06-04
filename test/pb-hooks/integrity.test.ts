@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { transpileHookSource } from '../../pocketbase/pb_hooks_src/generate-main-pb-js.ts';
+import { transpileHookSource, UTILITY_BUNDLES, type UtilityBundleName } from '../../pocketbase/pb_hooks_src/generate-main-pb-js.ts';
 
 function countOccurrences(str: string, needle: string): number {
     return str.split(needle).length - 1;
@@ -325,6 +325,62 @@ test('Generated main.pb.js contains no top-level function helper definitions out
             }
         }
     });
+});
+
+test('Static dependency declaration check - all relative imports must be declared in dependsOn', () => {
+    const srcDir = path.join(process.cwd(), 'pocketbase/pb_hooks_src');
+
+    // Helper to resolve an import path to its normalized relative path inside pb_hooks_src
+    function resolveImportPath(importingFile: string, relativeImport: string): string {
+        const dir = path.dirname(importingFile);
+        let resolved = path.join(dir, relativeImport);
+        // Normalize slashes
+        resolved = resolved.replace(/\\/g, '/');
+        if (!resolved.endsWith('.ts') && !resolved.endsWith('.js')) {
+            resolved += '.ts';
+        }
+        return resolved;
+    }
+
+    // Find which bundle (if any) contains the given file
+    function findBundleNameForFile(filePath: string): UtilityBundleName | null {
+        for (const [name, bundle] of Object.entries(UTILITY_BUNDLES)) {
+            if (bundle.files.includes(filePath)) {
+                return name as UtilityBundleName;
+            }
+        }
+        return null;
+    }
+
+    for (const [bundleName, bundle] of Object.entries(UTILITY_BUNDLES)) {
+        for (const file of bundle.files) {
+            const absolutePath = path.join(srcDir, file);
+            if (!fs.existsSync(absolutePath)) {
+                continue; // skip if file doesn't exist (e.g. types/declaration mock files)
+            }
+
+            const content = fs.readFileSync(absolutePath, 'utf8');
+            
+            // Regex to find relative imports like './foo' or '../bar/baz'
+            const importRegex = /import\s+(?:[\s\S]*?\s+from\s+)?['"](\.\.?\/[^'"]+)['"]/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                const relativeImport = match[1];
+                const resolvedFile = resolveImportPath(file, relativeImport);
+                const targetBundle = findBundleNameForFile(resolvedFile);
+
+                if (targetBundle && targetBundle !== bundleName) {
+                    // This import references a file owned by a different bundle.
+                    // Verify that the target bundle is declared in the importing bundle's dependsOn list.
+                    const dependsOnList = bundle.dependsOn || [];
+                    assert.ok(
+                        dependsOnList.includes(targetBundle),
+                        `CRITICAL: File "${file}" in bundle "${bundleName}" imports "${resolvedFile}" (owned by bundle "${targetBundle}"), but "${targetBundle}" is not declared in the dependsOn list of "${bundleName}" inside UTILITY_BUNDLES. This will cause a ReferenceError at runtime on PocketHost. Please add "${targetBundle}" to the dependsOn list for "${bundleName}".`
+                    );
+                }
+            }
+        }
+    }
 });
 
 
