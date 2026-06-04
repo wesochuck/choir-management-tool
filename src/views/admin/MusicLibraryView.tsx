@@ -7,7 +7,6 @@ import { eventService } from '../../services/eventService';
 import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicGenreDef, type MusicLibrarySettings } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
-import { mapWithConcurrency, retryOn429 } from '../../lib/networkSafety';
 import { buildVisibleMusicLibraryRows, type MusicLibrarySortField, type SortDirection } from '../../lib/music/libraryRows';
 import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
@@ -166,13 +165,13 @@ export default function MusicLibraryView() {
           dialog.showToast(`Removing deleted genre(s) from ${piecesToUpdate.length} piece(s) in background...`);
           (async () => {
             try {
-              await mapWithConcurrency(
-                piecesToUpdate,
-                async (piece) => {
-                  const updatedGenres = (piece.genres || []).filter(gId => !deletedGenreIds.has(gId));
-                  await retryOn429(() => musicLibraryService.updatePiece(piece.id, { genres: updatedGenres }));
-                },
-                { concurrency: 4 }
+              await musicLibraryService.bulkUpdate(
+                piecesToUpdate.map((piece) => ({
+                  id: piece.id,
+                  data: {
+                    genres: (piece.genres || []).filter(gId => !deletedGenreIds.has(gId)),
+                  },
+                }))
               );
               await loadData();
               dialog.showToast('Successfully cleaned up deleted genres from all music pieces.');
@@ -698,4 +697,3 @@ export default function MusicLibraryView() {
     </div>
   );
 }
-

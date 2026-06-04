@@ -4,6 +4,8 @@ import type { Venue } from './venueService';
 import { zonedInputValueToUtc } from '../lib/timezone';
 import { settingsService } from './settingsService';
 
+const BATCH_CHUNK_SIZE = 50;
+
 export interface SetListItem {
   id: string; // Used for dnd-kit key
   title: string;
@@ -179,11 +181,21 @@ export const eventService = {
       current.setDate(current.getDate() - 7);
     }
 
-    const createPromises = rehearsals.reverse().map(r =>
-      pb.collection('events').create<Event>(r)
-    );
+    const orderedRehearsals = rehearsals.reverse();
+    const created: Event[] = [];
 
-    return await Promise.all(createPromises);
+    // @allow-sequential-await - Chunked batch sends avoid oversized Batch API payloads.
+    for (let i = 0; i < orderedRehearsals.length; i += BATCH_CHUNK_SIZE) {
+      const batch = pb.createBatch();
+      const chunk = orderedRehearsals.slice(i, i + BATCH_CHUNK_SIZE);
+      for (const rehearsal of chunk) {
+        batch.collection('events').create(rehearsal);
+      }
+      const results = await batch.send();
+      created.push(...results.map((result) => result.body as Event));
+    }
+
+    return created;
   },
 
   async createEventWithRehearsals(data: Partial<Event>, bulkConfig?: BulkRehearsalConfig) {

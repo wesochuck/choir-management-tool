@@ -189,6 +189,7 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
 test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalCollection = pb.collection;
+  const originalCreateBatch = pb.createBatch;
 
   const mockEvents = {
     'e1': { id: 'e1', type: 'Rehearsal', parentPerformanceId: 'perf1', date: new Date().toISOString() }
@@ -208,7 +209,7 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
     { id: 'rr1', event: 'e1', profile: 'p1', attendance: 'Pending', rsvp: 'Pending' }
   ];
 
-  const createdRosters: unknown[] = [];
+  const createdRosters: Record<string, unknown>[] = [];
   const updatedRosters: Record<string, unknown>[] = [];
 
   pb.collection = ((name: string) => {
@@ -233,18 +234,27 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
           }
           return [];
         },
-        create: async (data: Record<string, unknown>) => {
-          createdRosters.push(data);
-          return { id: 'new_roster_id', ...data };
-        },
-        update: async (id: string, data: Record<string, unknown>) => {
-          updatedRosters.push({ id, ...data });
-          return { id, ...data };
-        }
       };
     }
     return originalCollection.call(pb, name);
   }) as unknown as typeof pb.collection;
+
+  pb.createBatch = function () {
+    return {
+      collection: (colName: string) => {
+        assert.equal(colName, 'eventRosters');
+        return {
+          create: (data: Record<string, unknown>) => {
+            createdRosters.push(data);
+          },
+          update: (id: string, data: Record<string, unknown>) => {
+            updatedRosters.push({ id, ...data });
+          }
+        } as unknown as ReturnType<ReturnType<typeof pb.createBatch>['collection']>;
+      },
+      send: async () => [],
+    } as unknown as ReturnType<typeof pb.createBatch>;
+  };
 
   try {
     const { rosterService } = await import('../src/services/rosterService.ts');
@@ -267,5 +277,6 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
     }
   } finally {
     pb.collection = originalCollection;
+    pb.createBatch = originalCreateBatch;
   }
 });

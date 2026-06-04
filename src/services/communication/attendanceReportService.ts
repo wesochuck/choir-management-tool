@@ -1,11 +1,26 @@
 import { pb } from '../../lib/pocketbase';
 import type { Event } from '../eventService';
 import { profileService, type Profile } from '../profileService';
-import { rosterService } from '../rosterService';
+import { rosterService, type EventRoster } from '../rosterService';
 import { settingsService } from '../settingsService';
 import { escapeHtml, sanitizeEmailSubject } from '../../lib/textSafety';
 import { messageRepository } from './messageRepository';
 import type { MessageRecord, CommunicationRecipient } from './types';
+
+const BATCH_CHUNK_SIZE = 50;
+
+type AttendanceFinalizeCreateOperation = {
+  type: 'create';
+  data: Pick<EventRoster, 'event' | 'profile' | 'rsvp' | 'attendance'>;
+};
+
+type AttendanceFinalizeUpdateOperation = {
+  type: 'update';
+  id: string;
+  data: Pick<EventRoster, 'attendance'>;
+};
+
+type AttendanceFinalizeOperation = AttendanceFinalizeCreateOperation | AttendanceFinalizeUpdateOperation;
 
 export function renderManualAttendanceReportSubject(params: {
   template: string;
@@ -100,25 +115,51 @@ export async function finalizeUnmarkedAttendanceForEvent(eventId: string): Promi
   const eventRosters = await rosterService.getEventRoster(eventId);
   const eventRosterMap = new Map(eventRosters.map(r => [r.profile, r]));
 
-  await Promise.all(
-    activeProfiles.map(async (profile) => {
-      if (performingProfileIds.has(profile.id)) {
-        const roster = eventRosterMap.get(profile.id);
-        if (!roster) {
-          await pb.collection('eventRosters').create({
-            event: eventId,
-            profile: profile.id,
-            rsvp: 'Pending',
-            attendance: 'Absent'
-          });
-        } else if (roster.attendance === 'Pending') {
-          await pb.collection('eventRosters').update(roster.id, {
-            attendance: 'Absent'
-          });
-        }
+  const operations: AttendanceFinalizeOperation[] = [];
+
+  for (const profile of activeProfiles) {
+    if (!performingProfileIds.has(profile.id)) {
+      continue;
+    }
+
+    const roster = eventRosterMap.get(profile.id);
+    if (!roster) {
+      operations.push({
+        type: 'create' as const,
+        data: {
+          event: eventId,
+          profile: profile.id,
+          rsvp: 'Pending',
+          attendance: 'Absent',
+        },
+      });
+      continue;
+    }
+
+    if (roster.attendance === 'Pending') {
+      operations.push({
+        type: 'update' as const,
+        id: roster.id,
+        data: {
+          attendance: 'Absent',
+        },
+      });
+    }
+  }
+
+  // @allow-sequential-await - Chunked batch sends keep large attendance finalizations bounded.
+  for (let i = 0; i < operations.length; i += BATCH_CHUNK_SIZE) {
+    const batch = pb.createBatch();
+    const chunk = operations.slice(i, i + BATCH_CHUNK_SIZE);
+    for (const operation of chunk) {
+      if (operation.type === 'create') {
+        batch.collection('eventRosters').create(operation.data);
+      } else {
+        batch.collection('eventRosters').update(operation.id, operation.data);
       }
-    })
-  );
+    }
+    await batch.send();
+  }
 }
 
 export async function triggerAttendanceReport(eventId: string): Promise<MessageRecord> {

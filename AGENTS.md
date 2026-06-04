@@ -59,6 +59,8 @@
 - **Stable Retry Callbacks:** Do not let retry feedback callbacks become dependencies that retrigger the data fetch; keep them stable with `useCallback` or store them in a ref inside reusable hooks.
 - **No Unbounded Fan-Out:** Never fire one API request per item in a large list without batching or a concurrency cap. Avoid `Promise.all(items.map(...))` for network calls unless the item count is strictly bounded and small.
 - **Batch First:** Prefer bulk/aggregated reads over per-record probes (for example, fetch statuses for many event IDs in one query, then map results locally).
+- **PocketBase Batch for Multi-Write UI Actions:** When one user action creates, updates, or deletes many PocketBase records of the same general workflow, consider `pb.createBatch()` before adding per-record requests. Batch writes should usually live in a service helper, use bounded chunks (commonly 50 records per batch), and return parsed batch result bodies when callers need created/updated records.
+- **Batch vs Custom Endpoint:** Use client-side PocketBase batch for straightforward same-collection or simple multi-collection write sets where PocketBase's batch transaction semantics are enough. Prefer a custom `pb.send(...)` backend endpoint when the operation needs authorization-sensitive business rules, upsert/merge logic, cross-record validation, server-only data, or richer partial-failure reporting.
 - **Chunk Dynamic Filters:** When building OR filters for many IDs, chunk into bounded groups (for example 20-50 IDs per query) to avoid oversized URLs and parser strain.
 - **Cap Concurrency:** If multiple requests are still required, use a small concurrency limit (default 3-5 in-flight requests), not full parallel fan-out.
 - **Handle 429 Explicitly:** For read paths, treat HTTP `429` as a rate-limit signal: retry with backoff and jitter a limited number of times, then surface a non-blocking warning state in UI.
@@ -133,5 +135,4 @@
 - **The Failure Mode**: The `profiles` collection does not contain a native `email` field; emails are stored exclusively on the related `users` record. Reading `.get("email")` or `.email` directly from a profile record will return `undefined` or `""` and silently break operations such as automated notification dispatches.
 - **The Safe Pattern (Backend)**: In backend hooks or endpoints (e.g. `pb_hooks_src/`), resolve the profile's related user record using the `user` relation field, then retrieve the email address from that user record.
 - **The Safe Pattern (Frontend)**: In frontend React views, services, or hooks, always resolve the email via the `getProfileEmail(profile)` helper from `src/services/profileService.ts` rather than reading `profile.email` directly.
-
 

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
 
 import { eventService } from '../src/services/eventService.ts';
+import { settingsService } from '../src/services/settingsService.ts';
 
 test('eventService.bulkCreateRehearsals throws on invalid day of week', async () => {
   const dummyPerformance = {
@@ -62,6 +63,72 @@ test('eventService.bulkCreateRehearsals throws on invalid performance date', asy
     },
     /Invalid performance date\./
   );
+});
+
+test('eventService.bulkCreateRehearsals creates rehearsals with PocketBase batch', async (t) => {
+  const originalCreateBatch = pb.createBatch;
+  const originalGetTimezone = settingsService.getTimezone;
+
+  const createdEvents: Record<string, unknown>[] = [];
+  const mockBatchSend = t.mock.fn(async () => {
+    return createdEvents.map((body, index) => ({
+      status: 200,
+      body: {
+        id: `rehearsal_${index + 1}`,
+        collectionId: 'events_col',
+        collectionName: 'events',
+        created: '2026-01-01T00:00:00.000Z',
+        updated: '2026-01-01T00:00:00.000Z',
+        ...body,
+      },
+    }));
+  });
+
+  settingsService.getTimezone = async () => 'America/New_York';
+  pb.createBatch = function () {
+    return {
+      collection: (colName: string) => {
+        assert.equal(colName, 'events');
+        return {
+          create: (data: Record<string, unknown>) => {
+            createdEvents.push(data);
+          },
+        } as unknown as ReturnType<ReturnType<typeof pb.createBatch>['collection']>;
+      },
+      send: mockBatchSend,
+    } as unknown as ReturnType<typeof pb.createBatch>;
+  };
+
+  try {
+    const performance = {
+      id: 'perf_1',
+      collectionId: 'col_1',
+      collectionName: 'events',
+      created: '2023-01-01',
+      updated: '2023-01-01',
+      title: 'Spring Concert',
+      date: '2026-05-20T23:00:00.000Z',
+      type: 'Performance' as const,
+      details: 'Black folders',
+      parentPerformanceId: '',
+    };
+
+    const rehearsals = await eventService.bulkCreateRehearsals(performance, {
+      count: 2,
+      dayOfWeek: 3,
+      time: '19:00',
+      venue: '',
+    });
+
+    assert.equal(mockBatchSend.mock.callCount(), 1);
+    assert.equal(createdEvents.length, 2);
+    assert.equal(rehearsals.length, 2);
+    assert.equal(createdEvents[0].parentPerformanceId, 'perf_1');
+    assert.equal(createdEvents[0].type, 'Rehearsal');
+  } finally {
+    pb.createBatch = originalCreateBatch;
+    settingsService.getTimezone = originalGetTimezone;
+  }
 });
 
 test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
@@ -169,4 +236,3 @@ test('eventService.createEventWithRehearsals rolls back event creation on bulk r
     pb.collection = originalCollection;
   }
 });
-
