@@ -22,6 +22,8 @@ export interface MusicLibraryFiltersProps {
     onPageSizeChange: (value: number) => void;
     recencyFilter: PerformanceRecencyFilter;
     onRecencyFilterChange: (value: PerformanceRecencyFilter) => void;
+    ignoreArticles: boolean;
+    onIgnoreArticlesChange: (value: boolean) => void;
 }
 
 export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
@@ -42,7 +44,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     pageSize,
     onPageSizeChange,
     recencyFilter,
-    onRecencyFilterChange
+    onRecencyFilterChange,
+    ignoreArticles,
+    onIgnoreArticlesChange
 }) => {
     // Sort genres alphabetically by label
     const sortedGenres = React.useMemo(() => {
@@ -136,6 +140,16 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         style={{ width: '14px', height: '14px', accentColor: 'var(--primary)' }}
                     />
                     <span className="text-xs" style={{ fontWeight: 500 }}>Duplicates ({duplicateCount})</span>
+                </label>
+
+                <label className="flex-row" style={{ alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input 
+                        type="checkbox" 
+                        checked={ignoreArticles} 
+                        onChange={(e) => onIgnoreArticlesChange(e.target.checked)}
+                        style={{ width: '14px', height: '14px', accentColor: 'var(--primary)' }}
+                    />
+                    <span className="text-xs" style={{ fontWeight: 500 }}>Ignore articles (A, An, The)</span>
                 </label>
 
                 {selectedCount > 0 && (

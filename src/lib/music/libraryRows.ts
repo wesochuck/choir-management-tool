@@ -19,6 +19,12 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   now?: Date;
   sortField?: MusicLibrarySortField;
   sortDirection?: SortDirection;
+  ignoreArticles?: boolean;
+}
+
+function getSortTitle(title: string, ignoreArticles: boolean): string {
+  if (!ignoreArticles) return title;
+  return title.replace(/^(?:a|an|the)\s+/i, '');
 }
 
 /**
@@ -39,7 +45,8 @@ export function buildVisibleMusicLibraryRows(
     recencyFilter = 'all',
     now,
     sortField = 'title',
-    sortDirection = 'asc'
+    sortDirection = 'asc',
+    ignoreArticles = false
   } = options;
 
   let result = [...pieces];
@@ -171,7 +178,9 @@ export function buildVisibleMusicLibraryRows(
       }
       case 'title':
       default: {
-        const comp = a.title.localeCompare(b.title);
+        const titleA = getSortTitle(a.title, ignoreArticles);
+        const titleB = getSortTitle(b.title, ignoreArticles);
+        const comp = titleA.localeCompare(titleB);
         return sortDirection === 'asc' ? comp : -comp;
       }
     }
@@ -193,7 +202,11 @@ export function buildVisibleMusicLibraryRows(
 
   // Sort each parent's children alphabetically by title
   childMap.forEach(list => {
-    list.sort((a, b) => a.title.localeCompare(b.title));
+    list.sort((a, b) => {
+      const titleA = getSortTitle(a.title, ignoreArticles);
+      const titleB = getSortTitle(b.title, ignoreArticles);
+      return titleA.localeCompare(titleB);
+    });
   });
 
   // Insert children immediately following their parent piece

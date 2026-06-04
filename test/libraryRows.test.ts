@@ -173,5 +173,26 @@ describe('Music Library Row Building (P5)', () => {
     assert.ok(removedSet.has('id2'));
     assert.strictEqual(removedSet.size, 1);
   });
+
+  it('sorts titles ignoring initial articles (A, An, The) when ignoreArticles is true', () => {
+    const piece1 = createMusicPieceFixture({ id: 'p1', title: 'The Apple' });
+    const piece2 = createMusicPieceFixture({ id: 'p2', title: 'Banana' });
+    const piece3 = createMusicPieceFixture({ id: 'p3', title: 'An Orange' });
+    const pieces = [piece1, piece2, piece3];
+
+    // Default sorting (ignoreArticles = false/undefined)
+    const rowsDefault = buildVisibleMusicLibraryRows(pieces, { sortField: 'title', sortDirection: 'asc' });
+    assert.strictEqual(rowsDefault[0].id, 'p3'); // An Orange
+    assert.strictEqual(rowsDefault[1].id, 'p2'); // Banana
+    assert.strictEqual(rowsDefault[2].id, 'p1'); // The Apple
+
+    // Ignored articles sorting (ignoreArticles = true)
+    // Stripped sort titles: 'Apple', 'Banana', 'Orange'
+    const rowsIgnored = buildVisibleMusicLibraryRows(pieces, { sortField: 'title', sortDirection: 'asc', ignoreArticles: true });
+    assert.strictEqual(rowsIgnored[0].id, 'p1'); // The Apple
+    assert.strictEqual(rowsIgnored[1].id, 'p2'); // Banana
+    assert.strictEqual(rowsIgnored[2].id, 'p3'); // An Orange
+  });
 });
+
 

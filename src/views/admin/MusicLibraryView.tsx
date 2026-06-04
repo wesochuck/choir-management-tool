@@ -81,16 +81,17 @@ export default function MusicLibraryView() {
   // Sorting State
   const [sortField, setSortField] = useState<MusicLibrarySortField>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [ignoreArticles, setIgnoreArticles] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [recencyFilter, setRecencyFilter] = useState<PerformanceRecencyFilter>('all');
 
-  // Reset to first page when search filters, duplicate filter, page size, or sorting changes
+  // Reset to first page when search filters, duplicate filter, page size, sorting, or ignoreArticles changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sectionFilters, genreFilters, recencyFilter, showDuplicatesOnly, pageSize, sortField, sortDirection]);
+  }, [searchTerm, sectionFilters, genreFilters, recencyFilter, showDuplicatesOnly, pageSize, sortField, sortDirection, ignoreArticles]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
@@ -390,9 +391,10 @@ export default function MusicLibraryView() {
       genreFilters,
       recencyFilter,
       sortField,
-      sortDirection
+      sortDirection,
+      ignoreArticles
     });
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters, recencyFilter, sortField, sortDirection]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters, recencyFilter, sortField, sortDirection, ignoreArticles]);
 
   const paginatedPieces = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -507,6 +509,8 @@ export default function MusicLibraryView() {
             onPageSizeChange={setPageSize}
             recencyFilter={recencyFilter}
             onRecencyFilterChange={setRecencyFilter}
+            ignoreArticles={ignoreArticles}
+            onIgnoreArticlesChange={setIgnoreArticles}
           />
 
           <MusicLibraryTable 
