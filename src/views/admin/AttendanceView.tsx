@@ -42,8 +42,13 @@ export default function AttendanceView() {
   const handleSortChange = (val: 'lastName' | 'voicePart') => {
     updatePreferences({ attendanceSort: val });
   };
+  // RSVP filter preference state
+  const defaultRsvpFilter = 'Both';
+  const rsvpFilter = user?.preferences?.attendanceRsvpFilter || defaultRsvpFilter;
+  const handleRsvpFilterChange = (val: 'Yes' | 'Pending' | 'Both') => {
+    updatePreferences({ attendanceRsvpFilter: val });
+  };
   
-  const [isPendingExpanded, setIsPendingExpanded] = useState(false);
   const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false);
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
   const { labels: voicePartLabels } = useVoiceParts();
@@ -184,13 +189,17 @@ export default function AttendanceView() {
     });
   }, [items, filterName, filterVoicePart, filterStatus]);
 
-  const expectedItems = useMemo(() => {
-    return filteredItems.filter(item => item.rsvp === 'Yes');
-  }, [filteredItems]);
-
-  const pendingItems = useMemo(() => {
-    return filteredItems.filter(item => item.rsvp === 'Pending');
-  }, [filteredItems]);
+  const checkInItems = useMemo(() => {
+    return filteredItems.filter(item => {
+      if (rsvpFilter === 'Yes') {
+        return item.rsvp === 'Yes';
+      }
+      if (rsvpFilter === 'Pending') {
+        return item.rsvp === 'Pending';
+      }
+      return item.rsvp === 'Yes' || item.rsvp === 'Pending';
+    });
+  }, [filteredItems, rsvpFilter]);
 
   const declinedSingers = useMemo(() => {
     return items.filter(item => item.rsvp === 'No');
@@ -528,6 +537,20 @@ export default function AttendanceView() {
             </select>
           </div>
 
+          {/* RSVP Status Filter */}
+          <div className="flex-col attendance-filter-control">
+            <label className="text-label attendance-filter-label">RSVP Status</label>
+            <select
+              value={rsvpFilter}
+              onChange={(e) => handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')}
+              className="card attendance-filter-input"
+            >
+              <option value="Both">Both (Attending + Pending)</option>
+              <option value="Yes">Attending Only</option>
+              <option value="Pending">Pending Only</option>
+            </select>
+          </div>
+
           {/* Sort By Filter */}
           <div className="flex-col attendance-filter-control">
             <label className="text-label attendance-filter-label">Sort By</label>
@@ -562,7 +585,7 @@ export default function AttendanceView() {
           <p style={{ color: 'var(--color-danger-text)', fontWeight: 600 }}>{error}</p>
         </AppCard>
       ) : selectedEventId ? (
-        filteredItems.length === 0 && declinedSingers.length === 0 ? (
+        checkInItems.length === 0 && declinedSingers.length === 0 ? (
           <AppCard style={{ textAlign: 'center', padding: '48px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
             <span style={{ fontSize: '2rem' }}>🔍</span>
             <h3 style={{ marginTop: '12px', marginBottom: '4px', fontWeight: 800, fontSize: '1.25rem' }}>No Matching Singers</h3>
@@ -572,11 +595,11 @@ export default function AttendanceView() {
         ) : (
           <div className="flex-col" style={{ gap: 'var(--space-md)', width: '100%' }}>
             
-            {/* 1. Expected / Attending Singers Section */}
+            {/* Check-In List */}
             <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
-              {expectedItems.length > 0 ? (
+              {checkInItems.length > 0 ? (
                 <CheckInList
-                  items={expectedItems}
+                  items={checkInItems}
                   onSetAttendance={handleSetAttendance}
                   onUpdateFolder={handleUpdateFolder}
                   onEdit={handleEditProfile}
@@ -586,52 +609,10 @@ export default function AttendanceView() {
                 />
               ) : (
                 <AppCard style={{ textAlign: 'center', padding: '24px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
-                  <p className="text-muted text-sm" style={{ margin: 0 }}>No expected singers (RSVP'd Yes) match your filters.</p>
+                  <p className="text-muted text-sm" style={{ margin: 0 }}>No singers match your RSVP filters.</p>
                 </AppCard>
               )}
             </div>
-
-            {/* 2. Pending RSVPs Collapsible Section */}
-            {pendingItems.length > 0 && (
-              <div className="flex-col" style={{ marginTop: 'var(--space-md)', width: '100%', gap: 'var(--space-xs)' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsPendingExpanded(!isPendingExpanded)}
-                  className="btn btn-ghost"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    padding: '10px 16px',
-                    height: '44px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--primary-light)',
-                    color: 'var(--primary-deep)',
-                    fontWeight: 700,
-                    fontSize: '0.85rem'
-                  }}
-                >
-                  <span>⏳ Pending RSVPs ({pendingItems.length} singers)</span>
-                  <span>{isPendingExpanded ? '▲ Hide' : '▼ Show'}</span>
-                </button>
-
-                {isPendingExpanded && (
-                  <div style={{ marginTop: '8px', width: '100%' }}>
-                    <CheckInList
-                      items={pendingItems}
-                      onSetAttendance={handleSetAttendance}
-                      onUpdateFolder={handleUpdateFolder}
-                      onEdit={handleEditProfile}
-                      sortBy={sortBy}
-                      missCounts={missCounts}
-                      maxRehearsalMisses={maxRehearsalMisses}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* 3. Declined Singers Rescue Control */}
             {declinedSingers.length > 0 && (

@@ -386,7 +386,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 type="checkbox"
                 checked={formData.doNotEmail}
                 onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
               />
               <span className="text-label">Do Not Email</span>
             </label>
@@ -395,7 +395,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 type="checkbox"
                 checked={formData.statusIsManual}
                 onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
             </label>
@@ -404,7 +404,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 type="checkbox"
                 checked={Boolean(formData.isSectionLeader)}
                 onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
               />
               <span className="text-label">Section Leader</span>
             </label>
@@ -415,7 +415,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     type="checkbox"
                     checked={formData.receiveAttendanceReports !== false}
                     onChange={(e) => setFormData({ ...formData, receiveAttendanceReports: e.target.checked })}
-                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span className="text-label">Receive Attendance Reports</span>
                 </label>
@@ -424,7 +424,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     type="checkbox"
                     checked={Boolean(formData.receiveRsvpDeclineNotices)}
                     onChange={(e) => setFormData({ ...formData, receiveRsvpDeclineNotices: e.target.checked })}
-                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span className="text-label">Receive RSVP Decline Notices</span>
                 </label>
@@ -433,7 +433,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     type="checkbox"
                     checked={formData.receiveAdminNotifications !== false}
                     onChange={(e) => setFormData({ ...formData, receiveAdminNotifications: e.target.checked })}
-                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span className="text-label">Receive General Admin Notifications</span>
                 </label>
@@ -461,7 +461,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     width: '16px',
                     height: '16px',
                     minHeight: 'auto',
-                    cursor: isSelf ? 'not-allowed' : 'pointer'
+                    cursor: isSelf ? 'not-allowed' : 'pointer',
+                    flexShrink: 0
                   }}
                 />
                 <span className="text-label">Administrator</span>
