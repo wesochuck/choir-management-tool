@@ -130,7 +130,7 @@
 .multiselect-dropdown-item {
     display: flex;
     align-items: center;
-    padding: 8px 14px;
+    padding: 4px 14px;
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
