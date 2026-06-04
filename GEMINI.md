@@ -48,6 +48,15 @@ These foundational mandates MUST be followed by all agents working on this codeb
     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
     ```
 *   **Profile Email Retrieval:** The `profiles` collection does not have a native `email` field. All user emails reside in the linked `users` collection. Never attempt to read `profile.email` or `profile.get("email")` directly on a profile record. On the backend, fetch the related user record via the `user` relation field first. On the frontend, always use the `getProfileEmail(profile)` helper from `profileService` or read from the expanded relation `profile.expand?.user?.email`.
+*   **Source-Generated Hooks:** The production `pocketbase/pb_hooks/main.pb.js` file is **SOURCE-GENERATED**. Never edit this file directly. Instead, modify the TypeScript source files in `pocketbase/pb_hooks_src/` and run `npm run generate:pb-hooks`.
+*   **Self-Contained Requirement:** PocketHost requires backend callbacks (hooks, crons, routers) to be self-contained. The generator handles this automatically by inlining all shared utilities into every individual callback closure. This prevents `ReferenceError` issues at runtime.
+*   **Verification Workflow:** After modifying backend logic:
+    1.  Edit the relevant TypeScript source file in `pocketbase/pb_hooks_src/` (`pocketbase/pb_hooks_src/email/` is for email-specific helpers and queue logic).
+    2.  Run `npm run generate:pb-hooks`.
+    3.  Run `npm run check:pb-hooks` to verify integrity and pass unit tests.
+*   **Sanitization:** When generating HTML bodies (e.g., for emails), always sanitize dynamic text data by passing it through an HTML escaping function (like the `escapeHtml` utility) before injecting it into the HTML string.
+*   **Always include/autorepair timestamp fields for custom base collections:** When creating collections programmatically with `new Collection(...)`, explicitly include or immediately add standard `AutodateField` fields named `created` (`onCreate: true`, `onUpdate: false`) and `updated` (`onCreate: true`, `onUpdate: true`) before UI code sorts by those fields. If a deployed collection may already exist without those fields, add a sequential forward migration that creates the missing fields and backfills existing records with a safe timestamp.
+*   **Goja VM Named Query Parameter Placeholder Syntax (`{:param}`):** Using SQL-native colon parameters (such as `:maxAttempts` or `:runId`) inside raw queries passed to `app.db().newQuery(...)` throws a Goja `missing named argument` exception, because PocketBase's underlying `dbx` Go package expects named variables to use the brace parameter format. Always format named query parameters using curly braces (e.g. `{:maxAttempts}`, `{:runId}`) inside raw SQL queries before binding values.
 
 
 ## Hosted PocketBase Workflow
@@ -59,6 +68,14 @@ These foundational mandates MUST be followed by all agents working on this codeb
 ## Token & URL Parameter Safety (Ampersand Issue Prevention)
 *   **Query Parameter Encoding:** When constructing sharing URLs or passing composite tokens via query parameters (e.g., for RSVP or Player links), ALWAYS use `encodeURIComponent(token)` to prevent the browser or HTTP clients from truncating or splitting tokens containing ampersands (`&`).
 *   **Defensive Parsing Fallback:** When parsing composite tokens from URL parameters, always check if the token was split by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API requests.
+
+
+## Signed Token & HMAC Stability
+*   **Signed token formats are compatibility contracts:** Existing HMAC payload strings and key order must remain stable: player links sign `e=<eventId>`, RSVP/calendar event-recipient links sign `e=<eventId>&p=<profileId>`, audition links sign `a=<auditionId>`, unsubscribe links sign `p=<profileId>`, poll links sign `l=<pollId>&p=<profileId>`, and singer calendar feed links sign `p=<profileId>&c=<calendarSalt>`.
+*   **Use canonical helpers for shared formats:** Prefer payload/generator helpers in `pocketbase/pb_hooks_src/hmacTokens.ts` when adding or verifying signed links. If a new token shape is needed, add a named payload helper and unit coverage before using it in endpoints, email rendering, or frontend services.
+*   **Sign the exact unencoded payload:** Generate signatures over the canonical raw payload string, then append `&s=<signature>`, then URL-encode the whole token only at the outer URL boundary with `encodeURIComponent(token)`. Do not reorder keys, serialize with `URLSearchParams`, encode individual payload fields before signing, or change separators unless all generators, verifiers, templates, frontend fallback parsing, and tests are updated together.
+*   **Verify defensively and fail closed:** Public endpoints must reject missing `HMAC_SECRET`, malformed tokens, and signature mismatches. Use constant-time comparison (`$security.equal(...)`) where available, and avoid adding logs that expose `HMAC_SECRET` or full signed tokens.
+*   **Regression coverage required:** Changes to signed token generation, parsing, or public token routes should update `test/pb-hooks/hmacTokens.test.ts` and relevant endpoint/placeholder tests, then run `npm run check:pb-hooks` plus the frontend tests that cover generated links.
 
 
 ## Authentication & Session Management
@@ -83,6 +100,33 @@ These foundational mandates MUST be followed by all agents working on this codeb
 *   **Typed Boundaries:** If a third-party API forces an untyped boundary, isolate it in a small adapter with a named type and a short comment explaining the boundary.
 *   **Verification:** Before finishing TypeScript work, run `npm run lint` or the relevant typecheck command and fix all `@typescript-eslint/no-explicit-any` violations introduced by the change.
 *   **Stale Asset Chunk Resilience (Lazy Loading):** When adding new route modules or lazy-loaded views, ALWAYS wrap the lazy-loading import statement using the `lazyWithReload(...)` helper defined in `src/App.tsx` instead of standard `lazy(...)`. This guarantees that if a redeployment deletes old hashed script assets, the application can recover automatically with a single session-cooldowned reload.
+
+
+## API Load & Rate-Limit Safety
+*   **Use Shared Helper First:** Prefer shared utilities in `src/lib/networkSafety.ts` before writing bespoke retry/throttling code:
+    *   `chunkArray(...)` for bounded query chunks
+    *   `mapWithConcurrency(...)` for capped in-flight request counts
+    *   `retryOn429(...)` for exponential backoff + jitter on rate-limited reads
+*   **Retry Feedback in Interactive Views:** When using `retryOn429(...)` in admin/user-facing flows, provide non-blocking UI feedback via `onRetry` (for example, a toast like “Rate-limited, retrying...”) so users understand transient loading delays.
+*   **Use the Retry Toast Hook in React:** For React screens, prefer `useRateLimitRetryToast(...)` from `src/hooks/useRateLimitRetryToast.ts` instead of hand-rolled retry toast refs/callbacks.
+*   **Stable Retry Callbacks:** Do not let retry feedback callbacks become dependencies that retrigger the data fetch; keep them stable with `useCallback` or store them in a ref inside reusable hooks.
+*   **No Unbounded Fan-Out:** Never fire one API request per item in a large list without batching or a concurrency cap. Avoid `Promise.all(items.map(...))` for network calls unless the item count is strictly bounded and small.
+*   **Bulk Reads First:** Prefer bulk/aggregated reads over per-record probes (for example, fetch statuses for many event IDs in one query, then map results locally).
+*   **PocketBase Batch for Multi-Write UI Actions:** When one user action creates, updates, or deletes many PocketBase records of the same general workflow, consider `pb.createBatch()` before adding per-record requests. Batch writes should usually live in a service helper, use bounded chunks (commonly 50 records per batch), and return parsed batch result bodies when callers need created/updated records.
+*   **Batch vs Custom Endpoint:** Use client-side PocketBase batch for straightforward same-collection or simple multi-collection write sets where PocketBase's batch transaction semantics are enough. Prefer a custom `pb.send(...)` backend endpoint when the operation needs authorization-sensitive business rules, upsert/merge logic, cross-record validation, server-only data, or richer partial-failure reporting.
+*   **Chunk Dynamic Filters:** When building OR filters for many IDs, chunk into bounded groups (for example 20-50 IDs per query) to avoid oversized URLs and parser strain.
+*   **Cap Concurrency:** If multiple requests are still required, use a small concurrency limit (default 3-5 in-flight requests), not full parallel fan-out.
+*   **Handle 429 Explicitly:** For read paths, treat HTTP `429` as a rate-limit signal: retry with backoff and jitter a limited number of times, then surface a non-blocking warning state in UI.
+*   **Load Only What UI Needs:** Prefer `perPage=1` existence checks only when truly singular; otherwise query once for a set and derive booleans client-side.
+*   **Reduce Duplicate Fetches:** Cache or memoize repeated status lookups by stable keys (e.g., eventId + type) during a page session to prevent repeated mount/refetch storms.
+*   **Protect High-Traffic Views:** For admin dashboards/pages that aggregate many events/messages, explicitly review request count in code review and include a short note estimating worst-case API calls on first load.
+
+
+## UI Dialog Consistency
+*   **Prefer App Modals Over Browser Dialogs:** In React/admin UI flows, use `useDialog()` (`dialog.confirm`, `dialog.showMessage`, `dialog.showToast`) instead of native `window.alert`, `window.confirm`, or `window.prompt`.
+*   **Destructive Actions:** Deletes/resets/revocations must use a danger-styled confirmation modal with clear action labels (for example `confirmLabel: 'Delete'`, `variant: 'danger'`).
+*   **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; ESC key should be supported but do not rely on ESC key or backdrop click as the only exit path.
+*   **Allowed Exception:** Native browser dialogs are acceptable only in narrowly scoped, temporary fallback flows where the shared dialog context is not available; prefer migrating these to `useDialog` when touched.
 
 
 ## Recurring Failure Prevention (MANDATORY)
