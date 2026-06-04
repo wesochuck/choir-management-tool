@@ -121,6 +121,172 @@ export default function SetListView() {
     }
   };
 
+  const handlePrintList = () => {
+    if (!selectedEvent) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      dialog.showMessage({
+        title: 'Popup Blocked',
+        message: 'Could not open print window. Please allow popups for this site.',
+        variant: 'danger'
+      });
+      return;
+    }
+
+    const dateStr = formatInTimezone(selectedEvent.date, timezone, { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    const timeStr = formatInTimezone(selectedEvent.date, timezone, {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    const venueStr = selectedEvent.expand?.venue?.name || '';
+
+    let songIndex = 1;
+    const itemsHTML = itemsWithDetails.map((item) => {
+      if (item.type === 'intermission') {
+        return `
+          <div class="printable-setlist-intermission">
+            ⏸️ ${item.displayTitle || 'Intermission'}
+          </div>
+        `;
+      } else {
+        const composerHTML = item.displayComposer 
+          ? `<span class="printable-setlist-composer">${item.displayComposer}</span>` 
+          : '';
+        const el = `
+          <div class="printable-setlist-item">
+            <span class="printable-setlist-title">${songIndex}. ${item.displayTitle}</span>
+            ${composerHTML}
+          </div>
+        `;
+        songIndex++;
+        return el;
+      }
+    }).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Set List: ${selectedEvent.title || selectedEvent.type}</title>
+          <style>
+            @media print {
+              body {
+                background: white !important;
+                color: black !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+            }
+            body {
+              font-family: Georgia, serif;
+              max-width: 600px;
+              margin: 40px auto;
+              padding: 20px;
+              background: white;
+              color: #333;
+            }
+            .printable-setlist {
+              border: 1px solid #ccc;
+              border-radius: 8px;
+              padding: 30px;
+              background: white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+            @media print {
+              .printable-setlist {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+              }
+            }
+            .printable-header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .printable-title {
+              margin: 0 0 6px 0;
+              font-size: 1.6rem;
+              color: #111;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              font-weight: 700;
+            }
+            .printable-meta {
+              font-size: 0.9rem;
+              color: #666;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              font-weight: 500;
+            }
+            .printable-divider {
+              border: none;
+              border-bottom: 2px solid #333;
+              margin: 20px 0;
+            }
+            .printable-setlist-items {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            .printable-setlist-item {
+              font-size: 1.1rem;
+              padding: 4px 0;
+              border-bottom: 1px solid #fafafa;
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+              gap: 15px;
+            }
+            .printable-setlist-title {
+              font-weight: 500;
+              color: #111;
+            }
+            .printable-setlist-composer {
+              font-size: 0.95rem;
+              color: #555;
+              font-style: italic;
+              text-align: right;
+            }
+            .printable-setlist-intermission {
+              font-size: 1.1rem;
+              font-weight: bold;
+              padding: 10px 0;
+              color: #555;
+              text-align: center;
+              border-top: 1px dashed #ddd;
+              border-bottom: 1px dashed #ddd;
+              margin: 10px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="printable-setlist">
+            <div class="printable-header">
+              <h2 class="printable-title">${selectedEvent.title || selectedEvent.type}</h2>
+              <div class="printable-meta">
+                ${dateStr} at ${timeStr} ${venueStr ? ` | ${venueStr}` : ''}
+              </div>
+            </div>
+            <hr class="printable-divider" />
+            <div class="printable-setlist-items">
+              ${itemsHTML}
+            </div>
+          </div>
+          <script>
+            setTimeout(() => {
+              window.print();
+              window.close();
+            }, 250);
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   // Audio player state
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
   const [activeAudioTitle, setActiveAudioTitle] = useState('');
@@ -748,7 +914,7 @@ export default function SetListView() {
             </button>
             <button 
               className="btn btn-primary" 
-              onClick={() => window.print()}
+              onClick={handlePrintList}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               🖨️ Print List
@@ -832,121 +998,7 @@ export default function SetListView() {
         </div>
       </BaseModal>
 
-      {selectedEvent && (
-        <div style={{ display: 'none' }} className="print-only">
-          <style>{`
-            @media print {
-              .print-only { display: block !important; }
-              .no-print { display: none !important; }
-              .modal-overlay, .modal-overlay * { display: none !important; }
-              body {
-                background: white !important;
-                color: black !important;
-              }
-              body .printable-setlist.printable-setlist {
-                font-family: Georgia, serif;
-                max-width: 600px;
-                margin: 0 auto !important;
-                padding: 20px !important;
-                background: white !important;
-                color: black !important;
-                border: 1px solid #ccc !important;
-                border-radius: 8px !important;
-              }
-              body .printable-setlist.printable-setlist h2 {
-                font-size: 24px !important;
-                margin: 0 0 10px 0 !important;
-                text-align: center !important;
-                font-family: var(--font-sans), sans-serif !important;
-                font-weight: 700 !important;
-              }
-              body .printable-setlist.printable-setlist p {
-                font-size: 14px !important;
-                margin: 0 0 25px 0 !important;
-                text-align: center !important;
-                color: #555 !important;
-                font-family: var(--font-sans), sans-serif !important;
-              }
-              body .printable-setlist.printable-setlist hr.printable-divider {
-                border: none !important;
-                border-bottom: 2px solid black !important;
-                margin: 25px 0 !important;
-                display: block !important;
-                height: 0 !important;
-              }
-              body .printable-setlist-items.printable-setlist-items {
-                list-style: none !important;
-                padding: 0 !important;
-                margin: 20px 0 0 0 !important;
-                display: block !important;
-              }
-              body .printable-setlist-item.printable-setlist-item {
-                font-size: 18px !important;
-                padding: 8px 0 !important;
-                border-bottom: 1px solid #eee !important;
-                display: flex !important;
-                justify-content: space-between !important;
-                align-items: baseline !important;
-              }
-              body .printable-setlist-intermission.printable-setlist-intermission {
-                font-size: 18px !important;
-                font-weight: bold !important;
-                padding: 12px 0 !important;
-                color: #444 !important;
-                text-align: center !important;
-                border-top: 1px dashed #ccc !important;
-                border-bottom: 1px dashed #ccc !important;
-                margin: 15px 0 !important;
-              }
-            }
-          `}</style>
-          <div className="printable-setlist">
-            <h2>Set List: {selectedEvent.title || selectedEvent.type}</h2>
-            <p>
-              Date: {formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-              {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
-              {selectedEvent.expand?.venue?.name && ` | Venue: ${selectedEvent.expand.venue.name}`}
-            </p>
-            <hr style={{ border: 'none', borderBottom: '2px solid black', margin: '25px 0', display: 'block', height: 0 }} className="printable-divider" />
-            <div className="printable-setlist-items">
-              {(() => {
-                let songIndex = 1;
-                return itemsWithDetails.map((item) => {
-                  if (item.type === 'intermission') {
-                    return (
-                      <div key={item.id} className="printable-setlist-intermission">
-                        ⏸️ {item.displayTitle || 'Intermission'}
-                      </div>
-                    );
-                  } else {
-                    const el = (
-                      <div 
-                        key={item.id} 
-                        className="printable-setlist-item"
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'baseline',
-                          gap: '15px'
-                        }}
-                      >
-                        <span>{songIndex}. {item.displayTitle}</span>
-                        {item.displayComposer && (
-                          <span style={{ fontSize: '14px', color: '#555', fontStyle: 'italic', textAlign: 'right' }}>
-                            {item.displayComposer}
-                          </span>
-                        )}
-                      </div>
-                    );
-                    songIndex++;
-                    return el;
-                  }
-                });
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
