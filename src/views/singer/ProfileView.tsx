@@ -271,7 +271,7 @@ export default function ProfileView() {
                   type="checkbox"
                   checked={receiveAttendanceReports}
                   onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
-                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
                 />
                 <div className="flex-col" style={{ gap: '2px' }}>
                   <span className="text-label" style={{ fontWeight: 600 }}>Receive attendance reports</span>
@@ -279,12 +279,12 @@ export default function ProfileView() {
                 </div>
               </label>
 
-               <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
+              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
                 <input
                   type="checkbox"
                   checked={receiveRsvpDeclineNotices}
                   onChange={(e) => setReceiveRsvpDeclineNotices(e.target.checked)}
-                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
                 />
                 <div className="flex-col" style={{ gap: '2px' }}>
                   <span className="text-label" style={{ fontWeight: 600 }}>Receive RSVP decline notifications</span>
@@ -297,7 +297,7 @@ export default function ProfileView() {
                   type="checkbox"
                   checked={receiveAdminNotifications}
                   onChange={(e) => setReceiveAdminNotifications(e.target.checked)}
-                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
                 />
                 <div className="flex-col" style={{ gap: '2px' }}>
                   <span className="text-label" style={{ fontWeight: 600 }}>Receive general admin notifications</span>

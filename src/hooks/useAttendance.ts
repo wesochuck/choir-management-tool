@@ -53,13 +53,23 @@ export const useAttendance = (eventId: string) => {
         .map(p => {
           const roster = rosterMap[p.id];
           const parentRoster = parentRosterMap[p.id];
+
+          // Determine RSVP status:
+          // If the singer has an explicit RSVP for the rehearsal (Yes/No), use it.
+          // If the rehearsal RSVP is Pending (or not set), and they declined the parent performance, default to 'No'.
+          // Otherwise, default to 'Pending'.
+          let resolvedRsvp: 'Yes' | 'No' | 'Pending' = roster?.rsvp || 'Pending';
+          if (resolvedRsvp === 'Pending' && currentEvent?.type === 'Rehearsal' && parentRoster?.rsvp === 'No') {
+            resolvedRsvp = 'No';
+          }
+
           return {
             id: roster?.id || `p_${p.id}`,
             profileId: p.id,
             name: p.name,
             voicePart: p.voicePart,
             attendance: roster?.attendance || 'Pending',
-            rsvp: roster?.rsvp || 'Pending',
+            rsvp: resolvedRsvp,
             rsvpNote: roster?.rsvpNote || '',
             rosterId: roster?.id,
             folderNumber: parentRoster?.folderNumber || '',

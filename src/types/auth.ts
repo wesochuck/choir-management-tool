@@ -2,6 +2,7 @@ import type { RecordModel } from 'pocketbase';
 
 export interface UserPreferences {
   attendanceSort?: 'lastName' | 'voicePart';
+  attendanceRsvpFilter?: 'Yes' | 'Pending' | 'Both';
   rosterSort?: 'lastName' | 'voicePart';
   rsvpSort?: 'lastName' | 'voicePart';
   rsvpExportSort?: 'lastName' | 'section';
