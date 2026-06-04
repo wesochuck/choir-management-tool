@@ -74,8 +74,7 @@ export function MusicPieceModal({
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
     const [notes, setNotes] = useState('');
-    const [purchaseMonth, setPurchaseMonth] = useState('');
-    const [purchaseYear, setPurchaseYear] = useState('');
+    const [purchaseDateInput, setPurchaseDateInput] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
 
@@ -185,15 +184,12 @@ export function MusicPieceModal({
             if (piece.purchaseDate) {
                 const parts = piece.purchaseDate.split('-');
                 if (parts.length >= 2) {
-                    setPurchaseYear(parts[0]);
-                    setPurchaseMonth(parts[1]);
+                    setPurchaseDateInput(`${parts[1]}/${parts[0]}`);
                 } else {
-                    setPurchaseYear('');
-                    setPurchaseMonth('');
+                    setPurchaseDateInput('');
                 }
             } else {
-                setPurchaseYear('');
-                setPurchaseMonth('');
+                setPurchaseDateInput('');
             }
 
             setSectionBuckets(piece.sectionBuckets || []);
@@ -215,8 +211,7 @@ export function MusicPieceModal({
             setDuration('');
             setCopies('');
             setCatalogId('');
-            setPurchaseYear('');
-            setPurchaseMonth('');
+            setPurchaseDateInput('');
             setSectionBuckets([]);
             setSelectedGenres([]);
             setSelectedPerformanceIds([]);
@@ -252,9 +247,10 @@ export function MusicPieceModal({
             const catalogIdChanged = catalogId !== (piece.catalogId || '');
             const notesChanged = notes !== (piece.notes || '');
             
-            const originalYear = piece.purchaseDate ? piece.purchaseDate.split('-')[0] : '';
-            const originalMonth = piece.purchaseDate ? piece.purchaseDate.split('-')[1] : '';
-            const purchaseDateChanged = purchaseMonth !== originalMonth || purchaseYear !== originalYear;
+            const originalPurchaseDisplay = piece.purchaseDate
+                ? (() => { const p = piece.purchaseDate.split('-'); return p.length >= 2 ? `${p[1]}/${p[0]}` : ''; })()
+                : '';
+            const purchaseDateChanged = purchaseDateInput !== originalPurchaseDisplay;
             
             const initialSections = [...(piece.sectionBuckets || [])].sort();
             const currentSections = [...sectionBuckets].sort();
@@ -282,11 +278,11 @@ export function MusicPieceModal({
             const hasPerformances = selectedPerformanceIds.length > 0;
             const hasTutti = tuttiFile !== null;
             const hasStagedMovements = localMovementsList.length > 0;
-            const hasPurchaseDate = Boolean(purchaseYear.trim()) || Boolean(purchaseMonth);
+            const hasPurchaseDate = Boolean(purchaseDateInput.trim());
 
             return hasTitle || hasComposer || hasArranger || hasDuration || hasCopies || hasCatalogId || hasNotes || hasSections || hasGenres || hasPerformances || hasTutti || hasStagedMovements || hasPurchaseDate;
         }
-    }, [piece, title, composer, arranger, duration, copies, catalogId, notes, sectionBuckets, selectedGenres, selectedPerformanceIds, initialTitle, tuttiFile, localMovementsList, purchaseYear, purchaseMonth]);
+    }, [piece, title, composer, arranger, duration, copies, catalogId, notes, sectionBuckets, selectedGenres, selectedPerformanceIds, initialTitle, tuttiFile, localMovementsList, purchaseDateInput]);
 
     const handleClose = async () => {
         if (isDirty) {
@@ -612,16 +608,19 @@ export function MusicPieceModal({
         return { id: newGenre.id, label: newGenre.label };
     };
 
+    const parsePurchaseDateInput = (input: string): string => {
+        const trimmed = input.trim();
+        if (!trimmed) return '';
+        const match = trimmed.match(/^(\d{1,2})\/?(\d{2}|\d{4})$/);
+        if (!match) return '';
+        const mm = match[1].padStart(2, '0');
+        const yyyy = match[2].length === 2 ? `20${match[2]}` : match[2];
+        return `${yyyy}-${mm}-01`;
+    };
+
     const buildSavePayload = () => {
         const normalizedDuration = duration.trim();
-        let serializedPurchaseDate: string | undefined = undefined;
-        if (purchaseYear.trim()) {
-            const year = purchaseYear.trim();
-            const month = purchaseMonth ? purchaseMonth.padStart(2, '0') : '01';
-            serializedPurchaseDate = `${year}-${month}-01`;
-        } else {
-            serializedPurchaseDate = '';
-        }
+        const serializedPurchaseDate = parsePurchaseDateInput(purchaseDateInput);
         return {
             title,
             composer,
@@ -667,8 +666,7 @@ export function MusicPieceModal({
         setDuration('');
         setCopies('');
         setCatalogId('');
-        setPurchaseYear('');
-        setPurchaseMonth('');
+        setPurchaseDateInput('');
         setSectionBuckets([]);
         setSelectedGenres([]);
         setSelectedPerformanceIds([]);
@@ -1052,38 +1050,12 @@ export function MusicPieceModal({
                                 )}
                             </div>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                <label className="text-label">Purchase Month</label>
-                                <select 
-                                    value={purchaseMonth} 
-                                    onChange={e => setPurchaseMonth(e.target.value)}
+                                <label className="text-label">Purchase Date</label>
+                                <input
+                                    value={purchaseDateInput}
+                                    onChange={e => setPurchaseDateInput(e.target.value)}
+                                    placeholder="mm/yyyy"
                                     className="card music-piece-input"
-                                    style={{ height: '40px', padding: '0 10px', width: '100%' }}
-                                >
-                                    <option value="">-- Month --</option>
-                                    <option value="01">January</option>
-                                    <option value="02">February</option>
-                                    <option value="03">March</option>
-                                    <option value="04">April</option>
-                                    <option value="05">May</option>
-                                    <option value="06">June</option>
-                                    <option value="07">July</option>
-                                    <option value="08">August</option>
-                                    <option value="09">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
-                            </div>
-                            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                                <label className="text-label">Purchase Year</label>
-                                <input 
-                                    type="number" 
-                                    value={purchaseYear} 
-                                    onChange={e => setPurchaseYear(e.target.value)} 
-                                    placeholder="e.g. 2026" 
-                                    className="card music-piece-input"
-                                    min="1800"
-                                    max="2100"
                                 />
                             </div>
                         </div>
