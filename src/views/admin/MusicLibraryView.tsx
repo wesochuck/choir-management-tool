@@ -108,14 +108,15 @@ export default function MusicLibraryView() {
         settingsService.getMusicLibrarySettings(),
         getVoicePartsAndSections()
       ]);
+      const sortedGenres = [...(settings.genres || [])].sort((a, b) => a.label.localeCompare(b.label));
       setPieces(data);
       setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
       setSections(sectionsData.sections);
-      setConfiguredGenres(settings.genres || []);
+      setConfiguredGenres(sortedGenres);
 
       const settingsState = {
         catalogLookupUrlTemplate: settings.catalogLookupUrlTemplate || '',
-        genres: settings.genres || []
+        genres: sortedGenres
       };
       setMusicLibrarySettings(JSON.parse(JSON.stringify(settingsState)));
       setInitialSettings(JSON.parse(JSON.stringify(settingsState)));
@@ -134,10 +135,15 @@ export default function MusicLibraryView() {
   const handleConfigSave = async () => {
     setIsSavingConfig(true);
     try {
-      await settingsService.saveMusicLibrarySettings(musicLibrarySettings);
-      setInitialSettings(JSON.parse(JSON.stringify(musicLibrarySettings)));
-      setCatalogLookupTemplate(musicLibrarySettings.catalogLookupUrlTemplate || '');
-      setConfiguredGenres(musicLibrarySettings.genres || []);
+      const sortedSettings = {
+        ...musicLibrarySettings,
+        genres: [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label))
+      };
+      await settingsService.saveMusicLibrarySettings(sortedSettings);
+      setInitialSettings(JSON.parse(JSON.stringify(sortedSettings)));
+      setCatalogLookupTemplate(sortedSettings.catalogLookupUrlTemplate || '');
+      setConfiguredGenres(sortedSettings.genres || []);
+      setMusicLibrarySettings(sortedSettings);
       dialog.showToast('Music Library settings saved successfully.');
     } catch {
       dialog.showMessage({ title: 'Error', message: 'Failed to save Music Library settings.', variant: 'danger' });
@@ -523,6 +529,10 @@ export default function MusicLibraryView() {
                         updated[index] = { ...updated[index], label: e.target.value };
                         setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
                       }}
+                      onBlur={() => {
+                        const updated = [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label));
+                        setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
+                      }}
                     />
                     <button
                       type="button"
@@ -556,7 +566,7 @@ export default function MusicLibraryView() {
                     const normalized = label;
                     const currentList = musicLibrarySettings.genres || [];
                     if (currentList.some(g => g.label.toLowerCase() === normalized.toLowerCase())) {
-                      alert('Genre label already exists.');
+                      dialog.showMessage({ title: 'Genre Exists', message: 'Genre label already exists.', variant: 'warning' });
                       return;
                     }
                     
@@ -568,7 +578,7 @@ export default function MusicLibraryView() {
                       counter++;
                     }
                     
-                    const updated = [...currentList, { id: finalId, label: normalized }];
+                    const updated = [...currentList, { id: finalId, label: normalized }].sort((a, b) => a.label.localeCompare(b.label));
                     setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
                     inputEl.value = '';
                   }}
