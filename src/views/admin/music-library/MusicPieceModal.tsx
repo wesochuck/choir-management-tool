@@ -873,7 +873,7 @@ export function MusicPieceModal({
                             </div>
                         </div>
                         {piece ? (
-                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', margin: '4px 0' }}>
+                            <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', margin: '0' }}>
                                 <input 
                                     type="checkbox" 
                                     id="is-multi-movement"
@@ -886,7 +886,7 @@ export function MusicPieceModal({
                                 </label>
                             </div>
                         ) : (
-                            <div className="flex-col" style={{ gap: 'var(--space-xs)', margin: '4px 0' }}>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)', margin: '0' }}>
                                 <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)' }}>
                                     <input 
                                         type="checkbox" 
@@ -1019,8 +1019,6 @@ export function MusicPieceModal({
                                     </a>
                                 )}
                             </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <label className="text-label">Purchase Month</label>
                                 <select 
@@ -1029,7 +1027,7 @@ export function MusicPieceModal({
                                     className="card music-piece-input"
                                     style={{ height: '40px', padding: '0 10px', width: '100%' }}
                                 >
-                                    <option value="">-- Select Month --</option>
+                                    <option value="">-- Month --</option>
                                     <option value="01">January</option>
                                     <option value="02">February</option>
                                     <option value="03">March</option>
