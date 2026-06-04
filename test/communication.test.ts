@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { communicationService, type SendMessageInput } from '../src/services/communicationService.ts';
-import { renderMarkdown } from '../src/lib/communicationUtils.ts';
+import { renderMarkdown, resolvePreviewContent } from '../src/lib/communicationUtils.ts';
 
 
 test('communicationService.sendBulkMessage does not generate client-side mailtoUrl', async () => {
@@ -200,6 +200,37 @@ test('communicationService.getMessagesPaginated calls pocketbase with expected l
   } finally {
     pb.collection = originalCollection;
   }
+});
+
+test('frontend resolvePreviewContent - escapes dynamic fields for HTML', () => {
+  const unsafeEvent = {
+    title: '<script>alert("title")</script>',
+    type: '<script>alert("type")</script>',
+    date: '2026-05-19T00:00:00Z',
+    details: '<script>alert("details")</script>',
+    callTime: '',
+    expand: {
+      venue: {
+        name: '<script>alert("venue")</script>',
+        address: ''
+      }
+    }
+  } as unknown as import('../src/services/eventService.ts').Event;
+  const unsafeRecipient = { name: '<script>alert("name")</script>' } as unknown as import('../src/services/communicationService.ts').CommunicationRecipient;
+
+  const template = 'Name: {singerName}, Title: {eventTitle}, Type: {eventType}, Location: {eventLocation}, Details: {eventDetails}';
+
+  // HTML mode should escape
+  const htmlResult = resolvePreviewContent(template, unsafeEvent, unsafeRecipient, '', {}, true);
+
+  assert.ok(!htmlResult.includes('<script>'), 'HTML output should not contain <script> tags');
+  assert.ok(htmlResult.includes('&lt;script&gt;alert(&quot;title&quot;)&lt;/script&gt;'), 'Title should be escaped');
+  assert.ok(htmlResult.includes('&lt;script&gt;alert(&quot;name&quot;)&lt;/script&gt;'), 'Name should be escaped');
+
+  // Plain text mode should NOT escape (used for SMS/Subject)
+  const plainResult = resolvePreviewContent(template, unsafeEvent, unsafeRecipient, '', {}, false);
+
+  assert.ok(plainResult.includes('<script>alert("title")</script>'), 'Plain text output should not be escaped');
 });
 
 test('communicationService.wasMessageSent uses parameterized filters and returns correct boolean', async () => {

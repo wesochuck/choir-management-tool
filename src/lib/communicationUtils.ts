@@ -1,6 +1,7 @@
 import { type CommunicationRecipient } from '../services/communicationService';
 import { type Event } from '../services/eventService';
 import { formatTime12h } from './dateUtils';
+import { escapeHtml } from './textSafety';
 
 export const COMPLIANT_FOOTER_HTML = `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
@@ -120,14 +121,20 @@ export function resolvePreviewContent(
   let result = content;
 
   // Recipient Placeholders
-  const name = recipient?.name || 'Sample Singer';
+  const rawName = recipient?.name || 'Sample Singer';
+  const name = isHtml ? escapeHtml(rawName) : rawName;
   result = result.replace(/{singerName}/g, name);
 
   // Event Placeholders
-  const title = event?.title || event?.type || 'Sample Performance';
-  const type = event?.type || 'Performance';
-  const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  const venueName = event?.expand?.venue?.name || 'Main Concert Hall';
+  const rawTitle = event?.title || event?.type || 'Sample Performance';
+  const rawType = event?.type || 'Performance';
+  const rawDate = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
+  const rawVenueName = event?.expand?.venue?.name || 'Main Concert Hall';
+
+  const title = isHtml ? escapeHtml(rawTitle) : rawTitle;
+  const type = isHtml ? escapeHtml(rawType) : rawType;
+  const date = isHtml ? escapeHtml(rawDate) : rawDate;
+  const venueName = isHtml ? escapeHtml(rawVenueName) : rawVenueName;
   const venueAddress = event?.expand?.venue?.address || '';
   
   let location = venueName;
@@ -135,8 +142,10 @@ export function resolvePreviewContent(
     location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${venueName}</a>`;
   }
 
-  const callTime = event?.callTime ? formatTime12h(event.callTime) : '';
-  const details = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const rawCallTime = event?.callTime ? formatTime12h(event.callTime) : '';
+  const rawDetails = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const callTime = isHtml ? escapeHtml(rawCallTime) : rawCallTime;
+  const details = isHtml ? escapeHtml(rawDetails) : rawDetails;
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
