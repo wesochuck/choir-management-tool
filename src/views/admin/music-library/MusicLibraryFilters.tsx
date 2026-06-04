@@ -138,7 +138,10 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     <span className="text-sm text-muted" style={{ fontWeight: 600, minWidth: '70px' }}>Genres:</span>
                     <div style={{ flex: 1 }}>
                         <MultiSelectDropdown
-                            options={sortedGenres.map(g => ({ id: g.id, label: g.label }))}
+                            options={[
+                                { id: '__no-genre__', label: 'No Genre' },
+                                ...sortedGenres.map(g => ({ id: g.id, label: g.label }))
+                            ]}
                             selectedIds={genreFilters}
                             onChange={onGenreFiltersChange}
                             placeholder="Genres"

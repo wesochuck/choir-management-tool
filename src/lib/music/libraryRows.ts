@@ -68,11 +68,13 @@ export function buildVisibleMusicLibraryRows(
 
   // 3b. Genre Filtering
   if (genreFilters && genreFilters.length > 0) {
+    const realGenreFilters = genreFilters.filter(id => id !== '__no-genre__');
+    const includeNoGenre = genreFilters.includes('__no-genre__');
     result = result.filter(p => {
-      if (!p.genres || !Array.isArray(p.genres)) {
-        return false;
-      }
-      return p.genres.some(gId => genreFilters.includes(gId));
+      const hasNoGenres = !p.genres || !Array.isArray(p.genres) || p.genres.length === 0;
+      if (includeNoGenre && hasNoGenres) return true;
+      if (realGenreFilters.length > 0 && p.genres?.some(gId => realGenreFilters.includes(gId))) return true;
+      return false;
     });
   }
 
