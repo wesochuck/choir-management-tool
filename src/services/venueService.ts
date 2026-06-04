@@ -17,7 +17,10 @@ export const venueService = {
   },
 
   async createVenue(data: Partial<Venue>) {
-    return await pb.collection('pbc_venues_001').create<Venue>(data);
+    return await pb.collection('pbc_venues_001').create<Venue>({
+      status: 'Active',
+      ...data,
+    });
   },
 
   async updateVenue(id: string, data: Partial<Venue>) {

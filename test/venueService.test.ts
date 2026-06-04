@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { checkVenueDependencies } from '../src/services/venueService.ts';
+import { checkVenueDependencies, venueService, type Venue } from '../src/services/venueService.ts';
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('checkVenueDependencies returns true if venue has linked events', async (t) => {
   const originalCollection = pb.collection;
-  const mockGetList = t.mock.fn(async () => {
+  const mockGetList = t.mock.fn(async (_page: number, _perPage: number, _options: { filter: string }) => {
     return { totalItems: 1 };
   });
 
@@ -26,6 +26,35 @@ test('checkVenueDependencies returns true if venue has linked events', async (t)
     assert.equal(firstCall.arguments[0], 1);
     assert.equal(firstCall.arguments[1], 1);
     assert.equal(firstCall.arguments[2].filter, "venue='venue_1'");
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
+test('venueService.createVenue sends status: "Active" by default', async (t) => {
+  const originalCollection = pb.collection;
+  const mockCreate = t.mock.fn(async (data: Partial<Venue>) => {
+    return { id: 'new-venue', status: data.status, ...data } as unknown as Venue;
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'pbc_venues_001') {
+      return { create: mockCreate } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const data = { name: 'New Sanctuary', rowCounts: [10, 12] };
+    const created = await venueService.createVenue(data);
+    assert.equal(created.status, 'Active');
+    assert.equal(mockCreate.mock.callCount(), 1);
+    const firstCall = mockCreate.mock.calls[0];
+    assert.deepEqual(firstCall.arguments[0], {
+      status: 'Active',
+      name: 'New Sanctuary',
+      rowCounts: [10, 12],
+    });
   } finally {
     pb.collection = originalCollection;
   }
