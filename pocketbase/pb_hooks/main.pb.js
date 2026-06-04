@@ -10023,6 +10023,67 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         return utcDate.toISOString();
     }
 
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function escapeIcsText(value = '') {
@@ -10753,6 +10814,67 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             utcDate = new Date(candidateUtcTime);
         }
         return utcDate.toISOString();
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
     }
 
     // --- Utility source: calendarEndpoint.ts ---
@@ -11487,6 +11609,67 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         return utcDate.toISOString();
     }
 
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function escapeIcsText(value = '') {
@@ -12217,6 +12400,67 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             utcDate = new Date(candidateUtcTime);
         }
         return utcDate.toISOString();
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
     }
 
     // --- Utility source: calendarEndpoint.ts ---
