@@ -210,6 +210,55 @@ export default function MusicLibraryView() {
     }
   };
 
+  const handleSaveAndAddAnother = async (data: Partial<MusicPieceInput> & {
+    tuttiFile?: File | null;
+    movements?: { title: string; duration?: string }[];
+  }) => {
+    try {
+      const { tuttiFile, movements, ...rest } = data;
+      let savedPiece: MusicPiece;
+      if (tuttiFile || (movements && movements.length > 0)) {
+        savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, { tuttiFile, movements });
+      } else {
+        savedPiece = await musicLibraryService.createPiece(rest);
+      }
+
+      // Link newly selected performances
+      const newPerformances = data.performances || [];
+      if (newPerformances.length > 0) {
+        const failedTitles: string[] = [];
+        await Promise.all(newPerformances.map(async (perfId: string) => {
+          let eventTitle = perfId;
+          try {
+            const event = await eventService.getEventById(perfId);
+            eventTitle = event.title || perfId;
+            const { updated, setList: updatedSetList } = appendPieceToSetList(event.setList, savedPiece);
+            if (updated) {
+              await eventService.updateEvent(perfId, { setList: updatedSetList });
+            }
+          } catch (err) {
+            console.error(`Failed to update set list for performance ${perfId}:`, err);
+            failedTitles.push(eventTitle);
+          }
+        }));
+        if (failedTitles.length > 0) {
+          dialog.showMessage({
+            title: 'Set List Update Failed',
+            message: `The piece was saved, but could not be appended to set lists for: ${failedTitles.join(', ')}.`,
+            variant: 'warning'
+          });
+        }
+      }
+
+      // Keep modal open, reset to new-piece mode, reload background data
+      setEditingPiece(null);
+      dialog.showToast(`"${savedPiece.title}" saved. Ready to add another piece.`);
+      await loadData();
+    } catch {
+      dialog.showMessage({ title: 'Error', message: 'Could not save the piece.', variant: 'danger' });
+    }
+  };
+
   const handleDeletePiece = async (id: string) => {
     const confirmed = await dialog.confirm({
       title: 'Delete Piece',
@@ -544,6 +593,7 @@ export default function MusicLibraryView() {
         piece={editingPiece}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSavePiece}
+        onSaveAndAddAnother={handleSaveAndAddAnother}
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
         onRefresh={loadData}

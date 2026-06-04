@@ -22,6 +22,10 @@ export interface MusicPieceModalProps {
         tuttiFile?: File | null; 
         movements?: { title: string; duration?: string }[] 
     }) => Promise<void>;
+    onSaveAndAddAnother?: (data: Partial<MusicPieceInput> & {
+        tuttiFile?: File | null;
+        movements?: { title: string; duration?: string }[];
+    }) => Promise<void>;
     onDelete?: () => Promise<void>;
     catalogLookupTemplate?: string;
     onRefresh?: () => Promise<void>;
@@ -35,7 +39,8 @@ export function MusicPieceModal({
     isOpen, 
     piece, 
     onClose, 
-    onSave, 
+    onSave,
+    onSaveAndAddAnother,
     onDelete, 
     catalogLookupTemplate, 
     onRefresh, 
@@ -603,6 +608,35 @@ export function MusicPieceModal({
         return { id: newGenre.id, label: newGenre.label };
     };
 
+    const buildSavePayload = () => {
+        const normalizedDuration = duration.trim();
+        let serializedPurchaseDate: string | undefined = undefined;
+        if (purchaseYear.trim()) {
+            const year = purchaseYear.trim();
+            const month = purchaseMonth ? purchaseMonth.padStart(2, '0') : '01';
+            serializedPurchaseDate = `${year}-${month}-01`;
+        } else {
+            serializedPurchaseDate = '';
+        }
+        return {
+            title,
+            composer,
+            arranger: arranger || undefined,
+            purchaseDate: serializedPurchaseDate,
+            duration: normalizedDuration || undefined,
+            copies: copies ? parseInt(copies, 10) : undefined,
+            catalogId,
+            sectionBuckets,
+            genres: selectedGenres,
+            performances: selectedPerformanceIds,
+            notes,
+            tuttiFile: !piece ? tuttiFile : undefined,
+            movements: (!piece && isMultiMovementInput)
+                ? localMovementsList.map(m => ({ title: m.title, duration: m.duration }))
+                : undefined
+        };
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
@@ -616,33 +650,34 @@ export function MusicPieceModal({
                 });
                 return;
             }
+            await onSave(buildSavePayload());
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
-            let serializedPurchaseDate: string | undefined = undefined;
-            if (purchaseYear.trim()) {
-                const year = purchaseYear.trim();
-                const month = purchaseMonth ? purchaseMonth.padStart(2, '0') : '01';
-                serializedPurchaseDate = `${year}-${month}-01`;
-            } else {
-                serializedPurchaseDate = '';
-            }
-
-            await onSave({
-                title,
-                composer,
-                arranger: arranger || undefined,
-                purchaseDate: serializedPurchaseDate,
-                duration: normalizedDuration || undefined,
-                copies: copies ? parseInt(copies, 10) : undefined,
-                catalogId,
-                sectionBuckets,
-                genres: selectedGenres,
-                performances: selectedPerformanceIds,
-                notes,
-                tuttiFile: !piece ? tuttiFile : undefined,
-                movements: (!piece && isMultiMovementInput)
-                    ? localMovementsList.map(m => ({ title: m.title, duration: m.duration }))
-                    : undefined
+    const handleSaveAndAddAnother = async () => {
+        if (!onSaveAndAddAnother) return;
+        const normalizedDuration = duration.trim();
+        if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+            await dialog.showMessage({
+                title: 'Invalid Duration',
+                message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+                variant: 'danger'
             });
+            return;
+        }
+        if (!title.trim()) {
+            await dialog.showMessage({
+                title: 'Title Required',
+                message: 'Please enter a title for the piece.',
+                variant: 'warning'
+            });
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await onSaveAndAddAnother(buildSavePayload());
         } finally {
             setIsSaving(false);
         }
@@ -716,6 +751,16 @@ export function MusicPieceModal({
                 <>
                     {onDelete && <button type="button" className="btn btn-danger" onClick={() => { onClose(); onDelete(); }} style={{ marginRight: 'auto' }}>Delete</button>}
                     <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
+                    {!piece && onSaveAndAddAnother && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={isSaving}
+                            onClick={handleSaveAndAddAnother}
+                        >
+                            {isSaving ? 'Saving...' : 'Save & Add Another'}
+                        </button>
+                    )}
                     <button type="submit" form="music-piece-form" className="btn btn-primary" disabled={isSaving}>
                         {isSaving ? 'Saving...' : 'Save Piece'}
                     </button>
@@ -1022,6 +1067,43 @@ export function MusicPieceModal({
 
 
                         {!piece && (
+                            <>
+                            <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+                                <label className="text-label">Link to Past Performance (Optional)</label>
+                                <div className="flex-row" style={{ flexWrap: 'wrap', gap: 'var(--space-xs)', minHeight: '36px' }}>
+                                    {selectedPerformances.length === 0 ? (
+                                        <span className="text-sm text-muted">No performances linked.</span>
+                                    ) : (
+                                        selectedPerformances.map(perf => {
+                                            const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
+                                            return (
+                                                <div key={perf.id} className="linked-performance-pill">
+                                                    <span>{perf.title} {dateStr && `(${dateStr})`}</span>
+                                                    <button type="button" onClick={() => togglePerformance(perf.id)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, fontSize: '14px', fontWeight: 'bold' }}>×</button>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                                <select
+                                    className="card"
+                                    value=""
+                                    onChange={e => {
+                                        if (e.target.value) togglePerformance(e.target.value);
+                                    }}
+                                    style={{ padding: '0 12px', height: '40px', width: '100%' }}
+                                >
+                                    <option value="">-- Link a past performance --</option>
+                                    {availablePerformances.map(perf => {
+                                        const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
+                                        return (
+                                            <option key={perf.id} value={perf.id}>
+                                                {perf.title} {dateStr && `(${dateStr})`}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            </div>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
                                 <label className="text-label">Tutti Practice Track (Optional)</label>
                                 {tuttiFile ? (
@@ -1089,6 +1171,7 @@ export function MusicPieceModal({
                                     </div>
                                 )}
                             </div>
+                            </>
                         )}
                     </>
                 )}
