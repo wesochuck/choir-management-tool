@@ -626,9 +626,9 @@ export function MusicPieceModal({
         return {
             title,
             composer,
-            arranger: arranger || undefined,
+            arranger,
             purchaseDate: serializedPurchaseDate,
-            duration: normalizedDuration || undefined,
+            duration: normalizedDuration,
             copies: copies ? parseInt(copies, 10) : undefined,
             catalogId,
             sectionBuckets,

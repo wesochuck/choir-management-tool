@@ -23,6 +23,39 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
+      } else if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        if (modalRef.current) {
+          // 1. Try to find the primary submit button in the modal
+          const submitButton = modalRef.current.querySelector<HTMLButtonElement>(
+            'button[type="submit"]:not([disabled])'
+          );
+          if (submitButton) {
+            event.preventDefault();
+            submitButton.click();
+            return;
+          }
+
+          // 2. Try to find any other primary action button
+          const primaryButton = modalRef.current.querySelector<HTMLButtonElement>(
+            '.btn-primary:not([disabled]), .btn-danger:not([disabled])'
+          );
+          if (primaryButton) {
+            event.preventDefault();
+            primaryButton.click();
+            return;
+          }
+
+          // 3. Fallback: submit any form within the modal
+          const form = modalRef.current.querySelector<HTMLFormElement>('form');
+          if (form) {
+            event.preventDefault();
+            if (typeof form.requestSubmit === 'function') {
+              form.requestSubmit();
+            } else {
+              form.submit();
+            }
+          }
+        }
       }
     };
 
