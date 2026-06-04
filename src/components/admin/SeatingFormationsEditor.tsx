@@ -298,18 +298,22 @@ function FormationRow({
                   const itemDndId = `${formation.id}::${code}::${secIdx}`;
                   let label = code;
                   let color = '#7f8c8d';
+                  let itemResolved = false;
 
                   if (isVoice) {
                     const vp = allVoiceParts.find(v => v.label === code);
                     if (vp) {
                       label = vp.fullName;
-                      color = vp.color || color;
+                      const parentSec = allSections.find(s => s.code === vp.sectionCode);
+                      color = vp.color || vp.colorBg || parentSec?.color || parentSec?.colorBg || color;
+                      itemResolved = true;
                     }
                   } else {
                     const sec = allSections.find(s => s.code === code);
                     if (sec) {
                       label = sec.name;
-                      color = sec.color || color;
+                      color = sec.color || sec.colorBg || color;
+                      itemResolved = true;
                     }
                   }
 
@@ -320,7 +324,7 @@ function FormationRow({
                       key={itemDndId}
                       dndId={itemDndId}
                       label={label}
-                      hasSec={!isVoice}
+                      hasSec={itemResolved}
                       bgColor={bg}
                       textColor={color}
                       borderColor={color}

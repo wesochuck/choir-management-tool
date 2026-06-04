@@ -331,7 +331,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const assignedProfile = profileId ? profileMap[profileId] : null;
 
               const isMismatch = isVoicePartLayout
-                ? Boolean(assignedProfile?.voicePart && assignedProfile.voicePart.toUpperCase() !== suggestion?.toUpperCase())
+                ? Boolean(assignedProfile?.voicePart && suggestion && assignedProfile.voicePart.toUpperCase() !== suggestion.toUpperCase())
                 : isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
 
               const displaySuggestion = (() => {
