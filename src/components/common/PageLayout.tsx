@@ -12,7 +12,7 @@ interface PageLayoutProps {
 }
 
 export const PageLayout: React.FC<PageLayoutProps> = ({ 
-  children, title, subtitle, backTo, actions, maxWidth = '1200px' 
+  children, title, subtitle, actions, maxWidth = '1200px' 
 }) => {
   useDocumentTitle(title);
   return (
@@ -20,9 +20,6 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
       <header className="admin-layout-header">
         <div className="admin-header-container" style={{ maxWidth }}>
           <div className="admin-header-brand">
-            {backTo && (
-              <Link to={backTo} className="admin-back-btn">← Back</Link>
-            )}
             <Link to="/" className="admin-back-btn" title="Dashboard">🏠 Home</Link>
             <div className="admin-header-titles">
               <h2 className="admin-header-title">{title}</h2>
