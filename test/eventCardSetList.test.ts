@@ -136,3 +136,55 @@ test('EventCard shows RSVP options if parent performance is attending', () => {
   assert.ok(textContent.includes('Report absence'), "Should show 'Report absence' button");
   assert.ok(!textContent.includes('Excused (Parent Performance Declined)'), "Should not show excused message");
 });
+
+test('EventCard does not show seating button if the performance is declined', () => {
+  const testEvent: Event = {
+    id: 'perf-123',
+    title: 'Grand Concert',
+    type: 'Performance',
+    date: '2026-12-25T19:00:00Z',
+  };
+
+  const { container } = render(
+    React.createElement(
+      MemoryRouter,
+      null,
+      React.createElement(EventCard, {
+        event: testEvent,
+        rsvp: 'No', // Declined
+        onRSVP: async () => {},
+        allEvents: [testEvent],
+        myRosters: {}
+      })
+    )
+  );
+
+  const textContent = container.textContent || '';
+  assert.ok(!textContent.includes('Seating'), "Should not show 'Seating' button");
+});
+
+test('EventCard shows seating button if the performance is attending or pending', () => {
+  const testEvent: Event = {
+    id: 'perf-123',
+    title: 'Grand Concert',
+    type: 'Performance',
+    date: '2026-12-25T19:00:00Z',
+  };
+
+  const { container } = render(
+    React.createElement(
+      MemoryRouter,
+      null,
+      React.createElement(EventCard, {
+        event: testEvent,
+        rsvp: 'Yes', // Attending
+        onRSVP: async () => {},
+        allEvents: [testEvent],
+        myRosters: {}
+      })
+    )
+  );
+
+  const textContent = container.textContent || '';
+  assert.ok(textContent.includes('Seating'), "Should show 'Seating' button");
+});

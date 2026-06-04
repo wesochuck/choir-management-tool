@@ -111,7 +111,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                    🎧 Practice
                  </button>
                )}
-               {isPerformance && (
+               {isPerformance && rsvp !== 'No' && (
                  <Link 
                    to={`/seating/${event.id}`}
                    className="btn btn-secondary btn-sm"
