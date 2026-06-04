@@ -892,11 +892,11 @@ export function MusicPieceModal({
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                                 <MultiSelectDropdown
                                     label="Genres"
-                                    options={allGenres.map(g => ({ id: g.id, label: g.label }))}
+                                    options={[...allGenres].sort((a, b) => a.label.localeCompare(b.label)).map(g => ({ id: g.id, label: g.label }))}
                                     selectedIds={selectedGenres}
                                     onChange={setSelectedGenres}
                                     placeholder="Genres"
-                                    allLabel="No Genres Selected"
+                                    allLabel="No Genre"
                                     allowCreate={true}
                                     onCreateOption={handleCreateGenreInline}
                                 />
