@@ -21,7 +21,7 @@
 - **Source-Generated Hooks**: The production `pocketbase/pb_hooks/main.pb.js` file is **SOURCE-GENERATED**. Never edit this file directly. Instead, modify the TypeScript source files in `pocketbase/pb_hooks_src/` and run `npm run generate:pb-hooks`.
 - **Self-Contained Requirement**: PocketHost requires backend callbacks (hooks, crons, routers) to be self-contained. The generator handles this automatically by inlining all shared utilities into every individual callback closure. This prevents `ReferenceError` issues at runtime.
 - **Verification Workflow**: After modifying backend logic:
-    1.  Edit files in `pocketbase/pb_hooks_src/email/`.
+    1.  Edit the relevant TypeScript source file in `pocketbase/pb_hooks_src/` (`pocketbase/pb_hooks_src/email/` is for email-specific helpers and queue logic).
     2.  Run `npm run generate:pb-hooks`.
     3.  Run `npm run check:pb-hooks` to verify integrity and pass unit tests.
 - **Defensive Hooks**: For advisory hooks, always wrap the whole registered callback body in `try/catch`. Logging must also be defensive and must not assume `e.record`, `record.id`, or related records are present.
@@ -35,6 +35,7 @@
 - **Never specify custom field IDs** (`id` property in field builders like `new TextField({ name: 'x', id: 'my_id' })`) in programmatic JavaScript migrations. PocketBase field IDs must be exactly 10 alphanumeric characters (`^[a-z0-9]+$`). Providing custom IDs that are longer or contain underscores will cause field parsing/validation to silently or explicitly fail. Omit `id` to let PocketBase auto-generate them.
 - **Always include/autorepair timestamp fields for custom base collections.** When creating collections programmatically with `new Collection(...)`, explicitly include or immediately add standard `AutodateField` fields named `created` (`onCreate: true`, `onUpdate: false`) and `updated` (`onCreate: true`, `onUpdate: true`) before UI code sorts by those fields. If a deployed collection may already exist without those fields, add a sequential forward migration that creates the missing fields and backfills existing records with a safe timestamp.
 - **Never name a collection field `isSystem` or other reserved rule system keywords**. The PocketBase expression rule parser intercepts `isSystem` as a system property/method, causing rule evaluation (e.g. `deleteRule: "isSystem = false"`) to throw "invalid left operand 'isSystem' - unknown field 'isSystem'". Use a distinct name like `isSystemTemplate` or `isDefaultPreset`.
+- **Never modify historical or already-executed migrations.** Always apply schema modifications, relaxed constraints, or field updates via sequential forward migrations (`.js`) to prevent environment schema drift.
 
 ## Hosted PocketBase Workflow
 
@@ -58,7 +59,7 @@
 - **Use the Retry Toast Hook in React:** For React screens, prefer `useRateLimitRetryToast(...)` from `src/hooks/useRateLimitRetryToast.ts` instead of hand-rolled retry toast refs/callbacks.
 - **Stable Retry Callbacks:** Do not let retry feedback callbacks become dependencies that retrigger the data fetch; keep them stable with `useCallback` or store them in a ref inside reusable hooks.
 - **No Unbounded Fan-Out:** Never fire one API request per item in a large list without batching or a concurrency cap. Avoid `Promise.all(items.map(...))` for network calls unless the item count is strictly bounded and small.
-- **Batch First:** Prefer bulk/aggregated reads over per-record probes (for example, fetch statuses for many event IDs in one query, then map results locally).
+- **Bulk Reads First:** Prefer bulk/aggregated reads over per-record probes (for example, fetch statuses for many event IDs in one query, then map results locally).
 - **PocketBase Batch for Multi-Write UI Actions:** When one user action creates, updates, or deletes many PocketBase records of the same general workflow, consider `pb.createBatch()` before adding per-record requests. Batch writes should usually live in a service helper, use bounded chunks (commonly 50 records per batch), and return parsed batch result bodies when callers need created/updated records.
 - **Batch vs Custom Endpoint:** Use client-side PocketBase batch for straightforward same-collection or simple multi-collection write sets where PocketBase's batch transaction semantics are enough. Prefer a custom `pb.send(...)` backend endpoint when the operation needs authorization-sensitive business rules, upsert/merge logic, cross-record validation, server-only data, or richer partial-failure reporting.
 - **Chunk Dynamic Filters:** When building OR filters for many IDs, chunk into bounded groups (for example 20-50 IDs per query) to avoid oversized URLs and parser strain.
@@ -72,13 +73,21 @@
 
 - **Prefer App Modals Over Browser Dialogs:** In React/admin UI flows, use `useDialog()` (`dialog.confirm`, `dialog.showMessage`, `dialog.showToast`) instead of native `window.alert`, `window.confirm`, or `window.prompt`.
 - **Destructive Actions:** Deletes/resets/revocations must use a danger-styled confirmation modal with clear action labels (for example `confirmLabel: 'Delete'`, `variant: 'danger'`).
-- **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; ECS key should be supported but do not rely on ESC key or backdrop click as the only exit path.
+- **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; ESC key should be supported but do not rely on ESC key or backdrop click as the only exit path.
 - **Allowed Exception:** Native browser dialogs are acceptable only in narrowly scoped, temporary fallback flows where the shared dialog context is not available; prefer migrating these to `useDialog` when touched.
 
 ## Token & URL Parameter Safety (Ampersand Issue Prevention)
 
 - **Query Parameter Encoding:** When constructing URLs with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)` to prevent query parameter splitting/truncation.
 - **Defensive Parsing Fallback:** When parsing composite tokens from URL parameters, always check if the token was split by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls.
+
+## Signed Token & HMAC Stability
+
+- **Signed token formats are compatibility contracts.** Existing HMAC payload strings and key order must remain stable: player links sign `e=<eventId>`, RSVP/calendar event-recipient links sign `e=<eventId>&p=<profileId>`, audition links sign `a=<auditionId>`, unsubscribe links sign `p=<profileId>`, poll links sign `l=<pollId>&p=<profileId>`, and singer calendar feed links sign `p=<profileId>&c=<calendarSalt>`.
+- **Use canonical helpers for shared formats.** Prefer payload/generator helpers in `pocketbase/pb_hooks_src/hmacTokens.ts` when adding or verifying signed links. If a new token shape is needed, add a named payload helper and unit coverage before using it in endpoints, email rendering, or frontend services.
+- **Sign the exact unencoded payload.** Generate signatures over the canonical raw payload string, then append `&s=<signature>`, then URL-encode the whole token only at the outer URL boundary with `encodeURIComponent(token)`. Do not reorder keys, serialize with `URLSearchParams`, encode individual payload fields before signing, or change separators unless all generators, verifiers, templates, frontend fallback parsing, and tests are updated together.
+- **Verify defensively and fail closed.** Public endpoints must reject missing `HMAC_SECRET`, malformed tokens, and signature mismatches. Use constant-time comparison (`$security.equal(...)`) where available, and avoid adding logs that expose `HMAC_SECRET` or full signed tokens.
+- **Regression coverage required.** Changes to signed token generation, parsing, or public token routes should update `test/pb-hooks/hmacTokens.test.ts` and relevant endpoint/placeholder tests, then run `npm run check:pb-hooks` plus the frontend tests that cover generated links.
 
 ## PocketBase JS VM (Goja) JSON Field & File URL Safety
 
@@ -100,17 +109,12 @@
   - *The Failure Mode:* Generating asset URLs on the client via `pb.files.getURL(record, filename)` will fail or construct invalid paths (e.g. `https://.../api/files/undefined/filename`) if `collectionId`/`collectionName` are missing or `undefined` in the serialized payload.
   - *The Safe Pattern:* Explicitly attach the known, hardcoded Collection ID (e.g. `"pbc_music_library_001"`) and Collection Name (e.g. `"musicLibrary"`) to the JSON output returned by custom endpoints, and ensure they are populated in the frontend model interface to guarantee correct absolute/relative URL construction.
 
-- **Token & URL Parameter Safety (Ampersand Prevention & Fallback):**
-  - *Encoding:* When generating links with composite tokens (such as RSVP or Player tokens containing `&`), always use `encodeURIComponent(token)`.
-  - *Fallback Decoding:* When parsing from URL parameters on the frontend, check if the browser split the token by unencoded ampersands (e.g., retrieving `token` and secondary params like `s` or `p` separately) and dynamically reconstruct the original token structure (e.g. `token = `${token}&s=${sParam}``) before making API calls. Refer to [PublicPlayerView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicPlayerView.tsx) and [PublicRsvpView.tsx](file:///Users/wesosborn/Downloads/choir-management-tool/src/views/PublicRsvpView.tsx).
+- **Token & URL Parameter Safety:** See the project-wide token encoding and defensive parsing rules above. They apply to frontend URL parsing and Goja-generated links.
 
 - **PocketBase Goja VM Sorting Restrictions:**
   - *The Failure Mode:* Sorting collections inside custom endpoints or registered hooks (Goja VM) by system fields (like `created` or `updated`) directly via `findRecordsByFilter` can be rejected by PocketBase's parser with an `invalid sort field` Go error, especially if a programmatically-created collection is missing those autodate fields.
   - *Frontend REST SDK:* Sorting client-side SDK list calls by `created`/`updated` is acceptable when those fields exist in the target collection schema.
   - *The Safe Pattern for Hooks/Endpoints:* Avoid sorting by `created` or `updated` inside Goja hooks/endpoints unless the collection schema has been verified in that environment. Prefer primary indexed fields or pass an empty sort string `""` to let SQLite naturally fall back to row insertion order (oldest first).
-
-- **PocketBase Migration Immutability:**
-  - *The Safe Pattern:* Never modify historical or already-executed database migrations in the `pocketbase/pb_migrations/` directory once checked into source control. Always apply schema modifications, relaxed constraints, or field updates via sequential forward migrations (`.js`) to prevent environment schema drifts.
 
 - **Defensive Numeric & attempts Safe-Parsing:**
   - *The Failure Mode:* Deferring or relaxing constraints on numeric fields (like `attempts`) can lead to null, undefined, or empty values inside hook callbacks. Using arithmetic operations directly on these values causes `NaN` evaluations that break retry limits.
@@ -135,4 +139,3 @@
 - **The Failure Mode**: The `profiles` collection does not contain a native `email` field; emails are stored exclusively on the related `users` record. Reading `.get("email")` or `.email` directly from a profile record will return `undefined` or `""` and silently break operations such as automated notification dispatches.
 - **The Safe Pattern (Backend)**: In backend hooks or endpoints (e.g. `pb_hooks_src/`), resolve the profile's related user record using the `user` relation field, then retrieve the email address from that user record.
 - **The Safe Pattern (Frontend)**: In frontend React views, services, or hooks, always resolve the email via the `getProfileEmail(profile)` helper from `src/services/profileService.ts` rather than reading `profile.email` directly.
-
