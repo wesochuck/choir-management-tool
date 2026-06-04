@@ -17,6 +17,8 @@ interface EventRosterTableProps {
   onUpdateRSVP: (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => Promise<void>;
   onPhotoChange?: () => void;
   onSingerClick?: (profile: Profile) => void;
+  missCounts?: Record<string, number>;
+  maxRehearsalMisses?: number;
 }
 
 export const EventRosterTable: React.FC<EventRosterTableProps> = ({
@@ -25,6 +27,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
   onUpdateRSVP,
   onPhotoChange,
   onSingerClick,
+  missCounts,
+  maxRehearsalMisses,
 }) => {
   return (
     <AppCard noPadding>
@@ -43,6 +47,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
             <tr>
               <th className="text-label">Name</th>
               <th className="text-label">Voice</th>
+              <th className="text-label" style={{ textAlign: 'center' }}>Missed Rehearsals</th>
               <th className="text-label" style={{ textAlign: 'center' }}>RSVP Status</th>
               <th className="text-label" style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -93,6 +98,26 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                   </td>
                   <td data-label="Voice">
                     <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart || '--'}</span>
+                  </td>
+                  <td data-label="Missed Rehearsals" style={{ textAlign: 'center' }}>
+                    {missCounts && missCounts[p.id] !== undefined && missCounts[p.id] > 0 ? (
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: '9px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: missCounts[p.id] > (maxRehearsalMisses ?? 3) ? '#fee2e2' : '#fef3c7',
+                          color: missCounts[p.id] > (maxRehearsalMisses ?? 3) ? '#991b1b' : '#92400e',
+                          border: missCounts[p.id] > (maxRehearsalMisses ?? 3) ? '1px solid #fca5a5' : '1px solid #fde68a',
+                          fontWeight: 800
+                        }}
+                      >
+                        ⚠️ {missCounts[p.id]} missed
+                      </span>
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: '0.85rem' }}>0</span>
+                    )}
                   </td>
                   <td data-label="RSVP Status" style={{ textAlign: 'center' }}>
                     <div className="flex-col" style={{ alignItems: 'center', gap: '4px' }}>
@@ -186,7 +211,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
             })}
             {singers.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                <td colSpan={5} style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
                   <p className="text-muted text-sm">No singers found.</p>
                 </td>
               </tr>

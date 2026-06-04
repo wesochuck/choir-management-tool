@@ -47,12 +47,14 @@ export function MusicLibraryRow({
   const isParent = isParentPiece(piece, allPieces);
   const isChild = isChildMovement;
   const totalMovementTracksCount = getMovementTrackCount(piece, allPieces);
+  const hasTracks = totalMovementTracksCount > 0 || (piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0);
   const lastPerformedDate = getEffectiveMostRecentPerformanceDate(piece, allPieces);
 
   return (
     <tr
       className="relative-row"
       onClick={() => onEditPiece(piece)}
+      data-has-tracks={hasTracks}
       style={{
         backgroundColor: isDuplicate
           ? 'rgba(255, 138, 101, 0.05)'

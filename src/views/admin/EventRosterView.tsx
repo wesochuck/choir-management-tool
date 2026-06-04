@@ -50,6 +50,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     partCounts,
     refreshProfiles,
     refreshRosters,
+    missCounts,
+    maxRehearsalMisses,
   } = useEventRosterData({ eventId, isInline });
 
   // RSVP bulk actions hook
@@ -463,6 +465,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           onUpdateRSVP={handleUpdateRSVP}
           onPhotoChange={handlePhotoChange}
           onSingerClick={handleSingerClick}
+          missCounts={missCounts}
+          maxRehearsalMisses={maxRehearsalMisses}
         />
       </div>
 

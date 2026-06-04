@@ -6,6 +6,8 @@ import { profileService, type Profile } from '../services/profileService';
 import { getVoicePartsAndSections, settingsService, type VoicePartDef, type SectionDef } from '../services/settingsService';
 import { useDialog } from '../contexts/DialogContext';
 import { useAuth } from '../contexts/AuthContext';
+import { pb } from '../lib/pocketbase';
+import { retryOn429 } from '../lib/networkSafety';
 import {
   mapSingersToRosters,
   calculateRsvpCounts,
@@ -40,6 +42,9 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
   const [rsvpFilter, setRsvpFilter] = useState<'All' | 'Yes' | 'No' | 'Pending'>('All');
 
   const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
+  const [maxRehearsalMisses, setMaxRehearsalMisses] = useState(3);
+  const [pastRehearsals, setPastRehearsals] = useState<Event[]>([]);
+  const [pastRosters, setPastRosters] = useState<EventRoster[]>([]);
   const sortBy = user?.preferences?.rsvpSort || defaultSort;
   const setSortBy = useCallback((val: 'lastName' | 'voicePart') => {
     updatePreferences({ rsvpSort: val });
@@ -73,9 +78,43 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
       setEventRoster(rosters);
       setVoiceParts(settings.voiceParts);
       setSections(settings.sections);
-      if (rosterSettings && rosterSettings.defaultRsvpSort) {
-        setDefaultSort(rosterSettings.defaultRsvpSort);
+
+      if (rosterSettings) {
+        if (rosterSettings.defaultRsvpSort) {
+          setDefaultSort(rosterSettings.defaultRsvpSort);
+        }
+        if (rosterSettings.maxRehearsalMisses !== undefined) {
+          setMaxRehearsalMisses(rosterSettings.maxRehearsalMisses);
+        }
       }
+
+      const linkedPerfId = evt.type === 'Performance' ? evt.id : evt.parentPerformanceId;
+      if (linkedPerfId) {
+        const cycleRehearsals = await eventService.getRehearsalsForPerformance(linkedPerfId);
+        const nowMs = Date.now();
+        const pastReh = cycleRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
+        setPastRehearsals(pastReh);
+
+        if (pastReh.length > 0) {
+          const filterParts = pastReh.map((_, idx) => `event = {:id${idx}}`).join(' || ');
+          const filterParams = pastReh.reduce((acc, reh, idx) => {
+            acc[`id${idx}`] = reh.id;
+            return acc;
+          }, {} as Record<string, string>);
+          const filter = pb.filter(filterParts, filterParams);
+
+          const rostersList = await retryOn429(() =>
+            pb.collection('eventRosters').getFullList<EventRoster>({ filter })
+          );
+          setPastRosters(rostersList);
+        } else {
+          setPastRosters([]);
+        }
+      } else {
+        setPastRehearsals([]);
+        setPastRosters([]);
+      }
+
       setIsLoading(false);
     } catch (err: unknown) {
       if (seq !== loadSeq.current) return;
@@ -152,6 +191,32 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     }
   }, [eventId]);
 
+  const missCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (pastRehearsals.length === 0) return counts;
+
+    activeProfiles.forEach(profile => {
+      let missCount = 0;
+      pastRehearsals.forEach(reh => {
+        const r = pastRosters.find(x => x.profile === profile.id && x.event === reh.id);
+
+        const wasDeclined = r?.rsvp === 'No';
+        const wasAbsent = r?.attendance === 'Absent';
+        const notMarkedPresent = r?.attendance !== 'Present';
+
+        if (wasDeclined || wasAbsent || notMarkedPresent) {
+          missCount++;
+        }
+      });
+
+      if (missCount > 0) {
+        counts[profile.id] = missCount;
+      }
+    });
+
+    return counts;
+  }, [activeProfiles, pastRehearsals, pastRosters]);
+
   return {
     event,
     activeProfiles,
@@ -179,6 +244,8 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     pendingCount,
     sectionCounts,
     partCounts,
+    missCounts,
+    maxRehearsalMisses,
 
     refreshProfiles,
     refreshRosters,
