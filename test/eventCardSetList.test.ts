@@ -66,3 +66,73 @@ test('EventCard set list preview renders all items without truncating or showing
   // Assert that "+ 2 more in Practice Player" or any variants are NOT rendered
   assert.ok(!textContent.includes('more in Practice Player'), 'Should not contain more in Practice Player text');
 });
+
+test('EventCard hides RSVP options if parent performance is declined', () => {
+  const rehearsalEvent: Event = {
+    id: 'reh-456',
+    title: 'Weekly Rehearsal',
+    type: 'Rehearsal',
+    date: '2026-12-25T19:00:00Z',
+    parentPerformanceId: 'perf-123',
+  };
+
+  const myRosters = {
+    'perf-123': { rsvp: 'No' as const }
+  };
+
+  const { container } = render(
+    React.createElement(
+      MemoryRouter,
+      null,
+      React.createElement(EventCard, {
+        event: rehearsalEvent,
+        rsvp: 'Pending',
+        onRSVP: async () => {},
+        allEvents: [rehearsalEvent],
+        myRosters: myRosters
+      })
+    )
+  );
+
+  const textContent = container.textContent || '';
+  // The RSVP options should not be shown
+  assert.ok(!textContent.includes("I'll be there"), "Should not show 'I'll be there' button");
+  assert.ok(!textContent.includes('Report absence'), "Should not show 'Report absence' button");
+  
+  // Instead, the excuse message should be rendered
+  assert.ok(textContent.includes('Excused (Parent Performance Declined)'), "Should show excused message");
+});
+
+test('EventCard shows RSVP options if parent performance is attending', () => {
+  const rehearsalEvent: Event = {
+    id: 'reh-456',
+    title: 'Weekly Rehearsal',
+    type: 'Rehearsal',
+    date: '2026-12-25T19:00:00Z',
+    parentPerformanceId: 'perf-123',
+  };
+
+  const myRosters = {
+    'perf-123': { rsvp: 'Yes' as const }
+  };
+
+  const { container } = render(
+    React.createElement(
+      MemoryRouter,
+      null,
+      React.createElement(EventCard, {
+        event: rehearsalEvent,
+        rsvp: 'Pending',
+        onRSVP: async () => {},
+        allEvents: [rehearsalEvent],
+        myRosters: myRosters
+      })
+    )
+  );
+
+  const textContent = container.textContent || '';
+  // The RSVP options should be shown
+  assert.ok(textContent.includes("I'll be there"), "Should show 'I'll be there' button");
+  assert.ok(textContent.includes('Report absence'), "Should show 'Report absence' button");
+  assert.ok(!textContent.includes('Excused (Parent Performance Declined)'), "Should not show excused message");
+});

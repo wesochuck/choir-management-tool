@@ -42,6 +42,11 @@ export const EventCard: React.FC<EventCardProps> = ({
   const [submittingStatus, setSubmittingStatus] = React.useState<'Yes' | 'No' | null>(null);
   const previewData = getSingerSetListPreview(event, myRosters, allEvents);
 
+  const isParentPerformanceDeclined = React.useMemo(() => {
+    if (event.type !== 'Rehearsal' || !event.parentPerformanceId || !myRosters) return false;
+    return myRosters[event.parentPerformanceId]?.rsvp === 'No';
+  }, [event.type, event.parentPerformanceId, myRosters]);
+
   const missStats = React.useMemo(() => {
     if (!isPerformance || rsvp !== 'Yes' || !allEvents || !myRosters) return null;
     const linkedRehearsals = allEvents.filter(e => e.type === 'Rehearsal' && e.parentPerformanceId === event.id);
@@ -218,30 +223,46 @@ export const EventCard: React.FC<EventCardProps> = ({
           </div>
         )}
 
-        <div className="event-card-rsvp-actions flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
-          <button 
-            onClick={() => handleRSVP('Yes')}
-            className={`btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ flex: 1 }}
-            disabled={isWindowClosed || submittingStatus !== null}
-          >
-            {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
-          </button>
-          <button 
-            onClick={() => handleRSVP('No')}
-            className={`btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
-            style={{ flex: 1 }}
-            disabled={isWindowClosed || submittingStatus !== null}
-          >
-            {submittingStatus === 'No' ? 'Processing...' : labels.no}
-          </button>
-        </div>
-        {isWindowClosed && (
-          <div className="rsvp-closed-message text-center text-xs text-muted" style={{ marginTop: 'var(--space-xs)', textAlign: 'center', width: '100%' }}>
-            {isPerformance 
-              ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
-              : 'This rehearsal has already passed.'}
+        {isParentPerformanceDeclined ? (
+          <div className="text-center text-xs text-muted" style={{ 
+            marginTop: 'var(--space-xs)', 
+            textAlign: 'center', 
+            width: '100%', 
+            padding: '10px', 
+            border: '1px dashed var(--border)', 
+            borderRadius: '6px', 
+            backgroundColor: 'var(--bg-muted)' 
+          }}>
+            🚫 Excused (Parent Performance Declined)
           </div>
+        ) : (
+          <>
+            <div className="event-card-rsvp-actions flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
+              <button 
+                onClick={() => handleRSVP('Yes')}
+                className={`btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ flex: 1 }}
+                disabled={isWindowClosed || submittingStatus !== null}
+              >
+                {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
+              </button>
+              <button 
+                onClick={() => handleRSVP('No')}
+                className={`btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                style={{ flex: 1 }}
+                disabled={isWindowClosed || submittingStatus !== null}
+              >
+                {submittingStatus === 'No' ? 'Processing...' : labels.no}
+              </button>
+            </div>
+            {isWindowClosed && (
+              <div className="rsvp-closed-message text-center text-xs text-muted" style={{ marginTop: 'var(--space-xs)', textAlign: 'center', width: '100%' }}>
+                {isPerformance 
+                  ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
+                  : 'This rehearsal has already passed.'}
+              </div>
+            )}
+          </>
         )}
       </div>
     </AppCard>

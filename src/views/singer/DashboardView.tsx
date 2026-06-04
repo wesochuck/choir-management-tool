@@ -152,6 +152,7 @@ export default function DashboardView() {
   const nextEvent = upcomingEvents[0] ?? null;
   const nextRoster = nextEvent ? myRosters[nextEvent.id] : undefined;
   const hasPerformanceSeatLink = nextEvent?.type === 'Performance';
+  const isNextEventParentPerformanceDeclined = nextEvent?.type === 'Rehearsal' && nextEvent.parentPerformanceId && myRosters[nextEvent.parentPerformanceId]?.rsvp === 'No';
   const latestAnnouncement = announcements[0] ?? null;
 
   const getFormattedDate = (dateStr: string) => {
@@ -215,30 +216,45 @@ export default function DashboardView() {
                   )}
                 </div>
 
-                <div className="mobile-singer-quick-rsvp">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
-                    className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
-                    disabled={isNextEventClosed || submittingRsvpStatus !== null}
-                  >
-                    {submittingRsvpStatus === 'Yes' ? 'Processing...' : nextEventLabels.yes}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
-                    className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
-                    disabled={isNextEventClosed || submittingRsvpStatus !== null}
-                  >
-                    {submittingRsvpStatus === 'No' ? 'Processing...' : nextEventLabels.no}
-                  </button>
-                </div>
-                {isNextEventClosed && (
-                  <div className="text-xs text-muted" style={{ textAlign: 'center', marginTop: 'var(--space-xs)' }}>
-                    {nextEvent.type === 'Performance' 
-                      ? 'The RSVP window for this performance is closed.' 
-                      : 'This rehearsal has already passed.'}
+                {isNextEventParentPerformanceDeclined ? (
+                  <div className="text-center text-xs text-muted" style={{ 
+                    marginTop: 'var(--space-md)', 
+                    textAlign: 'center', 
+                    width: '100%', 
+                    padding: '8px', 
+                    border: '1px dashed rgba(255, 255, 255, 0.3)', 
+                    borderRadius: '6px'
+                  }}>
+                    🚫 Excused (Parent Performance Declined)
                   </div>
+                ) : (
+                  <>
+                    <div className="mobile-singer-quick-rsvp">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
+                        className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                        disabled={isNextEventClosed || submittingRsvpStatus !== null}
+                      >
+                        {submittingRsvpStatus === 'Yes' ? 'Processing...' : nextEventLabels.yes}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
+                        className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                        disabled={isNextEventClosed || submittingRsvpStatus !== null}
+                      >
+                        {submittingRsvpStatus === 'No' ? 'Processing...' : nextEventLabels.no}
+                      </button>
+                    </div>
+                    {isNextEventClosed && (
+                      <div className="text-xs text-muted" style={{ textAlign: 'center', marginTop: 'var(--space-xs)' }}>
+                        {nextEvent.type === 'Performance' 
+                          ? 'The RSVP window for this performance is closed.' 
+                          : 'This rehearsal has already passed.'}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {(activePolls.length > 0 || latestAnnouncement) && (
