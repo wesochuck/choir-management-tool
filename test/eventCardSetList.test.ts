@@ -16,12 +16,13 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { EventCard } from '../src/components/singer/EventCard.tsx';
 import type { Event } from '../src/services/eventService.ts';
+import type { EventRoster } from '../src/services/rosterService.ts';
 
 test('EventCard set list preview renders all items without truncating or showing more in practice player', () => {
-  const testEvent: Event = {
+  const testEvent = {
     id: 'perf-123',
     title: 'Grand Concert',
-    type: 'Performance',
+    type: 'Performance' as const,
     date: '2026-12-25T19:00:00Z',
     setListApproved: true,
     setList: [
@@ -34,11 +35,11 @@ test('EventCard set list preview renders all items without truncating or showing
       { id: '7', title: 'Song Seven', composer: 'Composer G' },
       { id: '8', title: 'Song Eight', composer: 'Composer H' }
     ]
-  };
+  } as unknown as Event;
 
   const myRosters = {
     'perf-123': { rsvp: 'Yes' as const }
-  };
+  } as unknown as Record<string, EventRoster>;
 
   const { container } = render(
     React.createElement(
@@ -68,17 +69,17 @@ test('EventCard set list preview renders all items without truncating or showing
 });
 
 test('EventCard hides RSVP options if parent performance is declined', () => {
-  const rehearsalEvent: Event = {
+  const rehearsalEvent = {
     id: 'reh-456',
     title: 'Weekly Rehearsal',
-    type: 'Rehearsal',
+    type: 'Rehearsal' as const,
     date: '2026-12-25T19:00:00Z',
     parentPerformanceId: 'perf-123',
-  };
+  } as unknown as Event;
 
   const myRosters = {
     'perf-123': { rsvp: 'No' as const }
-  };
+  } as unknown as Record<string, EventRoster>;
 
   const { container } = render(
     React.createElement(
@@ -104,17 +105,17 @@ test('EventCard hides RSVP options if parent performance is declined', () => {
 });
 
 test('EventCard shows RSVP options if parent performance is attending', () => {
-  const rehearsalEvent: Event = {
+  const rehearsalEvent = {
     id: 'reh-456',
     title: 'Weekly Rehearsal',
-    type: 'Rehearsal',
+    type: 'Rehearsal' as const,
     date: '2026-12-25T19:00:00Z',
     parentPerformanceId: 'perf-123',
-  };
+  } as unknown as Event;
 
   const myRosters = {
     'perf-123': { rsvp: 'Yes' as const }
-  };
+  } as unknown as Record<string, EventRoster>;
 
   const { container } = render(
     React.createElement(
@@ -138,12 +139,12 @@ test('EventCard shows RSVP options if parent performance is attending', () => {
 });
 
 test('EventCard does not show seating button if the performance is declined', () => {
-  const testEvent: Event = {
+  const testEvent = {
     id: 'perf-123',
     title: 'Grand Concert',
-    type: 'Performance',
+    type: 'Performance' as const,
     date: '2026-12-25T19:00:00Z',
-  };
+  } as unknown as Event;
 
   const { container } = render(
     React.createElement(
@@ -164,12 +165,12 @@ test('EventCard does not show seating button if the performance is declined', ()
 });
 
 test('EventCard shows seating button if the performance is attending or pending', () => {
-  const testEvent: Event = {
+  const testEvent = {
     id: 'perf-123',
     title: 'Grand Concert',
-    type: 'Performance',
+    type: 'Performance' as const,
     date: '2026-12-25T19:00:00Z',
-  };
+  } as unknown as Event;
 
   const { container } = render(
     React.createElement(
