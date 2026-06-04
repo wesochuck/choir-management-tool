@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MusicPiece } from '../../../../types/musicLibrary';
-import type { SectionDef, MusicGenreDef } from '../../../../services/settingsService';
+import type { MusicGenreDef } from '../../../../services/settingsService';
 import {
   formatSecondsToDuration,
   parseDurationToSeconds,
@@ -11,7 +11,6 @@ import { MusicLibraryCatalogCell } from './MusicLibraryCatalogCell';
 import { MusicLibraryTracksCell } from './MusicLibraryTracksCell';
 import {
   getMovementTrackCount,
-  hasAnyTracks,
   isParentPiece,
 } from './musicLibraryTableUtils';
 
@@ -22,7 +21,6 @@ interface MusicLibraryRowProps {
   isExpanded: boolean;
   duplicateIds: Set<string>;
   selectedIds: Set<string>;
-  sections: SectionDef[];
   genres: MusicGenreDef[];
   catalogLookupTemplate: string;
   onToggleSelection: (id: string) => void;
@@ -38,7 +36,6 @@ export function MusicLibraryRow({
   isExpanded,
   duplicateIds,
   selectedIds,
-  sections,
   genres,
   catalogLookupTemplate,
   onToggleSelection,
@@ -50,7 +47,6 @@ export function MusicLibraryRow({
   const isParent = isParentPiece(piece, allPieces);
   const isChild = isChildMovement;
   const totalMovementTracksCount = getMovementTrackCount(piece, allPieces);
-  const hasTracks = hasAnyTracks(piece, allPieces);
   const lastPerformedDate = getEffectiveMostRecentPerformanceDate(piece, allPieces);
 
   return (
@@ -97,8 +93,6 @@ export function MusicLibraryRow({
         isDuplicate={isDuplicate}
         isParent={isParent}
         isExpanded={isExpanded}
-        hasTracks={hasTracks}
-        sections={sections}
         genres={genres}
         onToggleExpansion={(event) => onToggleExpansion(piece.id, event)}
       />

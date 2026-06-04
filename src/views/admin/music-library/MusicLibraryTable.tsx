@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { MusicPiece } from '../../../types/musicLibrary';
-import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
+import type { MusicGenreDef } from '../../../services/settingsService';
 import { toggleIdInSet, type MusicLibrarySortField, type SortDirection } from '../../../lib/music/libraryRows';
 import { Pagination } from '../../../components/common/Pagination';
 import { MusicLibraryRow } from './table/MusicLibraryRow';
@@ -9,7 +9,6 @@ import { getChildMovements } from './table/musicLibraryTableUtils';
 export interface MusicLibraryTableProps {
     pieces: MusicPiece[];
     filteredPieces: MusicPiece[];
-    sections: SectionDef[];
     genres: MusicGenreDef[];
     isLoading: boolean;
     duplicateIds: Set<string>;
@@ -31,7 +30,6 @@ export interface MusicLibraryTableProps {
 export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     pieces,
     filteredPieces,
-    sections,
     genres,
     isLoading,
     duplicateIds,
@@ -137,7 +135,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                                             isExpanded={isExpanded}
                                             duplicateIds={duplicateIds}
                                             selectedIds={selectedIds}
-                                            sections={sections}
                                             genres={genres}
                                             catalogLookupTemplate={catalogLookupTemplate}
                                             onToggleSelection={onToggleSelection}
@@ -156,7 +153,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                                                 isExpanded={false}
                                                 duplicateIds={duplicateIds}
                                                 selectedIds={selectedIds}
-                                                sections={sections}
                                                 genres={genres}
                                                 catalogLookupTemplate={catalogLookupTemplate}
                                                 onToggleSelection={onToggleSelection}

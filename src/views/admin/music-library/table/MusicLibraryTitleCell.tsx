@@ -1,8 +1,8 @@
 import React from 'react';
 import type { MusicPiece } from '../../../../types/musicLibrary';
-import type { SectionDef, MusicGenreDef } from '../../../../services/settingsService';
+import type { MusicGenreDef } from '../../../../services/settingsService';
 import { formatPerformanceHistory } from '../../../../lib/musicPieceUtils';
-import { TrackBadge, MultiMovementBadge, MovementBadge } from './MusicLibraryBadges';
+import { MultiMovementBadge, MovementBadge } from './MusicLibraryBadges';
 
 interface MusicLibraryTitleCellProps {
   piece: MusicPiece;
@@ -10,8 +10,6 @@ interface MusicLibraryTitleCellProps {
   isDuplicate: boolean;
   isParent: boolean;
   isExpanded: boolean;
-  hasTracks: boolean;
-  sections: SectionDef[];
   genres: MusicGenreDef[];
   onToggleExpansion: (event: React.MouseEvent) => void;
 }
@@ -22,8 +20,6 @@ export function MusicLibraryTitleCell({
   isDuplicate,
   isParent,
   isExpanded,
-  hasTracks,
-  sections,
   genres,
   onToggleExpansion,
 }: MusicLibraryTitleCellProps) {
@@ -70,7 +66,6 @@ export function MusicLibraryTitleCell({
             </span>
           )}
           <strong style={{ color: isDuplicate ? '#e64a19' : 'inherit' }}>{piece.title}</strong>
-          {hasTracks && <TrackBadge />}
           {isParent && <MultiMovementBadge />}
           {isChild && <MovementBadge />}
         </div>
@@ -103,35 +98,6 @@ export function MusicLibraryTitleCell({
               </span>
             );
           })}
-        </div>
-        <div className="flex-row" style={{ gap: 'var(--space-xs)', marginTop: '2px', flexWrap: 'wrap' }}>
-          {!piece.sectionBuckets || piece.sectionBuckets.length === 0 ? (
-            <span className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.6, fontSize: '10px' }}>
-              All Sections
-            </span>
-          ) : (
-            piece.sectionBuckets.map((code) => {
-              const section = sections.find((s) => s.code === code);
-              return (
-                <span
-                  key={code}
-                  title={section ? section.name : code}
-                  style={{
-                    display: 'inline-flex',
-                    padding: '1px 5px',
-                    borderRadius: '4px',
-                    backgroundColor: 'var(--bg-card-hover)',
-                    border: '1px solid var(--border)',
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  {code}
-                </span>
-              );
-            })
-          )}
         </div>
       </div>
     </td>

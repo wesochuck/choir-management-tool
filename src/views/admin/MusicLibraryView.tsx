@@ -512,7 +512,6 @@ export default function MusicLibraryView() {
           <MusicLibraryTable 
             pieces={pieces}
             filteredPieces={paginatedPieces}
-            sections={sections}
             genres={configuredGenres}
             isLoading={isLoading}
             duplicateIds={duplicateIds}
