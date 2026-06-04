@@ -7,6 +7,7 @@ import { eventService } from '../../services/eventService';
 import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicGenreDef, type MusicLibrarySettings } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
+import { mapWithConcurrency, retryOn429 } from '../../lib/networkSafety';
 import { buildVisibleMusicLibraryRows, type MusicLibrarySortField, type SortDirection } from '../../lib/music/libraryRows';
 import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
@@ -144,12 +145,47 @@ export default function MusicLibraryView() {
         ...musicLibrarySettings,
         genres: [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label))
       };
+
+      const deletedGenres = (initialSettings?.genres || []).filter(
+        ig => !sortedSettings.genres.some(g => g.id === ig.id)
+      );
+
       await settingsService.saveMusicLibrarySettings(sortedSettings);
       setInitialSettings(JSON.parse(JSON.stringify(sortedSettings)));
       setCatalogLookupTemplate(sortedSettings.catalogLookupUrlTemplate || '');
       setConfiguredGenres(sortedSettings.genres || []);
       setMusicLibrarySettings(sortedSettings);
       dialog.showToast('Music Library settings saved successfully.');
+
+      if (deletedGenres.length > 0) {
+        const deletedGenreIds = new Set(deletedGenres.map(g => g.id));
+        const piecesToUpdate = pieces.filter(p => (p.genres || []).some(gId => deletedGenreIds.has(gId)));
+
+        if (piecesToUpdate.length > 0) {
+          dialog.showToast(`Removing deleted genre(s) from ${piecesToUpdate.length} piece(s) in background...`);
+          (async () => {
+            try {
+              await mapWithConcurrency(
+                piecesToUpdate,
+                async (piece) => {
+                  const updatedGenres = (piece.genres || []).filter(gId => !deletedGenreIds.has(gId));
+                  await retryOn429(() => musicLibraryService.updatePiece(piece.id, { genres: updatedGenres }));
+                },
+                { concurrency: 4 }
+              );
+              await loadData();
+              dialog.showToast('Successfully cleaned up deleted genres from all music pieces.');
+            } catch (err: unknown) {
+              console.error('Failed to clean up deleted genres from pieces:', err);
+              dialog.showMessage({
+                title: 'Background Cleanup Failed',
+                message: 'Settings were saved, but some music pieces could not be updated with the deleted genres removed.',
+                variant: 'warning'
+              });
+            }
+          })();
+        }
+      }
     } catch {
       dialog.showMessage({ title: 'Error', message: 'Failed to save Music Library settings.', variant: 'danger' });
     } finally {
@@ -554,7 +590,21 @@ export default function MusicLibraryView() {
                     <button
                       type="button"
                       className="btn btn-danger btn-sm"
-                      onClick={() => {
+                      onClick={async () => {
+                        const targetGenre = musicLibrarySettings.genres[index];
+                        const linkedPiecesCount = pieces.filter(p => (p.genres || []).includes(targetGenre.id)).length;
+                        
+                        if (linkedPiecesCount > 0) {
+                          const confirmed = await dialog.confirm({
+                            title: 'Delete Genre?',
+                            message: `The genre "${targetGenre.label}" is currently linked to ${linkedPiecesCount} music piece(s). If you proceed and save, it will be removed from these pieces. Are you sure you want to delete this genre?`,
+                            confirmLabel: 'Delete Genre',
+                            cancelLabel: 'Cancel',
+                            variant: 'warning'
+                          });
+                          if (!confirmed) return;
+                        }
+                        
                         const updated = musicLibrarySettings.genres.filter((_, i) => i !== index);
                         setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
                       }}
