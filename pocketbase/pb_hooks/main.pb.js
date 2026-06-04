@@ -10453,8 +10453,9 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const token = `${payload}&s=${signature}`;
             return e.json(200, { token });
         }
-        catch (_a) {
-            return e.json(404, { error: "Singer profile not found" });
+        catch (err) {
+            console.log("Error in handleCalendarFeedUrl: " + String(err));
+            return e.json(404, { error: "Singer profile not found: " + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -11184,8 +11185,9 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const token = `${payload}&s=${signature}`;
             return e.json(200, { token });
         }
-        catch (_a) {
-            return e.json(404, { error: "Singer profile not found" });
+        catch (err) {
+            console.log("Error in handleCalendarFeedUrl: " + String(err));
+            return e.json(404, { error: "Singer profile not found: " + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -11915,8 +11917,9 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const token = `${payload}&s=${signature}`;
             return e.json(200, { token });
         }
-        catch (_a) {
-            return e.json(404, { error: "Singer profile not found" });
+        catch (err) {
+            console.log("Error in handleCalendarFeedUrl: " + String(err));
+            return e.json(404, { error: "Singer profile not found: " + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -12646,8 +12649,9 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const token = `${payload}&s=${signature}`;
             return e.json(200, { token });
         }
-        catch (_a) {
-            return e.json(404, { error: "Singer profile not found" });
+        catch (err) {
+            console.log("Error in handleCalendarFeedUrl: " + String(err));
+            return e.json(404, { error: "Singer profile not found: " + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {

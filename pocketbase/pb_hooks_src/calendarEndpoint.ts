@@ -543,8 +543,9 @@ export function handleCalendarFeedUrl(e: PocketBaseRequestEvent): unknown {
         const token = `${payload}&s=${signature}`;
 
         return e.json(200, { token });
-    } catch {
-        return e.json(404, { error: "Singer profile not found" });
+    } catch (err) {
+        console.log("Error in handleCalendarFeedUrl: " + String(err));
+        return e.json(404, { error: "Singer profile not found: " + String(err) });
     }
 }
 
