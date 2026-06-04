@@ -38,9 +38,9 @@ export default function AttendanceView() {
   const [isEventExpanded, setIsEventExpanded] = useState(false);
   
   // Sorting preference state
-  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
+  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart' | 'section'>('lastName');
   const sortBy = user?.preferences?.attendanceSort || defaultSort;
-  const handleSortChange = (val: 'lastName' | 'voicePart') => {
+  const handleSortChange = (val: 'lastName' | 'voicePart' | 'section') => {
     updatePreferences({ attendanceSort: val });
   };
   // RSVP filter preference state
@@ -569,11 +569,12 @@ export default function AttendanceView() {
             <label className="text-label attendance-filter-label">Sort By</label>
             <select
               value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart')}
+              onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')}
               className="card attendance-filter-input"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
+              <option value="section">Section + Last Name</option>
             </select>
           </div>
 

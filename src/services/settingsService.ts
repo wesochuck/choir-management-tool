@@ -34,7 +34,7 @@ export interface CommunicationSettings {
 }
 
 export interface AttendanceSettings {
-  defaultSort: 'lastName' | 'voicePart';
+  defaultSort: 'lastName' | 'voicePart' | 'section';
 }
 
 export interface RosterSettings {

@@ -8,7 +8,7 @@ interface CheckInListProps {
   onSetAttendance: (profileId: string, next: 'Present' | 'Absent' | 'Pending') => Promise<void>;
   onUpdateFolder: (profileId: string, folderNumber: string, folderReturned: boolean) => Promise<void>;
   onEdit: (profileId: string) => void;
-  sortBy: 'lastName' | 'voicePart';
+  sortBy: 'lastName' | 'voicePart' | 'section';
   missCounts?: Record<string, number>;
   maxRehearsalMisses?: number;
 }
@@ -299,7 +299,7 @@ const compareLastNames = (a: string, b: string): number => {
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 
 export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance, onUpdateFolder, onEdit, sortBy, missCounts, maxRehearsalMisses }) => {
-  const { voiceParts } = useVoiceParts();
+  const { voiceParts, sections } = useVoiceParts();
 
   const voicePartOrder = useMemo(() => {
     const order: Record<string, number> = {};
@@ -308,6 +308,30 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
     });
     return order;
   }, [voiceParts]);
+
+  const sectionOrderMap = useMemo(() => {
+    const order: Record<string, number> = {};
+    sections.forEach((s, index) => {
+      order[s.code] = index + 1;
+    });
+    return order;
+  }, [sections]);
+
+  const voicePartToSectionMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    voiceParts.forEach(vp => {
+      map[vp.label] = vp.sectionCode;
+    });
+    return map;
+  }, [voiceParts]);
+
+  const sectionNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    sections.forEach(s => {
+      map[s.code] = s.name;
+    });
+    return map;
+  }, [sections]);
 
   // Partition items into checked-in and not-checked-in subsets
   const notCheckedIn = useMemo(() => {
@@ -318,10 +342,14 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
           const partA = voicePartOrder[a.voicePart] ?? 99;
           const partB = voicePartOrder[b.voicePart] ?? 99;
           if (partA !== partB) return partA - partB;
+        } else if (sortBy === 'section') {
+          const secA = sectionOrderMap[voicePartToSectionMap[a.voicePart] || ''] ?? 99;
+          const secB = sectionOrderMap[voicePartToSectionMap[b.voicePart] || ''] ?? 99;
+          if (secA !== secB) return secA - secB;
         }
         return compareLastNames(a.name, b.name);
       });
-  }, [items, sortBy, voicePartOrder]);
+  }, [items, sortBy, voicePartOrder, sectionOrderMap, voicePartToSectionMap]);
 
   const checkedIn = useMemo(() => {
     return items
@@ -331,19 +359,36 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
           const partA = voicePartOrder[a.voicePart] ?? 99;
           const partB = voicePartOrder[b.voicePart] ?? 99;
           if (partA !== partB) return partA - partB;
+        } else if (sortBy === 'section') {
+          const secA = sectionOrderMap[voicePartToSectionMap[a.voicePart] || ''] ?? 99;
+          const secB = sectionOrderMap[voicePartToSectionMap[b.voicePart] || ''] ?? 99;
+          if (secA !== secB) return secA - secB;
         }
         return compareLastNames(a.name, b.name);
       });
-  }, [items, sortBy, voicePartOrder]);
+  }, [items, sortBy, voicePartOrder, sectionOrderMap, voicePartToSectionMap]);
 
-  // Render rows, adding dividers between voice parts if sortBy === 'voicePart'
+  // Render rows, adding dividers between voice parts or sections
   const renderListWithHeaders = (listItems: AttendanceItem[]) => {
-    let lastVoicePart = '';
+    let lastHeaderValue = '';
 
     return listItems.map((item) => {
-      const showHeader = sortBy === 'voicePart' && item.voicePart !== lastVoicePart;
-      if (showHeader) {
-        lastVoicePart = item.voicePart;
+      let showHeader = false;
+      let headerText = '';
+
+      if (sortBy === 'voicePart') {
+        showHeader = item.voicePart !== lastHeaderValue;
+        if (showHeader) {
+          lastHeaderValue = item.voicePart;
+          headerText = item.voicePart;
+        }
+      } else if (sortBy === 'section') {
+        const sectionCode = voicePartToSectionMap[item.voicePart] || 'Other';
+        showHeader = sectionCode !== lastHeaderValue;
+        if (showHeader) {
+          lastHeaderValue = sectionCode;
+          headerText = sectionNameMap[sectionCode] || sectionCode;
+        }
       }
 
       return (
@@ -364,10 +409,10 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
                   fontWeight: 800, 
                   color: 'var(--primary-deep)', 
                   letterSpacing: '0.05em',
-                  width: '32px'
+                  paddingRight: '8px'
                 }}
               >
-                {item.voicePart}
+                {headerText}
               </span>
               <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(74, 117, 89, 0.15)' }}></div>
             </div>

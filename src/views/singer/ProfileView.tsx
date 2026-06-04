@@ -75,7 +75,7 @@ export default function ProfileView() {
     }
   };
 
-  const handlePreferenceChange = async (key: 'rosterSort' | 'attendanceSort' | 'rsvpSort', value: 'lastName' | 'voicePart') => {
+  const handlePreferenceChange = async (key: 'rosterSort' | 'attendanceSort' | 'rsvpSort', value: 'lastName' | 'voicePart' | 'section') => {
     try {
       setError(null);
       await updatePreferences({ [key]: value });
@@ -496,12 +496,13 @@ export default function ProfileView() {
                 <label className="text-label">Attendance Sort</label>
                 <select
                   value={user?.preferences?.attendanceSort || 'lastName'}
-                  onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart')}
+                  onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart' | 'section')}
                   className="card"
                   style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
+                  <option value="section">Section + Last Name</option>
                 </select>
               </div>
 
