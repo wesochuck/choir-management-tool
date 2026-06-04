@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { BaseModal } from '../../../components/common/BaseModal';
 import { useDialog } from '../../../contexts/DialogContext';
 import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../../services/musicLibraryService';
@@ -51,6 +51,7 @@ export function MusicPieceModal({
 }: MusicPieceModalProps) {
     const dialog = useDialog();
     const { timezone } = useChoirSettings();
+    const titleInputRef = useRef<HTMLInputElement>(null);
     const [title, setTitle] = useState('');
     const [composer, setComposer] = useState('');
     const [arranger, setArranger] = useState('');
@@ -165,6 +166,9 @@ export function MusicPieceModal({
                 setVoiceParts(data.voiceParts);
                 setSections(data.sections);
             }).catch(console.error);
+
+            // Focus the title field on open
+            setTimeout(() => titleInputRef.current?.focus(), 50);
         }
     }, [isOpen]);
 
@@ -656,6 +660,32 @@ export function MusicPieceModal({
         }
     };
 
+    const resetFormToEmpty = () => {
+        setTitle('');
+        setComposer('');
+        setArranger('');
+        setDuration('');
+        setCopies('');
+        setCatalogId('');
+        setPurchaseYear('');
+        setPurchaseMonth('');
+        setSectionBuckets([]);
+        setSelectedGenres([]);
+        setSelectedPerformanceIds([]);
+        setNotes('');
+        setIsMultiMovementInput(false);
+        setLocalMovementsList([]);
+        setTuttiFile(null);
+        setIsTuttiDraggedOver(false);
+        setStagingMovTitle('');
+        setStagingMovDuration('');
+        setSuggestedDuration(null);
+        setShowQuickAdd(false);
+        setQuickTitle('');
+        setQuickDate('');
+        setQuickVenue('');
+    };
+
     const handleSaveAndAddAnother = async () => {
         if (!onSaveAndAddAnother) return;
         const normalizedDuration = duration.trim();
@@ -678,6 +708,8 @@ export function MusicPieceModal({
         setIsSaving(true);
         try {
             await onSaveAndAddAnother(buildSavePayload());
+            resetFormToEmpty();
+            setTimeout(() => titleInputRef.current?.focus(), 50);
         } finally {
             setIsSaving(false);
         }
@@ -816,7 +848,7 @@ export function MusicPieceModal({
 
                         <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                             <label className="text-label">Title</label>
-                            <input required value={title} onChange={e => setTitle(e.target.value)} className="card music-piece-input" />
+                            <input ref={titleInputRef} required value={title} onChange={e => setTitle(e.target.value)} className="card music-piece-input" />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-md)' }}>
                             <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
