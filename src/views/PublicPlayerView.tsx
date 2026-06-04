@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { playerService, type PlayerPlaylist, type PlayerMediaFile } from '../services/playerService';
+import { mapWithConcurrency } from '../lib/networkSafety';
 import { Player } from '../components/player/Player';
 import { Playlist } from '../components/player/Playlist';
 import { VoicePartSelector } from '../components/player/VoicePartSelector';
@@ -128,8 +129,7 @@ export default function PublicPlayerView() {
     
     const errorIds = new Set<string>();
     
-    // @allow-sequential-await - Downloading tracks sequentially ensures stable connection usage and a cleaner UI progress stream.
-    for (const track of toDownload) {
+    await mapWithConcurrency(toDownload, async (track) => {
       try {
         setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));
         setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f));
@@ -141,7 +141,7 @@ export default function PublicPlayerView() {
         errorIds.add(track.id);
         setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'error' } : f));
       }
-    }
+    }, { concurrency: 4 });
     
     const hydrated = await hydrateOfflineStatus(playlist);
     const finalPlaylist = hydrated.map(f => errorIds.has(f.id) ? { ...f, downloadStatus: 'error' as const } : f);
