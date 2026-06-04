@@ -3,6 +3,10 @@ import {
   getEffectiveMostRecentPerformanceDate,
   type PerformanceRecencyFilter,
 } from './performanceHistory';
+import { parseDurationToSeconds } from './duration';
+
+export type MusicLibrarySortField = 'title' | 'composer' | 'duration' | 'copies' | 'catalogId' | 'lastPerformed';
+export type SortDirection = 'asc' | 'desc';
 
 export interface BuildVisibleMusicLibraryRowsOptions {
   searchTerm?: string;
@@ -13,6 +17,8 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   genreFilters?: string[];
   recencyFilter?: PerformanceRecencyFilter;
   now?: Date;
+  sortField?: MusicLibrarySortField;
+  sortDirection?: SortDirection;
 }
 
 /**
@@ -31,7 +37,9 @@ export function buildVisibleMusicLibraryRows(
     sectionFilters = [],
     genreFilters = [],
     recencyFilter = 'all',
-    now
+    now,
+    sortField = 'title',
+    sortDirection = 'asc'
   } = options;
 
   let result = [...pieces];
@@ -122,13 +130,54 @@ export function buildVisibleMusicLibraryRows(
     });
   }
 
-  // 4. Hierarchical Sorting & Grouping
   // Separate parent/standalone and child pieces from the current result set
   const parents = result.filter(p => !p.parentId);
   const children = result.filter(p => p.parentId);
 
-  // Sort parents alphabetically by title
-  parents.sort((a, b) => a.title.localeCompare(b.title));
+  const comparePieces = (a: MusicPiece, b: MusicPiece): number => {
+    switch (sortField) {
+      case 'composer': {
+        const compA = a.composer || '';
+        const compB = b.composer || '';
+        const comp = compA.localeCompare(compB);
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'duration': {
+        const durA = parseDurationToSeconds(a.duration);
+        const durB = parseDurationToSeconds(b.duration);
+        const comp = durA - durB;
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'copies': {
+        const copiesA = a.copies !== undefined ? a.copies : -1;
+        const copiesB = b.copies !== undefined ? b.copies : -1;
+        const comp = copiesA - copiesB;
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'catalogId': {
+        const catA = a.catalogId || '';
+        const catB = b.catalogId || '';
+        const comp = catA.localeCompare(catB);
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'lastPerformed': {
+        const dateA = getEffectiveMostRecentPerformanceDate(a, pieces);
+        const dateB = getEffectiveMostRecentPerformanceDate(b, pieces);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // Put never-performed at the end (always)
+        if (!dateB) return -1; // Put never-performed at the end (always)
+        const comp = dateA.localeCompare(dateB);
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'title':
+      default: {
+        const comp = a.title.localeCompare(b.title);
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+    }
+  };
+
+  parents.sort(comparePieces);
 
   const sorted: MusicPiece[] = [];
   const childMap = new Map<string, MusicPiece[]>();
@@ -160,7 +209,7 @@ export function buildVisibleMusicLibraryRows(
   // (children whose parents are not in the current filtered list, or whose parentId is invalid)
   const sortedIds = new Set(sorted.map(p => p.id));
   const orphans = children.filter(child => !sortedIds.has(child.id));
-  orphans.sort((a, b) => a.title.localeCompare(b.title));
+  orphans.sort(comparePieces);
   sorted.push(...orphans);
 
   return sorted;

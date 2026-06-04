@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { MusicPiece } from '../../../types/musicLibrary';
 import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
-import { toggleIdInSet } from '../../../lib/music/libraryRows';
+import { toggleIdInSet, type MusicLibrarySortField, type SortDirection } from '../../../lib/music/libraryRows';
 import { Pagination } from '../../../components/common/Pagination';
 import { MusicLibraryRow } from './table/MusicLibraryRow';
 import { getChildMovements } from './table/musicLibraryTableUtils';
@@ -23,6 +23,9 @@ export interface MusicLibraryTableProps {
     pageSize: number;
     totalParentCount: number;
     onPageChange: (page: number) => void;
+    sortField: MusicLibrarySortField;
+    sortDirection: SortDirection;
+    onSortChange: (field: MusicLibrarySortField) => void;
 }
 
 export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
@@ -41,7 +44,10 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     currentPage,
     pageSize,
     totalParentCount,
-    onPageChange
+    onPageChange,
+    sortField,
+    sortDirection,
+    onSortChange
 }) => {
     const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(new Set());
 
@@ -51,6 +57,35 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     };
 
     const totalPages = Math.max(1, Math.ceil(totalParentCount / pageSize));
+
+    const renderSortHeader = (label: string, field: MusicLibrarySortField) => {
+        const isActive = sortField === field;
+        return (
+            <th 
+                className="text-label" 
+                onClick={() => onSortChange(field)}
+                style={{ 
+                    padding: '6px 10px', 
+                    color: isActive ? 'var(--primary)' : 'var(--text-muted)', 
+                    border: '1px solid var(--border)', 
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>{label}</span>
+                    <span style={{ 
+                        fontSize: '10px', 
+                        opacity: isActive ? 1 : 0.35,
+                        display: 'inline-block'
+                    }}>
+                        {!isActive ? '⇅' : sortDirection === 'asc' ? '▲' : '▼'}
+                    </span>
+                </div>
+            </th>
+        );
+    };
 
     return (
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
@@ -66,12 +101,12 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                                     style={{ minHeight: 'auto', width: '14px', height: '14px', margin: 0, verticalAlign: 'middle', cursor: 'pointer' }}
                                 />
                             </th>
-                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Title</th>
-                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Composer/Arranger</th>
-                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Duration</th>
-                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Copies</th>
-                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Catalog ID</th>
-                            <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Last Performed</th>
+                            {renderSortHeader('Title', 'title')}
+                            {renderSortHeader('Composer/Arranger', 'composer')}
+                            {renderSortHeader('Duration', 'duration')}
+                            {renderSortHeader('Copies', 'copies')}
+                            {renderSortHeader('Catalog ID', 'catalogId')}
+                            {renderSortHeader('Last Performed', 'lastPerformed')}
                             <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Tracks</th>
                             <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
                         </tr>

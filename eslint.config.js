@@ -13,7 +13,6 @@ export default defineConfig([
     'pocketbase/pocketbase',
     'pocketbase/types.d.ts',
     '.planning',
-    '.superpowers',
     'docs',
     'scratch',
   ]),

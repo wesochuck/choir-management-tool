@@ -7,7 +7,7 @@ import { eventService } from '../../services/eventService';
 import { settingsService, getVoicePartsAndSections, type SectionDef, type MusicGenreDef, type MusicLibrarySettings } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
 import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
-import { buildVisibleMusicLibraryRows } from '../../lib/music/libraryRows';
+import { buildVisibleMusicLibraryRows, type MusicLibrarySortField, type SortDirection } from '../../lib/music/libraryRows';
 import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
@@ -76,15 +76,19 @@ export default function MusicLibraryView() {
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Sorting State
+  const [sortField, setSortField] = useState<MusicLibrarySortField>('title');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [recencyFilter, setRecencyFilter] = useState<PerformanceRecencyFilter>('all');
 
-  // Reset to first page when search filters, duplicate filter, or page size changes
+  // Reset to first page when search filters, duplicate filter, page size, or sorting changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sectionFilters, genreFilters, recencyFilter, showDuplicatesOnly, pageSize]);
+  }, [searchTerm, sectionFilters, genreFilters, recencyFilter, showDuplicatesOnly, pageSize, sortField, sortDirection]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
@@ -347,9 +351,11 @@ export default function MusicLibraryView() {
       duplicateIds,
       sectionFilters,
       genreFilters,
-      recencyFilter
+      recencyFilter,
+      sortField,
+      sortDirection
     });
-  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters, recencyFilter]);
+  }, [pieces, searchTerm, showDuplicatesOnly, duplicateIds, sectionFilters, genreFilters, recencyFilter, sortField, sortDirection]);
 
   const paginatedPieces = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -491,6 +497,16 @@ export default function MusicLibraryView() {
             pageSize={pageSize}
             totalParentCount={filteredPieces.length}
             onPageChange={setCurrentPage}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={(field) => {
+              if (sortField === field) {
+                setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortField(field);
+                setSortDirection('asc');
+              }
+            }}
           />
         </AppCard>
       ) : (
