@@ -40,7 +40,7 @@ function getChoirTimezoneLocal(app: PocketBaseApp): string {
 
 function getChoirNameLocal(app: PocketBaseApp): string {
     try {
-        const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
+        const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
         const parsed = parseJsonField<string | Record<string, string>>(setting.get("value"));
 
         const directName = safeTrim(typeof parsed === "string" ? parsed : "");
@@ -226,7 +226,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
         const dtstamp = new Date();
 
         const choirName = getChoirNameLocal(app);
-        const calendarName = `${choirName} Schedule`;
+        const calendarName = choirName;
 
         const vevents: string[] = [];
 
@@ -242,7 +242,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
                     `DTSTAMP:${fmtUtc(dtstamp)}`,
                     `DTSTART:${fmtUtc(callStart)}`,
                     `DTEND:${fmtUtc(start)}`,
-                    `SUMMARY:Call: ${escapeIcsText(title)}`,
+                    `SUMMARY:Call Time: ${escapeIcsText(title)}`,
                     `LOCATION:${escapeIcsText(locationStr)}`,
                     `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`,
                     'END:VEVENT'
@@ -465,7 +465,7 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
                         `DTSTAMP:${fmtUtc(dtstamp)}`,
                         `DTSTART:${fmtUtc(callStart)}`,
                         `DTEND:${fmtUtc(start)}`,
-                        `SUMMARY:Call: ${escapeIcsText(title)}`,
+                        `SUMMARY:Call Time: ${escapeIcsText(title)}`,
                         `LOCATION:${escapeIcsText(locationStr)}`,
                         `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`,
                         'END:VEVENT'
@@ -487,7 +487,7 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
         });
 
         const choirName = getChoirNameLocal(app);
-        const calendarName = `${choirName} Schedule`;
+        const calendarName = choirName;
 
         const icsContent = [
             'BEGIN:VCALENDAR',

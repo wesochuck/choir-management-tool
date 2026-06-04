@@ -10115,7 +10115,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
+            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
             const directName = safeTrim(typeof parsed === "string" ? parsed : "");
             if (directName) {
@@ -10288,14 +10288,14 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
                 const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                 const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
-                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
             }
             vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
@@ -10460,13 +10460,13 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                     const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                     const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
-                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
                 }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -10908,7 +10908,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
+            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
             const directName = safeTrim(typeof parsed === "string" ? parsed : "");
             if (directName) {
@@ -11081,14 +11081,14 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
                 const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                 const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
-                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
             }
             vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
@@ -11253,13 +11253,13 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                     const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                     const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
-                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
                 }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -11701,7 +11701,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
+            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
             const directName = safeTrim(typeof parsed === "string" ? parsed : "");
             if (directName) {
@@ -11874,14 +11874,14 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
                 const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                 const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
-                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
             }
             vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
@@ -12046,13 +12046,13 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                     const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                     const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
-                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
                 }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
@@ -12494,7 +12494,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choirName'");
+            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
             const parsed = parseJsonField(setting.get("value"));
             const directName = safeTrim(typeof parsed === "string" ? parsed : "");
             if (directName) {
@@ -12667,14 +12667,14 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const vevents = [];
             if (callTime) {
                 const localDatePart = getLocalDatePart(start, timezone);
                 const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                 const callStart = new Date(callStartIso);
                 if (callStart.getTime() < start.getTime()) {
-                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                    vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                 }
             }
             vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(details)}`, 'END:VEVENT');
@@ -12839,13 +12839,13 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                     const callStartIso = zonedInputValueToUtcLocal(`${localDatePart}T${callTime}`, timezone);
                     const callStart = new Date(callStartIso);
                     if (callStart.getTime() < start.getTime()) {
-                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
+                        vevents.push('BEGIN:VEVENT', `UID:call-${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(callStart)}`, `DTEND:${fmtUtc(start)}`, `SUMMARY:Call Time: ${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:Arrival and warm-up for ${escapeIcsText(title)}.`, 'END:VEVENT');
                     }
                 }
                 vevents.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${fmtUtc(dtstamp)}`, `DTSTART:${fmtUtc(start)}`, `DTEND:${fmtUtc(end)}`, `SUMMARY:${escapeIcsText(title)}`, `LOCATION:${escapeIcsText(locationStr)}`, `DESCRIPTION:${escapeIcsText(description)}`, 'END:VEVENT');
             });
             const choirName = getChoirNameLocal(app);
-            const calendarName = `${choirName} Schedule`;
+            const calendarName = choirName;
             const icsContent = [
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',

@@ -414,6 +414,34 @@ test('codebase integrity: useAttendance hook must not call PocketBase directly',
   assert.ok(!content.includes('pb.send'), 'useAttendance.ts must not call pb.send directly to ensure it routes through rate-limit protected services');
 });
 
+test('codebase integrity: ensure appSettings lookups for choir name reference choir_name', () => {
+  const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), ['.ts', '.js']);
+  const frontendFiles = getSrcFiles(['.ts', '.tsx']);
+  const allFiles = [...backendFiles, ...frontendFiles];
+
+  const violations: string[] = [];
+
+  for (const file of allFiles) {
+    if (file.endsWith('generate-main-pb-js.ts')) continue;
+    const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      if (line.includes('choirName') && (line.includes('findFirstRecordByFilter') || line.includes('getFirstListItem') || line.includes('findRecordsByFilter')) && !line.includes('choir_name')) {
+        violations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`);
+      }
+    });
+  }
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found query for 'choirName' without checking 'choir_name' in settings:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nThe appSettings key in the database is 'choir_name'. Ensure all lookups check 'choir_name' instead of or in addition to 'choirName'.`
+    );
+  }
+  assert.ok(true, 'All choir name appSettings queries are safe');
+});
+
 
 
 
