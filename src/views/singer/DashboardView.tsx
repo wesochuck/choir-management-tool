@@ -10,6 +10,7 @@ import { communicationService, type MessageRecord } from '../../services/communi
 import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import { resourceService, type SingerResource } from '../../services/resourceService';
+import { settingsService } from '../../services/settingsService';
 import './DashboardView.css';
 
 export default function DashboardView() {
@@ -23,6 +24,7 @@ export default function DashboardView() {
   const [resources, setResources] = useState<SingerResource[]>([]);
   const [isResourcesLoading, setIsResourcesLoading] = useState(false);
   const [submittingRsvpStatus, setSubmittingRsvpStatus] = useState<'Yes' | 'No' | null>(null);
+  const [maxRehearsalMisses, setMaxRehearsalMisses] = useState(3);
 
   useEffect(() => {
     if (myProfile?.id) {
@@ -89,6 +91,14 @@ export default function DashboardView() {
       .then(list => setResources(list))
       .catch(err => console.error('Failed to load resources', err))
       .finally(() => setIsResourcesLoading(false));
+
+    settingsService.getRosterSettings()
+      .then(settings => {
+        if (settings?.maxRehearsalMisses !== undefined) {
+          setMaxRehearsalMisses(settings.maxRehearsalMisses);
+        }
+      })
+      .catch(err => console.error('Failed to load roster settings:', err));
   }, []);
 
   const handlePollResponse = async (pollId: string, status: 'Yes' | 'No') => {
@@ -265,6 +275,7 @@ export default function DashboardView() {
                 onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)} 
                 allEvents={events}
                 myRosters={myRosters}
+                maxRehearsalMisses={maxRehearsalMisses}
               />
             ))}
 

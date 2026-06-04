@@ -24,9 +24,11 @@ interface AppWithTransaction {
 import {
     parsePocketBaseDate,
     validateSingerRsvpWindow,
-    getRsvpWindowInfo,
-    notifyAdminsOfDecline
+    getRsvpWindowInfo
 } from './rsvpValidation';
+import {
+    notifyAdminsOfDecline
+} from './adminNotifications';
 export { parsePocketBaseDate };
 
 
@@ -287,7 +289,8 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
             roster.set("folderReturned", false);
         }
 
-        const oldRsvp = roster.get("rsvp");
+        const oldRsvp = (roster.get("rsvp") as string) || "Pending";
+        const oldNote = ((roster.get("rsvpNote") as string) || "").trim();
         roster.set("rsvp", normalizedRsvp);
 
         if (normalizedRsvp === "No") {
@@ -339,8 +342,12 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
             }
         }
 
-        // Notify admins if RSVP changed to No
-        if (normalizedRsvp === "No" && oldRsvp !== "No") {
+        // Notify admins if RSVP changed to No or decline reason changed for rehearsals
+        const shouldNotifyAdmins =
+            normalizedRsvp === "No" &&
+            (oldRsvp !== "No" || (oldNote !== rsvpNote && event.get("type") === "Rehearsal"));
+
+        if (shouldNotifyAdmins) {
             try {
                 const profile = $app.findRecordById("profiles", parts.p);
                 notifyAdminsOfDecline($app, parts.e, profile, rsvpNote);
@@ -782,7 +789,8 @@ routerAdd("POST", "/api/singer/rsvp", (e) => {
                 });
             }
         } else {
-            const oldRsvp = roster ? roster.get("rsvp") : "";
+            const oldRsvp = roster ? ((roster.get("rsvp") as string) || "Pending") : "Pending";
+            const oldNote = roster ? (((roster.get("rsvpNote") as string) || "").trim()) : "";
             if (!roster) {
                 const collection = $app.findCollectionByNameOrId("eventRosters");
                 roster = new Record(collection);
@@ -841,8 +849,12 @@ routerAdd("POST", "/api/singer/rsvp", (e) => {
                 }
             }
 
-            // Notify admins if RSVP changed to No
-            if (rsvp === "No" && oldRsvp !== "No") {
+            // Notify admins if RSVP changed to No or decline reason changed for rehearsals
+            const shouldNotifyAdmins =
+                rsvp === "No" &&
+                (oldRsvp !== "No" || (oldNote !== rsvpNote && event.get("type") === "Rehearsal"));
+
+            if (shouldNotifyAdmins) {
                 try {
                     notifyAdminsOfDecline($app, eventId, profile, rsvpNote);
                 } catch (declineErr) {

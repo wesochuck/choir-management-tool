@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
+import { pb } from '../../lib/pocketbase';
 import './AttendanceView.css';
 
 export default function AttendanceView() {
@@ -26,6 +27,8 @@ export default function AttendanceView() {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const hasDefaultedRef = useRef(false);
+  const [maxRehearsalMisses, setMaxRehearsalMisses] = useState(3);
+  const [missCounts, setMissCounts] = useState<Record<string, number>>({});
   
   // Filter States
   const [filterName, setFilterName] = useState('');
@@ -53,7 +56,86 @@ export default function AttendanceView() {
       .catch((err) => {
         console.error('Failed to load attendance settings', err);
       });
+
+    settingsService.getRosterSettings()
+      .then(settings => {
+        if (settings?.maxRehearsalMisses !== undefined) {
+          setMaxRehearsalMisses(settings.maxRehearsalMisses);
+        }
+      })
+      .catch(err => console.error('Failed to load roster settings:', err));
   }, []);
+
+  // Compute missed rehearsals count for each singer in the performance cycle
+  useEffect(() => {
+    if (!selectedEventId || events.length === 0) {
+      setMissCounts({});
+      return;
+    }
+
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+
+    const isPerformance = event.type === 'Performance';
+    const linkedPerfId = isPerformance ? event.id : event.parentPerformanceId;
+
+    if (!linkedPerfId) {
+      setMissCounts({});
+      return;
+    }
+
+    const cycleRehearsals = events.filter(e => e.type === 'Rehearsal' && e.parentPerformanceId === linkedPerfId);
+    if (cycleRehearsals.length === 0) {
+      setMissCounts({});
+      return;
+    }
+
+    const fetchMissCounts = async () => {
+      try {
+        const nowMs = Date.now();
+        const pastRehearsals = cycleRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
+
+        const perfRosters = linkedPerfId ? await pb.collection('eventRosters').getFullList({
+          filter: pb.filter('event = {:linkedPerfId} && rsvp = "Yes"', { linkedPerfId })
+        }) : [];
+        const performingProfileIds = new Set(perfRosters.map(r => r.profile));
+
+        const rostersLists = await Promise.all(
+          pastRehearsals.map(reh => pb.collection('eventRosters').getFullList({
+            filter: pb.filter('event = {:eventId}', { eventId: reh.id })
+          }))
+        );
+
+        const counts: Record<string, number> = {};
+
+        performingProfileIds.forEach(profileId => {
+          let missCount = 0;
+          pastRehearsals.forEach((_, index) => {
+            const rosters = rostersLists[index];
+            const r = rosters.find(x => x.profile === profileId);
+
+            const wasDeclined = r?.rsvp === 'No';
+            const wasAbsent = r?.attendance === 'Absent';
+            const notMarkedPresent = r?.attendance !== 'Present';
+
+            if (wasDeclined || wasAbsent || notMarkedPresent) {
+              missCount++;
+            }
+          });
+
+          if (missCount > 0) {
+            counts[profileId] = missCount;
+          }
+        });
+
+        setMissCounts(counts);
+      } catch (err) {
+        console.error('Failed to calculate rehearsal miss counts:', err);
+      }
+    };
+
+    fetchMissCounts();
+  }, [selectedEventId, events]);
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
@@ -499,6 +581,8 @@ export default function AttendanceView() {
                   onUpdateFolder={handleUpdateFolder}
                   onEdit={handleEditProfile}
                   sortBy={sortBy}
+                  missCounts={missCounts}
+                  maxRehearsalMisses={maxRehearsalMisses}
                 />
               ) : (
                 <AppCard style={{ textAlign: 'center', padding: '24px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
@@ -541,6 +625,8 @@ export default function AttendanceView() {
                       onUpdateFolder={handleUpdateFolder}
                       onEdit={handleEditProfile}
                       sortBy={sortBy}
+                      missCounts={missCounts}
+                      maxRehearsalMisses={maxRehearsalMisses}
                     />
                   </div>
                 )}

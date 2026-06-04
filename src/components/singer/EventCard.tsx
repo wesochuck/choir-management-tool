@@ -16,6 +16,7 @@ interface EventCardProps {
   onRSVP: (rsvp: 'Yes' | 'No') => Promise<void>;
   allEvents?: Event[];
   myRosters?: Record<string, EventRoster>;
+  maxRehearsalMisses?: number;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ 
@@ -23,7 +24,8 @@ export const EventCard: React.FC<EventCardProps> = ({
   rsvp = 'Pending', 
   onRSVP,
   allEvents = [],
-  myRosters = {}
+  myRosters = {},
+  maxRehearsalMisses = 3
 }) => {
   const { timezone } = useChoirSettings();
   const navigate = useNavigate();
@@ -39,6 +41,31 @@ export const EventCard: React.FC<EventCardProps> = ({
   };
   const [submittingStatus, setSubmittingStatus] = React.useState<'Yes' | 'No' | null>(null);
   const previewData = getSingerSetListPreview(event, myRosters, allEvents);
+
+  const missStats = React.useMemo(() => {
+    if (!isPerformance || rsvp !== 'Yes' || !allEvents || !myRosters) return null;
+    const linkedRehearsals = allEvents.filter(e => e.type === 'Rehearsal' && e.parentPerformanceId === event.id);
+    const nowMs = Date.now();
+    const pastRehearsals = linkedRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
+    let missedCount = 0;
+    
+    pastRehearsals.forEach(reh => {
+      const roster = myRosters[reh.id];
+      
+      const wasDeclined = roster?.rsvp === 'No';
+      const wasAbsent = roster?.attendance === 'Absent';
+      const notMarkedPresent = roster?.attendance !== 'Present';
+      
+      if (wasDeclined || wasAbsent || notMarkedPresent) {
+        missedCount++;
+      }
+    });
+    
+    return {
+      missed: missedCount,
+      total: pastRehearsals.length
+    };
+  }, [isPerformance, rsvp, event.id, allEvents, myRosters]);
 
   React.useEffect(() => {
     setNow(Date.now());
@@ -126,6 +153,35 @@ export const EventCard: React.FC<EventCardProps> = ({
             </a>
           </div>
           {event.details && <p className="text-muted text-sm">{event.details}</p>}
+          {missStats && (
+            <div style={{
+              marginTop: 'var(--space-xs)',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: missStats.missed > maxRehearsalMisses ? '#fef2f2' : '#fffbeb',
+              border: missStats.missed > maxRehearsalMisses ? '1px solid #fca5a5' : '1px solid #fde68a',
+              color: missStats.missed > maxRehearsalMisses ? '#991b1b' : '#92400e',
+              fontWeight: 600
+            }}>
+              <span>
+                Rehearsal Attendance: {missStats.missed} missed of {missStats.total} rehearsals
+              </span>
+              <span className="badge" style={{
+                backgroundColor: missStats.missed > maxRehearsalMisses ? '#ef4444' : '#f59e0b',
+                color: 'white',
+                fontWeight: 800,
+                border: 'none',
+                padding: '2px 6px',
+                fontSize: '0.75rem'
+              }}>
+                {missStats.missed > maxRehearsalMisses ? 'EXCEEDED LIMIT' : `LIMIT: ${maxRehearsalMisses}`}
+              </span>
+            </div>
+          )}
         </div>
 
         {previewData.visible && previewData.setList.length > 0 && (
@@ -144,7 +200,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             </h5>
 
             <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
-              {previewData.setList.map((item, idx) => {
+              {previewData.setList.slice(0, 6).map((item, idx) => {
                 const rawItem = item as unknown as Record<string, unknown>;
                 const itemTitle = (rawItem.title || rawItem.pieceTitle || 'Untitled Piece') as string;
                 return (
@@ -159,6 +215,11 @@ export const EventCard: React.FC<EventCardProps> = ({
                 );
               })}
             </ol>
+            {previewData.setList.length > 6 && (
+              <div style={{ marginTop: 'var(--space-xs)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                + {previewData.setList.length - 6} more in Practice Player
+              </div>
+            )}
           </div>
         )}
 

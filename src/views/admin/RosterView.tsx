@@ -103,6 +103,8 @@ export default function RosterView() {
     setConfigAutomationMissThreshold,
     configAutomationRecoveryEnabled,
     setConfigAutomationRecoveryEnabled,
+    configMaxRehearsalMisses,
+    setConfigMaxRehearsalMisses,
     isSavingConfig,
     configMessage,
     isConfigDirty,
@@ -442,6 +444,8 @@ export default function RosterView() {
           setConfigAutomationMissThreshold={setConfigAutomationMissThreshold}
           configAutomationRecoveryEnabled={configAutomationRecoveryEnabled}
           setConfigAutomationRecoveryEnabled={setConfigAutomationRecoveryEnabled}
+          configMaxRehearsalMisses={configMaxRehearsalMisses}
+          setConfigMaxRehearsalMisses={setConfigMaxRehearsalMisses}
           configSections={configSections}
           setConfigSections={setConfigSections}
           configVoiceParts={configVoiceParts}

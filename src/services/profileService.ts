@@ -13,6 +13,7 @@ export interface Profile extends RecordModel {
   doNotEmail?: boolean;
   receiveAttendanceReports?: boolean;
   receiveRsvpDeclineNotices?: boolean;
+  receiveAdminNotifications?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
   statusLastChangedAt?: string;
@@ -34,6 +35,7 @@ export interface ProfileInput extends Partial<Profile> {
   doNotEmail?: boolean;
   receiveAttendanceReports?: boolean;
   receiveRsvpDeclineNotices?: boolean;
+  receiveAdminNotifications?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
   role?: 'admin' | 'singer';

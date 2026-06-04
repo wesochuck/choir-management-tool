@@ -92,6 +92,7 @@ export default function ProfileView() {
   const [phone, setPhone] = useState('');
   const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
   const [receiveRsvpDeclineNotices, setReceiveRsvpDeclineNotices] = useState(false);
+  const [receiveAdminNotifications, setReceiveAdminNotifications] = useState(true);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
@@ -110,8 +111,9 @@ export default function ProfileView() {
           setProfile(p);
           setName(p.name || currentUser.name || '');
           setPhone(p.phone || '');
-          setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
+           setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
           setReceiveRsvpDeclineNotices(Boolean(p.receiveRsvpDeclineNotices));
+          setReceiveAdminNotifications(p.receiveAdminNotifications !== false);
           loadCalendarFeed(p.id);
         } else {
           setProfile({
@@ -130,7 +132,8 @@ export default function ProfileView() {
           });
           setName(currentUser.name || '');
           setPhone('');
-          setReceiveRsvpDeclineNotices(false);
+           setReceiveRsvpDeclineNotices(false);
+          setReceiveAdminNotifications(true);
         }
         setEmail(currentUser.email || '');
       } else {
@@ -165,14 +168,15 @@ export default function ProfileView() {
         await pb.collection('users').update(currentUser.id, { name, email });
         
         // If there's an associated profile, update it; otherwise create one.
-        if (profile.id) {
-          await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports, receiveRsvpDeclineNotices });
+         if (profile.id) {
+          await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports, receiveRsvpDeclineNotices, receiveAdminNotifications });
         } else {
           await pb.collection('profiles').create({
             user: currentUser.id,
             name: name || currentUser.name || email,
             receiveAttendanceReports,
             receiveRsvpDeclineNotices,
+            receiveAdminNotifications,
             voicePart: '',
             globalStatus: 'Active',
           });
@@ -275,7 +279,7 @@ export default function ProfileView() {
                 </div>
               </label>
 
-              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
+               <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
                 <input
                   type="checkbox"
                   checked={receiveRsvpDeclineNotices}
@@ -285,6 +289,19 @@ export default function ProfileView() {
                 <div className="flex-col" style={{ gap: '2px' }}>
                   <span className="text-label" style={{ fontWeight: 600 }}>Receive RSVP decline notifications</span>
                   <span className="text-xs text-muted">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
+                </div>
+              </label>
+
+              <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', margin: 'var(--space-xs) 0' }}>
+                <input
+                  type="checkbox"
+                  checked={receiveAdminNotifications}
+                  onChange={(e) => setReceiveAdminNotifications(e.target.checked)}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <div className="flex-col" style={{ gap: '2px' }}>
+                  <span className="text-label" style={{ fontWeight: 600 }}>Receive general admin notifications</span>
+                  <span className="text-xs text-muted">Receive automated general admin alerts and system notifications.</span>
                 </div>
               </label>
             </>

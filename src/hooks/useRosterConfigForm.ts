@@ -14,6 +14,7 @@ export interface RosterConfigState {
   statusAutomationEnabled: boolean;
   statusAutomationMissThreshold: number;
   statusAutomationRecoveryEnabled: boolean;
+  maxRehearsalMisses: number;
   sections: SectionDef[];
   voiceParts: VoicePartDef[];
 }
@@ -88,6 +89,7 @@ export function useRosterConfigForm({
   const [configAutomationEnabled, setConfigAutomationEnabled] = useState(true);
   const [configAutomationMissThreshold, setConfigAutomationMissThreshold] = useState(3);
   const [configAutomationRecoveryEnabled, setConfigAutomationRecoveryEnabled] = useState(true);
+  const [configMaxRehearsalMisses, setConfigMaxRehearsalMisses] = useState(3);
   const [initialConfigState, setInitialConfigState] = useState<RosterConfigState | null>(null);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [configMessage, setConfigMessage] = useState('');
@@ -105,6 +107,7 @@ export function useRosterConfigForm({
       const loadedAutomationEnabled = rosterSettings?.statusAutomationEnabled ?? true;
       const loadedAutomationMissThreshold = rosterSettings?.statusAutomationMissThreshold ?? 3;
       const loadedAutomationRecoveryEnabled = rosterSettings?.statusAutomationRecoveryEnabled ?? true;
+      const loadedMaxRehearsalMisses = rosterSettings?.maxRehearsalMisses ?? 3;
 
       setConfigDefaultStatus(loadedDefaultStatus);
       setConfigSeason(loadedSeason);
@@ -113,6 +116,7 @@ export function useRosterConfigForm({
       setConfigAutomationEnabled(loadedAutomationEnabled);
       setConfigAutomationMissThreshold(loadedAutomationMissThreshold);
       setConfigAutomationRecoveryEnabled(loadedAutomationRecoveryEnabled);
+      setConfigMaxRehearsalMisses(loadedMaxRehearsalMisses);
 
       setInitialConfigState({
         defaultStatus: loadedDefaultStatus,
@@ -120,6 +124,7 @@ export function useRosterConfigForm({
         statusAutomationEnabled: loadedAutomationEnabled,
         statusAutomationMissThreshold: loadedAutomationMissThreshold,
         statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
+        maxRehearsalMisses: loadedMaxRehearsalMisses,
         sections: JSON.parse(JSON.stringify(loadedSections)),
         voiceParts: JSON.parse(JSON.stringify(loadedVoiceParts))
       });
@@ -148,6 +153,7 @@ export function useRosterConfigForm({
       statusAutomationEnabled: configAutomationEnabled,
       statusAutomationMissThreshold: configAutomationMissThreshold,
       statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
+      maxRehearsalMisses: configMaxRehearsalMisses,
       sections: configSections,
       voiceParts: configVoiceParts
     });
@@ -158,6 +164,7 @@ export function useRosterConfigForm({
     configAutomationEnabled,
     configAutomationMissThreshold,
     configAutomationRecoveryEnabled,
+    configMaxRehearsalMisses,
     configSections,
     configVoiceParts
   ]);
@@ -185,7 +192,8 @@ export function useRosterConfigForm({
         currentSeason: configSeason,
         statusAutomationEnabled: configAutomationEnabled,
         statusAutomationMissThreshold: configAutomationMissThreshold,
-        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled
+        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
+        maxRehearsalMisses: configMaxRehearsalMisses
       });
       await saveVoicePartsAndSections(configVoiceParts, configSections);
 
@@ -212,6 +220,7 @@ export function useRosterConfigForm({
     setConfigAutomationEnabled(initialConfigState.statusAutomationEnabled);
     setConfigAutomationMissThreshold(initialConfigState.statusAutomationMissThreshold);
     setConfigAutomationRecoveryEnabled(initialConfigState.statusAutomationRecoveryEnabled);
+    setConfigMaxRehearsalMisses(initialConfigState.maxRehearsalMisses ?? 3);
     setConfigSections(JSON.parse(JSON.stringify(initialConfigState.sections)));
     setConfigVoiceParts(JSON.parse(JSON.stringify(initialConfigState.voiceParts)));
     setConfigMessage('');
@@ -232,6 +241,8 @@ export function useRosterConfigForm({
     setConfigAutomationMissThreshold,
     configAutomationRecoveryEnabled,
     setConfigAutomationRecoveryEnabled,
+    configMaxRehearsalMisses,
+    setConfigMaxRehearsalMisses,
     initialConfigState,
     isSavingConfig,
     configMessage,
