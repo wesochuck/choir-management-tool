@@ -208,8 +208,8 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
     { id: 'rr1', event: 'e1', profile: 'p1', attendance: 'Pending', rsvp: 'Pending' }
   ];
 
-  const createdRosters: any[] = [];
-  const updatedRosters: any[] = [];
+  const createdRosters: unknown[] = [];
+  const updatedRosters: Record<string, unknown>[] = [];
 
   pb.collection = ((name: string) => {
     if (name === 'events') {
@@ -224,7 +224,7 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
     }
     if (name === 'eventRosters') {
       return {
-        getFullList: async (options: any) => {
+        getFullList: async (options?: { filter?: string }) => {
           if (options?.filter?.includes('perf1')) {
             return mockPerfRosters;
           }
@@ -233,11 +233,11 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
           }
           return [];
         },
-        create: async (data: any) => {
+        create: async (data: Record<string, unknown>) => {
           createdRosters.push(data);
           return { id: 'new_roster_id', ...data };
         },
-        update: async (id: string, data: any) => {
+        update: async (id: string, data: Record<string, unknown>) => {
           updatedRosters.push({ id, ...data });
           return { id, ...data };
         }
@@ -250,8 +250,8 @@ test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', a
     const { rosterService } = await import('../src/services/rosterService.ts');
     const originalGetEventRoster = rosterService.getEventRoster;
     rosterService.getEventRoster = async (eventId: string) => {
-      if (eventId === 'perf1') return mockPerfRosters as any[];
-      if (eventId === 'e1') return mockRehearsalRosters as any[];
+      if (eventId === 'perf1') return mockPerfRosters as unknown as ReturnType<typeof originalGetEventRoster>;
+      if (eventId === 'e1') return mockRehearsalRosters as unknown as ReturnType<typeof originalGetEventRoster>;
       return [];
     };
 

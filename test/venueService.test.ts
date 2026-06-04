@@ -7,7 +7,10 @@ type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('checkVenueDependencies returns true if venue has linked events', async (t) => {
   const originalCollection = pb.collection;
-  const mockGetList = t.mock.fn(async (_page: number, _perPage: number, _options: { filter: string }) => {
+  const mockGetList = t.mock.fn(async (page: number, perPage: number, options: { filter: string }) => {
+    void page;
+    void perPage;
+    void options;
     return { totalItems: 1 };
   });
 

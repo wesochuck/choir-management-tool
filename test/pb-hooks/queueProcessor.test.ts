@@ -164,7 +164,7 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
         saveNoValidate: (record: PocketBaseRecord) => {
             savedRecords.push(record);
         },
-        delete: (_record: PocketBaseRecord) => {
+        delete: () => {
             // Not used in queue processor tests, but required by interface
         },
         db: () => mockDb
@@ -219,7 +219,7 @@ test('processEmailQueue batched success and failure flows', () => {
     assert.ok(recordSuccess.get('sentAt'), 'sentAt timestamp should be populated');
 
     // Verify Google Maps location links in HTML
-    const successEmail = sentEmails.find((e: any) => e.config.to[0].address === 'success@example.com') as any;
+    const successEmail = sentEmails.find((e) => e.config.to[0].address === 'success@example.com');
     assert.ok(successEmail, 'Should have sent an email to success recipient');
     assert.ok(successEmail.config.html.includes('https://www.google.com/maps/search/?api=1&amp;query=123%20Church%20St%2C%20Cityville'), 'Should include Google Maps URL with encoded address');
     assert.ok(successEmail.config.html.includes('St. Mary Church'), 'Should include the venue name inside the link');

@@ -1,6 +1,5 @@
 import type { PocketBaseRecord, PocketBaseApp } from './email/emailTypes';
 import { processEmailQueue } from './email/queueProcessor';
-import { escapeHtml } from './email/hookText';
 
 declare const Record: new (collection: unknown, data?: unknown) => PocketBaseRecord;
 
@@ -15,7 +14,7 @@ export function notifyAdminsOfDecline(app: PocketBaseApp, eventId: string, profi
         const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
         if (!adminUsers || adminUsers.length === 0) return;
         
-        const adminUserIds = adminUsers.map((u: any) => u.id);
+        const adminUserIds = adminUsers.map((u: PocketBaseRecord) => u.id);
         
         const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive'", "");
         if (!adminProfiles || adminProfiles.length === 0) return;
@@ -48,13 +47,13 @@ export function notifyAdminsOfDecline(app: PocketBaseApp, eventId: string, profi
         const singerName = (profile.get("name") || "Singer") as string;
 
         const finalTemplate = template; // aliasing for local block type stability
-        adminProfiles.forEach((adminProf: any) => {
+        adminProfiles.forEach((adminProf: PocketBaseRecord) => {
             const userId = adminProf.get("user") as string;
             if (!userId || adminUserIds.indexOf(userId) === -1) {
                 return;
             }
 
-            const adminUser = adminUsers.find((u: any) => u.id === userId);
+            const adminUser = adminUsers.find((u: PocketBaseRecord) => u.id === userId);
             const recipientEmail = adminUser ? (adminUser.get("email") as string) : "";
             
             // Check opt-out settings: receiveRsvpDeclineNotices or receiveAdminNotifications or doNotEmail

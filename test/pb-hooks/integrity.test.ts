@@ -317,7 +317,6 @@ test('Generated main.pb.js contains no top-level function helper definitions out
             // routerAdd(..., (e) => {
             // inside which the brace depth is already >= 1 before the function is declared.
             // If braceDepth <= 0 (or 1 and the function itself is on this line, meaning it wasn't opened in a parent block), it's global.
-            const hasPrecedingOpeningBrace = line.includes('{') && line.indexOf('{') > line.indexOf('function');
             const actualDepthBeforeLine = braceDepth - (line.match(/{/g) || []).length + (line.match(/}/g) || []).length;
             
             if (actualDepthBeforeLine === 0) {

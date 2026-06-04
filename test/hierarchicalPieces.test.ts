@@ -68,6 +68,7 @@ test('musicLibraryService.deletePiece with unlinkChildren option updates childre
   const originalCreateBatch = pb.createBatch;
   
   const mockDelete = t.mock.fn(async (id?: string) => {
+    void id;
     return true;
   });
   
@@ -102,6 +103,7 @@ test('musicLibraryService.deletePiece with unlinkChildren option updates childre
   pb.createBatch = function () {
     return {
       collection: (colName: string) => {
+        void colName;
         return {
           update: (id: string, data: Record<string, unknown>) => {
             mockUpdate(id, data);
@@ -109,10 +111,10 @@ test('musicLibraryService.deletePiece with unlinkChildren option updates childre
           delete: (id: string) => {
             mockDelete(id);
           }
-        } as any;
+        } as unknown as ReturnType<ReturnType<typeof pb.createBatch>['collection']>;
       },
       send: mockBatchSend
-    } as any;
+    } as unknown as ReturnType<typeof pb.createBatch>;
   };
 
   try {

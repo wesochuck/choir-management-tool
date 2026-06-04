@@ -39,7 +39,8 @@ pb.afterSend = async (response, data) => {
     } catch (e) { console.error('[PB AUTH] decode error', e); }
   }
 
-  const isAuthError = response.status === 401 || response.status === 403;
+  const isAuthError = (response.status === 401 || response.status === 403) &&
+    data?.message !== 'Batch requests are not allowed.';
   const isStaleToken400 = response.status === 400 && 
     data?.message?.includes('loadAuthToken');
 

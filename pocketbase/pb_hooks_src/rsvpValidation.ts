@@ -1,7 +1,5 @@
 import type { PocketBaseRecord } from './email/emailTypes';
 
-declare const Record: new (collection: unknown, data?: unknown) => PocketBaseRecord;
-
 
 export function parsePocketBaseDate(dateValue: unknown): Date | null {
     const raw = String(dateValue || "").trim();

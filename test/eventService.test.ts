@@ -74,8 +74,8 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
       { id: 'rehearsal_2', title: 'Rehearsal 2', parentPerformanceId: 'perf_123' }
     ];
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const mockDelete = t.mock.fn(async (_id: string) => {
+  const mockDelete = t.mock.fn(async (id?: string) => {
+    void id;
     return true;
   });
 
@@ -97,14 +97,15 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
   pb.createBatch = function () {
     return {
       collection: (colName: string) => {
+        void colName;
         return {
           delete: (id: string) => {
             mockDelete(id);
           }
-        } as any;
+        } as unknown as ReturnType<ReturnType<typeof pb.createBatch>['collection']>;
       },
       send: mockBatchSend
-    } as any;
+    } as unknown as ReturnType<typeof pb.createBatch>;
   };
 
   try {
@@ -132,6 +133,7 @@ test('eventService.createEventWithRehearsals rolls back event creation on bulk r
   });
 
   const mockDelete = t.mock.fn(async (id?: string) => {
+    void id;
     return true;
   });
 

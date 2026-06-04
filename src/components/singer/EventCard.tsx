@@ -50,7 +50,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   const missStats = React.useMemo(() => {
     if (!isPerformance || rsvp !== 'Yes' || !allEvents || !myRosters) return null;
     const linkedRehearsals = allEvents.filter(e => e.type === 'Rehearsal' && e.parentPerformanceId === event.id);
-    const nowMs = Date.now();
+    const nowMs = now;
     const pastRehearsals = linkedRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
     let missedCount = 0;
     
@@ -70,7 +70,7 @@ export const EventCard: React.FC<EventCardProps> = ({
       missed: missedCount,
       total: pastRehearsals.length
     };
-  }, [isPerformance, rsvp, event.id, allEvents, myRosters]);
+  }, [isPerformance, rsvp, event.id, allEvents, myRosters, now]);
 
   React.useEffect(() => {
     setNow(Date.now());

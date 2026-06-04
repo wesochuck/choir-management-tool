@@ -261,7 +261,9 @@ cronAdd("post_event_report", "0 * * * *", () => {
         try {
             linkedPerformance = app.findRecordById("events", linkedPerfId);
         }
-        catch (e) { }
+        catch (_a) {
+            // ignore
+        }
         if (!linkedPerformance)
             return;
         const activeProfiles = app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
@@ -273,7 +275,9 @@ cronAdd("post_event_report", "0 * * * *", () => {
                     perfRsvpYes = true;
                 }
             }
-            catch (e) { }
+            catch (_a) {
+                // ignore
+            }
             if (perfRsvpYes) {
                 let rosterRecord = null;
                 try {
@@ -282,7 +286,9 @@ cronAdd("post_event_report", "0 * * * *", () => {
                         rosterRecord = rosters[0];
                     }
                 }
-                catch (e) { }
+                catch (_b) {
+                    // ignore
+                }
                 if (!rosterRecord) {
                     const rosterCollection = app.findCollectionByNameOrId("eventRosters");
                     rosterRecord = new Record(rosterCollection, {

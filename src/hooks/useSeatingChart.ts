@@ -494,8 +494,12 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   };
 
   const reorderCharts = async (orderedIds: string[]) => {
-    await seatingService.reorderCharts(orderedIds);
-    await fetchData();
+    try {
+      await seatingService.reorderCharts(orderedIds);
+      await fetchData();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to reorder seating charts');
+    }
   };
 
   const isSaving = isSyncPending || activeRequestsCount > 0;

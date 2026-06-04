@@ -12,7 +12,9 @@ export function finalizeUnmarkedAttendanceForEvent(app: PocketBaseApp, event: Po
     let linkedPerformance = null;
     try {
         linkedPerformance = app.findRecordById("events", linkedPerfId);
-    } catch (e) {}
+    } catch {
+        // ignore
+    }
 
     if (!linkedPerformance) return;
 
@@ -32,7 +34,9 @@ export function finalizeUnmarkedAttendanceForEvent(app: PocketBaseApp, event: Po
             if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
                 perfRsvpYes = true;
             }
-        } catch (e) {}
+        } catch {
+            // ignore
+        }
 
         if (perfRsvpYes) {
             let rosterRecord = null;
@@ -48,7 +52,9 @@ export function finalizeUnmarkedAttendanceForEvent(app: PocketBaseApp, event: Po
                 if (rosters && rosters.length > 0) {
                     rosterRecord = rosters[0];
                 }
-            } catch (e) {}
+            } catch {
+                // ignore
+            }
 
             if (!rosterRecord) {
                 const rosterCollection = app.findCollectionByNameOrId("eventRosters");
