@@ -93,27 +93,39 @@ export default function AttendanceView() {
     const fetchMissCounts = async () => {
       try {
         const nowMs = Date.now();
+        const pastRehearsals = cycleRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
+
+        const perfRosters = linkedPerfId ? await pb.collection('eventRosters').getFullList({
+          filter: pb.filter('event = {:linkedPerfId} && rsvp = "Yes"', { linkedPerfId })
+        }) : [];
+        const performingProfileIds = new Set(perfRosters.map(r => r.profile));
+
         const rostersLists = await Promise.all(
-          cycleRehearsals.map(reh => pb.collection('eventRosters').getFullList({
+          pastRehearsals.map(reh => pb.collection('eventRosters').getFullList({
             filter: pb.filter('event = {:eventId}', { eventId: reh.id })
           }))
         );
 
         const counts: Record<string, number> = {};
 
-        cycleRehearsals.forEach((reh, index) => {
-          const rosters = rostersLists[index];
-          const isPast = new Date(reh.date).getTime() < nowMs;
+        performingProfileIds.forEach(profileId => {
+          let missCount = 0;
+          pastRehearsals.forEach((_, index) => {
+            const rosters = rostersLists[index];
+            const r = rosters.find(x => x.profile === profileId);
 
-          rosters.forEach(r => {
-            const wasDeclined = r.rsvp === 'No';
-            const wasAbsent = r.attendance === 'Absent';
-            const notMarkedPresent = isPast && r.attendance !== 'Present';
+            const wasDeclined = r?.rsvp === 'No';
+            const wasAbsent = r?.attendance === 'Absent';
+            const notMarkedPresent = r?.attendance !== 'Present';
 
             if (wasDeclined || wasAbsent || notMarkedPresent) {
-              counts[r.profile] = (counts[r.profile] || 0) + 1;
+              missCount++;
             }
           });
+
+          if (missCount > 0) {
+            counts[profileId] = missCount;
+          }
         });
 
         setMissCounts(counts);

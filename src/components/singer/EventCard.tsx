@@ -46,15 +46,15 @@ export const EventCard: React.FC<EventCardProps> = ({
     if (!isPerformance || rsvp !== 'Yes' || !allEvents || !myRosters) return null;
     const linkedRehearsals = allEvents.filter(e => e.type === 'Rehearsal' && e.parentPerformanceId === event.id);
     const nowMs = Date.now();
+    const pastRehearsals = linkedRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
     let missedCount = 0;
     
-    linkedRehearsals.forEach(reh => {
+    pastRehearsals.forEach(reh => {
       const roster = myRosters[reh.id];
-      const isPast = new Date(reh.date).getTime() < nowMs;
       
       const wasDeclined = roster?.rsvp === 'No';
       const wasAbsent = roster?.attendance === 'Absent';
-      const notMarkedPresent = isPast && roster?.attendance !== 'Present';
+      const notMarkedPresent = roster?.attendance !== 'Present';
       
       if (wasDeclined || wasAbsent || notMarkedPresent) {
         missedCount++;
@@ -63,7 +63,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     
     return {
       missed: missedCount,
-      total: linkedRehearsals.length
+      total: pastRehearsals.length
     };
   }, [isPerformance, rsvp, event.id, allEvents, myRosters]);
 
@@ -200,7 +200,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             </h5>
 
             <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
-              {previewData.setList.map((item, idx) => {
+              {previewData.setList.slice(0, 6).map((item, idx) => {
                 const rawItem = item as unknown as Record<string, unknown>;
                 const itemTitle = (rawItem.title || rawItem.pieceTitle || 'Untitled Piece') as string;
                 return (
@@ -215,6 +215,11 @@ export const EventCard: React.FC<EventCardProps> = ({
                 );
               })}
             </ol>
+            {previewData.setList.length > 6 && (
+              <div style={{ marginTop: 'var(--space-xs)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                + {previewData.setList.length - 6} more in Practice Player
+              </div>
+            )}
           </div>
         )}
 

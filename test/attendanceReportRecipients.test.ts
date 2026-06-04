@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveAttendanceReportRecipients, triggerAttendanceReport } from '../src/services/communication/attendanceReportService.ts';
+import { resolveAttendanceReportRecipients, triggerAttendanceReport, finalizeUnmarkedAttendanceForEvent } from '../src/services/communication/attendanceReportService.ts';
 import { messageRepository } from '../src/services/communication/messageRepository.ts';
 import type { MessageRecord } from '../src/services/communication/types.ts';
 
@@ -145,7 +145,7 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
   const originalCollection = pb.collection;
   const originalSaveMessage = messageRepository.saveMessage;
 
-  let savedMessage: MessageRecord | null = null;
+  let savedMessage: MessageRecord = null as unknown as MessageRecord;
   messageRepository.saveMessage = async (data) => {
     savedMessage = data as MessageRecord;
     return { id: 'm1', created: '', ...data } as MessageRecord;
@@ -183,5 +183,89 @@ test('triggerAttendanceReport saves message with correct recipients', async () =
   } finally {
     pb.collection = originalCollection;
     messageRepository.saveMessage = originalSaveMessage;
+  }
+});
+
+test('finalizeUnmarkedAttendanceForEvent creates or updates roster to Absent', async () => {
+  const { pb } = await import('../src/lib/pocketbase.ts');
+  const originalCollection = pb.collection;
+
+  const mockEvents = {
+    'e1': { id: 'e1', type: 'Rehearsal', parentPerformanceId: 'perf1', date: new Date().toISOString() }
+  };
+
+  const mockProfiles = [
+    { id: 'p1', voicePart: 'Soprano', globalStatus: 'Active', name: 'Performing Singer' },
+    { id: 'p2', voicePart: 'Alto', globalStatus: 'Active', name: 'Non-Performing Singer' }
+  ];
+
+  const mockPerfRosters = [
+    { id: 'pr1', event: 'perf1', profile: 'p1', rsvp: 'Yes' },
+    { id: 'pr2', event: 'perf1', profile: 'p2', rsvp: 'No' }
+  ];
+
+  const mockRehearsalRosters = [
+    { id: 'rr1', event: 'e1', profile: 'p1', attendance: 'Pending', rsvp: 'Pending' }
+  ];
+
+  const createdRosters: any[] = [];
+  const updatedRosters: any[] = [];
+
+  pb.collection = ((name: string) => {
+    if (name === 'events') {
+      return {
+        getOne: async (id: string) => mockEvents[id as keyof typeof mockEvents]
+      };
+    }
+    if (name === 'profiles') {
+      return {
+        getFullList: async () => mockProfiles
+      };
+    }
+    if (name === 'eventRosters') {
+      return {
+        getFullList: async (options: any) => {
+          if (options?.filter?.includes('perf1')) {
+            return mockPerfRosters;
+          }
+          if (options?.filter?.includes('e1')) {
+            return mockRehearsalRosters;
+          }
+          return [];
+        },
+        create: async (data: any) => {
+          createdRosters.push(data);
+          return { id: 'new_roster_id', ...data };
+        },
+        update: async (id: string, data: any) => {
+          updatedRosters.push({ id, ...data });
+          return { id, ...data };
+        }
+      };
+    }
+    return originalCollection.call(pb, name);
+  }) as unknown as typeof pb.collection;
+
+  try {
+    const { rosterService } = await import('../src/services/rosterService.ts');
+    const originalGetEventRoster = rosterService.getEventRoster;
+    rosterService.getEventRoster = async (eventId: string) => {
+      if (eventId === 'perf1') return mockPerfRosters as any[];
+      if (eventId === 'e1') return mockRehearsalRosters as any[];
+      return [];
+    };
+
+    try {
+      await finalizeUnmarkedAttendanceForEvent('e1');
+
+      assert.equal(updatedRosters.length, 1, 'Should update 1 roster record');
+      assert.equal(updatedRosters[0].id, 'rr1', 'Should update rr1');
+      assert.equal(updatedRosters[0].attendance, 'Absent', 'Should update to Absent');
+      assert.equal(createdRosters.length, 0, 'Should not create any new roster records');
+    } finally {
+      rosterService.getEventRoster = originalGetEventRoster;
+    }
+  } finally {
+    pb.collection = originalCollection;
   }
 });

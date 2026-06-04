@@ -428,6 +428,15 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   />
                   <span className="text-label">Receive RSVP Decline Notices</span>
                 </label>
+                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.receiveAdminNotifications !== false}
+                    onChange={(e) => setFormData({ ...formData, receiveAdminNotifications: e.target.checked })}
+                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer' }}
+                  />
+                  <span className="text-label">Receive General Admin Notifications</span>
+                </label>
               </>
             )}
             {formData.email?.trim() ? (
