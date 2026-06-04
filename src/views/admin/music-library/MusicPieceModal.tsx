@@ -33,6 +33,7 @@ export interface MusicPieceModalProps {
     allGenres: MusicGenreDef[];
     initialTitle?: string;
     onCreateGenre?: (label: string) => Promise<MusicGenreDef>;
+    initialTab?: 'details' | 'tracks' | 'performances' | 'movements';
 }
 
 export function MusicPieceModal({ 
@@ -47,7 +48,8 @@ export function MusicPieceModal({
     allPieces,
     allGenres,
     initialTitle,
-    onCreateGenre
+    onCreateGenre,
+    initialTab
 }: MusicPieceModalProps) {
     const dialog = useDialog();
     const { timezone } = useChoirSettings();
@@ -229,13 +231,13 @@ export function MusicPieceModal({
         setQuickTitle('');
         setQuickDate('');
         setQuickVenue('');
-        setActiveTab('details');
+        setActiveTab(initialTab || 'details');
         setNewMovementTitle('');
         setNewMovementDuration('');
         setExpandedMovementId(null);
         setSuggestedDuration(null);
         setManuallyAddedParts({});
-    }, [piece, isOpen, loadMovements, initialTitle]);
+    }, [piece, isOpen, loadMovements, initialTitle, initialTab]);
 
     const isDirty = useMemo(() => {
         if (piece) {

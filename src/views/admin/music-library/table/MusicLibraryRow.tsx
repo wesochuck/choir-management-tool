@@ -27,7 +27,7 @@ interface MusicLibraryRowProps {
   catalogLookupTemplate: string;
   onToggleSelection: (id: string) => void;
   onToggleExpansion: (id: string, event: React.MouseEvent) => void;
-  onEditPiece: (piece: MusicPiece) => void;
+  onEditPiece: (piece: MusicPiece, tab?: 'details' | 'tracks' | 'performances' | 'movements') => void;
   onPlayTrack: (piece: MusicPiece) => void;
 }
 
@@ -129,22 +129,6 @@ export function MusicLibraryRow({
           : '-'}
       </td>
 
-      {/* Column 5: Copies */}
-      <td
-        style={{
-          padding: '6px 10px',
-          border: '1px solid var(--border)',
-          verticalAlign: 'middle',
-        }}
-      >
-        {piece.copies !== undefined ? piece.copies : '-'}
-      </td>
-
-      {/* Column 6: Catalog Lookup Link */}
-      <MusicLibraryCatalogCell
-        catalogId={piece.catalogId}
-        catalogLookupTemplate={catalogLookupTemplate}
-      />
 
       {/* Column 7: Last Performed */}
       <td
@@ -163,6 +147,13 @@ export function MusicLibraryRow({
         isParent={isParent}
         totalMovementTracksCount={totalMovementTracksCount}
         onPlayTrack={onPlayTrack}
+        onEditPiece={onEditPiece}
+      />
+
+      {/* Column 6: Catalog Lookup Link */}
+      <MusicLibraryCatalogCell
+        catalogId={piece.catalogId}
+        catalogLookupTemplate={catalogLookupTemplate}
       />
 
       {/* Column 9: Actions */}

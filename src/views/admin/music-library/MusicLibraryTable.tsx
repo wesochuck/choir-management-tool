@@ -16,7 +16,7 @@ export interface MusicLibraryTableProps {
     selectedIds: Set<string>;
     onToggleSelection: (id: string) => void;
     onSelectAll: (checked: boolean) => void;
-    onEditPiece: (piece: MusicPiece) => void;
+    onEditPiece: (piece: MusicPiece, tab?: 'details' | 'tracks' | 'performances' | 'movements') => void;
     onPlayTrack: (piece: MusicPiece) => void;
     catalogLookupTemplate: string;
     currentPage: number;
@@ -104,21 +104,20 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                             {renderSortHeader('Title', 'title')}
                             {renderSortHeader('Composer/Arranger', 'composer')}
                             {renderSortHeader('Duration', 'duration')}
-                            {renderSortHeader('Copies', 'copies')}
-                            {renderSortHeader('Catalog ID', 'catalogId')}
                             {renderSortHeader('Last Performed', 'lastPerformed')}
                             <th className="text-label" style={{ padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Tracks</th>
+                            <th className="text-label" style={{ width: '60px', textAlign: 'center', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Link</th>
                             <th className="text-label" style={{ width: '80px', padding: '6px 10px', color: 'var(--text-muted)', border: '1px solid var(--border)', fontWeight: 600 }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
                             <tr>
-                                <td colSpan={9} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
+                                <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>Loading library...</td>
                             </tr>
                         ) : filteredPieces.length === 0 ? (
                             <tr>
-                                <td colSpan={9} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
+                                <td colSpan={8} style={{ textAlign: 'center', padding: '12px', border: '1px solid var(--border)' }}>No pieces found.</td>
                             </tr>
                         ) : (
                             filteredPieces.map(piece => {

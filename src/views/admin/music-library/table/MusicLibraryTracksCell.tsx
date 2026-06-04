@@ -5,6 +5,7 @@ interface MusicLibraryTracksCellProps {
   isParent: boolean;
   totalMovementTracksCount: number;
   onPlayTrack: (piece: MusicPiece) => void;
+  onEditPiece?: (piece: MusicPiece, tab?: 'details' | 'tracks' | 'performances' | 'movements') => void;
 }
 
 export function MusicLibraryTracksCell({
@@ -12,6 +13,7 @@ export function MusicLibraryTracksCell({
   isParent,
   totalMovementTracksCount,
   onPlayTrack,
+  onEditPiece,
 }: MusicLibraryTracksCellProps) {
   return (
     <td style={{ padding: '6px 10px', border: '1px solid var(--border)', verticalAlign: 'middle' }}>
@@ -37,6 +39,10 @@ export function MusicLibraryTracksCell({
         </button>
       ) : isParent && totalMovementTracksCount > 0 ? (
         <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditPiece?.(piece, 'tracks');
+          }}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -49,9 +55,12 @@ export function MusicLibraryTracksCell({
             fontWeight: 500,
             border: '1px solid rgba(27, 77, 62, 0.15)',
             whiteSpace: 'nowrap',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s, opacity 0.2s',
           }}
+          className="hover-glow"
         >
-          🎧 {totalMovementTracksCount} track{totalMovementTracksCount !== 1 ? 's' : ''} in movements
+          🎧 {totalMovementTracksCount} in mvts
         </span>
       ) : (
         <span className="text-xs text-muted">-</span>

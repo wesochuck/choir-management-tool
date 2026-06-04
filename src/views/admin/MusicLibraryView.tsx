@@ -71,6 +71,7 @@ export default function MusicLibraryView() {
   };
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingPiece, setEditingPiece] = useState<MusicPiece | null>(null);
+  const [modalInitialTab, setModalInitialTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>('details');
   
   // Duplicates & Bulk Delete state
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
@@ -490,7 +491,7 @@ export default function MusicLibraryView() {
               }
               setSelectedIds(newSet);
             }}
-            onEditPiece={(piece) => { setEditingPiece(piece); setIsModalOpen(true); }}
+            onEditPiece={(piece, tab) => { setEditingPiece(piece); setModalInitialTab(tab || 'details'); setIsModalOpen(true); }}
             onPlayTrack={handlePlayDefaultTrack}
             catalogLookupTemplate={catalogLookupTemplate}
             currentPage={currentPage}
@@ -626,6 +627,7 @@ export default function MusicLibraryView() {
         allPieces={pieces}
         allGenres={configuredGenres}
         onCreateGenre={handleCreateGenre}
+        initialTab={modalInitialTab}
       />
 
       <MusicImportModal
