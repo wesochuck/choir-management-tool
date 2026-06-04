@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService } from '../services/profileService';
 import { eventService, type Event } from '../services/eventService';
+import type { Retry429Options } from '../lib/networkSafety';
 
 export interface AttendanceItem {
   id: string; 
@@ -16,11 +17,20 @@ export interface AttendanceItem {
   folderReturned: boolean;
 }
 
-export const useAttendance = (eventId: string) => {
+export interface UseAttendanceOptions {
+  onRateLimitRetry?: Retry429Options['onRetry'];
+}
+
+export const useAttendance = (eventId: string, options: UseAttendanceOptions = {}) => {
+  const onRateLimitRetryRef = useRef(options.onRateLimitRetry);
   const [items, setItems] = useState<AttendanceItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
+
+  useEffect(() => {
+    onRateLimitRetryRef.current = options.onRateLimitRetry;
+  }, [options.onRateLimitRetry]);
 
   const fetchAttendance = useCallback(async () => {
     if (!eventId) return;
@@ -28,8 +38,12 @@ export const useAttendance = (eventId: string) => {
     try {
       const [currentEvent, activeProfiles, eventRosters] = await Promise.all([
         eventService.getEvents().then(events => events.find(e => e.id === eventId) || null),
-        profileService.getActiveProfiles(),
-        rosterService.getEventRoster(eventId),
+        profileService.getActiveProfiles({
+          onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+        }),
+        rosterService.getEventRoster(eventId, {
+          onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+        }),
       ]);
 
       setEvent(currentEvent);
@@ -37,7 +51,9 @@ export const useAttendance = (eventId: string) => {
       // If this is a Rehearsal, fetch the Parent Performance rosters to get folder info
       let parentRosters: EventRoster[] = [];
       if (currentEvent?.type === 'Rehearsal' && currentEvent.parentPerformanceId) {
-        parentRosters = await rosterService.getEventRoster(currentEvent.parentPerformanceId);
+        parentRosters = await rosterService.getEventRoster(currentEvent.parentPerformanceId, {
+          onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+        });
       } else {
         parentRosters = eventRosters; // Performance uses its own roster for folders
       }
@@ -102,10 +118,26 @@ export const useAttendance = (eventId: string) => {
     ));
 
     try {
-      // Record the RSVP against the current event (Rehearsal or Performance)
-      await rosterService.updateRSVP(eventId, profileId, nextRsvp);
+      const roster = await rosterService.updateRSVP(eventId, profileId, nextRsvp, '', {
+        onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+      });
+      setItems(prev => prev.map(item => 
+        item.profileId === profileId 
+          ? { 
+              ...item, 
+              id: roster.id || item.id,
+              rosterId: roster.id || item.rosterId,
+              rsvp: roster.rsvp || nextRsvp,
+              attendance: roster.attendance || item.attendance,
+              folderNumber: roster.folderNumber ?? item.folderNumber,
+              folderReturned: roster.folderReturned ?? item.folderReturned,
+            } 
+          : item
+      ));
+      setError(null);
     } catch (err: unknown) {
-      // Revert on failure
+      setError(err instanceof Error ? err.message : 'Failed to update RSVP');
+      // Revert to original state on failure
       setItems(prev => prev.map(item => 
         item.profileId === profileId 
           ? { ...item, rsvp: originalItem.rsvp } 
@@ -119,55 +151,66 @@ export const useAttendance = (eventId: string) => {
     const originalItem = items.find(item => item.profileId === profileId);
     if (!originalItem) return;
 
+    // Determine target RSVP based on attendance auto-promotion
+    const targetRsvp = (originalItem.rsvp === 'Pending' && next === 'Present') ? 'Yes' : originalItem.rsvp;
+
     // Optimistically update local state immediately
     setItems(prev => prev.map(item => 
       item.profileId === profileId 
-        ? { ...item, attendance: next } 
+        ? { ...item, attendance: next, rsvp: targetRsvp } 
         : item
     ));
 
     try {
-      const updated = await rosterService.upsertAttendance(eventId, profileId, next);
+      const roster = await rosterService.upsertAttendance(eventId, profileId, next, {
+        onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+      });
       setItems(prev => prev.map(item => 
         item.profileId === profileId 
-          ? { ...item, id: updated.id, rosterId: updated.id, attendance: updated.attendance } 
+          ? { 
+              ...item, 
+              id: roster.id || item.id,
+              rosterId: roster.id || item.rosterId,
+              attendance: roster.attendance || next,
+              rsvp: roster.rsvp || targetRsvp,
+              folderNumber: roster.folderNumber ?? item.folderNumber,
+              folderReturned: roster.folderReturned ?? item.folderReturned,
+            } 
           : item
       ));
+      setError(null);
     } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update attendance');
       // Revert to original state on failure
       setItems(prev => prev.map(item => 
         item.profileId === profileId 
-          ? { ...item, attendance: originalItem.attendance } 
+          ? { ...item, attendance: originalItem.attendance, rsvp: originalItem.rsvp } 
           : item
       ));
       throw new Error(err instanceof Error ? err.message : 'Failed to update attendance');
     }
   };
 
-  const updateFolder = async (profileId: string, folderNumber: string, folderReturned: boolean) => {
-    if (!event) return;
-    const targetEventId = event.type === 'Performance' ? event.id : event.parentPerformanceId;
-    if (!targetEventId) {
-       throw new Error("Assign a Parent Performance to this rehearsal to track folders across the cycle.");
-    }
-
+  const updateFolder = async (profileId: string, folderNumber?: string, folderReturned?: boolean) => {
     const originalItem = items.find(item => item.profileId === profileId);
     if (!originalItem) return;
 
     // Optimistically update local state immediately
     setItems(prev => prev.map(item => 
       item.profileId === profileId 
-        ? { ...item, folderNumber, folderReturned } 
+        ? { 
+            ...item, 
+            folderNumber: folderNumber !== undefined ? folderNumber : item.folderNumber, 
+            folderReturned: folderReturned !== undefined ? folderReturned : item.folderReturned 
+          } 
         : item
     ));
 
     try {
-      const updated = await rosterService.upsertFolder(targetEventId, profileId, { folderNumber, folderReturned });
-      setItems(prev => prev.map(item => 
-        item.profileId === profileId 
-          ? { ...item, folderNumber: updated.folderNumber, folderReturned: updated.folderReturned } 
-          : item
-      ));
+      await rosterService.upsertFolder(eventId, profileId, { folderNumber, folderReturned }, {
+        onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+      });
+      setError(null);
     } catch (err: unknown) {
       // Revert to original state on failure
       setItems(prev => prev.map(item => 
@@ -206,7 +249,9 @@ export const useAttendance = (eventId: string) => {
         profileId: item.profileId,
         attendance: next
       }));
-      const updatedRosters = await rosterService.bulkUpsertAttendance(eventId, updates);
+      const updatedRosters = await rosterService.bulkUpsertAttendance(eventId, updates, {
+        onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+      });
 
       const rosterMap = new Map(updatedRosters.map(r => [r.profile, r]));
       setItems(prev => prev.map(item => {
@@ -238,6 +283,7 @@ export const useAttendance = (eventId: string) => {
     items,
     isLoading,
     error,
+    event,
     setAttendance,
     setRSVP,
     setAllAttendance,

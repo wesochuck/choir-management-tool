@@ -1,4 +1,5 @@
 import { pb } from '../lib/pocketbase';
+import { retryOn429, type Retry429Options } from '../lib/networkSafety';
 import type { RecordModel } from 'pocketbase';
 import type { Profile } from './profileService';
 
@@ -16,6 +17,10 @@ export interface EventRoster extends RecordModel {
   };
 }
 
+export interface RosterRequestOptions {
+  onRetry?: Retry429Options['onRetry'];
+}
+
 type AttendanceStatus = EventRoster['attendance'];
 type RsvpStatus = EventRoster['rsvp'];
 
@@ -28,12 +33,22 @@ const isPostCommitPocketBaseError = (err: unknown) => {
   );
 };
 
-async function updateAttendanceWithVerification(rosterId: string, attendance: AttendanceStatus) {
+async function updateAttendanceWithVerification(
+  rosterId: string, 
+  attendance: AttendanceStatus, 
+  options: RosterRequestOptions = {}
+) {
   try {
-    return await pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance });
+    return await retryOn429(() => 
+      pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance }),
+      options
+    );
   } catch (err) {
     if (isPostCommitPocketBaseError(err)) {
-      const saved = await pb.collection('eventRosters').getOne<EventRoster>(rosterId).catch(() => null);
+      const saved = await retryOn429(() => 
+        pb.collection('eventRosters').getOne<EventRoster>(rosterId),
+        options
+      ).catch(() => null);
       if (saved?.attendance === attendance) {
         return saved;
       }
@@ -42,19 +57,30 @@ async function updateAttendanceWithVerification(rosterId: string, attendance: At
   }
 }
 
-async function createAttendanceWithVerification(eventId: string, profileId: string, attendance: AttendanceStatus) {
+async function createAttendanceWithVerification(
+  eventId: string, 
+  profileId: string, 
+  attendance: AttendanceStatus,
+  options: RosterRequestOptions = {}
+) {
   try {
-    return await pb.collection('eventRosters').create<EventRoster>({
-      event: eventId,
-      profile: profileId,
-      rsvp: 'Pending',
-      attendance,
-      folderReturned: false,
-    });
+    return await retryOn429(() => 
+      pb.collection('eventRosters').create<EventRoster>({
+        event: eventId,
+        profile: profileId,
+        rsvp: 'Pending',
+        attendance,
+        folderReturned: false,
+      }),
+      options
+    );
   } catch (err) {
     if (isPostCommitPocketBaseError(err)) {
-      const saved = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+      const saved = await retryOn429(() => 
+        pb.collection('eventRosters').getFirstListItem<EventRoster>(
+          pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+        ),
+        options
       ).catch(() => null);
       if (saved?.attendance === attendance) {
         return saved;
@@ -65,33 +91,45 @@ async function createAttendanceWithVerification(eventId: string, profileId: stri
 }
 
 export const rosterService = {
-  async getMyRosters() {
+  async getMyRosters(options: RosterRequestOptions = {}) {
     // Note: This assumes we have a way to find the profile for the current user.
     // We'll filter by profile.user = pb.authStore.model.id
-    return await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: pb.filter('profile.user = {:userId}', { userId: pb.authStore.model?.id }),
-      expand: 'event',
-    });
+    return await retryOn429(() => 
+      pb.collection('eventRosters').getFullList<EventRoster>({
+        filter: pb.filter('profile.user = {:userId}', { userId: pb.authStore.model?.id }),
+        expand: 'event',
+      }),
+      options
+    );
   },
 
-  async getSingerRosters(profileId: string) {
-    return await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: pb.filter('profile = {:profileId}', { profileId }),
-      expand: 'event,event.venue',
-    });
+  async getSingerRosters(profileId: string, options: RosterRequestOptions = {}) {
+    return await retryOn429(() => 
+      pb.collection('eventRosters').getFullList<EventRoster>({
+        filter: pb.filter('profile = {:profileId}', { profileId }),
+        expand: 'event,event.venue',
+      }),
+      options
+    );
   },
 
-  async updateMyRSVP(eventId: string, rsvp: RsvpStatus, rsvpNote = '') {
-    return await pb.send<EventRoster>('/api/singer/rsvp', {
-      method: 'POST',
-      body: { eventId, rsvp, rsvpNote },
-    });
+  async updateMyRSVP(eventId: string, rsvp: RsvpStatus, rsvpNote = '', options: RosterRequestOptions = {}) {
+    return await retryOn429(() => 
+      pb.send<EventRoster>('/api/singer/rsvp', {
+        method: 'POST',
+        body: { eventId, rsvp, rsvpNote },
+      }),
+      options
+    );
   },
 
-  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus, rsvpNote = '') {
+  async updateRSVP(eventId: string, profileId: string, rsvp: RsvpStatus, rsvpNote = '', options: RosterRequestOptions = {}) {
     try {
-      const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+      const existing = await retryOn429(() => 
+        pb.collection('eventRosters').getFirstListItem<EventRoster>(
+          pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+        ),
+        options
       );
       if (rsvp === 'Pending') {
         const attendance = existing.attendance || 'Pending';
@@ -104,7 +142,7 @@ export const rosterService = {
                              folderReturned ||
                              seatId !== '';
         if (!hasOtherData) {
-          await pb.collection('eventRosters').delete(existing.id);
+          await retryOn429(() => pb.collection('eventRosters').delete(existing.id), options);
           return {
             id: '',
             event: eventId,
@@ -114,16 +152,22 @@ export const rosterService = {
             folderReturned: false,
           } as EventRoster;
         } else {
-          return await pb.collection('eventRosters').update<EventRoster>(existing.id, {
-            rsvp: 'Pending',
-            rsvpNote: '',
-          });
+          return await retryOn429(() => 
+            pb.collection('eventRosters').update<EventRoster>(existing.id, {
+              rsvp: 'Pending',
+              rsvpNote: '',
+            }),
+            options
+          );
         }
       } else {
-        return await pb.collection('eventRosters').update<EventRoster>(existing.id, {
-          rsvp,
-          rsvpNote: rsvp === 'No' ? rsvpNote : '',
-        });
+        return await retryOn429(() => 
+          pb.collection('eventRosters').update<EventRoster>(existing.id, {
+            rsvp,
+            rsvpNote: rsvp === 'No' ? rsvpNote : '',
+          }),
+          options
+        );
       }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
@@ -137,30 +181,37 @@ export const rosterService = {
             folderReturned: false,
           } as EventRoster;
         }
-        return await pb.collection('eventRosters').create<EventRoster>({
-          event: eventId,
-          profile: profileId,
-          rsvp,
-          rsvpNote: rsvp === 'No' ? rsvpNote : '',
-          attendance: 'Pending',
-          folderReturned: false,
-        });
+        return await retryOn429(() => 
+          pb.collection('eventRosters').create<EventRoster>({
+            event: eventId,
+            profile: profileId,
+            rsvp,
+            rsvpNote: rsvp === 'No' ? rsvpNote : '',
+            attendance: 'Pending',
+            folderReturned: false,
+          }),
+          options
+        );
       }
       throw err;
     }
   },
 
-  async getEventRoster(eventId: string) {
-    return await pb.collection('eventRosters').getFullList<EventRoster>({
-      filter: pb.filter('event = {:eventId}', { eventId }),
-      expand: 'profile,profile.user',
-    });
+  async getEventRoster(eventId: string, options: RosterRequestOptions = {}) {
+    return await retryOn429(() => 
+      pb.collection('eventRosters').getFullList<EventRoster>({
+        filter: pb.filter('event = {:eventId}', { eventId }),
+        expand: 'profile,profile.user',
+      }),
+      options
+    );
   },
 
   async bulkUpdateRSVP(
     eventId: string, 
     updates: { profileId: string; rsvp: RsvpStatus }[],
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number) => void,
+    options: RosterRequestOptions = {}
   ) {
     if (updates.length === 0) {
       if (onProgress) onProgress(0, 0);
@@ -171,13 +222,16 @@ export const rosterService = {
       onProgress(0, updates.length);
     }
 
-    await pb.send('/api/admin/bulk-update-rsvps', {
-      method: 'POST',
-      body: {
-        eventId,
-        updates
-      }
-    });
+    await retryOn429(() => 
+      pb.send('/api/admin/bulk-update-rsvps', {
+        method: 'POST',
+        body: {
+          eventId,
+          updates
+        }
+      }),
+      options
+    );
 
     if (onProgress) {
       onProgress(updates.length, updates.length);
@@ -186,56 +240,74 @@ export const rosterService = {
     return [];
   },
   
-  async updateAttendance(rosterId: string, attendance: AttendanceStatus) {
-    return await updateAttendanceWithVerification(rosterId, attendance);
+  async updateAttendance(rosterId: string, attendance: AttendanceStatus, options: RosterRequestOptions = {}) {
+    return await updateAttendanceWithVerification(rosterId, attendance, options);
   },
 
-  async upsertAttendance(eventId: string, profileId: string, attendance: AttendanceStatus) {
+  async upsertAttendance(eventId: string, profileId: string, attendance: AttendanceStatus, options: RosterRequestOptions = {}) {
     try {
-      const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+      const existing = await retryOn429(() => 
+        pb.collection('eventRosters').getFirstListItem<EventRoster>(
+          pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+        ),
+        options
       );
-      return await updateAttendanceWithVerification(existing.id, attendance);
+      return await updateAttendanceWithVerification(existing.id, attendance, options);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
-        return await createAttendanceWithVerification(eventId, profileId, attendance);
+        return await createAttendanceWithVerification(eventId, profileId, attendance, options);
       }
       throw err;
     }
   },
 
-  async bulkUpsertAttendance(eventId: string, updates: { profileId: string, attendance: AttendanceStatus }[]) {
-    const response = await pb.send<{ rosters: EventRoster[] }>('/api/admin/bulk-upsert-attendance', {
-      method: 'POST',
-      body: {
-        eventId,
-        updates
-      }
-    });
+  async bulkUpsertAttendance(eventId: string, updates: { profileId: string, attendance: AttendanceStatus }[], options: RosterRequestOptions = {}) {
+    const response = await retryOn429(() => 
+      pb.send<{ rosters: EventRoster[] }>('/api/admin/bulk-upsert-attendance', {
+        method: 'POST',
+        body: {
+          eventId,
+          updates
+        }
+      }),
+      options
+    );
 
     return response.rosters ?? [];
   },
 
-  async updateFolder(rosterId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
-    return await pb.collection('eventRosters').update<EventRoster>(rosterId, data);
+  async updateFolder(rosterId: string, data: { folderNumber?: string, folderReturned?: boolean }, options: RosterRequestOptions = {}) {
+    return await retryOn429(() => 
+      pb.collection('eventRosters').update<EventRoster>(rosterId, data),
+      options
+    );
   },
 
-  async upsertFolder(eventId: string, profileId: string, data: { folderNumber?: string, folderReturned?: boolean }) {
+  async upsertFolder(eventId: string, profileId: string, data: { folderNumber?: string, folderReturned?: boolean }, options: RosterRequestOptions = {}) {
     try {
-      const existing = await pb.collection('eventRosters').getFirstListItem<EventRoster>(
-        pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+      const existing = await retryOn429(() => 
+        pb.collection('eventRosters').getFirstListItem<EventRoster>(
+          pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
+        ),
+        options
       );
-      return await pb.collection('eventRosters').update<EventRoster>(existing.id, data);
+      return await retryOn429(() => 
+        pb.collection('eventRosters').update<EventRoster>(existing.id, data),
+        options
+      );
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
-        return await pb.collection('eventRosters').create<EventRoster>({
-          event: eventId,
-          profile: profileId,
-          rsvp: 'Pending',
-          attendance: 'Pending',
-          folderNumber: data.folderNumber || '',
-          folderReturned: data.folderReturned || false,
-        });
+        return await retryOn429(() => 
+          pb.collection('eventRosters').create<EventRoster>({
+            event: eventId,
+            profile: profileId,
+            rsvp: 'Pending',
+            attendance: 'Pending',
+            folderNumber: data.folderNumber || '',
+            folderReturned: data.folderReturned || false,
+          }),
+          options
+        );
       }
       throw err;
     }

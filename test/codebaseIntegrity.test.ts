@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 import { JSDOM } from 'jsdom';
 import { getSrcFiles, resolveProjectPath, getFilesRecursively } from './helpers.ts';
 import { decodeGoBytes, parseJsonField } from '../src/lib/pocketbaseJson.ts';
@@ -343,6 +344,74 @@ test('codebase integrity: profiles do not have direct email fields', () => {
   }
 
   assert.ok(true, 'No direct profile email reads found');
+});
+
+test('codebase integrity: rosterService PocketBase calls must be wrapped in retryOn429', () => {
+  const serviceFile = resolveProjectPath('src/services/rosterService.ts');
+  const content = fs.readFileSync(serviceFile, 'utf8');
+  const sourceFile = ts.createSourceFile(serviceFile, content, ts.ScriptTarget.Latest, true);
+  assert.ok(sourceFile, 'Should load rosterService.ts source file');
+
+  const violations: string[] = [];
+
+  function checkNode(node: ts.Node) {
+    if (ts.isCallExpression(node)) {
+      const expression = node.expression;
+      let isPbCall = false;
+      let methodName = '';
+
+      // Check if it is a call to pb.send or pb.collection
+      if (ts.isPropertyAccessExpression(expression)) {
+        const obj = expression.expression;
+        const prop = expression.name;
+        if (ts.isIdentifier(obj) && obj.text === 'pb' && (prop.text === 'send' || prop.text === 'collection')) {
+          isPbCall = true;
+          methodName = `pb.${prop.text}`;
+        }
+      }
+
+      if (isPbCall) {
+        // Walk up the AST to check if any ancestor is a CallExpression to 'retryOn429'
+        let current: ts.Node | undefined = node.parent;
+        let isWrapped = false;
+        while (current) {
+          if (ts.isCallExpression(current)) {
+            const currentExpr = current.expression;
+            if (ts.isIdentifier(currentExpr) && currentExpr.text === 'retryOn429') {
+              isWrapped = true;
+              break;
+            }
+          }
+          current = current.parent;
+        }
+
+        if (!isWrapped) {
+          const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+          violations.push(`Line ${line + 1}, col ${character + 1}: ${methodName} call is not wrapped in retryOn429`);
+        }
+      }
+    }
+
+    ts.forEachChild(node, checkNode);
+  }
+
+  checkNode(sourceFile);
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found unprotected PocketBase calls in rosterService.ts:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nAll pb.send and pb.collection calls in rosterService.ts must be wrapped in 'retryOn429(...)' to prevent rate-limit failures.`
+    );
+  }
+  assert.ok(true, 'All rosterService.ts PocketBase calls are protected with retryOn429');
+});
+
+test('codebase integrity: useAttendance hook must not call PocketBase directly', () => {
+  const hookFile = resolveProjectPath('src/hooks/useAttendance.ts');
+  const content = fs.readFileSync(hookFile, 'utf8');
+  assert.ok(!content.includes('pb.collection'), 'useAttendance.ts must not call pb.collection directly to ensure it routes through rate-limit protected services');
+  assert.ok(!content.includes('pb.send'), 'useAttendance.ts must not call pb.send directly to ensure it routes through rate-limit protected services');
 });
 
 

@@ -15,6 +15,7 @@ import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
+import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import './AttendanceView.css';
 
 export default function AttendanceView() {
@@ -153,7 +154,19 @@ export default function AttendanceView() {
     }
   }, [events, selectedEventId, searchParams]);
 
-  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId);
+  const { onRetry: onAttendanceRateLimitRetry, reset: resetAttendanceRateLimitToast } = useRateLimitRetryToast(
+    'Attendance action is being rate-limited; retrying automatically...',
+  );
+
+  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId, {
+    onRateLimitRetry: onAttendanceRateLimitRetry,
+  });
+
+  useEffect(() => {
+    if (isLoading) {
+      resetAttendanceRateLimitToast();
+    }
+  }, [isLoading, resetAttendanceRateLimitToast]);
 
   const selectedEvent = useMemo(() => 
     events.find(e => e.id === selectedEventId), 
