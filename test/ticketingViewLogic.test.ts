@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 // Replicating the visibleEvents filter logic from src/views/admin/TicketingView.tsx
 function filterVisibleEvents(
-  events: any[],
+  events: { date: string; isTicketingEnabled: boolean; id: string }[],
   showPastAndInactive: boolean,
   now: number
 ) {

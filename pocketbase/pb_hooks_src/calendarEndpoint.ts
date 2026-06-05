@@ -334,7 +334,7 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
 
         // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-        const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}'`, "-date", 500);
+        const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
 
         // Fetch all rosters (RSVPs) for this profile
         const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);

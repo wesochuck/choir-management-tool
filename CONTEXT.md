@@ -111,6 +111,12 @@ A request submitted by a prospective singer via the public audition form, detail
 ## Singer Resource
 A document (such as a PDF handbook) or an external hyperlink (such as a Google Drive folder) managed by administrators and made available to all active singers under the Resources section of their dashboard.
 
+## Ticket Bundle
+An administrative grouping of multiple upcoming performances offered for sale as a single package (e.g., a "Season Ticket"). A bundle defines its own price, total capacity, and public marketing details.
+
+## Season Ticket
+A bundled purchase option that allows a buyer to purchase admission to a defined set of upcoming performances in a single transaction. Upon successful checkout, the system automatically generates individual standard Will Call Ticket Purchase records for each included performance, ensuring compatibility with existing door-entry, capacity, and communication logic. These individual records are flagged as originating from a season ticket purchase.
+
 ## Will Call Ticket Purchase
 A record of a successful general admission ticket transaction for a Performance, detailing the buyer's name, email, purchased quantity, payment status, and Stripe session reference. Used by administrators to manage door admission via a printed or digital will call list.
 

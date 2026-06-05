@@ -153,6 +153,11 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
         delete: mockDelete
       } as unknown as ReturnType<typeof pb.collection>;
     }
+    if (name === 'ticketPurchases') {
+      return {
+        getFullList: async () => []
+      } as unknown as ReturnType<typeof pb.collection>;
+    }
     return originalCollection.call(pb, name);
   };
 
@@ -209,6 +214,11 @@ test('eventService.createEventWithRehearsals rolls back event creation on bulk r
       return {
         create: mockCreate,
         delete: mockDelete,
+        getFullList: async () => []
+      } as unknown as ReturnType<typeof pb.collection>;
+    }
+    if (name === 'ticketPurchases') {
+      return {
         getFullList: async () => []
       } as unknown as ReturnType<typeof pb.collection>;
     }

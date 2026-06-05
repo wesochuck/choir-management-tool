@@ -26,6 +26,14 @@ export function parsePocketBaseDate(dateValue: unknown): Date | null {
 }
 
 export function validateSingerRsvpWindow(event: PocketBaseRecord): { ok: true } | { ok: false; status: number; error: string } {
+    if (event.get("isArchived")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "This event has been archived/deleted.",
+        };
+    }
+
     const eventType = String(event.get("type") || "");
 
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
@@ -55,6 +63,14 @@ export function getRsvpWindowInfo(event: PocketBaseRecord): {
     isReadOnly: boolean;
     reason: string;
 } {
+    if (event.get("isArchived")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "This event has been archived/deleted.",
+        };
+    }
+
     const eventType = String(event.get("type") || "");
 
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {

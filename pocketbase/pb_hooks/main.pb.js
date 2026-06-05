@@ -353,6 +353,13 @@ cronAdd("post_event_report", "0 * * * *", () => {
         }
     }
     function validateSingerRsvpWindow(event) {
+        if (event.get("isArchived")) {
+            return {
+                ok: false,
+                status: 410,
+                error: "This event has been archived/deleted.",
+            };
+        }
         const eventType = String(event.get("type") || "");
         if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
             return {
@@ -373,6 +380,13 @@ cronAdd("post_event_report", "0 * * * *", () => {
         return { ok: true };
     }
     function getRsvpWindowInfo(event) {
+        if (event.get("isArchived")) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This event has been archived/deleted.",
+            };
+        }
         const eventType = String(event.get("type") || "");
         if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
             return {
@@ -411,7 +425,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
     const end = new Date(now.getTime() - (hoursAfter * 60 * 60 * 1000));
     const start = new Date(end.getTime() - (1 * 60 * 60 * 1000));
 
-    const events = $app.findRecordsByFilter("events", "date >= {:start} && date < {:end}", "-date", 100, 0, { start, end });
+    const events = $app.findRecordsByFilter("events", "date >= {:start} && date < {:end} && isArchived != true", "-date", 100, 0, { start, end });
     if (!events || events.length === 0) return;
 
     const admins = $app.findRecordsByFilter("users", "role = 'admin'");
@@ -5428,6 +5442,13 @@ function parsePocketBaseDate(dateValue) {
     }
 }
 function validateSingerRsvpWindow(event) {
+    if (event.get("isArchived")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "This event has been archived/deleted.",
+        };
+    }
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
         return {
@@ -5448,6 +5469,13 @@ function validateSingerRsvpWindow(event) {
     return { ok: true };
 }
 function getRsvpWindowInfo(event) {
+    if (event.get("isArchived")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "This event has been archived/deleted.",
+        };
+    }
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
         return {
@@ -6569,6 +6597,13 @@ function parsePocketBaseDate(dateValue) {
     }
 }
 function validateSingerRsvpWindow(event) {
+    if (event.get("isArchived")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "This event has been archived/deleted.",
+        };
+    }
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
         return {
@@ -6589,6 +6624,13 @@ function validateSingerRsvpWindow(event) {
     return { ok: true };
 }
 function getRsvpWindowInfo(event) {
+    if (event.get("isArchived")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "This event has been archived/deleted.",
+        };
+    }
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
         return {
@@ -8628,6 +8670,13 @@ function parsePocketBaseDate(dateValue) {
     }
 }
 function validateSingerRsvpWindow(event) {
+    if (event.get("isArchived")) {
+        return {
+            ok: false,
+            status: 410,
+            error: "This event has been archived/deleted.",
+        };
+    }
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
         return {
@@ -8648,6 +8697,13 @@ function validateSingerRsvpWindow(event) {
     return { ok: true };
 }
 function getRsvpWindowInfo(event) {
+    if (event.get("isArchived")) {
+        return {
+            canSubmit: false,
+            isReadOnly: true,
+            reason: "This event has been archived/deleted.",
+        };
+    }
     const eventType = String(event.get("type") || "");
     if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
         return {
@@ -10412,6 +10468,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         catch (_b) {
             return e.json(404, { error: "Event not found" });
         }
+        if (event.get("isArchived")) {
+            return e.json(400, { error: "Event has been archived" });
+        }
         if (!event.get("isTicketingEnabled")) {
             return e.json(400, { error: "Ticketing is not enabled for this event" });
         }
@@ -11136,6 +11195,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         catch (_b) {
             return e.json(404, { error: "Event not found" });
         }
+        if (event.get("isArchived")) {
+            return e.json(400, { error: "Event has been archived" });
+        }
         if (!event.get("isTicketingEnabled")) {
             return e.json(400, { error: "Ticketing is not enabled for this event" });
         }
@@ -11859,6 +11921,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         }
         catch (_b) {
             return e.json(404, { error: "Event not found" });
+        }
+        if (event.get("isArchived")) {
+            return e.json(400, { error: "Event has been archived" });
         }
         if (!event.get("isTicketingEnabled")) {
             return e.json(400, { error: "Ticketing is not enabled for this event" });
@@ -13040,7 +13105,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}'`, "-date", 500);
+            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
             // Fetch all rosters (RSVPs) for this profile
             const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
             // Map event ID to roster record
@@ -13833,7 +13898,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}'`, "-date", 500);
+            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
             // Fetch all rosters (RSVPs) for this profile
             const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
             // Map event ID to roster record
@@ -14626,7 +14691,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}'`, "-date", 500);
+            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
             // Fetch all rosters (RSVPs) for this profile
             const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
             // Map event ID to roster record
@@ -15419,7 +15484,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}'`, "-date", 500);
+            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
             // Fetch all rosters (RSVPs) for this profile
             const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
             // Map event ID to roster record

@@ -24,7 +24,7 @@ export interface ConcertSummary {
 export const reportService = {
   async getPerformances(): Promise<Event[]> {
     return await pb.collection('events').getFullList<Event>({
-      filter: 'type = "Performance"',
+      filter: 'type = "Performance" && isArchived != true',
       sort: '-date',
     });
   },

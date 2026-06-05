@@ -49,11 +49,13 @@ export default function PublicTicketPurchaseView() {
     );
   }
 
-  if (error || !event) {
+  if (error || !event || !event.isTicketingEnabled || event.isArchived) {
     return (
       <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
         <AppCard style={{ width: '100%', maxWidth: 'min(480px, calc(100vw - 32px))', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error || 'Event not found.'}</p>
+          <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>
+            {error || (!event ? 'Event not found.' : 'Ticket sales are closed for this event.')}
+          </p>
           <Link to="/tickets" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Back to Events</Link>
         </AppCard>
       </div>

@@ -36,6 +36,7 @@ export interface Event extends RecordModel {
   doorsOpenTime?: string;
   publicDetails?: string;
   eventGraphic?: string;
+  isArchived?: boolean;
   expand?: {
     venue?: Venue;
     parentPerformanceId?: Event;
@@ -52,6 +53,7 @@ export interface BulkRehearsalConfig {
 export const eventService = {
   async getEvents() {
     return await pb.collection('events').getFullList<Event>({
+      filter: 'isArchived != true',
       sort: '-date',
       expand: 'parentPerformanceId,venue',
     });
@@ -117,20 +119,49 @@ export const eventService = {
 
   async deleteEvent(id: string) {
     try {
+      // 1. Check if the event has any ticket purchases
+      const purchases = await pb.collection('ticketPurchases').getFullList({
+        filter: pb.filter('event = {:eventId}', { eventId: id }),
+      });
+
+      // 2. Fetch and physically delete all associated rehearsals
       const rehearsals = await pb.collection('events').getFullList<Event>({
         filter: pb.filter('parentPerformanceId = {:id}', { id }),
       });
+
       if (rehearsals.length > 0) {
         const batch = pb.createBatch();
         for (const r of rehearsals) {
           batch.collection('events').delete(r.id);
         }
-        batch.collection('events').delete(id);
         await batch.send();
+      }
+
+      // 3. Clear public audition target if applicable
+      try {
+        const auditionSettings = await settingsService.getAuditionSettings();
+        if (auditionSettings.defaultPerformanceId === id) {
+          await settingsService.saveAuditionSettings({
+            ...auditionSettings,
+            defaultPerformanceId: '',
+            enabled: false,
+          });
+        }
+      } catch (auditionErr) {
+        console.warn('Failed to update audition settings during event deletion:', auditionErr);
+      }
+
+      // 4. Archive or physically delete
+      if (purchases.length > 0) {
+        await pb.collection('events').update(id, {
+          isArchived: true,
+          isTicketingEnabled: false,
+          isOpenForRSVP: false,
+        });
         return true;
       }
     } catch (err) {
-      console.warn('Failed to cascade delete rehearsals client-side:', err);
+      console.warn('Failed to cascade delete rehearsals or archive event client-side:', err);
     }
     return await pb.collection('events').delete(id);
   },

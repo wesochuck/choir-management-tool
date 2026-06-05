@@ -333,7 +333,7 @@ const now = new Date();
 const end = new Date(now.getTime() - (hoursAfter * 60 * 60 * 1000));
 const start = new Date(end.getTime() - (1 * 60 * 60 * 1000));
 
-const events = $app.findRecordsByFilter("events", "date >= {:start} && date < {:end}", "-date", 100, 0, { start, end });
+const events = $app.findRecordsByFilter("events", "date >= {:start} && date < {:end} && isArchived != true", "-date", 100, 0, { start, end });
 if (!events || events.length === 0) return;
 
 const admins = $app.findRecordsByFilter("users", "role = 'admin'");

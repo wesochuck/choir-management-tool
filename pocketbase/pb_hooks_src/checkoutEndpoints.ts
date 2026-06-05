@@ -52,6 +52,10 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
         return e.json(404, { error: "Event not found" });
     }
 
+    if (event.get("isArchived")) {
+        return e.json(400, { error: "Event has been archived" });
+    }
+
     if (!event.get("isTicketingEnabled")) {
         return e.json(400, { error: "Ticketing is not enabled for this event" });
     }
