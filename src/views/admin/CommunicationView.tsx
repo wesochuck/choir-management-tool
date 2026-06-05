@@ -301,22 +301,21 @@ export default function CommunicationView() {
 
   if (library.isLoading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>Loading Communications...</div>
+      <div className="comm-loading">Loading Communications...</div>
     );
   }
 
   return (
     <div className="communication-container">
       <div className="communication-header">
-        <div className="flex-col" style={{ gap: '6px' }}>
-          <h1 className="text-display" style={{ margin: 0 }}>
+        <div className="flex-col comm-header-title-container">
+          <h1 className="text-display comm-page-title">
             Communications
           </h1>
           {routeState?.returnToPolls && (
             <Link
               to="/admin/polls"
-              className="text-muted text-sm"
-              style={{ textDecoration: 'underline' }}
+              className="text-muted text-sm comm-breadcrumb-link"
             >
               Back to Polls
             </Link>
