@@ -20,12 +20,12 @@ interface UseEventSaveWorkflowArgs {
   setCloningEventId: (id: string | null) => void;
   setIsModalOpen: (open: boolean) => void;
   addEvent: (
-    data: Partial<Event>,
+    data: Partial<Event> | FormData,
     bulkConfig?: BulkRehearsalConfig,
   ) => Promise<Event | undefined>;
   editEvent: (
     id: string,
-    data: Partial<Event>,
+    data: Partial<Event> | FormData,
   ) => Promise<Event | undefined>;
   venues: Venue[];
   timezone: string;
@@ -52,7 +52,7 @@ export function useEventSaveWorkflow({
 }: UseEventSaveWorkflowArgs) {
   const handleSave = useCallback(
     async (
-      data: Partial<Event>,
+      data: Partial<Event> | FormData,
       bulkConfig?: BulkRehearsalConfig,
       openAuditions?: boolean,
     ) => {

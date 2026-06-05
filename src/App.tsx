@@ -58,6 +58,11 @@ const PublicRsvpView = lazyWithReload(() => import('./views/PublicRsvpView'));
 const PublicPollView = lazyWithReload(() => import('./views/PublicPollView'));
 const PublicUnsubscribeView = lazyWithReload(() => import('./views/PublicUnsubscribeView'));
 const PublicPlayerView = lazyWithReload(() => import('./views/PublicPlayerView'));
+const PublicTicketListView = lazyWithReload(() => import('./views/PublicTicketListView'));
+const PublicTicketPurchaseView = lazyWithReload(() => import('./views/PublicTicketPurchaseView'));
+const PublicTicketSuccessView = lazyWithReload(() => import('./views/PublicTicketSuccessView'));
+const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
+
 
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
@@ -119,6 +124,9 @@ export default function App() {
           <Route path="/poll" element={<PublicPollView />} />
           <Route path="/unsubscribe" element={<PublicUnsubscribeView />} />
           <Route path="/player" element={<PublicPlayerView />} />
+          <Route path="/tickets" element={<PublicTicketListView />} />
+          <Route path="/tickets/order/success" element={<PublicTicketSuccessView />} />
+          <Route path="/tickets/:eventId" element={<PublicTicketPurchaseView />} />
           <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
 
           <Route path="/admin/roster" element={
@@ -237,6 +245,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Singer Resources" backTo="/">
                 <ResourcesView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/tickets" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Ticketing" backTo="/">
+                <AdminTicketingView />
               </PageLayout>
             </ProtectedRoute>
           } />

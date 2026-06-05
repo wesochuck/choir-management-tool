@@ -45,6 +45,8 @@ export const EventModal: React.FC<EventModalProps> = ({
     venue: '',
   });
 
+  const [eventGraphicFile, setEventGraphicFile] = useState<File | null>(null);
+
   const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
   const [isOpenAuditions, setIsOpenAuditions] = useState(false);
   const [initialOpenAuditions, setInitialOpenAuditions] = useState(false);
@@ -75,6 +77,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [isSavingVenue, setIsSavingVenue] = useState(false);
 
   useEffect(() => {
+    setEventGraphicFile(null);
     if (initialData) {
       const formattedDate = utcToZonedInputValue(initialData.date, timezone);
       setFormData({ 
@@ -207,7 +210,29 @@ export const EventModal: React.FC<EventModalProps> = ({
 
       const utcDate = zonedInputValueToUtc(formData.date || '', timezone);
       const durationMinutes = formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal');
-      await onSave({ ...formData, date: utcDate, durationMinutes }, bulkConfig, isOpenAuditions);
+      const eventData = { ...formData, date: utcDate, durationMinutes };
+
+      let submitData: Partial<Event> | FormData = eventData;
+      if (formData.type === 'Performance') {
+        const fd = new FormData();
+        Object.entries(eventData).forEach(([key, val]) => {
+          if (val !== undefined && val !== null) {
+            if (key === 'setList') {
+              fd.append(key, JSON.stringify(val));
+            } else if (key === 'expand') {
+              // skip expanded relations in raw form payload
+            } else {
+              fd.append(key, String(val));
+            }
+          }
+        });
+        if (eventGraphicFile) {
+          fd.append('eventGraphic', eventGraphicFile);
+        }
+        submitData = fd;
+      }
+
+      await onSave(submitData, bulkConfig, isOpenAuditions);
       onClose();
     } catch (err: unknown) {
       await dialog.showMessage({
@@ -234,8 +259,15 @@ export const EventModal: React.FC<EventModalProps> = ({
       const venueChanged = (formData.venue || '') !== (initialData.venue || '');
       const rsvpChanged = Boolean(formData.isOpenForRSVP) !== Boolean(initialData.isOpenForRSVP);
       const auditionsChanged = isOpenAuditions !== initialOpenAuditions;
+      const ticketingEnabledChanged = Boolean(formData.isTicketingEnabled) !== Boolean(initialData.isTicketingEnabled);
+      const advancePriceChanged = (formData.advancePriceCents || 0) !== (initialData.advancePriceCents || 0);
+      const dayOfPriceChanged = (formData.dayOfPriceCents || 0) !== (initialData.dayOfPriceCents || 0);
+      const capacityChanged = (formData.ticketCapacity || 0) !== (initialData.ticketCapacity || 0);
+      const doorsOpenChanged = (formData.doorsOpenTime || '') !== (initialData.doorsOpenTime || '');
+      const publicDetailsChanged = (formData.publicDetails || '') !== (initialData.publicDetails || '');
+      const graphicChanged = eventGraphicFile !== null;
       
-      return titleChanged || dateChanged || typeChanged || detailsChanged || durationChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged;
+      return titleChanged || dateChanged || typeChanged || detailsChanged || durationChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged || ticketingEnabledChanged || advancePriceChanged || dayOfPriceChanged || capacityChanged || doorsOpenChanged || publicDetailsChanged || graphicChanged;
     } else {
       const hasTitle = Boolean(formData.title?.trim());
       const hasDetails = Boolean(formData.details?.trim());
@@ -248,10 +280,11 @@ export const EventModal: React.FC<EventModalProps> = ({
       const hasBulkAdd = shouldBulkAdd;
       
       const hasInlineVenue = Boolean(newVenueName.trim() || newVenueRows.trim() || newVenueAddress.trim());
+      const hasTicketing = Boolean(formData.isTicketingEnabled || formData.advancePriceCents || formData.dayOfPriceCents || formData.ticketCapacity || formData.doorsOpenTime || formData.publicDetails || eventGraphicFile);
 
-      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isDurationChanged || isTypeChanged || hasBulkAdd || hasInlineVenue;
+      return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isDurationChanged || isTypeChanged || hasBulkAdd || hasInlineVenue || hasTicketing;
     }
-  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, isOpenAuditions, initialOpenAuditions]);
+  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, isOpenAuditions, initialOpenAuditions, eventGraphicFile]);
 
   const handleClose = async () => {
     if (isDirty) {
@@ -522,6 +555,104 @@ export const EventModal: React.FC<EventModalProps> = ({
                 {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
               </button>
             </div>
+          </div>
+        )}
+
+        {formData.type === 'Performance' && (
+          <div className="flex-col" style={{ gap: 'var(--space-md)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)', marginTop: 'var(--space-xs)' }}>
+            <div style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.9rem' }}>🎟️ Ticketing Configuration</div>
+            
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+              <input
+                type="checkbox"
+                checked={formData.isTicketingEnabled || false}
+                onChange={(e) => setFormData({ ...formData, isTicketingEnabled: e.target.checked })}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+              />
+              <span className="text-label">Enable Online Ticket Sales</span>
+            </label>
+
+            {formData.isTicketingEnabled && (
+              <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+                  <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Advance Price (Cents)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 1500 for $15.00"
+                      value={formData.advancePriceCents === undefined ? '' : formData.advancePriceCents}
+                      onChange={(e) => setFormData({ ...formData, advancePriceCents: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      className="card"
+                      style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                    />
+                  </div>
+                  <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Day-Of Price (Cents)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 2000 for $20.00"
+                      value={formData.dayOfPriceCents === undefined ? '' : formData.dayOfPriceCents}
+                      onChange={(e) => setFormData({ ...formData, dayOfPriceCents: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      className="card"
+                      style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+                  <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Ticket Capacity</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 150"
+                      value={formData.ticketCapacity === undefined ? '' : formData.ticketCapacity}
+                      onChange={(e) => setFormData({ ...formData, ticketCapacity: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      className="card"
+                      style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                    />
+                  </div>
+                  <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                    <label className="text-label">Doors Open Time</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 6:30 PM"
+                      value={formData.doorsOpenTime || ''}
+                      onChange={(e) => setFormData({ ...formData, doorsOpenTime: e.target.value })}
+                      className="card"
+                      style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                  <label className="text-label">Event Graphic / Flyer Image</label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setEventGraphicFile(file);
+                    }}
+                    className="card"
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', display: 'block', height: 'auto' }}
+                  />
+                  {initialData?.eventGraphic && (
+                    <span className="text-xs text-muted">Current file: {initialData.eventGraphic}</span>
+                  )}
+                </div>
+
+                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                  <label className="text-label">Public Details (HTML / Text)</label>
+                  <textarea
+                    placeholder="Describe the concert program, parking info, dress code, etc."
+                    value={formData.publicDetails || ''}
+                    onChange={(e) => setFormData({ ...formData, publicDetails: e.target.value })}
+                    className="card"
+                    style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', height: '100px', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

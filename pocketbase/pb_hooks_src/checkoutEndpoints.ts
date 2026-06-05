@@ -13,7 +13,7 @@ declare function readerToString(reader: unknown, maxBytes?: number): string;
 
 declare class Record implements PocketBaseRecord {
     id: string;
-    constructor(collection: unknown, data?: Record<string, unknown>);
+    constructor(collection: unknown, data?: { [key: string]: unknown });
     get(field: string): unknown;
     set(field: string, value: unknown): void;
 }
@@ -142,7 +142,7 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
         });
     }
 
-    const metadata: Record<string, string> = {
+    const metadata: { [key: string]: string } = {
         paymentType: "ticket",
         eventId,
         quantity: String(qty),
@@ -162,10 +162,10 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
 }
 
 export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
-    let rawBody = "";
+    let rawBody: string;
     try {
         rawBody = readerToString(e.request.body);
-    } catch (err: unknown) {
+    } catch {
         return e.json(400, { error: "Failed to read request body" });
     }
 
@@ -216,10 +216,10 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                 customer?: string;
                 currency?: string;
                 amount_total?: number;
-                metadata?: Record<string, string>;
+                metadata?: { [key: string]: string };
             };
         };
-    } = {};
+    };
 
     try {
         eventObj = JSON.parse(rawBody);
@@ -304,7 +304,7 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                 stripePaymentIntentId: session.payment_intent || "",
                 stripeCustomerId: session.customer || "",
                 status: "paid",
-                marketingOptIn: metadata.marketingOptIn === "true" || metadata.marketingOptIn === true,
+                marketingOptIn: metadata.marketingOptIn === "true",
                 fulfilledAt: new Date().toISOString()
             });
 
@@ -314,7 +314,7 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
             try {
                 const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
                 let content = template.get("content") as string || "";
-                let subject = template.get("subject") as string || "";
+                const rawSubject = template.get("subject") as string || "";
 
                 let timezone = "America/New_York";
                 try {
@@ -337,8 +337,16 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                     // default
                 }
 
+                const eventTitle = targetEvent.get("title") as string || "";
+                const eventDateRaw = targetEvent.get("date") as string || "";
+                const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+                const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
+
                 content = content
                     .replace(/{buyerName}/g, metadata.buyerName || "")
+                    .replace(/{eventTitle}/g, eventTitle)
+                    .replace(/{eventDate}/g, eventDateStr)
                     .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
                     .replace(/{quantity}/g, String(quantity))
                     .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))

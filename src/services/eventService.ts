@@ -29,6 +29,13 @@ export interface Event extends RecordModel {
   isOpenForRSVP?: boolean;
   setListApproved?: boolean;
   setList?: SetListItem[];
+  isTicketingEnabled?: boolean;
+  advancePriceCents?: number;
+  dayOfPriceCents?: number;
+  ticketCapacity?: number;
+  doorsOpenTime?: string;
+  publicDetails?: string;
+  eventGraphic?: string;
   expand?: {
     venue?: Venue;
     parentPerformanceId?: Event;
@@ -64,7 +71,16 @@ export const eventService = {
     });
   },
 
-  async createEvent(data: Partial<Event>) {
+  async createEvent(data: Partial<Event> | FormData) {
+    if (data instanceof FormData) {
+      if (data.get('parentPerformanceId') === '') {
+        data.set('parentPerformanceId', '');
+      }
+      if (data.get('venue') === '') {
+        data.set('venue', '');
+      }
+      return await pb.collection('events').create<Event>(data);
+    }
     // Ensure date is in a format PocketBase likes (ISO string)
     const payload = { 
       setListApproved: true,
@@ -79,7 +95,16 @@ export const eventService = {
     return await pb.collection('events').create<Event>(payload);
   },
 
-  async updateEvent(id: string, data: Partial<Event>) {
+  async updateEvent(id: string, data: Partial<Event> | FormData) {
+    if (data instanceof FormData) {
+      if (data.get('parentPerformanceId') === '') {
+        data.set('parentPerformanceId', '');
+      }
+      if (data.get('venue') === '') {
+        data.set('venue', '');
+      }
+      return await pb.collection('events').update<Event>(id, data);
+    }
     const payload = { ...data };
     if (payload.parentPerformanceId === '') {
       payload.parentPerformanceId = null as unknown as string;
@@ -198,7 +223,7 @@ export const eventService = {
     return created;
   },
 
-  async createEventWithRehearsals(data: Partial<Event>, bulkConfig?: BulkRehearsalConfig) {
+  async createEventWithRehearsals(data: Partial<Event> | FormData, bulkConfig?: BulkRehearsalConfig) {
     const createdEvent = await this.createEvent(data);
     if (bulkConfig) {
       try {

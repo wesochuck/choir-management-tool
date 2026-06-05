@@ -10409,11 +10409,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     }
     function handleStripeWebhook(e) {
         var _a, _b;
-        let rawBody = "";
+        let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (err) {
+        catch (_c) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -10449,11 +10449,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         if (!$security.equal(localSig, signature)) {
             return e.json(400, { error: "Signature verification failed" });
         }
-        let eventObj = {};
+        let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_c) {
+        catch (_d) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -10477,7 +10477,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
                 }
-                catch (_d) {
+                catch (_e) {
                     // Record not found, continue
                 }
                 // Re-verify capacity before saving
@@ -10485,7 +10485,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_e) {
+                catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 let currentSold = 0;
@@ -10496,7 +10496,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         currentSold += typeof q === 'number' ? q : 0;
                     });
                 }
-                catch (_f) {
+                catch (_g) {
                     // Ignore query error
                 }
                 const capacity = targetEvent.get("ticketCapacity");
@@ -10529,7 +10529,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     stripePaymentIntentId: session.payment_intent || "",
                     stripeCustomerId: session.customer || "",
                     status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true" || metadata.marketingOptIn === true,
+                    marketingOptIn: metadata.marketingOptIn === "true",
                     fulfilledAt: new Date().toISOString()
                 });
                 $app.save(record);
@@ -10537,7 +10537,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
                     let content = template.get("content") || "";
-                    let subject = template.get("subject") || "";
+                    const rawSubject = template.get("subject") || "";
                     let timezone = "America/New_York";
                     try {
                         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -10547,7 +10547,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_h) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -10557,11 +10557,17 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_j) {
                         // default
                     }
+                    const eventTitle = targetEvent.get("title") || "";
+                    const eventDateRaw = targetEvent.get("date") || "";
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
                         .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{eventTitle}/g, eventTitle)
+                        .replace(/{eventDate}/g, eventDateStr)
                         .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
@@ -10596,7 +10602,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_j) {
+                        catch (_k) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -10621,7 +10627,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     purchase.set("status", "refunded");
                     $app.save(purchase);
                 }
-                catch (_k) {
+                catch (_l) {
                     console.log("Refunded purchase record not found for Payment Intent ID: " + paymentIntentId);
                 }
             }
@@ -11124,11 +11130,11 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     }
     function handleStripeWebhook(e) {
         var _a, _b;
-        let rawBody = "";
+        let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (err) {
+        catch (_c) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -11164,11 +11170,11 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         if (!$security.equal(localSig, signature)) {
             return e.json(400, { error: "Signature verification failed" });
         }
-        let eventObj = {};
+        let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_c) {
+        catch (_d) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -11192,7 +11198,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
                 }
-                catch (_d) {
+                catch (_e) {
                     // Record not found, continue
                 }
                 // Re-verify capacity before saving
@@ -11200,7 +11206,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_e) {
+                catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 let currentSold = 0;
@@ -11211,7 +11217,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         currentSold += typeof q === 'number' ? q : 0;
                     });
                 }
-                catch (_f) {
+                catch (_g) {
                     // Ignore query error
                 }
                 const capacity = targetEvent.get("ticketCapacity");
@@ -11244,7 +11250,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     stripePaymentIntentId: session.payment_intent || "",
                     stripeCustomerId: session.customer || "",
                     status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true" || metadata.marketingOptIn === true,
+                    marketingOptIn: metadata.marketingOptIn === "true",
                     fulfilledAt: new Date().toISOString()
                 });
                 $app.save(record);
@@ -11252,7 +11258,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
                     let content = template.get("content") || "";
-                    let subject = template.get("subject") || "";
+                    const rawSubject = template.get("subject") || "";
                     let timezone = "America/New_York";
                     try {
                         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -11262,7 +11268,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_h) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -11272,11 +11278,17 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_j) {
                         // default
                     }
+                    const eventTitle = targetEvent.get("title") || "";
+                    const eventDateRaw = targetEvent.get("date") || "";
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
                         .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{eventTitle}/g, eventTitle)
+                        .replace(/{eventDate}/g, eventDateStr)
                         .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
@@ -11311,7 +11323,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_j) {
+                        catch (_k) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -11336,7 +11348,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     purchase.set("status", "refunded");
                     $app.save(purchase);
                 }
-                catch (_k) {
+                catch (_l) {
                     console.log("Refunded purchase record not found for Payment Intent ID: " + paymentIntentId);
                 }
             }
@@ -11839,11 +11851,11 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     }
     function handleStripeWebhook(e) {
         var _a, _b;
-        let rawBody = "";
+        let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (err) {
+        catch (_c) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -11879,11 +11891,11 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         if (!$security.equal(localSig, signature)) {
             return e.json(400, { error: "Signature verification failed" });
         }
-        let eventObj = {};
+        let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_c) {
+        catch (_d) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -11907,7 +11919,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
                 }
-                catch (_d) {
+                catch (_e) {
                     // Record not found, continue
                 }
                 // Re-verify capacity before saving
@@ -11915,7 +11927,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_e) {
+                catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 let currentSold = 0;
@@ -11926,7 +11938,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         currentSold += typeof q === 'number' ? q : 0;
                     });
                 }
-                catch (_f) {
+                catch (_g) {
                     // Ignore query error
                 }
                 const capacity = targetEvent.get("ticketCapacity");
@@ -11959,7 +11971,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     stripePaymentIntentId: session.payment_intent || "",
                     stripeCustomerId: session.customer || "",
                     status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true" || metadata.marketingOptIn === true,
+                    marketingOptIn: metadata.marketingOptIn === "true",
                     fulfilledAt: new Date().toISOString()
                 });
                 $app.save(record);
@@ -11967,7 +11979,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
                     let content = template.get("content") || "";
-                    let subject = template.get("subject") || "";
+                    const rawSubject = template.get("subject") || "";
                     let timezone = "America/New_York";
                     try {
                         const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
@@ -11977,7 +11989,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_h) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -11987,11 +11999,17 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_j) {
                         // default
                     }
+                    const eventTitle = targetEvent.get("title") || "";
+                    const eventDateRaw = targetEvent.get("date") || "";
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
                         .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{eventTitle}/g, eventTitle)
+                        .replace(/{eventDate}/g, eventDateStr)
                         .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
@@ -12026,7 +12044,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_j) {
+                        catch (_k) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -12051,7 +12069,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     purchase.set("status", "refunded");
                     $app.save(purchase);
                 }
-                catch (_k) {
+                catch (_l) {
                     console.log("Refunded purchase record not found for Payment Intent ID: " + paymentIntentId);
                 }
             }

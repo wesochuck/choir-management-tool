@@ -23,7 +23,7 @@ export const useEvents = () => {
     fetchEvents();
   }, []);
 
-  const addEvent = async (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig) => {
+  const addEvent = async (data: Partial<Event> | FormData, bulkConfig?: BulkRehearsalConfig) => {
     try {
       const record = await eventService.createEventWithRehearsals(data, bulkConfig);
       await fetchEvents();
@@ -33,7 +33,7 @@ export const useEvents = () => {
     }
   };
 
-  const editEvent = async (id: string, data: Partial<Event>) => {
+  const editEvent = async (id: string, data: Partial<Event> | FormData) => {
     try {
       const updated = await eventService.updateEvent(id, data);
       await fetchEvents();
