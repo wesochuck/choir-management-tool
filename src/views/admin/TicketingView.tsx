@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ticketService, type TicketPurchase } from '../../services/ticketService';
 import { pb } from '../../lib/pocketbase';
 import type { Event } from '../../services/eventService';
@@ -13,7 +13,9 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
   const dialog = useDialog();
+  const [now] = useState(() => Date.now());
   const [events, setEvents] = useState<Event[]>([]);
+  const [showPastAndInactive, setShowPastAndInactive] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [purchases, setPurchases] = useState<TicketPurchase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,22 +26,75 @@ export default function TicketingView() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const [res, tz] = await Promise.all([
+        const [eventsEnabled, purchasesRes, tz] = await Promise.all([
           pb.collection('events').getFullList<Event>({
             filter: 'isTicketingEnabled = true',
             sort: '-date'
           }),
+          pb.collection('ticketPurchases').getFullList({
+            fields: 'event'
+          }),
           fetchChoirTimezone().catch(() => 'America/New_York')
         ]);
-        setEvents(res);
+
+        const enabledIds = new Set(eventsEnabled.map(e => e.id));
+        const eventIdsWithPurchases = Array.from(new Set(purchasesRes.map(p => p.event)));
+        const missingEventIds = eventIdsWithPurchases.filter(id => !enabledIds.has(id));
+
+        let allEvents = [...eventsEnabled];
+
+        if (missingEventIds.length > 0) {
+          const chunks: string[][] = [];
+          for (let i = 0; i < missingEventIds.length; i += 50) {
+            chunks.push(missingEventIds.slice(i, i + 50));
+          }
+
+          const missingEventsPromises = chunks.map(chunk => {
+            const filterStr = chunk.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
+            const placeholders = chunk.reduce((acc, id, idx) => {
+              acc[`id_${idx}`] = id;
+              return acc;
+            }, {} as Record<string, string>);
+            return pb.collection('events').getFullList<Event>({
+              filter: pb.filter(filterStr, placeholders)
+            });
+          });
+
+          const missingEventsResults = await Promise.all(missingEventsPromises);
+          const missingEvents = missingEventsResults.flat();
+          allEvents = [...allEvents, ...missingEvents];
+        }
+
+        allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setEvents(allEvents);
         setTimezone(tz);
-        if (res.length > 0) setSelectedEventId(res[0].id);
       } catch (err) {
         console.error(err);
       }
     }
     loadEvents();
   }, []);
+
+  const visibleEvents = useMemo(() => {
+    const cutoffTime = now - 3 * 60 * 60 * 1000;
+    return events.filter(ev => {
+      if (showPastAndInactive) return true;
+      const isUpcoming = new Date(ev.date).getTime() >= cutoffTime;
+      const isActive = ev.isTicketingEnabled;
+      return isUpcoming && isActive;
+    });
+  }, [events, showPastAndInactive, now]);
+
+  useEffect(() => {
+    if (visibleEvents.length > 0) {
+      const alreadySelected = visibleEvents.some(e => e.id === selectedEventId);
+      if (!alreadySelected) {
+        setSelectedEventId(visibleEvents[0].id);
+      }
+    } else {
+      setSelectedEventId('');
+    }
+  }, [visibleEvents, selectedEventId]);
 
   useEffect(() => {
     async function loadPurchases() {
@@ -195,33 +250,62 @@ export default function TicketingView() {
 
       <div className="card flex-responsive" style={{ padding: 'var(--space-md)', gap: 'var(--space-md)', alignItems: 'center', backgroundColor: 'var(--neutral-bg)' }}>
         <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-          <label className="text-label">Select Performance</label>
+          <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="text-label">Select Performance</label>
+            <label className="flex-row" style={{ alignItems: 'center', gap: '6px', fontSize: '0.875rem', cursor: 'pointer', margin: 0 }}>
+              <input
+                type="checkbox"
+                checked={showPastAndInactive}
+                onChange={e => setShowPastAndInactive(e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              <span>Include past & inactive performances</span>
+            </label>
+          </div>
           <select
             className="card"
             style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
             value={selectedEventId}
             onChange={e => setSelectedEventId(e.target.value)}
           >
-            {events.map(ev => (
-              <option key={ev.id} value={ev.id}>
-                {ev.title} ({formatInTimezone(ev.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })})
-              </option>
-            ))}
-            {events.length === 0 && (
+            {visibleEvents.map(ev => {
+              const cutoffTime = now - 3 * 60 * 60 * 1000;
+              const isPast = new Date(ev.date).getTime() < cutoffTime;
+              const isInactive = !ev.isTicketingEnabled;
+              const suffix = isInactive ? ' (Inactive)' : isPast ? ' (Past)' : '';
+              return (
+                <option key={ev.id} value={ev.id}>
+                  {ev.title} ({formatInTimezone(ev.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}){suffix}
+                </option>
+              );
+            })}
+            {visibleEvents.length === 0 && (
               <option value="">No ticketing-enabled events</option>
             )}
           </select>
         </div>
 
         {selectedEvent && (
-          <div className="flex-row" style={{ gap: 'var(--space-xl)', padding: '0 var(--space-md)' }}>
-            <div className="flex-col" style={{ gap: 2 }}>
+          <div className="flex-row" style={{ gap: 'var(--space-xl)', padding: '0 var(--space-md)', flexWrap: 'wrap' }}>
+            <div className="flex-col" style={{ gap: 2, minWidth: '100px' }}>
               <span className="text-xs text-muted">TICKETS SOLD</span>
               <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>
                 {totalTicketsSold} {capacity > 0 ? `/ ${capacity}` : ''}
               </span>
             </div>
-            <div className="flex-col" style={{ gap: 2 }}>
+            <div className="flex-col" style={{ gap: 2, minWidth: '110px' }}>
+              <span className="text-xs text-muted">TICKET SALES</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex-col" style={{ gap: 2, minWidth: '110px' }}>
+              <span className="text-xs text-muted">FEES COLLECTED</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex-col" style={{ gap: 2, minWidth: '110px' }}>
               <span className="text-xs text-muted">TOTAL REVENUE</span>
               <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
                 ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
