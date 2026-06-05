@@ -11,7 +11,9 @@ import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
+import { BaseModal } from '../../components/common/BaseModal';
 import './DashboardView.css';
+
 
 export default function DashboardView() {
   const dialog = useDialog();
@@ -409,40 +411,34 @@ export default function DashboardView() {
         </div>
       </div>
 
-      {/* Announcement slide-over/modal */}
-      {selectedAnnouncement && (
-        <div className="announcement-modal-backdrop" onClick={() => setSelectedAnnouncement(null)}>
-          <div className="announcement-modal" onClick={e => e.stopPropagation()}>
-            <div className="announcement-modal-header">
-              <div>
-                <h2 className="announcement-modal-title">{selectedAnnouncement.subject || 'Bulletin details'}</h2>
-                <div className="announcement-modal-meta">Dispatched on {getFormattedDate(selectedAnnouncement.created)}</div>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setSelectedAnnouncement(null)}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '1.25rem', border: 'none', padding: '0 8px' }}
-              >
-                ×
-              </button>
+      {/* Announcement modal */}
+      <BaseModal
+        isOpen={!!selectedAnnouncement}
+        onClose={() => setSelectedAnnouncement(null)}
+        title={selectedAnnouncement?.subject || 'Bulletin details'}
+        maxWidth="600px"
+        footer={
+          <button 
+            type="button" 
+            onClick={() => setSelectedAnnouncement(null)} 
+            className="btn btn-secondary btn-sm"
+          >
+            Close
+          </button>
+        }
+      >
+        {selectedAnnouncement && (
+          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div className="text-xs text-muted" style={{ marginTop: '-8px' }}>
+              Dispatched on {getFormattedDate(selectedAnnouncement.created)}
             </div>
-            <div className="announcement-modal-body message-preview-content">
+            <div className="message-preview-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
               {/* Secure content rendering */}
               <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement.content) }} />
             </div>
-            <div className="announcement-modal-footer">
-              <button 
-                type="button" 
-                onClick={() => setSelectedAnnouncement(null)} 
-                className="btn btn-secondary btn-sm"
-              >
-                Close
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </BaseModal>
     </PageLayout>
   );
 }
