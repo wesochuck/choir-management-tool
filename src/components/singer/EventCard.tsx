@@ -158,35 +158,65 @@ export const EventCard: React.FC<EventCardProps> = ({
             </a>
           </div>
           {event.details && <p className="text-muted text-sm">{event.details}</p>}
-          {missStats && (
-            <div style={{
-              marginTop: 'var(--space-xs)',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '0.85rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: missStats.missed > maxRehearsalMisses ? '#fef2f2' : '#fffbeb',
-              border: missStats.missed > maxRehearsalMisses ? '1px solid #fca5a5' : '1px solid #fde68a',
-              color: missStats.missed > maxRehearsalMisses ? '#991b1b' : '#92400e',
-              fontWeight: 600
-            }}>
-              <span>
-                Rehearsal Attendance: {missStats.missed} missed of {missStats.total} rehearsals
-              </span>
-              <span className="badge" style={{
-                backgroundColor: missStats.missed > maxRehearsalMisses ? '#ef4444' : '#f59e0b',
-                color: 'white',
-                fontWeight: 800,
-                border: 'none',
-                padding: '2px 6px',
-                fontSize: '0.75rem'
+          {missStats && (() => {
+            const styles = (() => {
+              if (missStats.missed > maxRehearsalMisses) {
+                return {
+                  containerBg: '#fef2f2',
+                  containerBorder: '1px solid #fca5a5',
+                  containerColor: '#991b1b',
+                  badgeBg: '#ef4444',
+                  badgeText: 'EXCEEDED LIMIT'
+                };
+              }
+              if (missStats.missed > 0) {
+                return {
+                  containerBg: '#fffbeb',
+                  containerBorder: '1px solid #fde68a',
+                  containerColor: '#92400e',
+                  badgeBg: '#f59e0b',
+                  badgeText: `LIMIT: ${maxRehearsalMisses}`
+                };
+              }
+              return {
+                containerBg: '#f0fdf4',
+                containerBorder: '1px solid #bbf7d0',
+                containerColor: '#166534',
+                badgeBg: '#22c55e',
+                badgeText: `LIMIT: ${maxRehearsalMisses}`
+              };
+            })();
+
+            return (
+              <div style={{
+                marginTop: 'var(--space-xs)',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: styles.containerBg,
+                border: styles.containerBorder,
+                color: styles.containerColor,
+                fontWeight: 600
               }}>
-                {missStats.missed > maxRehearsalMisses ? 'EXCEEDED LIMIT' : `LIMIT: ${maxRehearsalMisses}`}
-              </span>
-            </div>
-          )}
+                <span>
+                  Rehearsal Attendance: {missStats.missed} missed of {missStats.total} rehearsals
+                </span>
+                <span className="badge" style={{
+                  backgroundColor: styles.badgeBg,
+                  color: 'white',
+                  fontWeight: 800,
+                  border: 'none',
+                  padding: '2px 6px',
+                  fontSize: '0.75rem'
+                }}>
+                  {styles.badgeText}
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         {previewData.visible && previewData.setList.length > 0 && (

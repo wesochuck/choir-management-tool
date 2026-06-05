@@ -461,6 +461,7 @@ export function ComposePanel({
               hasApprovedSetList={(() => {
                 return selectedEvent ? selectedEvent.setListApproved !== false : false;
               })()}
+              hasCallTime={!!selectedEvent?.callTime?.trim()}
             />
           </div>
       </div>
