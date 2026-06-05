@@ -26,6 +26,7 @@ import { DraftsPanel } from './communications/DraftsPanel';
 import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
+import './communications/Communications.css';
 import type {
   AutomatedTask,
   CommunicationRouteState,

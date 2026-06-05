@@ -1,0 +1,325 @@
+/* Communications Module Styles */
+
+.comm-compose-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.comm-compose-header-row {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.comm-compose-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+  min-width: 250px;
+}
+
+.comm-compose-input {
+  height: 44px;
+  padding: 0 12px;
+}
+
+.comm-validation-error {
+  color: var(--error, #ef4444);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.comm-validation-warning {
+  color: var(--warning, #f59e0b);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Placeholder Panel */
+.comm-placeholder-panel {
+  padding: var(--space-md);
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  position: sticky;
+  top: var(--space-lg, 24px);
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  boxShadow: var(--shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.05));
+}
+
+.comm-placeholder-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-sm);
+}
+
+.comm-placeholder-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comm-placeholder-header-title h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.comm-placeholder-header-desc {
+  font-size: 0.75rem;
+  margin: 4px 0 0 0;
+}
+
+.comm-placeholder-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  box-sizing: border-box;
+}
+
+.comm-placeholder-category {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comm-placeholder-category-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.comm-placeholder-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  background-color: var(--bg, #f8fafc);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  height: auto;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comm-placeholder-item-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+
+.comm-placeholder-tag {
+  font-size: 0.82rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.comm-placeholder-insert {
+  font-size: 11px;
+  color: var(--primary);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.comm-placeholder-item:hover .comm-placeholder-insert {
+  opacity: 1;
+}
+
+.comm-placeholder-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.25;
+}
+
+/* Message History */
+.comm-message-list-header {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: 4px;
+}
+
+.comm-message-search-container {
+  position: relative;
+  flex: 1;
+}
+
+.comm-message-search-input {
+  width: 100%;
+}
+
+.comm-message-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.comm-message-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.comm-message-item:last-child {
+  border-bottom: none;
+}
+
+.comm-message-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comm-message-meta {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.comm-message-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.comm-message-subject {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.comm-message-recipients-link {
+  padding: 0;
+  height: auto;
+  font-size: 0.75rem;
+  color: var(--primary);
+  text-decoration: underline;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+/* Automated Tasks */
+.comm-automated-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.comm-automated-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.comm-automated-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.comm-automated-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light, #f1f5f9);
+}
+
+/* Templates */
+.comm-template-item {
+  padding: var(--space-sm) var(--space-md);
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: none;
+  border: 1px solid var(--border);
+  margin: 0;
+}
+
+.comm-email-mockup {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background-color: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comm-email-frame {
+  width: 100%;
+  background-color: #ffffff;
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 400px;
+}
+
+.comm-email-header {
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comm-email-header-row {
+  display: flex;
+  color: #64748b;
+}
+
+.comm-email-header-label {
+  width: 60px;
+  font-weight: 600;
+}
+
+.comm-email-body {
+  overflow-y: auto;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #334155;
+  word-break: break-word;
+}
+
+/* Layout and Loading */
+.comm-loading {
+  padding: 40px;
+  text-align: center;
+}
+
+.comm-header-title-container {
+  gap: 6px;
+}
+
+.comm-page-title {
+  margin: 0;
+}
+
+.comm-breadcrumb-link {
+  text-decoration: underline;
+}
