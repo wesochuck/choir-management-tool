@@ -901,6 +901,8 @@ export function MusicPieceModal({
                                     allLabel="No Genre"
                                     allowCreate={true}
                                     onCreateOption={handleCreateGenreInline}
+                                    variant="chips"
+                                    searchable
                                 />
                             </div>
                         </div>

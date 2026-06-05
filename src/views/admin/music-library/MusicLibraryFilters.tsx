@@ -93,6 +93,8 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         onChange={onGenreFiltersChange}
                         placeholder="Genres"
                         allLabel="All Genres"
+                        variant="chips"
+                        searchable
                     />
                 </div>
             </div>
