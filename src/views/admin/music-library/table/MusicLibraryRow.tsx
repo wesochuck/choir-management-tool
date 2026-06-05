@@ -4,7 +4,6 @@ import type { MusicGenreDef } from '../../../../services/settingsService';
 import {
   formatSecondsToDuration,
   parseDurationToSeconds,
-  formatPerformanceHistory,
 } from '../../../../lib/musicPieceUtils';
 import { getEffectiveMostRecentPerformanceDate } from '../../../../lib/music/performanceHistory';
 import { MusicLibraryTitleCell } from './MusicLibraryTitleCell';
@@ -97,7 +96,7 @@ export function MusicLibraryRow({
       {/* Column 5: Performance Count */}
       <td className="ml-table-cell ml-table-cell-center ml-perf-count">
         {piece.performances && piece.performances.length > 0 ? (
-          <span title={formatPerformanceHistory(piece).join('\n')}>
+          <span>
             {piece.performances.length}
           </span>
         ) : '-'}
