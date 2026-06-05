@@ -31,6 +31,7 @@ Add ticketing-specific configuration:
 *   `ticketCapacity` (number/integer): Max tickets available for purchase.
 *   `doorsOpenTime` (text, optional): Doors-open time (e.g. "6:30 PM") to show public buyers.
 *   `publicDetails` (text, optional): Markdown details for the public page (parking, directions).
+*   `eventGraphic` (file, optional): Hero image for the event. Displayed as the banner on the public ticket purchase page. `maxSelect: 1`, max 5 MB, accepts `image/jpeg`, `image/png`, `image/webp`.
 
 ### B. Create `ticketPurchases` Collection
 Record buyer transactions:
@@ -40,6 +41,7 @@ Record buyer transactions:
 *   `buyerEmail` (text, required)
 *   `quantity` (number/integer, required)
 *   `unitPriceCents` (number/integer, required)
+*   `feeCents` (number/integer, required)
 *   `amountPaidCents` (number/integer, required)
 *   `currency` (text, required, e.g. `'usd'`)
 *   `stripeSessionId` (text, unique, required)
@@ -66,7 +68,10 @@ Adds custom router endpoints:
     2. **Sold Count Derived from Paid Purchases:** Sold count is calculated on-the-fly by summing `quantity` from existing paid `ticketPurchases` where `event = eventId` and `status = paid`. Remaining capacity is derived via `ticketCapacity - soldCount`.
     3. **Capacity Check:** Validates that the requested quantity does not exceed remaining capacity.
     4. **Day-Of Price Selection:** Retrieves the choir's global `timezone` setting and checks if today (in that timezone) is the day of the performance. If yes, applies `dayOfPriceCents`; otherwise, applies `advancePriceCents`.
-    5. Initiates Stripe Checkout with `paymentType: "ticket"` in metadata, and returns the session URL.
+    5. **Fee Calculation:** Calculates the Stripe processing fee needed to net the exact `unitPriceCents`. 
+        *   Formula (in cents): `gross_cents = Math.round((unitPriceCents + 30) / (1 - 0.029))`
+        *   `feeCents = gross_cents - unitPriceCents`
+    6. Initiates Stripe Checkout with **two line items** (Ticket Price and "Processing Fee"), sets `paymentType: "ticket"` in metadata, and returns the session URL.
 *   `POST /api/webhook/stripe`: 
     1. **Signature Verification:** Reads the raw request body (`c.request().body()`) and the `Stripe-Signature` header. Uses PocketBase's `$security` helpers to verify the HMAC SHA-256 signature against `STRIPE_WEBHOOK_SECRET`. *(Note: In the Goja VM, you must parse the raw byte array of the body exactly as received to ensure signature matches).*
     2. **Event Filtering:** Listens specifically for `checkout.session.completed` events.
@@ -92,8 +97,10 @@ Avoid route conflicts between `/tickets/:eventId` and `/tickets/order/success` b
 ### Public Pages (`src/views/`)
 *   `PublicTicketListView.tsx` (`/tickets`): Lists upcoming events where `isTicketingEnabled === true`.
 *   `PublicTicketPurchaseView.tsx` (`/tickets/:eventId`): 
+    *   Displays a hero banner using the event's `eventGraphic` (via `pb.files.getURL(event, event.eventGraphic)`), falling back to a styled gradient header if no graphic is uploaded.
     *   Displays event details, doors open time, venue, and renders the `publicDetails` markdown to HTML.
     *   **Public Markdown Sanitization:** Before rendering `publicDetails`, sanitizes the output HTML to strip unsafe tags/scripts.
+    *   **Transparent Pricing:** Calculates and displays the exact base ticket price, the required processing fee, and the grand total so the buyer knows the final cost before submitting the form. (Uses the same `(sale_amount + 0.30) / (1 - 0.029)` formula client-side for display purposes).
     *   Form captures: Quantity, Buyer Name, Email Address, and Confirm Email Address.
     *   **Double-Entry Email Validation:** Frontend validation requires the Email and Confirm Email fields to match exactly, preventing email typos.
     *   **Public Checkout UX Warnings:**
@@ -104,7 +111,7 @@ Avoid route conflicts between `/tickets/:eventId` and `/tickets/order/success` b
 
 ### Event Creation / Edit Modal (`src/components/admin/EventModal.tsx`)
 Expose ticketing fields when the event type is set to `'Performance'`:
-*   Add inputs for `isTicketingEnabled`, `advancePriceCents`, `dayOfPriceCents`, `ticketCapacity`, and `doorsOpenTime`.
+*   Add inputs for `isTicketingEnabled`, `advancePriceCents`, `dayOfPriceCents`, `ticketCapacity`, `doorsOpenTime`, and an image upload for `eventGraphic` (reusing the existing `PhotoUpload` component pattern).
 *   Integrate the shared `MarkdownEditor` component for editing `publicDetails` (parking, directions, etc.).
 
 -----
@@ -131,12 +138,13 @@ Update `resolveRecipients` to support granular **Ticket Buyers** targets instead
 
 We will add regression coverage for the following scenarios:
 1.  **Pricing Rules:** Verify the unit price selection correctly switches between `advancePriceCents` and `dayOfPriceCents` at midnight in the local event timezone.
-2.  **Webhook Verification Rejection:** Verify `/api/webhook/stripe` rejects requests with invalid signatures or unsupported event types.
-3.  **Idempotency:** Verify the webhook handler safely ignores duplicate `checkout.session.completed` events for the same `stripeSessionId` without erroring.
-4.  **Sold Count Derivation:** Verify that the total sold count only includes paid purchases.
-5.  **Exclusion Rules:** Verify refunded purchases are excluded from will-call lists and communications filters.
-6.  **XSS Sanitization:** Verify that `publicDetails` markdown rendering strips out unsafe HTML/script tags.
-7.  **Success Page Resilience:** Verify that the success page handles already verified session IDs gracefully.
+2.  **Fee Calculation Math:** Verify the Stripe fee offset is calculated correctly using the `(sale_amount + 0.30) / (1 - 0.029)` rule, ensuring the final net amount matches the original ticket price.
+3.  **Webhook Verification Rejection:** Verify `/api/webhook/stripe` rejects requests with invalid signatures or unsupported event types.
+4.  **Idempotency:** Verify the webhook handler safely ignores duplicate `checkout.session.completed` events for the same `stripeSessionId` without erroring.
+5.  **Sold Count Derivation:** Verify that the total sold count only includes paid purchases.
+6.  **Exclusion Rules:** Verify refunded purchases are excluded from will-call lists and communications filters.
+7.  **XSS Sanitization:** Verify that `publicDetails` markdown rendering strips out unsafe HTML/script tags.
+8.  **Success Page Resilience:** Verify that the success page handles already verified session IDs gracefully.
 
 ---
 
