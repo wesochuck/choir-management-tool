@@ -37,6 +37,7 @@ export default function TicketingView() {
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publicDetails, setPublicDetails] = useState('');
 
   const reloadData = useCallback(async () => {
     setLoading(true);
@@ -297,6 +298,7 @@ export default function TicketingView() {
     setSaleEndDate('');
     setSelectedEventIds([]);
     setIsActive(false);
+    setPublicDetails('');
     setIsModalOpen(true);
   };
 
@@ -321,6 +323,7 @@ export default function TicketingView() {
 
     setSelectedEventIds(bundle.events || []);
     setIsActive(bundle.isActive);
+    setPublicDetails(bundle.publicDetails || '');
     setIsModalOpen(true);
   };
 
@@ -339,7 +342,8 @@ export default function TicketingView() {
         capacity: Number(capacity),
         events: selectedEventIds,
         saleEndDate: new Date(saleEndDate).toISOString(),
-        isActive
+        isActive,
+        publicDetails: publicDetails.trim()
       };
 
       if (editingBundle) {
@@ -662,12 +666,12 @@ export default function TicketingView() {
               <table className="w-full text-left" style={{ borderCollapse: 'collapse', width: '100%' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <th style={{ padding: '12px 8px' }}>Bundle Title</th>
-                    <th style={{ padding: '12px 8px' }}>Price</th>
-                    <th style={{ padding: '12px 8px' }}>Active</th>
-                    <th style={{ padding: '12px 8px' }}>Capacity Sold</th>
-                    <th style={{ padding: '12px 8px' }}>Sale End Date</th>
-                    <th style={{ padding: '12px 8px' }}>Included Events</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Bundle Title</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Price</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Active</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Capacity Sold</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Sale End Date</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Included Events</th>
                     <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -739,13 +743,13 @@ export default function TicketingView() {
               <table className="w-full text-left" style={{ borderCollapse: 'collapse', width: '100%' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <th style={{ padding: '12px 8px' }}>Buyer Name</th>
-                    <th style={{ padding: '12px 8px' }}>Email</th>
-                    <th style={{ padding: '12px 8px' }}>Purchase Date</th>
-                    <th style={{ padding: '12px 8px' }}>Season Bundle</th>
-                    <th style={{ padding: '12px 8px' }}>Qty</th>
-                    <th style={{ padding: '12px 8px' }}>Amount Paid</th>
-                    <th style={{ padding: '12px 8px' }}>Status</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Buyer Name</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Purchase Date</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Season Bundle</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Qty</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Amount Paid</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Status</th>
                     <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -814,6 +818,20 @@ export default function TicketingView() {
         }
       >
         <form id="bundle-form" onSubmit={handleSaveBundle} className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          {editingBundle && (
+            <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'rgba(74, 124, 89, 0.05)', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
+              <strong>🔗 Share Season Pass Link:</strong>{' '}
+              <a 
+                href={`/tickets/bundle/${editingBundle.id}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                style={{ textDecoration: 'underline', color: 'var(--primary)', wordBreak: 'break-all' }}
+              >
+                {window.location.origin}/tickets/bundle/{editingBundle.id}
+              </a>
+            </div>
+          )}
+
           <div className="flex-col" style={{ gap: '4px' }}>
             <label className="text-label">Bundle Title</label>
             <input
@@ -903,6 +921,17 @@ export default function TicketingView() {
                 <span className="text-muted text-xs">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
               )}
             </div>
+          </div>
+
+          <div className="flex-col" style={{ gap: '4px' }}>
+            <label className="text-label">Public Details / Instructions</label>
+            <textarea
+              placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
+              className="card"
+              style={{ padding: '8px 12px', minHeight: '100px', resize: 'vertical', border: '1px solid var(--border)' }}
+              value={publicDetails}
+              onChange={e => setPublicDetails(e.target.value)}
+            />
           </div>
 
           <label className="flex-row" style={{ alignItems: 'center', gap: '8px', cursor: 'pointer' }}>

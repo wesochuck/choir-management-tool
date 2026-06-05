@@ -5,10 +5,11 @@ import type { Event } from '../services/eventService';
 import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 
 export default function PublicTicketListView() {
   useDocumentTitle('Ticket Sales');
+  const { choirName } = useChoirName();
   const [events, setEvents] = useState<Event[]>([]);
   const [bundles, setBundles] = useState<TicketBundle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,8 +56,10 @@ export default function PublicTicketListView() {
     <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'flex-start', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
       <AppCard style={{ width: '100%', maxWidth: 'min(720px, calc(100vw - 32px))' }}>
         <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-          <Link to="/login" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}>Admin Login</Link>
-          <h1 className="text-display" style={{ margin: 0 }}>Ticket Purchases</h1>
+          <div className="flex-col" style={{ gap: '2px' }}>
+            {choirName && <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{choirName}</span>}
+            <h1 className="text-display" style={{ margin: 0 }}>Ticket Purchases</h1>
+          </div>
           <p className="text-muted" style={{ margin: 0 }}>
             Select an upcoming performance or a season pass to purchase tickets online.
           </p>

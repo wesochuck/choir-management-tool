@@ -3,11 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
 import { ticketService, type TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
+import { sanitizeHtml } from '../lib/textSafety';
 
 export default function PublicBundlePurchaseView() {
   useDocumentTitle('Purchase Season Tickets');
+  const { choirName } = useChoirName();
   const { bundleId } = useParams<{ bundleId: string }>();
   const [bundle, setBundle] = useState<TicketBundle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,7 +110,10 @@ export default function PublicBundlePurchaseView() {
       <AppCard style={{ width: '100%', maxWidth: 'min(720px, calc(100vw - 32px))' }}>
         <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
           <Link to="/tickets" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}>← Back to Tickets</Link>
-          <h1 className="text-display" style={{ margin: 0 }}>Buy Season Tickets</h1>
+          <div className="flex-col" style={{ gap: '2px' }}>
+            {choirName && <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{choirName}</span>}
+            <h1 className="text-display" style={{ margin: 0 }}>Buy Season Tickets</h1>
+          </div>
         </div>
 
         <div className="card flex-responsive" style={{ padding: 'var(--space-md)', gap: 'var(--space-md)', backgroundColor: 'var(--primary-light)' }}>
@@ -136,6 +141,16 @@ export default function PublicBundlePurchaseView() {
             )}
           </div>
         </div>
+
+        {bundle.publicDetails && (
+          <div className="flex-col" style={{ gap: 'var(--space-xs)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-md)' }}>
+            <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase' }}>Bundle Details & Instructions</span>
+            <div 
+              className="text-body"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(bundle.publicDetails) }}
+            />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
           {error && <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}

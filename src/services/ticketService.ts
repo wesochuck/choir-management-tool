@@ -9,6 +9,7 @@ export interface TicketBundle extends RecordModel {
   events: string[];
   saleEndDate: string;
   isActive: boolean;
+  publicDetails?: string;
   expand?: {
     events?: Event[];
   };

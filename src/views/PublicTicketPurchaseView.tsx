@@ -5,11 +5,12 @@ import type { Event } from '../services/eventService';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { sanitizeHtml } from '../lib/textSafety';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 
 export default function PublicTicketPurchaseView() {
   useDocumentTitle('Purchase Tickets');
+  const { choirName } = useChoirName();
   const { eventId } = useParams<{ eventId: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,10 @@ export default function PublicTicketPurchaseView() {
       <AppCard style={{ width: '100%', maxWidth: 'min(720px, calc(100vw - 32px))' }}>
         <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
           <Link to="/tickets" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}>← Back to Events</Link>
-          <h1 className="text-display" style={{ margin: 0 }}>Buy Tickets</h1>
+          <div className="flex-col" style={{ gap: '2px' }}>
+            {choirName && <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{choirName}</span>}
+            <h1 className="text-display" style={{ margin: 0 }}>Buy Tickets</h1>
+          </div>
         </div>
 
         <div className="card flex-responsive" style={{ padding: 'var(--space-md)', gap: 'var(--space-md)', backgroundColor: 'var(--primary-light)' }}>
