@@ -67,13 +67,21 @@ export default function PublicTicketSuccessView() {
             </div>
             <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.875rem' }}>
               <span className="text-muted">Quantity:</span>
-              <strong>{purchase.quantity} ticket{purchase.quantity > 1 ? 's' : ''}</strong>
+              <strong>{purchase.quantity} {purchase.expand?.bundle ? 'Season Pass' : 'ticket'}{purchase.quantity > 1 ? (purchase.expand?.bundle ? 'es' : 's') : ''}</strong>
             </div>
             <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.875rem' }}>
               <span className="text-muted">Amount Paid:</span>
               <strong>${(purchase.amountPaidCents / 100).toFixed(2)}</strong>
             </div>
-            {purchase.expand?.event && (
+            {purchase.expand?.bundle ? (
+              <div className="flex-col" style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-xs)', marginTop: 'var(--space-xs)', gap: '4px' }}>
+                <span className="text-muted text-xs">Season Ticket Pass</span>
+                <strong>{purchase.expand.bundle.title}</strong>
+                <p className="text-xs text-muted" style={{ margin: 0 }}>
+                  This pass grants Will Call admission to all performances included in this package.
+                </p>
+              </div>
+            ) : purchase.expand?.event ? (
               <div className="flex-col" style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-xs)', marginTop: 'var(--space-xs)', gap: '4px' }}>
                 <span className="text-muted text-xs">Event Details</span>
                 <strong>{purchase.expand.event.title}</strong>
@@ -88,7 +96,7 @@ export default function PublicTicketSuccessView() {
                   />
                 )}
               </div>
-            )}
+            ) : null}
             <p className="text-xs text-muted" style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-xs)', marginTop: 'var(--space-xs)', margin: 0, textAlign: 'center' }}>
               A confirmation email has been sent. Your tickets will be held at Will Call on show day. Please bring a photo ID matching the buyer's name.
             </p>

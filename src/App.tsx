@@ -61,7 +61,9 @@ const PublicPlayerView = lazyWithReload(() => import('./views/PublicPlayerView')
 const PublicTicketListView = lazyWithReload(() => import('./views/PublicTicketListView'));
 const PublicTicketPurchaseView = lazyWithReload(() => import('./views/PublicTicketPurchaseView'));
 const PublicTicketSuccessView = lazyWithReload(() => import('./views/PublicTicketSuccessView'));
+const PublicBundlePurchaseView = lazyWithReload(() => import('./views/PublicBundlePurchaseView'));
 const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
+
 
 
 
@@ -126,6 +128,7 @@ export default function App() {
           <Route path="/player" element={<PublicPlayerView />} />
           <Route path="/tickets" element={<PublicTicketListView />} />
           <Route path="/tickets/order/success" element={<PublicTicketSuccessView />} />
+          <Route path="/tickets/bundle/:bundleId" element={<PublicBundlePurchaseView />} />
           <Route path="/tickets/:eventId" element={<PublicTicketPurchaseView />} />
           <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
 

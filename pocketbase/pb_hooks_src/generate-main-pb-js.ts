@@ -125,7 +125,13 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     },
     checkoutEndpoints: {
         files: ['checkoutEndpoints.ts'],
-        symbols: ['handleCreateTicketsSession', 'handleStripeWebhook', 'handleAdminRefundTicket'],
+        symbols: [
+            'handleCreateTicketsSession',
+            'handleStripeWebhook',
+            'handleAdminRefundTicket',
+            'handleCreateBundleSession',
+            'handleAdminRefundBundle'
+        ],
         dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson'],
     },
 };
@@ -903,9 +909,13 @@ ${renderRoute('POST', '/api/generate-player-token', 'return handleGeneratePlayer
 
 ${renderRoute('POST', '/api/checkout/create-tickets-session', 'return handleCreateTicketsSession(e);')}
 
+${renderRoute('POST', '/api/checkout/create-bundle-session', 'return handleCreateBundleSession(e);')}
+
 ${renderRoute('POST', '/api/webhook/stripe', 'return handleStripeWebhook(e);')}
 
 ${renderRoute('POST', '/api/admin/refund-ticket', 'return handleAdminRefundTicket(e);')}
+
+${renderRoute('POST', '/api/admin/refund-bundle', 'return handleAdminRefundBundle(e);')}
 
 ${renderRoute('GET', '/api/player-playlist', 'return handlePlayerPlaylist(e);')}
 

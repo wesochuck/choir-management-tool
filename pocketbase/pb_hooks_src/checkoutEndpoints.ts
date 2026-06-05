@@ -18,6 +18,10 @@ declare class Record implements PocketBaseRecord {
     set(field: string, value: unknown): void;
 }
 
+interface AppWithTransaction {
+    runInTransaction(callback: (txApp: PocketBaseApp) => void): void;
+}
+
 interface GoHttpRequest {
     header: {
         get(key: string): string;
@@ -153,6 +157,160 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
         eventId,
         quantity: String(qty),
         unitPriceCents: String(unitPriceCents),
+        feeCents: String(feeCents),
+        buyerName: name,
+        buyerEmail: email
+    };
+
+    try {
+        const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+        return e.json(200, { url: session.url, sessionId: session.id });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+    }
+}
+
+export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
+    const body = e.requestInfo().body;
+    const bundleId = body.bundleId as string;
+    const quantity = body.quantity;
+    const email = body.email as string;
+    const name = body.name as string;
+
+    if (!bundleId || !quantity || !email || !name) {
+        return e.json(400, { error: "Missing required fields" });
+    }
+
+    const qty = Number(quantity);
+    if (isNaN(qty) || qty <= 0 || qty > 10) {
+        return e.json(400, { error: "Invalid ticket bundle quantity" });
+    }
+
+    let bundle: PocketBaseRecord;
+    try {
+        bundle = $app.findRecordById("ticketBundles", bundleId);
+    } catch {
+        return e.json(404, { error: "Bundle not found" });
+    }
+
+    if (!bundle.get("isActive")) {
+        return e.json(400, { error: "This bundle is not currently active for purchase" });
+    }
+
+    const saleEndDateStr = bundle.get("saleEndDate") as string;
+    if (saleEndDateStr) {
+        const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+        if (new Date() > saleEndDate) {
+            return e.json(400, { error: "The sale period for this bundle has ended" });
+        }
+    }
+
+    const bundleEventsVal = bundle.get("events");
+    const bundleEventIds = Array.isArray(bundleEventsVal) ? (bundleEventsVal as string[]) : [];
+    if (bundleEventIds.length === 0) {
+        return e.json(400, { error: "This bundle does not contain any events" });
+    }
+
+    // 1. Check bundle capacity
+    let bundleSoldCount = 0;
+    const firstEventId = bundleEventIds[0];
+    try {
+        const bundlePurchases = $app.findRecordsByFilter(
+            "ticketPurchases",
+            "bundle = {:bundleId} && event = {:eventId} && status = 'paid'",
+            "",
+            10000,
+            0,
+            { bundleId, eventId: firstEventId }
+        );
+        bundlePurchases.forEach(p => {
+            const q = p.get("quantity");
+            bundleSoldCount += typeof q === 'number' ? q : 0;
+        });
+    } catch (err: unknown) {
+        console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+    }
+
+    const bundleCapacity = Number(bundle.get("capacity") || 0);
+    if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
+        return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+    }
+
+    // 2. Check individual event capacities
+    for (const eventId of bundleEventIds) {
+        let event: PocketBaseRecord;
+        try {
+            event = $app.findRecordById("events", eventId);
+        } catch {
+            return e.json(404, { error: `Included event ${eventId} not found` });
+        }
+
+        if (event.get("isArchived")) {
+            return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+        }
+
+        let eventSoldCount = 0;
+        try {
+            const eventPurchases = $app.findRecordsByFilter(
+                "ticketPurchases",
+                "event = {:eventId} && status = 'paid'",
+                "",
+                10000,
+                0,
+                { eventId }
+            );
+            eventPurchases.forEach(p => {
+                const q = p.get("quantity");
+                eventSoldCount += typeof q === 'number' ? q : 0;
+            });
+        } catch (err: unknown) {
+            console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+        }
+
+        const eventCapacity = Number(event.get("ticketCapacity") || 0);
+        if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
+            return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+        }
+    }
+
+    const priceCents = Number(bundle.get("priceCents") || 0);
+    const totalTicketsCents = priceCents * qty;
+    const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+
+    const meta = $app.settings()?.meta;
+    const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || "";
+    const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+    const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${appUrl}/tickets`;
+
+    const lineItems = [
+        {
+            price_data: {
+                currency: "usd",
+                product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
+                unit_amount: priceCents
+            },
+            quantity: qty
+        }
+    ];
+
+    if (feeCents > 0) {
+        lineItems.push({
+            price_data: {
+                currency: "usd",
+                product_data: { name: "Processing Fee" },
+                unit_amount: feeCents
+            },
+            quantity: 1
+        });
+    }
+
+    const metadata: { [key: string]: string } = {
+        paymentType: "bundle",
+        bundleId,
+        quantity: String(qty),
+        unitPriceCents: String(priceCents),
         feeCents: String(feeCents),
         buyerName: name,
         buyerEmail: email
@@ -377,6 +535,216 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
             } catch (mailErr: unknown) {
                 console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
             }
+        } else if (paymentType === "bundle") {
+            const bundleId = metadata.bundleId;
+            const stripeSessionId = session.id || "";
+            const quantity = Number(metadata.quantity || 0);
+
+            if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                return e.json(400, { error: "Invalid session metadata" });
+            }
+
+            // Idempotency: Check if record exists
+            try {
+                const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                if (existing) {
+                    return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                }
+            } catch {
+                // Record not found, continue
+            }
+
+            // Re-verify capacity before saving
+            let targetBundle: PocketBaseRecord;
+            try {
+                targetBundle = $app.findRecordById("ticketBundles", bundleId);
+            } catch {
+                return e.json(400, { error: "Bundle not found during webhook processing" });
+            }
+
+            const bundleEventsVal = targetBundle.get("events");
+            const bundleEventIds = Array.isArray(bundleEventsVal) ? (bundleEventsVal as string[]) : [];
+
+            let isCapacityViolated = false;
+
+            // Verify bundle capacity
+            let bundleSoldCount = 0;
+            if (bundleEventIds.length > 0) {
+                const firstEventId = bundleEventIds[0];
+                try {
+                    const bundlePurchases = $app.findRecordsByFilter(
+                        "ticketPurchases",
+                        "bundle = {:bundleId} && event = {:eventId} && status = 'paid'",
+                        "",
+                        10000,
+                        0,
+                        { bundleId, eventId: firstEventId }
+                    );
+                    bundlePurchases.forEach(p => {
+                        const q = p.get("quantity");
+                        bundleSoldCount += typeof q === 'number' ? q : 0;
+                    });
+                } catch {
+                    // Ignore query error
+                }
+            }
+            const bundleCapacity = Number(targetBundle.get("capacity") || 0);
+            if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
+                isCapacityViolated = true;
+            }
+
+            // Verify individual event capacities
+            if (!isCapacityViolated) {
+                for (const eventId of bundleEventIds) {
+                    let event: PocketBaseRecord;
+                    try {
+                        event = $app.findRecordById("events", eventId);
+                    } catch {
+                        isCapacityViolated = true;
+                        break;
+                    }
+
+                    let eventSoldCount = 0;
+                    try {
+                        const eventPurchases = $app.findRecordsByFilter(
+                            "ticketPurchases",
+                            "event = {:eventId} && status = 'paid'",
+                            "",
+                            10000,
+                            0,
+                            { eventId }
+                        );
+                        eventPurchases.forEach(p => {
+                            const q = p.get("quantity");
+                            eventSoldCount += typeof q === 'number' ? q : 0;
+                        });
+                    } catch {
+                        // Ignore query error
+                    }
+
+                    const eventCapacity = Number(event.get("ticketCapacity") || 0);
+                    if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
+                        isCapacityViolated = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isCapacityViolated) {
+                const pi = session.payment_intent;
+                if (pi) {
+                    try {
+                        refundPaymentIntent(pi);
+                    } catch (refundErr: unknown) {
+                        console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
+                    }
+                }
+                return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
+            }
+
+            // Create purchase records in transaction
+            const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const txApp = $app as unknown as AppWithTransaction;
+            
+            try {
+                txApp.runInTransaction((tx) => {
+                    bundleEventIds.forEach(eventId => {
+                        const record = new Record(ticketPurchasesCollection, {
+                            event: eventId,
+                            bundle: bundleId,
+                            buyerName: metadata.buyerName || "",
+                            buyerEmail: metadata.buyerEmail || "",
+                            quantity: quantity,
+                            unitPriceCents: Number(metadata.unitPriceCents || 0),
+                            feeCents: Number(metadata.feeCents || 0),
+                            amountPaidCents: session.amount_total || 0,
+                            currency: session.currency || "usd",
+                            stripeSessionId: stripeSessionId,
+                            stripePaymentIntentId: session.payment_intent || "",
+                            stripeCustomerId: session.customer || "",
+                            status: "paid",
+                            marketingOptIn: metadata.marketingOptIn === "true",
+                            fulfilledAt: new Date().toISOString()
+                        });
+                        tx.save(record);
+                    });
+                });
+            } catch (txErr: unknown) {
+                console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
+                return e.json(500, { error: "Failed to create ticket purchases" });
+            }
+
+            // Enqueue Consolidated Ticket Confirmation email
+            try {
+                const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                let content = template.get("content") as string || "";
+                const rawSubject = template.get("subject") as string || "";
+
+                let timezone = "America/New_York";
+                try {
+                    const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                    const valueStr = tzSetting.get("value");
+                    const tzP = parseJsonField<{ timezone?: string }>(valueStr);
+                    if (tzP?.timezone) {
+                        timezone = tzP.timezone;
+                    }
+                } catch {
+                    // Use default America/New_York timezone
+                }
+
+                let choirName = "Choir Management Tool";
+                try {
+                    const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                    const val = parseJsonField<string>(choirRecord.get("value"));
+                    if (val) choirName = val;
+                } catch {
+                    // Use default choir name
+                }
+
+                const eventDetailsParts: string[] = [];
+                bundleEventIds.forEach(eventId => {
+                    try {
+                        const ev = $app.findRecordById("events", eventId);
+                        const evTitle = ev.get("title") as string || "";
+                        const evDate = ev.get("date") as string || "";
+                        const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
+                    } catch {
+                        // Ignore individual event loading error
+                    }
+                });
+                const eventDetailsStr = eventDetailsParts.join("\n");
+
+                const bundleTitle = targetBundle.get("title") as string || "";
+                const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
+
+                content = content
+                    .replace(/{buyerName}/g, metadata.buyerName || "")
+                    .replace(/{bundleTitle}/g, bundleTitle)
+                    .replace(/{eventDetails}/g, eventDetailsStr)
+                    .replace(/{quantity}/g, String(quantity))
+                    .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
+                    .replace(/{choirName}/g, choirName);
+
+                const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                const mailRecord = new Record(emailQueueCollection, {
+                    recipientId: "buyer_" + stripeSessionId,
+                    recipientEmail: metadata.buyerEmail || "",
+                    recipientName: metadata.buyerName || "Buyer",
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        bundleId: bundleId,
+                        type: "Automated Confirmation"
+                    })
+                });
+
+                $app.save(mailRecord);
+            } catch (mailErr: unknown) {
+                console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+            }
         } else if (paymentType === "dues") {
             const profileId = metadata.profileId;
             const season = metadata.season;
@@ -406,11 +774,18 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
         const paymentIntentId = charge?.payment_intent;
         if (paymentIntentId) {
             try {
-                const purchase = $app.findFirstRecordByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", { paymentIntentId });
-                purchase.set("status", "refunded");
-                $app.save(purchase);
-            } catch {
-                console.log("Refunded purchase record not found for Payment Intent ID: " + paymentIntentId);
+                const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                if (purchases && purchases.length > 0) {
+                    const txApp = $app as unknown as AppWithTransaction;
+                    txApp.runInTransaction((tx) => {
+                        purchases.forEach(p => {
+                            p.set("status", "refunded");
+                            tx.save(p);
+                        });
+                    });
+                }
+            } catch (err: unknown) {
+                console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
             }
         }
     }
@@ -446,6 +821,52 @@ export function handleAdminRefundTicket(e: PocketBaseRequestEvent): unknown {
         refundPaymentIntent(pi);
         purchase.set("status", "refunded");
         $app.save(purchase);
+        return e.json(200, { success: true });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+    }
+}
+
+export function handleAdminRefundBundle(e: PocketBaseRequestEvent): unknown {
+    const authRecord = e.auth;
+    if (!authRecord || authRecord.get("role") !== "admin") {
+        return e.json(403, { error: "Forbidden" });
+    }
+
+    const body = e.requestInfo().body;
+    const paymentIntentId = body.paymentIntentId as string;
+    if (!paymentIntentId) {
+        return e.json(400, { error: "Missing paymentIntentId" });
+    }
+
+    let purchases: PocketBaseRecord[];
+    try {
+        purchases = $app.findRecordsByFilter(
+            "ticketPurchases",
+            "stripePaymentIntentId = {:paymentIntentId}",
+            "",
+            1000,
+            0,
+            { paymentIntentId }
+        );
+    } catch {
+        return e.json(404, { error: "No purchases found for the payment intent" });
+    }
+
+    if (purchases.length === 0) {
+        return e.json(404, { error: "No purchase records found" });
+    }
+
+    try {
+        refundPaymentIntent(paymentIntentId);
+        const txApp = $app as unknown as AppWithTransaction;
+        txApp.runInTransaction((tx) => {
+            purchases.forEach(p => {
+                p.set("status", "refunded");
+                tx.save(p);
+            });
+        });
         return e.json(200, { success: true });
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);

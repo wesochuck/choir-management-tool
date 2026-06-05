@@ -23,4 +23,12 @@ test('Ticketing Pricing and Fee Calculation Rules', () => {
   const totalFreeTickets = freeUnitPrice * freeQuantity;
   const freeFeeCents = totalFreeTickets > 0 ? (Math.round(totalFreeTickets * 0.029) + 30) : 0;
   assert.strictEqual(freeFeeCents, 0);
+
+  // 4. Season Ticket Bundle calculation
+  const bundlePrice = 4500; // $45.00
+  const bundleQuantity = 2;
+  const totalBundleCents = bundlePrice * bundleQuantity; // 9000 cents ($90.00)
+  const bundleFeeCents = totalBundleCents > 0 ? (Math.round(totalBundleCents * 0.029) + 30) : 0;
+  assert.strictEqual(bundleFeeCents, 291); // 9000 * 0.029 = 261 + 30 = 291 cents ($2.91)
+  assert.strictEqual(totalBundleCents + bundleFeeCents, 9291); // $92.91 total
 });

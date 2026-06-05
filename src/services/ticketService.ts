@@ -2,6 +2,18 @@ import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import type { Event } from './eventService';
 
+export interface TicketBundle extends RecordModel {
+  title: string;
+  priceCents: number;
+  capacity: number;
+  events: string[];
+  saleEndDate: string;
+  isActive: boolean;
+  expand?: {
+    events?: Event[];
+  };
+}
+
 export interface TicketPurchase extends RecordModel {
   event: string;
   buyerName: string;
@@ -17,8 +29,10 @@ export interface TicketPurchase extends RecordModel {
   status: 'paid' | 'refunded' | 'pending';
   marketingOptIn: boolean;
   fulfilledAt?: string;
+  bundle?: string;
   expand?: {
     event?: Event;
+    bundle?: TicketBundle;
   };
 }
 
@@ -30,12 +44,20 @@ export const ticketService = {
     });
   },
 
+  async createBundleCheckoutSession(bundleId: string, quantity: number, email: string, name: string): Promise<{ url: string; sessionId: string }> {
+    return await pb.send<{ url: string; sessionId: string }>('/api/checkout/create-bundle-session', {
+      method: 'POST',
+      body: { bundleId, quantity, email, name }
+    });
+  },
+
   async pollForPurchaseRecord(sessionId: string, retries = 5, delay = 1000): Promise<TicketPurchase | null> {
     // @allow-sequential-await - Sequential polling checks for Stripe fulfillment status.
     for (let i = 0; i < retries; i++) {
       try {
         const record = await pb.collection('ticketPurchases').getFirstListItem<TicketPurchase>(
-          pb.filter('stripeSessionId = {:sessionId}', { sessionId })
+          pb.filter('stripeSessionId = {:sessionId}', { sessionId }),
+          { expand: 'event,bundle' }
         );
         if (record) return record;
       } catch {
@@ -50,14 +72,14 @@ export const ticketService = {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       filter: pb.filter('event = {:eventId}', { eventId }),
       sort: 'buyerName',
-      expand: 'event'
+      expand: 'event,bundle'
     });
   },
 
   async getAllPurchases(): Promise<TicketPurchase[]> {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       sort: '-created',
-      expand: 'event'
+      expand: 'event,bundle'
     });
   },
 
@@ -65,6 +87,13 @@ export const ticketService = {
     return await pb.send<{ success: boolean }>('/api/admin/refund-ticket', {
       method: 'POST',
       body: { purchaseId }
+    });
+  },
+
+  async adminRefundBundle(paymentIntentId: string): Promise<{ success: boolean }> {
+    return await pb.send<{ success: boolean }>('/api/admin/refund-bundle', {
+      method: 'POST',
+      body: { paymentIntentId }
     });
   }
 };
