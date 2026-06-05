@@ -40,6 +40,7 @@ export interface PocketBaseSmtpConfig {
 export interface PocketBaseMetaConfig {
     senderAddress?: string;
     senderName?: string;
+    appURL?: string;
 }
 
 export interface PocketBaseSettings {

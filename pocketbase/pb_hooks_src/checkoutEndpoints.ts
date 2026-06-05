@@ -112,11 +112,12 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
         return e.json(400, { error: "Invalid ticket price configuration" });
     }
 
-    // Calculate net Stripe fees
-    const grossCents = unitPriceCents > 0 ? Math.round((unitPriceCents + 30) / (1 - 0.029)) : 0;
-    const feeCents = grossCents - unitPriceCents;
+    // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
+    const totalTicketsCents = unitPriceCents * qty;
+    const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
 
-    const appUrl = process.env.APP_URL || "http://localhost:5173";
+    const settingsAppUrl = $app.settings().meta.appURL || "";
+    const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
     const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/tickets/${eventId}`;
 
@@ -138,7 +139,7 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
                 product_data: { name: "Processing Fee" },
                 unit_amount: feeCents
             },
-            quantity: qty
+            quantity: 1
         });
     }
 

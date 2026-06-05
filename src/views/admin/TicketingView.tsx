@@ -197,11 +197,11 @@ export default function TicketingView() {
               <table className="w-full text-left" style={{ borderCollapse: 'collapse', width: '100%', minWidth: '600px' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <th style={{ padding: '12px 8px' }}>Buyer Name</th>
-                    <th style={{ padding: '12px 8px' }}>Email</th>
-                    <th style={{ padding: '12px 8px' }}>Qty</th>
-                    <th style={{ padding: '12px 8px' }}>Amount Paid</th>
-                    <th style={{ padding: '12px 8px' }}>Status</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Buyer Name</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Qty</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Amount Paid</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Status</th>
                     <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>

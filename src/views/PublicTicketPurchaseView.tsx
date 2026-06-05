@@ -68,9 +68,9 @@ export default function PublicTicketPurchaseView() {
   const isShowDay = nowStr === eventDateStr;
   const unitPrice = isShowDay ? (event.dayOfPriceCents || 0) : (event.advancePriceCents || 0);
 
-  const grossCents = unitPrice > 0 ? Math.round((unitPrice + 30) / (1 - 0.029)) : 0;
-  const feeCents = grossCents - unitPrice;
-  const totalCents = (unitPrice + feeCents) * quantity;
+  const totalTicketsCents = unitPrice * quantity;
+  const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+  const totalCents = totalTicketsCents + feeCents;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,8 +195,8 @@ export default function PublicTicketPurchaseView() {
             </div>
             {feeCents > 0 && (
               <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                <span>Processing Fee ({quantity} x ${(feeCents / 100).toFixed(2)})</span>
-                <span>${((feeCents * quantity) / 100).toFixed(2)}</span>
+                <span>Processing Fee</span>
+                <span>${(feeCents / 100).toFixed(2)}</span>
               </div>
             )}
             <div className="flex-row" style={{ justifyContent: 'space-between', fontWeight: 700, borderTop: '1px solid var(--border)', paddingTop: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
