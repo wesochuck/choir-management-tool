@@ -2,9 +2,9 @@
 
 This document outlines the architecture and implementation steps to build a self-contained general admission ticketing system. The solution is designed for a "will call" door entry flow and utilizes Stripe Checkout for secure, compliant payment processing.
 
-> [!WARNING]
-> **Checkout Completion Depends on Return to Site**
-> This initial implementation does not use Stripe webhooks. Purchases are finalized when the buyer is redirected back to the site after Stripe Checkout and the success page verifies the completed session. Buyers should not close the browser tab until the confirmation screen appears. If a buyer completes payment but closes the page before returning, an administrator may need to reconcile the payment manually from the Stripe Dashboard.
+> [!NOTE]
+> **Webhook-Driven Fulfillment**
+> This implementation utilizes Stripe Webhooks to guarantee purchase fulfillment even if the buyer closes their browser before returning to the site. This ensures robust ticket delivery, database consistency, and allows for asynchronous background processing.
 
 > [!NOTE]
 > **No Checkout Reservation Hold**
@@ -14,7 +14,7 @@ This document outlines the architecture and implementation steps to build a self
 
 ## 1. Prerequisites & Credentials
 
-*   **Stripe Account:** Stripe account keys will be stored in the server environment variables (`STRIPE_SECRET_KEY` and `STRIPE_PUBLIC_KEY`).
+*   **Stripe Account:** Stripe account keys will be stored in the server environment variables (`STRIPE_SECRET_KEY`, `STRIPE_PUBLIC_KEY`, and `STRIPE_WEBHOOK_SECRET`).
 *   **Discount Codes:** Choir organizers will manage coupons/promotions directly inside the Stripe Dashboard. The app will enable Stripe Checkout's native promo code validation.
 
 ---
@@ -67,12 +67,13 @@ Adds custom router endpoints:
     3. **Capacity Check:** Validates that the requested quantity does not exceed remaining capacity.
     4. **Day-Of Price Selection:** Retrieves the choir's global `timezone` setting and checks if today (in that timezone) is the day of the performance. If yes, applies `dayOfPriceCents`; otherwise, applies `advancePriceCents`.
     5. Initiates Stripe Checkout with `paymentType: "ticket"` in metadata, and returns the session URL.
-*   `POST /api/checkout/verify-session`: 
-    1. Queries Stripe using the session ID to verify the payment is successful.
-    2. **Extensible Strategy Dispatch:** Inspects `paymentType` in the session metadata:
+*   `POST /api/webhook/stripe`: 
+    1. **Signature Verification:** Reads the raw request body (`c.request().body()`) and the `Stripe-Signature` header. Uses PocketBase's `$security` helpers to verify the HMAC SHA-256 signature against `STRIPE_WEBHOOK_SECRET`. *(Note: In the Goja VM, you must parse the raw byte array of the body exactly as received to ensure signature matches).*
+    2. **Event Filtering:** Listens specifically for `checkout.session.completed` events.
+    3. **Extensible Strategy Dispatch:** Inspects `paymentType` in the session metadata:
         *   **If `paymentType === "ticket"`:** Executes the Ticketing Fulfillment Strategy (creates `ticketPurchases` record idempotently, sends confirmation email, etc.).
         *   **If `paymentType === "dues"`:** Executes the Dues Fulfillment Strategy (updates `seasonalDues` record idempotently to `paid = true`).
-    3. **Server-side Idempotency:** Safely retrieves and returns the existing fulfillment record if the same `stripeSessionId` is verified multiple times.
+    4. **Server-side Idempotency:** Safely ignores the event if a record with the same `stripeSessionId` already exists, returning a `200 OK` to Stripe to prevent retries.
 
 ---
 
@@ -96,12 +97,10 @@ Avoid route conflicts between `/tickets/:eventId` and `/tickets/order/success` b
     *   Form captures: Quantity, Buyer Name, Email Address, and Confirm Email Address.
     *   **Double-Entry Email Validation:** Frontend validation requires the Email and Confirm Email fields to match exactly, preventing email typos.
     *   **Public Checkout UX Warnings:**
-        *   *On form before submit:* Displays: `"After payment, Stripe will return you to this site to confirm your order. Please keep the browser window open until you see your confirmation screen."`
-        *   *After submit (loading state):* Displays: `"Opening secure Stripe Checkout… after payment, please wait to be returned here for confirmation."`
+        *   *After submit (loading state):* Displays: `"Opening secure Stripe Checkout…"`
     *   Opt-in checkbox for future event announcements.
-*   `PublicTicketSuccessView.tsx` (`/tickets/order/success`): Polling screen that calls `/api/checkout/verify-session?session_id=...` and renders a clean confirmation receipt once validated.
-    *   **Verification Loading State:** Displays: `"Confirming your ticket purchase. Please do not close this page."`
-    *   **Idempotent UX:** Gracefully handles already verified sessions by displaying the receipt details.
+*   `PublicTicketSuccessView.tsx` (`/tickets/order/success`): Displays a clean confirmation receipt. Since fulfillment is handled asynchronously by the webhook, this page can briefly poll PocketBase for the `ticketPurchases` record using the `session_id` to show the final receipt, or simply display a standard "Thank You" message if the record isn't immediately available.
+    *   **Idempotent UX:** Handles both immediate fulfillment (record already created by webhook) and slightly delayed fulfillment (webhook in transit).
 
 ### Event Creation / Edit Modal (`src/components/admin/EventModal.tsx`)
 Expose ticketing fields when the event type is set to `'Performance'`:
@@ -132,8 +131,8 @@ Update `resolveRecipients` to support granular **Ticket Buyers** targets instead
 
 We will add regression coverage for the following scenarios:
 1.  **Pricing Rules:** Verify the unit price selection correctly switches between `advancePriceCents` and `dayOfPriceCents` at midnight in the local event timezone.
-2.  **Verification Rejection:** Verify `/api/checkout/verify-session` rejects unpaid sessions, sessions for the wrong event, or malformed metadata.
-3.  **Idempotency:** Verify `/api/checkout/verify-session` returns the existing record instead of creating duplicates when re-requested.
+2.  **Webhook Verification Rejection:** Verify `/api/webhook/stripe` rejects requests with invalid signatures or unsupported event types.
+3.  **Idempotency:** Verify the webhook handler safely ignores duplicate `checkout.session.completed` events for the same `stripeSessionId` without erroring.
 4.  **Sold Count Derivation:** Verify that the total sold count only includes paid purchases.
 5.  **Exclusion Rules:** Verify refunded purchases are excluded from will-call lists and communications filters.
 6.  **XSS Sanitization:** Verify that `publicDetails` markdown rendering strips out unsafe HTML/script tags.
@@ -153,8 +152,8 @@ When creating a dues Checkout Session, the backend/frontend will pass:
 *   `amountPaidCents` (the seasonal dues price)
 
 ### B. Dues Strategy Handler
-Inside `checkoutEndpoints.ts`, a specific dues fulfillment handler will be registered:
-1.  Verify the session payment is complete with Stripe.
+Inside `checkoutEndpoints.ts` (triggered by the webhook), a specific dues fulfillment handler will be registered:
+1.  Extract the completed session payload from the Stripe webhook event.
 2.  Search the `seasonalDues` collection for an existing record matching `profile = profileId` and `season = season`.
 3.  If no record exists, create one with `paid = true`. If a record exists but `paid = false`, update it to `paid = true`.
 4.  Return the verified dues payment record.

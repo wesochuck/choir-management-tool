@@ -426,6 +426,16 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             </button>
                         </div>
                     )}
+
+                    <div className="multiselect-dropdown-footer">
+                        <button
+                            type="button"
+                            className="multiselect-dropdown-done-btn"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            Done
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
