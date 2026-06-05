@@ -3,7 +3,7 @@ import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
-import { formatPocketBaseError } from '../../lib/pocketbase';
+import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
@@ -48,6 +48,51 @@ export const EventModal: React.FC<EventModalProps> = ({
   });
 
   const [eventGraphicFile, setEventGraphicFile] = useState<File | null>(null);
+  const [graphicPreviewUrl, setGraphicPreviewUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (eventGraphicFile) {
+      const objectUrl = URL.createObjectURL(eventGraphicFile);
+      setGraphicPreviewUrl(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    } else if (initialData?.eventGraphic) {
+      setGraphicPreviewUrl(pb.files.getURL(initialData, initialData.eventGraphic));
+    } else {
+      setGraphicPreviewUrl('');
+    }
+  }, [eventGraphicFile, initialData]);
+
+  const dayOfLiveText = useMemo(() => {
+    if (!formData.date) return '';
+    try {
+      const dateParts = formData.date.split('T')[0];
+      if (!dateParts) return '';
+      const [year, month, day] = dateParts.split('-').map(Number);
+      const d = new Date(year, month - 1, day);
+      if (isNaN(d.getTime())) return '';
+      
+      const formattedDate = d.toLocaleDateString([], {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      let tzAbbr = '';
+      try {
+        const formatter = new Intl.DateTimeFormat([], { timeZone: timezone, timeZoneName: 'short' });
+        const parts = formatter.formatToParts(new Date());
+        const tzPart = parts.find(p => p.type === 'timeZoneName');
+        tzAbbr = tzPart ? ` ${tzPart.value}` : '';
+      } catch {
+        // Fallback to empty string if timeZoneName is unsupported
+      }
+
+      return `Live on the day of the show: ${formattedDate} (12:00 AM - 11:59 PM${tzAbbr})`;
+    } catch {
+      return '';
+    }
+  }, [formData.date, timezone]);
 
   const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
   const [isOpenAuditions, setIsOpenAuditions] = useState(false);
@@ -782,6 +827,11 @@ export const EventModal: React.FC<EventModalProps> = ({
                       className="card"
                       style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
                     />
+                    {dayOfLiveText && (
+                      <div className="text-xs text-muted" style={{ marginTop: '4px', color: 'var(--primary)' }}>
+                        {dayOfLiveText}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -822,8 +872,40 @@ export const EventModal: React.FC<EventModalProps> = ({
                     className="card"
                     style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', display: 'block', height: 'auto' }}
                   />
-                  {initialData?.eventGraphic && (
+                  {initialData?.eventGraphic && !eventGraphicFile && (
                     <span className="text-xs text-muted">Current file: {initialData.eventGraphic}</span>
+                  )}
+                  {graphicPreviewUrl && (
+                    <div style={{ marginTop: 'var(--space-xs)', position: 'relative', width: 'fit-content' }}>
+                      <img
+                        src={graphicPreviewUrl}
+                        alt="Event flyer preview"
+                        style={{
+                          maxHeight: '120px',
+                          maxWidth: '240px',
+                          objectFit: 'cover',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--border)',
+                          display: 'block'
+                        }}
+                      />
+                      {eventGraphicFile && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEventGraphicFile(null)}
+                          style={{
+                            marginTop: '4px',
+                            padding: '2px 8px',
+                            height: 'auto',
+                            fontSize: '0.75rem',
+                            color: 'var(--color-danger-text)'
+                          }}
+                        >
+                          Clear Selection
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 

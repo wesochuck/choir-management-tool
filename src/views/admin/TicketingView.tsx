@@ -7,6 +7,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Link } from 'react-router-dom';
+import { getFirstName, getLastName } from '../../lib/stringUtils';
 
 
 export default function TicketingView() {
@@ -18,6 +19,7 @@ export default function TicketingView() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
+  const [sortBy, setSortBy] = useState<'lastName' | 'firstName' | 'saleDate'>('lastName');
 
   useEffect(() => {
     async function loadEvents() {
@@ -87,13 +89,39 @@ export default function TicketingView() {
     }
   };
 
+  const sortPurchases = (list: TicketPurchase[]) => {
+    return [...list].sort((a, b) => {
+      if (sortBy === 'lastName') {
+        const lastA = getLastName(a.buyerName).toLowerCase();
+        const lastB = getLastName(b.buyerName).toLowerCase();
+        if (lastA !== lastB) return lastA.localeCompare(lastB);
+        const firstA = getFirstName(a.buyerName).toLowerCase();
+        const firstB = getFirstName(b.buyerName).toLowerCase();
+        return firstA.localeCompare(firstB);
+      }
+      if (sortBy === 'firstName') {
+        const firstA = getFirstName(a.buyerName).toLowerCase();
+        const firstB = getFirstName(b.buyerName).toLowerCase();
+        if (firstA !== firstB) return firstA.localeCompare(firstB);
+        const lastA = getLastName(a.buyerName).toLowerCase();
+        const lastB = getLastName(b.buyerName).toLowerCase();
+        return lastA.localeCompare(lastB);
+      }
+      if (sortBy === 'saleDate') {
+        return new Date(b.created).getTime() - new Date(a.created).getTime();
+      }
+      return 0;
+    });
+  };
+
   const handleExportCSV = () => {
-    if (activePurchases.length === 0) {
+    const sortedActive = sortPurchases(activePurchases);
+    if (sortedActive.length === 0) {
       dialog.showToast('No active purchases to export.');
       return;
     }
     const headers = ["ID", "Buyer Name", "Buyer Email", "Quantity", "Paid", "Status", "Created"];
-    const rows = activePurchases.map(p => [
+    const rows = sortedActive.map(p => [
       p.id,
       p.buyerName,
       p.buyerEmail,
@@ -113,9 +141,11 @@ export default function TicketingView() {
     document.body.removeChild(link);
   };
 
-  const filteredPurchases = purchases.filter(p =>
-    p.buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.buyerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPurchases = sortPurchases(
+    purchases.filter(p =>
+      p.buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.buyerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   return (
@@ -209,14 +239,30 @@ export default function TicketingView() {
 
       <AppCard title="Will Call Checklist">
         <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <input
-            type="text"
-            placeholder="Search buyer name or email..."
-            className="card"
-            style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)' }}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
+          <div className="flex-responsive" style={{ gap: 'var(--space-sm)', width: '100%', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: '200px', width: '100%' }}>
+              <input
+                type="text"
+                placeholder="Search buyer name or email..."
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)' }}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div style={{ minWidth: '200px' }}>
+              <select
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', cursor: 'pointer' }}
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
+              >
+                <option value="lastName">Sort by Last Name</option>
+                <option value="firstName">Sort by First Name</option>
+                <option value="saleDate">Sort by Sale Date</option>
+              </select>
+            </div>
+          </div>
 
           {loading ? (
             <p className="text-muted">Loading registrations...</p>
@@ -229,6 +275,7 @@ export default function TicketingView() {
                   <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
                     <th style={{ padding: '12px 8px', textAlign: 'left' }}>Buyer Name</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Sale Date</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left' }}>Qty</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left' }}>Amount Paid</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left' }}>Status</th>
@@ -240,6 +287,9 @@ export default function TicketingView() {
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>
                       <td style={{ padding: '12px 8px', fontWeight: 600 }}>{p.buyerName}</td>
                       <td style={{ padding: '12px 8px' }}>{p.buyerEmail}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </td>
                       <td style={{ padding: '12px 8px' }}>{p.quantity}</td>
                       <td style={{ padding: '12px 8px' }}>${(p.amountPaidCents / 100).toFixed(2)}</td>
                       <td style={{ padding: '12px 8px' }}>
