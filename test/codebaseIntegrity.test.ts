@@ -466,8 +466,6 @@ test('codebase integrity: enforce no inline styles rule', () => {
     'src/components/admin/SetListInlineCreator.tsx',
     'src/components/admin/CheckInList.tsx',
     'src/components/admin/SeatingGrid.tsx',
-    'src/components/admin/RosterTable.tsx',
-    'src/components/admin/SingerModal.tsx',
     'src/components/admin/PollSelectionModal.tsx',
     'src/components/LivePreview.tsx',
     'src/components/common/MarkdownEditor.tsx',

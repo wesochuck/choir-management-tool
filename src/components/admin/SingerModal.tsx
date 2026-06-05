@@ -6,6 +6,8 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
 import { SingerRsvpHistoryTab } from './SingerRsvpHistoryTab';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
+import './RosterComponents.css';
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -14,8 +16,6 @@ interface SingerModalProps {
   onDelete?: (profile: Profile) => Promise<void>;
   initialData?: Profile | null;
 }
-
-import { useVoiceParts } from '../../hooks/useVoiceParts';
 
 export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData }) => {
   const dialog = useDialog();
@@ -180,8 +180,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   type="button"
                   onClick={handleDelete}
                   disabled={isDeleting || isSubmitting}
-                  className="btn btn-danger"
-                  style={{ marginRight: 'auto' }}
+                  className="btn btn-danger roster-cmp-delete-btn"
                 >
                   {isDeleting ? 'Deleting...' : 'Delete Singer'}
                 </button>
@@ -203,20 +202,16 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       }
     >
       {initialData && (
-        <div className="flex-row" style={{ borderBottom: '1px solid var(--border)', marginBottom: 'var(--space-md)', gap: 'var(--space-md)' }}>
+        <div className="flex-row roster-cmp-tabs-container">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
+            className="roster-cmp-tab-btn"
+            // @allow-inline-style - dynamic tab active state
             style={{
-              background: 'none',
-              border: 'none',
               borderBottom: activeTab === 'profile' ? '2px solid var(--primary)' : '2px solid transparent',
               color: activeTab === 'profile' ? 'var(--primary)' : 'var(--text-muted)',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '15px',
               fontWeight: activeTab === 'profile' ? 600 : 500,
-              transition: 'all 0.2s',
             }}
           >
             Profile Info
@@ -224,16 +219,12 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           <button
             type="button"
             onClick={() => setActiveTab('rsvps')}
+            className="roster-cmp-tab-btn"
+            // @allow-inline-style - dynamic tab active state
             style={{
-              background: 'none',
-              border: 'none',
               borderBottom: activeTab === 'rsvps' ? '2px solid var(--primary)' : '2px solid transparent',
               color: activeTab === 'rsvps' ? 'var(--primary)' : 'var(--text-muted)',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '15px',
               fontWeight: activeTab === 'rsvps' ? 600 : 500,
-              transition: 'all 0.2s',
             }}
           >
             Performance RSVPs
@@ -242,8 +233,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       )}
 
       {activeTab === 'profile' ? (
-        <form id="singer-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: '12px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-xs)' }}>
+        <form id="singer-form" onSubmit={handleSubmit} className="flex-col roster-cmp-form">
+          <div className="roster-cmp-avatar-container">
             {initialData ? (
               <>
                 <PhotoUploader
@@ -261,12 +252,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               </>
             ) : (
               <>
-                <div style={{
-                  width: 96, height: 96, borderRadius: '50%',
-                  backgroundColor: 'var(--bg)', border: '2px dashed var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--text-muted)', fontSize: '36px',
-                }}>
+                <div className="roster-cmp-avatar-placeholder">
                   ?
                 </div>
                 <span className="text-xs text-muted">Save first to add a photo</span>
@@ -274,84 +260,72 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             )}
           </div>
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col roster-cmp-name-container">
             <label className="text-label">Name</label>
             <input 
               value={formData.name || ''} 
               onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
               required
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
+              className="card roster-cmp-input"
             />
           </div>
-          <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'flex-start' }}>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+          <div className="flex-row roster-cmp-tabs-container roster-cmp-no-margin">
+            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
               <label className="text-label">Login Email (Optional)</label>
               <input
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="card"
+                className="card roster-cmp-input"
                 placeholder="e.g. singer@example.com"
-                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               />
-              <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>
+              <p className="text-muted roster-cmp-help-text">
                 {initialData?.user 
                   ? "Clearing this removes their login account." 
                   : "Provides portal access via password reset email."}
               </p>
               {initialData?.user && formData.email && (
-                <div className="flex-col" style={{ gap: '4px', marginTop: '6px', alignItems: 'flex-start' }}>
+                <div className="flex-col roster-cmp-reset-container">
                   <button
                     type="button"
                     onClick={handleResetPassword}
                     disabled={isResettingPassword}
-                    className="btn btn-xs btn-secondary"
-                    style={{
-                      height: '24px',
-                      padding: '0 8px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      cursor: 'pointer'
-                    }}
+                    className="btn btn-xs btn-secondary roster-cmp-reset-btn"
                   >
                     {isResettingPassword ? 'Sending Link...' : '🔑 Reset Password'}
                   </button>
                   {resetFeedback && (
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: resetFeedback.startsWith('Error') ? 'var(--color-danger-text, #ef4444)' : 'var(--color-success-text, #22c55e)'
-                    }}>
+                    <span 
+                      className="roster-cmp-reset-feedback"
+                      // @allow-inline-style - dynamic feedback color
+                      style={{
+                        color: resetFeedback.startsWith('Error') ? 'var(--color-danger-text, #ef4444)' : 'var(--color-success-text, #22c55e)'
+                      }}
+                    >
                       {resetFeedback}
                     </span>
                   )}
                 </div>
               )}
             </div>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
               <label className="text-label">Phone (Optional)</label>
               <input 
                 value={formData.phone || ''} 
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                className="card"
+                className="card roster-cmp-input"
                 placeholder="e.g. 555-123-4567"
-                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
               />
             </div>
           </div>
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+          <div className="flex-row roster-cmp-tabs-container roster-cmp-no-margin">
+            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
               <label className="text-label">Voice Part</label>
               <select 
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required={formData.role !== 'admin'}
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
+                className="card roster-cmp-input"
               >
                 {formData.role === 'admin' ? (
                   <option value="">-- Not Applicable (Admin) --</option>
@@ -365,13 +339,12 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 ))}
               </select>
             </div>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
               <label className="text-label">Status</label>
               <select 
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '38px', minHeight: '38px', border: '1px solid var(--border)' }}
+                className="card roster-cmp-input"
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>
@@ -380,60 +353,60 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             </div>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px var(--space-md)' }}>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+          <div className="roster-cmp-checkbox-grid">
+            <label className="flex-row roster-cmp-checkbox-label">
               <input
                 type="checkbox"
                 checked={formData.doNotEmail}
                 onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
+                className="roster-cmp-checkbox-input"
               />
               <span className="text-label">Do Not Email</span>
             </label>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+            <label className="flex-row roster-cmp-checkbox-label">
               <input
                 type="checkbox"
                 checked={formData.statusIsManual}
                 onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
+                className="roster-cmp-checkbox-input"
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
             </label>
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+            <label className="flex-row roster-cmp-checkbox-label">
               <input
                 type="checkbox"
                 checked={Boolean(formData.isSectionLeader)}
                 onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
+                className="roster-cmp-checkbox-input"
               />
               <span className="text-label">Section Leader</span>
             </label>
             {formData.role === 'admin' && (
               <>
-                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+                <label className="flex-row roster-cmp-checkbox-label">
                   <input
                     type="checkbox"
                     checked={formData.receiveAttendanceReports !== false}
                     onChange={(e) => setFormData({ ...formData, receiveAttendanceReports: e.target.checked })}
-                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
+                    className="roster-cmp-checkbox-input"
                   />
                   <span className="text-label">Receive Attendance Reports</span>
                 </label>
-                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+                <label className="flex-row roster-cmp-checkbox-label">
                   <input
                     type="checkbox"
                     checked={Boolean(formData.receiveRsvpDeclineNotices)}
                     onChange={(e) => setFormData({ ...formData, receiveRsvpDeclineNotices: e.target.checked })}
-                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
+                    className="roster-cmp-checkbox-input"
                   />
                   <span className="text-label">Receive RSVP Decline Notices</span>
                 </label>
-                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', minHeight: 'auto' }}>
+                <label className="flex-row roster-cmp-checkbox-label">
                   <input
                     type="checkbox"
                     checked={formData.receiveAdminNotifications !== false}
                     onChange={(e) => setFormData({ ...formData, receiveAdminNotifications: e.target.checked })}
-                    style={{ accentColor: 'var(--primary)', width: '16px', height: '16px', minHeight: 'auto', cursor: 'pointer', flexShrink: 0 }}
+                    className="roster-cmp-checkbox-input"
                   />
                   <span className="text-label">Receive General Admin Notifications</span>
                 </label>
@@ -441,13 +414,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             )}
             {formData.email?.trim() ? (
               <label
-                className="flex-row"
+                className="flex-row roster-cmp-checkbox-label"
+                // @allow-inline-style - dynamic opacity based on isSelf
                 style={{
-                  alignItems: 'center',
-                  gap: 'var(--space-sm)',
-                  cursor: isSelf ? 'not-allowed' : 'pointer',
                   opacity: isSelf ? 0.6 : 1,
-                  minHeight: 'auto'
                 }}
                 title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
               >
@@ -456,13 +426,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   checked={formData.role === 'admin'}
                   onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
                   disabled={Boolean(isSelf)}
+                  className="roster-cmp-checkbox-input"
+                  // @allow-inline-style - dynamic cursor based on isSelf
                   style={{
-                    accentColor: 'var(--primary)',
-                    width: '16px',
-                    height: '16px',
-                    minHeight: 'auto',
                     cursor: isSelf ? 'not-allowed' : 'pointer',
-                    flexShrink: 0
                   }}
                 />
                 <span className="text-label">Administrator</span>
@@ -471,23 +438,22 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           </div>
 
           {initialData?.statusLastChangedAt && (
-            <div className="card" style={{ padding: '6px 10px', backgroundColor: 'var(--bg)', boxShadow: 'none', border: '1px solid var(--border)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px 12px' }}>
-              <div className="text-xs text-muted" style={{ margin: 0 }}>
+            <div className="card roster-cmp-status-card">
+              <div className="text-xs text-muted roster-cmp-no-margin">
                 <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
               </div>
-              <div className="text-xs text-muted" style={{ margin: 0 }}>
+              <div className="text-xs text-muted roster-cmp-no-margin">
                 <strong>Reason:</strong> {initialData.statusChangeReason || 'Manual update'}
               </div>
             </div>
           )}
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col roster-cmp-name-container">
             <label className="text-label">Notes</label>
             <textarea 
               value={formData.notes} 
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-              className="card"
-              style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', height: '60px', minHeight: '60px', resize: 'vertical' }}
+              className="card roster-cmp-textarea"
             />
           </div>
         </form>

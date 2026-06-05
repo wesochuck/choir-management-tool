@@ -4,6 +4,10 @@ import type { SeasonalDue } from '../../services/duesService';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { Pagination } from '../common/Pagination';
+import { AppCard } from '../common/AppCard';
+import { StatusBadge } from '../common/StatusBadge';
+import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
+import './RosterComponents.css';
 
 interface RosterTableProps {
   profiles: Profile[];
@@ -17,10 +21,6 @@ interface RosterTableProps {
   totalCount: number;
   onPageChange: (page: number) => void;
 }
-
-import { AppCard } from '../common/AppCard';
-import { StatusBadge } from '../common/StatusBadge';
-import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
 
 export const RosterTable: React.FC<RosterTableProps> = ({ 
   profiles, 
@@ -60,8 +60,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   className="relative-row" 
                   onClick={() => onEdit(p)}
                 >
-                  <td data-label="Name" style={{ fontWeight: 500 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                  <td data-label="Name" className="roster-cmp-font-500">
+                    <div className="roster-cmp-name-container">
                       <PhotoUploader
                         profileId={p.id}
                         profileName={p.name}
@@ -72,19 +72,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       />
                       <span>{p.name}</span>
                       {p.expand?.user?.role === 'admin' && (
-                        <span className="badge badge-admin" style={{
-                          fontSize: '0.65rem',
-                          padding: '1px 5px',
-                          borderRadius: '4px',
-                          backgroundColor: 'var(--primary-light, #e0f2fe)',
-                          color: 'var(--primary, #0284c7)',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.025em',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          height: 'fit-content'
-                        }}>Admin</span>
+                        <span className="badge badge-admin roster-cmp-admin-badge">Admin</span>
                       )}
                     </div>
                   </td>
@@ -92,7 +80,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                     {p.expand?.user?.email || 'No login'}
                   </td>
                   <td data-label="Voice">
-                    <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart}</span>
+                    <span className="text-label roster-cmp-voice-part">{p.voicePart}</span>
                   </td>
                   <td data-label="Status">
                     <StatusBadge
@@ -107,12 +95,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       type="checkbox" 
                       checked={duesMap?.[p.id]?.paid || false}
                       onChange={(e) => onToggleDues?.(p.id, e.target.checked)}
-                      style={{
-                        cursor: 'pointer',
-                        accentColor: 'var(--primary)',
-                        width: '18px',
-                        height: '18px'
-                      }}
+                      className="roster-cmp-checkbox"
                     />
                   </td>
                 )}
@@ -133,7 +116,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             })}
             {profiles.length === 0 && (
               <tr>
-                <td colSpan={currentSeason ? 7 : 6} style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                <td colSpan={currentSeason ? 7 : 6} className="roster-cmp-empty-state-cell">
                   <p className="text-muted text-sm">No singers found.</p>
                 </td>
               </tr>
@@ -142,16 +125,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </table>
       </div>
       {totalCount > 0 && (
-        <div className="flex-responsive no-print" style={{ 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          padding: 'var(--space-md) var(--space-lg)', 
-          borderTop: '1px solid var(--border)',
-          backgroundColor: 'var(--bg-card, #fff)',
-          borderRadius: '0 0 var(--radius-md) var(--radius-md)',
-          marginTop: 'var(--space-xs)'
-        }}>
-          <span className="text-sm text-muted" style={{ fontWeight: 500 }}>
+        <div className="flex-responsive no-print roster-cmp-pagination-footer">
+          <span className="text-sm text-muted roster-cmp-pagination-info">
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
           </span>
 
