@@ -205,15 +205,31 @@ export default function PublicTicketPurchaseView() {
             </div>
           </div>
 
-          <label className="flex-row" style={{ alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
+          <div className="flex-row" style={{ 
+            padding: 'var(--space-md)', 
+            gap: 'var(--space-md)', 
+            alignItems: 'flex-start', 
+            backgroundColor: 'var(--neutral-bg)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 'var(--radius-md)',
+            marginTop: 'var(--space-xs)'
+          }}>
             <input
+              id="marketingOptIn"
               type="checkbox"
               checked={marketingOptIn}
               onChange={e => setMarketingOptIn(e.target.checked)}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px', minHeight: 'auto', accentColor: 'var(--primary)' }}
             />
-            <span className="text-sm">Opt-in to future choir announcements and performance notices.</span>
-          </label>
+            <label htmlFor="marketingOptIn" className="flex-col" style={{ gap: '2px', cursor: 'pointer', userSelect: 'none', flex: 1 }}>
+              <span className="text-sm" style={{ fontWeight: 600, color: 'var(--text)', lineHeight: '1.3' }}>
+                Email me future choir performance announcements.
+              </span>
+              <span className="text-xs text-muted" style={{ lineHeight: '1.3' }}>
+                No weekly emails. Unsubscribe anytime.
+              </span>
+            </label>
+          </div>
 
           <button
             type="submit"
