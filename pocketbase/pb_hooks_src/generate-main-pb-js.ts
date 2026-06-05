@@ -23,7 +23,8 @@ export type UtilityBundleName =
     | 'adminNotifications'
     | 'attendanceFinalizer'
     | 'playerEndpoints'
-    | 'stripeService';
+    | 'stripeService'
+    | 'checkoutEndpoints';
 
 export type UtilityBundle = {
     files: string[];
@@ -121,6 +122,11 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     stripeService: {
         files: ['stripeService.ts'],
         symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
+    },
+    checkoutEndpoints: {
+        files: ['checkoutEndpoints.ts'],
+        symbols: ['handleCreateTicketsSession', 'handleStripeWebhook', 'handleAdminRefundTicket'],
+        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson'],
     },
 };
 
@@ -878,6 +884,12 @@ ${renderRoute('POST', '/api/admin/queue-settings/generate', queueSettingsGenerat
 ${renderRoute('POST', '/api/test-smtp', testSmtpBody)}
 
 ${renderRoute('POST', '/api/generate-player-token', 'return handleGeneratePlayerToken(e);')}
+
+${renderRoute('POST', '/api/checkout/create-tickets-session', 'return handleCreateTicketsSession(e);')}
+
+${renderRoute('POST', '/api/webhook/stripe', 'return handleStripeWebhook(e);')}
+
+${renderRoute('POST', '/api/admin/refund-ticket', 'return handleAdminRefundTicket(e);')}
 
 ${renderRoute('GET', '/api/player-playlist', 'return handlePlayerPlaylist(e);')}
 
