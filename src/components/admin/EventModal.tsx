@@ -108,7 +108,21 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [activeTab, setActiveTab] = useState<'details' | 'tickets'>('details');
   const [advancePriceInput, setAdvancePriceInput] = useState('');
   const [dayOfPriceInput, setDayOfPriceInput] = useState('');
+  const [hasPurchases, setHasPurchases] = useState(false);
 
+  useEffect(() => {
+    if (isOpen && initialData?.id) {
+      pb.collection('ticketPurchases').getFirstListItem(
+        pb.filter('event = {:eventId} && status = "paid"', { eventId: initialData.id })
+      ).then(() => {
+        setHasPurchases(true);
+      }).catch(() => {
+        setHasPurchases(false);
+      });
+    } else {
+      setHasPurchases(false);
+    }
+  }, [isOpen, initialData]);
 
   useEffect(() => {
     if (isOpen) {
@@ -784,8 +798,38 @@ export const EventModal: React.FC<EventModalProps> = ({
             </label>
 
             {formData.isTicketingEnabled && (
+              <div className="card" style={{ padding: 'var(--space-xs) var(--space-md)', backgroundColor: 'var(--primary-light)', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-md)', margin: 'var(--space-xs) 0 0 0', boxShadow: 'none' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+                  <div>
+                    <strong>⚙️ Admin:</strong>{' '}
+                    <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--primary-deep)', fontWeight: 600 }}>
+                      Go to Ticketing Dashboard
+                    </a>
+                  </div>
+                  {initialData?.id && (
+                    <div>
+                      <strong>🔗 Storefront Link:</strong>{' '}
+                      <a href={`/tickets/${initialData.id}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--primary-deep)', fontWeight: 600 }}>
+                        View Concert Ticket Page
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {hasPurchases && !formData.isTicketingEnabled && (
+              <div className="card" style={{ padding: 'var(--space-md)', borderColor: 'var(--color-warning-border)', backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', marginTop: 'var(--space-xs)', boxShadow: 'none' }}>
+                <strong>⚠️ Existing Ticket Sales</strong>
+                <p style={{ margin: 'var(--space-xs) 0 0 0', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                  This event already has active ticket sales. Disabling ticket sales hides it from the storefront, but you can still view its Will Call checklist and process refunds in the <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, textDecoration: 'underline', color: 'inherit' }}>Ticketing Dashboard</a> by checking <em>"Include past & inactive performances"</em>.
+                </p>
+              </div>
+            )}
+
+            {formData.isTicketingEnabled && (
               <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+                <div className="flex-responsive" style={{ gap: 'var(--space-md)', alignItems: 'flex-start' }}>
                   <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
                     <label className="text-label">Advance Price ($)</label>
                     <input
