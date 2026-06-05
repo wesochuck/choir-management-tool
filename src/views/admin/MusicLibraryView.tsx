@@ -15,6 +15,7 @@ import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
+import './music-library/MusicLibrary.css';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
@@ -100,7 +101,7 @@ export default function MusicLibraryView() {
     const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', 'music_library_export.csv');
-    link.style.visibility = 'hidden';
+    link.style.visibility = 'hidden'; // @allow-inline-style - temporary DOM element for export
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -431,11 +432,11 @@ export default function MusicLibraryView() {
   };
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>Music Library</h1>
+    <div className="ml-container">
+      <div className="ml-header flex-responsive">
+        <h1 className="text-display ml-header-title">Music Library</h1>
         {activeTab === 'catalog' && (
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <div className="ml-header-actions">
             <button className="btn btn-secondary" onClick={handleExportCSV}>
               Export CSV
             </button>
@@ -450,38 +451,16 @@ export default function MusicLibraryView() {
       </div>
 
       {/* Segmented Tab Navigation */}
-      <div className="flex-row no-print" style={{ gap: 'var(--space-md)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
+      <div className="ml-tabs no-print">
         <button
           onClick={() => setActiveTab('catalog')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'catalog' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'catalog' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'catalog' ? '600' : '500',
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
-          }}
+          className={`ml-tab-btn ${activeTab === 'catalog' ? 'active' : ''}`}
         >
           Music Catalog
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'config' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'config' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'config' ? '600' : '500',
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0'
-          }}
+          className={`ml-tab-btn ${activeTab === 'config' ? 'active' : ''}`}
         >
           Library Settings
         </button>
@@ -549,35 +528,33 @@ export default function MusicLibraryView() {
           />
         </AppCard>
       ) : (
-        <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+        <div className="ml-config-stack">
           <AppCard title="Music Library Settings">
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="ml-settings-field-stack">
               <label className="text-label">Catalog Lookup URL Template</label>
               <input
                 type="url"
                 value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
                 onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
                 placeholder="https://example.com/catalog/{catalogId}"
-                className="card"
-                style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                className="card ml-settings-input"
               />
-              <p className="text-muted" style={{ margin: 0 }}>
+              <p className="text-muted ml-no-margin">
                 Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
               </p>
             </div>
           </AppCard>
 
           <AppCard title="Music Library Genres">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <p className="text-muted" style={{ margin: 0 }}>
+            <div className="ml-genres-container-stack">
+              <p className="text-muted ml-no-margin">
                 Configure standard genre tags used for library organization and advanced layout filtering.
               </p>
-              <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+              <div className="ml-genres-list-stack">
                 {musicLibrarySettings.genres?.map((genre, index) => (
-                  <div key={genre.id} style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center' }}>
+                  <div key={genre.id} className="ml-genre-input-group">
                     <input
-                      className="card"
-                      style={{ height: '40px', padding: '0 12px', width: '250px' }}
+                      className="card ml-genre-input"
                       value={genre.label}
                       onChange={(e) => {
                         const updated = [...musicLibrarySettings.genres];
@@ -617,12 +594,11 @@ export default function MusicLibraryView() {
                 ))}
               </div>
               
-              <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+              <div className="ml-new-genre-row">
                 <input
                   id="new-genre-input"
                   placeholder="New Genre Name (e.g. Sacred)"
-                  className="card"
-                  style={{ height: '40px', padding: '0 12px', maxWidth: '250px' }}
+                  className="card ml-new-genre-input"
                 />
                 <button
                   type="button"

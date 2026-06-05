@@ -17,6 +17,7 @@ import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import './RosterView.css';
+import './Roster.css';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
@@ -207,8 +208,8 @@ export default function RosterView() {
     document.body.removeChild(link);
   };
 
-  if (isLoading && profiles.length === 0) return <div style={{ padding: '20px' }}>Loading roster...</div>;
-  if (error) return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
+  if (isLoading && profiles.length === 0) return <div className="roster-loading">Loading roster...</div>;
+  if (error) return <div className="roster-error">Error: {error}</div>;
 
   return (
     <div className="roster-container">
@@ -224,18 +225,16 @@ export default function RosterView() {
       </div>
 
       {/* Segmented Tab Navigation */}
-      <div className="roster-tabs no-print" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
+      <div className="roster-tabs no-print roster-tabs-nav">
         <button
           onClick={() => setActiveTab('roster')}
-          className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-ghost'}`}
-          style={{ padding: '8px 16px', fontSize: '16px' }}
+          className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-ghost'} roster-tab-button`}
         >
           Singer Directory
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          className={`btn ${activeTab === 'config' ? 'btn-primary' : 'btn-ghost'}`}
-          style={{ padding: '8px 16px', fontSize: '16px' }}
+          className={`btn ${activeTab === 'config' ? 'btn-primary' : 'btn-ghost'} roster-tab-button`}
         >
           Roster Settings
         </button>
@@ -256,8 +255,7 @@ export default function RosterView() {
                 placeholder="Search by name or email..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
-                className="card search-input"
-                style={{ fontSize: '15px' }}
+                className="card search-input roster-search-input-field"
               />
               <span className="search-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -268,24 +266,7 @@ export default function RosterView() {
               {filters.name && (
                 <button
                   onClick={() => setFilter('name', '')}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px',
-                    borderRadius: '50%',
-                    transition: 'background-color 0.2s',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  className="roster-search-clear-btn"
                   title="Clear search"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -302,13 +283,13 @@ export default function RosterView() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="voice-part-dropdown-trigger flex-row"
               >
-                <span style={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '145px',
-                  fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400
-                }}>
+                <span 
+                  className="roster-voice-part-label"
+                  // @allow-inline-style - dynamic font weight based on filter state
+                  style={{
+                    fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400
+                  }}
+                >
                   {getDropdownLabel()}
                 </span>
                 <svg
@@ -318,10 +299,10 @@ export default function RosterView() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
+                  className="roster-dropdown-arrow"
+                  // @allow-inline-style - dynamic transform based on dropdown state
                   style={{
-                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                    color: 'var(--text-muted)'
+                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
                   }}
                 >
                   <polyline points="6 9 12 15 18 9"></polyline>
@@ -366,7 +347,7 @@ export default function RosterView() {
                         </label>
                       );
                     })}
-                    <label className="voice-part-option-label" style={{ gridColumn: '1 / -1', marginTop: '4px', borderTop: '1px dashed var(--border)', paddingTop: '8px' }}>
+                    <label className="voice-part-option-label roster-staff-option">
                       <input
                         type="checkbox"
                         checked={(filters.voiceParts || []).includes('__STAFF__')}

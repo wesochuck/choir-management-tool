@@ -72,8 +72,8 @@ export function CommunicationModals({
         }
       >
         {selectedMessage && (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ gap: '2px' }}>
+          <div className="comm-modal-stack">
+            <div className="comm-modal-label-stack">
               <label className="text-label text-muted">Subject</label>
               <strong>
                 {(() => {
@@ -89,7 +89,7 @@ export function CommunicationModals({
                 })()}
               </strong>
             </div>
-            <div className="flex-col" style={{ gap: '2px' }}>
+            <div className="comm-modal-label-stack">
               <label className="text-label text-muted">Sent To</label>
               <span>
                 {selectedMessage.status === 'Archived'
@@ -98,30 +98,13 @@ export function CommunicationModals({
               </span>
             </div>
             {selectedMessage.status === 'Archived' && (
-              <div
-                className="card"
-                style={{
-                  padding: '12px',
-                  backgroundColor: '#fffbeb',
-                  border: '1px solid #fcd34d',
-                  color: '#92400e',
-                  fontSize: '0.875rem',
-                }}
-              >
+              <div className="card comm-modal-alert-warning">
                 <strong>Archived:</strong> This automated message was archived without sending.
               </div>
             )}
-            <div className="flex-col" style={{ gap: '2px' }}>
+            <div className="comm-modal-label-stack">
               <label className="text-label text-muted">Content</label>
-              <div
-                className="card"
-                style={{
-                  padding: '12px',
-                  backgroundColor: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
+              <div className="card comm-modal-content-preview">
                 {selectedMessage.content}
               </div>
             </div>
@@ -144,17 +127,14 @@ export function CommunicationModals({
           </button>
         }
       >
-        <div
-          className="flex-col"
-          style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}
-        >
+        <div className="comm-modal-recipient-list">
           {recipientPreviewList.recipients.length === 0 ? (
-            <div className="card" style={{ padding: 'var(--space-md)', textAlign: 'center' }}>
-              <p className="text-muted" style={{ margin: 0 }}>
+            <div className="card comm-modal-recipient-empty">
+              <p className="text-muted comm-no-margin">
                 {recipientPreviewList.emptyMessage || 'No recipients found.'}
               </p>
               {recipientPreviewList.helperText && (
-                <p className="text-muted text-xs" style={{ marginTop: '8px', margin: 0 }}>
+                <p className="text-muted text-xs comm-recipient-helper-text">
                   {recipientPreviewList.helperText}
                 </p>
               )}
@@ -163,8 +143,7 @@ export function CommunicationModals({
             recipientPreviewList.recipients.map((r) => (
               <div
                 key={r.id}
-                className="flex-row card"
-                style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}
+                className="flex-row card comm-modal-recipient-item"
               >
                 <strong>{r.name}</strong>
                 <span className="text-muted text-xs">{r.voicePart}</span>

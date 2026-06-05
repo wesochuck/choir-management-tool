@@ -135,20 +135,10 @@ export function TemplatesPanel({
             }
           >
             <div
-              className="comm-email-mockup"
-              // @allow-inline-style - dynamic padding based on preview device
-              style={{
-                padding: previewDevice === 'mobile' ? '30px 15px' : '0',
-              }}
+              className={`comm-email-mockup ${previewDevice === 'mobile' ? 'mobile-preview' : 'desktop-preview'}`}
             >
               <div
                 className={`comm-email-frame ${previewDevice === 'mobile' ? 'mobile-frame' : 'desktop-frame'}`}
-                // @allow-inline-style - dynamic layout based on preview device
-                style={{
-                  maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
-                  borderRadius: previewDevice === 'mobile' ? '20px' : '0',
-                  border: previewDevice === 'mobile' ? '8px solid #1e293b' : 'none',
-                }}
               >
                 <div className="comm-email-header">
                   <div className="comm-email-header-row">
@@ -165,11 +155,7 @@ export function TemplatesPanel({
                   </div>
                 </div>
                 <div
-                  className="comm-email-body"
-                  // @allow-inline-style - dynamic padding based on preview device
-                  style={{
-                    padding: previewDevice === 'mobile' ? '16px' : '24px',
-                  }}
+                  className={`comm-email-body ${previewDevice === 'mobile' ? 'mobile-padding' : 'desktop-padding'}`}
                 >
                   <div
                     className="text-body message-preview-content"

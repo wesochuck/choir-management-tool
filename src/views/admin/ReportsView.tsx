@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { reportService, type ConcertSummary } from '../../services/reportService';
 import { eventService, type Event } from '../../services/eventService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
+import './Reports.css';
 
 type ReportTab = 'attendance' | 'repertoire';
 
@@ -156,10 +157,10 @@ export default function ReportsView() {
   const handlePrint = () => window.print();
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>Reports & Insights</h1>
-        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+    <div className="flex-col report-container">
+      <div className="flex-responsive report-header">
+        <h1 className="text-display report-title">Reports & Insights</h1>
+        <div className="flex-row report-tabs">
             <button className={`btn ${tab === 'attendance' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('attendance')}>
                 Attendance
             </button>
@@ -170,15 +171,14 @@ export default function ReportsView() {
       </div>
 
       {tab === 'attendance' && (
-        <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+        <div className="flex-col report-section">
           {/* Selection Header */}
           <div className="card no-print">
-            <div className="flex-responsive" style={{ justifyContent: 'space-between' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-responsive report-selection-header">
+              <div className="flex-col report-select-group">
                 <label className="text-label text-muted">Select Concert / Performance</label>
                 <select 
-                  className="card" 
-                  style={{ width: '300px', height: '40px', padding: '0 12px' }}
+                  className="card report-select"
                   value={selectedPerformanceId}
                   onChange={(e) => setSelectedPerformanceId(e.target.value)}
                 >
@@ -204,10 +204,10 @@ export default function ReportsView() {
             </div>
           </div>
 
-          {error && <div className="badge badge-danger" style={{ padding: 'var(--space-md)', width: '100%' }}>{error}</div>}
+          {error && <div className="badge badge-danger report-error">{error}</div>}
 
           {isAttendanceLoading && (
-            <div style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
+            <div className="report-loading">
               <div className="text-muted">Calculating attendance insights...</div>
             </div>
           )}
@@ -215,68 +215,64 @@ export default function ReportsView() {
           {!isAttendanceLoading && summary && (
             <>
               {/* KPI Cards */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: 'var(--space-lg)' 
-              }}>
-                <div className="card" style={{ textAlign: 'center' }}>
-                  <div className="text-muted text-xs" style={{ textTransform: 'uppercase', marginBottom: 'var(--space-xs)' }}>Rehearsals</div>
-                  <div className="text-display" style={{ color: 'var(--primary)' }}>{summary.totalRehearsals}</div>
+              <div className="report-kpi-grid">
+                <div className="card report-kpi-card">
+                  <div className="text-muted text-xs report-kpi-label">Rehearsals</div>
+                  <div className="text-display report-kpi-value">{summary.totalRehearsals}</div>
                 </div>
-                <div className="card" style={{ textAlign: 'center' }}>
-                  <div className="text-muted text-xs" style={{ textTransform: 'uppercase', marginBottom: 'var(--space-xs)' }}>Avg Attendance</div>
-                  <div className="text-display" style={{ color: 'var(--primary)' }}>{summary.avgAttendanceRate.toFixed(1)}%</div>
+                <div className="card report-kpi-card">
+                  <div className="text-muted text-xs report-kpi-label">Avg Attendance</div>
+                  <div className="text-display report-kpi-value">{summary.avgAttendanceRate.toFixed(1)}%</div>
                 </div>
-                <div className="card" style={{ textAlign: 'center' }}>
-                  <div className="text-muted text-xs" style={{ textTransform: 'uppercase', marginBottom: 'var(--space-xs)' }}>Total Singers</div>
-                  <div className="text-display" style={{ color: 'var(--primary)' }}>{summary.singerReports.length}</div>
+                <div className="card report-kpi-card">
+                  <div className="text-muted text-xs report-kpi-label">Total Singers</div>
+                  <div className="text-display report-kpi-value">{summary.singerReports.length}</div>
                 </div>
-                <div className="card" style={{ textAlign: 'center' }}>
-                  <div className="text-muted text-xs" style={{ textTransform: 'uppercase', marginBottom: 'var(--space-xs)' }}>2+ Absences</div>
-                  <div className="text-display" style={{ color: 'var(--color-danger-text)' }}>
+                <div className="card report-kpi-card">
+                  <div className="text-muted text-xs report-kpi-label">2+ Absences</div>
+                  <div className="text-display report-kpi-value-danger">
                     {summary.singerReports.filter(r => r.absences >= 2).length}
                   </div>
                 </div>
               </div>
 
               {/* Detailed Table */}
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)' }} className="no-print">
-                  <h3 style={{ margin: 0 }}>Singer Attendance Detail</h3>
-                  <p className="text-muted" style={{ margin: 0 }}>Singers with 2 or more absences are highlighted in red.</p>
+              <div className="card report-table-card">
+                <div className="report-table-header no-print">
+                  <h3>Singer Attendance Detail</h3>
+                  <p className="text-muted">Singers with 2 or more absences are highlighted in red.</p>
                 </div>
                 
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="report-table-scroll">
+                  <table className="table report-table">
                     <thead>
-                      <tr style={{ textAlign: 'left', backgroundColor: 'var(--primary-light)' }}>
-                        <th style={{ padding: 'var(--space-md)' }}>Singer</th>
-                        <th style={{ padding: 'var(--space-md)' }}>Part</th>
-                        <th style={{ padding: 'var(--space-md)', textAlign: 'center' }}>Absences</th>
-                        <th style={{ padding: 'var(--space-md)', textAlign: 'center' }}>Present</th>
-                        <th style={{ padding: 'var(--space-md)', textAlign: 'center' }}>Rate</th>
+                      <tr>
+                        <th>Singer</th>
+                        <th>Part</th>
+                        <th className="text-center">Absences</th>
+                        <th className="text-center">Present</th>
+                        <th className="text-center">Rate</th>
                       </tr>
                     </thead>
                     <tbody>
                       {summary.singerReports.map(report => (
                         <tr 
                           key={report.profileId} 
+                          // @allow-inline-style - dynamic background and text color based on absence threshold
                           style={{ 
-                            borderBottom: '1px solid var(--border)',
                             backgroundColor: report.absences >= 2 ? 'var(--color-danger-bg)' : 'transparent',
                             color: report.absences >= 2 ? 'var(--color-danger-text)' : 'inherit'
                           }}
                         >
-                          <td style={{ padding: 'var(--space-md)', fontWeight: 600 }}>{report.name}</td>
-                          <td style={{ padding: 'var(--space-md)' }}>{report.voicePart}</td>
-                          <td style={{ padding: 'var(--space-md)', textAlign: 'center' }}>
+                          <td className="font-bold">{report.name}</td>
+                          <td>{report.voicePart}</td>
+                          <td className="text-center">
                             <span className={report.absences >= 2 ? 'badge badge-danger' : ''}>
                               {report.absences}
                             </span>
                           </td>
-                          <td style={{ padding: 'var(--space-md)', textAlign: 'center' }}>{report.presenceCount} / {report.totalEvents}</td>
-                          <td style={{ padding: 'var(--space-md)', textAlign: 'center' }}>{report.attendanceRate.toFixed(1)}%</td>
+                          <td className="text-center">{report.presenceCount} / {report.totalEvents}</td>
+                          <td className="text-center">{report.attendanceRate.toFixed(1)}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -284,7 +280,7 @@ export default function ReportsView() {
                 </div>
               </div>
 
-              <div style={{ display: 'none' }} className="print-only">
+              <div className="report-print-hide print-only">
                 <style>{`
                   @media print {
                     .print-only { display: block !important; }
@@ -293,15 +289,15 @@ export default function ReportsView() {
                     .badge-danger { color: red !important; font-weight: bold !important; }
                   }
                 `}</style>
-                <h2 style={{ textAlign: 'center' }}>Attendance Report: {summary.performance.title}</h2>
-                <p style={{ textAlign: 'center' }}>Date: {new Date(summary.performance.date).toLocaleDateString()}</p>
+                <h2 className="report-print-title">Attendance Report: {summary.performance.title}</h2>
+                <p className="report-print-subtitle">Date: {new Date(summary.performance.date).toLocaleDateString()}</p>
               </div>
             </>
           )}
 
           {!selectedPerformanceId && !isAttendanceLoading && (
-            <div className="card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>📊</div>
+            <div className="card report-empty-state">
+              <div className="report-empty-icon">📊</div>
               <h3>No Performance Selected</h3>
               <p className="text-muted">Choose a performance from the dropdown above to analyze attendance data for its associated rehearsals.</p>
             </div>
@@ -310,13 +306,13 @@ export default function ReportsView() {
       )}
 
       {tab === 'repertoire' && (
-          <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
-            <div className="flex-responsive" style={{ justifyContent: 'space-between' }}>
+          <div className="flex-col report-section">
+            <div className="flex-responsive report-repertoire-header">
                 <div>
-                    <h3 style={{ margin: 0 }}>Repertoire History</h3>
-                    <p className="text-muted" style={{ margin: 0 }}>A consolidated view of all library pieces and their performance dates.</p>
+                    <h3>Repertoire History</h3>
+                    <p className="text-muted">A consolidated view of all library pieces and their performance dates.</p>
                 </div>
-                <div className="flex-row">
+                <div className="flex-row report-tabs">
                     <button onClick={handleExportCSV} className="btn btn-secondary btn-sm" disabled={isRepertoireLoading || repertoireStats.length === 0}>
                         <span>📥</span> Download CSV
                     </button>
@@ -327,23 +323,23 @@ export default function ReportsView() {
             </div>
 
             {isRepertoireLoading ? (
-                 <div style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
+                 <div className="report-loading">
                     <div className="text-muted">Loading repertoire data...</div>
                  </div>
             ) : repertoireStats.length === 0 ? (
-                <div className="card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                <div className="card report-empty-state">
                     <p className="text-muted">No pieces in the music library.</p>
                 </div>
             ) : (
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="table" style={{ width: '100%' }}>
+                <div className="card report-table-card">
+                    <div className="report-table-scroll">
+                        <table className="table report-table">
                             <thead>
                                 <tr>
                                     <th>Title</th>
                                     <th>Composer</th>
                                     <th>Arranger</th>
-                                    <th style={{ textAlign: 'center' }}>Total Performances</th>
+                                    <th className="text-center">Total Performances</th>
                                     <th>Last Performed</th>
                                 </tr>
                             </thead>
@@ -353,7 +349,7 @@ export default function ReportsView() {
                                         <td><strong>{stat.piece.title}</strong></td>
                                         <td>{stat.piece.composer || '-'}</td>
                                         <td>{stat.piece.arranger || '-'}</td>
-                                        <td style={{ textAlign: 'center' }}>
+                                        <td className="text-center">
                                             <span className="badge badge-performance">{stat.totalPerformances}</span>
                                         </td>
                                         <td>

@@ -1,0 +1,378 @@
+/* Music Library View Styles */
+
+.ml-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-xl) 0;
+}
+
+.ml-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ml-header-title {
+  margin: 0;
+}
+
+.ml-header-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+}
+
+/* Tab Navigation */
+.ml-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.ml-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.ml-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.ml-tab-btn.active {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Table Styles */
+.ml-table-container {
+  overflow-x: auto;
+}
+
+.ml-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+
+.ml-table-header-row {
+  background-color: var(--primary-light);
+}
+
+.ml-table-header {
+  padding: 6px 10px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  user-select: none;
+}
+
+.ml-table-header-center {
+  text-align: center;
+}
+
+.ml-table-header-sortable {
+  cursor: pointer;
+}
+
+.ml-sort-indicator {
+  font-size: 10px;
+  display: inline-block;
+}
+
+.ml-table-header-checkbox {
+  width: 40px;
+}
+
+.ml-table-header-perf {
+  width: 50px;
+}
+
+.ml-table-header-link {
+  width: 60px;
+}
+
+.ml-table-header-actions {
+  width: 80px;
+}
+
+.ml-pagination-footer {
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-card, #fff);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  margin-top: var(--space-xs);
+}
+
+.ml-pagination-info {
+  font-weight: 500;
+}
+
+.ml-table-cell {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.ml-table-cell-center {
+  text-align: center;
+}
+
+.ml-perf-count {
+  font-weight: 600;
+}
+
+.ml-table-row {
+  cursor: pointer;
+}
+
+.ml-table-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.ml-table-row-duplicate {
+  background-color: rgba(255, 138, 101, 0.05);
+}
+
+.ml-table-row-child {
+  background-color: rgba(248, 250, 252, 0.4);
+}
+
+.ml-table-row-child .ml-title-cell {
+  padding-left: 32px;
+}
+
+/* Title & Metadata Stack */
+.ml-title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ml-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ml-title-text {
+  font-weight: 700;
+}
+
+.ml-title-text-duplicate {
+  color: #e64a19;
+}
+
+.ml-child-indicator {
+  font-family: monospace;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.ml-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* Badges */
+.ml-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.ml-badge-multi {
+  background-color: var(--primary-light, rgba(27, 77, 62, 0.1));
+  color: var(--primary, #1b4d3e);
+  border-color: rgba(27, 77, 62, 0.2);
+}
+
+.ml-badge-mvt {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: var(--text-muted, #64748b);
+  border-color: rgba(100, 116, 139, 0.2);
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.ml-genre-tag {
+  display: inline-flex;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: rgba(100, 116, 139, 0.06);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.ml-track-badge {
+  font-size: 13px;
+  line-height: 1;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ml-track-in-mvts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: rgba(27, 77, 62, 0.08);
+  color: var(--primary, #1b4d3e);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(27, 77, 62, 0.15);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+/* Actions & Buttons */
+.ml-catalog-link {
+  color: var(--primary, #1b4d3e);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm, 4px);
+  transition: background-color 0.2s;
+}
+
+.ml-catalog-link svg {
+  vertical-align: middle;
+}
+
+.ml-actions-cell-content {
+  gap: var(--space-xs);
+}
+
+.ml-genre-row {
+  margin-top: 2px;
+}
+
+.ml-play-btn {
+  padding: 2px 8px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  font-size: 11px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+}
+
+.ml-edit-btn {
+  min-height: auto !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  font-size: 0.75rem !important;
+  margin: 0 !important;
+}
+
+.ml-checkbox {
+  min-height: auto !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+}
+
+/* Settings Form Styles */
+.ml-settings-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.ml-genre-input-group {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.ml-genre-input {
+  height: 40px;
+  padding: 0 12px;
+  width: 250px;
+}
+
+.ml-new-genre-input {
+  height: 40px;
+  padding: 0 12px;
+  max-width: 250px;
+}
+
+/* Layout Utilities for Config/Settings */
+.ml-config-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.ml-settings-field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.ml-no-margin {
+  margin: 0 !important;
+}
+
+.ml-genres-container-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.ml-genres-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.ml-new-genre-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+}

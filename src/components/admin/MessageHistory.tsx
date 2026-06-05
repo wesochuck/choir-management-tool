@@ -5,6 +5,7 @@ import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
+import '../../views/admin/communications/Communications.css';
 
 interface MessageHistoryProps {
   history: MessageRecord[];
@@ -51,36 +52,24 @@ export function MessageHistory({
   }, [historySearchQuery]);
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-      <div className="flex-row" style={{ gap: 'var(--space-sm)', marginBottom: '4px' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
+    <div className="flex-col comm-compose-form">
+      <div className="comm-message-list-header">
+        <div className="comm-message-search-container">
           <input
             type="text"
-            className="input"
+            className="input comm-message-search-input"
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', paddingRight: searchTerm ? '32px' : '12px' }}
+            style={{ paddingRight: searchTerm ? '32px' : '12px' }} // @allow-inline-style - dynamic padding based on clear button
           />
           {searchTerm && (
             <button
               type="button"
-              className="btn-close"
+              className="comm-message-search-clear"
               onClick={() => {
                 setSearchTerm('');
                 onHistorySearchChange('');
-              }}
-              style={{
-                position: 'absolute',
-                right: '8px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                fontSize: '1.2rem',
-                lineHeight: 1,
               }}
               title="Clear search"
             >
@@ -107,39 +96,22 @@ export function MessageHistory({
           );
 
           return (
-            <div key={message.id} className="message-list-item flex-responsive" style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-              <div className="flex-col" style={{ gap: '4px' }}>
-                <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'center' }}>
-                  <span className="badge badge-rehearsal" style={{ fontSize: '10px', padding: '2px 6px' }}>{message.type}</span>
+            <div key={message.id} className="comm-message-item flex-responsive">
+              <div className="comm-message-info">
+                <div className="comm-message-meta">
+                  <span className="badge badge-rehearsal comm-message-badge">{message.type}</span>
                   {message.status === 'Archived' && (
-                    <span
-                      className="badge badge-muted"
-                      style={{
-                        fontSize: '10px',
-                        padding: '2px 6px',
-                        backgroundColor: '#94a3b8',
-                        color: 'white',
-                      }}
-                    >
+                    <span className="badge badge-muted comm-message-badge comm-color-muted-bg">
                       Archived
                     </span>
                   )}
-                  {isAutomated && <span className="badge badge-concert" style={{ fontSize: '10px', padding: '2px 6px', opacity: 0.8 }}>{mType}</span>}
+                  {isAutomated && <span className="badge badge-concert comm-message-badge comm-opacity-80">{mType}</span>}
                   <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
                 </div>
-                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{resolvedSubject}</h3>
+                <h3 className="comm-message-subject">{resolvedSubject}</h3>
                 <button
                   type="button"
-                  className="btn btn-ghost"
-                  style={{
-                    padding: 0,
-                    height: 'auto',
-                    fontSize: '0.75rem',
-                    color: 'var(--primary)',
-                    textDecoration: 'underline',
-                    alignSelf: 'flex-start',
-                    cursor: 'pointer',
-                  }}
+                  className="btn btn-ghost comm-message-recipients-link"
                   onClick={() =>
                     onViewRecipients(
                       message.recipients,
@@ -150,7 +122,7 @@ export function MessageHistory({
                   {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''} →
                 </button>
               </div>
-              <div className="flex-row" style={{ gap: '6px' }}>
+              <div className="flex-row comm-gap-6px">
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>Details</button>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => onCopyDraft(message)}>Copy to Draft</button>
               </div>
@@ -158,7 +130,7 @@ export function MessageHistory({
           );
         })}
         {history.length === 0 && (
-          <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+          <div className="comm-empty-state">
             <p className="text-muted">
               {historySearchQuery 
                 ? `No messages found matching "${historySearchQuery}".` 

@@ -11,6 +11,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import { type UserAccount } from '../../services/profileService';
+import './Auditions.css';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -295,11 +296,11 @@ export default function AuditionsView() {
     });
   }, [filteredAuditions, sortField, sortDirection]);
 
-  if (isLoading) return <div style={{ padding: 'var(--space-xl)' }}>Loading auditions...</div>;
-  if (error) return <div style={{ padding: 'var(--space-xl)', color: 'var(--color-danger-text)' }}>{error}</div>;
+  if (isLoading) return <div className="audition-loading-error">Loading auditions...</div>;
+  if (error) return <div className="audition-loading-error audition-error-text">{error}</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+    <div className="flex-col audition-view-container">
       <div className="admin-view-header">
         <div className="admin-view-titles">
           {/* Page title is already handled by PageLayout in App.tsx */}
@@ -317,18 +318,11 @@ export default function AuditionsView() {
 
       {/* Status Banner */}
       {!isLoading && settings && (
-        <div className="card" style={{ 
-          backgroundColor: settings.enabled && settings.defaultPerformanceId ? 'rgba(74, 117, 89, 0.05)' : 'rgba(100, 116, 139, 0.05)',
-          border: `1px solid ${settings.enabled && settings.defaultPerformanceId ? 'var(--primary)' : 'var(--border)'}`,
-          padding: 'var(--space-md) var(--space-lg)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-            <div style={{ fontSize: '1.5rem' }}>{settings.enabled && settings.defaultPerformanceId ? '🟢' : '⚪'}</div>
-            <div className="flex-col" style={{ gap: 0 }}>
-              <div className="text-label" style={{ fontWeight: 700, color: settings.enabled && settings.defaultPerformanceId ? 'var(--primary-deep)' : 'var(--text-muted)' }}>
+        <div className={`card audition-status-banner ${settings.enabled && settings.defaultPerformanceId ? 'audition-status-banner-open' : 'audition-status-banner-closed'}`}>
+          <div className="flex-row audition-status-info-row">
+            <div className="audition-status-icon">{settings.enabled && settings.defaultPerformanceId ? '🟢' : '⚪'}</div>
+            <div className="flex-col audition-status-info-group">
+              <div className={`text-label audition-status-label ${settings.enabled && settings.defaultPerformanceId ? 'audition-status-label-open' : 'audition-status-label-closed'}`}>
                 PUBLIC AUDITIONS: {settings.enabled && settings.defaultPerformanceId ? 'OPEN' : 'CLOSED'}
               </div>
               <div className="text-xs text-muted">
@@ -353,18 +347,18 @@ export default function AuditionsView() {
 
       {showSettings && settings && (
         <AppCard title="Audition Settings">
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-            <label className="flex-row" style={{ gap: 'var(--space-sm)', alignSelf: 'flex-start' }}>
+          <div className="flex-col audition-settings-form">
+            <label className="flex-row audition-checkbox-label">
               <input
                 type="checkbox"
                 checked={settings.enabled}
                 onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
-                style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }}
+                className="audition-checkbox"
               />
               <span className="text-label">Accept public audition requests</span>
             </label>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col audition-generator-input-group">
               <label className="text-label">Target Performance</label>
               <select
                 className="form-select"
@@ -376,36 +370,36 @@ export default function AuditionsView() {
                   <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
                 ))}
               </select>
-              <p className="text-muted" style={{ margin: 0 }}>
+              <p className="text-muted audition-target-perf-hint">
                 A target performance is <strong>REQUIRED</strong> for the public audition form to accept requests.
               </p>
             </div>
 
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <label className="text-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+            <div className="flex-col audition-generator-input-group">
+              <label className="text-label audition-available-times-label">
                 <span>Available Audition Times</span>
                 {(!settings.slots || settings.slots.length === 0) && (
-                  <span className="badge badge-rehearsal" style={{ backgroundColor: 'var(--color-danger-text)', color: 'white', padding: '2px 6px', fontSize: '0.7rem' }}>Required</span>
+                  <span className="badge badge-rehearsal audition-required-badge">Required</span>
                 )}
               </label>
 
-              <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'var(--neutral-bg)', border: '1px solid var(--border)' }}>
-                <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-                  <span className="text-label" style={{ fontSize: '0.8rem' }}>Generate Slots</span>
+              <div className="card audition-generator-card">
+                <div className="flex-col audition-generator-inner">
+                  <span className="text-label audition-generator-title">Generate Slots</span>
                   <div className="slots-generator-grid">
-                    <div className="flex-col" style={{ gap: '4px' }}>
+                    <div className="flex-col audition-generator-input-stack">
                       <span className="text-xs text-muted">Date</span>
-                      <input type="date" className="card" value={genDate} onChange={e => setGenDate(e.target.value)} style={{ padding: '8px' }} />
+                      <input type="date" className="card audition-generator-input" value={genDate} onChange={e => setGenDate(e.target.value)} />
                     </div>
-                    <div className="flex-col" style={{ gap: '4px' }}>
+                    <div className="flex-col audition-generator-input-stack">
                       <span className="text-xs text-muted">Start Time</span>
-                      <input type="time" className="card" value={genStart} onChange={e => setGenStart(e.target.value)} style={{ padding: '8px' }} />
+                      <input type="time" className="card audition-generator-input" value={genStart} onChange={e => setGenStart(e.target.value)} />
                     </div>
-                    <div className="flex-col" style={{ gap: '4px' }}>
+                    <div className="flex-col audition-generator-input-stack">
                       <span className="text-xs text-muted">End Time</span>
-                      <input type="time" className="card" value={genEnd} onChange={e => setGenEnd(e.target.value)} style={{ padding: '8px' }} />
+                      <input type="time" className="card audition-generator-input" value={genEnd} onChange={e => setGenEnd(e.target.value)} />
                     </div>
-                    <div className="flex-col" style={{ gap: '4px' }}>
+                    <div className="flex-col audition-generator-input-stack">
                       <span className="text-xs text-muted">Interval (mins)</span>
                       <select className="form-select" value={genInterval} onChange={e => setGenInterval(e.target.value)}>
                         <option value="10">10</option>
@@ -421,11 +415,11 @@ export default function AuditionsView() {
                 </div>
               </div>
 
-              <div className="flex-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+              <div className="flex-row audition-slots-list">
                 {settings.slots?.map(slot => (
-                  <div key={slot} className="badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.85rem', backgroundColor: '#ffffff', border: '1px solid var(--border)' }}>
+                  <div key={slot} className="badge audition-slot-badge">
                     <span>{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-                    <button type="button" onClick={() => removeSlot(slot)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1 }}>
+                    <button type="button" onClick={() => removeSlot(slot)} className="audition-slot-remove-btn">
                       &times;
                     </button>
                   </div>
@@ -433,24 +427,23 @@ export default function AuditionsView() {
               </div>
 
               {(!settings.slots || settings.slots.length === 0) && (
-                <p style={{ color: 'var(--color-danger-text)', fontSize: '0.8125rem', margin: 0, fontWeight: 500 }}>
+                <p className="audition-slot-warning">
                   ⚠️ Generate at least one audition time slot so applicants can schedule their audition.
                 </p>
               )}
             </div>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col audition-generator-input-group">
               <label className="text-label">Confirmation Message</label>
               <textarea
                 value={settings.confirmationMessage}
                 onChange={(e) => setSettings({ ...settings, confirmationMessage: e.target.value })}
-                className="card"
-                style={{ minHeight: '80px', resize: 'vertical' }}
+                className="card audition-confirmation-msg-textarea"
               />
             </div>
 
-            <div className="flex-col" style={{ gap: 'var(--space-sm)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
-              <label className="flex-row" style={{ gap: 'var(--space-sm)', alignSelf: 'flex-start', cursor: 'pointer', userSelect: 'none' }}>
+            <div className="flex-col audition-admin-notify-section">
+              <label className="flex-row audition-checkbox-label">
                 <input
                   type="checkbox"
                   checked={settings.adminNotifyEnabled || false}
@@ -459,19 +452,19 @@ export default function AuditionsView() {
                     adminNotifyEnabled: e.target.checked,
                     adminNotifyUsers: settings.adminNotifyUsers || []
                   })}
-                  style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  className="audition-checkbox"
                 />
                 <span className="text-label">Notify administrators of new submissions</span>
               </label>
 
               {settings.adminNotifyEnabled && (
-                <div className="flex-col" style={{ gap: 'var(--space-xs)', paddingLeft: '28px' }}>
-                  <span className="text-label text-muted" style={{ fontSize: '0.875rem' }}>Select Administrators to Notify</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <div className="flex-col audition-admin-list-container">
+                  <span className="text-label text-muted audition-admin-info">Select Administrators to Notify</span>
+                  <div className="audition-admin-list">
                     {admins.map((admin) => {
                       const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
                       return (
-                        <label key={admin.id} className="flex-row" style={{ gap: '8px', cursor: 'pointer', alignItems: 'center', userSelect: 'none' }}>
+                        <label key={admin.id} className="flex-row audition-admin-checkbox-label">
                           <input
                             type="checkbox"
                             checked={isChecked}
@@ -482,9 +475,9 @@ export default function AuditionsView() {
                                 : currentUsers.filter(id => id !== admin.id);
                               setSettings({ ...settings, adminNotifyUsers: updatedUsers });
                             }}
-                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                            className="audition-admin-checkbox"
                           />
-                          <span style={{ fontSize: '0.9rem' }}>{admin.name} ({admin.email})</span>
+                          <span className="audition-admin-info">{admin.name} ({admin.email})</span>
                         </label>
                       );
                     })}
@@ -503,9 +496,9 @@ export default function AuditionsView() {
         </AppCard>
       )}
 
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
-        <div className="flex-responsive" style={{ gap: 'var(--space-md)', flex: 1 }}>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '240px' }}>
+      <div className="flex-responsive audition-filters-container">
+        <div className="flex-responsive audition-filters-inner">
+          <div className="flex-col audition-filter-perf-group">
             <label className="text-label text-muted">Filter by Performance</label>
             <select
               className="form-select"
@@ -519,13 +512,13 @@ export default function AuditionsView() {
             </select>
           </div>
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col audition-filter-status-group">
             <label className="text-label text-muted">Filter by Status</label>
-            <div className="flex-row" style={{ gap: '16px', height: '40px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="flex-row audition-filter-status-list">
               {(['New', 'Scheduled', 'Closed'] as Audition['status'][]).map(status => {
                 const isChecked = statusFilter.includes(status);
                 return (
-                  <label key={status} className="flex-row" style={{ gap: '8px', cursor: 'pointer', fontSize: '0.9rem', userSelect: 'none', alignItems: 'center' }}>
+                  <label key={status} className="flex-row audition-admin-checkbox-label">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -536,7 +529,7 @@ export default function AuditionsView() {
                           setStatusFilter([...statusFilter, status]);
                         }
                       }}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                      className="audition-admin-checkbox"
                     />
                     <span>{status}</span>
                   </label>
@@ -549,48 +542,47 @@ export default function AuditionsView() {
 
       <AppCard noPadding>
         <div className="table-responsive admin-responsive-table">
-          <table className="text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="text-left audition-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg)' }}>
+              <tr className="audition-table-header-row">
                 <th 
                   onClick={() => handleSort('name')}
-                  style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}
+                  className="audition-table-header-cell audition-table-header-sortable"
                 >
-                  <div className="flex-row" style={{ alignItems: 'center', gap: '6px' }}>
+                  <div className="flex-row audition-table-header-inner">
                     <span>Name / Contact</span>
                     {sortField === 'name' && (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--primary-deep)' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                      <span className="audition-table-sort-icon">{sortDirection === 'asc' ? '▲' : '▼'}</span>
                     )}
                   </div>
                 </th>
-                <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Target Performance</th>
+                <th className="audition-table-header-cell">Target Performance</th>
                 <th 
                   onClick={() => handleSort('scheduledTimeSlot')}
-                  style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}
+                  className="audition-table-header-cell audition-table-header-sortable"
                 >
-                  <div className="flex-row" style={{ alignItems: 'center', gap: '6px' }}>
+                  <div className="flex-row audition-table-header-inner">
                     <span>Audition Time</span>
                     {sortField === 'scheduledTimeSlot' && (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--primary-deep)' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                      <span className="audition-table-sort-icon">{sortDirection === 'asc' ? '▲' : '▼'}</span>
                     )}
                   </div>
                 </th>
-                <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', width: '120px' }}>Status</th>
-                <th style={{ padding: '16px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
+                <th className="audition-table-header-cell audition-table-width-sm">Status</th>
+                <th className="audition-table-header-cell audition-table-header-cell-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {sortedAuditions.map((audition) => (
                 <tr 
                   key={audition.id} 
-                  className="interactive-row" 
+                  className="interactive-row audition-table-row" 
                   onClick={() => { setEditingAudition(audition); setIsModalOpen(true); }}
-                  style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                 >
-                  <td data-label="Name" style={{ padding: '16px' }}>
-                    <div className="flex-col" style={{ gap: '4px' }}>
-                      <div className="flex-row" style={{ gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 600 }}>{audition.name}</span>
+                  <td data-label="Name" className="audition-name-cell">
+                    <div className="flex-col audition-name-inner">
+                      <div className="flex-row audition-name-top">
+                        <span className="audition-name-text">{audition.name}</span>
                         {audition.voicePart && <span className="badge badge-rehearsal">{audition.voicePart}</span>}
                       </div>
                       {audition.contact.includes('@') ? (
@@ -600,8 +592,7 @@ export default function AuditionsView() {
                             event.stopPropagation();
                             handleEmailClick(audition.contact, audition.name, audition.voicePart || '');
                           }}
-                          className="btn btn-link text-muted"
-                          style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline', fontSize: '0.85rem' }}
+                          className="btn btn-link text-muted audition-contact-btn"
                         >
                           {audition.contact}
                         </button>
@@ -609,15 +600,14 @@ export default function AuditionsView() {
                         <a
                           href={`tel:${audition.contact}`}
                           onClick={(event) => event.stopPropagation()}
-                          className="text-muted"
-                          style={{ fontSize: '0.85rem' }}
+                          className="text-muted audition-contact-link"
                         >
                           {audition.contact}
                         </a>
                       )}
                     </div>
                   </td>
-                  <td data-label="Target Performance" style={{ padding: '16px' }}>
+                  <td data-label="Target Performance" className="audition-perf-cell">
                     {audition.expand?.performance ? (
                       <button
                         type="button"
@@ -625,8 +615,7 @@ export default function AuditionsView() {
                           e.stopPropagation();
                           navigate(`/admin/events?eventId=${audition.performance}&openModal=true`);
                         }}
-                        className="btn btn-link"
-                        style={{ padding: 0, border: 'none', background: 'none', cursor: 'pointer', textDecoration: 'underline', color: 'var(--primary)', textAlign: 'left', fontWeight: 600, display: 'inline' }}
+                        className="btn btn-link audition-perf-link"
                         title="Click to edit performance details"
                       >
                         {audition.expand.performance.title}
@@ -635,38 +624,34 @@ export default function AuditionsView() {
                       <span className="text-muted text-sm">None</span>
                     )}
                   </td>
-                  <td data-label="Audition Time" style={{ padding: '16px', fontSize: '0.9rem', color: 'var(--neutral-text)' }}>
+                  <td data-label="Audition Time" className="audition-time-cell">
                     {audition.status === 'Scheduled' && audition.scheduledTimeSlot ? (
-                      <span style={{ fontWeight: 500 }}>
+                      <span className="audition-time-scheduled">
                         {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     ) : (
-                      <span className="badge" style={{ backgroundColor: '#f3f4f6', color: '#374151', padding: '4px 8px', fontSize: '0.8rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span className="badge audition-time-requested-badge">
                         {audition.requestedSlots && audition.requestedSlots.length > 0
                           ? `${audition.requestedSlots.length} slot${audition.requestedSlots.length > 1 ? 's' : ''} requested`
                           : 'No times requested'}
                       </span>
                     )}
                   </td>
-                  <td data-label="Status" style={{ padding: '16px' }}>
-                    <span className="badge" style={{ 
-                      backgroundColor: audition.status === 'New' ? '#dbeafe' : audition.status === 'Scheduled' ? '#dcfce7' : audition.status === 'Closed' ? '#f1f5f9' : 'var(--bg)',
-                      color: audition.status === 'New' ? '#1e40af' : audition.status === 'Scheduled' ? '#166534' : audition.status === 'Closed' ? '#64748b' : 'var(--neutral-text)'
-                    }}>
+                  <td data-label="Status" className="audition-status-cell">
+                    <span className={`badge ${audition.status === 'New' ? 'audition-status-badge-new' : audition.status === 'Scheduled' ? 'audition-status-badge-scheduled' : 'audition-status-badge-closed'}`}>
                       {audition.status}
                     </span>
                   </td>
-                  <td data-label="Actions" style={{ padding: '16px', textAlign: 'right' }}>
-                    <div className="flex-row" style={{ gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  <td data-label="Actions" className="audition-actions-cell">
+                    <div className="flex-row audition-actions-group">
                       {audition.contact.includes('@') && (
                         <button
                           type="button"
-                          className="btn btn-secondary btn-sm"
+                          className="btn btn-secondary btn-sm audition-action-btn-email"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEmailClick(audition.contact, audition.name, audition.voicePart || '');
                           }}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         >
                           ✉️ Email
                         </button>
@@ -687,7 +672,7 @@ export default function AuditionsView() {
               ))}
               {sortedAuditions.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={5} className="audition-empty-state">
                     No audition requests found for this filter.
                   </td>
                 </tr>
@@ -718,15 +703,15 @@ export default function AuditionsView() {
           </>
         }
       >
-        <form id="schedule-form" onSubmit={confirmSchedule} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <p style={{ margin: 0 }}>
+        <form id="schedule-form" onSubmit={confirmSchedule} className="flex-col audition-schedule-form">
+          <p className="audition-schedule-msg">
             Confirm the time slot for <strong>{schedulingAudition?.name}</strong>. An email will be sent to them with their scheduled time and an "Add to Calendar" link.
           </p>
           
           {schedulingAudition?.requestedSlots && schedulingAudition.requestedSlots.length > 0 && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <label className="text-label" style={{ color: 'var(--primary-deep)', fontWeight: 600 }}>Applicant's Preferred Times</label>
-              <div className="flex-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+            <div className="flex-col audition-generator-input-stack">
+              <label className="text-label audition-schedule-preferred-label">Applicant's Preferred Times</label>
+              <div className="flex-row audition-preferred-slots-list">
                 {schedulingAudition.requestedSlots.map((slot) => {
                   const isSlotPredefined = settings?.slots?.includes(slot);
                   const isSelected = schedSlot === slot || (schedSlot === '__custom__' && schedCustom === slot);
@@ -743,18 +728,7 @@ export default function AuditionsView() {
                           setSchedCustom(slot);
                         }
                       }}
-                      className="badge"
-                      style={{ 
-                        cursor: 'pointer',
-                        padding: '8px 12px',
-                        border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
-                        backgroundColor: isSelected ? 'var(--primary-light)' : '#ffffff',
-                        color: isSelected ? 'var(--primary-deep)' : 'var(--text)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontWeight: isSelected ? 700 : 500,
-                        transition: 'all 0.2s',
-                        fontSize: '0.8rem'
-                      }}
+                      className={`badge audition-preferred-slot-btn ${isSelected ? 'audition-preferred-slot-selected' : ''}`}
                     >
                       {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </button>
@@ -764,7 +738,7 @@ export default function AuditionsView() {
             </div>
           )}
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col audition-generator-input-stack">
             <label className="text-label">Select Confirmed Time Slot</label>
             <select
               className="form-select"
@@ -780,14 +754,13 @@ export default function AuditionsView() {
             </select>
           </div>
           {schedSlot === '__custom__' && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col audition-generator-input-stack">
               <label className="text-label">Custom Time Slot</label>
               <input
                 type="datetime-local"
-                className="card"
+                className="card audition-custom-time-input"
                 value={schedCustom ? utcToZonedInputValue(schedCustom, timezone) : ''}
                 onChange={(e) => setSchedCustom(zonedInputValueToUtc(e.target.value, timezone))}
-                style={{ height: '44px', padding: '0 12px' }}
                 required
               />
             </div>

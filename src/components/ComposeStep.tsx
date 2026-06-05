@@ -29,31 +29,29 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
   const bodyWarning = warnings.find(w => w.field === 'body');
 
   return (
-    <div className="composer-form flex-col" style={{ gap: 'var(--space-md)' }}>
-      <div className="composer-header-row">
-        <div className="composer-subject-field flex-col" style={{ gap: 'var(--space-xs)' }}>
+    <div className="composer-form comm-compose-form">
+      <div className="comm-compose-header-row">
+        <div className="composer-subject-field comm-compose-field">
           <label className="text-label">Subject</label>
           <input
-            className={`card ${subjectWarning ? 'border-error' : ''}`}
+            className={`card comm-compose-input ${subjectWarning ? 'border-error' : ''}`}
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
-            style={{ height: '44px', padding: '0 12px' }}
             disabled={messageType === 'SMS'}
             placeholder={messageType === 'SMS' ? 'Subject not supported for SMS' : 'Enter subject...'}
           />
           {subjectWarning && (
-            <span className="validation-error-text" style={{ color: 'var(--error, #ef4444)', fontSize: '12px', marginTop: '2px' }}>
+            <span className="comm-validation-error">
               ⚠️ {subjectWarning.message}
             </span>
           )}
         </div>
-        <div className="composer-channel-field flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="composer-channel-field comm-compose-field">
           <label className="text-label">Channel</label>
           <select
-            className="card"
+            className="card comm-compose-input"
             value={messageType}
             onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
-            style={{ height: '44px', padding: '0 12px' }}
           >
             <option value="Email">Email</option>
             <option value="SMS">SMS</option>
@@ -61,7 +59,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           </select>
         </div>
       </div>
-      <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+      <div className="comm-compose-field">
         <label className="text-label">Message Body (Markdown Supported)</label>
         <MarkdownEditor
           instanceRef={editorRef}
@@ -72,7 +70,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           minHeight="350px"
         />
         {bodyWarning && (
-          <span className="validation-warning-text" style={{ color: 'var(--warning, #f59e0b)', fontSize: '12px', marginTop: '2px' }}>
+          <span className="comm-validation-warning">
             ⚠️ {bodyWarning.message}
           </span>
         )}

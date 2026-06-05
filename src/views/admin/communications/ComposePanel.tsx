@@ -141,7 +141,7 @@ export function ComposePanel({
   const selectedEvent = events.find((e) => e.id === filters.eventId) || null;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+    <div className="flex-col comm-compose-form">
       <WizardStepper
         steps={[
           { number: 1, id: 'TARGETS', label: 'Recipients', isValid: true },
@@ -162,8 +162,8 @@ export function ComposePanel({
       />
 
       {wizardStep === 'TARGETS' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <div className="wizard-action-header" style={{ justifyContent: 'flex-end' }}>
+        <div className="flex-col comm-compose-form">
+          <div className="wizard-action-header comm-justify-end">
             <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
               Next: Compose Message →
             </button>
@@ -173,28 +173,19 @@ export function ComposePanel({
             title="Recipients"
             actions={
               <span
-                className="badge"
-                style={{
-                  backgroundColor: 'var(--primary-light)',
-                  color: 'var(--primary-deep)',
-                  fontWeight: 'bold',
-                  fontSize: '0.85rem',
-                  padding: '4px 8px',
-                  borderRadius: '12px',
-                }}
+                className="badge comm-message-badge comm-recipient-count-badge"
               >
                 {recipientCounts.total} Matched
               </span>
             }
           >
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col comm-compose-form">
+              <div className="comm-compose-field">
                 <label className="text-label">Event Context</label>
                 <select
-                  className="card"
+                  className="card comm-compose-input"
                   value={filters.eventId}
                   onChange={(event) => handleEventContextChange(event.target.value)}
-                  style={{ height: '44px', padding: '0 12px' }}
                 >
                   <option value="">No Specific Event</option>
                   {events.map((event) => (
@@ -205,15 +196,14 @@ export function ComposePanel({
                 </select>
               </div>
 
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <div className="comm-compose-field">
                 <label className="text-label">RSVP Status</label>
                 <select
-                  className="card"
+                  className="card comm-compose-input"
                   value={filters.rsvp}
                   onChange={(event) =>
                     updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
                   }
-                  style={{ height: '44px', padding: '0 12px' }}
                   disabled={!filters.eventId}
                 >
                   <option value="All">All Members</option>
@@ -228,13 +218,12 @@ export function ComposePanel({
                 )}
               </div>
 
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <div className="comm-compose-field">
                 <label className="text-label">Global Status</label>
                 <select
-                  className="card"
+                  className="card comm-compose-input"
                   value={filters.globalStatus}
                   onChange={(event) => updateFilter('globalStatus', event.target.value)}
-                  style={{ height: '44px', padding: '0 12px' }}
                 >
                   <option value="Active">Active</option>
                   <option value="Idle">Idle</option>
@@ -244,15 +233,14 @@ export function ComposePanel({
               </div>
 
               <div
-                className="flex-col"
-                style={{ gap: 'var(--space-xs)', position: 'relative' }}
+                className="comm-compose-field comm-relative"
                 ref={dropdownRef}
               >
                 <label className="text-label">Voice Part / Section</label>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="card voice-part-dropdown-trigger flex-row"
+                  className="card voice-part-dropdown-trigger flex-row comm-compose-input"
                 >
                   <span
                     className={`dropdown-item-text ${
@@ -270,6 +258,7 @@ export function ComposePanel({
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.5"
+                    // @allow-inline-style - dynamic rotation based on dropdown state
                     style={{
                       transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s',
@@ -288,24 +277,14 @@ export function ComposePanel({
                           type="checkbox"
                           checked={filters.voiceParts.includes(sec.code)}
                           onChange={() => handleVoicePartToggle(sec.code)}
-                          style={{
-                            accentColor: 'var(--primary)',
-                            width: '15px',
-                            height: '15px',
-                          }}
+                          className="comm-checkbox-input"
                         />
                         <span className={filters.voiceParts.includes(sec.code) ? 'selected' : ''}>
                           {sec.name}
                         </span>
                       </label>
                     ))}
-                    <div
-                      style={{
-                        height: '1px',
-                        backgroundColor: 'var(--border)',
-                        margin: '4px 0',
-                      }}
-                    ></div>
+                    <div className="comm-dropdown-divider"></div>
                     <div className="dropdown-section-header">Individual Parts</div>
                     {voicePartLabels.map((part) => (
                       <label key={part} className="dropdown-item-label">
@@ -313,11 +292,7 @@ export function ComposePanel({
                           type="checkbox"
                           checked={filters.voiceParts.includes(part)}
                           onChange={() => handleVoicePartToggle(part)}
-                          style={{
-                            accentColor: 'var(--primary)',
-                            width: '15px',
-                            height: '15px',
-                          }}
+                          className="comm-checkbox-input"
                         />
                         <span className={filters.voiceParts.includes(part) ? 'selected' : ''}>
                           {part}
@@ -328,33 +303,14 @@ export function ComposePanel({
                 )}
               </div>
 
-              <div
-                style={{
-                  marginTop: 'var(--space-xs)',
-                  padding: '12px',
-                  backgroundColor: 'var(--bg)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border)',
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                }}
-                className="flex-col"
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <div className="flex-col comm-summary-box">
+                <div className="comm-summary-row">
                   <span>Matched Singers:</span>
-                  <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                  <strong className="comm-summary-val">
                     {recipientCounts.total}
                   </strong>
                 </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '0.75rem',
-                    borderTop: '1px dashed var(--border)',
-                    paddingTop: '6px',
-                  }}
-                >
+                <div className="comm-summary-footer">
                   <span>
                     Email Reach: <strong>{recipientCounts.hasEmail}</strong>
                   </span>
@@ -364,8 +320,7 @@ export function ComposePanel({
                 </div>
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{ alignSelf: 'flex-end', marginTop: '8px' }}
+                  className="btn btn-ghost btn-sm comm-summary-btn"
                   disabled={recipients.length === 0}
                   onClick={() => onViewRecipients(recipients, 'Matched Singers')}
                 >
@@ -375,9 +330,9 @@ export function ComposePanel({
             </div>
           </AppCard>
 
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          <div className="flex-col comm-compose-form">
             <AppCard title="Templates & Quick Starts">
-              <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-col comm-compose-form">
                 <p className="text-muted text-sm">
                   Select a template to pre-fill your message, or start with a blank canvas.
                 </p>
@@ -395,7 +350,7 @@ export function ComposePanel({
               </div>
             </AppCard>
 
-            <div className="wizard-action-footer" style={{ justifyContent: 'flex-end' }}>
+            <div className="wizard-action-footer comm-justify-end">
               <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
                 Next: Compose Message →
               </button>
@@ -406,15 +361,14 @@ export function ComposePanel({
       )}
 
       {wizardStep === 'COMPOSE' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        <div className="flex-col comm-compose-form">
           <div
-            className="wizard-action-header flex-responsive"
-            style={{ justifyContent: 'space-between', width: '100%' }}
+            className="wizard-action-header flex-responsive comm-justify-between comm-w-full"
           >
             <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
               ← Back to Recipients
             </button>
-            <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-row wizard-action-subgroup comm-compose-header-row">
               <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                 {isSavingDraft ? 'Saving...' : 'Save Draft'}
               </button>
@@ -424,7 +378,7 @@ export function ComposePanel({
             </div>
           </div>
           <div className="compose-grid">
-            <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+            <div className="flex-col comm-compose-form">
               <AppCard title="Composer">
                 <ComposeStep
                   subject={subject}
@@ -439,13 +393,12 @@ export function ComposePanel({
               </AppCard>
 
               <div
-                className="wizard-action-footer flex-responsive"
-                style={{ justifyContent: 'space-between', width: '100%' }}
+                className="wizard-action-footer flex-responsive comm-justify-between comm-w-full"
               >
                 <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Recipients
                 </button>
-                <div className="flex-row wizard-action-subgroup" style={{ gap: 'var(--space-sm)' }}>
+                <div className="flex-row wizard-action-subgroup comm-compose-header-row">
                   <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                     {isSavingDraft ? 'Saving...' : 'Save Draft'}
                   </button>
@@ -468,16 +421,14 @@ export function ComposePanel({
       )}
 
       {wizardStep === 'REVIEW' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        <div className="flex-col comm-compose-form">
           <div
-            className="wizard-action-header flex-responsive"
-            style={{ justifyContent: 'space-between', width: '100%' }}
+            className="wizard-action-header flex-responsive comm-justify-between comm-w-full"
           >
             <button
               type="button"
-              className="review-btn-action back"
+              className="review-btn-action back comm-review-btn-reset"
               onClick={() => setWizardStep('COMPOSE')}
-              style={{ margin: 0 }}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -486,29 +437,27 @@ export function ComposePanel({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ width: '14px', height: '14px', marginRight: '4px' }}
+                className="comm-icon-inline comm-icon-margin-right"
               >
                 <polyline points="15 18 9 12 15 6" />
               </svg>
               Back
             </button>
-            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-row comm-compose-header-row">
               <button
                 type="button"
-                className="review-btn-action test"
+                className="review-btn-action test comm-review-btn-reset"
                 onClick={handleSendTest}
                 disabled={isSendingTest || isSending}
                 title={`Send email test to ${user?.email || 'your email'}`}
-                style={{ margin: 0 }}
               >
                 {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
               </button>
               <button
                 type="button"
-                className="review-btn-action primary"
+                className="review-btn-action primary comm-review-btn-reset"
                 onClick={sendMessage}
                 disabled={isSending || selectedRecipients.length === 0}
-                style={{ margin: 0 }}
               >
                 {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
               </button>
@@ -518,7 +467,7 @@ export function ComposePanel({
           {/* Left Column: Unified Live Preview */}
           <div className="review-preview-section">
             <AppCard noPadding>
-              <div style={{ padding: '24px' }}>
+              <div className="comm-preview-padding">
                 <LivePreview
                   channel={messageType}
                   subject={renderedSubject}
@@ -541,14 +490,7 @@ export function ComposePanel({
               actions={
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{
-                    padding: '4px 10px',
-                    height: '30px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
+                  className="btn btn-ghost btn-sm comm-message-recipients-link"
                   disabled={selectedRecipients.length === 0}
                   onClick={() => onViewRecipients(selectedRecipients, 'Recipients Selected for Send')}
                 >
@@ -557,7 +499,7 @@ export function ComposePanel({
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.5"
-                    style={{ width: '14px', height: '14px' }}
+                    className="comm-icon-inline"
                   >
                     <line x1="8" y1="6" x2="21" y2="6" />
                     <line x1="8" y1="12" x2="21" y2="12" />

@@ -1,5 +1,6 @@
 import { AppCard } from '../../../components/common/AppCard';
 import type { MessageRecord } from '../../../services/communicationService';
+import './Communications.css';
 
 interface DraftsPanelProps {
   drafts: MessageRecord[];
@@ -15,15 +16,15 @@ export function DraftsPanel({
   return (
     <AppCard noPadding>
       {drafts.map((draft) => (
-        <div key={draft.id} className="message-list-item flex-responsive">
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-              <span className="badge badge-rehearsal">{draft.type}</span>
+        <div key={draft.id} className="comm-message-item flex-responsive">
+          <div className="comm-message-info">
+            <div className="comm-message-meta">
+              <span className="badge badge-rehearsal comm-message-badge">{draft.type}</span>
               <span className="text-muted text-xs">
                 Last updated: {new Date(draft.updated).toLocaleString()}
               </span>
             </div>
-            <h3 style={{ margin: 0 }}>{draft.subject || '(No Subject)'}</h3>
+            <h3 className="comm-message-subject">{draft.subject || '(No Subject)'}</h3>
             <p className="text-muted text-sm">
               {draft.content.substring(0, 100)}...
             </p>
@@ -45,7 +46,7 @@ export function DraftsPanel({
         </div>
       ))}
       {drafts.length === 0 && (
-        <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div className="comm-drafts-empty">
           <p className="text-muted">No saved drafts.</p>
         </div>
       )}

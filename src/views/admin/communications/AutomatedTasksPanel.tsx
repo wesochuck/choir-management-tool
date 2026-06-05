@@ -37,30 +37,19 @@ export function AutomatedTasksPanel({
   };
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <h3
-          className="text-headline"
-          style={{ fontSize: '1.1rem', color: 'var(--primary-deep)' }}
-        >
+    <div className="flex-col comm-automated-container">
+      <div className="flex-col comm-automated-section">
+        <h3 className="text-headline comm-automated-section-title">
           Upcoming Automated Tasks
         </h3>
         <div className="automated-grid">
           {upcomingTasks.length === 0 && (
-            <div
-              className="card"
-              style={{
-                padding: 'var(--space-xl)',
-                textAlign: 'center',
-                gridColumn: '1 / -1',
-                border: '1px dashed var(--border)',
-              }}
-            >
+            <div className="card comm-automated-empty">
               <p className="text-muted">No upcoming automated tasks found.</p>
             </div>
           )}
           {upcomingTasks.map((task) => (
-            <div key={task.id} className="card automated-task-card">
+            <div key={task.id} className="card automated-task-card comm-automated-card-active">
               <div className="automated-task-header">
                 <span className="automated-task-status-group">
                   <span
@@ -71,10 +60,6 @@ export function AutomatedTasksPanel({
                         ? 'badge-concert'
                         : 'badge-rehearsal'
                     }`}
-                    style={{
-                      backgroundColor: task.type === 'RSVP Request' ? '#3b82f6' : undefined,
-                      color: task.type === 'RSVP Request' ? 'white' : undefined,
-                    }}
                   >
                     {task.type}
                   </span>
@@ -91,15 +76,15 @@ export function AutomatedTasksPanel({
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>
-              <div className="flex-col" style={{ gap: '2px' }}>
-                <strong style={{ fontSize: '1rem' }}>
+              <div className="flex-col comm-automated-info">
+                <strong className="comm-automated-name">
                   {task.event.title || task.event.type}
                 </strong>
                 <span className="text-muted text-xs">
                   {new Date(task.event.date).toLocaleString()}
                 </span>
                 {task.type === 'Report' && (
-                  <p className="text-muted text-xs" style={{ margin: 0, marginTop: '4px' }}>
+                  <p className="text-muted text-xs comm-automated-desc">
                     Sent only to admins who have opted in to attendance reports.
                   </p>
                 )}
@@ -156,24 +141,20 @@ export function AutomatedTasksPanel({
         </div>
       </div>
 
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <h3
-          className="text-headline"
-          style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}
-        >
+      <div className="flex-col comm-automated-section">
+        <h3 className="text-headline comm-automated-section-title-inactive">
           Sent / Past Automated Tasks
         </h3>
         <div className="automated-grid">
           {pastTasks.length === 0 && (
-            <p className="text-muted text-sm" style={{ gridColumn: '1 / -1' }}>
+            <p className="text-muted text-sm comm-automated-empty">
               No past automated tasks found in the logs.
             </p>
           )}
           {pastTasks.map((task) => (
             <div
               key={task.id}
-              className="card automated-task-card"
-              style={{ opacity: 0.8 }}
+              className="card automated-task-card comm-automated-card-inactive"
             >
               <div className="automated-task-header">
                 <span className="automated-task-status-group">
@@ -185,15 +166,6 @@ export function AutomatedTasksPanel({
                         ? 'badge-muted'
                         : 'badge-rehearsal'
                     }`}
-                    style={{
-                      backgroundColor:
-                        task.status === 'Sent'
-                          ? undefined
-                          : task.status === 'Archived'
-                          ? '#94a3b8'
-                          : 'var(--border)',
-                      color: task.status === 'Archived' ? 'white' : undefined,
-                    }}
                   >
                     {task.type}
                   </span>
@@ -217,8 +189,8 @@ export function AutomatedTasksPanel({
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>
-              <div className="flex-col" style={{ gap: '2px' }}>
-                <strong style={{ fontSize: '1rem' }}>
+              <div className="flex-col comm-automated-info">
+                <strong className="comm-automated-name">
                   {task.event.title || task.event.type}
                 </strong>
                 <span className="text-muted text-xs">

@@ -4,6 +4,7 @@ import type { MusicGenreDef } from '../../../../services/settingsService';
 import {
   formatSecondsToDuration,
   parseDurationToSeconds,
+  formatPerformanceHistory,
 } from '../../../../lib/musicPieceUtils';
 import { getEffectiveMostRecentPerformanceDate } from '../../../../lib/music/performanceHistory';
 import { MusicLibraryTitleCell } from './MusicLibraryTitleCell';
@@ -13,6 +14,7 @@ import {
   getMovementTrackCount,
   isParentPiece,
 } from './musicLibraryTableUtils';
+import '../MusicLibrary.css';
 
 interface MusicLibraryRowProps {
   piece: MusicPiece;
@@ -52,39 +54,18 @@ export function MusicLibraryRow({
 
   return (
     <tr
-      className="relative-row"
+      className={`relative-row ml-table-row ${isDuplicate ? 'ml-table-row-duplicate' : ''} ${isChild ? 'ml-table-row-child' : ''}`}
       onClick={() => onEditPiece(piece)}
       data-has-tracks={hasTracks}
-      style={{
-        backgroundColor: isDuplicate
-          ? 'rgba(255, 138, 101, 0.05)'
-          : isChild
-            ? 'rgba(248, 250, 252, 0.4)'
-            : undefined,
-        cursor: 'pointer',
-      }}
     >
       {/* Column 1: Checkbox Selection */}
-      <td
-        style={{
-          textAlign: 'center',
-          padding: '6px 10px',
-          border: '1px solid var(--border)',
-        }}
-      >
+      <td className="ml-table-cell ml-table-cell-center">
         <input
           type="checkbox"
           checked={selectedIds.has(piece.id)}
           onChange={() => onToggleSelection(piece.id)}
           onClick={(event) => event.stopPropagation()}
-          style={{
-            minHeight: 'auto',
-            width: '14px',
-            height: '14px',
-            margin: 0,
-            verticalAlign: 'middle',
-            cursor: 'pointer',
-          }}
+          className="ml-checkbox"
         />
       </td>
 
@@ -100,40 +81,31 @@ export function MusicLibraryRow({
       />
 
       {/* Column 3: Composer/Arranger */}
-      <td
-        style={{
-          padding: '6px 10px',
-          border: '1px solid var(--border)',
-          verticalAlign: 'middle',
-        }}
-      >
+      <td className="ml-table-cell">
         {piece.composer && piece.arranger
           ? `${piece.composer} / arr. ${piece.arranger}`
           : (piece.composer || piece.arranger || '-')}
       </td>
 
       {/* Column 4: Duration */}
-      <td
-        style={{
-          padding: '6px 10px',
-          border: '1px solid var(--border)',
-          verticalAlign: 'middle',
-        }}
-      >
+      <td className="ml-table-cell">
         {piece.duration
           ? formatSecondsToDuration(parseDurationToSeconds(piece.duration))
           : '-'}
       </td>
 
+      {/* Column 5: Performance Count */}
+      <td className="ml-table-cell ml-table-cell-center ml-perf-count">
+        {piece.performances && piece.performances.length > 0 ? (
+          <span title={formatPerformanceHistory(piece).join('\n')}>
+            {piece.performances.length}
+          </span>
+        ) : '-'}
+      </td>
+
 
       {/* Column 7: Last Performed */}
-      <td
-        style={{
-          padding: '6px 10px',
-          border: '1px solid var(--border)',
-          verticalAlign: 'middle',
-        }}
-      >
+      <td className="ml-table-cell">
         {lastPerformedDate || '-'}
       </td>
 
@@ -153,32 +125,13 @@ export function MusicLibraryRow({
       />
 
       {/* Column 9: Actions */}
-      <td
-        style={{
-          padding: '6px 10px',
-          border: '1px solid var(--border)',
-          verticalAlign: 'middle',
-        }}
-      >
-        <div
-          className="flex-row"
-          style={{
-            gap: 'var(--space-xs)',
-            justifyContent: 'center',
-          }}
-        >
+      <td className="ml-table-cell">
+        <div className="flex-row ml-table-cell-center ml-actions-cell-content">
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm ml-edit-btn"
             onClick={(event) => {
               event.stopPropagation();
               onEditPiece(piece);
-            }}
-            style={{
-              minHeight: 'auto',
-              height: '24px',
-              padding: '0 8px',
-              fontSize: '0.75rem',
-              margin: 0,
             }}
           >
             Edit

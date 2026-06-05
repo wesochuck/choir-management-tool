@@ -5,6 +5,7 @@ import type { CommunicationSettings } from '../../../services/settingsService';
 import type { TemplateRecord } from '../../../services/communicationService';
 import { useDialog } from '../../../contexts/DialogContext';
 import { TemplatesPanel } from './TemplatesPanel';
+import './Communications.css';
 
 export interface SettingsPanelProps {
   commSettings: CommunicationSettings;
@@ -52,7 +53,7 @@ export function SettingsPanel({
   senderEmail,
 }: SettingsPanelProps) {
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+    <div className="flex-col comm-compose-form">
       {editingTemplate ? (
         <TemplatesPanel
           templates={templates}
@@ -69,7 +70,7 @@ export function SettingsPanel({
       ) : (
         <>
           <AppCard title="Application & Footer Compliance">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div className="flex-col comm-compose-form">
               <SettingsGrid>
                 <Field
                   label="Physical Mailing Address"
@@ -104,31 +105,18 @@ export function SettingsPanel({
 
 
           <AppCard title="Test Server SMTP Connection">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <p className="text-muted text-sm" style={{ margin: 0 }}>
+            <div className="flex-col comm-compose-form">
+              <p className="text-muted text-sm">
                 Send a quick test email using the server's configured SMTP settings to verify that
                 outgoing mail delivery is working.
               </p>
-              <div
-                className="flex-row"
-                style={{
-                  gap: 'var(--space-sm)',
-                  alignItems: 'center',
-                  marginTop: 'var(--space-sm)',
-                }}
-              >
+              <div className="comm-compose-header-row comm-items-center">
                 <input
-                  className="card"
+                  className="card comm-compose-input comm-flex-1-max-300"
                   type="email"
                   value={testEmailAddress}
                   onChange={(e) => setTestEmailAddress(e.target.value)}
                   placeholder="e.g. test@example.com"
-                  style={{
-                    height: '44px',
-                    padding: '0 12px',
-                    flex: 1,
-                    maxWidth: '300px',
-                  }}
                 />
                 <button
                   type="button"
@@ -142,7 +130,7 @@ export function SettingsPanel({
             </div>
           </AppCard>
 
-          <div className="flex-row" style={{ justifyContent: 'flex-end' }}>
+          <div className="flex-row comm-justify-end">
             <button
               className="btn btn-primary"
               onClick={onSaveSettings}
@@ -159,13 +147,7 @@ export function SettingsPanel({
 
 function SettingsGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: 'var(--space-md)',
-      }}
-    >
+    <div className="comm-automated-grid">
       {children}
     </div>
   );
@@ -185,15 +167,14 @@ function Field({
   placeholder?: string;
 }) {
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+    <div className="comm-compose-field">
       <label className="text-label">{label}</label>
       <input
-        className="card"
+        className="card comm-compose-input"
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ height: '44px', padding: '0 12px' }}
       />
     </div>
   );
