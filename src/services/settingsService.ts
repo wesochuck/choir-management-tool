@@ -224,7 +224,16 @@ export const settingsService = {
 
   async getCommunicationSettings() {
     const setting = await getSetting<CommunicationSettings>('communications');
-    return { ...DEFAULT_COMMUNICATION_SETTINGS, ...setting?.value };
+    const value = setting?.value;
+    let resolvedUrl = value?.frontendUrl;
+    if ((!resolvedUrl || resolvedUrl === 'http://localhost:5173') && typeof window !== 'undefined' && window.location?.origin) {
+      resolvedUrl = window.location.origin;
+    }
+    return {
+      ...DEFAULT_COMMUNICATION_SETTINGS,
+      ...value,
+      frontendUrl: resolvedUrl || DEFAULT_COMMUNICATION_SETTINGS.frontendUrl,
+    };
   },
 
   async saveCommunicationSettings(value: CommunicationSettings) {

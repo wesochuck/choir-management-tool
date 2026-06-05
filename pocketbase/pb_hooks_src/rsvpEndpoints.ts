@@ -662,11 +662,23 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
         console.log("[Resolve Placeholders Hook Error] Failed to read communication settings: " + err);
     }
 
-    if (!baseUrl) {
+    if (!baseUrl || baseUrl === "http://localhost:5173" || baseUrl.indexOf("localhost") !== -1) {
         const requestInfo = e.requestInfo();
-        const host = requestInfo.headers?.["host"] || "localhost:8080";
-        const proto = requestInfo.headers?.["x-forwarded-proto"] || "http";
-        baseUrl = proto + "://" + host;
+        const host = requestInfo.headers?.["host"];
+        const proto = requestInfo.headers?.["x-forwarded-proto"] || "https";
+        if (host && host.indexOf("localhost") === -1) {
+            baseUrl = proto + "://" + host;
+        } else {
+            const meta = $app.settings()?.meta;
+            const settingsAppUrl = meta?.appUrl || meta?.appURL || "";
+            if (settingsAppUrl) {
+                baseUrl = settingsAppUrl;
+            } else if (host) {
+                baseUrl = proto + "://" + host;
+            } else {
+                baseUrl = "http://localhost:5173";
+            }
+        }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
 

@@ -614,6 +614,13 @@ try {
                     frontendUrl = commParsed.frontendUrl.replace(/\\/+$/, "");
                 }
             } catch (err) {}
+            if (frontendUrl === "http://localhost:5173" || !frontendUrl || frontendUrl.indexOf("localhost") !== -1) {
+                const meta = $app.settings()?.meta;
+                const appSettingsUrl = meta?.appUrl || meta?.appURL || "";
+                if (appSettingsUrl) {
+                    frontendUrl = appSettingsUrl.replace(/\\/+$/, "");
+                }
+            }
 
             let targetPerfName = "None";
             if (eventId) {

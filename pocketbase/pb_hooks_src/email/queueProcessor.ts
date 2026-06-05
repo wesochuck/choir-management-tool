@@ -72,6 +72,14 @@ export function processEmailQueue(app: PocketBaseApp): void {
     } catch {
         // use default baseUrl and mailingAddress
     }
+
+    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        const meta = app.settings()?.meta;
+        const appSettingsUrl = meta?.appUrl || meta?.appURL || "";
+        if (appSettingsUrl) {
+            baseUrl = appSettingsUrl;
+        }
+    }
     baseUrl = normalizeBaseUrl(baseUrl);
 
     try {

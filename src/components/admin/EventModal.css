@@ -1,0 +1,33 @@
+/* Event Modal Layout & Tabs */
+.event-modal-tabs {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-md);
+  gap: var(--space-md);
+}
+
+.event-modal-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s;
+  min-height: 40px; /* customized tab button height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-modal-tab-btn.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  font-weight: 600;
+}
+
+.event-modal-tab-btn.inactive {
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+}

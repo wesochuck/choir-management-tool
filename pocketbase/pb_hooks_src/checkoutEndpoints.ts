@@ -116,7 +116,8 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
     const totalTicketsCents = unitPriceCents * qty;
     const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
 
-    const settingsAppUrl = $app.settings().meta.appURL || "";
+    const meta = $app.settings()?.meta;
+    const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || "";
     const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
     const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/tickets/${eventId}`;

@@ -41,6 +41,8 @@ export interface PocketBaseMetaConfig {
     senderAddress?: string;
     senderName?: string;
     appURL?: string;
+    appUrl?: string;
+    AppURL?: string;
 }
 
 export interface PocketBaseSettings {

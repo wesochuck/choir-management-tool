@@ -1011,6 +1011,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
+        var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
             console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -1056,8 +1057,15 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_a) {
+        catch (_b) {
             // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
@@ -1066,7 +1074,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             if (val)
                 choirName = val;
         }
-        catch (_b) {
+        catch (_c) {
             // use default choirName
         }
         let timezone = "America/New_York";
@@ -1083,7 +1091,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                 }
             }
         }
-        catch (_c) {
+        catch (_d) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -1895,6 +1903,7 @@ onRecordAfterCreateSuccess((e) => {
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
+        var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
             console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -1940,8 +1949,15 @@ onRecordAfterCreateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_a) {
+        catch (_b) {
             // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
@@ -1950,7 +1966,7 @@ onRecordAfterCreateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_b) {
+        catch (_c) {
             // use default choirName
         }
         let timezone = "America/New_York";
@@ -1967,7 +1983,7 @@ onRecordAfterCreateSuccess((e) => {
                 }
             }
         }
-        catch (_c) {
+        catch (_d) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -2784,6 +2800,7 @@ onRecordAfterUpdateSuccess((e) => {
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
+        var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
             console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -2829,8 +2846,15 @@ onRecordAfterUpdateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_a) {
+        catch (_b) {
             // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
@@ -2839,7 +2863,7 @@ onRecordAfterUpdateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_b) {
+        catch (_c) {
             // use default choirName
         }
         let timezone = "America/New_York";
@@ -2856,7 +2880,7 @@ onRecordAfterUpdateSuccess((e) => {
                 }
             }
         }
-        catch (_c) {
+        catch (_d) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -3634,6 +3658,7 @@ onRecordAfterCreateSuccess((e) => {
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
+        var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
             console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -3679,8 +3704,15 @@ onRecordAfterCreateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_a) {
+        catch (_b) {
             // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
@@ -3689,7 +3721,7 @@ onRecordAfterCreateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_b) {
+        catch (_c) {
             // use default choirName
         }
         let timezone = "America/New_York";
@@ -3706,7 +3738,7 @@ onRecordAfterCreateSuccess((e) => {
                 }
             }
         }
-        catch (_c) {
+        catch (_d) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -4124,6 +4156,13 @@ onRecordAfterCreateSuccess((e) => {
                         frontendUrl = commParsed.frontendUrl.replace(/\/+$/, "");
                     }
                 } catch (err) {}
+                if (frontendUrl === "http://localhost:5173" || !frontendUrl || frontendUrl.indexOf("localhost") !== -1) {
+                    const meta = $app.settings()?.meta;
+                    const appSettingsUrl = meta?.appUrl || meta?.appURL || "";
+                    if (appSettingsUrl) {
+                        frontendUrl = appSettingsUrl.replace(/\/+$/, "");
+                    }
+                }
 
                 let targetPerfName = "None";
                 if (eventId) {
@@ -4630,6 +4669,7 @@ onRecordAfterUpdateSuccess((e) => {
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
+        var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
             console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -4675,8 +4715,15 @@ onRecordAfterUpdateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_a) {
+        catch (_b) {
             // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
@@ -4685,7 +4732,7 @@ onRecordAfterUpdateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_b) {
+        catch (_c) {
             // use default choirName
         }
         let timezone = "America/New_York";
@@ -4702,7 +4749,7 @@ onRecordAfterUpdateSuccess((e) => {
                 }
             }
         }
-        catch (_c) {
+        catch (_d) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -6007,6 +6054,7 @@ function parseSignedToken(token, requiredKeys) {
 // --- Utility source: email/queueProcessor.ts ---
 "use strict";
 function processEmailQueue(app) {
+    var _a;
     const settings = app.settings();
     if (!settings.smtp || !settings.smtp.enabled) {
         console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -6052,8 +6100,15 @@ function processEmailQueue(app) {
         if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (_a) {
+    catch (_b) {
         // use default baseUrl and mailingAddress
+    }
+    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+        if (appSettingsUrl) {
+            baseUrl = appSettingsUrl;
+        }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
     try {
@@ -6062,7 +6117,7 @@ function processEmailQueue(app) {
         if (val)
             choirName = val;
     }
-    catch (_b) {
+    catch (_c) {
         // use default choirName
     }
     let timezone = "America/New_York";
@@ -6079,7 +6134,7 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (_c) {
+    catch (_d) {
         // use default timezone
     }
     let totalClaimed = 0;
@@ -7390,7 +7445,7 @@ function parseSignedToken(token, requiredKeys) {
     return parts;
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
-    var _a, _b;
+    var _a, _b, _c;
     const authRecord = e.auth;
     if (!authRecord) {
         return e.json(401, { error: "Unauthorized" });
@@ -7405,7 +7460,7 @@ function parseSignedToken(token, requiredKeys) {
     try {
         profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
     }
-    catch (_c) {
+    catch (_d) {
         return e.json(404, { error: "Profile not found" });
     }
     let secret;
@@ -7414,7 +7469,7 @@ function parseSignedToken(token, requiredKeys) {
         if (!secret)
             throw new Error("Missing secret");
     }
-    catch (_d) {
+    catch (_e) {
         return e.json(500, { error: "HMAC_SECRET not configured" });
     }
     let baseUrl = "";
@@ -7423,7 +7478,7 @@ function parseSignedToken(token, requiredKeys) {
         try {
             commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
         }
-        catch (_e) {
+        catch (_f) {
             commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
         }
         if (commSettings) {
@@ -7436,11 +7491,26 @@ function parseSignedToken(token, requiredKeys) {
     catch (err) {
         console.log("[Resolve Placeholders Hook Error] Failed to read communication settings: " + err);
     }
-    if (!baseUrl) {
+    if (!baseUrl || baseUrl === "http://localhost:5173" || baseUrl.indexOf("localhost") !== -1) {
         const requestInfo = e.requestInfo();
-        const host = ((_a = requestInfo.headers) === null || _a === void 0 ? void 0 : _a["host"]) || "localhost:8080";
-        const proto = ((_b = requestInfo.headers) === null || _b === void 0 ? void 0 : _b["x-forwarded-proto"]) || "http";
-        baseUrl = proto + "://" + host;
+        const host = (_a = requestInfo.headers) === null || _a === void 0 ? void 0 : _a["host"];
+        const proto = ((_b = requestInfo.headers) === null || _b === void 0 ? void 0 : _b["x-forwarded-proto"]) || "https";
+        if (host && host.indexOf("localhost") === -1) {
+            baseUrl = proto + "://" + host;
+        }
+        else {
+            const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+            const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (settingsAppUrl) {
+                baseUrl = settingsAppUrl;
+            }
+            else if (host) {
+                baseUrl = proto + "://" + host;
+            }
+            else {
+                baseUrl = "http://localhost:5173";
+            }
+        }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
     let timezone = "America/New_York";
@@ -7457,7 +7527,7 @@ function parseSignedToken(token, requiredKeys) {
             }
         }
     }
-    catch (_f) {
+    catch (_g) {
         // use default timezone
     }
     let event = null;
@@ -7501,7 +7571,7 @@ function parseSignedToken(token, requiredKeys) {
             venueName = (venueRecord.get("name") || "TBD");
             venueAddress = (venueRecord.get("address") || "");
         }
-        catch (_g) {
+        catch (_h) {
             // venue not found
         }
         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -7586,7 +7656,7 @@ function parseSignedToken(token, requiredKeys) {
                 pollButtonLabel = question.trim();
             }
         }
-        catch (_h) {
+        catch (_j) {
             // Keep default fallback
         }
         const replacement = `
@@ -8043,6 +8113,7 @@ function parseSignedToken(token, requiredKeys) {
 // --- Utility source: email/queueProcessor.ts ---
 "use strict";
 function processEmailQueue(app) {
+    var _a;
     const settings = app.settings();
     if (!settings.smtp || !settings.smtp.enabled) {
         console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -8088,8 +8159,15 @@ function processEmailQueue(app) {
         if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (_a) {
+    catch (_b) {
         // use default baseUrl and mailingAddress
+    }
+    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+        if (appSettingsUrl) {
+            baseUrl = appSettingsUrl;
+        }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
     try {
@@ -8098,7 +8176,7 @@ function processEmailQueue(app) {
         if (val)
             choirName = val;
     }
-    catch (_b) {
+    catch (_c) {
         // use default choirName
     }
     let timezone = "America/New_York";
@@ -8115,7 +8193,7 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (_c) {
+    catch (_d) {
         // use default timezone
     }
     let totalClaimed = 0;
@@ -9213,6 +9291,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
+        var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
             console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
@@ -9258,8 +9337,15 @@ routerAdd("POST", "/api/queue/process", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_a) {
+        catch (_b) {
             // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
@@ -9268,7 +9354,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_b) {
+        catch (_c) {
             // use default choirName
         }
         let timezone = "America/New_York";
@@ -9285,7 +9371,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                 }
             }
         }
-        catch (_c) {
+        catch (_d) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -10306,6 +10392,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     function handleCreateTicketsSession(e) {
+        var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
         const quantity = body.quantity;
@@ -10322,7 +10409,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         try {
             event = $app.findRecordById("events", eventId);
         }
-        catch (_a) {
+        catch (_b) {
             return e.json(404, { error: "Event not found" });
         }
         if (!event.get("isTicketingEnabled")) {
@@ -10355,7 +10442,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 timezone = parsed.timezone;
             }
         }
-        catch (_b) {
+        catch (_c) {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
@@ -10375,7 +10462,8 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
         const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
-        const settingsAppUrl = $app.settings().meta.appURL || "";
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
@@ -11028,6 +11116,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     function handleCreateTicketsSession(e) {
+        var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
         const quantity = body.quantity;
@@ -11044,7 +11133,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         try {
             event = $app.findRecordById("events", eventId);
         }
-        catch (_a) {
+        catch (_b) {
             return e.json(404, { error: "Event not found" });
         }
         if (!event.get("isTicketingEnabled")) {
@@ -11077,7 +11166,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 timezone = parsed.timezone;
             }
         }
-        catch (_b) {
+        catch (_c) {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
@@ -11097,7 +11186,8 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
         const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
-        const settingsAppUrl = $app.settings().meta.appURL || "";
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
@@ -11750,6 +11840,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     function handleCreateTicketsSession(e) {
+        var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
         const quantity = body.quantity;
@@ -11766,7 +11857,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         try {
             event = $app.findRecordById("events", eventId);
         }
-        catch (_a) {
+        catch (_b) {
             return e.json(404, { error: "Event not found" });
         }
         if (!event.get("isTicketingEnabled")) {
@@ -11799,7 +11890,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 timezone = parsed.timezone;
             }
         }
-        catch (_b) {
+        catch (_c) {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
@@ -11819,7 +11910,8 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
         const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
-        const settingsAppUrl = $app.settings().meta.appURL || "";
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;

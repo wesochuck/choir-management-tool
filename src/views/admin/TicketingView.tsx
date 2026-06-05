@@ -6,6 +6,8 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { Link } from 'react-router-dom';
+
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -132,6 +134,34 @@ export default function TicketingView() {
           </button>
         )}
       </div>
+
+      <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'rgba(74, 124, 89, 0.05)', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-md)', margin: 0 }}>
+        <h3 style={{ margin: '0 0 var(--space-xs) 0', fontSize: '1rem', color: 'var(--primary-deep)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          ℹ️ Ticketing Instructions & Links
+        </h3>
+        <p className="text-muted text-sm" style={{ margin: '0 0 var(--space-sm) 0', lineHeight: '1.4' }}>
+          Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" style={{ fontWeight: 600, textDecoration: 'underline', color: 'var(--primary-deep)' }}>Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+          <div>
+            <strong>📢 Storefront URL:</strong>{' '}
+            <a href="/tickets" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--primary)' }}>
+              {window.location.origin}/tickets
+            </a>
+            <span className="text-xs text-muted" style={{ marginLeft: '6px' }}>(list of all active ticketed concerts)</span>
+          </div>
+          {selectedEventId && selectedEvent && (
+            <div>
+              <strong>🔗 Direct Concert Ticket Link:</strong>{' '}
+              <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--primary)' }}>
+                {window.location.origin}/tickets/{selectedEventId}
+              </a>
+              <span className="text-xs text-muted" style={{ marginLeft: '6px' }}>(direct checkout page for {selectedEvent.title})</span>
+            </div>
+          )}
+        </div>
+      </div>
+
 
       <div className="card flex-responsive" style={{ padding: 'var(--space-md)', gap: 'var(--space-md)', alignItems: 'center', backgroundColor: 'var(--neutral-bg)' }}>
         <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>

@@ -7,6 +7,8 @@ import { formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
+import './EventModal.css';
+
 
 interface EventModalProps {
   isOpen: boolean;
@@ -58,8 +60,14 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [isSubmitting, setIsLoading] = useState(false);
   const titleInputRef = React.useRef<HTMLInputElement>(null);
 
+  const [activeTab, setActiveTab] = useState<'details' | 'tickets'>('details');
+  const [advancePriceInput, setAdvancePriceInput] = useState('');
+  const [dayOfPriceInput, setDayOfPriceInput] = useState('');
+
+
   useEffect(() => {
     if (isOpen) {
+      setActiveTab('details');
       setTimeout(() => {
         if (titleInputRef.current) {
           titleInputRef.current.focus();
@@ -68,6 +76,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       }, 50);
     }
   }, [isOpen]);
+
 
   // Inline Quick-Add Venue States
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
@@ -85,6 +94,16 @@ export const EventModal: React.FC<EventModalProps> = ({
         date: formattedDate,
         durationMinutes: initialData.durationMinutes || getDefaultDurationMinutes(initialData.type)
       });
+      setAdvancePriceInput(
+        initialData.advancePriceCents !== undefined && initialData.advancePriceCents !== null 
+          ? (initialData.advancePriceCents / 100).toString() 
+          : ''
+      );
+      setDayOfPriceInput(
+        initialData.dayOfPriceCents !== undefined && initialData.dayOfPriceCents !== null 
+          ? (initialData.dayOfPriceCents / 100).toString() 
+          : ''
+      );
       setShouldBulkAdd(false);
     } else {
       setFormData({
@@ -97,6 +116,8 @@ export const EventModal: React.FC<EventModalProps> = ({
         parentPerformanceId: '',
         venue: '',
       });
+      setAdvancePriceInput('');
+      setDayOfPriceInput('');
       setBulkVenue('');
       setShouldBulkAdd(false);
     }
@@ -356,210 +377,355 @@ export const EventModal: React.FC<EventModalProps> = ({
         </>
       }
     >
+      {formData.type === 'Performance' && (
+        <div className="event-modal-tabs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('details')}
+            className={`event-modal-tab-btn ${activeTab === 'details' ? 'active' : 'inactive'}`}
+          >
+            Event Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('tickets')}
+            className={`event-modal-tab-btn ${activeTab === 'tickets' ? 'active' : 'inactive'}`}
+          >
+            Tickets
+          </button>
+        </div>
+      )}
+
       <form id="event-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
-          <input 
-            ref={titleInputRef}
-            value={formData.title} 
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
-            placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
-            className="card"
-            style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-          />
-        </div>
-
-        <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-          <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-            <label className="text-label">Type</label>
-            <select 
-              value={formData.type} 
-              onChange={(e) => {
-                const newType = e.target.value as 'Performance' | 'Rehearsal';
-                const oldType = formData.type || 'Rehearsal';
-                let newDuration = formData.durationMinutes;
-                
-                // If duration is missing or matches the old default, update to new default
-                if (!newDuration || newDuration === getDefaultDurationMinutes(oldType)) {
-                  newDuration = getDefaultDurationMinutes(newType);
-                }
-
-                setFormData({ 
-                  ...formData, 
-                  type: newType, 
-                  durationMinutes: newDuration,
-                  parentPerformanceId: newType === 'Performance' ? '' : formData.parentPerformanceId 
-                });
-              }}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-            >
-              <option value="Rehearsal">Rehearsal</option>
-              <option value="Performance">Performance</option>
-            </select>
-          </div>
-          <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-            <label className="text-label">Date & Time</label>
-            <input 
-              type="datetime-local"
-              value={formData.date} 
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
-              required
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-            />
-          </div>
-        </div>
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Event Duration</label>
-          <select 
-            value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
-            onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-            className="card"
-            style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-          >
-            <option value={30}>30 minutes</option>
-            <option value={45}>45 minutes</option>
-            <option value={60}>1 hour</option>
-            <option value={75}>1 hour 15 mins</option>
-            <option value={90}>1.5 hours</option>
-            <option value={105}>1 hour 45 mins</option>
-            <option value={120}>2 hours</option>
-            <option value={135}>2 hours 15 mins</option>
-            <option value={150}>2.5 hours</option>
-            <option value={165}>2 hours 45 mins</option>
-            <option value={180}>3 hours</option>
-            <option value={210}>3.5 hours</option>
-            <option value={240}>4 hours</option>
-          </select>
-          {endTime && (
-            <div className="text-xs text-muted" style={{ marginTop: '2px', fontWeight: 500 }}>
-              Ends at approximately <span style={{ color: 'var(--primary)' }}>{endTime}</span>
-            </div>
-          )}
-        </div>
-
-        {formData.type === 'Performance' && (
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Performance Call Time (Optional)</label>
-            <input 
-              type="time"
-              value={formData.callTime || ''} 
-              onChange={(e) => setFormData({ ...formData, callTime: e.target.value })} 
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-            />
-          </div>
-        )}
-
-        <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
-          <input
-            type="checkbox"
-            checked={formData.isOpenForRSVP || false}
-            onChange={(e) => setFormData({ ...formData, isOpenForRSVP: e.target.checked })}
-            style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
-          />
-          <span className="text-label">Open for RSVP Links</span>
-        </label>
-
-        
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Venue</label>
-          <select
-            value={formData.venue || ''}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === 'new') {
-                setIsAddingNewVenue(true);
-              } else {
-                setFormData({ 
-                  ...formData, 
-                  venue: val
-                });
-              }
-            }}
-            required
-            className="card"
-            style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-          >
-            <option value="">-- Select Venue --</option>
-            {venues.map(v => (
-              <option key={v.id} value={v.id}>{v.name}</option>
-            ))}
-            <option value="new" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>+ Add New Venue...</option>
-          </select>
-        </div>
-
-        {isAddingNewVenue && (
-          <div className="flex-col" style={{ 
-            gap: 'var(--space-md)', 
-            backgroundColor: 'rgba(107, 70, 193, 0.05)', 
-            padding: 'var(--space-md)', 
-            borderRadius: 'var(--radius-md)', 
-            border: '1px dashed var(--primary)',
-            marginTop: '-4px'
-          }}>
-            <div style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.9rem' }}>✨ Create New Venue Template Inline</div>
-            
-            <div className="flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
-              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Venue Name</label>
-                <input 
-                  value={newVenueName} 
-                  onChange={(e) => setNewVenueName(e.target.value)}
-                  placeholder="e.g. Grace Hall"
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
-                />
-              </div>
-              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Row Capacities (e.g. 10, 12, 14)</label>
-                <input 
-                  value={newVenueRows} 
-                  onChange={(e) => setNewVenueRows(e.target.value)}
-                  placeholder="e.g. 8, 10, 12"
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
-                />
-              </div>
-            </div>
-
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
-              <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Venue Address (Optional, for Google Maps)</label>
+        {activeTab === 'details' && (
+          <>
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
               <input 
-                value={newVenueAddress} 
-                onChange={(e) => setNewVenueAddress(e.target.value)}
-                placeholder="e.g. 123 Main St, Anytown, ST 12345"
+                ref={titleInputRef}
+                value={formData.title} 
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+                placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
                 className="card"
-                style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
               />
             </div>
 
-            <div className="flex-row" style={{ gap: 'var(--space-sm)', justifyContent: 'flex-end', width: '100%' }}>
-              <button 
-                type="button" 
-                onClick={() => setIsAddingNewVenue(false)}
-                className="btn btn-ghost btn-sm"
-                style={{ height: '28px', padding: '0 12px', fontSize: '0.8rem' }}
-              >
-                Cancel
-              </button>
-              <button 
-                type="button" 
-                onClick={handleCreateVenueInline}
-                disabled={isSavingVenue || !newVenueName.trim() || !newVenueRows.trim()}
-                className="btn btn-primary btn-sm"
-                style={{ height: '28px', padding: '0 12px', fontSize: '0.8rem' }}
-              >
-                {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
-              </button>
+            <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                <label className="text-label">Type</label>
+                <select 
+                  value={formData.type} 
+                  onChange={(e) => {
+                    const newType = e.target.value as 'Performance' | 'Rehearsal';
+                    const oldType = formData.type || 'Rehearsal';
+                    let newDuration = formData.durationMinutes;
+                    
+                    // If duration is missing or matches the old default, update to new default
+                    if (!newDuration || newDuration === getDefaultDurationMinutes(oldType)) {
+                      newDuration = getDefaultDurationMinutes(newType);
+                    }
+
+                    setFormData({ 
+                      ...formData, 
+                      type: newType, 
+                      durationMinutes: newDuration,
+                      parentPerformanceId: newType === 'Performance' ? '' : formData.parentPerformanceId 
+                    });
+
+                    if (newType === 'Rehearsal') {
+                      setActiveTab('details');
+                    }
+                  }}
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                >
+                  <option value="Rehearsal">Rehearsal</option>
+                  <option value="Performance">Performance</option>
+                </select>
+              </div>
+              <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                <label className="text-label">Date & Time</label>
+                <input 
+                  type="datetime-local"
+                  value={formData.date} 
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
+                  required
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                />
+              </div>
             </div>
-          </div>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Event Duration</label>
+              <select 
+                value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
+                onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+              >
+                <option value={30}>30 minutes</option>
+                <option value={45}>45 minutes</option>
+                <option value={60}>1 hour</option>
+                <option value={75}>1 hour 15 mins</option>
+                <option value={90}>1.5 hours</option>
+                <option value={105}>1 hour 45 mins</option>
+                <option value={120}>2 hours</option>
+                <option value={135}>2 hours 15 mins</option>
+                <option value={150}>2.5 hours</option>
+                <option value={165}>2 hours 45 mins</option>
+                <option value={180}>3 hours</option>
+                <option value={210}>3.5 hours</option>
+                <option value={240}>4 hours</option>
+              </select>
+              {endTime && (
+                <div className="text-xs text-muted" style={{ marginTop: '2px', fontWeight: 500 }}>
+                  Ends at approximately <span style={{ color: 'var(--primary)' }}>{endTime}</span>
+                </div>
+              )}
+            </div>
+
+            {formData.type === 'Performance' && (
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Performance Call Time (Optional)</label>
+                <input 
+                  type="time"
+                  value={formData.callTime || ''} 
+                  onChange={(e) => setFormData({ ...formData, callTime: e.target.value })} 
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                />
+              </div>
+            )}
+
+            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
+              <input
+                type="checkbox"
+                checked={formData.isOpenForRSVP || false}
+                onChange={(e) => setFormData({ ...formData, isOpenForRSVP: e.target.checked })}
+                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+              />
+              <span className="text-label">Open for RSVP Links</span>
+            </label>
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Venue</label>
+              <select
+                value={formData.venue || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'new') {
+                    setIsAddingNewVenue(true);
+                  } else {
+                    setFormData({ 
+                      ...formData, 
+                      venue: val
+                    });
+                  }
+                }}
+                required
+                className="card"
+                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+              >
+                <option value="">-- Select Venue --</option>
+                {venues.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+                <option value="new" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>+ Add New Venue...</option>
+              </select>
+            </div>
+
+            {isAddingNewVenue && (
+              <div className="flex-col" style={{ 
+                gap: 'var(--space-md)', 
+                backgroundColor: 'rgba(107, 70, 193, 0.05)', 
+                padding: 'var(--space-md)', 
+                borderRadius: 'var(--radius-md)', 
+                border: '1px dashed var(--primary)',
+                marginTop: '-4px'
+              }}>
+                <div style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.9rem' }}>✨ Create New Venue Template Inline</div>
+                
+                <div className="flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
+                  <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                    <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Venue Name</label>
+                    <input 
+                      value={newVenueName} 
+                      onChange={(e) => setNewVenueName(e.target.value)}
+                      placeholder="e.g. Grace Hall"
+                      className="card"
+                      style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                    <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Row Capacities (e.g. 10, 12, 14)</label>
+                    <input 
+                      value={newVenueRows} 
+                      onChange={(e) => setNewVenueRows(e.target.value)}
+                      placeholder="e.g. 8, 10, 12"
+                      className="card"
+                      style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
+                  <label className="text-muted text-xs" style={{ fontWeight: 600 }}>Venue Address (Optional, for Google Maps)</label>
+                  <input 
+                    value={newVenueAddress} 
+                    onChange={(e) => setNewVenueAddress(e.target.value)}
+                    placeholder="e.g. 123 Main St, Anytown, ST 12345"
+                    className="card"
+                    style={{ width: '100%', padding: '0 8px', height: '36px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div className="flex-row" style={{ gap: 'var(--space-sm)', justifyContent: 'flex-end', width: '100%' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsAddingNewVenue(false)}
+                    className="btn btn-ghost btn-sm"
+                    style={{ height: '28px', padding: '0 12px', fontSize: '0.8rem' }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleCreateVenueInline}
+                    disabled={isSavingVenue || !newVenueName.trim() || !newVenueRows.trim()}
+                    className="btn btn-primary btn-sm"
+                    style={{ height: '28px', padding: '0 12px', fontSize: '0.8rem' }}
+                  >
+                    {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {formData.type === 'Performance' && (
+              <div className="flex-col" style={{ 
+                backgroundColor: 'rgba(255, 138, 101, 0.05)', 
+                padding: 'var(--space-md)', 
+                borderRadius: 'var(--radius-md)', 
+                border: '1px dashed #ff8a65',
+                gap: 'var(--space-sm)'
+              }}>
+                <label className="flex-row" style={{ gap: 'var(--space-sm)', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={isOpenAuditions} 
+                    onChange={(e) => setIsOpenAuditions(e.target.checked)}
+                    style={{ width: '20px', height: '20px', accentColor: '#ff8a65' }}
+                  />
+                  <div className="flex-col" style={{ gap: 0 }}>
+                    <span className="text-label" style={{ fontWeight: 700, color: '#e64a19' }}>Open Public Auditions?</span>
+                    <span className="text-xs text-muted">If checked, this performance will be the target for new audition requests.</span>
+                  </div>
+                </label>
+              </div>
+            )}
+
+            {formData.type === 'Performance' && !initialData && (
+              <div className="flex-col" style={{ backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border)', gap: 'var(--space-md)' }}>
+                <label className="flex-row" style={{ gap: 'var(--space-sm)', cursor: 'pointer', fontWeight: 600 }}>
+                  <input 
+                    type="checkbox" 
+                    checked={shouldBulkAdd} 
+                    onChange={(e) => setShouldBulkAdd(e.target.checked)}
+                    style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }}
+                  />
+                  <span className="text-label">Auto-generate weekly rehearsals?</span>
+                </label>
+
+                {shouldBulkAdd && (
+                  <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+                    <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+                      <div className="flex-col" style={{ flex: 1, gap: '2px' }}>
+                        <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Count</label>
+                        <input 
+                          type="number" min="1" max="20"
+                          value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
+                          className="card"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
+                        />
+                      </div>
+                      <div className="flex-col" style={{ flex: 2, gap: '2px' }}>
+                        <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Day</label>
+                        <select 
+                          value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
+                          className="card"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
+                        >
+                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                            <option key={d} value={i}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-col" style={{ flex: 2, gap: '2px' }}>
+                        <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Time</label>
+                        <input 
+                          type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
+                          className="card"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-col" style={{ gap: '2px' }}>
+                      <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Rehearsal Venue</label>
+                      <select 
+                        value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
+                        required
+                        className="card"
+                        style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
+                      >
+                        <option value="">-- Select Rehearsal Venue --</option>
+                        {venues.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {startDate && (
+                      <div className="badge badge-rehearsal" style={{ padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)', textAlign: 'center', textTransform: 'none' }}>
+                        📅 First rehearsal: <strong>{startDate.toLocaleDateString()}</strong>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {formData.type === 'Rehearsal' && (
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                <label className="text-label">Linked Performance (Parent)</label>
+                <select 
+                  value={formData.parentPerformanceId} 
+                  onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
+                  className="card"
+                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                >
+                  <option value="">None</option>
+                  {performances.filter(p => p.id !== initialData?.id).map(p => (
+                    <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.expand?.venue?.name || ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <label className="text-label">Details / Notes</label>
+              <textarea 
+                value={formData.details} 
+                onChange={(e) => setFormData({ ...formData, details: e.target.value })} 
+                className="card"
+                style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', height: '80px', resize: 'vertical' }}
+              />
+            </div>
+          </>
         )}
 
-        {formData.type === 'Performance' && (
-          <div className="flex-col" style={{ gap: 'var(--space-md)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)', marginTop: 'var(--space-xs)' }}>
+        {formData.type === 'Performance' && activeTab === 'tickets' && (
+          <>
             <div style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.9rem' }}>🎟️ Ticketing Configuration</div>
             
             <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)' }}>
@@ -576,23 +742,43 @@ export const EventModal: React.FC<EventModalProps> = ({
               <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
                 <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
                   <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Advance Price (Cents)</label>
+                    <label className="text-label">Advance Price ($)</label>
                     <input
                       type="number"
-                      placeholder="e.g. 1500 for $15.00"
-                      value={formData.advancePriceCents === undefined ? '' : formData.advancePriceCents}
-                      onChange={(e) => setFormData({ ...formData, advancePriceCents: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      step="0.01"
+                      placeholder="e.g. 15.00"
+                      value={advancePriceInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAdvancePriceInput(val);
+                        const parsed = parseFloat(val);
+                        if (val === '') {
+                          setFormData(prev => ({ ...prev, advancePriceCents: undefined }));
+                        } else if (!isNaN(parsed)) {
+                          setFormData(prev => ({ ...prev, advancePriceCents: Math.round(parsed * 100) }));
+                        }
+                      }}
                       className="card"
                       style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
                     />
                   </div>
                   <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                    <label className="text-label">Day-Of Price (Cents)</label>
+                    <label className="text-label">Day-Of Price ($)</label>
                     <input
                       type="number"
-                      placeholder="e.g. 2000 for $20.00"
-                      value={formData.dayOfPriceCents === undefined ? '' : formData.dayOfPriceCents}
-                      onChange={(e) => setFormData({ ...formData, dayOfPriceCents: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      step="0.01"
+                      placeholder="e.g. 20.00"
+                      value={dayOfPriceInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDayOfPriceInput(val);
+                        const parsed = parseFloat(val);
+                        if (val === '') {
+                          setFormData(prev => ({ ...prev, dayOfPriceCents: undefined }));
+                        } else if (!isNaN(parsed)) {
+                          setFormData(prev => ({ ...prev, dayOfPriceCents: Math.round(parsed * 100) }));
+                        }
+                      }}
                       className="card"
                       style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
                     />
@@ -653,127 +839,8 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
-
-        {formData.type === 'Performance' && (
-          <div className="flex-col" style={{ 
-            backgroundColor: 'rgba(255, 138, 101, 0.05)', 
-            padding: 'var(--space-md)', 
-            borderRadius: 'var(--radius-md)', 
-            border: '1px dashed #ff8a65',
-            gap: 'var(--space-sm)'
-          }}>
-            <label className="flex-row" style={{ gap: 'var(--space-sm)', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={isOpenAuditions} 
-                onChange={(e) => setIsOpenAuditions(e.target.checked)}
-                style={{ width: '20px', height: '20px', accentColor: '#ff8a65' }}
-              />
-              <div className="flex-col" style={{ gap: 0 }}>
-                <span className="text-label" style={{ fontWeight: 700, color: '#e64a19' }}>Open Public Auditions?</span>
-                <span className="text-xs text-muted">If checked, this performance will be the target for new audition requests.</span>
-              </div>
-            </label>
-          </div>
-        )}
-
-        {formData.type === 'Performance' && !initialData && (
-            <div className="flex-col" style={{ backgroundColor: 'var(--bg)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border)', gap: 'var(--space-md)' }}>
-                <label className="flex-row" style={{ gap: 'var(--space-sm)', cursor: 'pointer', fontWeight: 600 }}>
-                    <input 
-                      type="checkbox" 
-                      checked={shouldBulkAdd} 
-                      onChange={(e) => setShouldBulkAdd(e.target.checked)}
-                      style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }}
-                    />
-                    <span className="text-label">Auto-generate weekly rehearsals?</span>
-                </label>
-
-                {shouldBulkAdd && (
-                    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-                            <div className="flex-col" style={{ flex: 1, gap: '2px' }}>
-                                <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Count</label>
-                                <input 
-                                  type="number" min="1" max="20"
-                                  value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
-                                  className="card"
-                                  style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
-                                />
-                            </div>
-                            <div className="flex-col" style={{ flex: 2, gap: '2px' }}>
-                                <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Day</label>
-                                <select 
-                                  value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
-                                  className="card"
-                                  style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
-                                >
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
-                                        <option key={d} value={i}>{d}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex-col" style={{ flex: 2, gap: '2px' }}>
-                                <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Time</label>
-                                <input 
-                                  type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
-                                  className="card"
-                                  style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex-col" style={{ gap: '2px' }}>
-                            <label className="text-xs text-muted" style={{ fontWeight: 700 }}>Rehearsal Venue</label>
-                            <select 
-                              value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
-                              required
-                              className="card"
-                              style={{ width: '100%', padding: '0 8px', border: '1px solid var(--border)', height: '36px' }}
-                            >
-                                <option value="">-- Select Rehearsal Venue --</option>
-                                {venues.map(v => (
-                                    <option key={v.id} value={v.id}>{v.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        {startDate && (
-                            <div className="badge badge-rehearsal" style={{ padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)', textAlign: 'center', textTransform: 'none' }}>
-                                📅 First rehearsal: <strong>{startDate.toLocaleDateString()}</strong>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        )}
-
-        {formData.type === 'Rehearsal' && (
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label">Linked Performance (Parent)</label>
-            <select 
-              value={formData.parentPerformanceId} 
-              onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
-              className="card"
-              style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
-            >
-              <option value="">None</option>
-              {performances.filter(p => p.id !== initialData?.id).map(p => (
-                <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.expand?.venue?.name || ''}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label">Details / Notes</label>
-          <textarea 
-            value={formData.details} 
-            onChange={(e) => setFormData({ ...formData, details: e.target.value })} 
-            className="card"
-            style={{ width: '100%', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', height: '80px', resize: 'vertical' }}
-          />
-        </div>
       </form>
     </BaseModal>
   );
