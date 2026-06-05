@@ -22,7 +22,8 @@ export type UtilityBundleName =
     | 'rsvpValidation'
     | 'adminNotifications'
     | 'attendanceFinalizer'
-    | 'playerEndpoints';
+    | 'playerEndpoints'
+    | 'stripeService';
 
 export type UtilityBundle = {
     files: string[];
@@ -116,6 +117,10 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     rsvpValidation: {
         files: ['rsvpValidation.ts'],
         symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
+    },
+    stripeService: {
+        files: ['stripeService.ts'],
+        symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
     },
 };
 
