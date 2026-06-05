@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## MANDATORY COMMAND PROXY (RTK)
+* **All shell commands (git, npm, pnpm, eslint, tsc, vitest, vitest run, etc.) MUST be prefixed with `rtk`** (e.g., `rtk git status`, `rtk npm run check:pb-hooks`, `rtk grep`).
+* Running raw commands without `rtk` is strictly prohibited as it bypasses token optimization. Always prefix with `rtk`.
+
 ## TypeScript Type Safety
 
 - Do not introduce explicit `any` in TypeScript or TSX files.

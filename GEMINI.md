@@ -1,6 +1,11 @@
 # Choir Management Tool - Project Instructions
 
+## MANDATORY COMMAND PROXY (RTK)
+* **All shell commands (git, npm, pnpm, eslint, tsc, vitest, vitest run, etc.) MUST be prefixed with `rtk`** (e.g., `rtk git status`, `rtk npm run check:pb-hooks`, `rtk grep`).
+* Running raw commands without `rtk` is strictly prohibited as it bypasses token optimization. Always prefix with `rtk`.
+
 These foundational mandates MUST be followed by all agents working on this codebase to ensure technical integrity and prevent recurring infrastructure issues.
+
 
 ## Administrative vs. Singer Account Handling
 *   **Singing Signal:** The presence of a non-empty `voicePart` is the primary signal that a profile should be treated as a "singer" in operational contexts.
