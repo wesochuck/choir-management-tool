@@ -105,16 +105,29 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           border-color: var(--primary) !important;
           background-color: var(--primary-light) !important;
         }
+        @media (max-width: 640px) {
+          .roster-summary-sections {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .roster-summary-sections {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       {/* Section Subtotals */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: `repeat(${sectionsList.length}, 1fr)`, 
-        gap: 'var(--space-md)',
-        paddingBottom: 'var(--space-md)',
-        borderBottom: '1px solid var(--border)'
-      }}>
+      <div 
+        className="roster-summary-sections"
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `repeat(${sectionsList.length}, 1fr)`, 
+          gap: 'var(--space-md)',
+          paddingBottom: 'var(--space-md)',
+          borderBottom: '1px solid var(--border)'
+        }}
+      >
         {sectionsList.map((sec: SectionDef) => {
           const isSelected = selectedVoiceParts.includes(sec.code);
           return (

@@ -564,7 +564,9 @@
     border: none;
   }
 
+  table.admin-responsive-table,
   .admin-responsive-table table,
+  .admin-responsive-table,
   .admin-responsive-table thead,
   .admin-responsive-table tbody,
   .admin-responsive-table th,
@@ -602,6 +604,18 @@
   .admin-responsive-table td:last-child {
     border-bottom: none;
     margin-top: var(--space-xs);
+  }
+
+  .admin-responsive-table td > div {
+    justify-content: flex-end !important;
+  }
+
+  .admin-responsive-table td > .flex-col {
+    align-items: flex-end !important;
+  }
+
+  .admin-responsive-table td[data-label="Login"] {
+    word-break: break-all;
   }
 
   /* Add the row label before value */

@@ -71,7 +71,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
 
   return (
     <div
-      className="flex-row card"
+      className="singer-rsvp-row card"
       style={{
         padding: 'var(--space-md)',
         alignItems: 'center',
@@ -89,6 +89,24 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
         e.currentTarget.style.borderColor = 'var(--border)';
       }}
     >
+      <style>{`
+        @media (max-width: 600px) {
+          .singer-rsvp-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: var(--space-sm) !important;
+          }
+          .singer-rsvp-row > div {
+            min-width: 100% !important;
+          }
+          .singer-rsvp-controls {
+            margin-top: var(--space-xs);
+            border-top: 1px dashed var(--border);
+            padding-top: var(--space-sm);
+            justify-content: flex-start !important;
+          }
+        }
+      `}</style>
       <div className="flex-col" style={{ gap: '2px', minWidth: '100px' }}>
         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{dateString}</span>
         <span className="text-xs text-muted">{timeString}</span>
@@ -107,7 +125,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
         </span>
       </div>
 
-      <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexShrink: 0 }}>
+      <div className="singer-rsvp-controls flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexShrink: 0 }}>
         {isPast && (
           <div className="flex-col" style={{ alignItems: 'center', gap: '2px' }}>
             <span className="text-xs text-muted" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Attended</span>
