@@ -263,7 +263,7 @@ function QueueWebhookSettings() {
         <div className="flex-col admin-settings-field">
           <label className="text-label" htmlFor="webhook-url">Target Webhook URL</label>
           <div className="flex-row admin-settings-inline-row">
-            // @allow-inline-style - layout overrides
+            {/* @allow-inline-style - layout overrides */}
             <input
               id="webhook-url"
               type="text"

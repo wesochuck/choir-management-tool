@@ -54,7 +54,7 @@ export function StatusAutomationSettings({
               </p>
             </div>
 
-            // @allow-inline-style - spacing override
+            {/* @allow-inline-style - spacing override */}
             <label className="admin-checkbox-label" style={{ marginTop: 'var(--space-xs)' }}>
               <input
                 type="checkbox"

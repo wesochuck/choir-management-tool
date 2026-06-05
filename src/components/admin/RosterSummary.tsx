@@ -148,11 +148,11 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 borderColor: isSelected ? 'var(--primary)' : 'transparent'
               }}
             >
-              // @allow-inline-style - typography overrides
+              {/* @allow-inline-style - typography overrides */}
               <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {sec.name}
               </div>
-              // @allow-inline-style - typography overrides
+              {/* @allow-inline-style - typography overrides */}
               <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec.code] || 0}</div>
             </div>
           );
@@ -185,9 +185,9 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
               }}
             >
-              // @allow-inline-style - typography overrides
+              {/* @allow-inline-style - typography overrides */}
               <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
-              // @allow-inline-style - typography overrides
+              {/* @allow-inline-style - typography overrides */}
               <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[vp.label] || 0}</div>
             </div>
           );
