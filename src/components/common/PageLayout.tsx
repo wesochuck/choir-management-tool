@@ -1,6 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuth } from '../../contexts/AuthContext';
+import { pb } from '../../lib/pocketbase';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -15,6 +17,14 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   children, title, subtitle, actions, maxWidth = '1200px' 
 }) => {
   useDocumentTitle(title);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    pb.authStore.clear();
+    navigate('/login');
+  };
+
   return (
     <div className="admin-layout-wrapper">
       <header className="admin-layout-header">
@@ -26,7 +36,17 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
               {subtitle && <p className="admin-header-subtitle">{subtitle}</p>}
             </div>
           </div>
-          {actions && <div className="admin-header-actions">{actions}</div>}
+          {(actions || user?.role === 'admin') && (
+            <div className="admin-header-actions">
+              {actions}
+              {user?.role === 'admin' && (
+                <>
+                  <Link to="/profile" className="btn btn-ghost">My Profile</Link>
+                  <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
