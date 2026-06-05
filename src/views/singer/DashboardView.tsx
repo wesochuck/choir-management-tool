@@ -33,6 +33,10 @@ export default function DashboardView() {
         .then(list => {
           // Client-side filter for active polls
           const filtered = list.filter(poll => {
+            // Filter by archiveAt expiration
+            const isExpired = poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < now : false;
+            if (isExpired) return false;
+
             if (!poll.eventId) return true;
             const event = events.find(e => e.id === poll.eventId);
             if (!event) return true;
@@ -59,12 +63,10 @@ export default function DashboardView() {
               let content = msg.content;
               const eventId = msg.filters?.eventId as string | undefined;
 
-              if (content.includes('{{RSVP_LINKS}}') || content.includes('{{POLL_LINK:')) {
-                try {
-                  content = await communicationService.resolveSingerPlaceholders(content, eventId);
-                } catch (err) {
-                  console.error('Failed to resolve placeholders for message', msg.id, err);
-                }
+              try {
+                content = await communicationService.resolveSingerPlaceholders(content, eventId);
+              } catch (err) {
+                console.error('Failed to resolve placeholders for message', msg.id, err);
               }
 
               return {

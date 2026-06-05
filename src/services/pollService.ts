@@ -17,6 +17,7 @@ export interface SingerPoll extends RecordModel {
   question: string;
   eventId?: string;
   status: 'Yes' | 'No' | '';
+  archiveAt?: string;
 }
 
 export const pollService = {

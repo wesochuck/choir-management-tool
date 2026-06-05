@@ -7042,6 +7042,284 @@ function parseJsonField(val) {
     }
 }
 
+// --- Utility source: email/hookText.ts ---
+"use strict";
+function escapeHtml(str) {
+    if (!str)
+        return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+function sanitizeHtmlTemplateData(data) {
+    const sanitized = {};
+    const entries = Object.entries(data);
+    for (const [key, value] of entries) {
+        sanitized[key] = escapeHtml(value == null ? "" : String(value));
+    }
+    return sanitized;
+}
+function sanitizeEmailSubject(str) {
+    if (!str)
+        return "";
+    return String(str).replace(/[\r\n]+/g, " ").trim();
+}
+function normalizeBaseUrl(url) {
+    if (!url)
+        return "http://localhost:5173";
+    return String(url).trim().replace(/\/+$/g, "");
+}
+function nthSundayOfMonth(year, monthIndex, occurrence) {
+    const first = new Date(Date.UTC(year, monthIndex, 1));
+    return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+}
+function lastSundayOfMonth(year, monthIndex) {
+    const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+    return last.getUTCDate() - last.getUTCDay();
+}
+function firstSundayOfMonth(year, monthIndex) {
+    return nthSundayOfMonth(year, monthIndex, 1);
+}
+function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+    const year = date.getUTCFullYear();
+    const dstStartDay = nthSundayOfMonth(year, 2, 2);
+    const dstEndDay = nthSundayOfMonth(year, 10, 1);
+    const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+    const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isEuropeDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+    const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+    return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+function isSydneyDst(date) {
+    const year = date.getUTCFullYear();
+    const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+    const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+    return date.getTime() >= dstStart || date.getTime() < dstEnd;
+}
+function getTimezoneOffsetInfo(date, timezone) {
+    const tz = String(timezone || "").toLowerCase();
+    if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+        const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+        return {
+            offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+            abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+        };
+    };
+    if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+        return usZone(-300, -240, "EST", "EDT");
+    }
+    if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+        return usZone(-360, -300, "CST", "CDT");
+    }
+    if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+        return usZone(-420, -360, "MST", "MDT");
+    }
+    if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+        return usZone(-540, -480, "AKST", "AKDT");
+    }
+    if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+        return { offsetMinutes: -420, abbreviation: "MST" };
+    }
+    if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+        return { offsetMinutes: -600, abbreviation: "HST" };
+    }
+    if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+        return usZone(-480, -420, "PST", "PDT");
+    }
+    if (tz.indexOf("london") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+    }
+    if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+        const isDst = isEuropeDst(date);
+        return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+    }
+    if (tz.indexOf("tokyo") >= 0) {
+        return { offsetMinutes: 540, abbreviation: "JST" };
+    }
+    if (tz.indexOf("sydney") >= 0) {
+        const isDst = isSydneyDst(date);
+        return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+    }
+    return { offsetMinutes: 0, abbreviation: "UTC" };
+}
+function formatInTimezone(date, timezone, options) {
+    if (!date)
+        return "";
+    const d = new Date(date);
+    if (isNaN(d.getTime()))
+        return "";
+    try {
+        // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+        if (typeof process === 'undefined' && typeof window === 'undefined') {
+            throw new Error("Goja VM: use custom formatting");
+        }
+        // Try native Intl first (V8 / browser / Node.js)
+        return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+    }
+    catch (_a) {
+        const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+        // Shift date by offset to get target local time in UTC coordinates
+        const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+        const localDate = new Date(localTimeMs);
+        // Format manually using the shifted localDate components
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const wday = weekdays[localDate.getUTCDay()];
+        const wdayFull = weekdaysFull[localDate.getUTCDay()];
+        const mon = months[localDate.getUTCMonth()];
+        const monFull = monthsFull[localDate.getUTCMonth()];
+        const day = localDate.getUTCDate();
+        const yr = localDate.getUTCFullYear();
+        let hr = localDate.getUTCHours();
+        const ampm = hr >= 12 ? "PM" : "AM";
+        hr = hr % 12;
+        if (hr === 0)
+            hr = 12;
+        const minVal = localDate.getUTCMinutes();
+        const min = minVal < 10 ? "0" + minVal : String(minVal);
+        const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+        // Build formats based on options requested:
+        // Case 1: Just time (hour + minute)
+        if (options.hour && !options.day) {
+            return hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+        // Case 2: Long date format: "Sunday, June 14, 2026"
+        if (options.weekday === "long" && options.year) {
+            return wdayFull + ", " + monFull + " " + day + ", " + yr;
+        }
+        // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+        if (options.weekday === "short" && options.hour) {
+            return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+        // Case 4: Date only with weekday: "Sun, Jun 14"
+        if (options.weekday === "short" && !options.hour) {
+            return wday + ", " + mon + " " + day;
+        }
+        // Case 5: Date only without weekday: "Jun 14, 2026"
+        if (options.month && !options.hour) {
+            const m = options.month === "long" ? monFull : mon;
+            return m + " " + day + (options.year ? ", " + yr : "");
+        }
+        // Generic fallback: "06/14/2026, 7:00 PM"
+        const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+        const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+        return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+    }
+}
+
+// --- Utility source: email/emailRendering.ts ---
+"use strict";
+function renderMarkdown(text) {
+    if (!text)
+        return "";
+    // Escape raw HTML first
+    let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+    html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+        const level = hashes.length;
+        // Using inline styles for headings for better email client compatibility
+        const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+        return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+    });
+    // Bold: **text** or __text__
+    html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+    // Italic: *text* or _text_
+    html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+    // Links: [text](url)
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+        const sanitizedUrl = url.trim();
+        if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+            return text;
+        }
+        const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+    });
+    // Lists (Ordered and Unordered)
+    const lines = html.split("\n");
+    let inUl = false;
+    let inOl = false;
+    const processedLines = lines.map(line => {
+        const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+        const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+        if (ulMatch) {
+            const content = ulMatch[2];
+            let prefix = "";
+            if (inOl) {
+                inOl = false;
+                prefix = "</ol>";
+            }
+            if (!inUl) {
+                inUl = true;
+                return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+            }
+            return `<li>${content}</li>`;
+        }
+        else if (olMatch) {
+            const content = olMatch[2];
+            let prefix = "";
+            if (inUl) {
+                inUl = false;
+                prefix = "</ul>";
+            }
+            if (!inOl) {
+                inOl = true;
+                return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+            }
+            return `<li>${content}</li>`;
+        }
+        else {
+            let result = line;
+            if (inUl) {
+                inUl = false;
+                result = "</ul>" + line;
+            }
+            if (inOl) {
+                inOl = false;
+                result = "</ol>" + line;
+            }
+            return result;
+        }
+    });
+    if (inUl)
+        processedLines.push("</ul>");
+    if (inOl)
+        processedLines.push("</ol>");
+    html = processedLines.join("\n");
+    // Line breaks and paragraphs
+    const blocks = html.split(/\n\s*\n/);
+    html = blocks.map(block => {
+        const trimmed = block.trim();
+        if (!trimmed)
+            return "";
+        if (trimmed.startsWith("<ul"))
+            return block;
+        if (trimmed.startsWith("<ol"))
+            return block;
+        if (trimmed.match(/^<h\d/))
+            return block;
+        if (trimmed.startsWith("<div"))
+            return block; // Keep footers/buttons intact
+        return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+    }).join("\n");
+    return html;
+}
+
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret(app) {
@@ -7112,7 +7390,7 @@ function parseSignedToken(token, requiredKeys) {
     if (typeof data.content !== "string") {
         return e.json(400, { error: "Missing or invalid content parameter" });
     }
-    let content = data.content;
+    const content = data.content;
     const eventId = typeof data.eventId === "string" ? data.eventId : undefined;
     let profile;
     try {
@@ -7155,28 +7433,163 @@ function parseSignedToken(token, requiredKeys) {
         const proto = ((_b = requestInfo.headers) === null || _b === void 0 ? void 0 : _b["x-forwarded-proto"]) || "http";
         baseUrl = proto + "://" + host;
     }
-    // Resolve RSVP links
-    if (content.indexOf("{{RSVP_LINKS}}") !== -1 && eventId && typeof eventId === "string") {
-        const token = generateSignedEventRecipientToken($app, eventId, profile.id, secret);
-        const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
-        const replacement = "(RSVP Link for " + (profile.get("name") || "Singer") + ")\nLink: " + rsvpLink + "\n(No login required)";
-        content = content.replace(/{{RSVP_LINKS}}/g, replacement);
+    baseUrl = normalizeBaseUrl(baseUrl);
+    let timezone = "America/New_York";
+    try {
+        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+        const valueStr = tzSetting.get("value");
+        const tzP = parseJsonField(valueStr);
+        if (tzP) {
+            if (typeof tzP === "string") {
+                timezone = tzP;
+            }
+            else if (typeof tzP === "object" && tzP.timezone) {
+                timezone = tzP.timezone;
+            }
+        }
+    }
+    catch (_f) {
+        // use default timezone
+    }
+    let event = null;
+    if (eventId) {
+        try {
+            event = $app.findRecordById("events", eventId);
+        }
+        catch (err) {
+            console.log("[Resolve Placeholders] Failed to find event: " + err);
+        }
+    }
+    // Temporarily protect placeholders containing underscores from markdown parsing
+    const protectedContent = content
+        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
+        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
+        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
+        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
+        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+    let htmlBody = renderMarkdown(protectedContent);
+    // Restore protected placeholders
+    htmlBody = htmlBody
+        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
+        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
+        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
+        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
+        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+    // Resolve {singerName}
+    const recipientName = (profile.get("name") || "Singer");
+    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+    if (event) {
+        const eventDate = event.get("date");
+        const eventTitle = (event.get("title") || event.get("type") || "Event");
+        const eventType = (event.get("type") || "Performance");
+        const eventDetails = (event.get("details") || "");
+        let venueName = "TBD";
+        let venueAddress = "";
+        try {
+            const venueRecord = $app.findRecordById("venues", event.get("venue"));
+            venueName = (venueRecord.get("name") || "TBD");
+            venueAddress = (venueRecord.get("address") || "");
+        }
+        catch (_g) {
+            // venue not found
+        }
+        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
+        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        let locationHtml = escapeHtml(venueName);
+        if (venueAddress.trim()) {
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+        }
+        const eventInfoHtml = `
+<div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+    <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+    <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+        📅 <strong>${escapeHtml(dateLong)}</strong><br>
+        ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+        📍 <strong>${locationHtml}</strong>
+    </div>
+</div>
+`;
+        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+            .replace(/{eventType}/g, () => escapeHtml(eventType))
+            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+            .replace(/{eventLocation}/g, () => locationHtml)
+            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+            .replace(/{eventInfo}/g, () => eventInfoHtml);
+        // Resolve RSVP links
+        if (htmlBody.indexOf("{{RSVP_LINKS}}") !== -1 || htmlBody.indexOf("{rsvpLinks}") !== -1) {
+            const token = generateSignedEventRecipientToken($app, event.id, profile.id, secret);
+            const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
+            const rsvpHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">(No login required)</p>
+</div>
+`;
+            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+        }
+        // Resolve Player links
+        if (htmlBody.indexOf("{{PLAYER_LINK}}") !== -1 || htmlBody.indexOf("{playerLink}") !== -1) {
+            const token = generateSignedPlayerToken($app, event.id, secret);
+            const playerLink = baseUrl + "/player?token=" + encodeURIComponent(token);
+            const playerHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+</div>
+`;
+            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+        }
+    }
+    else {
+        // Clear event placeholders if no event is present
+        htmlBody = htmlBody.replace(/{eventTitle}/g, "")
+            .replace(/{eventType}/g, "")
+            .replace(/{eventDate}/g, "")
+            .replace(/{eventLocation}/g, "")
+            .replace(/{eventDetails}/g, "")
+            .replace(/{{EVENT_INFO}}/g, "")
+            .replace(/{eventInfo}/g, "")
+            .replace(/{{RSVP_LINKS}}/g, "")
+            .replace(/{rsvpLinks}/g, "")
+            .replace(/{{PLAYER_LINK}}/g, "")
+            .replace(/{playerLink}/g, "");
     }
     // Resolve Poll links
     const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
     let match;
-    while ((match = pollRegex.exec(content)) !== null) {
+    while ((match = pollRegex.exec(htmlBody)) !== null) {
         const fullPlaceholder = match[0];
         const pollId = match[1];
         const payload = "l=" + pollId + "&p=" + profile.id;
         const signature = $security.hs256(payload, secret);
         const token = payload + "&s=" + signature;
         const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-        const replacement = "(Poll Link for " + (profile.get("name") || "Singer") + ")\nLink: " + pollLink + "\n(No login required)";
-        content = content.replace(fullPlaceholder, replacement);
+        let pollButtonLabel = "Answer our quick question";
+        try {
+            const pollRecord = $app.findRecordById("polls", pollId);
+            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
+            if (typeof question === "string" && question.trim()) {
+                pollButtonLabel = question.trim();
+            }
+        }
+        catch (_h) {
+            // Keep default fallback
+        }
+        const replacement = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+</div>
+`.trim();
+        htmlBody = htmlBody.replace(fullPlaceholder, replacement);
         pollRegex.lastIndex = 0; // Reset index since we replaced content
     }
-    return e.json(200, { resolvedContent: content });
+    return e.json(200, { resolvedContent: htmlBody });
 });
 routerAdd("POST", "/api/singer/rsvp", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---

@@ -111,3 +111,20 @@ A request submitted by a prospective singer via the public audition form, detail
 ## Singer Resource
 A document (such as a PDF handbook) or an external hyperlink (such as a Google Drive folder) managed by administrators and made available to all active singers under the Resources section of their dashboard.
 
+## Will Call Ticket Purchase
+A record of a successful general admission ticket transaction for a Performance, detailing the buyer's name, email, purchased quantity, payment status, and Stripe session reference. Used by administrators to manage door admission via a printed or digital will call list.
+
+## Ticketing Configuration
+Settings defined on a Performance event that enable ticket sales, set the single ticket price, and specify the maximum ticket capacity for the event.
+
+## Advance Ticket Price
+The price charged for a ticket purchased online in advance of the performance day.
+
+## Day-of Ticket Price
+The higher price charged for a ticket purchased online on the day of the performance.
+
+## Discount Code
+A code entered by a buyer at checkout to apply a percentage or fixed discount to their ticket purchase, leveraging Stripe's native Checkout Promotion Codes.
+
+
+
