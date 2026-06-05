@@ -1,6 +1,15 @@
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
 // Source: pocketbase/pb_hooks_src/
 
+// --- ENV POLYFILL FOR GOJA ---
+if (typeof process === 'undefined') {
+    globalThis.process = {
+        env: new Proxy({}, {
+            get: (target, prop) => typeof prop === 'string' ? os.getenv(prop) : undefined
+        })
+    };
+}
+
 // --- CRON JOBS ---
 
 cronAdd("post_event_report", "0 * * * *", () => {

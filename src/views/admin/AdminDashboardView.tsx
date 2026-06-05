@@ -21,6 +21,7 @@ const dashboardSections = [
     dotColor: "var(--section-amber)",
     links: [
       { to: '/admin/events', icon: '📅', iconClass: 'ic-amber', label: 'Manage Events', desc: 'Schedule performances and rehearsals' },
+      { to: '/admin/tickets', icon: '🎟️', iconClass: 'ic-amber', label: 'Ticket Sales', desc: 'Track sales and process refunds' },
       { to: '/admin/rsvp', icon: '🗓️', iconClass: 'ic-amber', label: 'Event RSVPs', desc: 'Track responses and roster balances' },
       { to: '/admin/attendance', icon: '✅', iconClass: 'ic-green', label: 'Take Attendance', desc: 'Track check-ins for events' },
       { to: '/admin/venues', icon: '🏛️', iconClass: 'ic-slate', label: 'Manage Venues', desc: 'Configure venue capacities' },
