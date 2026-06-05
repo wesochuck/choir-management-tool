@@ -221,7 +221,7 @@ export default function PublicTicketPurchaseView() {
             className="btn btn-primary btn-lg"
             style={{ width: '100%', height: '48px', fontWeight: 600 }}
           >
-            {submitting ? "Opening secure Stripe Checkout…" : "Go to Stripe Payment"}
+            {submitting ? "Opening Secure Checkout…" : "Proceed to Payment"}
           </button>
         </form>
       </AppCard>
