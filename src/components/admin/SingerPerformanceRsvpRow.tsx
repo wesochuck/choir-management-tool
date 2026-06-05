@@ -17,6 +17,7 @@ const getSelectStyle = (val: EventRoster['rsvp']) => {
   const base: React.CSSProperties = {
     padding: '0 8px',
     height: '32px',
+    minHeight: '32px',
     borderRadius: 'var(--radius-sm)',
     fontSize: '13px',
     fontWeight: 600,
@@ -125,7 +126,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
         </span>
       </div>
 
-      <div className="singer-rsvp-controls flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexShrink: 0 }}>
+      <div className="singer-rsvp-controls flex-row" style={{ alignItems: 'flex-start', gap: 'var(--space-md)', flexShrink: 0 }}>
         {isPast && (
           <div className="flex-col" style={{ alignItems: 'center', gap: '2px' }}>
             <span className="text-xs text-muted" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Attended</span>
