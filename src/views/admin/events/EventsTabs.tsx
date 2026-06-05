@@ -22,40 +22,27 @@ export function EventsTabs({
         padding: '0 4px',
         gap: 'var(--space-md)',
         flexWrap: 'wrap',
-        marginBottom: '4px',
+        marginBottom: 'var(--space-md)',
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: 'var(--space-xs)',
       }}
     >
       {/* Tab buttons */}
       <div
         className="flex-row"
         style={{
-          backgroundColor: 'var(--primary-light, #f1f5f9)',
-          padding: '4px',
-          borderRadius: 'var(--radius-md, 8px)',
-          border: '1px solid var(--border, #cbd5e1)',
-          gap: '4px',
+          gap: 'var(--space-sm)',
         }}
       >
         {(['all', 'performances', 'rehearsals'] as const).map((tab) => (
           <button
             key={tab}
+            className={`btn ${activeTab === tab ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setActiveTab(tab)}
-            style={{
-              height: '32px',
-              padding: '0 var(--space-md)',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              borderRadius: 'calc(var(--radius-md) - 2px)',
-              backgroundColor:
-                activeTab === tab ? 'var(--primary)' : 'transparent',
-              color: activeTab === tab ? 'white' : 'var(--text-muted)',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textTransform: 'capitalize',
+            style={{ 
+              padding: '8px 16px', 
+              fontWeight: 600,
+              textTransform: 'capitalize'
             }}
           >
             {tab === 'all' ? 'All Events' : tab}
