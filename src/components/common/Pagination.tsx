@@ -38,13 +38,6 @@ export const Pagination: React.FC<PaginationProps> = ({
       className="app-pagination flex-row" 
       role="navigation" 
       aria-label="Pagination Navigation"
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 'var(--space-xs)',
-        flexWrap: 'wrap',
-      }}
     >
       {/* First Page Button */}
       <button
@@ -76,11 +69,6 @@ export const Pagination: React.FC<PaginationProps> = ({
               key={`dots-${idx}`} 
               className="pagination-dots"
               aria-hidden="true"
-              style={{
-                padding: '8px 12px',
-                color: 'var(--text-muted)',
-                fontWeight: 600,
-              }}
             >
               &#8230;
             </span>

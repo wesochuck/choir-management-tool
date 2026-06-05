@@ -69,10 +69,11 @@ export function RosterSettingsTab({
   setFilter,
 }: RosterSettingsTabProps) {
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
+    <div className="admin-settings-layout">
       {configMessage && (
         <div 
           className={`badge ${configMessage.startsWith('Error') ? 'badge-rehearsal' : 'badge-performance'}`} 
+          // @allow-inline-style
           style={{ alignSelf: 'flex-start', padding: '8px 12px', fontSize: '14px' }}
         >
           {configMessage}

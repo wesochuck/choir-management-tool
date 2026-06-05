@@ -31,19 +31,19 @@ export function VoicePartEditor({
 
   return (
     <AppCard title="Voice Part Configurations">
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <p className="text-muted" style={{ margin: 0 }}>
+      <div className="admin-settings-group">
+        <p className="text-muted admin-settings-description">
           Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a Section Bucket.
         </p>
 
-        <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+        <div className="admin-settings-field">
           {configVoiceParts.map((vp, index) => {
             const count = getSingerCountForPart(vp.label);
             const isTied = count > 0;
             const section = configSections.find(s => s.code === vp.sectionCode);
             const defaultColor = section?.color || '#e0e0e0';
             return (
-              <div key={index} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 150px 130px 90px 80px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+              <div key={index} className="admin-voice-part-grid">
                 <input
                   value={vp.label}
                   onChange={(e) => {
@@ -53,8 +53,7 @@ export function VoicePartEditor({
                   }}
                   placeholder="Label"
                   disabled={isTied}
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '40px', minHeight: '40px' }}
+                  className="card admin-settings-input-full"
                   title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
                 />
                 <input
@@ -65,8 +64,7 @@ export function VoicePartEditor({
                     setConfigVoiceParts(newParts);
                   }}
                   placeholder="Full Name"
-                  className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px' }}
+                  className="card admin-settings-input-full"
                 />
                 <select
                   value={vp.sectionCode}
@@ -75,8 +73,7 @@ export function VoicePartEditor({
                     newParts[index] = { ...newParts[index], sectionCode: e.target.value };
                     setConfigVoiceParts(newParts);
                   }}
-                  className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '40px', minHeight: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  className="card admin-settings-input-full"
                 >
                   <option value="">Select Section...</option>
                   {configSections.map(s => (
@@ -84,8 +81,8 @@ export function VoicePartEditor({
                   ))}
                 </select>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
+                <div className="admin-flex-center">
+                  <div className="admin-color-picker-input-wrapper">
                     <input
                       type="color"
                       value={vp.color || defaultColor}
@@ -100,16 +97,7 @@ export function VoicePartEditor({
                         };
                         setConfigVoiceParts(newParts);
                       }}
-                      style={{
-                        position: 'absolute',
-                        top: '-8px',
-                        left: '-8px',
-                        width: '48px',
-                        height: '48px',
-                        border: 'none',
-                        padding: 0,
-                        cursor: 'pointer'
-                      }}
+                      className="admin-color-picker-input"
                     />
                   </div>
                   <input
@@ -129,15 +117,7 @@ export function VoicePartEditor({
                       setConfigVoiceParts(newParts);
                     }}
                     placeholder="Inherit"
-                    className="card"
-                    style={{
-                      width: '80px',
-                      padding: '0 8px',
-                      height: '32px',
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: '11px',
-                      margin: 0
-                    }}
+                    className="card admin-color-hex-input"
                   />
                 </div>
 
@@ -148,14 +128,14 @@ export function VoicePartEditor({
                       setActiveTab('roster');
                       setFilter('voiceParts', [vp.label]);
                     }}
-                    className="btn btn-secondary btn-sm"
-                    style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    className="btn btn-secondary btn-sm admin-action-btn-sm admin-action-btn-sm-gap"
                     title={`Click to view the ${count} singer(s) in this voice part`}
                   >
-                    <span style={{ fontWeight: 600 }}>{count}</span>
+                    <span className="admin-font-weight-600">{count}</span>
                     <span>singer{count === 1 ? '' : 's'}</span>
                   </button>
                 ) : (
+                  // @allow-inline-style
                   <div style={{ height: '36px' }} />
                 )}
                 <button
@@ -164,8 +144,7 @@ export function VoicePartEditor({
                     setConfigVoiceParts(configVoiceParts.filter((_, idx) => idx !== index));
                   }}
                   disabled={isTied}
-                  className="btn btn-danger btn-sm"
-                  style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  className="btn btn-danger btn-sm admin-action-btn-sm"
                   title={isTied ? "Cannot delete voice part with assigned singers" : undefined}
                 >
                   Delete
@@ -178,8 +157,7 @@ export function VoicePartEditor({
         <button
           type="button"
           onClick={() => setConfigVoiceParts([...configVoiceParts, { label: '', fullName: '', sectionCode: '' }])}
-          className="btn btn-secondary"
-          style={{ alignSelf: 'flex-start' }}
+          className="btn btn-secondary admin-align-start"
         >
           + Add Voice Part
         </button>

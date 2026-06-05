@@ -23,12 +23,12 @@ export function SectionBucketEditor({
 
   return (
     <AppCard title="Section Bucket Configurations">
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <p className="text-muted" style={{ margin: 0 }}>
+      <div className="admin-settings-group">
+        <p className="text-muted admin-settings-description">
           Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity on the seating chart.
         </p>
 
-        <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+        <div className="admin-settings-field">
           {configSections.map((sec, index) => {
             const isTied = isSectionReferenced(sec.code);
             const hexBg = sec.color || sec.colorBg || '#e0e0e0';
@@ -39,7 +39,7 @@ export function SectionBucketEditor({
             });
 
             return (
-              <div key={index} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 200px 80px', gap: 'var(--space-md)', alignItems: 'center', width: '100%' }}>
+              <div key={index} className="admin-section-bucket-grid">
                 <input
                   value={sec.code}
                   onChange={(e) => {
@@ -49,8 +49,7 @@ export function SectionBucketEditor({
                   }}
                   placeholder="Code"
                   disabled={isTied}
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                  className="card admin-settings-input-full"
                 />
                 <input
                   value={sec.name}
@@ -60,29 +59,17 @@ export function SectionBucketEditor({
                     setConfigSections(newSecs);
                   }}
                   placeholder="Name"
-                  className="card"
-                  style={{ width: '100%', padding: '0 8px', height: '40px' }}
+                  className="card admin-settings-input-full"
                 />
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                {/* @allow-inline-style */}
+                <div className="admin-flex-center-lg" style={{ position: 'relative' }}>
                   <button
                     type="button"
                     onClick={() => setActiveColorPickerIndex(activeColorPickerIndex === index ? null : index)}
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '6px',
-                      backgroundColor: hexBg,
-                      border: '1px solid var(--border)',
-                      cursor: 'pointer',
-                      padding: 0,
-                      boxShadow: 'var(--shadow-sm)',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'transform 0.1s ease',
-                    }}
+                    className="admin-color-preview"
+                    // @allow-inline-style
+                    style={{ backgroundColor: hexBg }}
                     title="Choose color"
                   />
 
@@ -106,18 +93,11 @@ export function SectionBucketEditor({
                       setConfigSections(newSecs);
                     }}
                     placeholder="#FFFFFF"
-                    className="card"
-                    style={{ 
-                      width: '90px', 
-                      padding: '0 8px', 
-                      height: '32px', 
-                      fontFamily: 'var(--font-mono, monospace)', 
-                      fontSize: '12px',
-                      margin: 0
-                    }}
+                    className="card admin-color-hex-input-lg"
                   />
 
                   {tooClose && (
+                    // @allow-inline-style
                     <span title="Warning: This color lacks adequate visual contrast with another section color." style={{ color: 'var(--color-danger-text)', cursor: 'help', fontSize: '14px' }}>⚠️</span>
                   )}
 
@@ -125,6 +105,7 @@ export function SectionBucketEditor({
                     <>
                       <div 
                         onClick={() => setActiveColorPickerIndex(null)}
+                        // @allow-inline-style
                         style={{
                           position: 'fixed',
                           top: 0,
@@ -135,23 +116,10 @@ export function SectionBucketEditor({
                           cursor: 'default'
                         }}
                       />
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        marginTop: '4px',
-                        backgroundColor: 'var(--card-bg, #ffffff)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md, 8px)',
-                        padding: '12px',
-                        boxShadow: 'var(--shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1))',
-                        zIndex: 101,
-                        width: '180px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px'
-                      }}>
+                      <div className="admin-color-picker-popover">
+                        {/* @allow-inline-style */}
                         <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-light)', textTransform: 'uppercase' }}>Presets</span>
+                        {/* @allow-inline-style */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
                           {PALETTE_COLORS.map(c => {
                             const isSelected = hexBg.toUpperCase() === c.toUpperCase();
@@ -170,41 +138,20 @@ export function SectionBucketEditor({
                                   setConfigSections(newSecs);
                                   setActiveColorPickerIndex(null);
                                 }}
-                                style={{
-                                  width: '24px',
-                                  height: '24px',
-                                  borderRadius: '6px',
-                                  backgroundColor: c,
-                                  border: isSelected ? '2px solid var(--text-main, #000000)' : '1px solid var(--border)',
-                                  cursor: 'pointer',
-                                  padding: 0,
-                                  flexShrink: 0,
-                                  transition: 'transform 0.1s ease',
-                                  transform: isSelected ? 'scale(1.1)' : 'scale(1)'
-                                }}
+                                className={`admin-color-preset-btn ${isSelected ? 'selected' : ''}`}
+                                // @allow-inline-style
+                                style={{ backgroundColor: c }}
                                 title={c}
                               />
                             );
                           })}
                         </div>
                         
+                        {/* @allow-inline-style */}
                         <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }} />
                         
-                        <label style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '6px', 
-                          fontSize: '12px', 
-                          cursor: 'pointer',
-                          color: 'var(--text-main)',
-                          padding: '6px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid var(--border)',
-                          justifyContent: 'center',
-                          backgroundColor: 'var(--bg-light, #f9fafb)',
-                          textAlign: 'center',
-                          margin: 0
-                        }}>
+                        <label className="admin-color-custom-btn">
+                          {/* @allow-inline-style */}
                           <span style={{ fontSize: '14px' }}>🎨</span> Custom Color
                           <input 
                             type="color"
@@ -220,6 +167,7 @@ export function SectionBucketEditor({
                               };
                               setConfigSections(newSecs);
                             }}
+                            // @allow-inline-style
                             style={{ 
                               position: 'absolute',
                               width: 0,
@@ -240,8 +188,7 @@ export function SectionBucketEditor({
                     setConfigSections(configSections.filter((_, idx) => idx !== index));
                   }}
                   disabled={isTied}
-                  className="btn btn-danger btn-sm"
-                  style={{ height: '36px', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  className="btn btn-danger btn-sm admin-action-btn-sm"
                 >
                   Delete
                 </button>
@@ -253,8 +200,7 @@ export function SectionBucketEditor({
         <button
           type="button"
           onClick={() => setConfigSections([...configSections, { code: '', name: '', color: '', colorBg: '', colorText: '' }])}
-          className="btn btn-secondary"
-          style={{ alignSelf: 'flex-start' }}
+          className="btn btn-secondary admin-align-start"
         >
           + Add Section Bucket
         </button>

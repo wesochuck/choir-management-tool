@@ -23,23 +23,23 @@ export function StatusAutomationSettings({
 }: StatusAutomationSettingsProps) {
   return (
     <AppCard title="Singer Status & Rehearsal Limits">
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer' }}>
+      <div className="admin-settings-group">
+        <label className="admin-checkbox-label">
           <input
             type="checkbox"
             checked={configAutomationEnabled}
             onChange={(e) => setConfigAutomationEnabled(e.target.checked)}
-            style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+            className="admin-checkbox-input"
           />
-          <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Changes</span>
+          <span className="text-label admin-font-weight-600">Enable Automated Status Changes</span>
         </label>
-        <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
+        <p className="text-muted admin-checkbox-description">
           Automatically mark singers as Active/Inactive based on their attendance and RSVP history.
         </p>
 
         {configAutomationEnabled && (
-          <div className="flex-col" style={{ gap: 'var(--space-md)', paddingLeft: 'var(--space-md)', borderLeft: '2px solid var(--border)', marginTop: 'var(--space-xs)' }}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="admin-settings-nested-group">
+            <div className="admin-settings-field">
               <label className="text-label">Consecutive Misses Threshold</label>
               <input
                 type="number"
@@ -47,43 +47,42 @@ export function StatusAutomationSettings({
                 max={10}
                 value={configAutomationMissThreshold}
                 onChange={(e) => setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-                className="card"
-                style={{ width: '100%', maxWidth: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                className="card admin-settings-input-sm"
               />
-              <p className="text-muted" style={{ margin: 0 }}>
+              <p className="text-muted admin-settings-description">
                 Mark a singer as Inactive after this many consecutive absences or 'No' RSVPs.
               </p>
             </div>
 
-            <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', marginTop: 'var(--space-xs)' }}>
+            // @allow-inline-style - spacing override
+            <label className="admin-checkbox-label" style={{ marginTop: 'var(--space-xs)' }}>
               <input
                 type="checkbox"
                 checked={configAutomationRecoveryEnabled}
                 onChange={(e) => setConfigAutomationRecoveryEnabled(e.target.checked)}
-                style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                className="admin-checkbox-input"
               />
-              <span className="text-label" style={{ fontWeight: 600 }}>Enable Automated Status Recovery</span>
+              <span className="text-label admin-font-weight-600">Enable Automated Status Recovery</span>
             </label>
-            <p className="text-muted" style={{ margin: 0, marginTop: '-8px' }}>
+            <p className="text-muted admin-checkbox-description">
               Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future Performance.
             </p>
           </div>
         )}
 
-        <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 'var(--space-sm) 0' }} />
+        <hr className="admin-divider" />
 
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <label className="text-label" style={{ fontWeight: 600 }}>Maximum Rehearsal Miss Limit</label>
+        <div className="admin-settings-field">
+          <label className="text-label admin-font-weight-600">Maximum Rehearsal Miss Limit</label>
           <input
             type="number"
             min={0}
             max={20}
             value={configMaxRehearsalMisses}
             onChange={(e) => setConfigMaxRehearsalMisses(Math.max(0, parseInt(e.target.value) || 0))}
-            className="card"
-            style={{ width: '100%', maxWidth: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            className="card admin-settings-input-sm"
           />
-          <p className="text-muted" style={{ margin: 0 }}>
+          <p className="text-muted admin-settings-description">
             The maximum number of rehearsal misses (declined RSVPs or marked absences) allowed for a concert cycle before warnings are shown to singers and admins.
           </p>
         </div>

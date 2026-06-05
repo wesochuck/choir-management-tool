@@ -11,17 +11,16 @@ export function SeasonManagementSettings({
 }: SeasonManagementSettingsProps) {
   return (
     <AppCard title="Season Management">
-      <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+      <div className="admin-settings-field">
         <label className="text-label">Current Season</label>
         <input
           type="text"
           value={configSeason}
           onChange={(event) => setConfigSeason(event.target.value)}
           placeholder="e.g. Fall 2026"
-          className="card"
-          style={{ width: '100%', maxWidth: '300px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+          className="card admin-settings-input-md"
         />
-        <p className="text-muted" style={{ margin: 0 }}>
+        <p className="text-muted admin-settings-description">
           Set the active season for tracking dues in the roster view. Leave blank to disable dues tracking.
         </p>
       </div>

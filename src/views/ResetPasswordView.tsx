@@ -52,34 +52,33 @@ export default function ResetPasswordView() {
   };
 
   return (
-    <div className="flex-col" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', padding: 'var(--space-md)', backgroundColor: 'var(--bg)' }}>
-      <AppCard style={{ width: '100%', maxWidth: 'min(400px, calc(100vw - 32px))' }}>
-        <h1 className="text-display" style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>Reset Password</h1>
+    <div className="public-page public-page--default">
+      <AppCard className="public-content-narrow">
+        <h1 className="text-display public-heading-center">Reset Password</h1>
 
         {!token ? (
-          <div className="flex-col" style={{ gap: 'var(--space-md)', alignItems: 'center', textAlign: 'center' }}>
-            <p className="text-sm" style={{ color: 'var(--color-danger-text)', margin: 0 }}>
+          <div className="public-error-body">
+            <p className="public-form-error">
               ⚠️ Missing or invalid password reset token.
             </p>
-            <p className="text-muted text-xs" style={{ margin: 0 }}>
+            <p className="text-muted text-xs public-heading-reset">
               The reset link you followed is invalid or has expired. Please go back to the login screen and request a new password reset link.
             </p>
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: 'var(--space-sm)' }}
+              className="btn btn-primary public-submit-btn public-margin-top-sm"
               onClick={() => navigate('/login')}
             >
               Go to Login
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-            <p className="text-muted text-sm" style={{ margin: 0, textAlign: 'center' }}>
+          <form onSubmit={handleSubmit} className="public-form">
+            <p className="login-instructions">
               Please enter your new password below. It must be at least 8 characters.
             </p>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="public-form-group">
               <label className="text-label" htmlFor="new-password">New Password</label>
               <input
                 id="new-password"
@@ -87,13 +86,12 @@ export default function ResetPasswordView() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="card"
-                style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+                className="public-form-input"
                 disabled={isLoading || !!success}
               />
             </div>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="public-form-group">
               <label className="text-label" htmlFor="confirm-password">Confirm Password</label>
               <input
                 id="confirm-password"
@@ -101,20 +99,18 @@ export default function ResetPasswordView() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="card"
-                style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+                className="public-form-input"
                 disabled={isLoading || !!success}
               />
             </div>
 
-            {error && <p className="text-xs" style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
-            {success && <p className="text-xs" style={{ color: 'var(--primary)', margin: 0, fontWeight: '600' }}>{success}</p>}
+            {error && <p className="public-form-error">{error}</p>}
+            {success && <p className="public-form-success">{success}</p>}
 
             <button
               type="submit"
               disabled={isLoading || !!success}
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: 'var(--space-md)' }}
+              className="btn btn-primary public-submit-btn--md"
             >
               {isLoading ? 'Resetting password...' : 'Reset Password'}
             </button>
@@ -122,8 +118,7 @@ export default function ResetPasswordView() {
             {!success && (
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
-                style={{ alignSelf: 'center', textDecoration: 'underline', cursor: 'pointer', height: 'auto', padding: 0 }}
+                className="public-back-link"
                 onClick={() => navigate('/login')}
               >
                 Cancel and return to Login

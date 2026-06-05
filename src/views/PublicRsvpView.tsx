@@ -197,53 +197,81 @@ export default function PublicRsvpView() {
     }
   };
 
+  const renderEventCard = (titleClass?: string) => {
+    if (!event) return null;
+    return (
+      <div className="rsvp-event-card">
+        <span className={`badge ${event.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'} rsvp-event-badge`}>
+          {event.type}
+        </span>
+        <h2 className={`text-headline rsvp-event-title ${titleClass || ''}`}>
+          {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
+        </h2>
+        
+        <div className="rsvp-event-meta">
+          <div className="rsvp-event-meta-row">
+            <span>📅</span>
+            <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+          </div>
+          <div className="rsvp-event-meta-row">
+            <span>⏰</span>
+            <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
+          </div>
+          <div className="rsvp-event-meta-row rsvp-event-meta-row--top">
+            <span>📍</span>
+            <span>
+              <strong>{event.expand?.venue?.name || event.location}</strong>
+              {event.expand?.venue?.address && <span className="rsvp-event-address">{event.expand?.venue?.address}</span>}
+            </span>
+          </div>
+        </div>
+
+        {event.details && (
+          <div className="rsvp-event-details">
+            {event.details}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderRehearsalsList = () => {
     if (rehearsals.length === 0) return null;
 
     return (
-      <div className="flex-col" style={{ gap: 'var(--space-xs)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginTop: 'var(--space-xs)' }}>
+      <div className="rsvp-rehearsals-container">
         <button 
           onClick={() => setShowRehearsals(!showRehearsals)}
-          style={{ 
-            width: '100%', 
-            padding: '12px 16px', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            background: 'var(--neutral-bg)', 
-            border: 'none',
-            cursor: 'pointer',
-            textAlign: 'left'
-          }}
+          className="rsvp-rehearsals-toggle"
         >
-          <h3 className="text-label" style={{ fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary-deep)', fontSize: '0.75rem', letterSpacing: '0.05em', margin: 0 }}>
+          <h3 className="text-label rsvp-rehearsals-heading">
             📅 Rehearsal Schedule ({rehearsals.length})
           </h3>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', transform: showRehearsals ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+          <span className={`rsvp-rehearsals-arrow ${showRehearsals ? 'rsvp-rehearsals-arrow--open' : ''}`}>
             ▼
           </span>
         </button>
 
         {showRehearsals && (
-          <div className="flex-col" style={{ gap: '8px', padding: '12px 16px', backgroundColor: '#ffffff', borderTop: '1px solid var(--border)' }}>
+          <div className="rsvp-rehearsals-list">
             {rehearsals.map((reh) => {
               return (
-                <div key={reh.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
-                  <div className="flex-col" style={{ gap: '2px' }}>
-                    <span style={{ fontWeight: 700 }}>
+                <div key={reh.id} className="rsvp-rehearsal-item">
+                  <div className="rsvp-rehearsal-info">
+                    <span className="rsvp-rehearsal-date">
                       {formatInTimezone(reh.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })}
                     </span>
-                    <span className="text-muted" style={{ fontSize: '0.7rem' }}>
+                    <span className="text-muted rsvp-rehearsal-venue">
                       📍 {reh.expand?.venue?.name || 'Rehearsal Venue'}
                     </span>
                   </div>
-                  <span className="text-muted" style={{ fontWeight: 500 }}>
+                  <span className="text-muted rsvp-rehearsal-time">
                     {formatInTimezone(reh.date, timezone, { hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
               );
             })}
-            <p className="text-muted" style={{ margin: 'var(--space-xs) 0 0', textAlign: 'center', fontSize: '0.75rem' }}>
+            <p className="text-muted rsvp-rehearsal-hint">
               Need to report a rehearsal absence? Please use your singer dashboard.
             </p>
           </div>
@@ -252,46 +280,59 @@ export default function PublicRsvpView() {
     );
   };
 
+  const renderNoteSection = (textareaClass?: string) => {
+    if (event?.type !== 'Rehearsal' || selectedRsvp !== 'No') return null;
+    return (
+      <div className="rsvp-note-section">
+        <label className="rsvp-note-label">
+          Why are you unable to attend?
+        </label>
+        <textarea
+          value={rsvpNote}
+          onChange={(e) => setRsvpNote(e.target.value)}
+          placeholder="Briefly let the admins know why you cannot make this rehearsal."
+          className={`rsvp-textarea ${textareaClass || ''}`}
+          maxLength={1000}
+        />
+        <p className="rsvp-note-hint">
+          This note is visible to choir admins.
+        </p>
+      </div>
+    );
+  };
+
   if (status === 'loading') {
     return (
-      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', backgroundColor: 'var(--primary-light)', padding: 'var(--space-md)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)' }}>
-          <div style={{ fontSize: '2.5rem', animation: 'spin 1.5s linear infinite' }}>🔄</div>
-          <h2 style={{ color: 'var(--primary-deep)', fontWeight: 800, margin: 0 }}>Loading Secure RSVP Details...</h2>
-          <p className="text-muted" style={{ margin: 0 }}>Preparing event context, please wait.</p>
+      <div className="public-page public-page--primary">
+        <div className="public-loading-container">
+          <div className="public-loading-icon">🔄</div>
+          <h2 className="public-loading-title">Loading Secure RSVP Details...</h2>
+          <p className="text-muted public-loading-subtitle">Preparing event context, please wait.</p>
         </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }
 
   if (status === 'error' || !event || !profile) {
     return (
-      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', backgroundColor: '#fef2f2', padding: 'var(--space-md)' }}>
-        <AppCard style={{ width: '100%', maxWidth: '440px', padding: 'var(--space-xl)', textAlign: 'center', border: '1px solid #fee2e2' }}>
-          <div className="flex-col" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
-            <div style={{ fontSize: '3.5rem' }}>⚠️</div>
-            <h2 style={{ margin: 0, color: '#991b1b', fontWeight: 800 }}>RSVP Request Failed</h2>
-            <p className="text-body" style={{ color: 'var(--neutral-text)', lineHeight: 1.6, margin: 'var(--space-xs) 0 0 0' }}>
+      <div className="public-page public-page--error">
+        <AppCard className="public-content-sm public-error-card">
+          <div className="public-error-body">
+            <div className="public-error-icon">⚠️</div>
+            <h2 className="public-error-heading">RSVP Request Failed</h2>
+            <p className="public-error-text">
               {errorMessage}
             </p>
-            <div style={{ marginTop: 'var(--space-md)', width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <a 
-                href="/login" 
-                className="btn btn-primary" 
-                style={{ display: 'inline-flex', width: '100%', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', height: '44px', fontWeight: 700 }}
+            <div className="public-error-actions">
+              <a
+                href="/login"
+                className="btn btn-primary public-error-link"
               >
                 Sign In to Member Portal
               </a>
               <a
                 href="mailto:admin@choir.org"
-                className="btn btn-ghost"
-                style={{ display: 'inline-flex', width: '100%', justifyContent: 'center', alignItems: 'center', textDecoration: 'none', height: '44px', border: '1px solid var(--border)' }}
+                className="btn btn-ghost public-error-link public-error-link--ghost"
               >
                 📧 Contact Choir Admins
               </a>
@@ -305,60 +346,17 @@ export default function PublicRsvpView() {
   const isAttending = selectedRsvp === 'Yes';
 
   return (
-    <div className="flex-col" style={{ minHeight: '100vh', width: '100vw', backgroundColor: 'var(--primary-light)', padding: 'var(--space-lg) var(--space-md)', boxSizing: 'border-box' }}>
-      <style>{`
-        .rsvp-button-group {
-          display: flex;
-          gap: var(--space-sm);
-          width: 100%;
-        }
-        .rsvp-button-group-segment {
-          display: flex;
-          background-color: #f1f5f9;
-          padding: 4px;
-          border-radius: 10px;
-          border: 1px solid var(--border);
-          width: 100%;
-          height: 48px;
-        }
-        @media (max-width: 480px) {
-          .rsvp-button-group {
-            flex-direction: column !important;
-          }
-          .rsvp-button-group-segment {
-            flex-direction: column !important;
-            height: auto !important;
-            gap: 8px;
-            background-color: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-          }
-          .rsvp-button-group-segment .btn {
-            height: 48px !important;
-            box-shadow: var(--shadow-sm) !important;
-            border-radius: var(--radius-md) !important;
-          }
-          .rsvp-button-group-segment .btn[style*="background-color: transparent"] {
-            background-color: #f8fafc !important;
-            color: #64748b !important;
-            border: 1px solid var(--border) !important;
-          }
-          .flex-responsive {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
-        }
-      `}</style>
-      <div style={{ margin: 'auto', width: '100%', maxWidth: '540px' }}>
-        <AppCard style={{ width: '100%', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', border: '1px solid rgba(74, 117, 89, 0.15)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
+    <div className="public-page public-page--primary public-page--top">
+      <div className="public-content-lg">
+        <AppCard className="public-main-card">
           
           {rsvpWindow.isReadOnly && (
-            <div className="card" style={{ padding: 'var(--space-md)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--neutral-bg)' }}>
-              <p className="text-muted" style={{ margin: 0 }}>
+            <div className="card rsvp-readonly-banner">
+              <p className="text-muted">
                 {rsvpWindow.reason}
               </p>
               {event?.type === 'Performance' && (
-                <p className="text-muted" style={{ margin: 'var(--space-xs) 0 0', fontSize: '0.75rem' }}>
+                <p className="text-muted rsvp-readonly-hint">
                   You can still report future rehearsal absences from your singer dashboard.
                 </p>
               )}
@@ -367,54 +365,27 @@ export default function PublicRsvpView() {
 
           {!rsvpWindow.canSubmit ? (
             /* Read-Only Screen */
-            <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-              <div className="flex-col" style={{ alignItems: 'center', textAlign: 'center', gap: 'var(--space-xs)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>📅</div>
-                <h1 className="text-display" style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--primary-deep)' }}>
+            <div className="public-section">
+              <div className="public-header">
+                <div className="public-header-icon">📅</div>
+                <h1 className="public-header-title">
                   RSVP Details
                 </h1>
-                <p className="text-muted" style={{ margin: 0, fontSize: '0.95rem' }}>
-                  Hello <strong style={{ color: 'var(--neutral-text)' }}>{profile.name}</strong>, the details for this event are shown below.
+                <p className="public-header-subtitle text-muted">
+                  Hello <strong>{profile.name}</strong>, the details for this event are shown below.
                 </p>
               </div>
 
               {/* Event Details Summary */}
-              <div className="flex-col" style={{ gap: 'var(--space-sm)', backgroundColor: 'var(--neutral-bg)', border: '1px solid var(--border)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
-                <span className={`badge ${event.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ alignSelf: 'flex-start', fontSize: '10px', padding: '3px 8px' }}>
-                  {event.type}
-                </span>
-                <h2 className="text-headline" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
-                  {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
-                </h2>
-                
-                <div className="flex-col" style={{ gap: '6px', fontSize: '0.9rem', color: 'var(--neutral-text)', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span>📅</span>
-                    <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span>⏰</span>
-                    <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span>📍</span>
-                    <span><strong>{event.expand?.venue?.name || event.location}</strong></span>
-                  </div>
-                </div>
-
-                {event.details && (
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '10px', fontSize: '0.85rem', color: 'var(--neutral-muted)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                    {event.details}
-                  </div>
-                )}
-              </div>
+              {renderEventCard()}
 
               {renderRehearsalsList()}
 
-              {/* Show the singer’s current response as read-only */}
-              <div className="card" style={{ padding: 'var(--space-md)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: '#ffffff', textAlign: 'center' }}>
-                <div className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--neutral-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your response</div>
-                <div className="text-headline" style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '8px', color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
+              {/* Show the singer's current response as read-only */}
+              <div className="card rsvp-response-card">
+                <div className="rsvp-response-label">Your response</div>
+                {/* @allow-inline-style - dynamic color based on dbRsvp state */}
+                <div className="text-headline rsvp-response-value" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
                     : dbRsvp === 'No'
@@ -422,35 +393,24 @@ export default function PublicRsvpView() {
                     : 'No response recorded'}
                 </div>
                 {dbRsvp === 'No' && rsvpNote && (
-                  <div style={{ marginTop: '12px', fontSize: '0.9rem', color: 'var(--neutral-text)', borderTop: '1px solid var(--border)', paddingTop: '8px', textAlign: 'left' }}>
+                  <div className="rsvp-response-note">
                     <strong>Note:</strong> {rsvpNote}
                   </div>
                 )}
               </div>
 
-              <div className="flex-responsive" style={{ gap: 'var(--space-sm)', width: '100%', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
+              <div className="rsvp-actions-row">
                 {dbRsvp === 'Yes' && (
                   <button 
                     onClick={handleDownloadCalendar}
-                    className="btn btn-secondary" 
-                    style={{ flex: 1, height: '44px', fontWeight: 700, justifyContent: 'center', gap: '6px' }}
+                    className="btn btn-secondary rsvp-action-btn"
                   >
                     📅 Add to Calendar (.ics)
                   </button>
                 )}
                 <a 
                   href="/login" 
-                  className="btn btn-ghost" 
-                  style={{ 
-                    flex: 1, 
-                    height: '44px', 
-                    fontWeight: 700, 
-                    justifyContent: 'center', 
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    border: '1px solid var(--border)'
-                  }}
+                  className="btn btn-ghost rsvp-action-link"
                 >
                   Sign In to Portal
                 </a>
@@ -458,86 +418,35 @@ export default function PublicRsvpView() {
             </div>
           ) : !isConfirmed ? (
             /* Confirmation Screen (Prevents pre-clicks, verifies human action) */
-            <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-              <div className="flex-col" style={{ alignItems: 'center', textAlign: 'center', gap: 'var(--space-xs)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>✉️</div>
-                <h1 className="text-display" style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--primary-deep)' }}>
+            <div className="public-section">
+              <div className="public-header">
+                <div className="public-header-icon">✉️</div>
+                <h1 className="public-header-title">
                   Confirm Your RSVP
                 </h1>
-                <p className="text-muted" style={{ margin: 0, fontSize: '0.95rem' }}>
-                  Hello <strong style={{ color: 'var(--neutral-text)' }}>{profile.name}</strong>, please confirm your attendance status below.
+                <p className="public-header-subtitle text-muted">
+                  Hello <strong>{profile.name}</strong>, please confirm your attendance status below.
                 </p>
               </div>
 
               {/* Event Details Summary */}
-              <div className="flex-col" style={{ gap: 'var(--space-sm)', backgroundColor: 'var(--neutral-bg)', border: '1px solid var(--border)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
-                <span className={`badge ${event.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ alignSelf: 'flex-start', fontSize: '10px', padding: '3px 8px' }}>
-                  {event.type}
-                </span>
-                <h2 className="text-headline" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
-                  {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
-                </h2>
-                
-                <div className="flex-col" style={{ gap: '6px', fontSize: '0.9rem', color: 'var(--neutral-text)', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span>📅</span>
-                    <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span>⏰</span>
-                    <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span>📍</span>
-                    <span><strong>{event.expand?.venue?.name || event.location}</strong></span>
-                  </div>
-                </div>
-              </div>
+              {renderEventCard()}
 
               {renderRehearsalsList()}
 
               {/* Interactive Buttons */}
-              <div className="flex-col" style={{ gap: '12px' }}>
-                {event.type === 'Rehearsal' && selectedRsvp === 'No' && (
-                  <div className="flex-col" style={{ gap: '8px', marginBottom: '8px', textAlign: 'left' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--neutral-text)' }}>
-                      Why are you unable to attend?
-                    </label>
-                    <textarea
-                      value={rsvpNote}
-                      onChange={(e) => setRsvpNote(e.target.value)}
-                      placeholder="Briefly let the admins know why you cannot make this rehearsal."
-                      style={{ 
-                        width: '100%', 
-                        minHeight: '100px', 
-                        padding: '12px', 
-                        borderRadius: 'var(--radius-md)', 
-                        border: '1px solid var(--border)',
-                        fontSize: '0.9rem',
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                        boxSizing: 'border-box'
-                      }}
-                      maxLength={1000}
-                    />
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-                      This note is visible to choir admins.
-                    </p>
-                  </div>
-                )}
-                <p className="text-muted" style={{ fontSize: '0.85rem', margin: 0, textAlign: 'center' }}>
+              <div className="public-section-gap-12">
+                {renderNoteSection()}
+                <p className="text-muted rsvp-prompt">
                   Are you planning to attend?
                 </p>
                 <div className="rsvp-button-group">
                   <button
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
-                    className="btn btn-primary"
+                    className="btn btn-primary rsvp-confirm-btn"
+                    // @allow-inline-style - dynamic opacity and border based on selectedRsvp state
                     style={{
-                      flex: 1,
-                      height: '48px',
-                      fontWeight: 700,
-                      justifyContent: 'center',
                       opacity: selectedRsvp === 'Yes' ? 1 : 0.6,
                       border: selectedRsvp === 'Yes' ? '2px solid var(--primary-deep)' : '1px solid var(--border)'
                     }}
@@ -553,12 +462,9 @@ export default function PublicRsvpView() {
                       }
                     }}
                     disabled={isUpdating}
-                    className="btn btn-danger"
+                    className="btn btn-danger rsvp-confirm-btn"
+                    // @allow-inline-style - dynamic opacity and border based on selectedRsvp state
                     style={{
-                      flex: 1,
-                      height: '48px',
-                      fontWeight: 700,
-                      justifyContent: 'center',
                       backgroundColor: '#ef4444',
                       color: 'white',
                       opacity: selectedRsvp === 'No' ? 1 : 0.6,
@@ -571,120 +477,60 @@ export default function PublicRsvpView() {
               </div>
 
               {/* Escape hatch for wrong person / forwarded links */}
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)', textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              <div className="public-footer rsvp-identity-row">
                 <span>Not <strong>{profile.name}</strong>? </span>
-                <a href="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Sign in as yourself</a>
+                <a href="/login" className="rsvp-identity-link">Sign in as yourself</a>
                 <span> or </span>
-                <a href="mailto:admin@choir.org" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Contact Admins</a>
+                <a href="mailto:admin@choir.org" className="rsvp-identity-link">Contact Admins</a>
               </div>
             </div>
           ) : (
             /* Success Screen (Shown once response confirmed or loaded from previous RSVP) */
-            <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+            <div className="public-section">
               {/* Header Status Visual */}
-              <div className="flex-col" style={{ alignItems: 'center', textAlign: 'center', gap: 'var(--space-xs)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
+              <div className="public-header">
                 <div 
+                  className="rsvp-status-icon"
+                  // @allow-inline-style - dynamic background/color based on isAttending state
                   style={{ 
-                    fontSize: '3.5rem', 
                     backgroundColor: isAttending ? '#e6f4ea' : '#fce8e6', 
                     color: isAttending ? 'var(--primary)' : '#c5221f',
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 'var(--space-xs)',
-                    transition: 'all 0.3s ease'
                   }}
                 >
                   {isAttending ? '✓' : '✗'}
                 </div>
-                <h1 className="text-display" style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--primary-deep)' }}>
+                <h1 className="public-header-title">
                   {isAttending ? 'Confirmed: Attending' : 'Confirmed: Not Attending'}
                 </h1>
-                <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem' }}>
-                  Thank you, <strong style={{ color: 'var(--neutral-text)' }}>{profile.name}</strong>. Your response has been securely recorded.
+                <p className="public-header-subtitle text-muted">
+                  Thank you, <strong>{profile.name}</strong>. Your response has been securely recorded.
                 </p>
               </div>
 
               {/* Event Details Card */}
-              <div className="flex-col" style={{ gap: 'var(--space-sm)', backgroundColor: 'var(--neutral-bg)', border: '1px solid var(--border)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
-                <span className={`badge ${event.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ alignSelf: 'flex-start', fontSize: '10px', padding: '3px 8px' }}>
-                  {event.type}
-                </span>
-                <h2 className="text-headline" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-                  {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
-                </h2>
-                
-                <div className="flex-col" style={{ gap: '6px', fontSize: '0.9rem', color: 'var(--neutral-text)', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span>📅</span>
-                    <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span>⏰</span>
-                    <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span>📍</span>
-                    <span>
-                      <strong>{event.expand?.venue?.name || event.location}</strong>
-                      {event.expand?.venue?.address && <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neutral-muted)', marginTop: '2px' }}>{event.expand?.venue?.address}</span>}
-                    </span>
-                  </div>
-                </div>
-
-                {event.details && (
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '10px', fontSize: '0.85rem', color: 'var(--neutral-muted)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                    {event.details}
-                  </div>
-                )}
-              </div>
+              {renderEventCard('rsvp-event-title--lg')}
 
               {renderRehearsalsList()}
 
               {/* Modify State & Actions */}
-              <div className="flex-col" style={{ gap: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
+              <div className="rsvp-change-section">
+                {renderNoteSection('rsvp-textarea--short')}
                 {event.type === 'Rehearsal' && selectedRsvp === 'No' && (
-                  <div className="flex-col" style={{ gap: '8px', marginBottom: '8px', textAlign: 'left' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--neutral-text)' }}>
-                      Why are you unable to attend?
-                    </label>
-                    <textarea
-                      value={rsvpNote}
-                      onChange={(e) => setRsvpNote(e.target.value)}
-                      placeholder="Briefly let the admins know why you cannot make this rehearsal."
-                      style={{ 
-                        width: '100%', 
-                        minHeight: '80px', 
-                        padding: '12px', 
-                        borderRadius: 'var(--radius-md)', 
-                        border: '1px solid var(--border)',
-                        fontSize: '0.9rem',
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                        boxSizing: 'border-box'
-                      }}
-                      maxLength={1000}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-                        This note is visible to choir admins.
-                      </p>
-                      <button 
-                        onClick={() => handleConfirmRsvp('No')}
-                        disabled={isUpdating}
-                        className="btn btn-primary"
-                        style={{ height: '36px', fontWeight: 700, padding: '0 16px', fontSize: '0.85rem' }}
-                      >
-                        {isUpdating ? 'Saving...' : 'Save Note'}
-                      </button>
-                    </div>
+                  <div className="rsvp-note-footer">
+                    <p className="rsvp-note-hint">
+                      This note is visible to choir admins.
+                    </p>
+                    <button 
+                      onClick={() => handleConfirmRsvp('No')}
+                      disabled={isUpdating}
+                      className="btn btn-primary rsvp-save-note-btn"
+                    >
+                      {isUpdating ? 'Saving...' : 'Save Note'}
+                    </button>
                   </div>
                 )}
-                <div className="flex-col" style={{ gap: '6px' }}>
-                  <label className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
+                <div className="rsvp-change-toggle-section">
+                  <label className="text-label rsvp-change-label">
                     Need to change your response?
                   </label>
                   
@@ -692,20 +538,13 @@ export default function PublicRsvpView() {
                     <button
                       onClick={() => handleConfirmRsvp('Yes')}
                       disabled={isUpdating}
-                      className="btn"
-                      style={{
-                        flex: 1,
-                        height: '100%',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        transition: 'all 0.2s ease',
-                        backgroundColor: isAttending ? 'var(--primary)' : 'transparent',
-                        color: isAttending ? '#ffffff' : 'var(--neutral-muted)',
-                        boxShadow: isAttending ? '0 2px 8px rgba(74, 117, 89, 0.2)' : 'none'
-                      }}
+                      className={`btn rsvp-segment-btn ${!isAttending ? 'rsvp-segment-btn--inactive' : ''}`}
+                      // @allow-inline-style - dynamic active state colors based on isAttending
+                      style={isAttending ? {
+                        backgroundColor: 'var(--primary)',
+                        color: '#ffffff',
+                        boxShadow: '0 2px 8px rgba(74, 117, 89, 0.2)'
+                      } : undefined}
                     >
                       {isUpdating && isAttending ? 'Updating...' : 'I Will Attend'}
                     </button>
@@ -718,20 +557,13 @@ export default function PublicRsvpView() {
                         }
                       }}
                       disabled={isUpdating}
-                      className="btn"
-                      style={{
-                        flex: 1,
-                        height: '100%',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        transition: 'all 0.2s ease',
-                        backgroundColor: !isAttending ? '#ef4444' : 'transparent',
-                        color: !isAttending ? '#ffffff' : 'var(--neutral-muted)',
-                        boxShadow: !isAttending ? '0 2px 8px rgba(239, 68, 68, 0.2)' : 'none'
-                      }}
+                      className={`btn rsvp-segment-btn ${isAttending ? 'rsvp-segment-btn--inactive' : ''}`}
+                      // @allow-inline-style - dynamic active state colors based on isAttending
+                      style={!isAttending ? {
+                        backgroundColor: '#ef4444',
+                        color: '#ffffff',
+                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)'
+                      } : undefined}
                     >
                       {isUpdating && !isAttending ? 'Updating...' : 'I Cannot Attend'}
                     </button>
@@ -739,35 +571,24 @@ export default function PublicRsvpView() {
                 </div>
 
                 {/* Escape hatch for wrong person on success screen */}
-                <div style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                <div className="rsvp-identity-row rsvp-identity-row--mb">
                   <span>Not <strong>{profile.name}</strong>? </span>
-                  <a href="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Sign in as yourself</a>
+                  <a href="/login" className="rsvp-identity-link">Sign in as yourself</a>
                 </div>
 
                 {/* Helper Action Buttons */}
-                <div className="flex-responsive" style={{ gap: 'var(--space-sm)', width: '100%' }}>
+                <div className="rsvp-actions-row">
                   {isAttending && (
                     <button 
                       onClick={handleDownloadCalendar}
-                      className="btn btn-secondary" 
-                      style={{ flex: 1, height: '44px', fontWeight: 700, justifyContent: 'center', gap: '6px' }}
+                      className="btn btn-secondary rsvp-action-btn"
                     >
                       📅 Add to Calendar (.ics)
                     </button>
                   )}
                   <a 
                     href="/login" 
-                    className="btn btn-ghost" 
-                    style={{ 
-                      flex: 1, 
-                      height: '44px', 
-                      fontWeight: 700, 
-                      justifyContent: 'center', 
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      border: '1px solid var(--border)'
-                    }}
+                    className="btn btn-ghost rsvp-action-link"
                   >
                     Sign In to Portal
                   </a>

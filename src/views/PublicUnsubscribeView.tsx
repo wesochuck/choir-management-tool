@@ -45,21 +45,21 @@ export default function PublicUnsubscribeView() {
   }, [token]);
 
   return (
-    <div className="container" style={{ maxWidth: '500px', paddingTop: '80px' }}>
+    <div className="public-unsubscribe-container">
       <AppCard title="Unsubscribe from Emails">
-        <div className="flex-col" style={{ gap: 'var(--space-md)', textAlign: 'center' }}>
+        <div className="public-unsubscribe-body">
           {status === 'loading' && (
             <p className="text-muted">Processing your request...</p>
           )}
 
           {status === 'success' && (
             <>
-              <div style={{ fontSize: '3rem' }}>✅</div>
+              <div className="public-emoji-lg">✅</div>
               <h3 className="text-headline">Unsubscribed Successfully</h3>
               <p className="text-muted">
                 You have been unsubscribed from all future choir management emails.
               </p>
-              <div style={{ marginTop: 'var(--space-md)' }}>
+              <div className="public-margin-top-md">
                 <Link to="/login" className="btn btn-primary">Go to Login</Link>
               </div>
             </>
@@ -67,12 +67,12 @@ export default function PublicUnsubscribeView() {
 
           {status === 'error' && (
             <>
-              <div style={{ fontSize: '3rem' }}>❌</div>
-              <h3 className="text-headline" style={{ color: 'var(--color-danger-text)' }}>Unsubscribe Failed</h3>
+              <div className="public-emoji-lg">❌</div>
+              <h3 className="text-headline public-unsubscribe-error-title">Unsubscribe Failed</h3>
               <p className="text-muted">
                 {errorMessage}
               </p>
-              <div style={{ marginTop: 'var(--space-md)' }}>
+              <div className="public-margin-top-md">
                 <Link to="/login" className="btn btn-ghost">Return to Site</Link>
               </div>
             </>

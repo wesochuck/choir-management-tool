@@ -797,4 +797,587 @@
   color: var(--text-muted);
 }
 
+/* -------------------------------------------------------------
+   11. Singer RSVP Row styling (extracted from SingerPerformanceRsvpRow)
+   ------------------------------------------------------------- */
+.singer-rsvp-row {
+  padding: var(--space-md);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  box-shadow: none;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  transition: border-color 0.2s;
+}
 
+.singer-rsvp-row:hover {
+  border-color: var(--primary) !important;
+}
+
+.singer-rsvp-row-date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 100px;
+}
+
+.singer-rsvp-row-date-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.singer-rsvp-row-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.singer-rsvp-row-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.singer-rsvp-row-venue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.singer-rsvp-row-venue svg {
+  flex-shrink: 0;
+}
+
+.singer-rsvp-row-venue-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.singer-rsvp-row-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.singer-rsvp-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.singer-rsvp-control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.singer-rsvp-control-group-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.singer-rsvp-select-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.singer-rsvp-saving-spinner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.singer-rsvp-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+.singer-rsvp-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.rsvp-select {
+  padding: 0 8px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.rsvp-select-success {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.rsvp-select-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.rsvp-select-neutral,
+.rsvp-select-warning {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #4b5563;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+@media (max-width: 600px) {
+  .singer-rsvp-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-sm) !important;
+  }
+  .singer-rsvp-row > div {
+    min-width: 100% !important;
+  }
+  .singer-rsvp-controls {
+    margin-top: var(--space-xs);
+    border-top: 1px dashed var(--border);
+    padding-top: var(--space-sm);
+    justify-content: flex-start !important;
+  }
+}
+
+/* -------------------------------------------------------------
+   12. Floating Save Bar component classes
+   ------------------------------------------------------------- */
+.floating-save-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  z-index: 1000;
+  width: calc(100% - 48px);
+  max-width: 600px;
+}
+
+.floating-save-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.floating-save-bar-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.floating-save-bar-actions {
+  display: flex;
+  gap: 12px;
+}
+
+
+
+
+/* -------------------------------------------------------------
+   13. Phase 3 Admin Settings Refactoring
+   ------------------------------------------------------------- */
+.admin-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.admin-settings-nested-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--border);
+  margin-top: var(--space-xs);
+}
+
+.admin-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.admin-settings-input-sm {
+  width: 100%;
+  max-width: 120px;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.admin-settings-input-md {
+  width: 100%;
+  max-width: 300px;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.admin-settings-input-lg {
+  width: 100%;
+  max-width: 400px;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.admin-settings-input-full {
+  width: 100%;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.admin-checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+}
+
+.admin-checkbox-input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+}
+
+.admin-checkbox-description {
+  margin: 0;
+  margin-top: -8px;
+}
+
+.admin-settings-description {
+  margin: 0;
+}
+
+.admin-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--space-sm) 0;
+}
+
+.admin-settings-hint {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* Specific to Section/Voice Part editors */
+.admin-voice-part-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr 150px 130px 90px 80px;
+  gap: var(--space-md);
+  align-items: center;
+  width: 100%;
+}
+
+.admin-section-bucket-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr 200px 80px;
+  gap: var(--space-md);
+  align-items: center;
+  width: 100%;
+}
+
+.admin-color-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.admin-color-picker-input-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-color-picker-input {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.admin-color-hex-input {
+  width: 80px;
+  padding: 0 8px;
+  height: 32px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  margin: 0;
+}
+.admin-color-hex-input-lg {
+  width: 90px;
+  padding: 0 8px;
+  height: 32px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  margin: 0;
+}
+
+.admin-color-picker-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px;
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1));
+  z-index: 101;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-color-preset-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.1s ease;
+}
+.admin-color-preset-btn.selected {
+  border: 2px solid var(--text-main, #000000);
+  transform: scale(1.1);
+}
+.admin-color-preset-btn:not(.selected) {
+  border: 1px solid var(--border);
+  transform: scale(1);
+}
+
+.admin-color-custom-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-main);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  justify-content: center;
+  background-color: var(--bg-light, #f9fafb);
+  text-align: center;
+  margin: 0;
+}
+
+.admin-action-btn-sm {
+  height: 36px;
+  min-height: 36px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-action-btn-sm-gap {
+  gap: 6px;
+}
+
+.admin-align-start {
+  align-self: flex-start;
+}
+
+.admin-loading-container {
+  padding: var(--space-xl);
+}
+.admin-loading-container-sm {
+  padding: var(--space-md) 0;
+}
+
+.admin-settings-row-apart {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-margin-0 {
+  margin: 0;
+}
+
+.admin-flex-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-flex-center-lg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-flex-row-gap-sm {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+}
+
+.admin-flex-row-gap-xs {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-xs);
+}
+
+.admin-flex-row-gap-md {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+}
+
+.admin-font-weight-600 {
+  font-weight: 600;
+}
+
+/* Roster Summary Specific */
+.admin-roster-summary-badge-singer {
+  font-size: var(--font-size-label);
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+.admin-roster-summary-badge-staff {
+  font-size: var(--font-size-label);
+  padding: 6px 16px;
+  border-radius: 20px;
+  background-color: var(--border);
+  color: var(--text-muted);
+}
+
+.admin-roster-summary-sections {
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-roster-summary-section-card {
+  text-align: center;
+  border-radius: var(--radius-md);
+  background-color: var(--primary-light);
+  border-width: 2px;
+  border-style: solid;
+}
+
+.admin-roster-summary-section-title {
+  color: var(--primary-deep);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-roster-summary-section-count {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary-deep);
+  line-height: 1;
+}
+
+.admin-roster-summary-parts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: var(--space-sm);
+  margin-top: 0;
+}
+
+.admin-roster-summary-part-card {
+  text-align: center;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg);
+  border-style: solid;
+}
+
+.admin-roster-summary-part-title {
+  font-weight: 700;
+}
+
+/* Settings View specific */
+.admin-settings-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-xl) 0;
+}
+
+.admin-settings-webhook-input {
+  flex: 1;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--border-light, #f8fafc);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.admin-settings-webhook-btn {
+  height: 40px;
+  white-space: nowrap;
+}
+
+.admin-settings-webhook-footer {
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--border-light, #f8fafc);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}

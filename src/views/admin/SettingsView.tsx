@@ -113,18 +113,18 @@ export default function SettingsView() {
     }
   };
 
-  if (isLoading) return <div style={{ padding: 'var(--space-xl)' }}>Loading system settings...</div>;
+  if (isLoading) return <div className="admin-settings-container">Loading system settings...</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>System Settings</h1>
+    <div className="flex-col admin-settings-container">
+      <div className="admin-view-header">
+        <h1 className="admin-header-title">System Settings</h1>
       </div>
 
-      {message && <div className="badge badge-rehearsal" style={{ alignSelf: 'flex-start' }}>{message}</div>}
+      {message && <div className="badge badge-rehearsal admin-badge-inline">{message}</div>}
 
       <AppCard title="Choir Name">
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col admin-settings-field">
           <label className="text-label" htmlFor="choir-name">Organization Name</label>
           <input
             id="choir-name"
@@ -132,17 +132,16 @@ export default function SettingsView() {
             value={choirName}
             onChange={(event) => setChoirName(event.target.value)}
             placeholder="e.g. Downtown Community Chorale"
-            className="card"
-            style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            className="card admin-settings-input-sm"
           />
-          <p className="text-muted" style={{ margin: 0 }}>
+          <p className="text-muted admin-settings-hint">
             Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
           </p>
         </div>
       </AppCard>
 
       <AppCard title="Public Homepage URL">
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col admin-settings-field">
           <label className="text-label" htmlFor="homepage-url">Homepage Address</label>
           <input
             id="homepage-url"
@@ -150,30 +149,24 @@ export default function SettingsView() {
             value={homepageUrl}
             onChange={(event) => setHomepageUrl(event.target.value)}
             placeholder="e.g. https://www.mychoir.org"
-            className="card"
-            style={{ width: '100%', maxWidth: '400px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            className="card admin-settings-input-sm"
           />
-          <p className="text-muted" style={{ margin: 0 }}>
+          <p className="text-muted admin-settings-hint">
             The main public website address where applicants are redirected after submitting their audition sheet successfully.
           </p>
         </div>
       </AppCard>
 
       <AppCard title="Choir Timezone">
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col admin-settings-field">
           <label className="text-label" htmlFor="choir-timezone">Active Timezone</label>
           <select
             id="choir-timezone"
             value={timezone}
             onChange={(event) => setTimezone(event.target.value)}
-            className="card"
+            className="card admin-settings-input-sm"
+            // @allow-inline-style - explicit pointer cursor and dynamic background color overrides
             style={{
-              width: '100%',
-              maxWidth: '400px',
-              padding: '0 12px',
-              height: '40px',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
               backgroundColor: 'var(--card-bg, #ffffff)',
               color: 'inherit',
               cursor: 'pointer'
@@ -194,7 +187,7 @@ export default function SettingsView() {
               ))}
             </optgroup>
           </select>
-          <p className="text-muted" style={{ margin: 0 }}>
+          <p className="text-muted admin-settings-hint">
             This timezone controls all event scheduling, display clocks, and email/SMS automatic reminders.
           </p>
         </div>
@@ -258,40 +251,38 @@ function QueueWebhookSettings() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (isLoading) return <div style={{ padding: 'var(--space-md) 0' }} className="text-muted">Loading queue configurations...</div>;
+  if (isLoading) return <div className="text-muted admin-settings-loading">Loading queue configurations...</div>;
 
   return (
     <AppCard title="Email Queue Webhook">
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <p className="text-muted" style={{ margin: 0 }}>
+      <div className="flex-col admin-settings-group">
+        <p className="text-muted admin-settings-hint">
           PocketHost triggers this URL to process single-recipient messages sequentially in the background.
         </p>
 
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col admin-settings-field">
           <label className="text-label" htmlFor="webhook-url">Target Webhook URL</label>
-          <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
+          <div className="flex-row admin-settings-inline-row">
+            // @allow-inline-style - layout overrides
             <input
               id="webhook-url"
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="card"
+              className="card admin-settings-input-sm"
+              // @allow-inline-style - dynamic flex growth and background color overlay
               style={{
                 flex: 1,
-                padding: '0 12px',
-                height: '40px',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--border-light, #f8fafc)',
-                color: 'var(--text-muted)',
-                fontSize: '14px'
+                color: 'var(--text-muted)'
               }}
             />
             <button
               type="button"
               disabled={!token}
               onClick={handleCopy}
-              className="btn btn-secondary"
+              className="btn btn-ghost" 
+              // @allow-inline-style - explicit height matching
               style={{ height: '40px', whiteSpace: 'nowrap' }}
             >
               {copied ? 'Copied!' : 'Copy Link'}
@@ -299,8 +290,8 @@ function QueueWebhookSettings() {
           </div>
         </div>
 
-        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--border-light, #f8fafc)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-          <div className="text-muted" style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+        <div className="flex-row admin-settings-terminal-row">
+          <div className="text-muted admin-settings-terminal-text">
             <strong>Status:</strong> {token ? `Active (${token.substring(0, 8)}...)` : 'Unassigned'}
           </div>
           <button

@@ -63,18 +63,18 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
     <AppCard 
       title="Voice Part Balance"
       actions={
-        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
-          <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
+        <div className="admin-flex-row-gap-sm">
+          <span className="badge badge-rehearsal admin-roster-summary-badge-singer">
             {singerTotal} Singers
           </span>
           {staffTotal > 0 && (
-            <span className="badge badge-muted" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px', backgroundColor: 'var(--border)', color: 'var(--text-muted)' }}>
+            <span className="badge badge-muted admin-roster-summary-badge-staff">
               {staffTotal} Staff
             </span>
           )}
         </div>
       }
-      style={{ gap: 'var(--space-md)' }}
+      className="admin-settings-group"
     >
       <style>{`
         .voice-section-card {
@@ -120,6 +120,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       {/* Section Subtotals */}
       <div 
         className="roster-summary-sections"
+        // @allow-inline-style - dynamic grid columns based on section list length
         style={{ 
           display: 'grid', 
           gridTemplateColumns: `repeat(${sectionsList.length}, 1fr)`, 
@@ -135,6 +136,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
               key={sec.code} 
               className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
               onClick={() => onVoicePartToggle?.(sec.code)}
+              // @allow-inline-style - dynamic border color
               style={{ 
                 textAlign: 'center', 
                 padding: 'calc(var(--space-md) - 2px)', 
@@ -146,9 +148,11 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 borderColor: isSelected ? 'var(--primary)' : 'transparent'
               }}
             >
+              // @allow-inline-style - typography overrides
               <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {sec.name}
               </div>
+              // @allow-inline-style - typography overrides
               <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec.code] || 0}</div>
             </div>
           );
@@ -156,6 +160,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       </div>
 
       {/* Individual Part Breakdowns */}
+      {/* @allow-inline-style - dynamic grid layout configuration */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
@@ -169,6 +174,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
               key={vp.label} 
               className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
               onClick={() => onVoicePartToggle?.(vp.label)}
+              // @allow-inline-style - dynamic padding and borders based on selection state
               style={{ 
                 textAlign: 'center', 
                 borderRadius: 'var(--radius-sm)', 
@@ -179,7 +185,9 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
               }}
             >
+              // @allow-inline-style - typography overrides
               <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
+              // @allow-inline-style - typography overrides
               <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[vp.label] || 0}</div>
             </div>
           );

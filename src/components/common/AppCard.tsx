@@ -14,17 +14,13 @@ export const AppCard: React.FC<AppCardProps> = ({
 }) => {
   return (
     <div 
-      className={`card flex-col relative-row ${className}`} 
-      style={{ 
-        padding: noPadding ? 0 : 'var(--space-lg)', 
-        gap: 'var(--space-lg)',
-        ...style 
-      }}
+      className={`card flex-col relative-row ${noPadding ? 'no-padding' : ''} ${className}`} 
+      style={style}
     >
       {(title || actions) && (
-        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: title ? 'var(--space-xs)' : 0 }}>
-          {title && <h3 style={{ margin: 0 }}>{title}</h3>}
-          {actions && <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>{actions}</div>}
+        <div className={`card-header ${title ? 'has-title' : ''}`}>
+          {title && <h3 className="card-title">{title}</h3>}
+          {actions && <div className="card-actions">{actions}</div>}
         </div>
       )}
       {children}

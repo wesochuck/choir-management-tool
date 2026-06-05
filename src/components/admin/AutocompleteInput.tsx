@@ -96,7 +96,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   }, [activeIndex]);
 
   return (
-    <div ref={containerRef} className="autocomplete-container" style={{ position: 'relative', width: '100%' }}>
+    <div ref={containerRef} className="autocomplete-container">
       <input
         type="text"
         value={value}
@@ -113,26 +113,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         autoComplete="off"
       />
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <ul
-          ref={listRef}
-          className="autocomplete-suggestions-list"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            right: 0,
-            backgroundColor: 'var(--surface, #ffffff)',
-            border: '1px solid var(--border, #e2e8f0)',
-            borderRadius: 'var(--radius-md, 8px)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-            listStyle: 'none',
-            padding: '4px 0',
-            margin: 0,
-            zIndex: 1000,
-            maxHeight: '260px',
-            overflowY: 'auto',
-          }}
-        >
+        <ul ref={listRef} className="autocomplete-suggestions-list">
           {filteredSuggestions.map((suggestion, idx) => {
             const isActive = idx === activeIndex;
             return (
@@ -140,15 +121,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
                 key={suggestion}
                 onClick={() => selectSuggestion(suggestion)}
                 onMouseEnter={() => setActiveIndex(idx)}
-                style={{
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  backgroundColor: isActive ? 'var(--primary-light, rgba(74, 124, 89, 0.1))' : 'transparent',
-                  color: isActive ? 'var(--primary-deep, #1b4d3e)' : 'var(--text-color, #2d3748)',
-                  fontWeight: isActive ? 600 : 'normal',
-                  transition: 'background-color 0.1s, color 0.1s',
-                }}
+                className={`autocomplete-suggestion-item ${isActive ? 'active' : 'inactive'}`}
               >
                 {suggestion}
               </li>

@@ -442,6 +442,127 @@ test('codebase integrity: ensure appSettings lookups for choir name reference ch
   assert.ok(true, 'All choir name appSettings queries are safe');
 });
 
+test('codebase integrity: enforce no inline styles rule', () => {
+  const files = getSrcFiles(['.tsx', '.jsx']);
+  const srcDir = resolveProjectPath('src');
+  
+  // Whitelist of legacy files that currently use inline style={...}
+  const legacyInlineStyleWhitelist = new Set([
+    'src/App.tsx',
+    'src/contexts/DialogContext.tsx',
+    'src/components/ComposeStep.tsx',
+    'src/components/admin/SetListItemEditModal.tsx',
+    'src/components/admin/EventModal.tsx',
+    'src/components/admin/MusicImportModal.tsx',
+    'src/components/admin/SeatingBottomDock.tsx',
+    'src/components/admin/SingerRsvpHistoryTab.tsx',
+    'src/components/admin/EventRosterTable.tsx',
+    'src/components/admin/BulkEventModal.tsx',
+    'src/components/admin/SeatingFormationsEditor.tsx',
+    'src/components/admin/SingerLookupModal.tsx',
+    'src/components/admin/EventList.tsx',
+    'src/components/admin/PlaceholderPanel.tsx',
+    'src/components/admin/MessageHistory.tsx',
+    'src/components/admin/AuditionModal.tsx',
+    'src/components/admin/SortableSetListItem.tsx',
+    'src/components/admin/RosterImportModal.tsx',
+    'src/components/admin/SetListInlineCreator.tsx',
+    'src/components/admin/CheckInList.tsx',
+    'src/components/admin/SeatingGrid.tsx',
+    'src/components/admin/RosterTable.tsx',
+    'src/components/admin/SingerModal.tsx',
+    'src/components/admin/PollSelectionModal.tsx',
+    'src/components/LivePreview.tsx',
+    'src/components/common/MarkdownEditor.tsx',
+    'src/components/common/BaseModal.tsx',
+    'src/components/common/PageLayout.tsx',
+    'src/components/singer/EventCard.tsx',
+    'src/components/player/Playlist.tsx',
+    'src/components/player/Player.tsx',
+    'src/views/PublicAuditionView.tsx',
 
+    'src/views/admin/SeatingView.tsx',
+    'src/views/admin/EventsView.tsx',
+    'src/views/admin/ReportsView.tsx',
+    'src/views/admin/AdminDashboardView.tsx',
+    'src/views/admin/MusicLibraryView.tsx',
+    'src/views/admin/PollsDashboardView.tsx',
+    'src/views/admin/ResourcesView.tsx',
+    'src/views/admin/CommunicationView.tsx',
+    'src/views/admin/SetListView.tsx',
+    'src/views/admin/AuditionsView.tsx',
+    'src/views/admin/EventRosterView.tsx',
+    'src/views/admin/RsvpDashboardView.tsx',
+    'src/views/admin/VenuesView.tsx',
+    'src/views/admin/event-roster/useEventRosterExport.tsx',
+    'src/views/admin/RosterView.tsx',
+    'src/views/admin/music-library/FloatingAudioPlayer.tsx',
+    'src/views/admin/music-library/MusicLibraryTable.tsx',
+    'src/views/admin/music-library/MusicLibraryFilters.tsx',
+    'src/views/admin/music-library/LearningTracksEditor.tsx',
+    'src/views/admin/music-library/table/MusicLibraryCatalogCell.tsx',
+    'src/views/admin/music-library/table/MusicLibraryTracksCell.tsx',
+    'src/views/admin/music-library/table/MusicLibraryBadges.tsx',
+    'src/views/admin/music-library/table/MusicLibraryRow.tsx',
+    'src/views/admin/music-library/table/MusicLibraryTitleCell.tsx',
+    'src/views/admin/music-library/MultiSelectDropdown.tsx',
+    'src/views/admin/music-library/MusicPieceModal.tsx',
+    'src/views/admin/TicketingView.tsx',
+    'src/views/admin/events/useEventPlayerLink.tsx',
+    'src/views/admin/events/EventsTabs.tsx',
+    'src/views/admin/AttendanceView.tsx',
+    'src/views/admin/communications/TemplatesPanel.tsx',
+    'src/views/admin/communications/AutomatedTasksPanel.tsx',
+    'src/views/admin/communications/SettingsPanel.tsx',
+    'src/views/admin/communications/CommunicationModals.tsx',
+    'src/views/admin/communications/DraftsPanel.tsx',
+    'src/views/admin/communications/ComposePanel.tsx',
 
+    'src/views/PublicPlayerView.tsx',
+    'src/views/PublicTicketPurchaseView.tsx',
+    'src/views/PublicTicketListView.tsx',
+    'src/views/PublicTicketSuccessView.tsx',
+    'src/views/singer/ProfileView.tsx',
+    'src/views/singer/SeatingFinderView.tsx',
+    'src/views/singer/DashboardView.tsx',
+    'src/views/PublicBundlePurchaseView.tsx',
+  ]);
 
+  const violations: string[] = [];
+  for (const file of files) {
+    const relPath = path.relative(srcDir, file);
+    const key = `src/${relPath}`;
+    if (legacyInlineStyleWhitelist.has(key)) {
+      continue;
+    }
+
+    const content = fs.readFileSync(file, 'utf8');
+    if (!content.includes('style={{')) {
+      continue;
+    }
+
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      if (line.includes('style={{')) {
+        // Look for preceding line or current line containing @allow-inline-style
+        const prevLine = idx > 0 ? lines[idx - 1] : '';
+        const currentLine = lines[idx];
+        const isBypassed = prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style');
+
+        if (!isBypassed) {
+          violations.push(`${key}:${idx + 1} -> "${line.trim()}"`);
+        }
+      }
+    });
+  }
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found inline style={{ ... }} usage in non-whitelisted file:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nTo resolve, either move styling to an external CSS stylesheet, OR if the style is dynamic, add a preceding comment:\n` +
+      `// @allow-inline-style - [explanation of dynamic styling requirement]`
+    );
+  }
+  assert.ok(true, 'No unauthorized inline styles found');
+});

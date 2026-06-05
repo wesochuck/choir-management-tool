@@ -194,12 +194,12 @@ export default function LoginView() {
 
         {/* FORGOT PASSWORD FORM */}
         {isForgotMode ? (
-          <form onSubmit={handleRequestReset} className="flex-col login-fade-in" style={{ gap: 'var(--space-lg)' }}>
-            <p className="text-muted text-sm" style={{ margin: 0, textAlign: 'center' }}>
+          <form onSubmit={handleRequestReset} className="login-form login-fade-in">
+            <p className="login-instructions">
               Enter your email address and we'll send you a custom link to reset your password.
             </p>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="login-form-group">
               <label className="text-label" htmlFor="forgot-email">Email Address</label>
               <input
                 id="forgot-email"
@@ -207,28 +207,25 @@ export default function LoginView() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="card"
-                style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+                className="login-form-input"
                 placeholder="e.g. singer@choir.org"
               />
             </div>
 
-            {error && <p className="text-xs" style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
-            {resetSuccess && <p className="text-xs" style={{ color: 'var(--primary)', margin: 0, fontWeight: '600' }}>{resetSuccess}</p>}
+            {error && <p className="login-form-error">{error}</p>}
+            {resetSuccess && <p className="login-form-success">{resetSuccess}</p>}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: 'var(--space-xs)' }}
+              className="btn btn-primary login-submit-btn"
             >
               {isLoading ? 'Sending reset link...' : 'Send Reset Link'}
             </button>
 
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'center', textDecoration: 'underline', cursor: 'pointer', height: 'auto', padding: 0 }}
+              className="login-back-link"
               onClick={() => setIsForgotMode(false)}
             >
               ← Back to Login
@@ -242,11 +239,11 @@ export default function LoginView() {
               <div className="login-fade-in">
                 {otpStep === 'request' ? (
                   /* Step 1: Request OTP Code */
-                  <form onSubmit={handleRequestOTP} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-                    <p className="text-muted text-sm" style={{ margin: 0, textAlign: 'center' }}>
+                  <form onSubmit={handleRequestOTP} className="login-form">
+                    <p className="login-instructions">
                       Sign in securely without a password. We'll email you a 6-digit login code.
                     </p>
-                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                    <div className="login-form-group">
                       <label className="text-label" htmlFor="otp-email">Email Address</label>
                       <input
                         id="otp-email"
@@ -254,24 +251,22 @@ export default function LoginView() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="card"
-                        style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+                        className="login-form-input"
                         placeholder="singer@choir.org"
                       />
                     </div>
-                    {error && <p className="text-xs" style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
+                    {error && <p className="login-form-error">{error}</p>}
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="btn btn-primary"
-                      style={{ width: '100%', marginTop: 'var(--space-xs)' }}
+                      className="btn btn-primary login-submit-btn"
                     >
                       {isLoading ? 'Sending Login Code...' : 'Send Login Code'}
                     </button>
                   </form>
                 ) : (
                   /* Step 2: Verification Code Input */
-                  <form onSubmit={handleVerifyOTP} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+                  <form onSubmit={handleVerifyOTP} className="login-form">
                     <div className="otp-sent-banner">
                       <p>
                         A 6-digit login code has been sent to <strong>{email}</strong>
@@ -313,14 +308,13 @@ export default function LoginView() {
                       </div>
                     </div>
 
-                    {error && <p className="text-xs" style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
-                    {resetSuccess && <p className="text-xs" style={{ color: 'var(--primary)', margin: 0, fontWeight: '600' }}>{resetSuccess}</p>}
+                    {error && <p className="login-form-error">{error}</p>}
+                    {resetSuccess && <p className="login-form-success">{resetSuccess}</p>}
 
                     <button
                       type="submit"
                       disabled={isLoading || countdown <= 0}
-                      className="btn btn-primary"
-                      style={{ width: '100%', marginTop: 'var(--space-xs)' }}
+                      className="btn btn-primary login-submit-btn"
                     >
                       {isLoading ? 'Verifying...' : 'Verify & Sign In'}
                     </button>
@@ -353,8 +347,8 @@ export default function LoginView() {
 
             {/* TRADITIONAL PASSWORD WORKFLOW */}
             {loginMode === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="flex-col login-fade-in" style={{ gap: 'var(--space-lg)' }}>
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <form onSubmit={handlePasswordSubmit} className="login-form login-fade-in">
+                <div className="login-form-group">
                   <label className="text-label" htmlFor="login-email">Email Address</label>
                   <input
                     id="login-email"
@@ -362,25 +356,16 @@ export default function LoginView() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="card"
-                    style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+                    className="login-form-input"
                     placeholder="e.g. singer@choir.org"
                   />
                 </div>
-                <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-                  <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="login-form-group">
+                  <div className="login-password-header">
                     <label className="text-label" htmlFor="login-password">Password</label>
                     <button
                       type="button"
-                      className="btn btn-ghost btn-sm"
-                      style={{
-                        padding: 0,
-                        height: 'auto',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)',
-                        textDecoration: 'underline',
-                        cursor: 'pointer',
-                      }}
+                      className="login-forgot-link"
                       onClick={() => {
                         setIsForgotMode(true);
                         setError('');
@@ -396,16 +381,14 @@ export default function LoginView() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="card"
-                    style={{ padding: '0 12px', height: '44px', width: '100%', border: '1px solid var(--border)' }}
+                    className="login-form-input"
                   />
                 </div>
-                {error && <p className="text-xs" style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
+                {error && <p className="login-form-error">{error}</p>}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn btn-primary"
-                  style={{ width: '100%', marginTop: 'var(--space-md)' }}
+                  className="btn btn-primary login-submit-btn-md"
                 >
                   {isLoading ? 'Logging in...' : 'Login'}
                 </button>

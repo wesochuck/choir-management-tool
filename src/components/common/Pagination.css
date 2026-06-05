@@ -1,6 +1,11 @@
 .app-pagination {
   margin: var(--space-md) auto;
   user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
 }
 
 .pagination-btn {
@@ -68,6 +73,8 @@
   font-size: 16px;
   color: var(--text-muted, #64748b);
   cursor: default;
+  padding: 8px 12px;
+  font-weight: 600;
 }
 
 /* Animations for active button switching */
