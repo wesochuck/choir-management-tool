@@ -770,8 +770,17 @@ export function MusicPieceModal({
         );
     };
 
-    const selectedPerformances = allPerformances.filter(p => selectedPerformanceIds.includes(p.id));
-    const availablePerformances = allPerformances.filter(p => !selectedPerformanceIds.includes(p.id));
+    const selectedPerformances = useMemo(() => {
+        return allPerformances
+            .filter(p => selectedPerformanceIds.includes(p.id))
+            .sort((a, b) => a.title.localeCompare(b.title));
+    }, [allPerformances, selectedPerformanceIds]);
+
+    const availablePerformances = useMemo(() => {
+        return allPerformances
+            .filter(p => !selectedPerformanceIds.includes(p.id))
+            .sort((a, b) => a.title.localeCompare(b.title));
+    }, [allPerformances, selectedPerformanceIds]);
 
     return (
         <BaseModal
@@ -878,7 +887,6 @@ export function MusicPieceModal({
                             <div className="form-field-group">
                                 <label className="text-label">Applies to Sections</label>
                                 <MultiSelectDropdown
-                                    label="Applies to Sections"
                                     options={sections.map(s => ({ id: s.code, label: s.name }))}
                                     selectedIds={sectionBuckets}
                                     onChange={setSectionBuckets}
@@ -896,7 +904,6 @@ export function MusicPieceModal({
                             <div className="form-field-group">
                                 <label className="text-label">Genres</label>
                                 <MultiSelectDropdown
-                                    label="Genres"
                                     options={[...allGenres].sort((a, b) => a.label.localeCompare(b.label)).map(g => ({ id: g.id, label: g.label }))}
                                     selectedIds={selectedGenres}
                                     onChange={setSelectedGenres}
@@ -1189,7 +1196,7 @@ export function MusicPieceModal({
 
                             <div className="mle-perf-actions-row">
                                 <select 
-                                    className="card mle-perf-select-dropdown" 
+                                    className="card mle-perf-select-half" 
                                     value="" 
                                     onChange={e => {
                                         if (e.target.value) {

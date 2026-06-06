@@ -781,14 +781,16 @@
 
 .mle-perf-select-full {
     padding: 0 12px;
-    height: 40px;
+    height: 36px;
+    font-size: 14px;
     width: 100%;
 }
 
 .mle-perf-select-half {
     flex: 1 1 200px;
     padding: 0 12px;
-    height: 40px;
+    height: 36px;
+    font-size: 14px;
     min-width: 0;
 }
 
