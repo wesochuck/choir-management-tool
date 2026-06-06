@@ -578,13 +578,20 @@ select:focus {
   border: 1px solid var(--border);
 }
 
-.photo-uploader-avatar-clickable {
+.photo-uploader-trigger {
   position: relative;
   border-radius: 50%;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-uploader-trigger:hover {
+  opacity: 0.9;
 }
 
 .photo-uploader-avatar-img {
@@ -625,28 +632,6 @@ select:focus {
   align-items: center;
   justify-content: center;
   color: #fff;
-  z-index: 10;
-}
-
-.photo-uploader-hover-overlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(15, 23, 42, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: background-color 0.2s;
-}
-
-.photo-uploader-mobile-overlay {
-  position: absolute;
-  bottom: 0;
-  inset-inline: 0;
-  background-color: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 10;
 }
 
@@ -927,10 +912,6 @@ select:focus {
   font-size: 0.75rem;
   color: #94a3b8;
   margin-top: 8px;
-}
-
-.photo-uploader-hover-overlay svg {
-  opacity: 0.9;
 }
 
 .camera-viewfinder-frame video {

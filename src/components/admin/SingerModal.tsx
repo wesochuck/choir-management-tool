@@ -260,7 +260,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             )}
           </div>
 
-          <div className="flex-col roster-cmp-name-container">
+          <div className="roster-cmp-form-group">
             <label className="text-label">Name</label>
             <input 
               value={formData.name || ''} 
@@ -269,8 +269,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               className="card roster-cmp-input"
             />
           </div>
-          <div className="flex-row roster-cmp-tabs-container roster-cmp-no-margin">
-            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
+          <div className="roster-cmp-form-row">
+            <div className="roster-cmp-form-group roster-cmp-flex-1">
               <label className="text-label">Login Email (Optional)</label>
               <input
                 type="email"
@@ -308,7 +308,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 </div>
               )}
             </div>
-            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
+            <div className="roster-cmp-form-group roster-cmp-flex-1">
               <label className="text-label">Phone (Optional)</label>
               <input 
                 value={formData.phone || ''} 
@@ -318,8 +318,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               />
             </div>
           </div>
-          <div className="flex-row roster-cmp-tabs-container roster-cmp-no-margin">
-            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
+          <div className="roster-cmp-form-row">
+            <div className="roster-cmp-form-group roster-cmp-flex-1">
               <label className="text-label">Voice Part</label>
               <select 
                 value={formData.voicePart} 
@@ -339,7 +339,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 ))}
               </select>
             </div>
-            <div className="flex-col roster-cmp-name-container roster-cmp-flex-1">
+            <div className="roster-cmp-form-group roster-cmp-flex-1">
               <label className="text-label">Status</label>
               <select 
                 value={formData.globalStatus} 
@@ -448,7 +448,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             </div>
           )}
 
-          <div className="flex-col roster-cmp-name-container">
+          <div className="roster-cmp-form-group">
             <label className="text-label">Notes</label>
             <textarea 
               value={formData.notes} 

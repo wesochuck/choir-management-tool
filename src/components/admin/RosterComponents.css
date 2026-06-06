@@ -76,7 +76,21 @@
 }
 
 .roster-cmp-form {
-  gap: 12px;
+  gap: 16px;
+}
+
+.roster-cmp-form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.roster-cmp-form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-md);
 }
 
 .roster-cmp-avatar-container {
