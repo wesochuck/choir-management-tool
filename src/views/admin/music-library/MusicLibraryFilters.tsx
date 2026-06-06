@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SectionDef, MusicGenreDef } from '../../../services/settingsService';
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
+import type { FilterMode } from '../../../lib/music/libraryRows';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 import './MusicLibraryEditors.css';
 
@@ -11,6 +12,8 @@ export interface MusicLibraryFiltersProps {
     onSectionFiltersChange: (value: string[]) => void;
     genreFilters: string[];
     onGenreFiltersChange: (value: string[]) => void;
+    genreFilterMode: FilterMode;
+    onGenreFilterModeChange: (mode: FilterMode) => void;
     genres: MusicGenreDef[];
     sections: SectionDef[];
     showDuplicatesOnly: boolean;
@@ -34,6 +37,8 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     onSectionFiltersChange,
     genreFilters,
     onGenreFiltersChange,
+    genreFilterMode,
+    onGenreFilterModeChange,
     genres,
     sections,
     showDuplicatesOnly,
@@ -83,7 +88,27 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     />
                 </div>
                 <div className="flex-col form-field-group">
-                    <span className="text-xs text-muted mle-filters-field-label">Genres</span>
+                    <div className="flex-row mle-genre-label-row">
+                        <span className="text-xs text-muted mle-filters-field-label">Genres</span>
+                        <div className="mle-genre-mode-toggle">
+                            <button 
+                                type="button" 
+                                className={`mle-genre-mode-btn ${genreFilterMode === 'OR' ? 'active' : ''}`}
+                                onClick={() => onGenreFilterModeChange('OR')}
+                                title="OR: Match ANY selected genre"
+                            >
+                                OR
+                            </button>
+                            <button 
+                                type="button" 
+                                className={`mle-genre-mode-btn ${genreFilterMode === 'AND' ? 'active' : ''}`}
+                                onClick={() => onGenreFilterModeChange('AND')}
+                                title="AND: Match ALL selected genres"
+                            >
+                                AND
+                            </button>
+                        </div>
+                    </div>
                     <MultiSelectDropdown
                         options={[
                             { id: '__no-genre__', label: 'No Genre' },

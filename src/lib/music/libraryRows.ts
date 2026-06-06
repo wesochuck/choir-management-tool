@@ -7,6 +7,7 @@ import { parseDurationToSeconds } from './duration';
 
 export type MusicLibrarySortField = 'title' | 'composer' | 'duration' | 'copies' | 'catalogId' | 'lastPerformed';
 export type SortDirection = 'asc' | 'desc';
+export type FilterMode = 'OR' | 'AND';
 
 export interface BuildVisibleMusicLibraryRowsOptions {
   searchTerm?: string;
@@ -15,6 +16,7 @@ export interface BuildVisibleMusicLibraryRowsOptions {
   duplicateIds?: Set<string>;
   sectionFilters?: string[];
   genreFilters?: string[];
+  genreFilterMode?: FilterMode;
   recencyFilter?: PerformanceRecencyFilter;
   now?: Date;
   sortField?: MusicLibrarySortField;
@@ -42,6 +44,7 @@ export function buildVisibleMusicLibraryRows(
     duplicateIds = new Set<string>(),
     sectionFilters = [],
     genreFilters = [],
+    genreFilterMode = 'OR',
     recencyFilter = 'all',
     now,
     sortField = 'title',
@@ -87,10 +90,22 @@ export function buildVisibleMusicLibraryRows(
     const realGenreFilters = genreFilters.filter(id => id !== '__no-genre__');
     const includeNoGenre = genreFilters.includes('__no-genre__');
     result = result.filter(p => {
-      const hasNoGenres = !p.genres || !Array.isArray(p.genres) || p.genres.length === 0;
-      if (includeNoGenre && hasNoGenres) return true;
-      if (realGenreFilters.length > 0 && p.genres?.some(gId => realGenreFilters.includes(gId))) return true;
-      return false;
+      const pGenres = p.genres || [];
+      const hasNoGenres = !Array.isArray(pGenres) || pGenres.length === 0;
+
+      if (genreFilterMode === 'AND') {
+        // AND mode: Must match ALL criteria
+        if (includeNoGenre && !hasNoGenres) return false;
+        if (realGenreFilters.length > 0) {
+          return realGenreFilters.every(gId => pGenres.includes(gId));
+        }
+        return includeNoGenre ? hasNoGenres : true;
+      } else {
+        // OR mode: Match ANY criteria
+        if (includeNoGenre && hasNoGenres) return true;
+        if (realGenreFilters.length > 0 && pGenres.some(gId => realGenreFilters.includes(gId))) return true;
+        return false;
+      }
     });
   }
 

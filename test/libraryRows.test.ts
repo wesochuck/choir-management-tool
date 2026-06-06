@@ -202,6 +202,39 @@ describe('Music Library Row Building (P5)', () => {
     assert.strictEqual(rowsIgnored[1].id, 'p2'); // Banana
     assert.strictEqual(rowsIgnored[2].id, 'p3'); // An Orange
   });
+
+  describe('Genre Filter Modes (OR vs AND)', () => {
+    const pG1 = createMusicPieceFixture({ id: 'pG1', title: 'Sacred', genres: ['sacred'] });
+    const pG12 = createMusicPieceFixture({ id: 'pG12', title: 'Sacred Christmas', genres: ['sacred', 'christmas'] });
+    const pG2 = createMusicPieceFixture({ id: 'pG2', title: 'Christmas', genres: ['christmas'] });
+    const pNone = createMusicPieceFixture({ id: 'pNone', title: 'No Genre', genres: [] });
+    const pieces = [pG1, pG12, pG2, pNone];
+
+    it('OR mode (default): matches pieces with ANY of the selected genres', () => {
+      const rows = buildVisibleMusicLibraryRows(pieces, { genreFilters: ['sacred', 'christmas'], genreFilterMode: 'OR' });
+      assert.strictEqual(rows.length, 3);
+      assert.ok(rows.find(r => r.id === 'pG1'));
+      assert.ok(rows.find(r => r.id === 'pG12'));
+      assert.ok(rows.find(r => r.id === 'pG2'));
+    });
+
+    it('AND mode: matches pieces with ALL of the selected genres', () => {
+      const rows = buildVisibleMusicLibraryRows(pieces, { genreFilters: ['sacred', 'christmas'], genreFilterMode: 'AND' });
+      assert.strictEqual(rows.length, 1);
+      assert.strictEqual(rows[0].id, 'pG12');
+    });
+
+    it('AND mode: matches No Genre when explicitly selected alone', () => {
+      const rows = buildVisibleMusicLibraryRows(pieces, { genreFilters: ['__no-genre__'], genreFilterMode: 'AND' });
+      assert.strictEqual(rows.length, 1);
+      assert.strictEqual(rows[0].id, 'pNone');
+    });
+
+    it('AND mode: matches nothing when "No Genre" is combined with a specific genre', () => {
+      const rows = buildVisibleMusicLibraryRows(pieces, { genreFilters: ['sacred', '__no-genre__'], genreFilterMode: 'AND' });
+      assert.strictEqual(rows.length, 0);
+    });
+  });
 });
 
 
