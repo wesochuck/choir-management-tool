@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { MusicPiece } from '../../types/musicLibrary';
 import type { SetListItem } from '../../services/eventService';
 import { createSetListItemFromCustomInput, createSetListItemFromMusicPiece, filterMusicLibrarySuggestions } from '../../lib/setList/setListItems';
+import '../../views/admin/SetList.css';
 
 interface SetListInlineCreatorProps {
   library: MusicPiece[];
@@ -78,19 +79,12 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="flex-col" style={{ gap: 'var(--space-xs)', position: 'relative' }}>
-      <div className="flex-row card" style={{ 
-        padding: 'var(--space-sm) var(--space-md)', 
-        gap: 'var(--space-md)', 
-        alignItems: 'center',
-        backgroundColor: 'var(--bg-card-hover)',
-        border: '1px dashed var(--border)'
-      }}>
-        <div className="flex-row" style={{ gap: '4px', backgroundColor: 'var(--surface)', padding: '2px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+    <div ref={containerRef} className="flex-col sl-creator-container">
+      <div className="flex-row card sl-creator-card">
+        <div className="flex-row sl-type-toggle-group">
           <button
             type="button"
-            className={`btn btn-sm ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ fontSize: '11px', padding: '2px 8px', minHeight: 'auto', height: '24px' }}
+            className={`btn btn-sm sl-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setType('song')}
             disabled={disabled}
           >
@@ -98,8 +92,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </button>
           <button
             type="button"
-            className={`btn btn-sm ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ fontSize: '11px', padding: '2px 8px', minHeight: 'auto', height: '24px' }}
+            className={`btn btn-sm sl-type-btn ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setType('intermission')}
             disabled={disabled}
           >
@@ -107,7 +100,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </button>
         </div>
 
-        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div className="sl-search-container">
           <input
             type="text"
             placeholder={type === 'song' ? "Search music library..." : "Intermission title..."}
@@ -119,14 +112,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card"
-            style={{ 
-              width: '100%', 
-              padding: '0 36px 0 12px', 
-              height: '36px', 
-              border: '1px solid var(--border)', 
-              fontSize: '14px' 
-            }}
+            className="card sl-search-input"
           />
           <svg 
             viewBox="0 0 24 24" 
@@ -135,80 +121,37 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             strokeWidth="2.5" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
-            style={{ 
-              position: 'absolute', 
-              right: '12px', 
-              width: '16px', 
-              height: '16px', 
-              color: 'var(--text-muted)',
-              pointerEvents: 'none'
-            }}
+            className="sl-search-icon"
           >
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
  
           {showSuggestions && query.trim().length > 0 && (
-            <div className="card shadow-md" style={{ 
-              position: 'absolute', 
-              top: '100%', 
-              left: 0, 
-              right: 0, 
-              zIndex: 100, 
-              marginTop: '4px', 
-              maxHeight: '300px', 
-              overflowY: 'auto',
-              padding: '4px',
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-md)'
-            }}>
+            <div className="card shadow-md sl-suggestions-dropdown">
               {filteredLibrary.map(p => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => handleAddItem(p)}
-                  className="btn btn-ghost"
-                  style={{ 
-                    width: '100%', 
-                    textAlign: 'left', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'flex-start',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    gap: '2px',
-                    minHeight: 'auto'
-                  }}
+                  className="btn btn-ghost sl-suggestion-btn"
                 >
-                  <span style={{ fontWeight: 600, fontSize: '14px' }}>{p.title}</span>
-                  {p.composer && <span style={{ fontSize: '12px', opacity: 0.7 }}>by {p.composer}</span>}
+                  <span className="sl-suggestion-title">{p.title}</span>
+                  {p.composer && <span className="sl-suggestion-composer">by {p.composer}</span>}
                 </button>
               ))}
               
               <button
                 type="button"
                 onClick={() => handleAddItem()}
-                className="btn btn-ghost"
+                className="btn btn-ghost sl-suggestion-new-btn"
+                // @allow-inline-style - conditional border based on array length
                 style={{ 
-                  width: '100%', 
-                  textAlign: 'left', 
-                  display: 'flex', 
-                  flexDirection: 'row', 
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  gap: '4px',
-                  color: 'var(--primary-deep)',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  minHeight: 'auto',
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
                 }}
               >
                 <span>"{query.trim()}"</span>
-                <span style={{ fontWeight: 400, opacity: 0.7, fontSize: '13px' }}>
+                <span className="sl-suggestion-new-subtitle">
                   ({type === 'song' ? 'create new' : 'create new intermission'})
                 </span>
               </button>
@@ -216,7 +159,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           )}
         </div>
  
-        <div style={{ width: '100px' }}>
+        <div className="sl-duration-container">
           <input
             type="text"
             placeholder="Duration"
@@ -224,8 +167,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onChange={(e) => setDuration(e.target.value)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card"
-            style={{ width: '100%', padding: '0 12px', height: '36px', border: '1px solid var(--border)', fontSize: '14px' }}
+            className="card sl-duration-input"
           />
         </div>
  
@@ -233,14 +175,13 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           type="button"
           onClick={() => handleAddItem()}
           disabled={disabled || !query.trim()}
-          className="btn btn-primary"
-          style={{ height: '36px', minHeight: 'auto', padding: '0 16px', fontSize: '13px' }}
+          className="btn btn-primary sl-add-btn"
         >
           + Add
         </button>
       </div>
       {type === 'song' && (
-        <span className="text-xs text-muted" style={{ paddingLeft: 'var(--space-md)' }}>
+        <span className="text-xs text-muted sl-creator-tip">
           Tip: Select the "(create new)" option or press Enter to add a new piece to the music library.
         </span>
       )}

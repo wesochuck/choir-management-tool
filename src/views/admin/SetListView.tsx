@@ -22,6 +22,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
+import './SetList.css';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
@@ -312,12 +313,12 @@ export default function SetListView() {
       await dialog.showMessage({
         title: 'Player Link Generated',
         message: (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-col sl-player-modal-msg">
             <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
-            <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'var(--bg)', border: '1px solid var(--border)', wordBreak: 'break-all', fontSize: '0.85rem' }}>
+            <div className="card sl-stats-card">
               {url}
             </div>
-            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-row sl-player-modal-actions">
               <button 
                 className="btn btn-primary btn-sm"
                 onClick={() => {
@@ -575,11 +576,11 @@ export default function SetListView() {
   );
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+    <div className="flex-col sl-main-wrapper">
       <div className="no-print admin-view-header">
-        <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)' }}>
+        <div className="flex-row sl-header-title-row">
           {selectedEventId && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            <div className="sl-warning-text">
               {saveStatus === 'saving' && (
                 <>
                   <span className="spinner-small" />
@@ -587,12 +588,12 @@ export default function SetListView() {
                 </>
               )}
               {saveStatus === 'saved' && (
-                <span style={{ color: 'var(--primary-deep)', fontWeight: 500 }}>
+                <span className="sl-text-primary-deep">
                   ✓ Saved
                 </span>
               )}
               {saveStatus === 'error' && (
-                <span style={{ color: 'var(--danger)', fontWeight: 500 }}>
+                <span className="sl-text-danger">
                   ✗ Save failed
                 </span>
               )}
@@ -603,18 +604,16 @@ export default function SetListView() {
           <div className="admin-view-actions">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary sl-primary-action-btn"
               onClick={() => handleOpenPlayer(selectedEvent)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '42px' }}
               title="Open practice player link generator"
             >
               🎧 Practice Player
             </button>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-secondary sl-primary-action-btn"
               onClick={() => setIsPrintModalOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '42px' }}
               title="View printable set list"
             >
               🖨️ Print & Copy
@@ -623,14 +622,13 @@ export default function SetListView() {
         )}
       </div>
 
-      <div className="roster-filters-bar" style={{ alignItems: 'stretch' }}>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)', flex: 1, minWidth: '260px' }}>
+      <div className="roster-filters-bar sl-filters-bar">
+          <div className="flex-col sl-filter-col">
             <label className="text-label">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="admin-filter-select"
-              style={{ width: '100%', minWidth: '260px' }}
+              className="admin-filter-select sl-filter-input"
             >
               <option value="">-- Choose Event --</option>
               {events.map((e) => (
@@ -642,13 +640,12 @@ export default function SetListView() {
           </div>
 
           {selectedEvent && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '260px', flex: 1 }}>
+            <div className="flex-col sl-filter-col">
               <label className="text-label">Copy from Previous</label>
               <select 
                 value="" 
                 onChange={(e) => handleCopyFrom(e.target.value)}
-                className="admin-filter-select"
-                style={{ width: '100%', minWidth: '260px' }}
+                className="admin-filter-select sl-filter-input"
               >
                 <option value="">-- Copy Set List --</option>
                 {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (
@@ -661,42 +658,19 @@ export default function SetListView() {
           )}
 
           {selectedEvent && selectedEvent.type === 'Performance' && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '200px' }}>
+            <div className="flex-col sl-filter-select-col">
               <label className="text-label">Singer Visibility</label>
               <div 
-                className="card"
-                style={{ 
-                  height: '44px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  padding: '0 16px',
-                  backgroundColor: selectedEvent.setListApproved !== false ? 'rgba(74, 124, 89, 0.1)' : 'var(--surface)',
-                  border: selectedEvent.setListApproved !== false ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  transition: 'all 0.2s',
-                  borderRadius: 'var(--radius-md)'
-                }}
+                className={`card sl-singer-visibility-card ${selectedEvent.setListApproved !== false ? 'approved' : ''}`}
               >
                 <label 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '10px', 
-                    cursor: 'pointer',
-                    width: '100%',
-                    fontWeight: 500,
-                    fontSize: 'var(--font-size-label)'
-                  }}
+                  className="sl-approved-label"
                 >
                   <input
                     type="checkbox"
                     checked={selectedEvent.setListApproved !== false}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
-                    style={{ 
-                      width: '18px', 
-                      height: '18px', 
-                      accentColor: 'var(--primary)', 
-                      cursor: 'pointer' 
-                    }}
+                    className="sl-approved-checkbox"
                   />
                   <span>Approved for Singers</span>
                 </label>
@@ -705,44 +679,18 @@ export default function SetListView() {
           )}
 
           {selectedEvent && selectedEvent.type === 'Rehearsal' && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', minWidth: '200px' }}>
+            <div className="flex-col sl-filter-select-col">
               <label className="text-label">Parent Set List</label>
               {parentPerformance ? (
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary sl-parent-link-btn"
                   onClick={() => setSelectedEventId(parentPerformance.id)}
-                  style={{
-                    height: '44px',
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    backgroundColor: 'rgba(74, 124, 89, 0.08)',
-                    color: 'var(--primary-deep)',
-                    border: '1px solid rgba(74, 124, 89, 0.2)'
-                  }}
                 >
                   🔗 Go to parent: {parentPerformance.title || 'Concert'}
                 </button>
               ) : (
-                <div 
-                  style={{ 
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center', 
-                    height: '44px', 
-                    padding: '0 12px', 
-                    fontSize: 'var(--font-size-label)', 
-                    color: 'var(--text-muted)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--surface)'
-                  }}
-                >
+                <div className="card sl-approved-card">
                   No parent linked
                 </div>
               )}
@@ -751,32 +699,17 @@ export default function SetListView() {
       </div>
 
       {selectedEventId ? (
-        <div className="flex-col" style={{ gap: 'var(--space-lg)', width: '100%' }}>
+        <div className="flex-col sl-main-content">
           {selectedEvent?.type === 'Rehearsal' && (
-            <div 
-              style={{
-                backgroundColor: 'rgba(74, 124, 89, 0.05)',
-                borderLeft: '4px solid var(--primary)',
-                padding: 'var(--space-md)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.9rem',
-                color: 'var(--text-main)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 'var(--space-md)',
-                flexWrap: 'wrap'
-              }}
-            >
+            <div className="sl-rehearsal-warning">
               <div>
                 <strong>⚠️ Rehearsal Mode:</strong> This rehearsal inherits its set list and singer visibility from the parent Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct edits here will not be visible on the Singer Dashboard.
               </div>
               {parentPerformance && (
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm sl-filter-select"
                   onClick={() => setSelectedEventId(parentPerformance.id)}
-                  style={{ whiteSpace: 'nowrap' }}
                 >
                   Manage Parent Set List
                 </button>
@@ -785,32 +718,20 @@ export default function SetListView() {
           )}
 
           <AppCard title="Current Set List">
-            <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-col sl-dnd-container">
               {items.length > 0 && (
-                <div className="flex-responsive" style={{ 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  backgroundColor: 'var(--primary-light)', 
-                  padding: 'var(--space-sm) var(--space-md)', 
-                  borderRadius: 'var(--radius-md)', 
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: 'var(--primary-deep)',
-                  marginBottom: 'var(--space-xs)',
-                  border: '1px solid rgba(74, 124, 89, 0.15)',
-                  gap: 'var(--space-sm)'
-                }}>
-                  <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+                <div className="flex-responsive sl-list-header-bar">
+                  <div className="flex-row sl-list-section">
                     <span>🎼 Songs: {durationTotals.songs}</span>
                     <span>⏸️ Intermissions: {durationTotals.intermissions}</span>
                   </div>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--primary-deep)', borderLeft: '1px solid rgba(74, 124, 89, 0.3)', paddingLeft: 'var(--space-md)' }}>
+                  <span className="sl-list-section-title">
                     ⏱️ Total: {durationTotals.total}
                   </span>
                 </div>
               )}
 
-              <div style={{ marginBottom: 'var(--space-md)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
+              <div className="sl-list-divider">
                 <SetListInlineCreator 
                   library={library}
                   onAddItem={handleInlineAddItem}
@@ -820,7 +741,7 @@ export default function SetListView() {
               </div>
 
               {items.length === 0 ? (
-                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>No items in set list.</div>
+                <div className="text-muted sl-empty-list">No items in set list.</div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -845,13 +766,13 @@ export default function SetListView() {
                 </DndContext>
               )}
             </div>
-            <p className="text-muted text-sm" style={{ marginTop: 'var(--space-md)', padding: '0 var(--space-md) var(--space-md)' }}>
+            <p className="text-muted text-sm sl-hint-text">
                 Tip: Drag the ⣿ handle to reorder items. Changes are saved automatically.
             </p>
           </AppCard>
         </div>
       ) : (
-        <AppCard style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+        <AppCard className="sl-empty-state-card">
           <p className="text-muted">Select an event above to manage its set list.</p>
         </AppCard>
       )}
@@ -906,46 +827,33 @@ export default function SetListView() {
               Close
             </button>
             <button 
-              className="btn btn-secondary" 
+              className="btn btn-secondary sl-icon-btn" 
               onClick={handleCopyList}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               {copied ? '✓ Copied!' : '📋 Copy Plain Text'}
             </button>
             <button 
-              className="btn btn-primary" 
+              className="btn btn-primary sl-icon-btn" 
               onClick={handlePrintList}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               🖨️ Print List
             </button>
           </>
         }
       >
-        <div 
-          className="card" 
-          style={{ 
-            backgroundColor: '#fff', 
-            color: '#333', 
-            border: '1px solid var(--border)', 
-            borderRadius: 'var(--radius-md)', 
-            padding: 'var(--space-lg)', 
-            fontFamily: 'Georgia, serif',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
-          }}
-        >
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-md)' }}>
-            <h3 style={{ margin: '0 0 var(--space-xxs) 0', fontSize: '1.4rem', color: '#111', fontFamily: 'var(--font-sans)', fontWeight: 700 }}>
+        <div className="card sl-print-preview-card">
+          <div className="sl-print-header">
+            <h3 className="sl-print-title">
               {selectedEvent?.title || selectedEvent?.type}
             </h3>
-            <div style={{ fontSize: '0.85rem', color: '#666', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+            <div className="sl-print-subtitle">
               {selectedEvent && formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
             </div>
           </div>
-          <div style={{ borderBottom: '1px solid #eee', marginBottom: 'var(--space-md)' }}></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="sl-print-divider"></div>
+          <div className="sl-print-list">
             {(() => {
               let songIndex = 1;
               return itemsWithDetails.map((item) => {
@@ -953,16 +861,7 @@ export default function SetListView() {
                   return (
                     <div 
                       key={item.id} 
-                      style={{ 
-                        fontWeight: 'bold', 
-                        color: '#666', 
-                        textAlign: 'center', 
-                        padding: '6px 0', 
-                        borderTop: '1px dashed #eee', 
-                        borderBottom: '1px dashed #eee',
-                        margin: '8px 0',
-                        fontSize: '0.95rem'
-                      }}
+                      className="sl-print-preview-intermission"
                     >
                       ⏸️ {item.displayTitle || 'Intermission'}
                     </div>
@@ -971,19 +870,11 @@ export default function SetListView() {
                   const el = (
                     <div 
                       key={item.id} 
-                      style={{ 
-                        fontSize: '1.05rem', 
-                        padding: '2px 0', 
-                        borderBottom: '1px solid #fafafa',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'baseline',
-                        gap: 'var(--space-md)'
-                      }}
+                      className="sl-print-preview-song"
                     >
-                      <span style={{ fontWeight: 500 }}>{songIndex}. {item.displayTitle}</span>
+                      <span className="sl-print-item-title">{songIndex}. {item.displayTitle}</span>
                       {item.displayComposer && (
-                        <span style={{ fontSize: '0.9rem', color: '#666', fontStyle: 'italic', textAlign: 'right' }}>
+                        <span className="sl-print-item-duration">
                           {item.displayComposer}
                         </span>
                       )}

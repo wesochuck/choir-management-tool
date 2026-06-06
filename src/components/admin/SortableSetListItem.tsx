@@ -5,6 +5,7 @@ import type { SetListItem } from '../../services/eventService';
 import type { MusicPiece } from '../../types/musicLibrary';
 import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
 import type { MusicGenreDef } from '../../services/settingsService';
+import '../../views/admin/SetList.css';
 
 interface Props {
   item: SetListItem;
@@ -58,140 +59,87 @@ export const SortableSetListItem: React.FC<Props> = ({
   return (
     <div 
       ref={setNodeRef} 
-      className="card flex-row" 
+      className={`card flex-row sl-item-card ${item.type === 'intermission' ? 'sl-item-card-intermission' : 'sl-item-card-song'}`}
+      // @allow-inline-style - dynamic dnd kit positioning
       style={{ 
-        padding: 'var(--space-sm) var(--space-md)', 
-        gap: 'var(--space-md)', 
-        alignItems: 'center', 
-        backgroundColor: item.type === 'intermission' ? 'var(--primary-light)' : 'var(--surface)', 
-        border: item.type === 'intermission' ? '1px dashed var(--primary)' : '1px solid var(--border)', 
         ...style 
       }}
     >
-      <div {...attributes} {...listeners} style={{ cursor: 'grab', display: 'flex', alignItems: 'center', padding: '8px', color: 'var(--text-muted)' }}>
-        <span style={{ fontSize: '1.2rem' }}>⣿</span>
+      <div {...attributes} {...listeners} className="sl-drag-handle">
+        <span className="sl-drag-icon">⣿</span>
       </div>
       
-      <div className="flex-col" style={{ flex: 1, gap: '2px' }}>
+      <div className="flex-col sl-item-content">
         {item.type === 'intermission' ? (
-          <div className="flex-row" style={{ alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 600, color: 'var(--primary-deep)', fontSize: '0.95rem' }}>⏸️ {titleText}</span>
+          <div className="flex-row sl-item-header">
+            <span className="sl-intermission-title">⏸️ {titleText}</span>
             {displayDuration && (
-              <span className="badge badge-rehearsal" style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: 'var(--surface)' }}>
+              <span className="badge badge-rehearsal sl-badge-intermission">
                 {displayDuration}
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-xs text-muted" style={{ fontStyle: 'normal' }}>
+              <span className="text-xs text-muted sl-item-duration">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         ) : (
-          <div className="text-label flex-row" style={{ margin: 0, gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="text-label flex-row sl-solo-group">
             {(item.pieceId || linkedPiece?.id) && onPieceClick ? (
               <button
                 type="button"
                 onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  textAlign: 'left',
-                  fontFamily: 'inherit',
-                  fontSize: 'inherit',
-                  fontWeight: 'inherit',
-                  cursor: 'pointer',
-                  color: 'var(--primary)',
-                  textDecoration: 'underline',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
+                className="sl-item-title-linked"
               >
                 {titleText}
-                <span title="Linked to Music Library" style={{ fontSize: '0.85rem', textDecoration: 'none', display: 'inline-block' }}>🎼</span>
+                <span title="Linked to Music Library" className="sl-library-link">🎼</span>
               </button>
             ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <span className="sl-title-wrapper">
                 {onEdit ? (
                     <button
                         type="button"
                         onClick={() => onEdit(item)}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            textAlign: 'left',
-                            color: 'inherit',
-                            font: 'inherit',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textDecoration: 'underline dotted var(--primary)',
-                            textUnderlineOffset: '3px'
-                        }}
+                        className="sl-item-title-edit-btn"
                     >
                         {titleText}
                     </button>
                 ) : (
-                    <span style={{ fontWeight: 600 }}>{titleText}</span>
+                    <span className="sl-item-title-unlinked">{titleText}</span>
                 )}
-                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" style={{ fontSize: '0.85rem' }}>🎼</span>}
+                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" className="sl-library-icon">🎼</span>}
               </span>
             )}
             {item.soloSmallGroup && (
-              <span 
-                className="badge" 
-                style={{ 
-                  fontSize: '0.75rem', 
-                  padding: '2px 8px', 
-                  backgroundColor: 'rgba(74, 124, 89, 0.08)',
-                  color: 'var(--primary-deep)',
-                  border: '1px solid rgba(74, 124, 89, 0.15)',
-                  borderRadius: '12px',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
+              <span className="badge sl-solo-badge">
                 🎤 Solo / Small Group
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-xs text-muted" style={{ fontWeight: 'normal', marginLeft: '4px' }}>
+              <span className="text-xs text-muted sl-composer-text">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         )}
         {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
-          <div className="text-xs text-muted flex-row" style={{ alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
+          <div className="text-xs text-muted flex-row sl-missing-link">
             {displayComposer && (
-              <span style={{ fontWeight: 600, color: 'var(--primary-deep)', fontStyle: 'italic' }}>
+              <span className="sl-missing-link-text">
                 {displayComposer}
               </span>
             )}
             {displayComposer && displayDuration && <span>•</span>}
             {displayDuration && <span>{displayDuration}</span>}
             {linkedPiece?.genres && linkedPiece.genres.length > 0 && genres && (
-              <div className="flex-row" style={{ gap: '4px', display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="flex-row sl-action-buttons">
                 {linkedPiece.genres.map(id => {
                   const found = genres.find(g => g.id === id);
                   return (
                     <span 
                       key={id}
-                      style={{ 
-                        display: 'inline-flex',
-                        padding: '1px 5px',
-                        borderRadius: '4px',
-                        backgroundColor: 'rgba(74, 124, 89, 0.08)',
-                        border: '1px solid rgba(74, 124, 89, 0.15)',
-                        fontSize: '9px',
-                        fontWeight: 600,
-                        color: 'var(--primary-deep)',
-                        lineHeight: 1
-                      }}
+                      className="sl-genre-badge"
                     >
                       {found ? found.label : id}
                     </span>
@@ -202,7 +150,7 @@ export const SortableSetListItem: React.FC<Props> = ({
           </div>
         )}
         {item.notes && (
-          <div className="text-xs text-muted" style={{ fontStyle: 'italic', marginTop: '2px' }}>
+          <div className="text-xs text-muted sl-notes-text">
             {item.notes}
           </div>
         )}
@@ -215,9 +163,8 @@ export const SortableSetListItem: React.FC<Props> = ({
             e.stopPropagation();
             if (linkedPiece) onPlayTrack(linkedPiece);
           }} 
-          className="btn btn-secondary btn-sm"
+          className="btn btn-secondary btn-sm sl-play-btn"
           title="Play default track"
-          style={{ padding: '0 8px', minHeight: 'auto', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           🎵
         </button>
@@ -226,4 +173,3 @@ export const SortableSetListItem: React.FC<Props> = ({
     </div>
   );
 };
-

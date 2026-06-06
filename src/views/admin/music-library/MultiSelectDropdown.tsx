@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import './MultiSelectDropdown.css';
+import './MusicLibraryEditors.css';
 
 export interface MultiSelectOption {
     id: string;
@@ -233,6 +234,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                     <span
                                         key={opt.id}
                                         className="multiselect-chip"
+                                        // @allow-inline-style - Chip colors are dynamic and stable based on option mapping.
                                         style={{
                                             backgroundColor: color.bg,
                                             borderColor: color.border,
@@ -346,6 +348,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                                     role="option"
                                                     aria-selected={isChecked}
                                                     onClick={() => handleOptionToggle(option.id)}
+                                                    // @allow-inline-style - Chip colors are dynamic and stable based on option mapping.
                                                     style={isChecked ? {
                                                         backgroundColor: color.bg,
                                                         borderColor: color.border,

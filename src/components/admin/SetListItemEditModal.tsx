@@ -3,6 +3,7 @@ import { BaseModal } from '../common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
 import type { SetListItem } from '../../services/eventService';
+import '../../views/admin/SetList.css';
 
 interface SetListItemEditModalProps {
   isOpen: boolean;
@@ -101,22 +102,20 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </>
       }
     >
-      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col sl-modal-form">
+        <div className="flex-col sl-modal-form-group">
           <label className="text-label">Item Type</label>
-          <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+          <div className="flex-row sl-modal-type-group">
             <button
               type="button"
-              className={`btn btn-sm ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ flex: 1 }}
+              className={`btn btn-sm sl-modal-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setType('song')}
             >
               🎼 Song
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ flex: 1 }}
+              className={`btn btn-sm sl-modal-type-btn ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setType('intermission')}
             >
               ⏸️ Intermission
@@ -124,68 +123,59 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col sl-modal-form-group">
           <label className="text-label">Title</label>
           <input
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="card"
-            style={{ padding: '0 12px', height: '40px' }}
+            className="card sl-modal-input"
           />
         </div>
 
         {type === 'song' && (
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col sl-modal-form-group">
             <label className="text-label">Composer/Arranger</label>
             <input
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              className="card"
-              style={{ padding: '0 12px', height: '40px' }}
+              className="card sl-modal-input"
             />
           </div>
         )}
 
         {type === 'song' && (
-          <div className="flex-row card" style={{ 
-            alignItems: 'center', 
-            gap: '10px', 
-            padding: '12px',
-            backgroundColor: soloSmallGroup ? 'rgba(74, 124, 89, 0.08)' : 'var(--surface)',
-            border: soloSmallGroup ? '1px solid var(--primary)' : '1px solid var(--border)',
-            cursor: 'pointer',
-            userSelect: 'none'
-          }} onClick={() => setSoloSmallGroup(!soloSmallGroup)}>
+          <div 
+            className={`flex-row card sl-modal-solo-card ${soloSmallGroup ? 'sl-modal-solo-card-selected' : 'sl-modal-solo-card-unselected'}`}
+            onClick={() => setSoloSmallGroup(!soloSmallGroup)}
+          >
             <input
               type="checkbox"
               checked={soloSmallGroup}
               onChange={(e) => setSoloSmallGroup(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
-              style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+              className="sl-modal-solo-checkbox"
             />
-            <span style={{ fontSize: '14px', fontWeight: 500 }}>🎤 Mark as Solo / Small Group</span>
+            <span className="sl-modal-solo-label">🎤 Mark as Solo / Small Group</span>
           </div>
         )}
 
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col sl-modal-form-group">
           <label className="text-label">Duration</label>
           <input
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            className="card"
-            style={{ padding: '0 12px', height: '40px' }}
+            className="card sl-modal-input"
           />
         </div>
 
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+        <div className="flex-col sl-modal-form-group">
           <label className="text-label">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="card"
-            style={{ padding: '12px', minHeight: '80px', resize: 'vertical' }}
+            className="card sl-modal-textarea"
           />
         </div>
       </form>

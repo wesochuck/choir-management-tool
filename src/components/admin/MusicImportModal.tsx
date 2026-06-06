@@ -10,6 +10,7 @@ import {
   type MusicField,
   type MusicFieldMapping,
 } from '../../lib/musicImportUtils';
+import '../../views/admin/music-library/MusicLibraryEditors.css';
 
 interface MusicImportModalProps {
   isOpen: boolean;
@@ -213,7 +214,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       case 'MAP':
         return (
           <>
-            <button onClick={handleReset} className="btn btn-ghost" style={{ marginRight: 'auto' }}>Restart</button>
+            <button onClick={handleReset} className="btn btn-ghost mle-import-modal-bulk-restart">Restart</button>
             <button onClick={() => setStep('UPLOAD')} className="btn btn-ghost">Back</button>
             <button onClick={handleApplyMapping} className="btn btn-primary">Preview & Validate</button>
           </>
@@ -263,26 +264,14 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     >
       {/* STEP 1: UPLOAD */}
       {step === 'UPLOAD' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)', textAlign: 'center', padding: '20px 0' }}>
-          <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col mle-import-modal-upload-container">
+          <p className="text-muted text-sm mle-import-modal-upload-p">
             Upload a CSV file containing your music repertoire to bootstrap the process.
           </p>
 
           <div 
             onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: '2px dashed var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '40px 20px',
-              cursor: 'pointer',
-              backgroundColor: 'rgba(74, 124, 89, 0.02)',
-              transition: 'border-color 0.2s, background-color 0.2s',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-            }}
+            className="mle-import-modal-dropzone"
             onMouseOver={(e) => {
               e.currentTarget.style.borderColor = 'var(--primary)';
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.05)';
@@ -292,12 +281,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.02)';
             }}
           >
-            <span style={{ fontSize: '3rem' }}>🎼</span>
+            <span className="mle-import-modal-dropzone-icon">🎼</span>
             <div>
-              <strong style={{ color: 'var(--primary-deep)', display: 'block', fontSize: '1rem' }}>
+              <strong className="mle-import-modal-dropzone-label">
                 Select a CSV file to upload
               </strong>
-              <span className="text-muted text-xs" style={{ marginTop: '4px', display: 'block' }}>
+              <span className="text-muted text-xs mle-import-modal-dropzone-sublabel">
                 or drag & drop it here
               </span>
             </div>
@@ -306,11 +295,11 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               accept=".csv" 
               ref={fileInputRef} 
               onChange={handleFileUpload} 
-              style={{ display: 'none' }} 
+              className="mle-hidden-input" 
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <div className="mle-import-modal-hint">
             <span>💡</span>
             <span>The importer will automatically try to match column headers for you!</span>
           </div>
@@ -319,43 +308,26 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 2: FIELD MAPPING */}
       {step === 'MAP' && csvData && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col mle-import-modal-map-container">
+          <p className="text-muted text-sm mle-import-modal-upload-p">
             Align the columns in your CSV with our music library database fields. Smart auto-matches have been pre-selected.
           </p>
 
-          <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="flex-col mle-import-modal-map-list">
             {fieldsConfig.map(field => {
               const selectedIndex = mapping[field.key];
+              const isRequiredMissing = field.required && selectedIndex === -1;
               
               return (
                 <div 
                   key={field.key} 
-                  className="card" 
-                  style={{ 
-                    padding: '12px 16px', 
-                    display: 'flex', 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
-                  }}
+                  className={`card mle-import-modal-map-card ${isRequiredMissing ? 'required-missing' : ''}`}
                 >
-                  <div className="flex-col" style={{ gap: '2px', flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text)' }}>{field.label}</strong>
+                  <div className="flex-col mle-import-modal-map-field-info">
+                    <div className="mle-import-modal-map-field-label-container">
+                      <strong className="mle-import-modal-map-field-label">{field.label}</strong>
                       {field.required && (
-                        <span 
-                          style={{ 
-                            fontSize: '0.7rem', 
-                            backgroundColor: 'rgba(153, 27, 27, 0.1)', 
-                            color: '#991b1b', 
-                            padding: '1px 6px', 
-                            borderRadius: '4px',
-                            fontWeight: 600,
-                          }}
-                        >
+                        <span className="mle-import-modal-map-required-badge">
                           Required
                         </span>
                       )}
@@ -366,16 +338,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   <select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className="card"
-                    style={{ 
-                      width: '200px', 
-                      height: '38px', 
-                      padding: '0 10px', 
-                      border: '1px solid var(--border)', 
-                      fontSize: '0.85rem',
-                      borderColor: selectedIndex !== -1 ? 'var(--primary)' : undefined,
-                      boxShadow: 'none',
-                    }}
+                    className={`card mle-import-modal-map-select ${selectedIndex !== -1 ? 'mapped' : ''}`}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr: string, idx: number) => (
@@ -393,31 +356,31 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 3: PREVIEW & VALIDATION */}
       {step === 'PREVIEW' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col mle-import-modal-preview-container">
+          <div className="mle-import-modal-preview-header">
+            <p className="text-muted text-sm mle-import-modal-upload-p">
               Verify parsed music piece details and resolve validation warnings or errors before importing.
             </p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <span className="text-xs card" style={{ padding: '4px 8px', background: 'rgba(74, 124, 89, 0.05)', color: 'var(--primary-deep)', fontWeight: 600 }}>
+            <div className="mle-import-modal-preview-stats">
+              <span className="text-xs card mle-import-modal-preview-stat-mapped">
                 Total Mapped: {mappedPieces.length}
               </span>
-              <span className="text-xs card" style={{ padding: '4px 8px', background: 'rgba(153, 27, 27, 0.05)', color: '#991b1b', fontWeight: 600 }}>
+              <span className="text-xs card mle-import-modal-preview-stat-errors">
                 Errors: {mappedPieces.filter(p => !p.isValid).length}
               </span>
             </div>
           </div>
 
-          <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', maxHeight: '350px' }}>
-            <table className="table" style={{ width: '100%', minWidth: '600px', margin: 0 }}>
-              <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 1, boxShadow: '0 1px 0 var(--border)' }}>
+          <div className="mle-import-modal-table-container">
+            <table className="table mle-import-modal-table">
+              <thead className="mle-import-modal-table-thead">
                 <tr>
-                  <th style={{ width: '60px', textAlign: 'center' }}>Row</th>
+                  <th className="mle-import-modal-table-row-num">Row</th>
                   <th>Title</th>
                   <th>Composer</th>
                   <th>Arranger</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}>Copies</th>
-                  <th style={{ width: '100px' }}>Catalog ID</th>
+                  <th className="mle-import-modal-table-copies">Copies</th>
+                  <th className="mle-import-modal-table-catalog-col">Catalog ID</th>
                   <th>Status / Errors</th>
                 </tr>
               </thead>
@@ -429,43 +392,44 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   return (
                     <tr 
                       key={idx} 
+                      // @allow-inline-style - Row background highlights validation state (error/warning).
                       style={{ 
                         backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
                       }}
                     >
-                      <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      <td className="mle-import-modal-table-row-num">
                         {piece.rowNumber}
                       </td>
                       <td>
-                        <strong style={{ color: hasErrors ? '#c62828' : 'inherit' }}>
+                        <strong className={hasErrors ? 'mle-import-modal-text-error' : ''}>
                           {piece.data.title || '(Empty Title)'}
                         </strong>
                       </td>
-                      <td style={{ fontSize: '0.85rem' }}>{piece.data.composer || '-'}</td>
-                      <td style={{ fontSize: '0.85rem' }}>{piece.data.arranger || '-'}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className="text-xs" style={{ fontWeight: 600 }}>
+                      <td className="mle-import-modal-table-data-small">{piece.data.composer || '-'}</td>
+                      <td className="mle-import-modal-table-data-small">{piece.data.arranger || '-'}</td>
+                      <td className="mle-import-modal-table-copies">
+                        <span className="text-xs mle-import-modal-table-data-bold">
                           {piece.data.copies !== undefined ? piece.data.copies : '-'}
                         </span>
                       </td>
                       <td>
-                        <span className="text-xs card" style={{ padding: '2px 6px', display: 'inline-block' }}>
+                        <span className="text-xs card mle-import-modal-table-catalog-id">
                           {piece.data.catalogId || '-'}
                         </span>
                       </td>
                       <td>
                         {hasErrors && (
-                          <div style={{ color: '#c62828', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div className="mle-import-modal-status-errors">
                             {piece.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
                           </div>
                         )}
                         {hasWarnings && (
-                          <div style={{ color: '#b78103', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div className="mle-import-modal-status-warnings">
                             {piece.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
                           </div>
                         )}
                         {!hasErrors && !hasWarnings && (
-                          <span style={{ color: 'var(--primary-deep)', fontSize: '0.8rem' }}>🟢 Ready</span>
+                          <span className="mle-import-modal-status-ready">Ready</span>
                         )}
                       </td>
                     </tr>
@@ -479,11 +443,11 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 4: IMPORTING PROGRESS */}
       {step === 'IMPORTING' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)', padding: '20px 0', alignItems: 'center' }}>
-          <span style={{ fontSize: '3rem', animation: 'spin 2s linear infinite' }}>⚙️</span>
+        <div className="flex-col mle-import-modal-importing-container">
+          <span className="mle-import-modal-importing-icon">⚙️</span>
           
-          <div className="flex-col" style={{ gap: '6px', width: '100%', alignItems: 'center' }}>
-            <strong style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
+          <div className="mle-import-modal-importing-title-container">
+            <strong className="mle-import-modal-importing-title">
               Importing {mappedPieces.filter(p => p.isValid).length} Pieces...
             </strong>
             <span className="text-muted text-sm">
@@ -491,55 +455,44 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </span>
           </div>
 
-          <div style={{ width: '100%', height: '12px', backgroundColor: 'var(--border)', borderRadius: '6px', overflow: 'hidden', marginTop: '10px' }}>
+          <div className="mle-import-modal-importing-progress-bg">
             <div 
+              className="mle-import-modal-importing-progress-fill"
+              // @allow-inline-style - Progress bar width is dynamic based on import progress.
               style={{ 
-                height: '100%', 
-                backgroundColor: 'var(--primary)', 
                 width: `${importProgress}%`,
-                transition: 'width 0.1s ease-out',
               }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            <span>Successes: <strong style={{ color: 'var(--primary-deep)' }}>{successCount}</strong></span>
-            <span>Failures: <strong style={{ color: errorsList.length > 0 ? '#991b1b' : 'inherit' }}>{errorsList.length}</strong></span>
+          <div className="mle-import-modal-importing-stats">
+            <span>Successes: <strong className="mle-import-modal-text-primary">{successCount}</strong></span>
+            <span>Failures: <strong className={errorsList.length > 0 ? 'mle-import-modal-text-danger' : ''}>{errorsList.length}</strong></span>
           </div>
         </div>
       )}
 
       {/* STEP 5: IMPORT COMPLETE */}
       {step === 'COMPLETE' && (
-        <div className="flex-col" style={{ gap: 'var(--space-lg)', padding: '10px 0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
-            <span style={{ fontSize: '3.5rem' }}>🎉</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary-deep)' }}>Import Finished!</h3>
-            <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col mle-import-modal-complete-container">
+          <div className="mle-import-modal-complete-header">
+            <span className="mle-import-modal-complete-header-icon">🎉</span>
+            <h3 className="mle-import-modal-complete-title">Import Finished!</h3>
+            <p className="text-muted text-sm mle-import-modal-upload-p">
               Successfully imported <strong>{successCount}</strong> music pieces into your library.
             </p>
           </div>
 
           {/* Error Details */}
           {errorsList.length > 0 && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <strong style={{ fontSize: '0.9rem', color: '#991b1b' }}>
+            <div className="flex-col mle-import-modal-complete-errors-container">
+              <strong className="mle-import-modal-complete-errors-label">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
-              <div 
-                style={{ 
-                  maxHeight: '150px', 
-                  overflowY: 'auto', 
-                  border: '1px solid var(--border)', 
-                  borderRadius: 'var(--radius-md)',
-                  padding: '8px 12px',
-                  backgroundColor: '#fafafa',
-                  fontSize: '0.8rem',
-                }}
-              >
+              <div className="mle-import-modal-complete-errors-list">
                 {errorsList.map((err, i) => (
-                  <div key={i} style={{ padding: '4px 0', borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined, color: '#444' }}>
-                    Row {err.row} (<strong>{err.title}</strong>): <span style={{ color: '#991b1b' }}>{err.error}</span>
+                  <div key={i} className="mle-import-modal-complete-error-item">
+                    Row {err.row} (<strong>{err.title}</strong>): <span className="mle-import-modal-text-danger">{err.error}</span>
                   </div>
                 ))}
               </div>
