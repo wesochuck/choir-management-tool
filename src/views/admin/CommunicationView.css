@@ -270,7 +270,7 @@
   width: 100%;
   gap: var(--space-sm);
   padding: 0 0 var(--space-sm) 0;
-  border-bottom: 1px dashed var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 @media (max-width: 768px) {

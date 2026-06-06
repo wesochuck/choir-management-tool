@@ -316,7 +316,6 @@ return (
         <h1 className="text-display comm-page-title">
           Communications
         </h1>
-...
 
           {routeState?.returnToPolls && (
             <Link
