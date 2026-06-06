@@ -1,0 +1,1049 @@
+/* Music Library Editors & Import Styles */
+
+/* --- MusicImportModal --- */
+
+.mle-import-modal-upload-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    text-align: center;
+    padding: 20px 0;
+}
+
+.mle-import-modal-upload-p {
+    margin: 0;
+}
+
+.mle-import-modal-dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px 20px;
+    cursor: pointer;
+    background-color: rgba(74, 124, 89, 0.02);
+    transition: border-color 0.2s, background-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.mle-import-modal-dropzone:hover {
+    border-color: var(--primary);
+    background-color: rgba(74, 124, 89, 0.05);
+}
+
+.mle-import-modal-dropzone-icon {
+    font-size: 3rem;
+}
+
+.mle-import-modal-dropzone-label {
+    color: var(--primary-deep);
+    display: block;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.mle-import-modal-dropzone-sublabel {
+    margin-top: 4px;
+    display: block;
+}
+
+.mle-import-modal-hint {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.mle-import-modal-map-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.mle-import-modal-map-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.mle-import-modal-map-card {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mle-import-modal-map-card.required-missing {
+    border-color: var(--red-light);
+}
+
+.mle-import-modal-map-field-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.mle-import-modal-map-field-label-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mle-import-modal-map-field-label {
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.mle-import-modal-map-required-badge {
+    font-size: 0.7rem;
+    background-color: rgba(153, 27, 27, 0.1);
+    color: #991b1b;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.mle-import-modal-map-field-desc {
+    /* Uses .text-muted .text-xs */
+}
+
+.mle-import-modal-map-select {
+    width: 200px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    box-shadow: none;
+}
+
+.mle-import-modal-map-select.mapped {
+    border-color: var(--primary);
+}
+
+.mle-import-modal-preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.mle-import-modal-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mle-import-modal-preview-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.mle-import-modal-preview-stat-mapped {
+    padding: 4px 8px;
+    background: rgba(74, 124, 89, 0.05);
+    color: var(--primary-deep);
+    font-weight: 600;
+}
+
+.mle-import-modal-preview-stat-errors {
+    padding: 4px 8px;
+    background: rgba(153, 27, 27, 0.05);
+    color: #991b1b;
+    font-weight: 600;
+}
+
+.mle-import-modal-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    max-height: 350px;
+}
+
+.mle-import-modal-table {
+    width: 100%;
+    min-width: 600px;
+    margin: 0;
+}
+
+.mle-import-modal-table-thead {
+    position: sticky;
+    top: 0;
+    background-color: var(--bg);
+    z-index: 1;
+    box-shadow: 0 1px 0 var(--border);
+}
+
+.mle-import-modal-table-row-num {
+    width: 60px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.mle-import-modal-table-title {
+    /* Uses strong */
+}
+
+.mle-import-modal-table-copies {
+    width: 80px;
+    text-align: center;
+}
+
+.mle-import-modal-table-catalog-col {
+    width: 100px;
+}
+
+.mle-import-modal-table-catalog-id {
+    padding: 2px 6px;
+    display: inline-block;
+}
+
+.mle-import-modal-status-errors {
+    color: #c62828;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mle-import-modal-status-warnings {
+    color: #b78103;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mle-import-modal-status-ready {
+    color: var(--primary-deep);
+    font-size: 0.8rem;
+}
+
+.mle-import-modal-importing-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: 20px 0;
+    align-items: center;
+}
+
+.mle-import-modal-importing-icon {
+    font-size: 3rem;
+    animation: spin 2s linear infinite;
+}
+
+.mle-import-modal-importing-title-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    align-items: center;
+}
+
+.mle-import-modal-importing-title {
+    font-size: 1.1rem;
+    color: var(--text);
+}
+
+.mle-import-modal-importing-progress-bg {
+    width: 100%;
+    height: 12px;
+    background-color: var(--border);
+    borderRadius: 6px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.mle-import-modal-importing-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.mle-import-modal-complete-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding: 10px 0;
+}
+
+.mle-import-modal-complete-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+.mle-import-modal-complete-header-icon {
+    font-size: 3.5rem;
+}
+
+.mle-import-modal-complete-title {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--primary-deep);
+}
+
+.mle-import-modal-complete-errors-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.mle-import-modal-complete-errors-label {
+    font-size: 0.9rem;
+    color: #991b1b;
+}
+
+.mle-import-modal-complete-errors-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    background-color: #fafafa;
+    font-size: 0.8rem;
+}
+
+.mle-import-modal-complete-error-item {
+    padding: 4px 0;
+    color: #444;
+}
+
+.mle-import-modal-complete-error-item:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+}
+
+.mle-import-modal-bulk-restart {
+    margin-right: auto;
+}
+
+.mle-hidden-input {
+    display: none;
+}
+
+.mle-import-modal-hidden-input {
+    display: none;
+}
+
+.mle-import-modal-table-data-small {
+    font-size: 0.85rem;
+}
+
+.mle-import-modal-table-data-bold {
+    font-weight: 600;
+}
+
+.mle-import-modal-importing-progress-fill {
+    height: 100%;
+    background-color: var(--primary);
+    transition: width 0.1s ease-out;
+}
+
+.mle-import-modal-text-primary {
+    color: var(--primary-deep);
+}
+
+.mle-import-modal-text-error {
+    color: #c62828;
+}
+
+.mle-import-modal-text-danger {
+    color: #991b1b;
+}
+
+
+/* --- MusicLibraryFilters --- */
+
+.mle-filters-container {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border);
+    gap: var(--space-sm);
+}
+
+.mle-filters-row1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-sm);
+    align-items: end;
+}
+
+.mle-filters-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mle-filters-field-label {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.mle-filters-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+}
+
+.mle-filters-row2 {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-lg);
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: 2px;
+}
+
+.mle-filters-select-group {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+}
+
+.mle-filters-select-label {
+    font-weight: 600;
+}
+
+.mle-filters-select {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.mle-filters-select-per-page {
+    min-width: 60px;
+}
+
+.mle-filters-checkbox-label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.mle-filters-checkbox {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary);
+}
+
+.mle-filters-checkbox-text {
+    font-weight: 500;
+}
+
+.mle-filters-bulk-delete {
+    margin-left: auto;
+}
+
+
+/* --- LearningTracksEditor --- */
+
+.mle-tracks-editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-sm);
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.mle-tracks-editor-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mle-tracks-editor-item-normal {
+    padding: 8px 12px;
+    background-color: var(--bg-card-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transform: scale(1);
+    box-shadow: none;
+}
+
+.mle-tracks-editor-item-movement {
+    padding: 6px 10px;
+    background-color: var(--bg-card-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transform: scale(1);
+    box-shadow: none;
+    font-size: 13px;
+}
+
+.mle-tracks-editor-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.mle-tracks-editor-info-normal {
+    min-width: 90px;
+}
+
+.mle-tracks-editor-info-movement {
+    min-width: 80px;
+}
+
+.mle-tracks-editor-display-name {
+    color: var(--text-color);
+}
+
+.mle-tracks-editor-display-name-normal {
+    font-size: 13px;
+}
+
+.mle-tracks-editor-display-name-movement {
+    font-size: 12px;
+}
+
+.mle-tracks-editor-full-name-normal {
+    font-size: 11px;
+}
+
+.mle-tracks-editor-full-name-movement {
+    font-size: 10px;
+}
+
+.mle-tracks-editor-uploading {
+    font-size: 12px;
+}
+
+.mle-tracks-editor-audio-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.mle-tracks-editor-audio {
+    flex: 1;
+    width: 100%;
+}
+
+.mle-tracks-editor-audio-normal {
+    height: 28px;
+}
+
+.mle-tracks-editor-audio-movement {
+    height: 24px;
+}
+
+.mle-tracks-editor-delete-btn {
+    color: var(--danger);
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    min-height: auto;
+    height: auto;
+    margin: 0;
+}
+
+.mle-tracks-editor-empty-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1;
+}
+
+.mle-tracks-editor-upload-label {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    fontSize: 11px;
+    padding: 2px 8px;
+    height: 24px;
+    minHeight: 24px;
+    margin: 0;
+}
+
+.mle-tracks-editor-add-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    border-top: 1px dashed var(--border);
+    justify-content: flex-start;
+}
+
+.mle-tracks-editor-add-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.mle-tracks-editor-add-select {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    backgroundColor: var(--bg-card-hover);
+    color: var(--text-color);
+    cursor: pointer;
+    outline: none;
+    fontWeight: 500;
+}
+
+
+/* --- MusicPieceModal --- */
+
+.mle-modal-delete-btn {
+    margin-right: auto;
+}
+
+.mle-mt-xs {
+    margin-top: var(--space-xs);
+}
+
+.mle-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.mle-form-group-no-margin {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+}
+
+.mle-form-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+}
+
+.mle-form-grid-duration {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-md);
+}
+
+.mle-input-hint {
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.mle-checkbox-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.mle-checkbox-row-no-margin {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+}
+
+.mle-checkbox-input {
+    cursor: pointer;
+}
+
+.mle-checkbox-input-styled {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.mle-checkbox-label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.mle-staging-header-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mle-staging-input-row {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.mle-staging-input-name {
+    padding: 0 8px;
+    height: 30px;
+    font-size: 12px;
+    flex: 2;
+}
+
+.mle-staging-input-duration {
+    padding: 0 8px;
+    height: 30px;
+    font-size: 12px;
+    flex: 1;
+}
+
+.mle-staging-add-btn {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+}
+
+.mle-duration-suggestion-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary, #1b4d3e);
+    font-weight: 500;
+}
+
+.mle-duration-suggestion-apply-btn {
+    padding: 2px 8px;
+    height: 22px;
+    min-height: 22px;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.mle-catalog-lookup-link {
+    align-self: flex-start;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    height: 24px;
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    margin-top: 2px;
+    line-height: 1;
+}
+
+.mle-notes-hint {
+    margin-top: 2px;
+}
+
+.mle-perf-pills-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    min-height: 36px;
+}
+
+.mle-perf-pills-container-tracks {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    min-height: 40px;
+    padding: var(--space-xs) 0;
+}
+
+.mle-perf-pill-remove-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.mle-perf-select-full {
+    padding: 0 12px;
+    height: 40px;
+    width: 100%;
+}
+
+.mle-perf-select-half {
+    flex: 1 1 200px;
+    padding: 0 12px;
+    height: 40px;
+    min-width: 0;
+}
+
+.mle-tutti-preview-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: rgba(74, 124, 89, 0.05);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    gap: var(--space-md);
+}
+
+.mle-tutti-info-col {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+.mle-tutti-icon-emoji {
+    font-size: 18px;
+}
+
+.mle-tutti-text-stack {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.mle-tutti-filename {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+
+.mle-tutti-remove-btn {
+    color: var(--danger);
+    padding: 4px 8px;
+    height: 28px;
+    min-height: auto;
+    margin: 0;
+}
+
+.mle-tutti-upload-emoji {
+    font-size: 20px;
+}
+
+.mle-tutti-upload-hint {
+    font-size: 13px;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.mle-tutti-upload-browse-text {
+    color: var(--primary);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.mle-perf-actions-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.mle-quick-add-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+}
+
+.mle-quick-add-title {
+    margin-top: 0;
+    margin-bottom: var(--space-md);
+    color: var(--primary);
+}
+
+.mle-quick-add-field {
+    padding: 0 12px;
+    height: 36px;
+    font-size: 14px;
+}
+
+.mle-quick-add-grid-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-md);
+}
+
+.mle-quick-add-select-field {
+    padding: 0 12px;
+    height: 36px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.mle-quick-add-submit-btn {
+    align-self: flex-end;
+    margin-top: var(--space-xs);
+}
+
+.mle-tracks-editor-fallback-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background-color: rgba(74, 124, 89, 0.03);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 14px;
+    justify-content: center;
+}
+
+.mle-movements-section-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mle-movements-section-title {
+    margin: 0;
+    color: var(--primary);
+}
+
+.mle-movements-empty-state {
+    padding: var(--space-md);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.mle-movement-item-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.mle-movement-item-title-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.mle-movement-item-title-strong {
+    font-size: 14px;
+}
+
+.mle-movement-item-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.mle-movement-item-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: 28px;
+    min-height: auto;
+}
+
+.mle-movement-tracks-editor-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: var(--space-sm);
+}
+
+.mle-movement-tracks-editor-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    display: block;
+}
+
+.mle-movement-add-form-container {
+    padding: var(--space-md);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--surface-muted, #f8fafc);
+}
+
+.mle-movement-add-title {
+    margin-top: 0;
+    margin-bottom: var(--space-sm);
+    color: var(--primary);
+}
+
+.mle-movement-add-inputs-row {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-sm);
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.mle-movement-add-name-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 2 1 200px;
+}
+
+.mle-movement-add-duration-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 100px;
+}
+
+.mle-movement-add-input-field {
+    padding: 0 12px;
+    height: 36px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.mle-movement-add-submit-btn {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+}
+
+.mle-tracks-tab-content {
+    gap: var(--space-xs);
+}
+
+.mle-movements-tab-content {
+    gap: var(--space-md);
+}
+
+.mle-movements-list-container {
+    gap: var(--space-sm);
+}
+
+.mle-movement-item-btn-danger {
+    color: var(--danger) !important;
+}
