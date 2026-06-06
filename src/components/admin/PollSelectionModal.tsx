@@ -3,6 +3,7 @@ import { BaseModal } from '../common/BaseModal';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import type { RecordModel } from 'pocketbase';
+import './PollSelectionModal.css';
 
 interface PollRecord extends RecordModel {
   question: string;
@@ -80,8 +81,8 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
       maxWidth="500px"
     >
 
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-        <div className="flex-row" style={{ gap: 'var(--space-xs)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)' }}>
+      <div className="flex-col poll-sel-main">
+        <div className="flex-row poll-sel-tabs">
           <button
             className={`btn btn-sm ${tab === 'list' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setTab('list')}
@@ -97,24 +98,23 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
         </div>
 
         {tab === 'list' ? (
-          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-            <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
+          <div className="flex-col poll-sel-list-wrapper">
+            <div className="flex-col poll-sel-list-scroll">
               {isLoading ? (
-                <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>Loading polls...</p>
+                <p className="text-muted poll-sel-status-text">Loading polls...</p>
               ) : polls.length === 0 ? (
-                <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>No polls found. Create one to get started!</p>
+                <p className="text-muted poll-sel-status-text">No polls found. Create one to get started!</p>
               ) : (
                 polls.map(poll => (
                   <button
                     key={poll.id}
-                    className="card flex-col"
-                    style={{ textAlign: 'left', padding: 'var(--space-sm) var(--space-md)', gap: '4px', cursor: 'pointer', border: '1px solid var(--border)' }}
+                    className="card flex-col poll-sel-item"
                     onClick={() => {
                       onSelect(poll.id, poll.question);
                       onClose();
                     }}
                   >
-                    <strong style={{ fontSize: '0.95rem' }}>{poll.question}</strong>
+                    <strong className="poll-sel-item-question">{poll.question}</strong>
                     {poll.eventId && (
                       <span className="text-muted text-xs">
                         Linked to: {events.find(e => e.id === poll.eventId)?.title || 'Event'}
@@ -124,32 +124,30 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
                 ))
               )}
             </div>
-            <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-xs)' }}>
+            <div className="flex-row poll-sel-actions">
               <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleCreate} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <form onSubmit={handleCreate} className="flex-col poll-sel-main">
+            <div className="flex-col poll-sel-form-group">
               <label className="text-label">Poll Question</label>
               <input
-                className="card"
+                className="card poll-sel-input"
                 autoFocus
                 required
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
                 placeholder="e.g. Can you help with riser setup?"
-                style={{ height: '44px', padding: '0 12px' }}
               />
             </div>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col poll-sel-form-group">
               <label className="text-label">Linked Event (Optional)</label>
               <select
-                className="card"
+                className="card poll-sel-input"
                 value={eventId}
                 onChange={e => setEventId(e.target.value)}
-                style={{ height: '44px', padding: '0 12px' }}
               >
                 <option value="">No Linked Event</option>
                 {events.map(event => (
@@ -160,7 +158,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
               </select>
             </div>
 
-            <div className="flex-row" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-xs)' }}>
+            <div className="flex-row poll-sel-actions">
               <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn btn-primary" disabled={isCreating || !question}>
                 {isCreating ? 'Creating...' : 'Create & Insert Poll'}

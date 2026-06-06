@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { pb } from '../../lib/pocketbase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './AdminDashboardView.css';
+import './Dashboards.css';
 
 const dashboardSections = [
   {
@@ -171,6 +172,7 @@ export default function AdminDashboardView() {
             <div className="admin-dashboard-section-header">
               <div 
                 className="admin-dashboard-section-dot" 
+                // @allow-inline-style - dynamic dot color from section config
                 style={{ backgroundColor: section.dotColor }}
               />
               <h2 className="admin-dashboard-section-title">{section.title}</h2>

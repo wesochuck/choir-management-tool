@@ -1,0 +1,50 @@
+.poll-sel-main {
+  gap: var(--space-md);
+}
+
+.poll-sel-tabs {
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-xs);
+}
+
+.poll-sel-list-wrapper {
+  gap: var(--space-sm);
+}
+
+.poll-sel-list-scroll {
+  gap: var(--space-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.poll-sel-status-text {
+  text-align: center;
+  padding: var(--space-md);
+}
+
+.poll-sel-item {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  gap: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.poll-sel-item-question {
+  font-size: 0.95rem;
+}
+
+.poll-sel-actions {
+  justify-content: flex-end;
+  margin-top: var(--space-xs);
+}
+
+.poll-sel-form-group {
+  gap: var(--space-xs);
+}
+
+.poll-sel-input {
+  height: 44px;
+  padding: 0 12px;
+}

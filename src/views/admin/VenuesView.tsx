@@ -3,6 +3,7 @@ import { useVenues } from '../../hooks/useVenues';
 import { checkVenueDependencies, type Venue } from '../../services/venueService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
+import './Venues.css';
 
 export default function VenuesView() {
   const dialog = useDialog();
@@ -75,12 +76,12 @@ export default function VenuesView() {
     await removeVenue(venue.id);
   };
 
-  if (isLoading && venues.length === 0) return <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading venues...</div>;
+  if (isLoading && venues.length === 0) return <div className="container venue-loading">Loading venues...</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-       <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 className="text-display" style={{ margin: 0 }}>Venue Templates</h1>
+    <div className="flex-col venue-container">
+       <div className="flex-responsive venue-header">
+        <h1 className="text-display venue-title">Venue Templates</h1>
         {!isAdding && (
           <button onClick={() => setIsAdding(true)} className="btn btn-primary">+ New Venue</button>
         )}
@@ -88,46 +89,43 @@ export default function VenuesView() {
 
       {isAdding && (
         <AppCard title={editingId ? 'Edit Venue' : 'Create New Venue'}>
-          <form onSubmit={handleSave} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <form onSubmit={handleSave} className="flex-col venue-form">
+            <div className="flex-col venue-form-field">
               <label className="text-label">Venue Name</label>
               <input 
                 value={name} onChange={(e) => setName(e.target.value)} required
                 placeholder="e.g. Main Sanctuary"
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px' }}
+                className="card venue-input"
               />
             </div>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col venue-form-field">
               <label className="text-label">Address</label>
               <input 
                 value={address} onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 123 Main St, City, State"
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px' }}
+                className="card venue-input"
               />
             </div>
-            <div className="flex-row" style={{ gap: 'var(--space-xs)', alignItems: 'center' }}>
+            <div className="flex-row venue-checkbox-container">
               <input 
                 type="checkbox"
                 id="isOpenSeating"
                 checked={isOpenSeating} onChange={(e) => setIsOpenSeating(e.target.checked)}
               />
-              <label htmlFor="isOpenSeating" className="text-label" style={{ margin: 0 }}>Open Seating (No assigned seats)</label>
+              <label htmlFor="isOpenSeating" className="text-label venue-checkbox-label">Open Seating (No assigned seats)</label>
             </div>
             {!isOpenSeating && (
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <div className="flex-col venue-form-field">
                 <label className="text-label">Row Capacities (Comma separated)</label>
                 <input 
                   value={rowCountsStr} onChange={(e) => setRowCountsStr(e.target.value)} required
                   placeholder="e.g. 12, 15, 18, 20"
-                  className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '44px' }}
+                  className="card venue-input"
                 />
                 <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
               </div>
             )}
-            <div className="flex-responsive" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)' }}>
+            <div className="flex-responsive venue-form-actions">
               <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>
               <button type="submit" className="btn btn-primary">Save Template</button>
             </div>
@@ -135,10 +133,10 @@ export default function VenuesView() {
         </AppCard>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-lg)' }}>
+      <div className="venue-grid">
         {venues.map(v => (
           <AppCard key={v.id} title={v.name}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col venue-card-content">
               {v.address && (
                 <div className="text-body">
                   <span className="text-muted">Address:</span>{' '}
@@ -148,7 +146,7 @@ export default function VenuesView() {
                 </div>
               )}
               {v.isOpenSeating ? (
-                <div className="text-body" style={{ color: 'var(--primary)' }}>
+                <div className="text-body venue-open-seating">
                   <strong>Open Seating</strong>
                 </div>
               ) : (
@@ -165,15 +163,14 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="flex-responsive" style={{ gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
-              <button onClick={() => handleEdit(v)} className="btn btn-ghost expanded-hit-area" style={{ flex: 1 }}>Edit</button>
+            <div className="flex-responsive venue-card-actions">
+              <button onClick={() => handleEdit(v)} className="btn btn-ghost expanded-hit-area venue-action-btn">Edit</button>
               <button 
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(v);
                 }}
-                className="btn btn-danger" 
-                style={{ flex: 1 }}
+                className="btn btn-danger venue-action-btn"
               >
                 Delete
               </button>
@@ -183,7 +180,7 @@ export default function VenuesView() {
       </div>
 
       {venues.length === 0 && !isAdding && (
-        <AppCard style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+        <AppCard className="venue-empty">
           <p className="text-muted">No venue templates created yet.</p>
         </AppCard>
       )}

@@ -6,6 +6,7 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import EventRosterView from './EventRosterView';
+import './Dashboards.css';
 
 export default function RsvpDashboardView() {
   const [searchParams] = useSearchParams();
@@ -36,14 +37,14 @@ export default function RsvpDashboardView() {
   );
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
+    <div className="flex-col db-container-vertical db-padding-v">
       <div className="admin-view-header">
         <div className="admin-view-titles">
           {/* Page title is already handled by PageLayout in App.tsx */}
         </div>
-        <div className="admin-view-actions" style={{ minWidth: '320px' }}>
-          <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
-            <label className="text-label" style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Select Event</label>
+        <div className="admin-view-actions db-filter-actions">
+          <div className="db-form-field db-flex-1">
+            <label className="text-label db-filter-label db-font-sm">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
@@ -59,36 +60,25 @@ export default function RsvpDashboardView() {
       </div>
 
       {selectedEvent && (
-        <div 
-          className="card-accent" 
-          style={{ 
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 'var(--space-md)'
-          }}
-        >
-          <div className="flex-col" style={{ gap: '2px' }}>
-            <span className="text-muted text-xs" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Event</span>
-            {selectedEvent.title && <h2 className="text-headline" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary-deep)' }}>{selectedEvent.title}</h2>}
+        <div className="card-accent db-accent-card">
+          <div className="db-event-title-stack">
+            <span className="text-muted text-xs db-filter-label db-letter-spacing">Active Event</span>
+            {selectedEvent.title && <h2 className="db-event-headline">{selectedEvent.title}</h2>}
           </div>
           
-          <div className="flex-row" style={{ gap: 'var(--space-lg)', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
+          <div className="db-event-meta-row">
+            <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'} db-event-type-badge`}>
               {selectedEvent.type}
             </span>
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label"
-              style={{ fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary-deep)' }}
+              className="text-label db-venue-link"
             >
               📍 {selectedEvent.expand?.venue?.name || ''}
             </a>
-            <span className="text-muted text-sm" style={{ fontWeight: 500 }}>
+            <span className="text-muted text-sm db-event-date">
               📅 {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
@@ -96,18 +86,18 @@ export default function RsvpDashboardView() {
       )}
 
       {isLoading ? (
-        <AppCard style={{ textAlign: 'center', padding: '32px' }}>
+        <AppCard className="db-loading-card">
           <p className="text-muted">Loading events...</p>
         </AppCard>
       ) : error ? (
-        <AppCard style={{ textAlign: 'center', border: '1px solid var(--color-danger-text)', padding: '24px' }}>
-          <p style={{ color: 'var(--color-danger-text)', fontWeight: 600 }}>{error}</p>
+        <AppCard className="db-error-card">
+          <p className="db-error-text">{error}</p>
         </AppCard>
       ) : selectedEventId ? (
         <EventRosterView eventIdProp={selectedEventId} />
       ) : (
-        <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
-          <p className="text-muted" style={{ fontSize: '1rem', margin: 0 }}>Please select an event above to view and manage RSVPs.</p>
+        <AppCard className="db-empty-state-card">
+          <p className="text-muted db-empty-state-text">Please select an event above to view and manage RSVPs.</p>
         </AppCard>
       )}
     </div>

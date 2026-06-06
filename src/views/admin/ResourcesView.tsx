@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
+import './Resources.css';
 
 export default function ResourcesView() {
   const dialog = useDialog();
@@ -149,14 +150,14 @@ export default function ResourcesView() {
   };
 
   if (isLoading && resources.length === 0) {
-    return <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading resources...</div>;
+    return <div className="container res-loading">Loading resources...</div>;
   }
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex-col res-container">
+      <div className="flex-responsive res-header">
         <div>
-          <h1 className="text-display" style={{ margin: 0 }}>Singer Resources</h1>
+          <h1 className="text-display res-title">Singer Resources</h1>
           <p className="text-muted text-sm">Upload documents or reference URLs for active singers to view on their dashboard.</p>
         </div>
         {!isAdding && (
@@ -166,39 +167,38 @@ export default function ResourcesView() {
 
       {isAdding && (
         <AppCard title={editingId ? 'Edit Resource' : 'Create New Resource'}>
-          <form onSubmit={handleSave} className="flex-col" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <form onSubmit={handleSave} className="flex-col res-form">
+            <div className="flex-col res-form-field">
               <label className="text-label">Resource Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="e.g. Choir Singer Handbook"
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                className="card res-input"
               />
             </div>
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col res-form-field">
               <label className="text-label">Resource Type</label>
-              <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
-                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+              <div className="flex-row res-radio-group">
+                <label className="flex-row res-radio-label">
                   <input
                     type="radio"
                     name="resourceType"
                     checked={resourceType === 'file'}
                     onChange={() => setResourceType('file')}
-                    style={{ accentColor: 'var(--primary)' }}
+                    className="res-radio-input"
                   />
                   File Upload
                 </label>
-                <label className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer' }}>
+                <label className="flex-row res-radio-label">
                   <input
                     type="radio"
                     name="resourceType"
                     checked={resourceType === 'link'}
                     onChange={() => setResourceType('link')}
-                    style={{ accentColor: 'var(--primary)' }}
+                    className="res-radio-input"
                   />
                   Link URL
                 </label>
@@ -206,19 +206,18 @@ export default function ResourcesView() {
             </div>
 
             {resourceType === 'file' ? (
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <div className="flex-col res-form-field">
                 <label className="text-label">File Upload</label>
                 <input
                   type="file"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   required={!editingId}
-                  className="card"
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)' }}
+                  className="card res-file-input"
                 />
                 <span className="text-xs text-muted">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
               </div>
             ) : (
-              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+              <div className="flex-col res-form-field">
                 <label className="text-label">Link URL</label>
                 <input
                   type="text"
@@ -226,27 +225,25 @@ export default function ResourcesView() {
                   onChange={(e) => setUrl(e.target.value)}
                   required
                   placeholder="drive.google.com/..."
-                  className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                  className="card res-input"
                 />
                 <span className="text-xs text-muted">Enter a link URL. https:// will be prepended if missing.</span>
               </div>
             )}
 
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+            <div className="flex-col res-form-field">
               <label className="text-label">Sort Order (Optional)</label>
               <input
                 type="number"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
                 placeholder="e.g. 1"
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                className="card res-input"
               />
               <span className="text-xs text-muted">Lower numbers show up first on the dashboard.</span>
             </div>
 
-            <div className="flex-responsive" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)' }}>
+            <div className="flex-responsive res-form-actions">
               <button type="button" onClick={resetForm} disabled={isSaving} className="btn btn-ghost">Cancel</button>
               <button type="submit" disabled={isSaving} className="btn btn-primary">
                 {isSaving ? 'Saving...' : 'Save Resource'}
@@ -256,16 +253,16 @@ export default function ResourcesView() {
         </AppCard>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-lg)' }}>
+      <div className="res-grid">
         {resources.map(r => (
           <AppCard key={r.id} title={r.title}>
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', minHeight: '60px' }}>
+            <div className="flex-col res-card-content">
               <div className="text-body">
                 <span className="text-muted">Type:</span>{' '}
                 {r.url ? '🔗 Link' : '📄 File Upload'}
               </div>
               {r.url ? (
-                <div className="text-body text-xs text-muted" style={{ wordBreak: 'break-all' }}>
+                <div className="text-body text-xs text-muted res-url-container">
                   <a href={r.url} target="_blank" rel="noopener noreferrer">
                     {r.url}
                   </a>
@@ -281,15 +278,14 @@ export default function ResourcesView() {
                 <span className="text-muted">Sort Order:</span> {r.sortOrder || 0}
               </div>
             </div>
-            <div className="flex-responsive" style={{ gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
-              <button onClick={() => handleEdit(r)} className="btn btn-ghost expanded-hit-area" style={{ flex: 1 }}>Edit</button>
+            <div className="flex-responsive res-card-actions">
+              <button onClick={() => handleEdit(r)} className="btn btn-ghost expanded-hit-area res-action-btn">Edit</button>
               <button
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(r);
                 }}
-                className="btn btn-danger"
-                style={{ flex: 1 }}
+                className="btn btn-danger res-action-btn"
               >
                 Delete
               </button>
@@ -299,7 +295,7 @@ export default function ResourcesView() {
       </div>
 
       {resources.length === 0 && !isAdding && (
-        <AppCard style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+        <AppCard className="res-empty">
           <p className="text-muted">No resources uploaded yet.</p>
         </AppCard>
       )}

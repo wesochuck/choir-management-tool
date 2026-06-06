@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import './PollsDashboardView.css';
+import './Dashboards.css';
 import { BaseModal } from '../../components/common/BaseModal';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
@@ -251,34 +252,32 @@ export default function PollsDashboardView() {
     }
   };
 
-  if (isLoading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Polls...</div>;
+  if (isLoading) return <div className="db-loading-card">Loading Polls...</div>;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
-      <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
-        <h2 className="text-headline" style={{ margin: 0 }}>Engagement Polls & Volunteering</h2>
-        <div className="flex-row" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
-          <label className="flex-row" style={{ gap: '8px', alignItems: 'center', cursor: 'pointer', fontSize: '0.9rem' }}>
+    <div className="flex-col db-container-vertical db-padding-v">
+      <div className="db-header-row">
+        <h2 className="text-headline db-margin-0">Engagement Polls & Volunteering</h2>
+        <div className="db-polls-header-actions">
+          <label className="db-polls-archive-toggle">
             <input 
               type="checkbox" 
               checked={showArchived} 
               onChange={e => setShowArchived(e.target.checked)}
-              style={{ width: '16px', height: '16px' }}
+              className="db-polls-checkbox"
             />
             Show Archived
           </label>
           <button 
             type="button"
-            className="btn btn-secondary btn-sm flex-row" 
-            style={{ gap: '6px', height: '36px', display: 'flex', alignItems: 'center' }}
+            className="btn btn-secondary btn-sm db-polls-btn-content" 
             onClick={() => setIsSettingsModalOpen(true)}
           >
             ⚙️ Settings
           </button>
           <button 
             type="button"
-            className="btn btn-primary btn-sm flex-row" 
-            style={{ gap: '6px', height: '36px', display: 'flex', alignItems: 'center' }}
+            className="btn btn-primary btn-sm db-polls-btn-content" 
             onClick={openQuickCreate}
           >
             <span>+</span> Start New Poll
@@ -286,15 +285,15 @@ export default function PollsDashboardView() {
         </div>
       </div>
 
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+      <div className="flex-col db-container-vertical">
         {loadError && (
-          <AppCard style={{ padding: 'var(--space-md)', borderColor: '#ef4444' }}>
-            <p style={{ margin: 0, color: '#ef4444' }}>{loadError}</p>
+          <AppCard className="db-error-card">
+            <p className="db-error-text">{loadError}</p>
           </AppCard>
         )}
         {filteredPolls.length === 0 ? (
-          <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: 'var(--space-md)' }}>No active polls found.</p>
+          <AppCard className="db-empty-state-card flex-col db-align-center">
+            <p className="text-muted db-empty-state-text db-margin-b-md">No active polls found.</p>
             <div>
               <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
                 Start New Poll
@@ -302,7 +301,7 @@ export default function PollsDashboardView() {
             </div>
           </AppCard>
         ) : (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-col db-container-vertical">
             <AppCard noPadding className="polls-list-card">
               {paginatedPolls.map((poll, index) => {
                 const stat = pollStats[poll.id];
@@ -391,15 +390,14 @@ export default function PollsDashboardView() {
                     })();
 
                     return (
-                      <div className="polls-response-panel flex-col" style={{ gap: 'var(--space-md)' }}>
-                        <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '4px' }}>
+                      <div className="polls-response-panel flex-col db-container-vertical">
+                        <div className="db-polls-response-header">
                           {contactedSingers.length > 0 ? (
                             <>
                               <span>📨 Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
                               <button
                                 type="button"
-                                className="btn btn-ghost btn-sm"
-                                style={{ padding: '0 8px', height: '24px', fontSize: '0.75rem', textDecoration: 'underline', color: 'var(--primary)', cursor: 'pointer' }}
+                                className="btn btn-ghost btn-sm db-polls-view-contacted-btn"
                                 onClick={() => setRecipientModal({
                                   isOpen: true,
                                   recipients: contactedSingers,
@@ -414,7 +412,7 @@ export default function PollsDashboardView() {
                               📨 No sent communications found for this poll yet. You can send it from the{' '}
                               <a
                                 href="/admin/communications"
-                                style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+                                className="db-link-primary"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   navigate('/admin/communications');
@@ -426,7 +424,7 @@ export default function PollsDashboardView() {
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', gap: 'var(--space-xl)', width: '100%' }} className="polls-response-columns-container">
+                        <div className="db-polls-response-columns polls-response-columns-container">
                           <div className="polls-response-column">
                             <h4 className="polls-response-heading polls-response-heading-yes">
                               Volunteers ({stat.yes})
@@ -486,43 +484,41 @@ export default function PollsDashboardView() {
         title={quickCreateStep === 1 ? 'Quick Create Poll' : 'Confirm & Open Review'}
         maxWidth="560px"
       >
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        <div className="flex-col db-container-vertical">
           {quickCreateStep === 1 ? (
             <>
-              <p className="text-muted" style={{ margin: 0 }}>
+              <p className="text-muted db-margin-0">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)', marginBottom: 'var(--space-md)' }}>
+              <div className="db-form-field">
                 <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
                 <input
                   id="quick-poll-question"
                   type="text"
-                  className="card"
-                  style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  className="card db-form-input"
                   value={quickPollQuestion}
                   onChange={(e) => setQuickPollQuestion(e.target.value)}
                   placeholder="e.g. Who can help with setup?"
                   required
                 />
               </div>
-              <div className="flex-col" style={{ gap: 'var(--space-xs)', marginBottom: 'var(--space-md)' }}>
+              <div className="db-form-field">
                 <label className="text-label" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
                 <input
                   id="quick-poll-days"
                   type="number"
                   min="1"
                   max="365"
-                  className="card"
-                  style={{ width: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                  className="card db-form-input-short"
                   value={quickPollDays}
                   onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
                   required
                 />
               </div>
-              <p className="text-muted text-sm" style={{ margin: 0, marginBottom: 'var(--space-sm)' }}>
+              <p className="text-muted text-sm db-margin-0 db-margin-b-sm">
                 Recipients default to all singers with status Active or Idle.
               </p>
-              <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+              <div className="db-modal-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => setIsQuickCreateOpen(false)}>Cancel</button>
                 <button
                   type="button"
@@ -536,19 +532,19 @@ export default function PollsDashboardView() {
             </>
           ) : (
             <>
-              <p style={{ margin: 0 }}>
+              <p className="db-margin-0">
                 We'll create this poll and save a pre-filled message to your <strong>Drafts</strong>. You can review, edit, and send from the Communications page.
               </p>
-              <div className="card" style={{ padding: '12px 14px' }}>
-                <div className="text-muted text-xs" style={{ marginBottom: '6px' }}>Poll Question</div>
+              <div className="card db-preview-card">
+                <div className="text-muted text-xs db-preview-label">Poll Question</div>
                 <strong>{quickPollQuestion.trim()}</strong>
               </div>
-              <div className="card" style={{ padding: '12px 14px' }}>
-                <div className="text-muted text-xs" style={{ marginBottom: '6px' }}>Draft Preview</div>
+              <div className="card db-preview-card">
+                <div className="text-muted text-xs db-preview-label">Draft Preview</div>
                 <div><strong>Subject:</strong> Quick Choir Poll</div>
-                <div style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
+                <div className="db-preview-content">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
               </div>
-              <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+              <div className="db-modal-actions">
                 <button type="button" className="btn btn-ghost" disabled={isCreatingQuickPoll} onClick={() => setQuickCreateStep(1)}>Back</button>
                 <button
                   type="button"
@@ -571,28 +567,27 @@ export default function PollsDashboardView() {
         title="⚙️ Engagement Poll Settings"
         maxWidth="400px"
       >
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <p className="text-muted" style={{ margin: 0 }}>
+        <div className="flex-col db-container-vertical">
+          <p className="text-muted db-margin-0">
             Configure global default settings for quick engagement polls.
           </p>
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="db-form-field">
             <label className="text-label" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
             <input
               id="settings-default-days"
               type="number"
               min="1"
               max="365"
-              className="card"
-              style={{ width: '120px', padding: '0 12px', height: '40px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+              className="card db-form-input-short"
               value={globalDefaultDays}
               onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
               required
             />
           </div>
-          <p className="text-muted text-xs" style={{ margin: 0 }}>
+          <p className="text-muted text-xs db-margin-0">
             New quick polls will automatically archive after this many days unless overridden.
           </p>
-          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
+          <div className="db-modal-actions db-margin-t-sm">
             <button type="button" className="btn btn-ghost" disabled={isSavingSettings} onClick={() => setIsSettingsModalOpen(false)}>Cancel</button>
             <button
               type="button"
@@ -621,9 +616,9 @@ export default function PollsDashboardView() {
           </button>
         }
       >
-        <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '400px', overflowY: 'auto' }}>
+        <div className="flex-col db-container-vertical db-scroll-v">
           {recipientModal.recipients.map(r => (
-            <div key={r.id} className="flex-row card" style={{ padding: 'var(--space-sm)', justifyContent: 'space-between', boxShadow: 'none' }}>
+            <div key={r.id} className="flex-row card db-recipient-item">
               <strong>{r.name}</strong>
               <span className="text-muted text-xs">{r.voicePart}</span>
             </div>

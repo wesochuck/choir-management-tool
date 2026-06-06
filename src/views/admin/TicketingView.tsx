@@ -9,6 +9,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Link } from 'react-router-dom';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { BaseModal } from '../../components/common/BaseModal';
+import './Ticketing.css';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -411,13 +412,13 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-lg)', padding: 'var(--space-xl) 0' }}>
-      <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="ticket-container">
+      <div className="ticket-header flex-responsive">
         <div>
-          <h1 className="text-display" style={{ margin: 0 }}>Ticketing Dashboard</h1>
+          <h1 className="text-display ticket-title">Ticketing Dashboard</h1>
           <p className="text-muted text-sm">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+        <div className="ticket-header-actions">
           {activeTab === 'bundles' && (
             <button onClick={handleOpenCreateModal} className="btn btn-primary">
               Create New Bundle
@@ -432,25 +433,22 @@ export default function TicketingView() {
       </div>
 
       {/* Tab Controls */}
-      <div className="flex-row" style={{ gap: 'var(--space-sm)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-xs)', marginBottom: 'var(--space-xs)' }}>
+      <div className="ticket-tabs">
         <button
-          className={`btn ${activeTab === 'willcall' ? 'btn-primary' : 'btn-ghost'}`}
+          className={`btn ${activeTab === 'willcall' ? 'btn-primary' : 'btn-ghost'} ticket-tab-button`}
           onClick={() => setActiveTab('willcall')}
-          style={{ padding: '8px 16px', fontWeight: 600 }}
         >
           Concert Will Call
         </button>
         <button
-          className={`btn ${activeTab === 'bundles' ? 'btn-primary' : 'btn-ghost'}`}
+          className={`btn ${activeTab === 'bundles' ? 'btn-primary' : 'btn-ghost'} ticket-tab-button`}
           onClick={() => setActiveTab('bundles')}
-          style={{ padding: '8px 16px', fontWeight: 600 }}
         >
           Season Bundles
         </button>
         <button
-          className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-ghost'}`}
+          className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-ghost'} ticket-tab-button`}
           onClick={() => setActiveTab('orders')}
-          style={{ padding: '8px 16px', fontWeight: 600 }}
         >
           Bundle Orders
         </button>
@@ -458,50 +456,49 @@ export default function TicketingView() {
 
       {activeTab === 'willcall' && (
         <>
-          <div className="card" style={{ padding: 'var(--space-md)', backgroundColor: 'rgba(74, 124, 89, 0.05)', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-md)', margin: 0 }}>
-            <h3 style={{ margin: '0 0 var(--space-xs) 0', fontSize: '1rem', color: 'var(--primary-deep)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="card ticket-info-box">
+            <h3 className="ticket-info-title">
               ℹ️ Ticketing Instructions & Links
             </h3>
-            <p className="text-muted text-sm" style={{ margin: '0 0 var(--space-sm) 0', lineHeight: '1.4' }}>
-              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" style={{ fontWeight: 600, textDecoration: 'underline', color: 'var(--primary-deep)' }}>Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
+            <p className="text-muted text-sm ticket-info-description">
+              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="ticket-link-strong">Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+            <div className="ticket-info-links">
               <div>
                 <strong>📢 Storefront URL:</strong>{' '}
-                <a href="/tickets" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--primary)' }}>
+                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="ticket-link-primary">
                   {window.location.origin}/tickets
                 </a>
-                <span className="text-xs text-muted" style={{ marginLeft: '6px' }}>(list of all active ticketed concerts & bundles)</span>
+                <span className="text-xs text-muted ticket-link-muted-note">(list of all active ticketed concerts & bundles)</span>
               </div>
               {selectedEventId && selectedEvent && (
                 <div>
                   <strong>🔗 Direct Concert Ticket Link:</strong>{' '}
-                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--primary)' }}>
+                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="ticket-link-primary">
                     {window.location.origin}/tickets/{selectedEventId}
                   </a>
-                  <span className="text-xs text-muted" style={{ marginLeft: '6px' }}>(direct checkout page for {selectedEvent.title})</span>
+                  <span className="text-xs text-muted ticket-link-muted-note">(direct checkout page for {selectedEvent.title})</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="card flex-responsive" style={{ padding: 'var(--space-md)', gap: 'var(--space-md)', alignItems: 'center', backgroundColor: 'var(--neutral-bg)' }}>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-              <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="card flex-responsive ticket-selector-card">
+            <div className="ticket-selector-controls">
+              <div className="ticket-selector-header">
                 <label className="text-label">Select Performance</label>
-                <label className="flex-row" style={{ alignItems: 'center', gap: '6px', fontSize: '0.875rem', cursor: 'pointer', margin: 0 }}>
+                <label className="ticket-checkbox-label">
                   <input
                     type="checkbox"
                     checked={showPastAndInactive}
                     onChange={e => setShowPastAndInactive(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
+                    className="ticket-cursor-pointer"
                   />
                   <span>Include past & inactive performances</span>
                 </label>
               </div>
               <select
-                className="card"
-                style={{ width: '100%', padding: '0 12px', height: '44px', border: '1px solid var(--border)' }}
+                className="card ticket-select-full"
                 value={selectedEventId}
                 onChange={e => setSelectedEventId(e.target.value)}
               >
@@ -523,28 +520,28 @@ export default function TicketingView() {
             </div>
 
             {selectedEvent && (
-              <div className="flex-row" style={{ gap: 'var(--space-xl)', padding: '0 var(--space-md)', flexWrap: 'wrap' }}>
-                <div className="flex-col" style={{ gap: 2, minWidth: '100px' }}>
+              <div className="ticket-stats-row">
+                <div className="ticket-stat-box">
                   <span className="text-xs text-muted">TICKETS SOLD</span>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                  <span className="ticket-stat-value">
                     {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
                   </span>
                 </div>
-                <div className="flex-col" style={{ gap: 2, minWidth: '110px' }}>
+                <div className="ticket-stat-box ticket-stat-box-large">
                   <span className="text-xs text-muted">TICKET SALES</span>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                  <span className="ticket-stat-value">
                     ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex-col" style={{ gap: 2, minWidth: '110px' }}>
+                <div className="ticket-stat-box ticket-stat-box-large">
                   <span className="text-xs text-muted">FEES COLLECTED</span>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                  <span className="ticket-stat-value ticket-stat-value-muted">
                     ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex-col" style={{ gap: 2, minWidth: '110px' }}>
+                <div className="ticket-stat-box ticket-stat-box-large">
                   <span className="text-xs text-muted">TOTAL REVENUE</span>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
+                  <span className="ticket-stat-value ticket-stat-value-primary">
                     ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
                   </span>
                 </div>
@@ -553,28 +550,26 @@ export default function TicketingView() {
           </div>
 
           {showWarning && (
-            <div className="card" style={{ padding: 'var(--space-md)', borderColor: 'var(--color-warning-border)', backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>
+            <div className="card ticket-warning-box">
               ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
             </div>
           )}
 
           <AppCard title="Will Call Checklist">
-            <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex-responsive" style={{ gap: 'var(--space-sm)', width: '100%', alignItems: 'center' }}>
-                <div style={{ flex: 1, minWidth: '200px', width: '100%' }}>
+            <div className="ticket-checklist-container">
+              <div className="ticket-search-row flex-responsive">
+                <div className="ticket-search-input-wrapper">
                   <input
                     type="text"
                     placeholder="Search buyer name or email..."
-                    className="card"
-                    style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)' }}
+                    className="card ticket-search-input"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div style={{ minWidth: '200px' }}>
+                <div className="ticket-sort-select-wrapper">
                   <select
-                    className="card"
-                    style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)', cursor: 'pointer' }}
+                    className="card ticket-sort-select"
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
                   >
@@ -588,46 +583,51 @@ export default function TicketingView() {
               {loading ? (
                 <p className="text-muted">Loading registrations...</p>
               ) : filteredPurchases.length === 0 ? (
-                <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-lg) 0' }}>No purchase records found.</p>
+                <p className="text-muted ticket-empty-msg">No purchase records found.</p>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="w-full text-left" style={{ borderCollapse: 'collapse', width: '100%', minWidth: '600px' }}>
+                <div className="ticket-table-container">
+                  <table className="ticket-table w-full text-left">
                     <thead>
-                      <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                        <th style={{ padding: '12px 8px', textAlign: 'left' }}>Buyer Name</th>
-                        <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
-                        <th style={{ padding: '12px 8px', textAlign: 'left' }}>Sale Date</th>
-                        <th style={{ padding: '12px 8px', textAlign: 'left' }}>Qty</th>
-                        <th style={{ padding: '12px 8px', textAlign: 'left' }}>Amount Paid</th>
-                        <th style={{ padding: '12px 8px', textAlign: 'left' }}>Status</th>
-                        <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
+                      <tr className="ticket-table-header-row">
+                        <th className="ticket-table-th">Buyer Name</th>
+                        <th className="ticket-table-th">Email</th>
+                        <th className="ticket-table-th">Sale Date</th>
+                        <th className="ticket-table-th">Qty</th>
+                        <th className="ticket-table-th">Amount Paid</th>
+                        <th className="ticket-table-th">Status</th>
+                        <th className="ticket-table-th-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredPurchases.map(p => {
                         const isRefunded = p.status === 'refunded';
                         return (
-                          <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', fontSize: '0.9rem', color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}>
-                            <td style={{ padding: '12px 8px', fontWeight: 600 }}>
+                          <tr 
+                            key={p.id} 
+                            className="ticket-table-row" 
+                            // @allow-inline-style - isRefunded text color/opacity
+                            style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
+                          >
+                            <td className="ticket-table-td-bold">
                               {p.buyerName}
                               {p.expand?.bundle && (
-                                <span className="badge badge-success" style={{ marginLeft: '8px', fontSize: '0.7rem', verticalAlign: 'middle' }}>
+                                <span className="badge badge-success ticket-bundle-badge">
                                   Season Ticket: {p.expand.bundle.title}
                                 </span>
                               )}
                             </td>
-                            <td style={{ padding: '12px 8px' }}>{p.buyerEmail}</td>
-                            <td style={{ padding: '12px 8px' }}>
+                            <td className="ticket-table-td">{p.buyerEmail}</td>
+                            <td className="ticket-table-td">
                               {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                             </td>
-                            <td style={{ padding: '12px 8px' }}>{p.quantity}</td>
-                            <td style={{ padding: '12px 8px' }}>${(p.amountPaidCents / 100).toFixed(2)}</td>
-                            <td style={{ padding: '12px 8px' }}>
-                              <span className={`badge ${p.status === 'paid' ? 'badge-success' : 'badge-danger'}`} style={{ textTransform: 'capitalize' }}>
+                            <td className="ticket-table-td">{p.quantity}</td>
+                            <td className="ticket-table-td">${(p.amountPaidCents / 100).toFixed(2)}</td>
+                            <td className="ticket-table-td">
+                              <span className={`badge ${p.status === 'paid' ? 'badge-success' : 'badge-danger'} ticket-status-badge`}>
                                 {p.status}
                               </span>
                             </td>
-                            <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                            <td className="ticket-table-td-right">
                               {p.status === 'paid' && (
                                 <button
                                   onClick={() => {
@@ -660,58 +660,61 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-muted">Loading bundles...</p>
           ) : bundles.length === 0 ? (
-            <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-lg) 0' }}>No season bundles configured.</p>
+            <p className="text-muted ticket-empty-msg">No season bundles configured.</p>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="w-full text-left" style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <div className="ticket-table-container">
+              <table className="ticket-table-full w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Bundle Title</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Price</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Active</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Capacity Sold</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Sale End Date</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Included Events</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
+                  <tr className="ticket-table-header-row">
+                    <th className="ticket-table-th">Bundle Title</th>
+                    <th className="ticket-table-th">Price</th>
+                    <th className="ticket-table-th">Active</th>
+                    <th className="ticket-table-th">Capacity Sold</th>
+                    <th className="ticket-table-th">Sale End Date</th>
+                    <th className="ticket-table-th">Included Events</th>
+                    <th className="ticket-table-th-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bundles.map(b => {
                     const sold = getBundleSoldQty(b.id, b.events);
                     return (
-                      <tr key={b.id} style={{ borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>
-                        <td style={{ padding: '12px 8px', fontWeight: 600 }}>{b.title}</td>
-                        <td style={{ padding: '12px 8px' }}>${(b.priceCents / 100).toFixed(2)}</td>
-                        <td style={{ padding: '12px 8px' }}>
+                      <tr key={b.id} className="ticket-table-row">
+                        <td className="ticket-table-td-bold">{b.title}</td>
+                        <td className="ticket-table-td">${(b.priceCents / 100).toFixed(2)}</td>
+                        <td className="ticket-table-td">
                           <span className={`badge ${b.isActive ? 'badge-success' : 'badge-danger'}`}>
                             {b.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 8px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <td className="ticket-table-td">
+                          <div className="ticket-progress-container">
                             <span>{sold} / {b.capacity} sold</span>
-                            <div style={{ width: '100px', height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <div style={{ width: `${Math.min(100, (sold / b.capacity) * 100)}%`, height: '100%', backgroundColor: 'var(--primary)' }} />
+                            <div className="ticket-progress-bar-bg">
+                              <div 
+                                className="ticket-progress-bar-fill" 
+                                // @allow-inline-style - progress bar width
+                                style={{ width: `${Math.min(100, (sold / b.capacity) * 100)}%` }} 
+                              />
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '12px 8px' }}>
+                        <td className="ticket-table-td">
                           {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </td>
-                        <td style={{ padding: '12px 8px', maxWidth: '240px' }}>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        <td className="ticket-events-td">
+                          <div className="ticket-events-container">
                             {b.expand?.events?.map(ev => (
-                              <span key={ev.id} className="badge badge-secondary" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                              <span key={ev.id} className="badge badge-secondary ticket-event-badge">
                                 {ev.title}
                               </span>
                             ))}
                           </div>
                         </td>
-                        <td style={{ padding: '12px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <td className="ticket-actions-td">
                           <button
                             onClick={() => handleOpenEditModal(b)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ marginRight: '8px' }}
+                            className="btn btn-secondary btn-sm ticket-edit-btn"
                           >
                             Edit
                           </button>
@@ -737,41 +740,46 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-muted">Loading orders...</p>
           ) : bundleOrders.length === 0 ? (
-            <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-lg) 0' }}>No season pass orders found.</p>
+            <p className="text-muted ticket-empty-msg">No season pass orders found.</p>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="w-full text-left" style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <div className="ticket-table-container">
+              <table className="ticket-table-full w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Buyer Name</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Purchase Date</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Season Bundle</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Qty</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Amount Paid</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Status</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
+                  <tr className="ticket-table-header-row">
+                    <th className="ticket-table-th">Buyer Name</th>
+                    <th className="ticket-table-th">Email</th>
+                    <th className="ticket-table-th">Purchase Date</th>
+                    <th className="ticket-table-th">Season Bundle</th>
+                    <th className="ticket-table-th">Qty</th>
+                    <th className="ticket-table-th">Amount Paid</th>
+                    <th className="ticket-table-th">Status</th>
+                    <th className="ticket-table-th-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bundleOrders.map(order => {
                     const isRefunded = order.status === 'refunded';
                     return (
-                      <tr key={order.stripeSessionId} style={{ borderBottom: '1px solid var(--border)', fontSize: '0.9rem', color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}>
-                        <td style={{ padding: '12px 8px', fontWeight: 600 }}>{order.buyerName}</td>
-                        <td style={{ padding: '12px 8px' }}>{order.buyerEmail}</td>
-                        <td style={{ padding: '12px 8px' }}>
+                      <tr 
+                        key={order.stripeSessionId} 
+                        className="ticket-table-row" 
+                        // @allow-inline-style - isRefunded text color/opacity
+                        style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
+                      >
+                        <td className="ticket-table-td-bold">{order.buyerName}</td>
+                        <td className="ticket-table-td">{order.buyerEmail}</td>
+                        <td className="ticket-table-td">
                           {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </td>
-                        <td style={{ padding: '12px 8px', fontWeight: 500 }}>{order.bundleTitle}</td>
-                        <td style={{ padding: '12px 8px' }}>{order.quantity}</td>
-                        <td style={{ padding: '12px 8px' }}>${(order.amountPaidCents / 100).toFixed(2)}</td>
-                        <td style={{ padding: '12px 8px' }}>
-                          <span className={`badge ${order.status === 'paid' ? 'badge-success' : 'badge-danger'}`} style={{ textTransform: 'capitalize' }}>
+                        <td className="ticket-table-td-medium">{order.bundleTitle}</td>
+                        <td className="ticket-table-td">{order.quantity}</td>
+                        <td className="ticket-table-td">${(order.amountPaidCents / 100).toFixed(2)}</td>
+                        <td className="ticket-table-td">
+                          <span className={`badge ${order.status === 'paid' ? 'badge-success' : 'badge-danger'} ticket-status-badge`}>
                             {order.status}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                        <td className="ticket-table-td-right">
                           {order.status === 'paid' && (
                             <button
                               onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
@@ -798,7 +806,7 @@ export default function TicketingView() {
         title={editingBundle ? "Edit Season Bundle" : "Create Season Bundle"}
         maxWidth="600px"
         footer={
-          <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <div className="ticket-modal-footer">
             <button
               type="button"
               className="btn btn-ghost"
@@ -817,88 +825,89 @@ export default function TicketingView() {
           </div>
         }
       >
-        <form id="bundle-form" onSubmit={handleSaveBundle} className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        <form id="bundle-form" onSubmit={handleSaveBundle} className="ticket-form">
           {editingBundle && (
-            <div className="card" style={{ padding: 'var(--space-sm)', backgroundColor: 'rgba(74, 124, 89, 0.05)', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
+            <div className="card ticket-share-box">
               <strong>🔗 Share Season Pass Link:</strong>{' '}
               <a 
                 href={`/tickets/bundle/${editingBundle.id}`} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                style={{ textDecoration: 'underline', color: 'var(--primary)', wordBreak: 'break-all' }}
+                className="ticket-share-link"
               >
                 {window.location.origin}/tickets/bundle/{editingBundle.id}
               </a>
             </div>
           )}
 
-          <div className="flex-col" style={{ gap: '4px' }}>
+          <div className="ticket-form-group">
             <label className="text-label">Bundle Title</label>
             <input
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
-              className="card"
-              style={{ padding: '0 12px', height: '40px' }}
+              className="card ticket-form-input"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
           </div>
 
-          <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ flex: 1, gap: '4px' }}>
+          <div className="ticket-form-row flex-responsive">
+            <div className="ticket-form-group ticket-flex-1">
               <label className="text-label">Price (USD)</label>
               <input
                 type="number"
                 required
                 min="0.01"
                 step="0.01"
-                className="card"
-                style={{ padding: '0 12px', height: '40px' }}
+                className="card ticket-form-input"
                 value={price || ''}
                 onChange={e => setPrice(Number(e.target.value))}
               />
             </div>
-            <div className="flex-col" style={{ flex: 1, gap: '4px' }}>
+            <div className="ticket-form-group ticket-flex-1">
               <label className="text-label">Capacity Limit</label>
               <input
                 type="number"
                 required
                 min="1"
-                className="card"
-                style={{ padding: '0 12px', height: '40px' }}
+                className="card ticket-form-input"
                 value={capacity || ''}
                 onChange={e => setCapacity(Number(e.target.value))}
               />
             </div>
           </div>
 
-          <div className="flex-col" style={{ gap: '4px' }}>
+          <div className="ticket-form-group">
             <label className="text-label">Sale End Date</label>
             <input
               type="datetime-local"
               required
-              className="card"
-              style={{ padding: '0 12px', height: '40px' }}
+              className="card ticket-form-input"
               value={saleEndDate}
               onChange={e => setSaleEndDate(e.target.value)}
             />
           </div>
 
-          <div className="flex-col" style={{ gap: '4px' }}>
+          <div className="ticket-form-group">
             <label className="text-label">Included Performances</label>
             {hasPurchases && (
-              <div className="card" style={{ padding: 'var(--space-sm)', borderColor: 'var(--color-warning-border)', backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontSize: '0.85rem' }}>
+              <div className="card ticket-warning-text-box">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}
-            <div className="card" style={{ maxHeight: '200px', overflowY: 'auto', padding: 'var(--space-sm)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="card ticket-events-list-box">
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
                   const isChecked = selectedEventIds.includes(ev.id);
                   return (
-                    <label key={ev.id} className="flex-row" style={{ alignItems: 'center', gap: '8px', cursor: hasPurchases ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}>
+                    <label 
+                      key={ev.id} 
+                      className="ticket-event-label" 
+                      // @allow-inline-style - hasPurchases cursor
+                      style={{ cursor: hasPurchases ? 'not-allowed' : 'pointer' }}
+                    >
                       <input
                         type="checkbox"
                         checked={isChecked}
@@ -923,24 +932,23 @@ export default function TicketingView() {
             </div>
           </div>
 
-          <div className="flex-col" style={{ gap: '4px' }}>
+          <div className="ticket-form-group">
             <label className="text-label">Public Details / Instructions</label>
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
-              className="card"
-              style={{ padding: '8px 12px', minHeight: '100px', resize: 'vertical', border: '1px solid var(--border)' }}
+              className="card ticket-textarea"
               value={publicDetails}
               onChange={e => setPublicDetails(e.target.value)}
             />
           </div>
 
-          <label className="flex-row" style={{ alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <label className="ticket-active-label">
             <input
               type="checkbox"
               checked={isActive}
               onChange={e => setIsActive(e.target.checked)}
             />
-            <span className="text-label" style={{ margin: 0 }}>Active and visible to the public</span>
+            <span className="text-label ticket-label-no-margin">Active and visible to the public</span>
           </label>
         </form>
       </BaseModal>
