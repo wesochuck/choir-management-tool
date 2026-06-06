@@ -1,26 +1,7 @@
 /* Music Library View Styles */
 
-.ml-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xl);
-  padding: var(--space-xl) 0;
-}
-
-.ml-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .ml-header-title {
   margin: 0;
-}
-
-.ml-header-actions {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-md);
 }
 
 /* Tab Navigation */
@@ -128,10 +109,6 @@
   padding: 6px 10px;
   border: 1px solid var(--border);
   vertical-align: middle;
-}
-
-.ml-table-cell-center {
-  text-align: center;
 }
 
 .ml-perf-count {
@@ -347,12 +324,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
-}
-
-.ml-settings-field-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
 }
 
 .ml-no-margin {

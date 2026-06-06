@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { AppCard } from '../../components/common/AppCard';
 import EasyMDE from 'easymde';
 import { useDialog } from '../../contexts/DialogContext';
 import { useEvents } from '../../hooks/useEvents';
@@ -298,20 +299,25 @@ export default function CommunicationView() {
 
     // The editor's change handler will trigger setContent/setEditingTemplate automatically via onChange
   };
-
-  if (library.isLoading) {
-    return (
-      <div className="comm-loading">Loading Communications...</div>
-    );
-  }
-
+if (library.isLoading) {
   return (
-    <div className="communication-container">
-      <div className="communication-header">
-        <div className="flex-col comm-header-title-container">
-          <h1 className="text-display comm-page-title">
-            Communications
-          </h1>
+    <div className="admin-view-container">
+      <AppCard className="admin-loading-state">
+        <p>Loading Communications...</p>
+      </AppCard>
+    </div>
+  );
+}
+
+return (
+  <div className="admin-view-container">
+    <div className="admin-view-header">
+      <div className="flex-col gap-xs">
+        <h1 className="text-display comm-page-title">
+          Communications
+        </h1>
+...
+
           {routeState?.returnToPolls && (
             <Link
               to="/admin/polls"

@@ -199,7 +199,7 @@ export default function DashboardView() {
       <div className="sd-dashboard-wrapper">
         {nextEvent && (
           <section className="mobile-singer-quick-panel" aria-label="Singer quick actions">
-            <AppCard className="glass-card">
+            <AppCard className="card-glass">
               <div className="mobile-singer-quick-content">
                 <div className="mobile-singer-quick-eyebrow">Next up</div>
                 <div className="mobile-singer-quick-title">{nextEvent.title || nextEvent.type}</div>
@@ -293,7 +293,7 @@ export default function DashboardView() {
             ))}
 
             {upcomingEvents.length === 0 && (
-              <div className="card glass-card sd-no-events-card">
+              <div className="card card-glass admin-empty-state">
                 <p className="text-muted">No upcoming events at this time.</p>
               </div>
             )}
@@ -304,7 +304,7 @@ export default function DashboardView() {
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
-              <AppCard className="glass-card sd-polls-card" title="📊 Quick Polls">
+              <AppCard className="card-glass sd-polls-card" title="📊 Quick Polls">
                 <div className="flex-col sd-polls-list">
                   {activePolls.map(poll => (
                     <div key={poll.id} className="card sd-poll-item">
@@ -340,7 +340,7 @@ export default function DashboardView() {
             )}
 
             {/* Recent Announcements Widget */}
-            <AppCard className="glass-card" title="✉️ Bulletins">
+            <AppCard className="card-glass" title="✉️ Bulletins">
               {isAnnouncementsLoading ? (
                 <div className="text-muted sd-centered-muted-padding">Loading bulletins...</div>
               ) : announcements.length > 0 ? (
@@ -370,7 +370,7 @@ export default function DashboardView() {
             </AppCard>
 
             {/* Resources Widget */}
-            <AppCard className="glass-card" title="📂 Resources">
+            <AppCard className="card-glass" title="📂 Resources">
               {isResourcesLoading ? (
                 <div className="text-muted sd-centered-muted-padding">Loading resources...</div>
               ) : resources.length > 0 ? (

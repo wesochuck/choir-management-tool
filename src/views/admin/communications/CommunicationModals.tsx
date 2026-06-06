@@ -129,7 +129,7 @@ export function CommunicationModals({
       >
         <div className="comm-modal-recipient-list">
           {recipientPreviewList.recipients.length === 0 ? (
-            <div className="card comm-modal-recipient-empty">
+            <div className="card admin-empty-state">
               <p className="text-muted comm-no-margin">
                 {recipientPreviewList.emptyMessage || 'No recipients found.'}
               </p>

@@ -46,7 +46,7 @@ export function DraftsPanel({
         </div>
       ))}
       {drafts.length === 0 && (
-        <div className="comm-drafts-empty">
+        <div className="admin-empty-state">
           <p className="text-muted">No saved drafts.</p>
         </div>
       )}

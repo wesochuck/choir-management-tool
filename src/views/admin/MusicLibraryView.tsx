@@ -432,11 +432,14 @@ export default function MusicLibraryView() {
   };
 
   return (
-    <div className="ml-container">
-      <div className="ml-header flex-responsive">
-        <h1 className="text-display ml-header-title">Music Library</h1>
+    <div className="admin-view-container">
+      <header className="admin-view-header no-print">
+        <div className="flex-col gap-xs">
+          <h1 className="ml-header-title">Music Library</h1>
+          <p className="text-muted text-sm">Manage choir repertoire, movements, and learning tracks.</p>
+        </div>
         {activeTab === 'catalog' && (
-          <div className="ml-header-actions">
+          <div className="admin-view-actions">
             <button className="btn btn-secondary" onClick={handleExportCSV}>
               Export CSV
             </button>
@@ -448,7 +451,7 @@ export default function MusicLibraryView() {
             </button>
           </div>
         )}
-      </div>
+      </header>
 
       {/* Segmented Tab Navigation */}
       <div className="ml-tabs no-print">
@@ -530,7 +533,7 @@ export default function MusicLibraryView() {
       ) : (
         <div className="ml-config-stack">
           <AppCard title="Music Library Settings">
-            <div className="ml-settings-field-stack">
+            <div className="form-field-group">
               <label className="text-label">Catalog Lookup URL Template</label>
               <input
                 type="url"

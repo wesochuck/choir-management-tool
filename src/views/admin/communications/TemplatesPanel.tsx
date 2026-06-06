@@ -51,7 +51,7 @@ export function TemplatesPanel({
           <AppCard title={editingTemplate.id ? 'Edit Template' : 'New Template'}>
             <div className="composer-form comm-compose-form">
               <div className="comm-compose-header-row">
-                <div className="comm-compose-field">
+                <div className="form-field-group">
                   <label className="text-label">Template Title</label>
                   <input
                     className="card comm-compose-input"
@@ -63,7 +63,7 @@ export function TemplatesPanel({
                     required
                   />
                 </div>
-                <div className="comm-compose-field comm-flex-0-0-150">
+                <div className="form-field-group comm-flex-0-0-150">
                   <label className="text-label">Channel</label>
                   <select
                     className="card comm-compose-input"
@@ -83,7 +83,7 @@ export function TemplatesPanel({
                 </div>
               </div>
 
-              <div className="comm-compose-field">
+              <div className="form-field-group">
                 <label className="text-label">Subject</label>
                 <input
                   className="card comm-compose-input"
@@ -97,7 +97,7 @@ export function TemplatesPanel({
                 />
               </div>
 
-              <div className="comm-compose-field">
+              <div className="form-field-group">
                 <label className="text-label">Template Body (Markdown Supported)</label>
                 <MarkdownEditor
                   instanceRef={editorRef}
@@ -163,7 +163,7 @@ export function TemplatesPanel({
                     dangerouslySetInnerHTML={{
                       __html:
                         previewHtml ||
-                        '<p class="text-muted comm-empty-state-centered">No template content yet.</p>',
+                        '<p class="text-muted admin-empty-state-centered">No template content yet.</p>',
                     }}
                   />
                 </div>
@@ -308,7 +308,7 @@ export function TemplatesPanel({
             </div>
           ))}
           {templates.length === 0 && (
-            <div className="comm-empty-state-small">
+            <div className="admin-empty-state-small">
               No templates found.
             </div>
           )}

@@ -130,7 +130,7 @@ export function MessageHistory({
           );
         })}
         {history.length === 0 && (
-          <div className="comm-empty-state">
+          <div className="admin-empty-state">
             <p className="text-muted">
               {historySearchQuery 
                 ? `No messages found matching "${historySearchQuery}".` 

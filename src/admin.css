@@ -93,6 +93,26 @@
 /* -------------------------------------------------------------
    2. Page-level Views and Action Controls
    ------------------------------------------------------------- */
+.admin-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-xl) 0;
+}
+
+.admin-empty-state,
+.admin-loading-state {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.admin-empty-state p,
+.admin-loading-state p {
+  margin: 0;
+  font-size: var(--font-size-label);
+}
+
 .admin-view-header {
   display: flex;
   flex-direction: row;
@@ -774,6 +794,27 @@
   border: 1px solid rgba(74, 117, 89, 0.2);
   border-radius: var(--radius-md);
   padding: var(--space-md) var(--space-lg);
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* Card Variants */
+.card-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.card-muted {
+  background-color: var(--border-light, #f8fafc);
+  border: 1px solid var(--border);
+  box-shadow: none;
 }
 
 /* -------------------------------------------------------------

@@ -84,7 +84,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     };
 
     return (
-        <div className="ml-container ml-no-margin">
+        <div className="admin-view-container ml-no-margin">
             <div className="ml-table-container">
                 <table className="table ml-table">
                     <thead>
@@ -110,11 +110,15 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                     <tbody>
                         {isLoading ? (
                             <tr>
-                                <td colSpan={9} className="ml-table-cell ml-table-cell-center">Loading library...</td>
+                                <td colSpan={9} className="admin-loading-state">
+                                    <p>Loading library...</p>
+                                </td>
                             </tr>
                         ) : filteredPieces.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="ml-table-cell ml-table-cell-center">No pieces found.</td>
+                                <td colSpan={9} className="admin-empty-state">
+                                    <p>No pieces found.</p>
+                                </td>
                             </tr>
                         ) : (
                             filteredPieces.map(piece => {

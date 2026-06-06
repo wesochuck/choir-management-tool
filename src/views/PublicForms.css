@@ -17,7 +17,7 @@
 
 .pub-style-3 {
   width: 100%;
-  max-width: 'min(720px;
+  max-width: 720px;
 }
 
 .pub-style-4 {
@@ -126,7 +126,7 @@
 
 .pub-style-25 {
   display: grid;
-  grid-template-columns: 'repeat(auto-fill;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
   background-color: var(--neutral-bg);
   padding: var(--space-md);
@@ -147,7 +147,7 @@
 
 .pub-style-28 {
   width: 100%;
-  max-width: 'min(480px;
+  max-width: 480px;
   text-align: center;
 }
 
@@ -316,7 +316,7 @@
 
 .pub-style-55 {
   width: 100%;
-  max-width: 'min(480px;
+  max-width: 480px;
   text-align: center;
   align-items: center;
 }
@@ -332,7 +332,7 @@
 
 .pub-style-57 {
   width: 100%;
-  max-width: 'min(480px;
+  max-width: 480px;
   text-align: center;
   align-items: center;
   gap: var(--space-md);

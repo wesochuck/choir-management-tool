@@ -43,7 +43,7 @@ export default function RsvpDashboardView() {
           {/* Page title is already handled by PageLayout in App.tsx */}
         </div>
         <div className="admin-view-actions db-filter-actions">
-          <div className="db-form-field db-flex-1">
+          <div className="form-field-group db-flex-1">
             <label className="text-label db-filter-label db-font-sm">Select Event</label>
             <select 
               value={selectedEventId} 
@@ -96,10 +96,10 @@ export default function RsvpDashboardView() {
       ) : selectedEventId ? (
         <EventRosterView eventIdProp={selectedEventId} />
       ) : (
-        <AppCard className="db-empty-state-card">
+        <AppCard className="admin-empty-state">
           <p className="text-muted db-empty-state-text">Please select an event above to view and manage RSVPs.</p>
         </AppCard>
-      )}
-    </div>
-  );
+       )}
+     </div>
+   );
 }

@@ -12,14 +12,6 @@
   flex-wrap: wrap;
 }
 
-.comm-compose-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  flex: 1;
-  min-width: 250px;
-}
-
 .comm-compose-input {
   height: 44px;
   padding: 0 12px;
@@ -335,11 +327,6 @@
 }
 
 /* Layout and Loading */
-.comm-loading {
-  padding: 40px;
-  text-align: center;
-}
-
 .comm-header-title-container {
   gap: 6px;
 }
@@ -456,12 +443,8 @@
   overflow-y: auto;
 }
 
-.comm-modal-recipient-empty {
-  padding: var(--space-md);
-  text-align: center;
-}
-
 .comm-modal-recipient-item {
+
   padding: var(--space-sm);
   justify-content: space-between;
   box-shadow: none;
@@ -573,9 +556,9 @@
 .comm-gap-sm { gap: 8px; }
 .comm-gap-6px { gap: 6px; }
 .comm-opacity-80 { opacity: 0.8; }
-.comm-empty-state { padding: var(--space-xl); text-align: center; }
-.comm-empty-state-centered { text-align: center; padding: 40px 0; }
-.comm-empty-state-small { text-align: center; padding: 20px; color: var(--text-muted); }
+.admin-empty-state { padding: var(--space-xl); text-align: center; }
+.admin-empty-state { text-align: center; padding: 40px 0; }
+.admin-empty-state { text-align: center; padding: 20px; color: var(--text-muted); }
 
 /* Template specific */
 .comm-template-editor-footer {
@@ -637,7 +620,7 @@
   overflow: hidden;
 }
 
-.comm-drafts-empty {
+.admin-empty-state {
   padding: 40px;
   text-align: center;
 }

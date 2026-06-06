@@ -125,38 +125,9 @@
   font-weight: 500;
 }
 
-/* Empty States & Loading */
-.db-empty-state-card {
-  text-align: center;
-  padding: 48px;
-  border: 2px dashed var(--border);
-  background-color: transparent;
-  box-shadow: none;
-}
+/* Accent Cards & Status Banners */
+.db-accent-card {
 
-.db-empty-state-text {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.db-loading-card {
-  text-align: center;
-  padding: 32px;
-}
-
-.db-error-card {
-  text-align: center;
-  border: 1px solid var(--color-danger-text);
-  padding: 24px;
-}
-
-.db-error-text {
-  color: var(--color-danger-text);
-  font-weight: 600;
-}
-
-/* Polls Specific */
-.db-polls-header-actions {
   display: flex;
   flex-direction: row;
   gap: var(--space-md);
@@ -215,13 +186,6 @@
 }
 
 /* Form & Input Layouts */
-.db-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-md);
-}
-
 .db-form-input {
   width: 100%;
   padding: 0 12px;

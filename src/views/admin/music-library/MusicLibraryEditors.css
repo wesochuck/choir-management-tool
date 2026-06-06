@@ -624,12 +624,6 @@
     margin-top: var(--space-xs);
 }
 
-.mle-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-}
-
 .mle-form-group-no-margin {
     display: flex;
     flex-direction: column;
@@ -930,13 +924,8 @@
     color: var(--primary);
 }
 
-.mle-movements-empty-state {
-    padding: var(--space-md);
-    text-align: center;
-    color: var(--text-muted);
-}
-
 .mle-movement-item-header {
+
     display: flex;
     flex-direction: row;
     justify-content: space-between;

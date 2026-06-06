@@ -63,7 +63,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
         <div className="flex-col mle-filters-container">
             {/* Row 1: Search + Filter Dropdowns */}
             <div className="mle-filters-row1">
-                <div className="flex-col mle-filters-field-group">
+                <div className="flex-col form-field-group">
                     <span className="text-xs text-muted mle-filters-field-label">Search</span>
                     <input
                         className="card mle-filters-input"
@@ -72,7 +72,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         onChange={(e) => onSearchChange(e.target.value)}
                     />
                 </div>
-                <div className="flex-col mle-filters-field-group">
+                <div className="flex-col form-field-group">
                     <span className="text-xs text-muted mle-filters-field-label">Sections</span>
                     <MultiSelectDropdown
                         options={sortedSections.map(s => ({ id: s.code, label: s.name }))}
@@ -82,7 +82,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         allLabel="All Sections"
                     />
                 </div>
-                <div className="flex-col mle-filters-field-group">
+                <div className="flex-col form-field-group">
                     <span className="text-xs text-muted mle-filters-field-label">Genres</span>
                     <MultiSelectDropdown
                         options={[

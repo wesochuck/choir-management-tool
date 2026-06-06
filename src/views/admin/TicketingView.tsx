@@ -412,13 +412,13 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="ticket-container">
-      <div className="ticket-header flex-responsive">
+    <div className="admin-view-container">
+      <div className="admin-view-header flex-responsive">
         <div>
           <h1 className="text-display ticket-title">Ticketing Dashboard</h1>
           <p className="text-muted text-sm">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
         </div>
-        <div className="ticket-header-actions">
+        <div className="admin-view-actions">
           {activeTab === 'bundles' && (
             <button onClick={handleOpenCreateModal} className="btn btn-primary">
               Create New Bundle
@@ -583,7 +583,7 @@ export default function TicketingView() {
               {loading ? (
                 <p className="text-muted">Loading registrations...</p>
               ) : filteredPurchases.length === 0 ? (
-                <p className="text-muted ticket-empty-msg">No purchase records found.</p>
+                <p className="text-muted admin-empty-state">No purchase records found.</p>
               ) : (
                 <div className="ticket-table-container">
                   <table className="ticket-table w-full text-left">
@@ -660,7 +660,7 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-muted">Loading bundles...</p>
           ) : bundles.length === 0 ? (
-            <p className="text-muted ticket-empty-msg">No season bundles configured.</p>
+            <p className="text-muted admin-empty-state">No season bundles configured.</p>
           ) : (
             <div className="ticket-table-container">
               <table className="ticket-table-full w-full text-left">
@@ -740,7 +740,7 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-muted">Loading orders...</p>
           ) : bundleOrders.length === 0 ? (
-            <p className="text-muted ticket-empty-msg">No season pass orders found.</p>
+            <p className="text-muted admin-empty-state">No season pass orders found.</p>
           ) : (
             <div className="ticket-table-container">
               <table className="ticket-table-full w-full text-left">
@@ -840,7 +840,7 @@ export default function TicketingView() {
             </div>
           )}
 
-          <div className="ticket-form-group">
+          <div className="form-field-group">
             <label className="text-label">Bundle Title</label>
             <input
               type="text"
@@ -853,7 +853,7 @@ export default function TicketingView() {
           </div>
 
           <div className="ticket-form-row flex-responsive">
-            <div className="ticket-form-group ticket-flex-1">
+            <div className="form-field-group ticket-flex-1">
               <label className="text-label">Price (USD)</label>
               <input
                 type="number"
@@ -865,7 +865,7 @@ export default function TicketingView() {
                 onChange={e => setPrice(Number(e.target.value))}
               />
             </div>
-            <div className="ticket-form-group ticket-flex-1">
+            <div className="form-field-group ticket-flex-1">
               <label className="text-label">Capacity Limit</label>
               <input
                 type="number"
@@ -878,7 +878,7 @@ export default function TicketingView() {
             </div>
           </div>
 
-          <div className="ticket-form-group">
+          <div className="form-field-group">
             <label className="text-label">Sale End Date</label>
             <input
               type="datetime-local"
@@ -889,7 +889,7 @@ export default function TicketingView() {
             />
           </div>
 
-          <div className="ticket-form-group">
+          <div className="form-field-group">
             <label className="text-label">Included Performances</label>
             {hasPurchases && (
               <div className="card ticket-warning-text-box">
@@ -932,7 +932,7 @@ export default function TicketingView() {
             </div>
           </div>
 
-          <div className="ticket-form-group">
+          <div className="form-field-group">
             <label className="text-label">Public Details / Instructions</label>
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."

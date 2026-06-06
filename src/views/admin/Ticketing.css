@@ -1,18 +1,5 @@
 /* Ticketing Dashboard Styles */
 
-.ticket-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  padding: var(--space-xl) 0;
-}
-
-.ticket-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .ticket-title {
   margin: 0;
 }
@@ -199,12 +186,8 @@
   cursor: pointer;
 }
 
-.ticket-empty-msg {
-  text-align: center;
-  padding: var(--space-lg) 0;
-}
-
 .ticket-table-container {
+
   overflow-x: auto;
 }
 
@@ -340,12 +323,6 @@
   text-decoration: underline;
   color: var(--primary);
   word-break: break-all;
-}
-
-.ticket-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .ticket-form-row {

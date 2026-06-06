@@ -847,12 +847,12 @@ export function MusicPieceModal({
                             </div>
                         )}
 
-                        <div className="mle-form-group">
+                        <div className="form-field-group">
                             <label className="text-label">Title</label>
                             <input ref={titleInputRef} required value={title} onChange={e => setTitle(e.target.value)} className="card music-piece-input" />
                         </div>
                         <div className="mle-form-grid-2col">
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Composer</label>
                                 <AutocompleteInput 
                                     value={composer} 
@@ -862,7 +862,7 @@ export function MusicPieceModal({
                                     className="card music-piece-input" 
                                 />
                             </div>
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Arranger</label>
                                 <AutocompleteInput 
                                     value={arranger} 
@@ -875,7 +875,7 @@ export function MusicPieceModal({
                         </div>
 
                         <div className="mle-form-grid-2col">
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Applies to Sections</label>
                                 <MultiSelectDropdown
                                     label="Applies to Sections"
@@ -893,7 +893,7 @@ export function MusicPieceModal({
                                 </span>
                             </div>
 
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Genres</label>
                                 <MultiSelectDropdown
                                     label="Genres"
@@ -923,7 +923,7 @@ export function MusicPieceModal({
                                 </label>
                             </div>
                         ) : (
-                            <div className="mle-form-group-no-margin">
+                            <div className="form-field-group-no-margin">
                                 <div className="mle-checkbox-row">
                                     <input 
                                         type="checkbox" 
@@ -999,7 +999,7 @@ export function MusicPieceModal({
                             </div>
                         )}
                         <div className="mle-form-grid-duration">
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Duration</label>
                                 <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card music-piece-input" />
                                 {suggestedDuration && !duration.trim() && (
@@ -1020,11 +1020,11 @@ export function MusicPieceModal({
                                     </div>
                                 )}
                             </div>
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Copies</label>
                                 <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card music-piece-input" />
                             </div>
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Catalog ID</label>
                                 <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card music-piece-input" />
                                 {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
@@ -1038,7 +1038,7 @@ export function MusicPieceModal({
                                     </a>
                                 )}
                             </div>
-                            <div className="mle-form-group">
+                            <div className="form-field-group">
                                 <label className="text-label">Purchase Date</label>
                                 <input
                                     value={purchaseDateInput}
@@ -1048,7 +1048,7 @@ export function MusicPieceModal({
                                 />
                             </div>
                         </div>
-                        <div className="mle-form-group">
+                        <div className="form-field-group">
                             <label className="text-label">Notes</label>
                             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card music-piece-textarea" />
                             <span className="text-xs text-muted mle-notes-hint">
@@ -1059,7 +1059,7 @@ export function MusicPieceModal({
 
                         {!piece && (
                             <>
-                            <div className="mle-form-group mle-mt-xs">
+                            <div className="form-field-group mle-mt-xs">
                                 <label className="text-label">Link to Past Performance (Optional)</label>
                                 <div className="mle-perf-pills-container">
                                     {selectedPerformances.length === 0 ? (
@@ -1094,7 +1094,7 @@ export function MusicPieceModal({
                                     })}
                                 </select>
                             </div>
-                            <div className="mle-form-group mle-mt-xs">
+                            <div className="form-field-group mle-mt-xs">
                                 <label className="text-label">Tutti Practice Track (Optional)</label>
                                 {tuttiFile ? (
                                     <div className="mle-tutti-preview-row animate-fade-in">
@@ -1167,7 +1167,7 @@ export function MusicPieceModal({
 
                 {(piece && activeTab === 'performances') && (
                     <>
-                        <div className="mle-form-group">
+                        <div className="form-field-group">
                             <label className="text-label">Linked Performances</label>
                             
                             {/* Selected performances pills */}
@@ -1221,8 +1221,8 @@ export function MusicPieceModal({
                         {showQuickAdd && (
                             <div className="quick-add-performance-card card">
                                 <h4 className="text-sm mle-quick-add-title">Quick Add Historic Performance</h4>
-                                <div className="mle-form-group">
-                                    <div className="mle-form-group">
+                                <div className="form-field-group">
+                                    <div className="form-field-group">
                                         <label className="text-xs text-muted">Performance Title</label>
                                         <input 
                                             value={quickTitle} 
@@ -1233,7 +1233,7 @@ export function MusicPieceModal({
                                     </div>
                                     
                                     <div className="mle-quick-add-grid-row">
-                                        <div className="mle-form-group">
+                                        <div className="form-field-group">
                                             <label className="text-xs text-muted">Date</label>
                                             <input 
                                                 type="datetime-local" 
@@ -1242,7 +1242,7 @@ export function MusicPieceModal({
                                                 className="card mle-quick-add-field" 
                                             />
                                         </div>
-                                        <div className="mle-form-group">
+                                        <div className="form-field-group">
                                             <label className="text-xs text-muted">Venue</label>
                                             <select 
                                                 value={quickVenue} 
@@ -1330,7 +1330,7 @@ export function MusicPieceModal({
                         </div>
 
                         {movements.length === 0 ? (
-                            <div className="card mle-movements-empty-state">
+                            <div className="card admin-empty-state">
                                 No movements added yet. Add your first movement below.
                             </div>
                         ) : (

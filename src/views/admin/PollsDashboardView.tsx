@@ -252,12 +252,23 @@ export default function PollsDashboardView() {
     }
   };
 
-  if (isLoading) return <div className="db-loading-card">Loading Polls...</div>;
+  if (isLoading && polls.length === 0) {
+    return (
+      <div className="admin-view-container">
+        <AppCard className="admin-loading-state">
+          <p>Loading polls...</p>
+        </AppCard>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-col db-container-vertical db-padding-v">
-      <div className="db-header-row">
-        <h2 className="text-headline db-margin-0">Engagement Polls & Volunteering</h2>
+    <div className="admin-view-container">
+      <div className="admin-view-header">
+        <div className="flex-col gap-xs">
+          <h2 className="text-headline db-margin-0">Engagement Polls & Volunteering</h2>
+          <p className="text-muted text-sm">Review volunteer responses and counts.</p>
+        </div>
         <div className="db-polls-header-actions">
           <label className="db-polls-archive-toggle">
             <input 
@@ -292,7 +303,7 @@ export default function PollsDashboardView() {
           </AppCard>
         )}
         {filteredPolls.length === 0 ? (
-          <AppCard className="db-empty-state-card flex-col db-align-center">
+          <AppCard className="admin-empty-state">
             <p className="text-muted db-empty-state-text db-margin-b-md">No active polls found.</p>
             <div>
               <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
@@ -490,7 +501,7 @@ export default function PollsDashboardView() {
               <p className="text-muted db-margin-0">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
-              <div className="db-form-field">
+              <div className="form-field-group">
                 <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
                 <input
                   id="quick-poll-question"
@@ -502,7 +513,7 @@ export default function PollsDashboardView() {
                   required
                 />
               </div>
-              <div className="db-form-field">
+              <div className="form-field-group">
                 <label className="text-label" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
                 <input
                   id="quick-poll-days"
@@ -571,7 +582,7 @@ export default function PollsDashboardView() {
           <p className="text-muted db-margin-0">
             Configure global default settings for quick engagement polls.
           </p>
-          <div className="db-form-field">
+          <div className="form-field-group">
             <label className="text-label" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
             <input
               id="settings-default-days"

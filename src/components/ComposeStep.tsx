@@ -31,7 +31,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
   return (
     <div className="composer-form comm-compose-form">
       <div className="comm-compose-header-row">
-        <div className="composer-subject-field comm-compose-field">
+        <div className="composer-subject-field form-field-group">
           <label className="text-label">Subject</label>
           <input
             className={`card comm-compose-input ${subjectWarning ? 'border-error' : ''}`}
@@ -46,7 +46,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
             </span>
           )}
         </div>
-        <div className="composer-channel-field comm-compose-field">
+        <div className="composer-channel-field form-field-group">
           <label className="text-label">Channel</label>
           <select
             className="card comm-compose-input"
@@ -59,7 +59,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           </select>
         </div>
       </div>
-      <div className="comm-compose-field">
+      <div className="form-field-group">
         <label className="text-label">Message Body (Markdown Supported)</label>
         <MarkdownEditor
           instanceRef={editorRef}
