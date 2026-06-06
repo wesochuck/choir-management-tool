@@ -7,6 +7,7 @@ import { AppCard } from '../components/common/AppCard';
 import { sanitizeHtml } from '../lib/textSafety';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
+import './PublicForms.css';
 
 export default function PublicTicketPurchaseView() {
   useDocumentTitle('Purchase Tickets');
@@ -44,7 +45,7 @@ export default function PublicTicketPurchaseView() {
 
   if (loading) {
     return (
-      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw' }}>
+      <div className="flex-col pub-style-1">
         <p className="text-muted">Loading details...</p>
       </div>
     );
@@ -52,12 +53,12 @@ export default function PublicTicketPurchaseView() {
 
   if (error || !event || !event.isTicketingEnabled || event.isArchived) {
     return (
-      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
-        <AppCard style={{ width: '100%', maxWidth: 'min(480px, calc(100vw - 32px))', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>
+      <div className="flex-col pub-style-2">
+        <AppCard className="pub-style-28">
+          <p className="pub-style-27">
             {error || (!event ? 'Event not found.' : 'Ticket sales are closed for this event.')}
           </p>
-          <Link to="/tickets" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Back to Events</Link>
+          <Link to="/tickets" className="btn btn-ghost pub-style-29">Back to Events</Link>
         </AppCard>
       </div>
     );
@@ -98,31 +99,30 @@ export default function PublicTicketPurchaseView() {
   };
 
   return (
-    <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'flex-start', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
-      <AppCard style={{ width: '100%', maxWidth: 'min(720px, calc(100vw - 32px))' }}>
-        <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-          <Link to="/tickets" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}>← Back to Events</Link>
-          <div className="flex-col" style={{ gap: '2px' }}>
-            {choirName && <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{choirName}</span>}
-            <h1 className="text-display" style={{ margin: 0 }}>Buy Tickets</h1>
+    <div className="flex-col pub-style-30">
+      <AppCard className="pub-style-3">
+        <div className="flex-col pub-style-4">
+          <Link to="/tickets" className="btn btn-ghost btn-sm pub-style-5">← Back to Events</Link>
+          <div className="flex-col pub-style-31">
+            {choirName && <span className="text-xs text-muted pub-style-32">{choirName}</span>}
+            <h1 className="text-display pub-style-6">Buy Tickets</h1>
           </div>
         </div>
 
-        <div className="card flex-responsive" style={{ padding: 'var(--space-md)', gap: 'var(--space-md)', backgroundColor: 'var(--primary-light)' }}>
+        <div className="card flex-responsive pub-style-33">
           {event.eventGraphic && (
             <img
               src={pb.files.getURL(event, event.eventGraphic)}
-              alt={event.title}
-              style={{ width: '100%', maxWidth: '240px', maxHeight: '160px', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+              alt={event.title} className="pub-style-34"
             />
           )}
-          <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-            <h3 style={{ margin: 0, color: 'var(--primary-deep)' }}>{event.title}</h3>
-            <p className="text-body" style={{ margin: 0 }}>
+          <div className="flex-col pub-style-24">
+            <h3 className="pub-style-18">{event.title}</h3>
+            <p className="text-body pub-style-6">
               Date: <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</strong>
             </p>
             {event.doorsOpenTime && (
-              <p className="text-muted text-sm" style={{ margin: 0 }}>
+              <p className="text-muted text-sm pub-style-6">
                 Doors Open: <strong>{event.doorsOpenTime}</strong>
               </p>
             )}
@@ -130,8 +130,8 @@ export default function PublicTicketPurchaseView() {
         </div>
 
         {event.publicDetails && (
-          <div className="flex-col" style={{ gap: 'var(--space-xs)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-md)' }}>
-            <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase' }}>Event Details</span>
+          <div className="flex-col pub-style-35">
+            <span className="text-xs text-muted pub-style-20">Event Details</span>
             <div 
               className="text-body"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(event.publicDetails) }}
@@ -139,99 +139,87 @@ export default function PublicTicketPurchaseView() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-          {error && <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
+        <form onSubmit={handleSubmit} className="flex-col pub-style-22">
+          {error && <p className="pub-style-27">{error}</p>}
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col pub-style-19">
             <label className="text-label">Your Name (for Will Call)</label>
             <input
               type="text"
               required
-              className="card"
-              style={{ padding: '0 12px', height: '40px' }}
+              className="card pub-style-36"
               value={name}
               onChange={e => setName(e.target.value)}
             />
           </div>
 
-          <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+          <div className="flex-responsive pub-style-23">
+            <div className="flex-col pub-style-24">
               <label className="text-label">Email Address</label>
               <input
                 type="email"
                 required
-                className="card"
-                style={{ padding: '0 12px', height: '40px' }}
+                className="card pub-style-36"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
-            <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+            <div className="flex-col pub-style-24">
               <label className="text-label">Confirm Email</label>
               <input
                 type="email"
                 required
-                className="card"
-                style={{ padding: '0 12px', height: '40px' }}
+                className="card pub-style-36"
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-col pub-style-19">
             <label className="text-label">Ticket Quantity</label>
             <input
               type="number"
               min="1"
               max="10"
               required
-              className="card"
-              style={{ padding: '0 12px', height: '40px' }}
+              className="card pub-style-36"
               value={quantity}
               onChange={e => setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))}
             />
           </div>
 
-          <div className="card flex-col" style={{ padding: 'var(--space-md)', gap: 'var(--space-xs)', backgroundColor: 'var(--neutral-bg)' }}>
-            <h4 style={{ margin: 0, color: 'var(--primary-deep)' }}>Pricing Summary</h4>
-            <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.875rem' }}>
+          <div className="card flex-col pub-style-37">
+            <h4 className="pub-style-18">Pricing Summary</h4>
+            <div className="flex-row pub-style-38">
               <span>Ticket Price ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>
               <span>${((unitPrice * quantity) / 100).toFixed(2)}</span>
             </div>
             {feeCents > 0 && (
-              <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.875rem' }}>
+              <div className="flex-row pub-style-38">
                 <span>Processing Fee</span>
                 <span>${(feeCents / 100).toFixed(2)}</span>
               </div>
             )}
-            <div className="flex-row" style={{ justifyContent: 'space-between', fontWeight: 700, borderTop: '1px solid var(--border)', paddingTop: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+            <div className="flex-row pub-style-39">
               <span>Total Cost</span>
               <span>${(totalCents / 100).toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="flex-row" style={{ 
-            padding: 'var(--space-md)', 
-            gap: 'var(--space-md)', 
-            alignItems: 'flex-start', 
-            backgroundColor: 'var(--neutral-bg)', 
-            border: '1px solid var(--border)', 
-            borderRadius: 'var(--radius-md)',
-            marginTop: 'var(--space-xs)'
-          }}>
+          <div className="flex-row pub-style-40">
             <input
               id="marketingOptIn"
               type="checkbox"
+              className="pub-checkbox-marketing"
               checked={marketingOptIn}
               onChange={e => setMarketingOptIn(e.target.checked)}
-              style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px', minHeight: 'auto', accentColor: 'var(--primary)' }}
             />
-            <label htmlFor="marketingOptIn" className="flex-col" style={{ gap: '2px', cursor: 'pointer', userSelect: 'none', flex: 1 }}>
-              <span className="text-sm" style={{ fontWeight: 600, color: 'var(--text)', lineHeight: '1.3' }}>
+            <label htmlFor="marketingOptIn" className="flex-col pub-style-41">
+              <span className="text-sm pub-style-42">
                 Email me future choir performance announcements.
               </span>
-              <span className="text-xs text-muted" style={{ lineHeight: '1.3' }}>
+              <span className="text-xs text-muted pub-style-43">
                 No weekly emails. Unsubscribe anytime.
               </span>
             </label>
@@ -240,8 +228,7 @@ export default function PublicTicketPurchaseView() {
           <button
             type="submit"
             disabled={submitting}
-            className="btn btn-primary btn-lg"
-            style={{ width: '100%', height: '48px', fontWeight: 600 }}
+            className="btn btn-primary btn-lg pub-style-44"
           >
             {submitting ? "Opening Secure Checkout…" : "Proceed to Payment"}
           </button>

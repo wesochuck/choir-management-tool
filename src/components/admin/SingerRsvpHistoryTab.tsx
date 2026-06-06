@@ -1,6 +1,7 @@
 import React from 'react';
 import { SingerPerformanceRsvpRow } from './SingerPerformanceRsvpRow';
 import { useSingerRsvpHistory } from '../../hooks/useSingerRsvpHistory';
+import './RosterUtils.css';
 
 interface SingerRsvpHistoryTabProps {
   singerId: string;
@@ -21,21 +22,21 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
 
   if (loadingRsvps) {
     return (
-      <div className="text-sm text-muted" style={{ padding: 'var(--space-md)' }}>
+      <div className="text-sm text-muted roster-ut-history-loading">
         Loading RSVP history...
       </div>
     );
   }
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+    <div className="flex-col roster-ut-history-container">
       <div>
-        <h4 style={{ margin: '0 0 8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+        <h4 className="roster-ut-history-header">
           Upcoming Performances ({upcomingPerformances.length})
         </h4>
-        <div className="flex-col" style={{ gap: '8px' }}>
+        <div className="flex-col roster-ut-history-list">
           {upcomingPerformances.length === 0 ? (
-            <p className="text-sm text-muted" style={{ margin: 0 }}>No upcoming performances.</p>
+            <p className="text-sm text-muted roster-ut-margin-0">No upcoming performances.</p>
           ) : (
             upcomingPerformances.map((performance) => {
               const rosterEntry = rosters.find((roster) => roster.event === performance.id);
@@ -56,12 +57,12 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
       </div>
 
       <div>
-        <h4 style={{ margin: '0 0 8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+        <h4 className="roster-ut-history-header">
           Past Performances ({pastPerformances.length})
         </h4>
-        <div className="flex-col" style={{ gap: '8px' }}>
+        <div className="flex-col roster-ut-history-list">
           {pastPerformances.length === 0 ? (
-            <p className="text-sm text-muted" style={{ margin: 0 }}>No past performances.</p>
+            <p className="text-sm text-muted roster-ut-margin-0">No past performances.</p>
           ) : (
             pastPerformances.map((performance) => {
               const rosterEntry = rosters.find((roster) => roster.event === performance.id);

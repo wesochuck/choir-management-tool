@@ -12,6 +12,7 @@ import {
   type RosterField,
 } from '../../lib/rosterImportUtils';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import './RosterUtils.css';
 
 interface RosterImportModalProps {
   isOpen: boolean;
@@ -258,7 +259,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       case 'MAP':
         return (
           <>
-            <button onClick={handleReset} className="btn btn-ghost" style={{ marginRight: 'auto' }}>Restart</button>
+            <button onClick={handleReset} className="btn btn-ghost roster-ut-mr-auto">Restart</button>
             <button onClick={() => setStep('UPLOAD')} className="btn btn-ghost">Back</button>
             <button onClick={handleApplyMapping} className="btn btn-primary">Preview & Validate</button>
           </>
@@ -306,26 +307,14 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     >
       {/* STEP 1: UPLOAD */}
       {step === 'UPLOAD' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)', textAlign: 'center', padding: '20px 0' }}>
-          <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col roster-ut-upload-container">
+          <p className="text-muted text-sm roster-ut-margin-0">
             Upload a CSV file containing your singer roster to bootstrap the process.
           </p>
 
           <div 
             onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: '2px dashed var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '40px 20px',
-              cursor: 'pointer',
-              backgroundColor: 'rgba(74, 124, 89, 0.02)',
-              transition: 'border-color 0.2s, background-color 0.2s',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-            }}
+            className="roster-ut-upload-dropzone"
             onMouseOver={(e) => {
               e.currentTarget.style.borderColor = 'var(--primary)';
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.05)';
@@ -335,12 +324,12 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.02)';
             }}
           >
-            <span style={{ fontSize: '3rem' }}>📄</span>
+            <span className="roster-ut-upload-icon">📄</span>
             <div>
-              <strong style={{ color: 'var(--primary-deep)', display: 'block', fontSize: '1rem' }}>
+              <strong className="roster-ut-upload-title">
                 Select a CSV file to upload
               </strong>
-              <span className="text-muted text-xs" style={{ marginTop: '4px', display: 'block' }}>
+              <span className="text-muted text-xs roster-ut-upload-subtitle">
                 or drag & drop it here
               </span>
             </div>
@@ -349,11 +338,11 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               accept=".csv" 
               ref={fileInputRef} 
               onChange={handleFileUpload} 
-              style={{ display: 'none' }} 
+              className="roster-ut-d-none" 
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <div className="roster-ut-upload-hint">
             <span>💡</span>
             <span>The importer will automatically try to match column headers for you!</span>
           </div>
@@ -362,42 +351,30 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 2: FIELD MAPPING */}
       {step === 'MAP' && csvData && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col roster-ut-map-container">
+          <p className="text-muted text-sm roster-ut-margin-0">
             Align the columns in your CSV with our system database fields. Smart auto-matches have been pre-selected.
           </p>
 
-          <div className="flex-col" style={{ gap: 'var(--space-sm)', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="flex-col roster-ut-map-list">
             {fieldsConfig.map(field => {
               const selectedIndex = mapping[field.key];
               
               return (
                 <div 
                   key={field.key} 
-                  className="card" 
-                  style={{ 
-                    padding: '12px 16px', 
-                    display: 'flex', 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    gap: '12px',
+                  className="card roster-ut-map-item" 
+                  style={{ /* @allow-inline-style */ 
+                    // @allow-inline-style - Dynamic border color for invalid required mapping
                     borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
                   }}
                 >
-                  <div className="flex-col" style={{ gap: '2px', flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text)' }}>{field.label}</strong>
+                  <div className="flex-col roster-ut-map-item-info">
+                    <div className="roster-ut-map-item-header">
+                      <strong className="roster-ut-map-item-title">{field.label}</strong>
                       {field.required && (
                         <span 
-                          style={{ 
-                            fontSize: '0.7rem', 
-                            backgroundColor: 'rgba(153, 27, 27, 0.1)', 
-                            color: '#991b1b', 
-                            padding: '1px 6px', 
-                            borderRadius: '4px',
-                            fontWeight: 600,
-                          }}
+                          className="roster-ut-map-item-required"
                         >
                           Required
                         </span>
@@ -409,15 +386,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   <select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className="card"
-                    style={{ 
-                      width: '200px', 
-                      height: '38px', 
-                      padding: '0 10px', 
-                      border: '1px solid var(--border)', 
-                      fontSize: '0.85rem',
+                    className="card roster-ut-map-select"
+                    style={{ /* @allow-inline-style */ 
+                      // @allow-inline-style - Dynamic border color when actively mapped
                       borderColor: selectedIndex !== -1 ? 'var(--primary)' : undefined,
-                      boxShadow: 'none',
                     }}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
@@ -436,30 +408,30 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 3: PREVIEW & VALIDATION */}
       {step === 'PREVIEW' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col roster-ut-map-container">
+          <div className="flex-responsive roster-ut-preview-header">
+            <p className="text-muted text-sm roster-ut-margin-0">
               Verify parsed singer details and resolve validation warnings or errors before importing.
             </p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <span className="text-xs card" style={{ padding: '4px 8px', background: 'rgba(74, 124, 89, 0.05)', color: 'var(--primary-deep)', fontWeight: 600 }}>
+            <div className="roster-ut-preview-stats">
+              <span className="text-xs card roster-ut-preview-stat-mapped">
                 Total Mapped: {mappedSingers.length}
               </span>
-              <span className="text-xs card" style={{ padding: '4px 8px', background: 'rgba(153, 27, 27, 0.05)', color: '#991b1b', fontWeight: 600 }}>
+              <span className="text-xs card roster-ut-preview-stat-errors">
                 Errors: {mappedSingers.filter(s => !s.isValid).length}
               </span>
             </div>
           </div>
 
-          <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', maxHeight: '350px' }}>
-            <table className="table" style={{ width: '100%', minWidth: '600px', margin: 0 }}>
-              <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg)', zIndex: 1, boxShadow: '0 1px 0 var(--border)' }}>
+          <div className="roster-ut-preview-table-container">
+            <table className="table roster-ut-preview-table">
+              <thead className="roster-ut-preview-thead">
                 <tr>
-                  <th style={{ width: '60px', textAlign: 'center' }}>Row</th>
+                  <th className="roster-ut-preview-th-row">Row</th>
                   <th>Name</th>
                   <th>Email</th>
-                  <th style={{ width: '100px' }}>Voice Part</th>
-                  <th style={{ width: '130px' }}>Status</th>
+                  <th className="roster-ut-preview-th-voicepart">Voice Part</th>
+                  <th className="roster-ut-preview-th-status">Status</th>
                   <th>Status / Errors</th>
                 </tr>
               </thead>
@@ -471,42 +443,46 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   return (
                     <tr 
                       key={idx} 
-                      style={{ 
+                      style={{ /* @allow-inline-style */ 
+                        // @allow-inline-style - Dynamic row color based on errors or warnings
                         backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
                       }}
                     >
-                      <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      <td className="roster-ut-preview-td-row">
                         {singer.rowNumber}
                       </td>
                       <td>
-                        <strong style={{ color: hasErrors ? '#c62828' : 'inherit' }}>
+                        <strong style={{ /* @allow-inline-style */ 
+                          // @allow-inline-style - Dynamic name color based on error state
+                          color: hasErrors ? '#c62828' : 'inherit' 
+                        }}>
                           {singer.data.name || '(Empty Name)'}
                         </strong>
                       </td>
-                      <td style={{ fontSize: '0.85rem' }}>{singer.data.email || '-'}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className="text-xs" style={{ fontWeight: 600 }}>
+                      <td className="roster-ut-preview-td-email">{singer.data.email || '-'}</td>
+                      <td className="roster-ut-preview-td-voicepart">
+                        <span className="text-xs roster-ut-fw-600">
                           {singer.data.voicePart || '-'}
                         </span>
                       </td>
                       <td>
-                        <span className="text-xs card" style={{ padding: '2px 6px', display: 'inline-block' }}>
+                        <span className="text-xs card roster-ut-preview-status-badge">
                           {singer.data.globalStatus}
                         </span>
                       </td>
                       <td>
                         {hasErrors && (
-                          <div style={{ color: '#c62828', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div className="roster-ut-preview-errors-list">
                             {singer.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
                           </div>
                         )}
                         {hasWarnings && (
-                          <div style={{ color: '#b78103', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div className="roster-ut-preview-warnings-list">
                             {singer.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
                           </div>
                         )}
                         {!hasErrors && !hasWarnings && (
-                          <span style={{ color: 'var(--primary-deep)', fontSize: '0.8rem' }}>🟢 Ready</span>
+                          <span className="roster-ut-preview-ready">🟢 Ready</span>
                         )}
                       </td>
                     </tr>
@@ -520,11 +496,11 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 4: IMPORTING PROGRESS */}
       {step === 'IMPORTING' && (
-        <div className="flex-col" style={{ gap: 'var(--space-md)', padding: '20px 0', alignItems: 'center' }}>
-          <span style={{ fontSize: '3rem', animation: 'spin 2s linear infinite' }}>⚙️</span>
+        <div className="flex-col roster-ut-importing-container">
+          <span className="roster-ut-importing-icon">⚙️</span>
           
-          <div className="flex-col" style={{ gap: '6px', width: '100%', alignItems: 'center' }}>
-            <strong style={{ fontSize: '1.1rem', color: 'var(--text)' }}>
+          <div className="flex-col roster-ut-importing-header">
+            <strong className="roster-ut-importing-title">
               Importing {mappedSingers.filter(s => s.isValid).length} Singers...
             </strong>
             <span className="text-muted text-sm">
@@ -532,31 +508,33 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             </span>
           </div>
 
-          <div style={{ width: '100%', height: '12px', backgroundColor: 'var(--border)', borderRadius: '6px', overflow: 'hidden', marginTop: '10px' }}>
+          <div className="roster-ut-importing-progress-track">
             <div 
-              style={{ 
-                height: '100%', 
-                backgroundColor: 'var(--primary)', 
+              className="roster-ut-importing-progress-bar"
+              style={{ /* @allow-inline-style */ 
+                // @allow-inline-style - Dynamic progress bar width
                 width: `${importProgress}%`,
-                transition: 'width 0.1s ease-out',
               }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            <span>Successes: <strong style={{ color: 'var(--primary-deep)' }}>{successCount}</strong></span>
-            <span>Failures: <strong style={{ color: errorsList.length > 0 ? '#991b1b' : 'inherit' }}>{errorsList.length}</strong></span>
+          <div className="roster-ut-importing-stats">
+            <span>Successes: <strong className="roster-ut-importing-success">{successCount}</strong></span>
+            <span>Failures: <strong style={{ /* @allow-inline-style */ 
+                  // @allow-inline-style - Dynamic error count color
+                  color: errorsList.length > 0 ? '#991b1b' : 'inherit' 
+                }}>{errorsList.length}</strong></span>
           </div>
         </div>
       )}
 
       {/* STEP 5: IMPORT COMPLETE */}
       {step === 'COMPLETE' && (
-        <div className="flex-col" style={{ gap: 'var(--space-lg)', padding: '10px 0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
-            <span style={{ fontSize: '3.5rem' }}>🎉</span>
-            <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary-deep)' }}>Import Finished!</h3>
-            <p className="text-muted text-sm" style={{ margin: 0 }}>
+        <div className="flex-col roster-ut-complete-container">
+          <div className="roster-ut-complete-header">
+            <span className="roster-ut-complete-icon">🎉</span>
+            <h3 className="roster-ut-complete-title">Import Finished!</h3>
+            <p className="text-muted text-sm roster-ut-margin-0">
               Successfully imported <strong>{successCount}</strong> singers into the roster.
             </p>
           </div>
@@ -564,31 +542,19 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           {/* Credentials Download Callout */}
           {credentialsList.length > 0 && (
             <div 
-              className="card"
-              style={{
-                backgroundColor: 'rgba(74, 124, 89, 0.06)',
-                borderColor: 'rgba(74, 124, 89, 0.2)',
-                padding: '16px 20px',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-              }}
+              className="card roster-ut-complete-creds-callout"
             >
-              <div className="flex-col" style={{ gap: '4px', flex: 1 }}>
-                <strong style={{ color: 'var(--primary-deep)', fontSize: '0.95rem' }}>
+              <div className="flex-col roster-ut-complete-creds-info">
+                <strong className="roster-ut-complete-creds-title">
                   🔑 Generated temporary credentials
                 </strong>
-                <span className="text-muted text-xs" style={{ lineHeight: 1.4 }}>
+                <span className="text-muted text-xs roster-ut-complete-creds-desc">
                   Created {credentialsList.length} new login accounts. Download this CSV now to save their temporary login passwords.
                 </span>
               </div>
               <button 
                 onClick={handleDownloadCredentials} 
-                className="btn btn-primary"
-                style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                className="btn btn-primary roster-ut-complete-creds-btn"
               >
                 📥 Download CSV
               </button>
@@ -597,24 +563,18 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           {/* Error Details */}
           {errorsList.length > 0 && (
-            <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-              <strong style={{ fontSize: '0.9rem', color: '#991b1b' }}>
+            <div className="flex-col roster-ut-complete-errors">
+              <strong className="roster-ut-complete-errors-title">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
-              <div 
-                style={{ 
-                  maxHeight: '150px', 
-                  overflowY: 'auto', 
-                  border: '1px solid var(--border)', 
-                  borderRadius: 'var(--radius-md)',
-                  padding: '8px 12px',
-                  backgroundColor: '#fafafa',
-                  fontSize: '0.8rem',
-                }}
-              >
+              <div className="roster-ut-complete-errors-list">
                 {errorsList.map((err, i) => (
-                  <div key={i} style={{ padding: '4px 0', borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined, color: '#444' }}>
-                    Row {err.row} (<strong>{err.name}</strong>): <span style={{ color: '#991b1b' }}>{err.error}</span>
+                  <div key={i} className="roster-ut-complete-error-item" 
+                    style={{ /* @allow-inline-style */ 
+                      // @allow-inline-style - Dynamic border based on position in list
+                      borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined 
+                    }}>
+                    Row {err.row} (<strong>{err.name}</strong>): <span className="roster-ut-complete-error-text">{err.error}</span>
                   </div>
                 ))}
               </div>

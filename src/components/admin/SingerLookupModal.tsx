@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
 import { BaseModal } from '../common/BaseModal';
+import './RosterUtils.css';
 
 interface SingerLookupModalProps {
   isOpen: boolean;
@@ -62,27 +63,26 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
       maxWidth="500px"
       footer={<button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>}
     >
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+      <div className="flex-col roster-ut-lookup-container">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name, voice part, status..."
-          className="card"
-          style={{ width: '100%', padding: '0 12px', height: '40px', border: '1px solid var(--border)' }}
+          className="card roster-ut-lookup-search"
           autoFocus
         />
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: 'var(--space-md)', color: 'var(--text-muted)' }}>
+          <div className="roster-ut-lookup-status">
             Loading roster database...
           </div>
         ) : error ? (
-          <div style={{ color: 'var(--color-danger-text)', padding: 'var(--space-md)', textAlign: 'center' }}>
+          <div className="roster-ut-lookup-error">
             ⚠️ {error}
           </div>
         ) : (
-          <div className="flex-col" style={{ gap: '6px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="flex-col roster-ut-lookup-list">
             {filtered.map(p => (
               <button
                 key={p.id}
@@ -91,31 +91,19 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                   await onSelect(p);
                   onClose();
                 }}
-                className="flex-row card"
-                style={{
-                  padding: '10px 14px',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg)',
-                  textAlign: 'left',
-                  width: '100%',
-                  display: 'flex',
-                  gap: 'var(--space-sm)'
-                }}
+                className="flex-row card roster-ut-lookup-item"
               >
-                <div className="flex-col" style={{ gap: '2px' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>{p.name}</span>
+                <div className="flex-col roster-ut-lookup-item-content">
+                  <span className="roster-ut-lookup-item-name">{p.name}</span>
                   <span className="text-xs text-muted">Status: {p.globalStatus}</span>
                 </div>
-                <span className="badge badge-rehearsal" style={{ textTransform: 'uppercase' }}>
+                <span className="badge badge-rehearsal roster-ut-lookup-badge">
                   {p.voicePart || 'Unknown'}
                 </span>
               </button>
             ))}
             {filtered.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 'var(--space-md)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              <div className="roster-ut-lookup-empty">
                 No singers found
               </div>
             )}

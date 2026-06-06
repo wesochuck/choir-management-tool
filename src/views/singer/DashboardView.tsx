@@ -12,7 +12,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
 import { BaseModal } from '../../components/common/BaseModal';
-import './DashboardView.css';
+import './SingerDashboard.css';
 
 
 export default function DashboardView() {
@@ -148,8 +148,8 @@ export default function DashboardView() {
     }
   };
 
-  if (isLoading && events.length === 0) return <div className="container" style={{ textAlign: 'center', paddingTop: 'var(--space-xl)' }}>Loading your events...</div>;
-  if (error) return <div className="container" style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
+  if (isLoading && events.length === 0) return <div className="container sd-loading-container">Loading your events...</div>;
+  if (error) return <div className="container sd-error-container">Error: {error}</div>;
 
   const upcomingEvents = events.filter(e => new Date(e.date) >= new Date());
   
@@ -189,14 +189,14 @@ export default function DashboardView() {
     <PageLayout 
       title="Singer Dashboard" 
       actions={
-        <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+        <div className="flex-row sd-page-actions">
           <Link to="/profile" className="btn btn-ghost">My Profile</Link>
           <button onClick={() => pb.authStore.clear()} className="btn btn-ghost">Logout</button>
         </div>
       }
       maxWidth="1200px"
     >
-      <div style={{ padding: 'var(--space-md) 0' }}>
+      <div className="sd-dashboard-wrapper">
         {nextEvent && (
           <section className="mobile-singer-quick-panel" aria-label="Singer quick actions">
             <AppCard className="glass-card">
@@ -221,14 +221,7 @@ export default function DashboardView() {
                 </div>
 
                 {isNextEventParentPerformanceDeclined ? (
-                  <div className="text-center text-xs text-muted" style={{ 
-                    marginTop: 'var(--space-md)', 
-                    textAlign: 'center', 
-                    width: '100%', 
-                    padding: '8px', 
-                    border: '1px dashed rgba(255, 255, 255, 0.3)', 
-                    borderRadius: '6px'
-                  }}>
+                  <div className="text-center text-xs text-muted sd-excused-message">
                     🚫 Excused (Parent Performance Declined)
                   </div>
                 ) : (
@@ -252,7 +245,7 @@ export default function DashboardView() {
                       </button>
                     </div>
                     {isNextEventClosed && (
-                      <div className="text-xs text-muted" style={{ textAlign: 'center', marginTop: 'var(--space-xs)' }}>
+                      <div className="text-xs text-muted sd-rsvp-closed-message">
                         {nextEvent.type === 'Performance' 
                           ? 'The RSVP window for this performance is closed.' 
                           : 'This rehearsal has already passed.'}
@@ -285,8 +278,8 @@ export default function DashboardView() {
         <div className="dashboard-container">
           
           {/* Main timeline panel: Events */}
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neutral-dark)', margin: '0 0 var(--space-xs) 0' }}>Upcoming Events</h2>
+          <div className="flex-col sd-timeline-panel">
+            <h2 className="sd-upcoming-events-header">Upcoming Events</h2>
             {upcomingEvents.map((e) => (
               <EventCard 
                 key={e.id} 
@@ -300,44 +293,40 @@ export default function DashboardView() {
             ))}
 
             {upcomingEvents.length === 0 && (
-              <div className="card glass-card" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+              <div className="card glass-card sd-no-events-card">
                 <p className="text-muted">No upcoming events at this time.</p>
               </div>
             )}
           </div>
 
           {/* Right sidebar: Quick widgets */}
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          <div className="flex-col sd-sidebar">
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
-              <AppCard className="glass-card" title="📊 Quick Polls" style={{ backgroundColor: 'var(--primary-light)' }}>
-                <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+              <AppCard className="glass-card sd-polls-card" title="📊 Quick Polls">
+                <div className="flex-col sd-polls-list">
                   {activePolls.map(poll => (
-                    <div key={poll.id} className="card" style={{ padding: 'var(--space-sm)', display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', boxShadow: 'none', border: '1px solid var(--border)' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{poll.question}</div>
-                      <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+                    <div key={poll.id} className="card sd-poll-item">
+                      <div className="sd-poll-question">{poll.question}</div>
+                      <div className="flex-row sd-poll-actions">
                         <button 
-                          className="btn btn-sm" 
+                          className="btn btn-sm sd-poll-btn-base" 
+                          // @allow-inline-style - Dynamic color based on poll status
                           style={{ 
-                            flex: 1, 
                             backgroundColor: poll.status === 'Yes' ? 'var(--primary)' : 'white',
                             color: poll.status === 'Yes' ? 'white' : 'var(--neutral-text)',
-                            border: '1px solid var(--border)',
-                            fontWeight: 700
                           }}
                           onClick={() => handlePollResponse(poll.id, 'Yes')}
                         >
                           {poll.status === 'Yes' ? '✓ Yes' : 'Yes'}
                         </button>
                         <button 
-                          className="btn btn-sm" 
+                          className="btn btn-sm sd-poll-btn-base" 
+                          // @allow-inline-style - Dynamic color based on poll status
                           style={{ 
-                            flex: 1, 
                             backgroundColor: poll.status === 'No' ? '#ef4444' : 'white',
                             color: poll.status === 'No' ? 'white' : 'var(--neutral-text)',
-                            border: '1px solid var(--border)',
-                            fontWeight: 700
                           }}
                           onClick={() => handlePollResponse(poll.id, 'No')}
                         >
@@ -353,7 +342,7 @@ export default function DashboardView() {
             {/* Recent Announcements Widget */}
             <AppCard className="glass-card" title="✉️ Bulletins">
               {isAnnouncementsLoading ? (
-                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>Loading bulletins...</div>
+                <div className="text-muted sd-centered-muted-padding">Loading bulletins...</div>
               ) : announcements.length > 0 ? (
                 <div className="bulletin-feed">
                   {announcements.map(ann => (
@@ -376,14 +365,14 @@ export default function DashboardView() {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>No recent updates.</div>
+                <div className="text-muted sd-centered-muted-padding">No recent updates.</div>
               )}
             </AppCard>
 
             {/* Resources Widget */}
             <AppCard className="glass-card" title="📂 Resources">
               {isResourcesLoading ? (
-                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>Loading resources...</div>
+                <div className="text-muted sd-centered-muted-padding">Loading resources...</div>
               ) : resources.length > 0 ? (
                 <div className="resource-locker-list">
                   {resources.map(res => {
@@ -402,7 +391,7 @@ export default function DashboardView() {
                   })}
                 </div>
               ) : (
-                <div className="text-muted" style={{ textAlign: 'center', padding: 'var(--space-md)' }}>No resources available.</div>
+                <div className="text-muted sd-centered-muted-padding">No resources available.</div>
               )}
             </AppCard>
 
@@ -428,11 +417,11 @@ export default function DashboardView() {
         }
       >
         {selectedAnnouncement && (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-            <div className="text-xs text-muted" style={{ marginTop: '-8px' }}>
+          <div className="flex-col sd-announcement-modal-content">
+            <div className="text-xs text-muted sd-dispatched-date">
               Dispatched on {getFormattedDate(selectedAnnouncement.created)}
             </div>
-            <div className="message-preview-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            <div className="message-preview-content sd-message-preview-content">
               {/* Secure content rendering */}
               <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement.content) }} />
             </div>

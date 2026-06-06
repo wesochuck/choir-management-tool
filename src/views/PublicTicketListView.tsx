@@ -6,6 +6,7 @@ import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
+import './PublicForms.css';
 
 export default function PublicTicketListView() {
   useDocumentTitle('Ticket Sales');
@@ -44,7 +45,7 @@ export default function PublicTicketListView() {
 
   if (loading) {
     return (
-      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw' }}>
+      <div className="flex-col pub-style-1">
         <p className="text-muted">Loading events...</p>
       </div>
     );
@@ -53,56 +54,55 @@ export default function PublicTicketListView() {
   const hasContent = events.length > 0 || bundles.length > 0;
 
   return (
-    <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'flex-start', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
-      <AppCard style={{ width: '100%', maxWidth: 'min(720px, calc(100vw - 32px))' }}>
-        <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-          <div className="flex-col" style={{ gap: '2px' }}>
-            {choirName && <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{choirName}</span>}
-            <h1 className="text-display" style={{ margin: 0 }}>Ticket Purchases</h1>
+    <div className="flex-col pub-style-30">
+      <AppCard className="pub-style-3">
+        <div className="flex-col pub-style-4">
+          <div className="flex-col pub-style-31">
+            {choirName && <span className="text-xs text-muted pub-style-32">{choirName}</span>}
+            <h1 className="text-display pub-style-6">Ticket Purchases</h1>
           </div>
-          <p className="text-muted" style={{ margin: 0 }}>
+          <p className="text-muted pub-style-6">
             Select an upcoming performance or a season pass to purchase tickets online.
           </p>
         </div>
 
         {!hasContent ? (
-          <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-xl) 0', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem' }}>🎟️</div>
-            <p className="text-body" style={{ margin: 0, fontWeight: 500 }}>
+          <div className="flex-col pub-style-7">
+            <div className="pub-style-8">🎟️</div>
+            <p className="text-body pub-style-9">
               No tickets are currently open for online purchase.
             </p>
             <p className="text-muted text-sm">Please check back later or contact the administrator.</p>
           </div>
         ) : (
-          <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+          <div className="flex-col pub-style-22">
             {/* Season Passes / Bundles Section */}
             {bundles.length > 0 && (
-              <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                <h2 style={{ margin: 0, borderBottom: '2px solid var(--border)', paddingBottom: 'var(--space-xs)', color: 'var(--primary-deep)' }}>
+              <div className="flex-col pub-style-23">
+                <h2 className="pub-style-45">
                   Season Passes
                 </h2>
                 {bundles.map(bundle => (
-                  <div key={bundle.id} className="card flex-responsive" style={{ padding: 'var(--space-md)', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)', border: '2px solid var(--primary)', backgroundColor: 'var(--primary-light)' }}>
-                    <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
-                      <span className="badge badge-success" style={{ alignSelf: 'flex-start', textTransform: 'uppercase', fontSize: '0.7rem' }}>Best Value</span>
-                      <h3 style={{ margin: 0, color: 'var(--primary-deep)' }}>{bundle.title}</h3>
-                      <p className="text-sm text-body" style={{ margin: 0 }}>
+                  <div key={bundle.id} className="card flex-responsive pub-style-46">
+                    <div className="flex-col pub-style-24">
+                      <span className="badge badge-success pub-style-47">Best Value</span>
+                      <h3 className="pub-style-18">{bundle.title}</h3>
+                      <p className="text-sm text-body pub-style-6">
                         Discounted package for all included concerts.
                       </p>
                       {bundle.expand?.events && (
-                        <div className="text-muted text-xs" style={{ marginTop: 'var(--space-xs)' }}>
+                        <div className="text-muted text-xs pub-style-48">
                           <strong>Includes:</strong> {bundle.expand.events.map(e => e.title).join(', ')}
                         </div>
                       )}
                     </div>
-                    <div className="flex-col" style={{ alignItems: 'flex-end', gap: 'var(--space-xs)' }}>
-                      <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary-deep)' }}>
+                    <div className="flex-col pub-style-49">
+                      <span className="pub-style-50">
                         ${(bundle.priceCents / 100).toFixed(2)}
                       </span>
                       <Link
                         to={`/tickets/bundle/${bundle.id}`}
-                        className="btn btn-primary"
-                        style={{ textDecoration: 'none', textAlign: 'center', whiteSpace: 'nowrap' }}
+                        className="btn btn-primary pub-style-51"
                       >
                         Buy Season Pass
                       </Link>
@@ -114,29 +114,27 @@ export default function PublicTicketListView() {
 
             {/* Individual Concerts Section */}
             {events.length > 0 && (
-              <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-                <h2 style={{ margin: 0, borderBottom: '2px solid var(--border)', paddingBottom: 'var(--space-xs)' }}>
+              <div className="flex-col pub-style-23">
+                <h2 className="pub-style-52">
                   Concert Tickets
                 </h2>
                 {events.map(event => (
-                  <div key={event.id} className="card flex-responsive" style={{ padding: 'var(--space-md)', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
-                    <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
+                  <div key={event.id} className="card flex-responsive pub-style-53">
+                    <div className="flex-col pub-style-24">
                       {event.eventGraphic && (
                         <img
                           src={pb.files.getURL(event, event.eventGraphic)}
-                          alt={event.title}
-                          style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-xs)' }}
+                          alt={event.title} className="pub-style-54"
                         />
                       )}
-                      <h3 style={{ margin: 0 }}>{event.title}</h3>
+                      <h3 className="pub-style-6">{event.title}</h3>
                       <span className="text-muted text-sm">
                         {formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     </div>
                     <Link
                       to={`/tickets/${event.id}`}
-                      className="btn btn-primary"
-                      style={{ textDecoration: 'none', textAlign: 'center', whiteSpace: 'nowrap' }}
+                      className="btn btn-primary pub-style-51"
                     >
                       Buy Tickets
                     </Link>

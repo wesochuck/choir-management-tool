@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AttendanceItem } from '../../hooks/useAttendance';
 import './CheckInList.css';
+import './RosterUtils.css';
 
 interface CheckInListProps {
   items: AttendanceItem[];
@@ -45,18 +46,7 @@ const FolderInput: React.FC<{
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       placeholder="--"
-      className="card"
-      style={{
-        width: '55px',
-        padding: '0 6px',
-        textAlign: 'center',
-        height: '32px',
-        fontSize: '0.85rem',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border)',
-        boxShadow: 'none',
-        backgroundColor: 'var(--surface)'
-      }}
+      className="card roster-ut-folder-input"
     />
   );
 };
@@ -80,7 +70,8 @@ const CheckInRow: React.FC<{
     <div
       className={`card admin-checkin-row checkin-row ${isSecondaryOpen ? 'secondary-open' : ''}`}
       onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
-      style={{
+      style={{ /* @allow-inline-style */
+        // @allow-inline-style - Dynamic row styling based on attendance state
         opacity: isPresent ? 0.85 : 1,
         border: isPresent
           ? '1px solid var(--primary)'
@@ -100,7 +91,6 @@ const CheckInRow: React.FC<{
         <div className="admin-checkin-singer">
           <div className="admin-checkin-singer-header">
             <span
-              className="admin-checkin-name"
               onClick={(event) => {
                 event.stopPropagation();
                 const query = new URLSearchParams({
@@ -109,14 +99,14 @@ const CheckInRow: React.FC<{
                 });
                 navigate(`/admin/roster?${query.toString()}`);
               }}
-              style={{
+              className="admin-checkin-name roster-ut-clickable-name"
+              style={{ /* @allow-inline-style */
+                // @allow-inline-style - Dynamic name color based on attendance state
                 color: isPresent 
                   ? 'var(--primary-deep)' 
                   : isAbsent 
                     ? '#991b1b' 
                     : 'var(--text-main)',
-                cursor: 'pointer',
-                textDecoration: 'underline'
               }}
               title="Click to view full roster profile"
             >
@@ -126,40 +116,24 @@ const CheckInRow: React.FC<{
             <div className="admin-checkin-badges">
               {item.rsvp === 'Yes' && (
                 <span 
-                  className="badge badge-rehearsal" 
-                  style={{ 
-                    fontSize: '9px', 
-                    padding: '2px 6px',
-                    borderRadius: '4px'
-                  }}
+                  className="badge badge-rehearsal roster-ut-badge-rsvp"
                 >
                   RSVP
                 </span>
               )}
               <span
-                className="badge"
-                style={{
-                  fontSize: '9px',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  backgroundColor: 'var(--primary-light)',
-                  color: 'var(--primary-deep)',
-                  border: '1px solid rgba(74, 117, 89, 0.2)'
-                }}
+                className="badge roster-ut-badge-voicepart"
               >
                 {item.voicePart}
               </span>
               {missCounts && missCounts[item.profileId] !== undefined && missCounts[item.profileId] > 0 && (
                 <span
-                  className="badge"
-                  style={{
-                    fontSize: '9px',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
+                  className="badge roster-ut-badge-misses"
+                  style={{ /* @allow-inline-style */
+                    // @allow-inline-style - Dynamic colors based on miss threshold
                     backgroundColor: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '#fee2e2' : '#fef3c7',
                     color: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '#991b1b' : '#92400e',
                     border: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '1px solid #fca5a5' : '1px solid #fde68a',
-                    fontWeight: 800
                   }}
                 >
                   ⚠️ {missCounts[item.profileId]} missed
@@ -172,7 +146,7 @@ const CheckInRow: React.FC<{
             {item.rsvp === 'Yes' && <span>RSVP</span>}
             <span>Folder {item.folderNumber || '--'}</span>
             <span>{item.folderReturned ? 'Returned' : 'Not returned'}</span>
-            {item.rsvpNote && <span style={{ color: '#b91c1c', fontWeight: 600 }}>📝 {item.rsvpNote}</span>}
+            {item.rsvpNote && <span className="roster-ut-rsvp-note">📝 {item.rsvpNote}</span>}
           </div>
           <div className="admin-checkin-primary-hint">
             {isPresent ? 'Checked in' : isAbsent ? 'Marked absent' : 'Tap card to mark present'}
@@ -189,7 +163,8 @@ const CheckInRow: React.FC<{
               onSetAttendance(item.profileId, isAbsent ? 'Pending' : 'Absent');
             }}
             className="btn admin-checkin-absent-btn"
-            style={{
+            style={{ /* @allow-inline-style */
+              // @allow-inline-style - Dynamic styling based on absence state
               backgroundColor: isAbsent ? '#ef4444' : 'var(--surface)',
               color: isAbsent ? 'var(--surface)' : '#64748b',
               borderColor: isAbsent ? '#ef4444' : 'var(--border)',
@@ -207,7 +182,8 @@ const CheckInRow: React.FC<{
               onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present');
             }}
             className="btn admin-checkin-present-btn"
-            style={{
+            style={{ /* @allow-inline-style */
+              // @allow-inline-style - Dynamic styling based on presence state
               backgroundColor: isPresent ? 'var(--primary)' : 'var(--surface)',
               color: isPresent ? 'var(--surface)' : 'var(--primary-deep)',
               borderColor: isPresent ? 'var(--primary)' : 'var(--border)',
@@ -256,7 +232,8 @@ const CheckInRow: React.FC<{
             />
             <span
               className="admin-checkin-returned-text"
-              style={{
+              style={{ /* @allow-inline-style */
+                // @allow-inline-style - Dynamic text color based on returned state
                 color: item.folderReturned ? 'var(--primary)' : 'var(--text-muted)'
               }}
             >
@@ -395,26 +372,14 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
         <React.Fragment key={item.id}>
           {showHeader && (
             <div 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                margin: '18px 0 8px 0', 
-                gap: '12px',
-                width: '100%' 
-              }}
+              className="roster-ut-list-header-container"
             >
               <span 
-                style={{ 
-                  fontSize: '0.8rem', 
-                  fontWeight: 800, 
-                  color: 'var(--primary-deep)', 
-                  letterSpacing: '0.05em',
-                  paddingRight: '8px'
-                }}
+                className="roster-ut-list-header-text"
               >
                 {headerText}
               </span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(74, 117, 89, 0.15)' }}></div>
+              <div className="roster-ut-list-header-line"></div>
             </div>
           )}
           <CheckInRow 
@@ -431,42 +396,22 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
   };
 
   return (
-    <div className="flex-col" style={{ gap: '12px', width: '100%' }}>
+    <div className="flex-col roster-ut-checkin-wrapper">
       {/* 1. Unchecked / Absent Singers */}
       {renderListWithHeaders(notCheckedIn)}
 
       {/* 2. Beautiful Checked-In Divider */}
       {checkedIn.length > 0 && (
         <div 
-          className="flex-row"
-          style={{ 
-            alignItems: 'center', 
-            margin: '24px 0 12px 0', 
-            gap: '16px',
-            width: '100%'
-          }}
+          className="flex-row roster-ut-checked-in-divider-container"
         >
-          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, var(--border))' }}></div>
+          <div className="roster-ut-checked-in-divider-line-left"></div>
           <span 
-            style={{ 
-              fontSize: '0.8rem', 
-              fontWeight: 800, 
-              color: 'var(--primary-deep)', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.08em',
-              backgroundColor: 'var(--surface)',
-              padding: '6px 16px',
-              borderRadius: '20px',
-              border: '1px solid rgba(74, 117, 89, 0.25)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+            className="roster-ut-checked-in-divider-text"
           >
             ✓ Checked In ({checkedIn.length})
           </span>
-          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, var(--border))' }}></div>
+          <div className="roster-ut-checked-in-divider-line-right"></div>
         </div>
       )}
 
@@ -475,7 +420,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
 
       {/* 4. Empty State */}
       {items.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
+        <div className="card roster-ut-empty-state-card">
           <p className="text-muted text-sm">No active singers found in the roster.</p>
         </div>
       )}

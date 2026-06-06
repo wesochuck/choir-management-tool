@@ -7,7 +7,6 @@ import { eventService, type Event } from '../services/eventService';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useVoiceParts } from '../hooks/useVoiceParts';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
-import './PublicForms.css';
 
 export default function PublicAuditionView() {
   useDocumentTitle('Auditions');
@@ -99,29 +98,29 @@ export default function PublicAuditionView() {
 
   if (isLoading) {
     return (
-      <div className="flex-col pub-style-1">
+      <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw' }}>
         <p className="text-muted">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-col pub-style-2">
-      <AppCard className="pub-style-3">
-        <div className="flex-col pub-style-4">
-          <Link to="/login" className="btn btn-ghost btn-sm pub-style-5">Admin Login</Link>
-          <h1 className="text-display pub-style-6">Choir Auditions</h1>
+    <div className="flex-col" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', width: '100vw', padding: 'var(--space-md)' }}>
+      <AppCard style={{ width: '100%', maxWidth: 'min(720px, calc(100vw - 32px))' }}>
+        <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
+          <Link to="/login" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}>Admin Login</Link>
+          <h1 className="text-display" style={{ margin: 0 }}>Choir Auditions</h1>
           {!submitted && (
-            <p className="text-muted pub-style-6">
+            <p className="text-muted" style={{ margin: 0 }}>
               Choose an audition time and share the best way to reach you.
             </p>
           )}
         </div>
 
         {!isFormActive ? (
-          <div className="flex-col pub-style-7">
-            <div className="pub-style-8">📅</div>
-            <p className="text-body pub-style-9">
+          <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-xl) 0', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem' }}>📅</div>
+            <p className="text-body" style={{ margin: 0, fontWeight: 500 }}>
               {settings.enabled 
                 ? "Auditions are not currently scheduled for an upcoming performance."
                 : "Audition requests are closed right now. Please check back later."}
@@ -129,53 +128,67 @@ export default function PublicAuditionView() {
             <p className="text-muted text-sm">Please check our social media or website for the next audition announcement.</p>
           </div>
         ) : submitted ? (
-          <div className="flex-col pub-style-10">
-            <div className="badge badge-success pub-style-5">Request Sent</div>
-            <p className="text-body pub-style-6">
+          <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md) 0' }}>
+            <div className="badge badge-success" style={{ alignSelf: 'flex-start' }}>Request Sent</div>
+            <p className="text-body" style={{ margin: 0 }}>
               {settings.confirmationMessage}
             </p>
             {homepageUrl && (
               <a 
                 href={homepageUrl} 
-                className="btn btn-primary pub-style-11"
+                className="btn btn-primary" 
+                style={{ 
+                  alignSelf: 'flex-start',
+                  marginTop: 'var(--space-md)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
               >
                 🏠 Visit our Homepage
               </a>
             )}
           </div>
         ) : (
-          <div className="flex-col pub-style-12">
+          <div className="flex-col" style={{ gap: 'var(--space-xl)' }}>
             {/* Concert Details & Schedule */}
-            <div className="card pub-style-13">
+            <div className="card" style={{ padding: 0, overflow: 'hidden', backgroundColor: 'var(--primary-light)' }}>
               <button 
                 onClick={() => setIsScheduleExpanded(!isScheduleExpanded)}
-                className="flex-row pub-accordion-button" 
+                className="flex-row" 
+                style={{ 
+                  width: '100%', 
+                  padding: 'var(--space-md) var(--space-lg)', 
+                  justifyContent: 'space-between',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
               >
-                <div className="flex-col pub-style-14">
-                  <span className="text-label pub-style-15">CONCERT DETAILS & SCHEDULE</span>
+                <div className="flex-col" style={{ gap: 2 }}>
+                  <span className="text-label" style={{ color: 'var(--primary-deep)' }}>CONCERT DETAILS & SCHEDULE</span>
                   <span className="text-xs text-muted">Please review the commitment for this concert series</span>
                 </div>
-                // @allow-inline-style - dynamic transform based on expansion state
-                <span style={{ fontSize: '1.2rem', transform: isScheduleExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                  ▼
-                </span>
+                <span style={{ fontSize: '1.2rem', transform: isScheduleExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
               </button>
 
               {isScheduleExpanded && (
-                <div className="pub-style-16">
-                  <div className="flex-col pub-style-17">
+                <div style={{ padding: '0 var(--space-lg) var(--space-lg) var(--space-lg)' }}>
+                  <div className="flex-col" style={{ gap: 'var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)' }}>
                     <div>
-                      <h3 className="pub-style-18">{targetPerformance.title}</h3>
-                      <p className="text-sm pub-style-6">
+                      <h3 style={{ margin: 0, color: 'var(--primary-deep)' }}>{targetPerformance.title}</h3>
+                      <p className="text-sm" style={{ margin: 0 }}>
                         Performance: <strong>{formatInTimezone(targetPerformance.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</strong>
                       </p>
                     </div>
 
-                    <div className="flex-col pub-style-19">
-                      <span className="text-xs text-muted pub-style-20">Rehearsal Schedule</span>
-                      <div className="flex-col pub-style-19">
+                    <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
+                      <span className="text-xs text-muted" style={{ fontWeight: 700, textTransform: 'uppercase' }}>Rehearsal Schedule</span>
+                      <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                         {rehearsals.length > 0 ? rehearsals.map((rehearsal) => (
-                          <div key={rehearsal.id} className="flex-responsive pub-style-21">
+                          <div key={rehearsal.id} className="flex-responsive" style={{ fontSize: '0.8125rem', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
                             <span>{formatInTimezone(rehearsal.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })} - {formatInTimezone(rehearsal.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
                             <span className="text-muted">{rehearsal.title}</span>
                           </div>
@@ -189,19 +202,19 @@ export default function PublicAuditionView() {
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-col pub-style-22">
-              <div className="flex-col pub-style-19">
+            <form onSubmit={handleSubmit} className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Name</label>
-                <input className="card pub-input" value={name} onChange={(e) => setName(e.target.value)} required />
+                <input className="card" value={name} onChange={(e) => setName(e.target.value)} required style={{ padding: '0 12px' }} />
               </div>
-              <div className="flex-col pub-style-19">
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Email or Phone</label>
-                <input className="card pub-input" value={contact} onChange={(e) => setContact(e.target.value)} required />
+                <input className="card" value={contact} onChange={(e) => setContact(e.target.value)} required style={{ padding: '0 12px' }} />
               </div>
-              <div className="flex-responsive pub-style-23">
-                <div className="flex-col pub-style-24">
+              <div className="flex-responsive" style={{ gap: 'var(--space-md)' }}>
+                <div className="flex-col" style={{ flex: 1, gap: 'var(--space-xs)' }}>
                   <label className="text-label">Voice Part</label>
-                  <select className="card pub-select" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
+                  <select className="card" value={voicePart} onChange={(e) => setVoicePart(e.target.value)} style={{ padding: '0 12px', height: '44px' }}>
                     <option value="">Not sure yet</option>
                     {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>
@@ -209,19 +222,38 @@ export default function PublicAuditionView() {
                   </select>
                 </div>
               </div>
-              <div className="flex-col pub-style-19">
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Available Audition Times (Select all that apply)</label>
-                <div className="pub-style-25">
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+                  gap: '12px',
+                  backgroundColor: 'var(--neutral-bg)',
+                  padding: 'var(--space-md)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)'
+                }}>
                   {(settings.slots || []).map((slot) => {
                     const isChecked = requestedSlots.includes(slot);
                     return (
                       <label 
                         key={slot} 
-                        className={`interactive-row pub-slot-label ${isChecked ? 'pub-slot-label-checked' : ''}`}
+                        className="interactive-row"
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '10px', 
+                          padding: '12px', 
+                          borderRadius: 'var(--radius-sm)',
+                          border: `1px solid ${isChecked ? 'var(--primary)' : 'var(--border)'}`,
+                          backgroundColor: isChecked ? 'rgba(74, 117, 89, 0.05)' : 'var(--surface)',
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          transition: 'all 0.2s ease'
+                        }}
                       >
                         <input 
                           type="checkbox" 
-                          className="pub-checkbox-accent"
                           checked={isChecked}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -230,8 +262,13 @@ export default function PublicAuditionView() {
                               setRequestedSlots(requestedSlots.filter(s => s !== slot));
                             }
                           }}
+                          style={{ 
+                            width: '18px', 
+                            height: '18px', 
+                            accentColor: 'var(--primary)',
+                            cursor: 'pointer' 
+                          }}
                         />
-                        // @allow-inline-style - dynamic font weight based on check state
                         <span style={{ fontSize: '0.875rem', fontWeight: isChecked ? 600 : 400 }}>
                           {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </span>
@@ -239,21 +276,22 @@ export default function PublicAuditionView() {
                     );
                   })}
                   {(!settings.slots || settings.slots.length === 0) && (
-                    <span className="text-muted text-sm pub-style-26">
+                    <span className="text-muted text-sm" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '12px 0' }}>
                       No time slots are currently configured. Please contact the administrator.
                     </span>
                   )}
                 </div>
               </div>
-              <div className="flex-col pub-style-19">
+              <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
                 <label className="text-label">Experience / Musical Background</label>
                 <textarea
-                  className="card pub-textarea"
+                  className="card"
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
+                  style={{ minHeight: '120px', padding: '12px', resize: 'vertical' }}
                 />
               </div>
-              {error && <p className="pub-style-27">{error}</p>}
+              {error && <p style={{ color: 'var(--color-danger-text)', margin: 0 }}>{error}</p>}
               <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Request Audition'}
               </button>

@@ -1,3 +1,127 @@
+.ec-card-content {
+  padding: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.ec-top-row {
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+
+.ec-actions {
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ec-info-wrapper {
+  gap: var(--space-xs);
+}
+
+.ec-date-call-row {
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.ec-date-text {
+  margin: 0;
+  color: var(--primary);
+}
+
+.ec-call-time-badge {
+  background-color: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 2px rgba(67, 56, 202, 0.05);
+}
+
+.ec-venue-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ec-miss-stats-container {
+  margin-top: var(--space-xs);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.ec-miss-stats-badge {
+  font-weight: 800;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+.ec-setlist-preview-box {
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin: var(--space-sm) 0;
+  background: var(--surface);
+}
+
+.ec-setlist-label {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.ec-setlist-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+
+.ec-setlist-item {
+  margin-bottom: 4px;
+}
+
+.ec-composer-text {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.ec-excused-message {
+  margin-top: var(--space-xs);
+  text-align: center;
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background-color: var(--bg-muted);
+}
+
+.ec-rsvp-actions {
+  gap: var(--space-md);
+  width: 100%;
+}
+
+.ec-rsvp-btn {
+  flex: 1;
+}
+
+.ec-rsvp-closed-message {
+  margin-top: var(--space-xs);
+  text-align: center;
+  width: 100%;
+}
+
 @media (max-width: 640px) {
   .event-card-top-row {
     flex-direction: column !important;

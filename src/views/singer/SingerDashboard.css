@@ -1,3 +1,106 @@
+/* SingerDashboard.css */
+
+.sd-loading-container {
+  text-align: center;
+  padding-top: var(--space-xl);
+}
+
+.sd-error-container {
+  padding: 20px;
+  color: red;
+}
+
+.sd-page-actions {
+  gap: var(--space-sm);
+}
+
+.sd-dashboard-wrapper {
+  padding: var(--space-md) 0;
+}
+
+.sd-excused-message {
+  margin-top: var(--space-md);
+  text-align: center;
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+}
+
+.sd-rsvp-closed-message {
+  text-align: center;
+  margin-top: var(--space-xs);
+}
+
+.sd-timeline-panel {
+  gap: var(--space-lg);
+}
+
+.sd-upcoming-events-header {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--neutral-dark);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.sd-no-events-card {
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.sd-sidebar {
+  gap: var(--space-lg);
+}
+
+.sd-polls-card {
+  background-color: var(--primary-light);
+}
+
+.sd-polls-list {
+  gap: var(--space-sm);
+}
+
+.sd-poll-item {
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+.sd-poll-question {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.sd-poll-actions {
+  gap: var(--space-xs);
+}
+
+.sd-poll-btn-base {
+  flex: 1;
+  border: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.sd-centered-muted-padding {
+  text-align: center;
+  padding: var(--space-md);
+}
+
+.sd-announcement-modal-content {
+  gap: var(--space-md);
+}
+
+.sd-dispatched-date {
+  margin-top: -8px;
+}
+
+.sd-message-preview-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
 /* DashboardView.css */
 
 .dashboard-container {

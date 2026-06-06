@@ -91,12 +91,12 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   return (
     <AppCard noPadding>
-      <div className="flex-col" style={{ padding: 'var(--space-lg)', gap: 'var(--space-md)' }}>
-        <div className="event-card-top-row flex-row" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+      <div className="flex-col ec-card-content">
+        <div className="event-card-top-row flex-row ec-top-row">
             <span className={`badge ${isPerformance ? 'badge-performance' : 'badge-rehearsal'}`}>
                {event.type}
              </span>
-             <div className="flex-row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+             <div className="flex-row ec-actions">
                <button 
                  onClick={() => calendarUtils.generateICS(event)}
                  className="btn btn-ghost btn-sm"
@@ -123,25 +123,13 @@ export const EventCard: React.FC<EventCardProps> = ({
         </div>
 
 
-        <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-          <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
-            <h3 className="text-label" style={{ margin: 0, color: 'var(--primary)' }}>
+        <div className="flex-col ec-info-wrapper">
+          <div className="flex-row ec-date-call-row">
+            <h3 className="text-label ec-date-text">
               {formatInTimezone(event.date, timezone)}
             </h3>
             {event.callTime && (
-              <span className="badge" style={{
-                backgroundColor: '#eef2ff',
-                color: '#4338ca',
-                border: '1px solid #c7d2fe',
-                fontWeight: 800,
-                fontSize: '0.8rem',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                boxShadow: '0 1px 2px rgba(67, 56, 202, 0.05)'
-              }}>
+              <span className="badge ec-call-time-badge">
                 📢 Call Time: {formatTime12h(event.callTime)}
               </span>
             )}
@@ -152,7 +140,7 @@ export const EventCard: React.FC<EventCardProps> = ({
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand?.venue?.address || event.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+              className="ec-venue-link"
             >
               📍 {event.expand?.venue?.name || ''}
             </a>
@@ -188,30 +176,25 @@ export const EventCard: React.FC<EventCardProps> = ({
             })();
 
             return (
-              <div style={{
-                marginTop: 'var(--space-xs)',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: styles.containerBg,
-                border: styles.containerBorder,
-                color: styles.containerColor,
-                fontWeight: 600
-              }}>
+              <div 
+                className="ec-miss-stats-container"
+                // @allow-inline-style - Dynamic colors for attendance miss stats
+                style={{
+                  backgroundColor: styles.containerBg,
+                  border: styles.containerBorder,
+                  color: styles.containerColor,
+                }}
+              >
                 <span>
                   Rehearsal Attendance: {missStats.missed} missed of {missStats.total} rehearsals
                 </span>
-                <span className="badge" style={{
-                  backgroundColor: styles.badgeBg,
-                  color: 'white',
-                  fontWeight: 800,
-                  border: 'none',
-                  padding: '2px 6px',
-                  fontSize: '0.75rem'
-                }}>
+                <span 
+                  className="badge ec-miss-stats-badge"
+                  // @allow-inline-style - Dynamic color for miss stats limit badge
+                  style={{
+                    backgroundColor: styles.badgeBg,
+                  }}
+                >
                   {styles.badgeText}
                 </span>
               </div>
@@ -220,29 +203,20 @@ export const EventCard: React.FC<EventCardProps> = ({
         </div>
 
         {previewData.visible && previewData.setList.length > 0 && (
-          <div
-            className="setlist-preview-box"
-            style={{
-              padding: 'var(--space-md)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              margin: 'var(--space-sm) 0',
-              background: 'var(--surface)',
-            }}
-          >
-            <h5 style={{ margin: '0 0 var(--space-xs) 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <div className="setlist-preview-box ec-setlist-preview-box">
+            <h5 className="ec-setlist-label">
               📋 {previewData.label}
             </h5>
 
-            <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem' }}>
+            <ol className="ec-setlist-list">
               {previewData.setList.map((item, idx) => {
                 const rawItem = item as unknown as Record<string, unknown>;
                 const itemTitle = (rawItem.title || rawItem.pieceTitle || 'Untitled Piece') as string;
                 return (
-                  <li key={item.id || `${itemTitle}-${idx}`} style={{ marginBottom: '4px' }}>
+                  <li key={item.id || `${itemTitle}-${idx}`} className="ec-setlist-item">
                     <strong>{itemTitle}</strong>
                     {item.composer && (
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                      <span className="ec-composer-text">
                         {' '}— {item.composer}
                       </span>
                     )}
@@ -254,39 +228,29 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
 
         {isParentPerformanceDeclined ? (
-          <div className="text-center text-xs text-muted" style={{ 
-            marginTop: 'var(--space-xs)', 
-            textAlign: 'center', 
-            width: '100%', 
-            padding: '10px', 
-            border: '1px dashed var(--border)', 
-            borderRadius: '6px', 
-            backgroundColor: 'var(--bg-muted)' 
-          }}>
+          <div className="text-center text-xs text-muted ec-excused-message">
             🚫 Excused (Parent Performance Declined)
           </div>
         ) : (
           <>
-            <div className="event-card-rsvp-actions flex-responsive" style={{ gap: 'var(--space-md)', width: '100%' }}>
+            <div className="event-card-rsvp-actions flex-responsive ec-rsvp-actions">
               <button 
                 onClick={() => handleRSVP('Yes')}
-                className={`btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ flex: 1 }}
+                className={`btn ec-rsvp-btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
               </button>
               <button 
                 onClick={() => handleRSVP('No')}
-                className={`btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
-                style={{ flex: 1 }}
+                className={`btn ec-rsvp-btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'No' ? 'Processing...' : labels.no}
               </button>
             </div>
             {isWindowClosed && (
-              <div className="rsvp-closed-message text-center text-xs text-muted" style={{ marginTop: 'var(--space-xs)', textAlign: 'center', width: '100%' }}>
+              <div className="rsvp-closed-message text-center text-xs text-muted ec-rsvp-closed-message">
                 {isPerformance 
                   ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
                   : 'This rehearsal has already passed.'}
