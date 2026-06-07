@@ -130,7 +130,9 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
             'handleStripeWebhook',
             'handleAdminRefundTicket',
             'handleCreateBundleSession',
-            'handleAdminRefundBundle'
+            'handleAdminRefundBundle',
+            'handleCreateDonationSession',
+            'handleAdminRefundDonation'
         ],
         dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson'],
     },
@@ -1025,11 +1027,15 @@ ${renderRoute('POST', '/api/checkout/create-tickets-session', 'return handleCrea
 
 ${renderRoute('POST', '/api/checkout/create-bundle-session', 'return handleCreateBundleSession(e);')}
 
+${renderRoute('POST', '/api/checkout/create-donation-session', 'return handleCreateDonationSession(e);')}
+
 ${renderRoute('POST', '/api/webhook/stripe', 'return handleStripeWebhook(e);')}
 
 ${renderRoute('POST', '/api/admin/refund-ticket', 'return handleAdminRefundTicket(e);')}
 
 ${renderRoute('POST', '/api/admin/refund-bundle', 'return handleAdminRefundBundle(e);')}
+
+${renderRoute('POST', '/api/admin/refund-donation', 'return handleAdminRefundDonation(e);')}
 
 ${renderRoute('GET', '/api/player-playlist', 'return handlePlayerPlaylist(e);')}
 

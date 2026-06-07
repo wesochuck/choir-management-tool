@@ -144,6 +144,20 @@ export default function PublicTicketListView() {
             )}
           </div>
         )}
+
+        <div className="flex-col pub-style-63 pub-mt-xl pub-border-dashed pub-pt-lg">
+          <div className="flex-col pub-style-31 pub-text-center">
+            <h2 className="pub-style-18">Support our Music</h2>
+            <p className="text-body pub-max-w-480">
+              Your contribution helps us keep the music playing and supports our mission in the community.
+            </p>
+          </div>
+          <div className="flex-row pub-justify-center pub-mt-md">
+            <Link to="/donate" className="btn btn-primary btn-lg pub-min-w-200">
+              Make a Donation
+            </Link>
+          </div>
+        </div>
       </AppCard>
     </div>
   );

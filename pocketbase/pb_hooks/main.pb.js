@@ -11648,6 +11648,64 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
     function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -12022,6 +12080,84 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
             else if (paymentType === "dues") {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
@@ -12032,7 +12168,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_s) {
+                        catch (_u) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -12132,6 +12268,38 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     tx.save(p);
                 });
             });
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
@@ -12734,6 +12902,64 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
     function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -13108,6 +13334,84 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
             else if (paymentType === "dues") {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
@@ -13118,7 +13422,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_s) {
+                        catch (_u) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -13225,9 +13529,1295 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: "Failed to issue Stripe refund", details: message });
         }
     }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     return handleCreateBundleSession(e);
+});
+
+routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: stripeService.ts ---
+    "use strict";
+    function createCheckoutSession(lineItems, metadata, customerEmail, successUrl, cancelUrl) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        // Build form URL-encoded body
+        const params = [];
+        params.push("mode=payment");
+        params.push(`success_url=${encodeURIComponent(successUrl)}`);
+        params.push(`cancel_url=${encodeURIComponent(cancelUrl)}`);
+        if (customerEmail) {
+            params.push(`customer_email=${encodeURIComponent(customerEmail)}`);
+        }
+        // native promo codes enabled
+        params.push("allow_promotion_codes=true");
+        lineItems.forEach((item, idx) => {
+            params.push(`line_items[${idx}][price_data][currency]=${item.price_data.currency}`);
+            params.push(`line_items[${idx}][price_data][product_data][name]=${encodeURIComponent(item.price_data.product_data.name)}`);
+            params.push(`line_items[${idx}][price_data][unit_amount]=${item.price_data.unit_amount}`);
+            params.push(`line_items[${idx}][quantity]=${item.quantity}`);
+        });
+        Object.entries(metadata).forEach(([key, val]) => {
+            params.push(`metadata[${key}]=${encodeURIComponent(val)}`);
+        });
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/checkout/sessions",
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params.join("&")
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe checkout session creation failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+    function retrieveCheckoutSession(sessionId) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/checkout/sessions/" + sessionId,
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey
+            }
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe session retrieval failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+    function refundPaymentIntent(paymentIntentId) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/refunds",
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `payment_intent=${paymentIntentId}`
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe refund failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: checkoutEndpoints.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const eventId = body.eventId;
+        const quantity = body.quantity;
+        const email = body.email;
+        const name = body.name;
+        if (!eventId || !quantity || !email || !name) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        const qty = Number(quantity);
+        if (isNaN(qty) || qty <= 0 || qty > 10) {
+            return e.json(400, { error: "Invalid ticket quantity" });
+        }
+        let event;
+        try {
+            event = $app.findRecordById("events", eventId);
+        }
+        catch (_b) {
+            return e.json(404, { error: "Event not found" });
+        }
+        if (event.get("isArchived")) {
+            return e.json(400, { error: "Event has been archived" });
+        }
+        if (!event.get("isTicketingEnabled")) {
+            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        }
+        // Derive sold count from paid ticketPurchases
+        let soldCount = 0;
+        try {
+            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+            paidPurchases.forEach(p => {
+                const q = p.get("quantity");
+                soldCount += typeof q === 'number' ? q : 0;
+            });
+        }
+        catch (err) {
+            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+        }
+        const capacity = event.get("ticketCapacity");
+        const capacityNum = typeof capacity === 'number' ? capacity : 0;
+        if (capacityNum > 0 && soldCount + qty > capacityNum) {
+            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+        }
+        // Select price based on day-of rules in event timezone
+        let timezone = "America/New_York";
+        try {
+            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+            const val = settingsRecord.get("value");
+            const parsed = parseJsonField(val);
+            if (parsed && parsed.timezone) {
+                timezone = parsed.timezone;
+            }
+        }
+        catch (_c) {
+            // use default timezone
+        }
+        const nowFormatted = formatInTimezone(new Date(), timezone, {});
+        const eventDateRaw = event.get("date");
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
+        const nowStr = nowFormatted.split(",")[0];
+        const eventDateStr = eventFormatted.split(",")[0];
+        const isShowDay = nowStr === eventDateStr;
+        const advancePriceCents = event.get("advancePriceCents");
+        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const unitPriceCents = isShowDay
+            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
+            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+        if (unitPriceCents < 0) {
+            return e.json(400, { error: "Invalid ticket price configuration" });
+        }
+        // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
+        const totalTicketsCents = unitPriceCents * qty;
+        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/tickets/${eventId}`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
+                    unit_amount: unitPriceCents
+                },
+                quantity: qty
+            }
+        ];
+        if (feeCents > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: "Processing Fee" },
+                    unit_amount: feeCents
+                },
+                quantity: 1
+            });
+        }
+        const metadata = {
+            paymentType: "ticket",
+            eventId,
+            quantity: String(qty),
+            unitPriceCents: String(unitPriceCents),
+            feeCents: String(feeCents),
+            buyerName: name,
+            buyerEmail: email
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
+    function handleCreateBundleSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const bundleId = body.bundleId;
+        const quantity = body.quantity;
+        const email = body.email;
+        const name = body.name;
+        if (!bundleId || !quantity || !email || !name) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        const qty = Number(quantity);
+        if (isNaN(qty) || qty <= 0 || qty > 10) {
+            return e.json(400, { error: "Invalid ticket bundle quantity" });
+        }
+        let bundle;
+        try {
+            bundle = $app.findRecordById("ticketBundles", bundleId);
+        }
+        catch (_b) {
+            return e.json(404, { error: "Bundle not found" });
+        }
+        if (!bundle.get("isActive")) {
+            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        }
+        const saleEndDateStr = bundle.get("saleEndDate");
+        if (saleEndDateStr) {
+            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            if (new Date() > saleEndDate) {
+                return e.json(400, { error: "The sale period for this bundle has ended" });
+            }
+        }
+        const bundleEventsVal = bundle.get("events");
+        const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+        if (bundleEventIds.length === 0) {
+            return e.json(400, { error: "This bundle does not contain any events" });
+        }
+        // 1. Check bundle capacity
+        let bundleSoldCount = 0;
+        const firstEventId = bundleEventIds[0];
+        try {
+            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach(p => {
+                const q = p.get("quantity");
+                bundleSoldCount += typeof q === 'number' ? q : 0;
+            });
+        }
+        catch (err) {
+            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+        }
+        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
+            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+        }
+        // 2. Check individual event capacities
+        for (const eventId of bundleEventIds) {
+            let event;
+            try {
+                event = $app.findRecordById("events", eventId);
+            }
+            catch (_c) {
+                return e.json(404, { error: `Included event ${eventId} not found` });
+            }
+            if (event.get("isArchived")) {
+                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            }
+            let eventSoldCount = 0;
+            try {
+                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+                eventPurchases.forEach(p => {
+                    const q = p.get("quantity");
+                    eventSoldCount += typeof q === 'number' ? q : 0;
+                });
+            }
+            catch (err) {
+                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+            }
+            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
+                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+            }
+        }
+        const priceCents = Number(bundle.get("priceCents") || 0);
+        const totalTicketsCents = priceCents * qty;
+        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/tickets`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
+                    unit_amount: priceCents
+                },
+                quantity: qty
+            }
+        ];
+        if (feeCents > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: "Processing Fee" },
+                    unit_amount: feeCents
+                },
+                quantity: 1
+            });
+        }
+        const metadata = {
+            paymentType: "bundle",
+            bundleId,
+            quantity: String(qty),
+            unitPriceCents: String(priceCents),
+            feeCents: String(feeCents),
+            buyerName: name,
+            buyerEmail: email
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
+    function handleStripeWebhook(e) {
+        var _a, _b;
+        let rawBody;
+        try {
+            rawBody = readerToString(e.request.body);
+        }
+        catch (_c) {
+            return e.json(400, { error: "Failed to read request body" });
+        }
+        const sig = e.request.header.get("Stripe-Signature") || "";
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        if (!sig || !webhookSecret) {
+            return e.json(400, { error: "Missing signature or webhook config" });
+        }
+        // Parse Stripe-Signature components: t=123,v1=abc
+        let timestamp = "";
+        let signature = "";
+        sig.split(",").forEach((part) => {
+            const pair = part.split("=");
+            if (pair.length === 2) {
+                const k = pair[0].trim();
+                const v = pair[1].trim();
+                if (k === "t")
+                    timestamp = v;
+                if (k === "v1")
+                    signature = v;
+            }
+        });
+        if (!timestamp || !signature) {
+            return e.json(400, { error: "Invalid signature format" });
+        }
+        // Validate replay attacks
+        const nowSecs = Math.floor(Date.now() / 1000);
+        if (Math.abs(nowSecs - Number(timestamp)) > 300) {
+            return e.json(400, { error: "Expired timestamp" });
+        }
+        // Compute local signature
+        const signedPayload = timestamp + "." + rawBody;
+        const localSig = $security.hs256(signedPayload, webhookSecret);
+        if (!$security.equal(localSig, signature)) {
+            return e.json(400, { error: "Signature verification failed" });
+        }
+        let eventObj;
+        try {
+            eventObj = JSON.parse(rawBody);
+        }
+        catch (_d) {
+            return e.json(400, { error: "Invalid JSON body" });
+        }
+        if (eventObj.type === "checkout.session.completed") {
+            const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
+            if (!session) {
+                return e.json(400, { error: "Missing session object" });
+            }
+            const metadata = session.metadata || {};
+            const paymentType = metadata.paymentType;
+            if (paymentType === "ticket") {
+                const eventId = metadata.eventId;
+                const stripeSessionId = session.id || "";
+                const quantity = Number(metadata.quantity || 0);
+                if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                    return e.json(400, { error: "Invalid session metadata" });
+                }
+                // Idempotency: Check if record exists
+                try {
+                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    }
+                }
+                catch (_e) {
+                    // Record not found, continue
+                }
+                // Re-verify capacity before saving
+                let targetEvent;
+                try {
+                    targetEvent = $app.findRecordById("events", eventId);
+                }
+                catch (_f) {
+                    return e.json(400, { error: "Event not found during webhook processing" });
+                }
+                let currentSold = 0;
+                try {
+                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+                    paidPurchases.forEach(p => {
+                        const q = p.get("quantity");
+                        currentSold += typeof q === 'number' ? q : 0;
+                    });
+                }
+                catch (_g) {
+                    // Ignore query error
+                }
+                const capacity = targetEvent.get("ticketCapacity");
+                const capacityNum = typeof capacity === 'number' ? capacity : 0;
+                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
+                    // Auto-Refund since capacity exceeded
+                    const pi = session.payment_intent;
+                    if (pi) {
+                        try {
+                            refundPaymentIntent(pi);
+                        }
+                        catch (refundErr) {
+                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
+                        }
+                    }
+                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
+                }
+                // Create purchase record
+                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                const record = new Record(collection, {
+                    event: eventId,
+                    buyerName: metadata.buyerName || "",
+                    buyerEmail: metadata.buyerEmail || "",
+                    quantity: quantity,
+                    unitPriceCents: Number(metadata.unitPriceCents || 0),
+                    feeCents: Number(metadata.feeCents || 0),
+                    amountPaidCents: session.amount_total || 0,
+                    currency: session.currency || "usd",
+                    stripeSessionId: stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || "",
+                    stripeCustomerId: session.customer || "",
+                    status: "paid",
+                    marketingOptIn: metadata.marketingOptIn === "true",
+                    fulfilledAt: new Date().toISOString()
+                });
+                $app.save(record);
+                // Enqueue Ticket Confirmation email
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const rawSubject = template.get("subject") || "";
+                    let timezone = "America/New_York";
+                    try {
+                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                        const valueStr = tzSetting.get("value");
+                        const tzP = parseJsonField(valueStr);
+                        if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
+                            timezone = tzP.timezone;
+                        }
+                    }
+                    catch (_h) {
+                        // default
+                    }
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_j) {
+                        // default
+                    }
+                    const eventTitle = targetEvent.get("title") || "";
+                    const eventDateRaw = targetEvent.get("date") || "";
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
+                    content = content
+                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{eventTitle}/g, eventTitle)
+                        .replace(/{eventDate}/g, eventDateStr)
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{quantity}/g, String(quantity))
+                        .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "buyer_" + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || "",
+                        recipientName: metadata.buyerName || "Buyer",
+                        subject: subject,
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({
+                            eventId: eventId,
+                            type: "Automated Confirmation"
+                        })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === "bundle") {
+                const bundleId = metadata.bundleId;
+                const stripeSessionId = session.id || "";
+                const quantity = Number(metadata.quantity || 0);
+                if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                    return e.json(400, { error: "Invalid session metadata" });
+                }
+                // Idempotency: Check if record exists
+                try {
+                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    }
+                }
+                catch (_k) {
+                    // Record not found, continue
+                }
+                // Re-verify capacity before saving
+                let targetBundle;
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                }
+                catch (_l) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                }
+                const bundleEventsVal = targetBundle.get("events");
+                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                let isCapacityViolated = false;
+                // Verify bundle capacity
+                let bundleSoldCount = 0;
+                if (bundleEventIds.length > 0) {
+                    const firstEventId = bundleEventIds[0];
+                    try {
+                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
+                        bundlePurchases.forEach(p => {
+                            const q = p.get("quantity");
+                            bundleSoldCount += typeof q === 'number' ? q : 0;
+                        });
+                    }
+                    catch (_m) {
+                        // Ignore query error
+                    }
+                }
+                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
+                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
+                    isCapacityViolated = true;
+                }
+                // Verify individual event capacities
+                if (!isCapacityViolated) {
+                    for (const eventId of bundleEventIds) {
+                        let event;
+                        try {
+                            event = $app.findRecordById("events", eventId);
+                        }
+                        catch (_o) {
+                            isCapacityViolated = true;
+                            break;
+                        }
+                        let eventSoldCount = 0;
+                        try {
+                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+                            eventPurchases.forEach(p => {
+                                const q = p.get("quantity");
+                                eventSoldCount += typeof q === 'number' ? q : 0;
+                            });
+                        }
+                        catch (_p) {
+                            // Ignore query error
+                        }
+                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
+                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
+                            isCapacityViolated = true;
+                            break;
+                        }
+                    }
+                }
+                if (isCapacityViolated) {
+                    const pi = session.payment_intent;
+                    if (pi) {
+                        try {
+                            refundPaymentIntent(pi);
+                        }
+                        catch (refundErr) {
+                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
+                        }
+                    }
+                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
+                }
+                // Create purchase records in transaction
+                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                const txApp = $app;
+                try {
+                    txApp.runInTransaction((tx) => {
+                        bundleEventIds.forEach(eventId => {
+                            const record = new Record(ticketPurchasesCollection, {
+                                event: eventId,
+                                bundle: bundleId,
+                                buyerName: metadata.buyerName || "",
+                                buyerEmail: metadata.buyerEmail || "",
+                                quantity: quantity,
+                                unitPriceCents: Number(metadata.unitPriceCents || 0),
+                                feeCents: Number(metadata.feeCents || 0),
+                                amountPaidCents: session.amount_total || 0,
+                                currency: session.currency || "usd",
+                                stripeSessionId: stripeSessionId,
+                                stripePaymentIntentId: session.payment_intent || "",
+                                stripeCustomerId: session.customer || "",
+                                status: "paid",
+                                marketingOptIn: metadata.marketingOptIn === "true",
+                                fulfilledAt: new Date().toISOString()
+                            });
+                            tx.save(record);
+                        });
+                    });
+                }
+                catch (txErr) {
+                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
+                    return e.json(500, { error: "Failed to create ticket purchases" });
+                }
+                // Enqueue Consolidated Ticket Confirmation email
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const rawSubject = template.get("subject") || "";
+                    let timezone = "America/New_York";
+                    try {
+                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                        const valueStr = tzSetting.get("value");
+                        const tzP = parseJsonField(valueStr);
+                        if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
+                            timezone = tzP.timezone;
+                        }
+                    }
+                    catch (_q) {
+                        // Use default America/New_York timezone
+                    }
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_r) {
+                        // Use default choir name
+                    }
+                    const eventDetailsParts = [];
+                    bundleEventIds.forEach(eventId => {
+                        try {
+                            const ev = $app.findRecordById("events", eventId);
+                            const evTitle = ev.get("title") || "";
+                            const evDate = ev.get("date") || "";
+                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
+                        }
+                        catch (_a) {
+                            // Ignore individual event loading error
+                        }
+                    });
+                    const eventDetailsStr = eventDetailsParts.join("\n");
+                    const bundleTitle = targetBundle.get("title") || "";
+                    const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
+                    content = content
+                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{bundleTitle}/g, bundleTitle)
+                        .replace(/{eventDetails}/g, eventDetailsStr)
+                        .replace(/{quantity}/g, String(quantity))
+                        .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "buyer_" + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || "",
+                        recipientName: metadata.buyerName || "Buyer",
+                        subject: subject,
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({
+                            bundleId: bundleId,
+                            type: "Automated Confirmation"
+                        })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === "dues") {
+                const profileId = metadata.profileId;
+                const season = metadata.season;
+                if (profileId && season) {
+                    try {
+                        let duesRecord;
+                        try {
+                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
+                            duesRecord.set("paid", true);
+                        }
+                        catch (_u) {
+                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            duesRecord = new Record(duesColl, {
+                                profile: profileId,
+                                season: season,
+                                paid: true
+                            });
+                        }
+                        $app.save(duesRecord);
+                    }
+                    catch (err) {
+                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                    }
+                }
+            }
+        }
+        else if (eventObj.type === "charge.refunded") {
+            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
+            if (paymentIntentId) {
+                try {
+                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    if (purchases && purchases.length > 0) {
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            purchases.forEach(p => {
+                                p.set("status", "refunded");
+                                tx.save(p);
+                            });
+                        });
+                    }
+                }
+                catch (err) {
+                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                }
+            }
+        }
+        return e.json(200, { success: true });
+    }
+    function handleAdminRefundTicket(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const purchaseId = body.purchaseId;
+        if (!purchaseId) {
+            return e.json(400, { error: "Missing purchaseId" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase record not found" });
+        }
+        const pi = purchase.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            purchase.set("status", "refunded");
+            $app.save(purchase);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundBundle(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const paymentIntentId = body.paymentIntentId;
+        if (!paymentIntentId) {
+            return e.json(400, { error: "Missing paymentIntentId" });
+        }
+        let purchases;
+        try {
+            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "No purchases found for the payment intent" });
+        }
+        if (purchases.length === 0) {
+            return e.json(404, { error: "No purchase records found" });
+        }
+        try {
+            refundPaymentIntent(paymentIntentId);
+            const txApp = $app;
+            txApp.runInTransaction((tx) => {
+                purchases.forEach(p => {
+                    p.set("status", "refunded");
+                    tx.save(p);
+                });
+            });
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleCreateDonationSession(e);
 });
 
 routerAdd("POST", "/api/webhook/stripe", (e) => {
@@ -13820,6 +15410,64 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
     function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -14194,6 +15842,84 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
             else if (paymentType === "dues") {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
@@ -14204,7 +15930,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_s) {
+                        catch (_u) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -14304,6 +16030,38 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     tx.save(p);
                 });
             });
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
@@ -14906,6 +16664,64 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
     function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -15280,6 +17096,84 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
             else if (paymentType === "dues") {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
@@ -15290,7 +17184,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_s) {
+                        catch (_u) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -15390,6 +17284,38 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     tx.save(p);
                 });
             });
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
@@ -15992,6 +17918,64 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
     function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -16366,6 +18350,84 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
             else if (paymentType === "dues") {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
@@ -16376,7 +18438,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_s) {
+                        catch (_u) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -16483,9 +18545,1295 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: "Failed to issue Stripe refund", details: message });
         }
     }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     return handleAdminRefundBundle(e);
+});
+
+routerAdd("POST", "/api/admin/refund-donation", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: stripeService.ts ---
+    "use strict";
+    function createCheckoutSession(lineItems, metadata, customerEmail, successUrl, cancelUrl) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        // Build form URL-encoded body
+        const params = [];
+        params.push("mode=payment");
+        params.push(`success_url=${encodeURIComponent(successUrl)}`);
+        params.push(`cancel_url=${encodeURIComponent(cancelUrl)}`);
+        if (customerEmail) {
+            params.push(`customer_email=${encodeURIComponent(customerEmail)}`);
+        }
+        // native promo codes enabled
+        params.push("allow_promotion_codes=true");
+        lineItems.forEach((item, idx) => {
+            params.push(`line_items[${idx}][price_data][currency]=${item.price_data.currency}`);
+            params.push(`line_items[${idx}][price_data][product_data][name]=${encodeURIComponent(item.price_data.product_data.name)}`);
+            params.push(`line_items[${idx}][price_data][unit_amount]=${item.price_data.unit_amount}`);
+            params.push(`line_items[${idx}][quantity]=${item.quantity}`);
+        });
+        Object.entries(metadata).forEach(([key, val]) => {
+            params.push(`metadata[${key}]=${encodeURIComponent(val)}`);
+        });
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/checkout/sessions",
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params.join("&")
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe checkout session creation failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+    function retrieveCheckoutSession(sessionId) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/checkout/sessions/" + sessionId,
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey
+            }
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe session retrieval failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+    function refundPaymentIntent(paymentIntentId) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/refunds",
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `payment_intent=${paymentIntentId}`
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe refund failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    function decodeGoBytes(val) {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            // Check if it's a byte array (only numbers)
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    }
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: checkoutEndpoints.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const eventId = body.eventId;
+        const quantity = body.quantity;
+        const email = body.email;
+        const name = body.name;
+        if (!eventId || !quantity || !email || !name) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        const qty = Number(quantity);
+        if (isNaN(qty) || qty <= 0 || qty > 10) {
+            return e.json(400, { error: "Invalid ticket quantity" });
+        }
+        let event;
+        try {
+            event = $app.findRecordById("events", eventId);
+        }
+        catch (_b) {
+            return e.json(404, { error: "Event not found" });
+        }
+        if (event.get("isArchived")) {
+            return e.json(400, { error: "Event has been archived" });
+        }
+        if (!event.get("isTicketingEnabled")) {
+            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        }
+        // Derive sold count from paid ticketPurchases
+        let soldCount = 0;
+        try {
+            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+            paidPurchases.forEach(p => {
+                const q = p.get("quantity");
+                soldCount += typeof q === 'number' ? q : 0;
+            });
+        }
+        catch (err) {
+            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+        }
+        const capacity = event.get("ticketCapacity");
+        const capacityNum = typeof capacity === 'number' ? capacity : 0;
+        if (capacityNum > 0 && soldCount + qty > capacityNum) {
+            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+        }
+        // Select price based on day-of rules in event timezone
+        let timezone = "America/New_York";
+        try {
+            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+            const val = settingsRecord.get("value");
+            const parsed = parseJsonField(val);
+            if (parsed && parsed.timezone) {
+                timezone = parsed.timezone;
+            }
+        }
+        catch (_c) {
+            // use default timezone
+        }
+        const nowFormatted = formatInTimezone(new Date(), timezone, {});
+        const eventDateRaw = event.get("date");
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
+        const nowStr = nowFormatted.split(",")[0];
+        const eventDateStr = eventFormatted.split(",")[0];
+        const isShowDay = nowStr === eventDateStr;
+        const advancePriceCents = event.get("advancePriceCents");
+        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const unitPriceCents = isShowDay
+            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
+            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+        if (unitPriceCents < 0) {
+            return e.json(400, { error: "Invalid ticket price configuration" });
+        }
+        // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
+        const totalTicketsCents = unitPriceCents * qty;
+        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/tickets/${eventId}`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
+                    unit_amount: unitPriceCents
+                },
+                quantity: qty
+            }
+        ];
+        if (feeCents > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: "Processing Fee" },
+                    unit_amount: feeCents
+                },
+                quantity: 1
+            });
+        }
+        const metadata = {
+            paymentType: "ticket",
+            eventId,
+            quantity: String(qty),
+            unitPriceCents: String(unitPriceCents),
+            feeCents: String(feeCents),
+            buyerName: name,
+            buyerEmail: email
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
+    function handleCreateBundleSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const bundleId = body.bundleId;
+        const quantity = body.quantity;
+        const email = body.email;
+        const name = body.name;
+        if (!bundleId || !quantity || !email || !name) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        const qty = Number(quantity);
+        if (isNaN(qty) || qty <= 0 || qty > 10) {
+            return e.json(400, { error: "Invalid ticket bundle quantity" });
+        }
+        let bundle;
+        try {
+            bundle = $app.findRecordById("ticketBundles", bundleId);
+        }
+        catch (_b) {
+            return e.json(404, { error: "Bundle not found" });
+        }
+        if (!bundle.get("isActive")) {
+            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        }
+        const saleEndDateStr = bundle.get("saleEndDate");
+        if (saleEndDateStr) {
+            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            if (new Date() > saleEndDate) {
+                return e.json(400, { error: "The sale period for this bundle has ended" });
+            }
+        }
+        const bundleEventsVal = bundle.get("events");
+        const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+        if (bundleEventIds.length === 0) {
+            return e.json(400, { error: "This bundle does not contain any events" });
+        }
+        // 1. Check bundle capacity
+        let bundleSoldCount = 0;
+        const firstEventId = bundleEventIds[0];
+        try {
+            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach(p => {
+                const q = p.get("quantity");
+                bundleSoldCount += typeof q === 'number' ? q : 0;
+            });
+        }
+        catch (err) {
+            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+        }
+        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
+            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+        }
+        // 2. Check individual event capacities
+        for (const eventId of bundleEventIds) {
+            let event;
+            try {
+                event = $app.findRecordById("events", eventId);
+            }
+            catch (_c) {
+                return e.json(404, { error: `Included event ${eventId} not found` });
+            }
+            if (event.get("isArchived")) {
+                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            }
+            let eventSoldCount = 0;
+            try {
+                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+                eventPurchases.forEach(p => {
+                    const q = p.get("quantity");
+                    eventSoldCount += typeof q === 'number' ? q : 0;
+                });
+            }
+            catch (err) {
+                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+            }
+            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
+                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+            }
+        }
+        const priceCents = Number(bundle.get("priceCents") || 0);
+        const totalTicketsCents = priceCents * qty;
+        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/tickets`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
+                    unit_amount: priceCents
+                },
+                quantity: qty
+            }
+        ];
+        if (feeCents > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: "Processing Fee" },
+                    unit_amount: feeCents
+                },
+                quantity: 1
+            });
+        }
+        const metadata = {
+            paymentType: "bundle",
+            bundleId,
+            quantity: String(qty),
+            unitPriceCents: String(priceCents),
+            feeCents: String(feeCents),
+            buyerName: name,
+            buyerEmail: email
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || "none";
+        const tributeName = body.tributeName || "";
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: "Missing required fields" });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: "Donation amount must be at least $5.00" });
+        }
+        let choirName = "Choir Management Tool";
+        try {
+            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get("value"));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents
+                },
+                quantity: 1
+            }
+        ];
+        const metadata = {
+            paymentType: "donation",
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous)
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+        }
+    }
+    function handleStripeWebhook(e) {
+        var _a, _b;
+        let rawBody;
+        try {
+            rawBody = readerToString(e.request.body);
+        }
+        catch (_c) {
+            return e.json(400, { error: "Failed to read request body" });
+        }
+        const sig = e.request.header.get("Stripe-Signature") || "";
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        if (!sig || !webhookSecret) {
+            return e.json(400, { error: "Missing signature or webhook config" });
+        }
+        // Parse Stripe-Signature components: t=123,v1=abc
+        let timestamp = "";
+        let signature = "";
+        sig.split(",").forEach((part) => {
+            const pair = part.split("=");
+            if (pair.length === 2) {
+                const k = pair[0].trim();
+                const v = pair[1].trim();
+                if (k === "t")
+                    timestamp = v;
+                if (k === "v1")
+                    signature = v;
+            }
+        });
+        if (!timestamp || !signature) {
+            return e.json(400, { error: "Invalid signature format" });
+        }
+        // Validate replay attacks
+        const nowSecs = Math.floor(Date.now() / 1000);
+        if (Math.abs(nowSecs - Number(timestamp)) > 300) {
+            return e.json(400, { error: "Expired timestamp" });
+        }
+        // Compute local signature
+        const signedPayload = timestamp + "." + rawBody;
+        const localSig = $security.hs256(signedPayload, webhookSecret);
+        if (!$security.equal(localSig, signature)) {
+            return e.json(400, { error: "Signature verification failed" });
+        }
+        let eventObj;
+        try {
+            eventObj = JSON.parse(rawBody);
+        }
+        catch (_d) {
+            return e.json(400, { error: "Invalid JSON body" });
+        }
+        if (eventObj.type === "checkout.session.completed") {
+            const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
+            if (!session) {
+                return e.json(400, { error: "Missing session object" });
+            }
+            const metadata = session.metadata || {};
+            const paymentType = metadata.paymentType;
+            if (paymentType === "ticket") {
+                const eventId = metadata.eventId;
+                const stripeSessionId = session.id || "";
+                const quantity = Number(metadata.quantity || 0);
+                if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                    return e.json(400, { error: "Invalid session metadata" });
+                }
+                // Idempotency: Check if record exists
+                try {
+                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    }
+                }
+                catch (_e) {
+                    // Record not found, continue
+                }
+                // Re-verify capacity before saving
+                let targetEvent;
+                try {
+                    targetEvent = $app.findRecordById("events", eventId);
+                }
+                catch (_f) {
+                    return e.json(400, { error: "Event not found during webhook processing" });
+                }
+                let currentSold = 0;
+                try {
+                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+                    paidPurchases.forEach(p => {
+                        const q = p.get("quantity");
+                        currentSold += typeof q === 'number' ? q : 0;
+                    });
+                }
+                catch (_g) {
+                    // Ignore query error
+                }
+                const capacity = targetEvent.get("ticketCapacity");
+                const capacityNum = typeof capacity === 'number' ? capacity : 0;
+                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
+                    // Auto-Refund since capacity exceeded
+                    const pi = session.payment_intent;
+                    if (pi) {
+                        try {
+                            refundPaymentIntent(pi);
+                        }
+                        catch (refundErr) {
+                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
+                        }
+                    }
+                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
+                }
+                // Create purchase record
+                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                const record = new Record(collection, {
+                    event: eventId,
+                    buyerName: metadata.buyerName || "",
+                    buyerEmail: metadata.buyerEmail || "",
+                    quantity: quantity,
+                    unitPriceCents: Number(metadata.unitPriceCents || 0),
+                    feeCents: Number(metadata.feeCents || 0),
+                    amountPaidCents: session.amount_total || 0,
+                    currency: session.currency || "usd",
+                    stripeSessionId: stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || "",
+                    stripeCustomerId: session.customer || "",
+                    status: "paid",
+                    marketingOptIn: metadata.marketingOptIn === "true",
+                    fulfilledAt: new Date().toISOString()
+                });
+                $app.save(record);
+                // Enqueue Ticket Confirmation email
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const rawSubject = template.get("subject") || "";
+                    let timezone = "America/New_York";
+                    try {
+                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                        const valueStr = tzSetting.get("value");
+                        const tzP = parseJsonField(valueStr);
+                        if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
+                            timezone = tzP.timezone;
+                        }
+                    }
+                    catch (_h) {
+                        // default
+                    }
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_j) {
+                        // default
+                    }
+                    const eventTitle = targetEvent.get("title") || "";
+                    const eventDateRaw = targetEvent.get("date") || "";
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
+                    content = content
+                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{eventTitle}/g, eventTitle)
+                        .replace(/{eventDate}/g, eventDateStr)
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{quantity}/g, String(quantity))
+                        .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "buyer_" + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || "",
+                        recipientName: metadata.buyerName || "Buyer",
+                        subject: subject,
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({
+                            eventId: eventId,
+                            type: "Automated Confirmation"
+                        })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === "bundle") {
+                const bundleId = metadata.bundleId;
+                const stripeSessionId = session.id || "";
+                const quantity = Number(metadata.quantity || 0);
+                if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                    return e.json(400, { error: "Invalid session metadata" });
+                }
+                // Idempotency: Check if record exists
+                try {
+                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    }
+                }
+                catch (_k) {
+                    // Record not found, continue
+                }
+                // Re-verify capacity before saving
+                let targetBundle;
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                }
+                catch (_l) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                }
+                const bundleEventsVal = targetBundle.get("events");
+                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                let isCapacityViolated = false;
+                // Verify bundle capacity
+                let bundleSoldCount = 0;
+                if (bundleEventIds.length > 0) {
+                    const firstEventId = bundleEventIds[0];
+                    try {
+                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
+                        bundlePurchases.forEach(p => {
+                            const q = p.get("quantity");
+                            bundleSoldCount += typeof q === 'number' ? q : 0;
+                        });
+                    }
+                    catch (_m) {
+                        // Ignore query error
+                    }
+                }
+                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
+                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
+                    isCapacityViolated = true;
+                }
+                // Verify individual event capacities
+                if (!isCapacityViolated) {
+                    for (const eventId of bundleEventIds) {
+                        let event;
+                        try {
+                            event = $app.findRecordById("events", eventId);
+                        }
+                        catch (_o) {
+                            isCapacityViolated = true;
+                            break;
+                        }
+                        let eventSoldCount = 0;
+                        try {
+                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
+                            eventPurchases.forEach(p => {
+                                const q = p.get("quantity");
+                                eventSoldCount += typeof q === 'number' ? q : 0;
+                            });
+                        }
+                        catch (_p) {
+                            // Ignore query error
+                        }
+                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
+                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
+                            isCapacityViolated = true;
+                            break;
+                        }
+                    }
+                }
+                if (isCapacityViolated) {
+                    const pi = session.payment_intent;
+                    if (pi) {
+                        try {
+                            refundPaymentIntent(pi);
+                        }
+                        catch (refundErr) {
+                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
+                        }
+                    }
+                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
+                }
+                // Create purchase records in transaction
+                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                const txApp = $app;
+                try {
+                    txApp.runInTransaction((tx) => {
+                        bundleEventIds.forEach(eventId => {
+                            const record = new Record(ticketPurchasesCollection, {
+                                event: eventId,
+                                bundle: bundleId,
+                                buyerName: metadata.buyerName || "",
+                                buyerEmail: metadata.buyerEmail || "",
+                                quantity: quantity,
+                                unitPriceCents: Number(metadata.unitPriceCents || 0),
+                                feeCents: Number(metadata.feeCents || 0),
+                                amountPaidCents: session.amount_total || 0,
+                                currency: session.currency || "usd",
+                                stripeSessionId: stripeSessionId,
+                                stripePaymentIntentId: session.payment_intent || "",
+                                stripeCustomerId: session.customer || "",
+                                status: "paid",
+                                marketingOptIn: metadata.marketingOptIn === "true",
+                                fulfilledAt: new Date().toISOString()
+                            });
+                            tx.save(record);
+                        });
+                    });
+                }
+                catch (txErr) {
+                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
+                    return e.json(500, { error: "Failed to create ticket purchases" });
+                }
+                // Enqueue Consolidated Ticket Confirmation email
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const rawSubject = template.get("subject") || "";
+                    let timezone = "America/New_York";
+                    try {
+                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+                        const valueStr = tzSetting.get("value");
+                        const tzP = parseJsonField(valueStr);
+                        if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
+                            timezone = tzP.timezone;
+                        }
+                    }
+                    catch (_q) {
+                        // Use default America/New_York timezone
+                    }
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_r) {
+                        // Use default choir name
+                    }
+                    const eventDetailsParts = [];
+                    bundleEventIds.forEach(eventId => {
+                        try {
+                            const ev = $app.findRecordById("events", eventId);
+                            const evTitle = ev.get("title") || "";
+                            const evDate = ev.get("date") || "";
+                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
+                        }
+                        catch (_a) {
+                            // Ignore individual event loading error
+                        }
+                    });
+                    const eventDetailsStr = eventDetailsParts.join("\n");
+                    const bundleTitle = targetBundle.get("title") || "";
+                    const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
+                    content = content
+                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{bundleTitle}/g, bundleTitle)
+                        .replace(/{eventDetails}/g, eventDetailsStr)
+                        .replace(/{quantity}/g, String(quantity))
+                        .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "buyer_" + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || "",
+                        recipientName: metadata.buyerName || "Buyer",
+                        subject: subject,
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({
+                            bundleId: bundleId,
+                            type: "Automated Confirmation"
+                        })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === "donation") {
+                const stripeSessionId = session.id || "";
+                if (!stripeSessionId) {
+                    return e.json(400, { error: "Missing session ID" });
+                }
+                // Idempotency
+                try {
+                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (existing) {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                }
+                catch (_s) {
+                    // Not found, continue
+                }
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || "";
+                const donorEmail = metadata.donorEmail || "";
+                const tributeType = metadata.tributeType || "none";
+                const tributeName = metadata.tributeName || "";
+                const isAnonymous = metadata.isAnonymous === "true";
+                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                const record = new Record(collection, {
+                    amountPaidCents,
+                    donorName,
+                    donorEmail,
+                    tributeType,
+                    tributeName,
+                    isAnonymous,
+                    status: "paid",
+                    stripeSessionId,
+                    stripePaymentIntentId: session.payment_intent || ""
+                });
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get("content") || "";
+                    const subject = template.get("subject") || "";
+                    let choirName = "Choir Management Tool";
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get("value"));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_t) {
+                        // default
+                    }
+                    let tributeSection = "";
+                    if (tributeType === "memory" && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === "honor" && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: "donor_" + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || "Donor",
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify({ type: "Donation Receipt" })
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === "dues") {
+                const profileId = metadata.profileId;
+                const season = metadata.season;
+                if (profileId && season) {
+                    try {
+                        let duesRecord;
+                        try {
+                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
+                            duesRecord.set("paid", true);
+                        }
+                        catch (_u) {
+                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            duesRecord = new Record(duesColl, {
+                                profile: profileId,
+                                season: season,
+                                paid: true
+                            });
+                        }
+                        $app.save(duesRecord);
+                    }
+                    catch (err) {
+                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                    }
+                }
+            }
+        }
+        else if (eventObj.type === "charge.refunded") {
+            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
+            if (paymentIntentId) {
+                try {
+                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    if (purchases && purchases.length > 0) {
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            purchases.forEach(p => {
+                                p.set("status", "refunded");
+                                tx.save(p);
+                            });
+                        });
+                    }
+                }
+                catch (err) {
+                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                }
+            }
+        }
+        return e.json(200, { success: true });
+    }
+    function handleAdminRefundTicket(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const purchaseId = body.purchaseId;
+        if (!purchaseId) {
+            return e.json(400, { error: "Missing purchaseId" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase record not found" });
+        }
+        const pi = purchase.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            purchase.set("status", "refunded");
+            $app.save(purchase);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundBundle(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const paymentIntentId = body.paymentIntentId;
+        if (!paymentIntentId) {
+            return e.json(400, { error: "Missing paymentIntentId" });
+        }
+        let purchases;
+        try {
+            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "No purchases found for the payment intent" });
+        }
+        if (purchases.length === 0) {
+            return e.json(404, { error: "No purchase records found" });
+        }
+        try {
+            refundPaymentIntent(paymentIntentId);
+            const txApp = $app;
+            txApp.runInTransaction((tx) => {
+                purchases.forEach(p => {
+                    p.set("status", "refunded");
+                    tx.save(p);
+                });
+            });
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Forbidden" });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: "Missing donationId" });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById("donations", donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: "Donation record not found" });
+        }
+        const pi = donation.get("stripePaymentIntentId");
+        if (!pi) {
+            return e.json(400, { error: "Stripe payment intent missing on record" });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set("status", "refunded");
+            $app.save(donation);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleAdminRefundDonation(e);
 });
 
 routerAdd("GET", "/api/player-playlist", (e) => {

@@ -78,7 +78,7 @@ test('Generated main.pb.js integrity', () => {
     assert.ok(content.includes('"/api/generate-player-token"'), 'Should include player endpoint route');
     assert.ok(content.includes('"/api/player-playlist"'), 'Should include player playlist route');
 
-    assert.strictEqual(countOccurrences(content, 'routerAdd('), 24, 'Generated main file should contain exactly 24 route registrations');
+    assert.strictEqual(countOccurrences(content, 'routerAdd('), 26, 'Generated main file should contain exactly 26 route registrations');
     assert.strictEqual(countOccurrences(content, 'cronAdd('), 3, 'Generated main file should contain exactly 3 cron registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterCreateSuccess(('), 2, 'Generated main file should contain exactly two create hook registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterUpdateSuccess(('), 2, 'Generated main file should contain exactly two update hook registrations');
@@ -108,7 +108,7 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
     assert.ok(!content.includes('// --- SHARED UTILITIES ---'), 'Generated file should not emit the old top-level sharedUtils block');
     assert.ok(!content.includes('__SHARED_UTILS__'), 'Generated file should not leak generator utility placeholders');
-    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 54, 'Twenty-seven utility-bearing callbacks should have start/end local utility markers');
+    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 58, 'Twenty-nine utility-bearing callbacks should have start/end local utility markers');
 
     const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
     assert.ok(!filePrelude.includes('function '), 'Generated file prelude should not contain top-level helper functions');

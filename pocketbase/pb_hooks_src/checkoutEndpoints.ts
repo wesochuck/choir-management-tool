@@ -325,6 +325,68 @@ export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
     }
 }
 
+export function handleCreateDonationSession(e: PocketBaseRequestEvent): unknown {
+    const body = e.requestInfo().body;
+    const amountCents = Number(body.amountCents || 0);
+    const name = body.name as string;
+    const email = body.email as string;
+    const tributeType = body.tributeType as string || "none";
+    const tributeName = body.tributeName as string || "";
+    const isAnonymous = !!body.isAnonymous;
+
+    if (!amountCents || !name || !email) {
+        return e.json(400, { error: "Missing required fields" });
+    }
+
+    if (amountCents < 500) {
+        return e.json(400, { error: "Donation amount must be at least $5.00" });
+    }
+
+    let choirName = "Choir Management Tool";
+    try {
+        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+        const val = parseJsonField<string>(choirRecord.get("value"));
+        if (val) choirName = val;
+    } catch {
+        // default
+    }
+
+    const meta = $app.settings()?.meta;
+    const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || "";
+    const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+    const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${appUrl}/donate`;
+
+    const lineItems = [
+        {
+            price_data: {
+                currency: "usd",
+                product_data: { name: `Donation to ${choirName}` },
+                unit_amount: amountCents
+            },
+            quantity: 1
+        }
+    ];
+
+    const metadata: { [key: string]: string } = {
+        paymentType: "donation",
+        amountPaidCents: String(amountCents),
+        donorName: name,
+        donorEmail: email,
+        tributeType,
+        tributeName,
+        isAnonymous: String(isAnonymous)
+    };
+
+    try {
+        const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+        return e.json(200, { url: session.url, sessionId: session.id });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+    }
+}
+
 export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
     let rawBody: string;
     try {
@@ -745,6 +807,88 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
             } catch (mailErr: unknown) {
                 console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
             }
+        } else if (paymentType === "donation") {
+            const stripeSessionId = session.id || "";
+            if (!stripeSessionId) {
+                return e.json(400, { error: "Missing session ID" });
+            }
+
+            // Idempotency
+            try {
+                const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                if (existing) {
+                    return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                }
+            } catch {
+                // Not found, continue
+            }
+
+            const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+            const donorName = metadata.donorName || "";
+            const donorEmail = metadata.donorEmail || "";
+            const tributeType = metadata.tributeType || "none";
+            const tributeName = metadata.tributeName || "";
+            const isAnonymous = metadata.isAnonymous === "true";
+
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents,
+                donorName,
+                donorEmail,
+                tributeType,
+                tributeName,
+                isAnonymous,
+                status: "paid",
+                stripeSessionId,
+                stripePaymentIntentId: session.payment_intent || ""
+            });
+
+            $app.save(record);
+
+            // Enqueue Donation Receipt
+            try {
+                const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
+                let content = template.get("content") as string || "";
+                const subject = template.get("subject") as string || "";
+
+                let choirName = "Choir Management Tool";
+                try {
+                    const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
+                    const val = parseJsonField<string>(choirRecord.get("value"));
+                    if (val) choirName = val;
+                } catch {
+                    // default
+                }
+
+                let tributeSection = "";
+                if (tributeType === "memory" && tributeName) {
+                    tributeSection = `This donation was made in memory of ${tributeName}.`;
+                } else if (tributeType === "honor" && tributeName) {
+                    tributeSection = `This donation was made in honor of ${tributeName}.`;
+                }
+
+                content = content
+                    .replace(/{donorName}/g, donorName)
+                    .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{tributeSection}/g, tributeSection);
+
+                const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                const mailRecord = new Record(emailQueueCollection, {
+                    recipientId: "donor_" + stripeSessionId,
+                    recipientEmail: donorEmail,
+                    recipientName: donorName || "Donor",
+                    subject: subject.replace(/{choirName}/g, choirName),
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({ type: "Donation Receipt" })
+                });
+
+                $app.save(mailRecord);
+            } catch (mailErr: unknown) {
+                console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+            }
         } else if (paymentType === "dues") {
             const profileId = metadata.profileId;
             const season = metadata.season;
@@ -867,6 +1011,41 @@ export function handleAdminRefundBundle(e: PocketBaseRequestEvent): unknown {
                 tx.save(p);
             });
         });
+        return e.json(200, { success: true });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+    }
+}
+
+export function handleAdminRefundDonation(e: PocketBaseRequestEvent): unknown {
+    const authRecord = e.auth;
+    if (!authRecord || authRecord.get("role") !== "admin") {
+        return e.json(403, { error: "Forbidden" });
+    }
+
+    const body = e.requestInfo().body;
+    const donationId = body.donationId as string;
+    if (!donationId) {
+        return e.json(400, { error: "Missing donationId" });
+    }
+
+    let donation: PocketBaseRecord;
+    try {
+        donation = $app.findRecordById("donations", donationId);
+    } catch {
+        return e.json(404, { error: "Donation record not found" });
+    }
+
+    const pi = donation.get("stripePaymentIntentId") as string;
+    if (!pi) {
+        return e.json(400, { error: "Stripe payment intent missing on record" });
+    }
+
+    try {
+        refundPaymentIntent(pi);
+        donation.set("status", "refunded");
+        $app.save(donation);
         return e.json(200, { success: true });
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
