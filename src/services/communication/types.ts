@@ -4,7 +4,7 @@ import type { Retry429Options } from '../../lib/networkSafety';
 export type MessageType = 'Email' | 'SMS' | 'Both';
 export type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
 export type MessageStatus = 'Draft' | 'Sent' | 'Failed' | 'Archived';
-export type AutomatedTaskType = 'Reminder' | 'Report' | 'RSVP Request';
+export type AutomatedTaskType = 'Reminder' | 'Report' | 'RSVP Request' | 'Ticket Buyer Reminder';
 
 export type AutomatedTaskResolutionStatus = 'pending' | 'sent' | 'archived';
 export type AutomatedTaskStatusMap = Record<string, AutomatedTaskResolutionStatus>;

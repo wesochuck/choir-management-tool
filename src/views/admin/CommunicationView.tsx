@@ -151,6 +151,20 @@ export default function CommunicationView() {
         return;
       }
 
+      if (task.type === 'Ticket Buyer Reminder') {
+        const recipients = await communicationService.resolveTicketBuyerRecipients(task.event.id);
+
+        setRecipientPreviewList({
+          isOpen: true,
+          recipients,
+          title: `Ticket Buyers for ${eventLabel}`,
+          emptyMessage: 'No ticket buyers found for this performance.',
+          helperText: 'Only users who have purchased tickets for this specific performance will receive this reminder.',
+        });
+
+        return;
+      }
+
       const recipients = await communicationService.resolveRecipients({
         eventId: task.event.id,
         rsvp: task.type === 'RSVP Request' ? 'Pending' : 'All',
@@ -193,12 +207,14 @@ export default function CommunicationView() {
       const getAutomatedTaskKeyPrefix = (taskType: AutomatedTask['type']) => {
         if (taskType === 'RSVP Request') return 'rsvp';
         if (taskType === 'Reminder') return 'reminder';
+        if (taskType === 'Ticket Buyer Reminder') return 'ticket-reminder';
         return 'report';
       };
 
       const getAutomatedTaskFilterType = (taskType: AutomatedTask['type']) => {
         if (taskType === 'RSVP Request') return 'RSVP Invitation';
         if (taskType === 'Reminder') return 'Automated Reminder';
+        if (taskType === 'Ticket Buyer Reminder') return 'Ticket Buyer Reminder';
         return 'Automated Report';
       };
 

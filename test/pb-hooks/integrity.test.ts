@@ -78,8 +78,8 @@ test('Generated main.pb.js integrity', () => {
     assert.ok(content.includes('"/api/generate-player-token"'), 'Should include player endpoint route');
     assert.ok(content.includes('"/api/player-playlist"'), 'Should include player playlist route');
 
-    assert.strictEqual(countOccurrences(content, 'routerAdd('), 24, 'Generated main file should contain exactly 24 route registrations');
-    assert.strictEqual(countOccurrences(content, 'cronAdd('), 2, 'Generated main file should contain exactly 2 cron registrations');
+    assert.strictEqual(countOccurrences(content, 'routerAdd('), 26, 'Generated main file should contain exactly 26 route registrations');
+    assert.strictEqual(countOccurrences(content, 'cronAdd('), 3, 'Generated main file should contain exactly 3 cron registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterCreateSuccess(('), 2, 'Generated main file should contain exactly two create hook registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterUpdateSuccess(('), 2, 'Generated main file should contain exactly two update hook registrations');
 
@@ -108,7 +108,7 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
     assert.ok(!content.includes('// --- SHARED UTILITIES ---'), 'Generated file should not emit the old top-level sharedUtils block');
     assert.ok(!content.includes('__SHARED_UTILS__'), 'Generated file should not leak generator utility placeholders');
-    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 52, 'Twenty-six utility-bearing callbacks should have start/end local utility markers');
+    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 58, 'Twenty-nine utility-bearing callbacks should have start/end local utility markers');
 
     const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
     assert.ok(!filePrelude.includes('function '), 'Generated file prelude should not contain top-level helper functions');
@@ -138,6 +138,11 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
     assert.ok(processEmailQueueCron.includes('function renderMarkdown'), 'Email queue cron should contain markdown rendering utilities');
     assert.ok(processEmailQueueCron.includes('function compileMailjetHtml'), 'Email queue cron should contain Mailjet HTML rendering utilities');
     assert.ok(!processEmailQueueCron.includes('function renderAttendanceReportBody'), 'Email queue cron should not contain unrelated attendance report renderer');
+
+    const ticketBuyerReminderCron = extractCronCallback(content, 'ticket_buyer_reminder');
+    assert.ok(ticketBuyerReminderCron.includes('function formatInTimezone'), 'Ticket buyer reminder cron should contain timezone formatting utilities');
+    assert.ok(ticketBuyerReminderCron.includes('function parseJsonField'), 'Ticket buyer reminder cron should contain JSON parsing utilities');
+    assert.ok(ticketBuyerReminderCron.includes('function processEmailQueue'), 'Ticket buyer reminder cron should contain queue processor utilities');
 
     const createMessagesHook = extractRecordHookCallback(content, 'onRecordAfterCreateSuccess', 'messages');
     assert.ok(createMessagesHook.includes('function shouldQueueMessage'), 'Create messages hook should contain queue eligibility utility');

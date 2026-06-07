@@ -29,6 +29,7 @@ export interface TicketPurchase extends RecordModel {
   stripeCustomerId?: string;
   status: 'paid' | 'refunded' | 'pending';
   marketingOptIn: boolean;
+  reminderSent?: boolean;
   fulfilledAt?: string;
   bundle?: string;
   expand?: {

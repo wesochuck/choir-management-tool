@@ -62,7 +62,10 @@ const PublicTicketListView = lazyWithReload(() => import('./views/PublicTicketLi
 const PublicTicketPurchaseView = lazyWithReload(() => import('./views/PublicTicketPurchaseView'));
 const PublicTicketSuccessView = lazyWithReload(() => import('./views/PublicTicketSuccessView'));
 const PublicBundlePurchaseView = lazyWithReload(() => import('./views/PublicBundlePurchaseView'));
+const PublicDonationView = lazyWithReload(() => import('./views/PublicDonationView'));
+const PublicDonationSuccessView = lazyWithReload(() => import('./views/PublicDonationSuccessView'));
 const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
+const DonationsView = lazyWithReload(() => import('./views/admin/DonationsView'));
 
 
 
@@ -130,6 +133,8 @@ export default function App() {
           <Route path="/tickets/order/success" element={<PublicTicketSuccessView />} />
           <Route path="/tickets/bundle/:bundleId" element={<PublicBundlePurchaseView />} />
           <Route path="/tickets/:eventId" element={<PublicTicketPurchaseView />} />
+          <Route path="/donate" element={<PublicDonationView />} />
+          <Route path="/donate/success" element={<PublicDonationSuccessView />} />
           <Route path="/" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
 
           <Route path="/admin/roster" element={
@@ -256,6 +261,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Ticketing" backTo="/">
                 <AdminTicketingView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/donations" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Donations" backTo="/">
+                <DonationsView />
               </PageLayout>
             </ProtectedRoute>
           } />

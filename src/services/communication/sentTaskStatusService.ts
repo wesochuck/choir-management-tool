@@ -29,6 +29,10 @@ const AUTOMATED_STATUS_FILTERS: Record<
     typeFilter: "(filters.type = 'Automated Report' || filters.type = 'Attendance Report')",
     paramPrefix: 'reportEventId',
   },
+  'Ticket Buyer Reminder': {
+    typeFilter: "filters.type = 'Ticket Buyer Reminder'",
+    paramPrefix: 'ticketReminderEventId',
+  },
 };
 
 const buildEventIdClause = (eventIds: string[], paramPrefix: string) => {
@@ -58,6 +62,7 @@ export async function getAutomatedTaskStatuses(
     statusMap[`rsvp-${eventId}`] = 'pending';
     statusMap[`reminder-${eventId}`] = 'pending';
     statusMap[`report-${eventId}`] = 'pending';
+    statusMap[`ticket-reminder-${eventId}`] = 'pending';
   });
 
   if (uniqueEventIds.length === 0) {
@@ -73,6 +78,8 @@ export async function getAutomatedTaskStatuses(
         ? 'rsvp'
         : type === 'Reminder'
         ? 'reminder'
+        : type === 'Ticket Buyer Reminder'
+        ? 'ticket-reminder'
         : 'report';
 
     await mapWithConcurrency(
@@ -118,6 +125,7 @@ export async function getAutomatedTaskStatuses(
     resolveTasksForType('RSVP Request'),
     resolveTasksForType('Reminder'),
     resolveTasksForType('Report'),
+    resolveTasksForType('Ticket Buyer Reminder'),
   ]);
 
   return statusMap;
@@ -148,6 +156,8 @@ export async function wasMessageSent(filter: {
         ? 'rsvp'
         : filter.type === 'Reminder'
         ? 'reminder'
+        : filter.type === 'Ticket Buyer Reminder'
+        ? 'ticket-reminder'
         : 'report';
     return statuses[`${keyPrefix}-${filter.eventId}`] === 'sent';
   } catch {
