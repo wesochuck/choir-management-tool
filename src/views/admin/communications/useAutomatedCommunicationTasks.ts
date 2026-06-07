@@ -134,6 +134,30 @@ export function useAutomatedCommunicationTasks({
         if (isResolved || scheduledTime < now) past.push(task);
         else upcoming.push(task);
       }
+
+      if (event.type === 'Performance' && event.isTicketingEnabled === true) {
+        const scheduledTime = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000);
+        const resolution = automatedTaskStatus[`ticket-reminder-${event.id}`] || 'pending';
+        const isResolved = resolution !== 'pending';
+
+        const taskStatus =
+          resolution === 'sent'
+            ? 'Sent'
+            : resolution === 'archived'
+            ? 'Archived'
+            : 'Scheduled';
+
+        const task: AutomatedTask = {
+          id: `ticket-reminder-${event.id}`,
+          type: 'Ticket Buyer Reminder',
+          event,
+          scheduledTime,
+          status: taskStatus,
+        };
+
+        if (isResolved || scheduledTime < now) past.push(task);
+        else upcoming.push(task);
+      }
     });
 
     return {

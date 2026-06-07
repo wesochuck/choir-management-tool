@@ -5,7 +5,7 @@ export type WizardStep = 'TARGETS' | 'COMPOSE' | 'REVIEW';
 
 export interface AutomatedTask {
   id: string;
-  type: 'Reminder' | 'Report' | 'RSVP Request';
+  type: 'Reminder' | 'Report' | 'RSVP Request' | 'Ticket Buyer Reminder';
   event: Event;
   scheduledTime: Date;
   status: 'Scheduled' | 'Sent' | 'Archived';

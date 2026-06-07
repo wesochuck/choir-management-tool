@@ -495,6 +495,118 @@ events.forEach(event => {
     }
 });`;
 
+    const ticketBuyerReminderBody = `
+const now = new Date();
+const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+
+const events = $app.findRecordsByFilter(
+    "events", 
+    "type = 'Performance' && date >= {:now} && date <= {:tomorrow} && isArchived != true && isTicketingEnabled = true", 
+    "date", 
+    100, 
+    0, 
+    { now, tomorrow }
+);
+
+if (!events || events.length === 0) return;
+
+let template;
+try {
+    template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Concert Reminder' && isSystemTemplate = true");
+} catch (e) {
+    console.log("[Reminder Cron] Ticket Concert Reminder template not found");
+    return;
+}
+
+let timezone = "America/New_York";
+try {
+    const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
+    const tzP = parseJsonField(tzSetting.get("value"));
+    if (tzP && tzP.timezone) timezone = tzP.timezone;
+} catch (e) {}
+
+let choirName = "Choir Management Tool";
+try {
+    const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
+    const parsed = parseJsonField(choirRecord.get("value"));
+    const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : "");
+    if (val) choirName = val;
+} catch (e) {}
+
+events.forEach(event => {
+    const purchases = $app.findRecordsByFilter(
+        "ticketPurchases",
+        "event = {:eventId} && status = 'paid' && reminderSent != true",
+        "",
+        1000,
+        0,
+        { eventId: event.id }
+    );
+
+    if (!purchases || purchases.length === 0) return;
+
+    const eventTitle = event.get("title") || "";
+    const eventDateRaw = event.get("date");
+    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
+
+    purchases.forEach(purchase => {
+        const buyerName = purchase.get("buyerName") || "Music Lover";
+        const quantity = purchase.get("quantity") || 0;
+        
+        let content = template.get("content") || "";
+        content = content
+            .replace(/{buyerName}/g, buyerName)
+            .replace(/{eventTitle}/g, eventTitle)
+            .replace(/{eventDate}/g, eventDateStr)
+            .replace(/{doorsOpenTime}/g, doorsOpenTime)
+            .replace(/{quantity}/g, String(quantity))
+            .replace(/{choirName}/g, choirName);
+
+        const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
+
+        try {
+            const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+            const mailRecord = new Record(queueCollection, {
+                recipientId: "buyer_" + purchase.id,
+                recipientEmail: purchase.get("buyerEmail"),
+                recipientName: buyerName,
+                subject: subject,
+                rawContent: content,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify({
+                    eventId: event.id,
+                    type: "Ticket Buyer Reminder"
+                })
+            });
+            $app.save(mailRecord);
+
+            purchase.set("reminderSent", true);
+            $app.save(purchase);
+        } catch (e) {
+            console.log("[Reminder Cron] Failed to enqueue email for purchase " + purchase.id + ": " + e);
+        }
+    });
+
+    try {
+        const messageCollection = $app.findCollectionByNameOrId("messages");
+        const msgRecord = new Record(messageCollection, {
+            subject: "Ticket Buyer Reminders Sent: " + eventTitle,
+            content: "Sent reminders for " + eventTitle,
+            type: "Email",
+            status: "Sent",
+            recipients: [],
+            filters: { eventId: event.id, type: "Ticket Buyer Reminder" }
+        });
+        $app.save(msgRecord);
+    } catch (e) {
+        console.log("[Reminder Cron] Failed to log message for event " + event.id + ": " + e);
+    }
+});
+
+processEmailQueue($app);`;
+
     const processQueueBody = `
 console.log("[Cron Engine] Evaluating pending outbound message matrices...");
 processEmailQueue($app);`;
@@ -880,6 +992,8 @@ if (typeof process === 'undefined') {
 // --- CRON JOBS ---
 
 ${renderCron('post_event_report', '0 * * * *', postEventReportBody)}
+
+${renderCron('ticket_buyer_reminder', '0 * * * *', ticketBuyerReminderBody)}
 
 ${renderCron('process_email_queue_job', '*/2 * * * *', processQueueBody)}
 

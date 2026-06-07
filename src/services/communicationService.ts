@@ -7,6 +7,7 @@
 import type { ListResult } from 'pocketbase';
 import { pb } from '../lib/pocketbase';
 import type { Event } from './eventService';
+import { ticketService } from './ticketService';
 import {
   DEFAULT_COMMUNICATION_CONFIG,
   type CommunicationConfig,
@@ -72,6 +73,19 @@ export const communicationService = {
   wasMessageSent,
   resolveRecipients,
   resolveAttendanceReportRecipients,
+  resolveTicketBuyerRecipients: async (eventId: string): Promise<CommunicationRecipient[]> => {
+    const purchases = await ticketService.getPurchasesForEvent(eventId);
+    return purchases
+      .filter((p) => p.status === 'paid')
+      .map((p) => ({
+        id: p.id,
+        name: `${p.buyerName} <${p.buyerEmail}> (Qty: ${p.quantity})`,
+        email: p.buyerEmail,
+        phone: '',
+        voicePart: 'Ticket Buyer',
+        globalStatus: 'Paid',
+      }));
+  },
   resolveRsvpPlaceholders,
   resolvePollPlaceholders,
   resolveSingerPlaceholders: async (content: string, eventId?: string): Promise<string> => {
@@ -102,7 +116,7 @@ export const communicationService = {
   ) => Promise<Record<string, boolean>>;
   wasMessageSent: (filter: {
     eventId?: string;
-    type?: 'Reminder' | 'Report' | 'RSVP Request';
+    type?: 'Reminder' | 'Report' | 'RSVP Request' | 'Ticket Buyer Reminder';
   }) => Promise<boolean>;
   getDrafts: () => Promise<MessageRecord[]>;
   saveDraft: (data: SendMessageInput, id?: string) => Promise<MessageRecord>;
@@ -117,6 +131,7 @@ export const communicationService = {
     filters: CommunicationFilters
   ) => Promise<CommunicationRecipient[]>;
   resolveAttendanceReportRecipients: () => Promise<CommunicationRecipient[]>;
+  resolveTicketBuyerRecipients: (eventId: string) => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (
     content: string,
     eventId: string,
