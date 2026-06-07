@@ -222,6 +222,41 @@
     gap: 8px;
 }
 
+.roster-ut-patronage-summary {
+    padding: var(--space-md);
+    background-color: var(--primary-light);
+    border: 1px solid rgba(74, 117, 89, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.roster-ut-patronage-summary-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--primary-deep);
+}
+
+.roster-ut-patronage-summary-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.roster-ut-history-row {
+    padding: 12px var(--space-md);
+    box-shadow: none;
+    border: 1px solid var(--border);
+    margin: 0;
+}
+
+.roster-ut-align-right {
+    text-align: right;
+    align-items: flex-end;
+}
+
 /* Roster Import Modal */
 .roster-ut-import-btn-restart {
     margin-right: auto;

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { profileService, type Profile } from '../../services/profileService';
+import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { donationService } from '../../services/donationService';
 import { ticketService } from '../../services/ticketService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
+import { SingerModal } from '../../components/admin/SingerModal';
 import './PatronsView.css';
 
 interface PatronData {
@@ -25,6 +26,10 @@ export default function PatronsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ltv' | 'name' | 'lastDate'>('ltv');
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPatron, setSelectedPatron] = useState<Profile | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -128,6 +133,23 @@ export default function PatronsView() {
     navigate(`/admin/communications?recipientIds=${ids}`);
   };
 
+  const handleOpenProfile = (profile: Profile) => {
+    setSelectedPatron(profile);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveProfile = async (data: ProfileInput) => {
+    if (selectedPatron) {
+      await profileService.updateProfile(selectedPatron.id, data);
+      await fetchData();
+    }
+  };
+
+  const handleDeleteProfile = async (profile: Profile) => {
+    await profileService.deleteProfile(profile.id);
+    await fetchData();
+  };
+
   return (
     <div className="admin-view-container patrons-view">
       <div className="admin-view-header flex-responsive">
@@ -197,7 +219,7 @@ export default function PatronsView() {
               ) : filteredPatrons.length === 0 ? (
                 <tr><td colSpan={7} className="patrons-table-td patrons-text-center admin-empty-state">No patrons found matching your search.</td></tr>
               ) : filteredPatrons.map(p => (
-                <tr key={p.profile.id} className="patrons-table-row" onClick={() => toggleSelect(p.profile.id)}>
+                <tr key={p.profile.id} className="patrons-table-row" onClick={() => handleOpenProfile(p.profile)}>
                   <td className="patrons-table-td patrons-col-check" onClick={e => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
@@ -227,6 +249,14 @@ export default function PatronsView() {
           </table>
         </div>
       </AppCard>
+
+      <SingerModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveProfile}
+        onDelete={handleDeleteProfile}
+        initialData={selectedPatron}
+      />
     </div>
   );
 }

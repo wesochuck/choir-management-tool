@@ -80,6 +80,14 @@ export const ticketService = {
     });
   },
 
+  async getPurchasesForProfile(profileId: string): Promise<TicketPurchase[]> {
+    return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
+      filter: pb.filter('profile = {:profileId}', { profileId }),
+      sort: '-created',
+      expand: 'event,bundle'
+    });
+  },
+
   async getAllPurchases(): Promise<TicketPurchase[]> {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       sort: '-created',
