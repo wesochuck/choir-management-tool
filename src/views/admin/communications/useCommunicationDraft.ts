@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   communicationService,
   type CommunicationFilters,
@@ -40,12 +41,20 @@ export function useCommunicationDraft({
   setTab,
   setWizardStep,
 }: UseCommunicationDraftArgs) {
+  const [searchParams] = useSearchParams();
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+
+  const initialProfileIds = useMemo(() => {
+    const ids = searchParams.get('recipientIds');
+    return ids ? ids.split(',').filter(id => !!id) : [];
+  }, [searchParams]);
+
   const [filters, setFilters] = useState<CommunicationFilters>({
     eventId: routeState?.initialEventId || '',
     rsvp: 'All',
     voiceParts: [],
     globalStatus: 'Active',
+    profileIds: initialProfileIds.length > 0 ? initialProfileIds : undefined,
   });
 
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
@@ -59,7 +68,8 @@ export function useCommunicationDraft({
       (routeState?.initialOpenReview &&
         routeState?.initialRecipients &&
         routeState.initialRecipients.length > 0) ||
-        routeState?.openDraftId,
+        routeState?.openDraftId ||
+        initialProfileIds.length > 0
     ),
   );
 
@@ -174,6 +184,10 @@ export function useCommunicationDraft({
         rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
         voiceParts: vpArray,
         globalStatus: (mFilters?.globalStatus as string) || 'Active',
+        // NEW: restore profileIds when resuming a draft
+        profileIds: Array.isArray(mFilters?.profileIds)
+          ? (mFilters.profileIds as string[])
+          : undefined,
       });
 
       if (draft.recipients && draft.recipients.length > 0) {

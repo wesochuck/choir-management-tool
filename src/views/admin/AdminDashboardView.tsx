@@ -15,7 +15,8 @@ const dashboardSections = [
       { to: '/admin/auditions', icon: '🎵', iconClass: 'ic-sage', label: 'Auditions', desc: 'Review public audition requests' },
       { to: '/admin/communications', icon: '✉️', iconClass: 'ic-slate', label: 'Communications', desc: 'Send announcements and review history' },
       { to: '/admin/polls', icon: '📊', iconClass: 'ic-pink', label: 'Engagement Polls', desc: 'Review volunteer responses and counts' },
-      { to: '/admin/donations', icon: '🎁', iconClass: 'ic-pink', label: 'Donations', desc: 'Track giving and manage donor levels' }
+      { to: '/admin/donations', icon: '🎁', iconClass: 'ic-pink', label: 'Donations', desc: 'Track giving and manage donor levels' },
+      { to: '/admin/patrons', icon: '💎', iconClass: 'ic-teal', label: 'Patrons Dashboard', desc: 'View donor/buyer LTV and message patrons' }
     ]
   },
   {

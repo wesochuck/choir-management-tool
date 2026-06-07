@@ -3,10 +3,13 @@ import { formatInTimezone } from './email/hookText';
 import { createCheckoutSession, refundPaymentIntent } from './stripeService';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 
-declare const $app: PocketBaseApp;
+declare const $app: PocketBaseApp & {
+    findAuthRecordByEmail(collectionName: string, email: string): PocketBaseRecord;
+};
 declare const $security: {
     hs256(payload: string, secret: string): string;
     equal(a: string, b: string): boolean;
+    randomString(length: number): string;
 };
 
 declare function readerToString(reader: unknown, maxBytes?: number): string;
@@ -31,6 +34,51 @@ interface GoHttpRequest {
 
 interface TicketingRequestEvent extends PocketBaseRequestEvent {
     request: GoHttpRequest;
+}
+
+/**
+ * Finds or creates a Patron profile for a given email and name.
+ */
+function getOrCreatePatronProfile(email: string, name: string): PocketBaseRecord {
+    try {
+        // Try finding by user email first
+        return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+    } catch {
+        // Try finding by name as a fallback
+        try {
+            return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+        } catch {
+            // No profile found, create a new Patron profile.
+            // We create a user account so they can be linked to this email in the future.
+            let userId: string;
+            try {
+                const user = $app.findAuthRecordByEmail("users", email);
+                userId = user.id;
+            } catch {
+                const usersCollection = $app.findCollectionByNameOrId("users");
+                const password = $security.randomString(32);
+                const newUser = new Record(usersCollection, {
+                    email: email,
+                    password: password,
+                    passwordConfirm: password,
+                    role: "singer", // Patrons are singers with no voice part
+                    name: name || email
+                });
+                $app.save(newUser);
+                userId = newUser.id;
+            }
+
+            const profilesCollection = $app.findCollectionByNameOrId("profiles");
+            const newProfile = new Record(profilesCollection, {
+                user: userId,
+                name: name || email,
+                globalStatus: "Active",
+                voicePart: ""
+            });
+            $app.save(newProfile);
+            return newProfile;
+        }
+    }
 }
 
 export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
@@ -516,9 +564,11 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
             }
 
             // Create purchase record
+            const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
             const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
             const record = new Record(collection, {
                 event: eventId,
+                profile: profile.id,
                 buyerName: metadata.buyerName || "",
                 buyerEmail: metadata.buyerEmail || "",
                 quantity: quantity,
@@ -705,6 +755,7 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
             }
 
             // Create purchase records in transaction
+            const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
             const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
             const txApp = $app as unknown as AppWithTransaction;
             
@@ -714,6 +765,7 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                         const record = new Record(ticketPurchasesCollection, {
                             event: eventId,
                             bundle: bundleId,
+                            profile: profile.id,
                             buyerName: metadata.buyerName || "",
                             buyerEmail: metadata.buyerEmail || "",
                             quantity: quantity,
@@ -830,11 +882,13 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
             const tributeName = metadata.tributeName || "";
             const isAnonymous = metadata.isAnonymous === "true";
 
+            const profile = getOrCreatePatronProfile(donorEmail, donorName);
             const collection = $app.findCollectionByNameOrId("pbc_donations_001");
             const record = new Record(collection, {
                 amountPaidCents,
                 donorName,
                 donorEmail,
+                profile: profile.id,
                 tributeType,
                 tributeName,
                 isAnonymous,

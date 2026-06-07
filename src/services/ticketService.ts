@@ -17,6 +17,7 @@ export interface TicketBundle extends RecordModel {
 
 export interface TicketPurchase extends RecordModel {
   event: string;
+  profile?: string;
   buyerName: string;
   buyerEmail: string;
   quantity: number;
@@ -35,6 +36,7 @@ export interface TicketPurchase extends RecordModel {
   expand?: {
     event?: Event;
     bundle?: TicketBundle;
+    profile?: import('./profileService').Profile;
   };
 }
 
@@ -74,6 +76,14 @@ export const ticketService = {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       filter: pb.filter('event = {:eventId}', { eventId }),
       sort: 'buyerName',
+      expand: 'event,bundle'
+    });
+  },
+
+  async getPurchasesForProfile(profileId: string): Promise<TicketPurchase[]> {
+    return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
+      filter: pb.filter('profile = {:profileId}', { profileId }),
+      sort: '-created',
       expand: 'event,bundle'
     });
   },

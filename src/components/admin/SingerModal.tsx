@@ -6,6 +6,7 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
 import { SingerRsvpHistoryTab } from './SingerRsvpHistoryTab';
+import { SingerPatronageHistoryTab } from './SingerPatronageHistoryTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import './RosterComponents.css';
 
@@ -29,6 +30,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const isSelf = initialData?.user && pb.authStore.model && initialData.user === pb.authStore.model.id;
+  const isAdmin = pb.authStore.model?.role === 'admin';
 
   const handleResetPassword = async () => {
     const email = formData.email?.trim();
@@ -48,7 +50,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   };
 
   // Tabs state
-  const [activeTab, setActiveTab] = useState<'profile' | 'rsvps'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'rsvps' | 'patronage'>('profile');
 
   useEffect(() => {
     setFormData(profileToFormData(initialData));
@@ -206,29 +208,26 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className="roster-cmp-tab-btn"
-            // @allow-inline-style - dynamic tab active state
-            style={{
-              borderBottom: activeTab === 'profile' ? '2px solid var(--primary)' : '2px solid transparent',
-              color: activeTab === 'profile' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: activeTab === 'profile' ? 600 : 500,
-            }}
+            className={`roster-cmp-tab-btn ${activeTab === 'profile' ? 'roster-cmp-tab-btn--active' : 'roster-cmp-tab-btn--inactive'}`}
           >
             Profile Info
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('rsvps')}
-            className="roster-cmp-tab-btn"
-            // @allow-inline-style - dynamic tab active state
-            style={{
-              borderBottom: activeTab === 'rsvps' ? '2px solid var(--primary)' : '2px solid transparent',
-              color: activeTab === 'rsvps' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: activeTab === 'rsvps' ? 600 : 500,
-            }}
+            className={`roster-cmp-tab-btn ${activeTab === 'rsvps' ? 'roster-cmp-tab-btn--active' : 'roster-cmp-tab-btn--inactive'}`}
           >
             Performance RSVPs
           </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('patronage')}
+              className={`roster-cmp-tab-btn ${activeTab === 'patronage' ? 'roster-cmp-tab-btn--active' : 'roster-cmp-tab-btn--inactive'}`}
+            >
+              Patronage
+            </button>
+          )}
         </div>
       )}
 
@@ -457,9 +456,13 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             />
           </div>
         </form>
-      ) : (
+      ) : activeTab === 'rsvps' ? (
         initialData && (
           <SingerRsvpHistoryTab singerId={initialData.id} isOpen={isOpen} isActive={activeTab === 'rsvps'} />
+        )
+      ) : (
+        initialData && (
+          <SingerPatronageHistoryTab profileId={initialData.id} isOpen={isOpen} isActive={activeTab === 'patronage'} />
         )
       )}
     </BaseModal>

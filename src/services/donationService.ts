@@ -13,6 +13,7 @@ export interface DonationRecord extends RecordModel {
   amountPaidCents: number;
   donorName: string;
   donorEmail: string;
+  profile?: string;
   tributeType: 'none' | 'memory' | 'honor';
   tributeName?: string;
   isAnonymous: boolean;
@@ -20,6 +21,9 @@ export interface DonationRecord extends RecordModel {
   stripeSessionId: string;
   stripePaymentIntentId: string;
   created: string;
+  expand?: {
+    profile?: import('./profileService').Profile;
+  };
 }
 
 export interface DonationSettings {
