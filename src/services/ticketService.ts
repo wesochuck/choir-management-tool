@@ -17,6 +17,7 @@ export interface TicketBundle extends RecordModel {
 
 export interface TicketPurchase extends RecordModel {
   event: string;
+  profile?: string;
   buyerName: string;
   buyerEmail: string;
   quantity: number;
@@ -35,6 +36,7 @@ export interface TicketPurchase extends RecordModel {
   expand?: {
     event?: Event;
     bundle?: TicketBundle;
+    profile?: import('./profileService').Profile;
   };
 }
 

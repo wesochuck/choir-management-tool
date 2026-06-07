@@ -11404,6 +11404,52 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -11814,9 +11860,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -11980,6 +12028,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -11988,6 +12037,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -12101,11 +12151,13 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
@@ -12658,6 +12710,52 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -13068,9 +13166,11 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -13234,6 +13334,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -13242,6 +13343,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -13355,11 +13457,13 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
@@ -13912,6 +14016,52 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -14322,9 +14472,11 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -14488,6 +14640,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -14496,6 +14649,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -14609,11 +14763,13 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
@@ -15166,6 +15322,52 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -15576,9 +15778,11 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -15742,6 +15946,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -15750,6 +15955,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -15863,11 +16069,13 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
@@ -16420,6 +16628,52 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -16830,9 +17084,11 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -16996,6 +17252,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -17004,6 +17261,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -17117,11 +17375,13 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
@@ -17674,6 +17934,52 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -18084,9 +18390,11 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -18250,6 +18558,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -18258,6 +18567,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -18371,11 +18681,13 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
@@ -18928,6 +19240,52 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
 
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
+    /**
+     * Finds or creates a Patron profile for a given email and name.
+     */
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+        }
+        catch (e) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+            }
+            catch (e2) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId = "";
+                try {
+                    const user = $app.findAuthRecordByEmail("users", email);
+                    userId = user.id;
+                }
+                catch (e3) {
+                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: "singer", // Patrons are singers with no voice part
+                        name: name || email
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: "Active",
+                    voicePart: ""
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
     function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -19338,9 +19696,11 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase record
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const record = new Record(collection, {
                     event: eventId,
+                    profile: profile.id,
                     buyerName: metadata.buyerName || "",
                     buyerEmail: metadata.buyerEmail || "",
                     quantity: quantity,
@@ -19504,6 +19864,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
                 }
                 // Create purchase records in transaction
+                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                 const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
                 const txApp = $app;
                 try {
@@ -19512,6 +19873,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             const record = new Record(ticketPurchasesCollection, {
                                 event: eventId,
                                 bundle: bundleId,
+                                profile: profile.id,
                                 buyerName: metadata.buyerName || "",
                                 buyerEmail: metadata.buyerEmail || "",
                                 quantity: quantity,
@@ -19625,11 +19987,13 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
+                const profile = getOrCreatePatronProfile(donorEmail, donorName);
                 const collection = $app.findCollectionByNameOrId("pbc_donations_001");
                 const record = new Record(collection, {
                     amountPaidCents,
                     donorName,
                     donorEmail,
+                    profile: profile.id,
                     tributeType,
                     tributeName,
                     isAnonymous,
