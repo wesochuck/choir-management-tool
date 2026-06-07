@@ -1,0 +1,119 @@
+.patrons-view .patrons-filter-card {
+  margin-bottom: var(--space-md);
+}
+
+.patrons-view .patrons-filters {
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.patrons-view .patrons-search-wrapper {
+  flex: 1;
+}
+
+.patrons-view .patrons-search-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.patrons-view .patrons-sort-wrapper {
+  min-width: 200px;
+}
+
+.patrons-view .patrons-sort-select {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.patrons-view .patrons-table-container {
+  overflow-x: auto;
+}
+
+.patrons-view .patrons-table {
+  border-collapse: collapse;
+}
+
+.patrons-view .patrons-table-header-row {
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-muted);
+}
+
+.patrons-view .patrons-table-th {
+  padding: var(--space-md);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.patrons-view .patrons-table-th-right {
+  padding: var(--space-md);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: right;
+}
+
+.patrons-view .patrons-table-row {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.patrons-view .patrons-table-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.patrons-view .patrons-table-td {
+  padding: var(--space-md);
+  vertical-align: middle;
+}
+
+.patrons-view .patrons-table-td-bold {
+  padding: var(--space-md);
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+.patrons-view .patrons-table-td-right {
+  padding: var(--space-md);
+  vertical-align: middle;
+  text-align: right;
+}
+
+.patrons-view .patrons-table-td-right-bold {
+  padding: var(--space-md);
+  vertical-align: middle;
+  text-align: right;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.patrons-view .patrons-col-check {
+  width: 48px;
+  text-align: center;
+}
+
+.patrons-view .patrons-text-center {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.patrons-view .badge-sage {
+  background-color: #e6fffa;
+  color: #2c7a7b;
+}
+
+@media (max-width: 768px) {
+  .patrons-view .patrons-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .patrons-view .patrons-sort-wrapper {
+    min-width: 0;
+  }
+}

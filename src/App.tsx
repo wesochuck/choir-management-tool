@@ -66,6 +66,7 @@ const PublicDonationView = lazyWithReload(() => import('./views/PublicDonationVi
 const PublicDonationSuccessView = lazyWithReload(() => import('./views/PublicDonationSuccessView'));
 const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
 const DonationsView = lazyWithReload(() => import('./views/admin/DonationsView'));
+const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
 
 
 
@@ -269,6 +270,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Donations" backTo="/">
                 <DonationsView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/patrons" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Patrons" backTo="/">
+                <PatronsView />
               </PageLayout>
             </ProtectedRoute>
           } />
