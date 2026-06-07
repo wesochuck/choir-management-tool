@@ -13,7 +13,9 @@
 
 .patrons-view .patrons-search-input {
   width: 100%;
-  padding: var(--space-sm) var(--space-md);
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
 }
 
 .patrons-view .patrons-sort-wrapper {
@@ -22,7 +24,10 @@
 
 .patrons-view .patrons-sort-select {
   width: 100%;
-  padding: var(--space-sm) var(--space-md);
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  cursor: pointer;
 }
 
 .patrons-view .patrons-table-container {
@@ -31,36 +36,31 @@
 
 .patrons-view .patrons-table {
   border-collapse: collapse;
+  width: 100%;
+  min-width: 600px;
 }
 
 .patrons-view .patrons-table-header-row {
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-muted);
+  border-bottom: 2px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 .patrons-view .patrons-table-th {
-  padding: var(--space-md);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  font-weight: 700;
+  padding: 12px 8px;
+  text-align: left;
 }
 
 .patrons-view .patrons-table-th-right {
-  padding: var(--space-md);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  font-weight: 700;
+  padding: 12px 8px;
   text-align: right;
 }
 
 .patrons-view .patrons-table-row {
-  border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.2s;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .patrons-view .patrons-table-row:hover {
@@ -68,28 +68,24 @@
 }
 
 .patrons-view .patrons-table-td {
-  padding: var(--space-md);
-  vertical-align: middle;
+  padding: 12px 8px;
 }
 
 .patrons-view .patrons-table-td-bold {
-  padding: var(--space-md);
-  vertical-align: middle;
+  padding: 12px 8px;
   font-weight: 600;
 }
 
 .patrons-view .patrons-table-td-right {
-  padding: var(--space-md);
-  vertical-align: middle;
+  padding: 12px 8px;
   text-align: right;
 }
 
 .patrons-view .patrons-table-td-right-bold {
-  padding: var(--space-md);
-  vertical-align: middle;
+  padding: 12px 8px;
   text-align: right;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .patrons-view .patrons-col-check {
