@@ -208,26 +208,14 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className="roster-cmp-tab-btn"
-            // @allow-inline-style - dynamic tab active state
-            style={{
-              borderBottom: activeTab === 'profile' ? '2px solid var(--primary)' : '2px solid transparent',
-              color: activeTab === 'profile' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: activeTab === 'profile' ? 600 : 500,
-            }}
+            className={`roster-cmp-tab-btn ${activeTab === 'profile' ? 'roster-cmp-tab-btn--active' : 'roster-cmp-tab-btn--inactive'}`}
           >
             Profile Info
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('rsvps')}
-            className="roster-cmp-tab-btn"
-            // @allow-inline-style - dynamic tab active state
-            style={{
-              borderBottom: activeTab === 'rsvps' ? '2px solid var(--primary)' : '2px solid transparent',
-              color: activeTab === 'rsvps' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: activeTab === 'rsvps' ? 600 : 500,
-            }}
+            className={`roster-cmp-tab-btn ${activeTab === 'rsvps' ? 'roster-cmp-tab-btn--active' : 'roster-cmp-tab-btn--inactive'}`}
           >
             Performance RSVPs
           </button>
@@ -235,13 +223,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <button
               type="button"
               onClick={() => setActiveTab('patronage')}
-              className="roster-cmp-tab-btn"
-              // @allow-inline-style - dynamic tab active state
-              style={{
-                borderBottom: activeTab === 'patronage' ? '2px solid var(--primary)' : '2px solid transparent',
-                color: activeTab === 'patronage' ? 'var(--primary)' : 'var(--text-muted)',
-                fontWeight: activeTab === 'patronage' ? 600 : 500,
-              }}
+              className={`roster-cmp-tab-btn ${activeTab === 'patronage' ? 'roster-cmp-tab-btn--active' : 'roster-cmp-tab-btn--inactive'}`}
             >
               Patronage
             </button>

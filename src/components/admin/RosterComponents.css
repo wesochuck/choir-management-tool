@@ -75,6 +75,18 @@
   transition: all 0.2s;
 }
 
+.roster-cmp-tab-btn--active {
+  border-bottom: 2px solid var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.roster-cmp-tab-btn--inactive {
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .roster-cmp-form {
   gap: 16px;
 }

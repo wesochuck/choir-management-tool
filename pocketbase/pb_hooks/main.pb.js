@@ -11412,20 +11412,20 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
@@ -12718,20 +12718,20 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
@@ -14024,20 +14024,20 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
@@ -15330,20 +15330,20 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
@@ -16636,20 +16636,20 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
@@ -17942,20 +17942,20 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
@@ -19248,20 +19248,20 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             // Try finding by user email first
             return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
         }
-        catch (e) {
+        catch (_a) {
             // Try finding by name as a fallback
             try {
                 return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
             }
-            catch (e2) {
+            catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
-                let userId = "";
+                let userId;
                 try {
                     const user = $app.findAuthRecordByEmail("users", email);
                     userId = user.id;
                 }
-                catch (e3) {
+                catch (_c) {
                     const usersCollection = $app.findCollectionByNameOrId("users");
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {

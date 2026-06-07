@@ -184,6 +184,10 @@ export function useCommunicationDraft({
         rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
         voiceParts: vpArray,
         globalStatus: (mFilters?.globalStatus as string) || 'Active',
+        // NEW: restore profileIds when resuming a draft
+        profileIds: Array.isArray(mFilters?.profileIds)
+          ? (mFilters.profileIds as string[])
+          : undefined,
       });
 
       if (draft.recipients && draft.recipients.length > 0) {

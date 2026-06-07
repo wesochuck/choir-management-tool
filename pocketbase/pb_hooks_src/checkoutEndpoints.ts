@@ -43,18 +43,18 @@ function getOrCreatePatronProfile(email: string, name: string): PocketBaseRecord
     try {
         // Try finding by user email first
         return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
-    } catch (e) {
+    } catch {
         // Try finding by name as a fallback
         try {
             return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
-        } catch (e2) {
+        } catch {
             // No profile found, create a new Patron profile.
             // We create a user account so they can be linked to this email in the future.
-            let userId = "";
+            let userId: string;
             try {
                 const user = $app.findAuthRecordByEmail("users", email);
                 userId = user.id;
-            } catch (e3) {
+            } catch {
                 const usersCollection = $app.findCollectionByNameOrId("users");
                 const password = $security.randomString(32);
                 const newUser = new Record(usersCollection, {
