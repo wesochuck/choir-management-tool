@@ -62,10 +62,10 @@
 
 .donation-search-row {
   display: flex;
-  flex-direction: row; /* Fixed: explicitly set row */
+  flex-direction: row;
   gap: var(--space-sm);
   width: 100%;
-  align-items: center;
+  align-items: center; /* Match Ticketing center alignment */
   flex-wrap: wrap;
 }
 
@@ -81,7 +81,7 @@
 .donation-input {
   width: 100%;
   padding: 0 12px;
-  height: 44px; /* Increased for accessibility standard (44px) */
+  height: 40px; /* Match Ticketing height */
   border: 1px solid var(--border);
 }
 
@@ -92,22 +92,22 @@
 .donation-table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 800px;
+  min-width: 600px; /* Match Ticketing min-width */
 }
 
 .donation-table-header-row {
-  border-bottom: 2px solid var(--border);
+  border-bottom: 2px solid var(--border); /* Match Ticketing border-bottom */
   color: var(--text-muted);
   font-size: var(--font-size-label);
 }
 
 .donation-table-th {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
   text-align: left;
 }
 
 .donation-table-th-right {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
   text-align: right;
 }
 
@@ -117,21 +117,21 @@
 }
 
 .donation-table-td {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
 }
 
 .donation-table-td-bold {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
   font-weight: var(--font-weight-headline);
 }
 
 .donation-table-td-right {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
   text-align: right;
 }
 
 .donation-table-td-right-bold {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
   text-align: right;
   font-weight: var(--font-weight-headline);
 }
@@ -141,7 +141,7 @@
 }
 
 .donation-actions-td {
-  padding: 12px var(--space-sm);
+  padding: 12px 8px; /* Match Ticketing padding */
   text-align: right;
   white-space: nowrap;
 }
@@ -203,7 +203,7 @@
   display: flex;
   flex-direction: row;
   gap: var(--space-xl);
-  align-items: stretch;
+  align-items: center; /* Match Ticketing center alignment */
 }
 
 .donation-filters-column {
@@ -211,7 +211,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md);
-  align-items: flex-end;
+  align-items: center; /* Match Ticketing center alignment */
 }
 
 .donation-stats-column {
@@ -251,8 +251,8 @@
 
 .donation-filter-actions {
   display: flex;
-  align-items: flex-end;
-  height: 44px; /* Match input height for accessibility */
+  align-items: center; /* Match Ticketing center alignment */
+  height: 40px; 
 }
 
 @media (max-width: 1024px) {

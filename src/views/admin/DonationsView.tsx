@@ -245,37 +245,36 @@ export default function DonationsView() {
         <>
           <AppCard className="donation-header-card flex-responsive">
             <div className="donation-filters-column">
-              <div className="donation-filter-item">
-                <label className="donation-filter-label">Search</label>
-                <input 
-                  type="text" 
-                  placeholder="Name or email..." 
-                  className="donation-input"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="donation-filter-item">
-                <label className="donation-filter-label">From</label>
-                <input 
-                  type="date" 
-                  className="donation-input"
-                  value={startDate}
-                  onChange={e => handleSetStartDate(e.target.value)}
-                />
-              </div>
-              <div className="donation-filter-item">
-                <label className="donation-filter-label">To</label>
-                <input 
-                  type="date" 
-                  className="donation-input"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                />
-              </div>
-              <div className="donation-filter-item donation-filter-actions">
+              <div className="donation-search-row flex-responsive">
+                <div className="donation-search-input-wrapper">
+                  <input 
+                    type="text" 
+                    placeholder="Search donor name or email..." 
+                    className="card donation-input"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="donation-date-input-wrapper">
+                  <input 
+                    type="date" 
+                    className="card donation-input"
+                    value={startDate}
+                    onChange={e => handleSetStartDate(e.target.value)}
+                    placeholder="View From"
+                  />
+                </div>
+                <div className="donation-date-input-wrapper">
+                  <input 
+                    type="date" 
+                    className="card donation-input"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    placeholder="To"
+                  />
+                </div>
                 <button className="btn btn-ghost" onClick={handleClearFilters}>
-                  Clear
+                  Reset
                 </button>
               </div>
             </div>
@@ -302,9 +301,9 @@ export default function DonationsView() {
             </div>
           </AppCard>
 
-          <AppCard noPadding>
+          <AppCard title="Donation History" noPadding>
             <div className="donation-table-container">
-              <table className="donation-table">
+              <table className="donation-table w-full text-left">
                 <thead>
                   <tr className="donation-table-header-row">
                     <th className="donation-table-th">Date</th>
@@ -320,7 +319,7 @@ export default function DonationsView() {
                   {loading ? (
                     <tr><td colSpan={7} className="donation-table-td donation-text-center">Loading...</td></tr>
                   ) : filteredDonations.length === 0 ? (
-                    <tr><td colSpan={7} className="donation-table-td donation-text-center">No donations found.</td></tr>
+                    <tr><td colSpan={7} className="donation-table-td donation-text-center admin-empty-state">No donations found.</td></tr>
                   ) : filteredDonations.map(d => (
                     <tr key={d.id} className="donation-table-row">
                       <td className="donation-table-td">{formatInTimezone(d.created, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
@@ -342,7 +341,7 @@ export default function DonationsView() {
                           {d.status}
                         </span>
                       </td>
-                      <td className="donation-actions-td">
+                      <td className="donation-table-td-right">
                         {d.status === 'paid' && (
                           <button className="btn btn-sm btn-ghost btn-danger" onClick={() => handleRefund(d.id)}>
                             Refund
@@ -365,9 +364,9 @@ export default function DonationsView() {
             <p className="donation-m-0">These levels are displayed to donors on the public donation page.</p>
           </AppCard>
 
-          <AppCard noPadding>
+          <AppCard title="Donor Levels Configuration" noPadding>
             <div className="donation-table-container">
-              <table className="donation-table">
+              <table className="donation-table w-full text-left">
                 <thead>
                   <tr className="donation-table-header-row">
                     <th className="donation-table-th">Label</th>
@@ -378,13 +377,13 @@ export default function DonationsView() {
                 </thead>
                 <tbody>
                   {!settings || settings.levels.length === 0 ? (
-                    <tr><td colSpan={4} className="donation-table-td donation-text-center">No donor levels defined.</td></tr>
+                    <tr><td colSpan={4} className="donation-table-td donation-text-center admin-empty-state">No donor levels defined.</td></tr>
                   ) : settings.levels.map(l => (
                     <tr key={l.id} className="donation-table-row">
                       <td className="donation-table-td-bold">{l.label}</td>
                       <td className="donation-table-td-right-bold">${l.amount}</td>
                       <td className="donation-table-td">{l.benefit}</td>
-                      <td className="donation-actions-td">
+                      <td className="donation-table-td-right">
                         <button className="btn btn-sm btn-ghost" onClick={() => openLevelModal(l)}>
                           Edit
                         </button>

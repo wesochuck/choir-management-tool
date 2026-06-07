@@ -48,7 +48,7 @@ export default function PublicDonationSuccessView() {
         <div className="pub-style-58">♥</div>
         <h1 className="text-display pub-style-6">Thank You!</h1>
         <p className="text-muted pub-style-6">
-          Your donation has been successfully processed.
+          We have successfully processed your donation.
         </p>
 
         {donation ? (
@@ -76,13 +76,13 @@ export default function PublicDonationSuccessView() {
               </div>
             )}
             <p className="text-xs text-muted pub-style-62">
-              A receipt has been sent to your email. We truly appreciate your support!
+              We are sending your receipt to your email now. You can safely close this page.
             </p>
           </div>
         ) : (
           <div className="flex-col pub-style-63">
             <p className="text-muted text-sm pub-style-6">
-              We're finishing up enqueuing your donation receipt. You can safely navigate away. Your contribution is secured.
+              We are sending your receipt to your email now. You can safely close this page.
             </p>
           </div>
         )}
