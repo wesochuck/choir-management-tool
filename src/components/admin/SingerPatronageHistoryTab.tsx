@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ticketService, type TicketPurchase } from '../../services/ticketService';
-import { donationService, type DonationRecord } from '../../services/donationService';
+import { ticketService } from '../../services/ticketService';
+import { donationService } from '../../services/donationService';
 import { formatInTimezone } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import './RosterUtils.css';
