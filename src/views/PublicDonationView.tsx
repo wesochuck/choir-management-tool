@@ -68,7 +68,7 @@ export default function PublicDonationView() {
     setSubmitting(true);
     try {
       const session = await donationService.createDonationSession({
-        amount,
+        amountCents: Math.round(amount * 100),
         email: email.trim(),
         name: name.trim(),
         tributeType,

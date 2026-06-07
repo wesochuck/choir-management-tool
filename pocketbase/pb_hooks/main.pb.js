@@ -11676,7 +11676,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
@@ -12930,7 +12930,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
@@ -14184,7 +14184,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
@@ -15438,7 +15438,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
@@ -16692,7 +16692,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
@@ -17946,7 +17946,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
@@ -19200,7 +19200,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
         const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {

@@ -79,7 +79,7 @@ export const donationService = {
   },
 
   async createDonationSession(data: {
-    amount: number;
+    amountCents: number;
     email: string;
     name: string;
     tributeType: string;

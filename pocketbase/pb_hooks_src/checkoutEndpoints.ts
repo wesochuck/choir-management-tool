@@ -354,7 +354,7 @@ export function handleCreateDonationSession(e: PocketBaseRequestEvent): unknown 
     const meta = $app.settings()?.meta;
     const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || "";
     const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
-    const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/donate`;
 
     const lineItems = [
