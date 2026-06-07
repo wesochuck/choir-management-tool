@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
-import type { Event } from '../services/eventService';
+import { eventService, type Event } from '../services/eventService';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { sanitizeHtml } from '../lib/textSafety';
@@ -29,7 +29,7 @@ export default function PublicTicketPurchaseView() {
       try {
         if (!eventId) return;
         const [res, tz] = await Promise.all([
-          pb.collection('events').getOne<Event>(eventId),
+          eventService.getPublicEventById(eventId),
           fetchChoirTimezone().catch(() => 'America/New_York')
         ]);
         setEvent(res);

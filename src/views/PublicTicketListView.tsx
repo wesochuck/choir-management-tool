@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
-import type { Event } from '../services/eventService';
+import { eventService, type Event } from '../services/eventService';
 import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
@@ -20,10 +20,7 @@ export default function PublicTicketListView() {
     async function loadData() {
       try {
         const [eventsRes, bundlesRes, tz] = await Promise.all([
-          pb.collection('events').getFullList<Event>({
-            filter: 'isTicketingEnabled = true && date >= @now',
-            sort: 'date',
-          }),
+          eventService.getPublicEvents(),
           pb.collection('ticketBundles').getFullList<TicketBundle>({
             filter: 'isActive = true && saleEndDate >= @now',
             sort: 'saleEndDate',

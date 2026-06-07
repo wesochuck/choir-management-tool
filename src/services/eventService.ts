@@ -59,9 +59,25 @@ export const eventService = {
     });
   },
 
+  async getPublicEvents() {
+    return await pb.collection('events').getFullList<Event>({
+      filter: 'isArchived != true && isTicketingEnabled = true && date >= @now',
+      sort: 'date',
+      fields: 'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+      expand: 'venue',
+    });
+  },
+
   async getEventById(id: string) {
     return await pb.collection('events').getOne<Event>(id, {
       expand: 'parentPerformanceId,venue',
+    });
+  },
+
+  async getPublicEventById(id: string) {
+    return await pb.collection('events').getOne<Event>(id, {
+      fields: 'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+      expand: 'venue',
     });
   },
 
@@ -69,6 +85,15 @@ export const eventService = {
     return await pb.collection('events').getFullList<Event>({
       filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),
       sort: 'date',
+      expand: 'venue',
+    });
+  },
+
+  async getPublicRehearsalsForPerformance(performanceId: string) {
+    return await pb.collection('events').getFullList<Event>({
+      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),
+      sort: 'date',
+      fields: 'id,collectionId,collectionName,title,date,venue,expand.venue',
       expand: 'venue',
     });
   },

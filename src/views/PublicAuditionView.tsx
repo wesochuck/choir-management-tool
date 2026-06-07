@@ -42,10 +42,10 @@ export default function PublicAuditionView() {
 
         if (loaded.defaultPerformanceId) {
           try {
-            const performance = await eventService.getEventById(loaded.defaultPerformanceId);
+            const performance = await eventService.getPublicEventById(loaded.defaultPerformanceId);
             setTargetPerformance(performance);
 
-            const rehearsalList = await eventService.getRehearsalsForPerformance(performance.id);
+            const rehearsalList = await eventService.getPublicRehearsalsForPerformance(performance.id);
             setRehearsals(rehearsalList);
           } catch (e) {
             console.error('Failed to load performance details', e);
