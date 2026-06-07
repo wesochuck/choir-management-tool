@@ -7,8 +7,11 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
+import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
 import './PatronsView.css';
+
+const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
 interface PatronData {
   profile: Profile;
@@ -26,6 +29,24 @@ export default function PatronsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ltv' | 'name' | 'lastDate'>('ltv');
+  const [startDate, setStartDate] = useState(safeLocalStorage.getItem(STORAGE_KEY_START_DATE) || '');
+  const [endDate, setEndDate] = useState('');
+
+  const handleSetStartDate = (val: string) => {
+    setStartDate(val);
+    if (val) {
+      safeLocalStorage.setItem(STORAGE_KEY_START_DATE, val);
+    } else {
+      safeLocalStorage.removeItem(STORAGE_KEY_START_DATE);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStartDate('');
+    setEndDate('');
+    safeLocalStorage.removeItem(STORAGE_KEY_START_DATE);
+  };
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -86,10 +107,15 @@ export default function PatronsView() {
   const filteredPatrons = useMemo(() => {
     const result = patrons.filter(p => {
       const search = searchQuery.toLowerCase();
-      return (
+      const matchesSearch =
         p.profile.name.toLowerCase().includes(search) ||
-        (p.profile.expand?.user?.email || '').toLowerCase().includes(search)
-      );
+        (p.profile.expand?.user?.email || '').toLowerCase().includes(search);
+
+      const date = new Date(p.lastTransactionDate);
+      const matchesStart = !startDate || date >= new Date(startDate);
+      const matchesEnd = !endDate || date <= new Date(endDate + 'T23:59:59');
+
+      return matchesSearch && matchesStart && matchesEnd;
     });
 
     result.sort((a, b) => {
@@ -107,7 +133,13 @@ export default function PatronsView() {
     });
 
     return result;
-  }, [patrons, searchQuery, sortBy]);
+  }, [patrons, searchQuery, sortBy, startDate, endDate]);
+
+  const filteredStats = useMemo(() => {
+    const count = filteredPatrons.length;
+    const totalLtvCents = filteredPatrons.reduce((acc, p) => acc + p.ltvCents, 0);
+    return { count, totalLtvCents };
+  }, [filteredPatrons]);
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredPatrons.length) {
@@ -169,7 +201,7 @@ export default function PatronsView() {
       </div>
 
       <AppCard className="patrons-filter-card">
-        <div className="patrons-filters flex-responsive">
+        <div className="patrons-filter-row flex-responsive">
           <div className="patrons-search-wrapper">
             <input 
               type="text"
@@ -179,6 +211,27 @@ export default function PatronsView() {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
+          <div className="patrons-date-input-wrapper">
+            <input 
+              type="date" 
+              className="card patrons-date-input"
+              value={startDate}
+              onChange={e => handleSetStartDate(e.target.value)}
+              placeholder="Last Transaction From"
+            />
+          </div>
+          <div className="patrons-date-input-wrapper">
+            <input 
+              type="date" 
+              className="card patrons-date-input"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              placeholder="To"
+            />
+          </div>
+          <button className="btn btn-ghost" onClick={handleClearFilters}>
+            Reset
+          </button>
           <div className="patrons-sort-wrapper">
             <select 
               className="card patrons-sort-select"
@@ -189,6 +242,18 @@ export default function PatronsView() {
               <option value="name">Sort by Name</option>
               <option value="lastDate">Sort by Last Transaction</option>
             </select>
+          </div>
+        </div>
+        <div className="patrons-stats-row">
+          <div className="patrons-stat-item">
+            <span className="patrons-stat-label">Patrons</span>
+            <span className="patrons-stat-value">{filteredStats.count}</span>
+          </div>
+          <div className="patrons-stat-item">
+            <span className="patrons-stat-label">Total LTV</span>
+            <span className="patrons-stat-value patrons-stat-value-primary">
+              ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
           </div>
         </div>
       </AppCard>
