@@ -1,3 +1,4 @@
+import { pb } from '../../lib/pocketbase';
 import { profileService, type Profile } from '../profileService';
 import { rosterService } from '../rosterService';
 import { getVoicePartsAndSections } from '../settingsService';
@@ -20,6 +21,21 @@ export function profileToRecipient(profile: Profile): CommunicationRecipient {
 export async function resolveRecipients(
   filters: CommunicationFilters
 ): Promise<CommunicationRecipient[]> {
+  if (filters.profileIds && filters.profileIds.length > 0) {
+    const filterParts: string[] = [];
+    const filterParams: Record<string, string> = {};
+    filters.profileIds.forEach((id, index) => {
+      filterParts.push(`id = {:id${index}}`);
+      filterParams[`id${index}`] = id;
+    });
+
+    const profiles = await pb.collection('profiles').getFullList<Profile>({
+      filter: pb.filter(filterParts.join(' || '), filterParams),
+      expand: 'user',
+    });
+    return profiles.map(profileToRecipient);
+  }
+
   const [profiles, voiceData] = await Promise.all([
     profileService.getProfiles(),
     getVoicePartsAndSections(),

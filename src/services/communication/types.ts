@@ -23,6 +23,7 @@ export interface CommunicationFilters {
   rsvp: RsvpFilter;
   voiceParts: string[]; // Supports both individual part labels and section codes
   globalStatus: string;
+  profileIds?: string[]; // New field
 }
 
 export interface MessageRecord extends RecordModel {
