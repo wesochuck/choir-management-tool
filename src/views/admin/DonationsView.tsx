@@ -301,7 +301,7 @@ export default function DonationsView() {
             </div>
           </AppCard>
 
-          <AppCard title="Donation History" noPadding>
+          <AppCard noPadding>
             <div className="donation-table-container">
               <table className="donation-table w-full text-left">
                 <thead>
