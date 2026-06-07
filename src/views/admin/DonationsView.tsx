@@ -5,19 +5,38 @@ import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { BaseModal } from '../../components/common/BaseModal';
 import { formatInTimezone } from '../../lib/timezone';
+import { safeLocalStorage } from '../../lib/storage';
 import './Donations.css';
+
+const STORAGE_KEY_START_DATE = 'donations_view_filter_start_date';
 
 export default function DonationsView() {
   useDocumentTitle('Donations');
   const dialog = useDialog();
-  const [activeTab, setActiveTab] = useState<'history' | 'levels' | 'summary'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'levels'>('history');
 
   const [donations, setDonations] = useState<DonationRecord[]>([]);
   const [settings, setSettings] = useState<DonationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState(safeLocalStorage.getItem(STORAGE_KEY_START_DATE) || '');
   const [endDate, setEndDate] = useState('');
+
+  const handleSetStartDate = (val: string) => {
+    setStartDate(val);
+    if (val) {
+      safeLocalStorage.setItem(STORAGE_KEY_START_DATE, val);
+    } else {
+      safeLocalStorage.removeItem(STORAGE_KEY_START_DATE);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStartDate('');
+    setEndDate('');
+    safeLocalStorage.removeItem(STORAGE_KEY_START_DATE);
+  };
 
   // Level CRUD modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,11 +80,13 @@ export default function DonationsView() {
     });
   }, [donations, searchQuery, startDate, endDate]);
 
-  const totalRaised = useMemo(() => {
-    return donations
-      .filter(d => d.status === 'paid')
-      .reduce((acc, d) => acc + d.amountPaidCents, 0);
-  }, [donations]);
+  const filteredStats = useMemo(() => {
+    const paidDonations = filteredDonations.filter(d => d.status === 'paid');
+    const count = paidDonations.length;
+    const total = paidDonations.reduce((acc, d) => acc + d.amountPaidCents, 0);
+    const avg = count > 0 ? total / count : 0;
+    return { count, total, avg };
+  }, [filteredDonations]);
 
   const handleRefund = async (donationId: string) => {
     const confirmed = await dialog.confirm({
@@ -218,47 +239,67 @@ export default function DonationsView() {
         >
           Donor Levels
         </button>
-        <button 
-          className={`donation-tab-button btn ${activeTab === 'summary' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('summary')}
-        >
-          Summary
-        </button>
       </div>
 
       {activeTab === 'history' && (
         <>
-          <AppCard className="donation-search-row">
-            <div className="donation-search-input-wrapper">
-              <input 
-                type="text" 
-                placeholder="Search name or email..." 
-                className="donation-input"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
+          <AppCard className="donation-header-card flex-responsive">
+            <div className="donation-filters-column">
+              <div className="donation-filter-item">
+                <label className="donation-filter-label">Search</label>
+                <input 
+                  type="text" 
+                  placeholder="Name or email..." 
+                  className="donation-input"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="donation-filter-item">
+                <label className="donation-filter-label">From</label>
+                <input 
+                  type="date" 
+                  className="donation-input"
+                  value={startDate}
+                  onChange={e => handleSetStartDate(e.target.value)}
+                />
+              </div>
+              <div className="donation-filter-item">
+                <label className="donation-filter-label">To</label>
+                <input 
+                  type="date" 
+                  className="donation-input"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                />
+              </div>
+              <div className="donation-filter-item donation-filter-actions">
+                <button className="btn btn-ghost" onClick={handleClearFilters}>
+                  Clear
+                </button>
+              </div>
             </div>
-            <div className="donation-date-input-wrapper">
-              <input 
-                type="date" 
-                className="donation-input"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                placeholder="Start Date"
-              />
+
+            <div className="donation-stats-column">
+              <div className="donation-stats-inline">
+                <div className="donation-stat-item">
+                  <span className="donation-stat-label">Donations</span>
+                  <span className="donation-stat-value">{filteredStats.count}</span>
+                </div>
+                <div className="donation-stat-item">
+                  <span className="donation-stat-label">Total Raised</span>
+                  <span className="donation-stat-value donation-stat-value-primary">
+                    ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="donation-stat-item">
+                  <span className="donation-stat-label">Average</span>
+                  <span className="donation-stat-value">
+                    ${(filteredStats.avg / 100).toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="donation-date-input-wrapper">
-              <input 
-                type="date" 
-                className="donation-input"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                placeholder="End Date"
-              />
-            </div>
-            <button className="btn btn-ghost" onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}>
-              Clear
-            </button>
           </AppCard>
 
           <AppCard noPadding>
@@ -357,30 +398,6 @@ export default function DonationsView() {
               </table>
             </div>
           </AppCard>
-        </>
-      )}
-
-      {activeTab === 'summary' && (
-        <>
-          <div className="donation-stats-row">
-            <AppCard className="donation-stat-box">
-              <span className="text-muted small uppercase bold">Total Donations</span>
-              <span className="donation-stat-value">{donations.filter(d => d.status === 'paid').length}</span>
-            </AppCard>
-            <AppCard className="donation-stat-box">
-              <span className="text-muted small uppercase bold">Total Amount Raised</span>
-              <span className="donation-stat-value donation-stat-value-primary">${(totalRaised / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </AppCard>
-            <AppCard className="donation-stat-box">
-              <span className="text-muted small uppercase bold">Average Donation</span>
-              <span className="donation-stat-value">
-                {donations.filter(d => d.status === 'paid').length > 0 
-                  ? `$${(totalRaised / 100 / donations.filter(d => d.status === 'paid').length).toFixed(2)}`
-                  : '$0.00'
-                }
-              </span>
-            </AppCard>
-          </div>
         </>
       )}
 
