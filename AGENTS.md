@@ -4,6 +4,9 @@
 * **All shell commands (git, npm, pnpm, eslint, tsc, vitest, vitest run, etc.) MUST be prefixed with `rtk`** (e.g., `rtk git status`, `rtk npm run check:pb-hooks`, `rtk grep`).
 * Running raw commands without `rtk` is strictly prohibited as it bypasses token optimization. Always prefix with `rtk`.
 
+## Security Audit
+- **Vulnerability Scanning**: Every non-trivial change MUST be verified with `rtk npm audit --audit-level=high` to ensure no high-severity vulnerabilities are introduced. This check is also enforced in the CI/CD pipeline.
+
 ## TypeScript Type Safety
 
 - Do not introduce explicit `any` in TypeScript or TSX files.

@@ -906,7 +906,7 @@ if (queryToken) {
         const record = $app.findFirstRecordByFilter("appSettings", "key = 'QUEUE_SECRET'");
         const parsed = parseJsonField(record.get("value"));
         const secret = parsed && parsed.secret ? parsed.secret : "";
-        if (secret && queryToken === secret) {
+        if (secret && $security.equal(queryToken, secret)) {
             tokenValid = true;
         }
     } catch (err) {

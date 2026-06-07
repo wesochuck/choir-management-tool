@@ -19,10 +19,13 @@ jobs:
           node-version: 'lts/*'
           cache: 'npm'
 
-      - name: Install dependencies and build frontend
+      - name: Install dependencies and audit
         run: |
           npm ci
-          npm run build
+          npm audit --audit-level=high
+
+      - name: Build frontend
+        run: npm run build
 
       - name: Prepare deployment structure
         run: |
