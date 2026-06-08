@@ -221,16 +221,13 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
 
         const exceededSingers: { name: string; missCount: number }[] = [];
 
-        const pastRehearsalsRosters = await Promise.all(
-          pastRehearsalIds.map(rehId => rosterService.getEventRoster(rehId))
-        );
+        const allPastRehearsalRosters = await rosterService.getEventRostersForEvents(pastRehearsalIds);
 
         for (const profile of activeProfiles) {
           if (performingProfileIds.has(profile.id)) {
             let missCount = 0;
-            pastRehearsals.forEach((_, index) => {
-              const rehRosters = pastRehearsalsRosters[index];
-              const r = rehRosters.find(x => x.profile === profile.id);
+            pastRehearsals.forEach((reh) => {
+              const r = allPastRehearsalRosters.find(x => x.event === reh.id && x.profile === profile.id);
               
               const wasDeclined = r?.rsvp === 'No';
               const wasAbsent = r?.attendance === 'Absent';
