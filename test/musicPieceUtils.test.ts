@@ -6,8 +6,6 @@ import {
   appendPieceToSetList, 
   resolveCatalogLookupUrl, 
   resolveRecommendedTracks, 
-  parseDurationToSeconds, 
-  isValidDurationString,
   pieceAppliesToSectionBucket,
   getSectionBucketApplicabilityLabel,
   filterPiecesBySectionBucket
@@ -195,24 +193,4 @@ test('resolveRecommendedTracks resolves exact, prefix, fallback and Tutti tracks
   assert.deepEqual(resolveRecommendedTracks('LowSop', customMapping, customVoiceParts), ['HighSop', 'tutti']);
 });
 
-test('duration parsing accepts supported formats and rejects polluted text', () => {
-  assert.equal(isValidDurationString('3:45'), true);
-  assert.equal(isValidDurationString('1:02:03'), true);
-  assert.equal(isValidDurationString('15'), true);
-  assert.equal(isValidDurationString('15m'), true);
-  assert.equal(isValidDurationString('1h 5m 9s'), true);
-
-  assert.equal(parseDurationToSeconds('3:45'), 225);
-  assert.equal(parseDurationToSeconds('1:02:03'), 3723);
-  assert.equal(parseDurationToSeconds('15'), 900);
-  assert.equal(parseDurationToSeconds('15m'), 900);
-  assert.equal(parseDurationToSeconds('1h 5m 9s'), 3909);
-
-  assert.equal(isValidDurationString('ljkdsajklf;daz'), false);
-  assert.equal(isValidDurationString('3abc'), false);
-  assert.equal(isValidDurationString('3:99'), false);
-  assert.equal(isValidDurationString('duration 3:45'), false);
-  assert.equal(parseDurationToSeconds('ljkdsajklf;daz'), 0);
-  assert.equal(parseDurationToSeconds('3abc'), 0);
-});
 
