@@ -442,6 +442,23 @@ export default function SetListView() {
     }
   };
 
+  const handleDeleteLibraryPiece = async () => {
+    if (!libraryEditingPiece) return;
+    try {
+      await musicLibraryService.deletePiece(libraryEditingPiece.id);
+      setIsLibraryModalOpen(false);
+      const updatedLib = await musicLibraryService.getLibrary();
+      setLibrary(updatedLib);
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to delete the music piece.',
+        variant: 'danger',
+      });
+    }
+  };
+
   useEffect(() => {
     eventsRef.current = events;
   }, [events]);
@@ -861,7 +878,7 @@ export default function SetListView() {
           setPrefilledTitleForSetList(null);
         }}
         onSave={handleSaveLibraryPiece}
-        onDelete={libraryEditingPiece ? () => musicLibraryService.deletePiece(libraryEditingPiece.id).then(() => { setIsLibraryModalOpen(false); return musicLibraryService.getLibrary(); }).then(setLibrary).then(() => {}) : undefined}
+        onDelete={libraryEditingPiece ? handleDeleteLibraryPiece : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
         allPieces={library}
         allGenres={configuredGenres}
