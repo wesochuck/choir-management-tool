@@ -1,5 +1,5 @@
 import { pb } from '../lib/pocketbase';
-import type { RecordModel } from 'pocketbase';
+import { ClientResponseError, type RecordModel } from 'pocketbase';
 
 import { type Event } from './eventService';
 import type { Profile } from './profileService';
@@ -75,8 +75,12 @@ export const auditionService = {
           });
         }
         await batch.send();
-      } catch (e) {
-        console.error('Failed to link converted singer to performance rosters', e);
+      } catch (e: unknown) {
+        if (e instanceof ClientResponseError) {
+          console.error(`Failed to link converted singer to performance rosters: ${e.status}`, e.data);
+        } else {
+          console.error('Failed to link converted singer to performance rosters', e);
+        }
       }
     }
 
