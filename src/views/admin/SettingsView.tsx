@@ -106,9 +106,9 @@ export default function SettingsView() {
 
     try {
       await Promise.all([
-        settingsService.saveChoirName(choirName),
+        choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
         settingsService.saveTimezone(timezone),
-        settingsService.saveHomepageUrl(homepageUrl),
+        homepageUrl ? settingsService.saveHomepageUrl(homepageUrl) : Promise.resolve(),
         logoFile !== null
           ? settingsService.saveLogo(logoFile)
           : isLogoRemoved
