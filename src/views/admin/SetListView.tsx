@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { eventService, type SetListItem, type Event } from '../../services/eventService';
@@ -49,8 +49,8 @@ export default function SetListView() {
 
   // Cumulative duration totals incorporating resolved library pieces
   const durationTotals = useMemo(() => {
-    return calculateSetListDurationTotals(items, library);
-  }, [items, library]);
+    return calculateSetListDurationTotals(items, library, selectedEvent?.announcementGapSeconds || 0);
+  }, [items, library, selectedEvent?.announcementGapSeconds]);
 
   // Resolves linked music library piece info and computes running timestamps
   const itemsWithDetails = useMemo(() => {
@@ -494,6 +494,23 @@ export default function SetListView() {
     }
   };
 
+  const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleAnnouncementGapChange = useCallback((seconds: number) => {
+    if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
+    gapSaveTimerRef.current = setTimeout(async () => {
+      if (!selectedEventId) return;
+      setSaveStatus('saving');
+      try {
+        await eventService.updateEvent(selectedEventId, { announcementGapSeconds: seconds });
+        setSaveStatus('saved');
+      } catch (error) {
+        console.error('Failed to save announcement gap:', error);
+        setSaveStatus('error');
+      }
+    }, 500);
+  }, [selectedEventId]);
+
   const updateItems = (newItems: SetListItem[]) => {
     setItems(newItems);
     saveSetList(newItems);
@@ -724,6 +741,21 @@ export default function SetListView() {
                   <div className="flex-row sl-list-section">
                     <span>🎼 Songs: {durationTotals.songs}</span>
                     <span>⏸️ Intermissions: {durationTotals.intermissions}</span>
+                    <span className="flex-row sl-gap-section">
+                      📢 Gaps:
+                      <input
+                        type="number"
+                        className="sl-gap-input"
+                        min={0}
+                        step={1}
+                        value={selectedEvent?.announcementGapSeconds ?? 0}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          handleAnnouncementGapChange(isNaN(val) ? 0 : val);
+                        }}
+                      />
+                      s × {Math.max(0, items.length - 1)} = {durationTotals.gaps}
+                    </span>
                   </div>
                   <span className="sl-list-section-title">
                     ⏱️ Total: {durationTotals.total}
