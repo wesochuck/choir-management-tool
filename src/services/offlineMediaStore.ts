@@ -247,7 +247,7 @@ export async function hydrateOfflineStatus(files: PlayerMediaFile[]): Promise<Pl
       })
     );
     return hydrated;
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Failed to hydrate offline status:', err);
     return files;
   }
