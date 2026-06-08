@@ -1,6 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import { retryOn429, type Retry429Options } from '../lib/networkSafety';
-import type { RecordModel } from 'pocketbase';
+import { ClientResponseError, type RecordModel } from 'pocketbase';
 import type { Profile } from './profileService';
 
 export interface EventRoster extends RecordModel {
@@ -26,9 +26,7 @@ type RsvpStatus = EventRoster['rsvp'];
 
 const isPostCommitPocketBaseError = (err: unknown) => {
   return Boolean(
-    err &&
-      typeof err === 'object' &&
-      'status' in err &&
+    err instanceof ClientResponseError &&
       err.status === 400
   );
 };
@@ -43,7 +41,7 @@ async function updateAttendanceWithVerification(
       pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance }),
       options
     );
-  } catch (err) {
+  } catch (err: unknown) {
     if (isPostCommitPocketBaseError(err)) {
       const saved = await retryOn429(() => 
         pb.collection('eventRosters').getOne<EventRoster>(rosterId),
@@ -74,7 +72,7 @@ async function createAttendanceWithVerification(
       }),
       options
     );
-  } catch (err) {
+  } catch (err: unknown) {
     if (isPostCommitPocketBaseError(err)) {
       const saved = await retryOn429(() => 
         pb.collection('eventRosters').getFirstListItem<EventRoster>(
@@ -170,7 +168,7 @@ export const rosterService = {
         );
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
+      if (err instanceof ClientResponseError && err.status === 404) {
         if (rsvp === 'Pending') {
           return {
             id: '',
@@ -254,7 +252,7 @@ export const rosterService = {
       );
       return await updateAttendanceWithVerification(existing.id, attendance, options);
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
+      if (err instanceof ClientResponseError && err.status === 404) {
         return await createAttendanceWithVerification(eventId, profileId, attendance, options);
       }
       throw err;
@@ -296,7 +294,7 @@ export const rosterService = {
         options
       );
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
+      if (err instanceof ClientResponseError && err.status === 404) {
         return await retryOn429(() => 
           pb.collection('eventRosters').create<EventRoster>({
             event: eventId,

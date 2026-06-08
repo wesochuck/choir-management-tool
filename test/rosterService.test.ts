@@ -8,7 +8,10 @@ type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('updateAttendance returns the saved roster when PocketBase reports a post-commit 400', async (t) => {
   const originalCollection = pb.collection;
-  const error = Object.assign(new Error('Failed to update record.'), { status: 400 });
+  const { ClientResponseError } = await import('pocketbase');
+  const error = new ClientResponseError();
+  error.status = 400;
+  error.message = 'Failed to update record.';
   const update = t.mock.fn(async () => {
     throw error;
   });
