@@ -494,7 +494,7 @@ export default function SetListView() {
     }
   };
 
-  const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleAnnouncementGapChange = useCallback((seconds: number) => {
     if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
