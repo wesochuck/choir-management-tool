@@ -447,6 +447,16 @@ export default function SetListView() {
   }, [events]);
 
   useEffect(() => {
+    selectedEventIdRef.current = selectedEventId;
+  }, [selectedEventId]);
+
+  useEffect(() => {
+    return () => {
+      if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
       const urlEventId = searchParams.get('eventId');
       const resolved = resolveInitialEventId(events, urlEventId, {
@@ -508,15 +518,17 @@ export default function SetListView() {
   };
 
   const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const selectedEventIdRef = useRef(selectedEventId);
 
   const handleAnnouncementGapChange = useCallback((seconds: number) => {
     setLocalGapSeconds(seconds);
     if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
     gapSaveTimerRef.current = setTimeout(async () => {
-      if (!selectedEventId) return;
+      const eventId = selectedEventIdRef.current;
+      if (!eventId) return;
       setSaveStatus('saving');
       try {
-        await eventService.updateEvent(selectedEventId, { announcementGapSeconds: seconds });
+        await eventService.updateEvent(eventId, { announcementGapSeconds: seconds });
         await refresh();
         setSaveStatus('saved');
       } catch (error) {
@@ -524,7 +536,7 @@ export default function SetListView() {
         setSaveStatus('error');
       }
     }, 500);
-  }, [selectedEventId, refresh]);
+  }, [refresh]);
 
   const updateItems = async (newItems: SetListItem[]): Promise<boolean> => {
     const previousItems = items;
