@@ -71,6 +71,7 @@ export function suggestFieldMapping(headers: string[]): FieldMapping {
 
   headers.forEach((header, index) => {
     const clean = header.trim().toLowerCase();
+    if (!clean) return;
     
     const matches = (keywords: string[]) => keywords.some(k => clean.includes(k) || k.includes(clean));
 

@@ -36,6 +36,7 @@ export default function TicketingView() {
   const [capacity, setCapacity] = useState(0);
   const [saleEndDate, setSaleEndDate] = useState('');
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const selectedEventIdsSet = useMemo(() => new Set(selectedEventIds), [selectedEventIds]);
   const [isActive, setIsActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publicDetails, setPublicDetails] = useState('');
@@ -397,7 +398,7 @@ export default function TicketingView() {
   // Auto-populate saleEndDate to 11:59 PM of the chronologically first event in creation mode
   useEffect(() => {
     if (isModalOpen && !editingBundle && selectedEventIds.length > 0) {
-      const selectedConcerts = events.filter(e => selectedEventIds.includes(e.id));
+      const selectedConcerts = events.filter(e => selectedEventIdsSet.has(e.id));
       if (selectedConcerts.length > 0) {
         selectedConcerts.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         const firstEventDate = new Date(selectedConcerts[0].date);
@@ -407,7 +408,7 @@ export default function TicketingView() {
         setSaleEndDate(`${year}-${month}-${day}T23:59`);
       }
     }
-  }, [selectedEventIds, isModalOpen, editingBundle, events]);
+  }, [selectedEventIds, selectedEventIdsSet, isModalOpen, editingBundle, events]);
 
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
@@ -900,7 +901,7 @@ export default function TicketingView() {
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
-                  const isChecked = selectedEventIds.includes(ev.id);
+                  const isChecked = selectedEventIdsSet.has(ev.id);
                   return (
                     <label 
                       key={ev.id} 

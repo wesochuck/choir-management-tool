@@ -9,7 +9,7 @@ function lazyWithReload<T extends React.ComponentType<Record<string, never>>>(
   return lazy(async () => {
     try {
       return await importer();
-    } catch (error) {
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       const isChunkLoadError =
         message.includes('Failed to fetch dynamically imported module') ||

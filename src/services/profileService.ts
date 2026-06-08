@@ -120,7 +120,7 @@ export const profileService = {
         // Automatically send the password setup email
         await pb.collection('users').requestPasswordReset(email);
         return newProfile;
-      } catch (err) {
+      } catch (err: unknown) {
         await pb.collection('users').delete(user.id).catch(() => undefined);
         throw err;
       }
@@ -181,7 +181,7 @@ export const profileService = {
       }
 
       return updatedProfile;
-    } catch (err) {
+    } catch (err: unknown) {
       // Clean up newly created auth accounts if password reset or profile update fails.
       if (newlyCreatedUserId) {
         await pb.collection('users').delete(newlyCreatedUserId).catch(() => undefined);

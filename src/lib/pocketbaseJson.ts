@@ -34,8 +34,7 @@ export function parseJsonField<T>(val: unknown): T | null {
   const str = decodeGoBytes(val);
   
   if (!str) {
-    // If it's an array that couldn't be decoded as a numeric byte array,
-    // return the array itself (handles standard relation list fields).
+    // Pass through standard array relations that fail string conversion
     if (Array.isArray(val)) {
       return val as unknown as T;
     }

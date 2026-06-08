@@ -102,3 +102,12 @@ test('sanitizeEmailSubject removes CRLF', () => {
     'Hello BCC: test@example.org',
   );
 });
+
+test('renderManualAttendanceReportSubject replaces multiple instances of placeholders', () => {
+  const result = renderManualAttendanceReportSubject({
+    template: '{eventTitle} - {eventDate} | {eventTitle} ({eventDate})',
+    eventTitle: 'Test Event',
+    eventDate: '10/10/2025',
+  });
+  assert.equal(result, 'Test Event - 10/10/2025 | Test Event (10/10/2025)');
+});
