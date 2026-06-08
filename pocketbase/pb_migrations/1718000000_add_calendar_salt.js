@@ -11,17 +11,7 @@ migrate((app) => {
   );
   app.save(collection);
 
-  // 2. Generate random 16-char alphanumeric salt helper
-  function generateRandomSalt(length = 16) {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
-
-  // 3. Scan and backfill existing profile records with random salts
+  // 2. Scan and backfill existing profile records with random salts
   let offset = 0;
   while (true) {
     const records = app.findRecordsByFilter("profiles", "calendarSalt = '' || calendarSalt = null", "", 100, offset);
@@ -30,7 +20,7 @@ migrate((app) => {
     }
 
     records.forEach((record) => {
-      record.set("calendarSalt", generateRandomSalt(16));
+      record.set("calendarSalt", $security.randomString(16));
       app.saveNoValidate(record);
     });
 
