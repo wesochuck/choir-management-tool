@@ -538,6 +538,7 @@ export default function SetListView() {
   const handleAnnouncementGapChange = useCallback((seconds: number) => {
     setLocalGapSeconds(seconds);
     if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
+    // eslint-disable-next-line react-hooks/immutability -- ref mutation is standard pattern for debounce timers
     gapSaveTimerRef.current = setTimeout(async () => {
       const eventId = selectedEventIdRef.current;
       if (!eventId) return;
