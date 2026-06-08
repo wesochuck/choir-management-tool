@@ -326,7 +326,7 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
         
         // Double check calendar salt matches
         const activeSalt = profile.get("calendarSalt") as string;
-        if (!activeSalt || activeSalt !== parts.c) {
+        if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
             return e.json(401, { error: "Token has been reset or is invalid" });
         }
 

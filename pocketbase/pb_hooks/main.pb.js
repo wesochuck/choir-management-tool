@@ -11560,6 +11560,23 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -11687,6 +11704,23 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -11745,6 +11779,21 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -11815,17 +11864,43 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -11833,53 +11908,6 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -11894,7 +11922,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -11904,7 +11932,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -11946,119 +11974,52 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -12074,7 +12035,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -12084,7 +12045,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -12135,36 +12096,40 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -12178,7 +12143,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -12220,7 +12185,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -12866,6 +12831,23 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -12993,6 +12975,23 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -13051,6 +13050,21 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -13121,17 +13135,43 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -13139,53 +13179,6 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -13200,7 +13193,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -13210,7 +13203,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -13252,119 +13245,52 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -13380,7 +13306,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -13390,7 +13316,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -13441,36 +13367,40 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -13484,7 +13414,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -13526,7 +13456,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -14172,6 +14102,23 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -14299,6 +14246,23 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -14357,6 +14321,21 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -14427,17 +14406,43 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -14445,53 +14450,6 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -14506,7 +14464,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -14516,7 +14474,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -14558,119 +14516,52 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -14686,7 +14577,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -14696,7 +14587,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -14747,36 +14638,40 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -14790,7 +14685,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -14832,7 +14727,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -15478,6 +15373,23 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -15605,6 +15517,23 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -15663,6 +15592,21 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -15733,17 +15677,43 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -15751,53 +15721,6 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -15812,7 +15735,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -15822,7 +15745,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -15864,119 +15787,52 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -15992,7 +15848,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -16002,7 +15858,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -16053,36 +15909,40 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -16096,7 +15956,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -16138,7 +15998,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -16784,6 +16644,23 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -16911,6 +16788,23 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -16969,6 +16863,21 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -17039,17 +16948,43 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -17057,53 +16992,6 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -17118,7 +17006,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -17128,7 +17016,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -17170,119 +17058,52 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -17298,7 +17119,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -17308,7 +17129,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -17359,36 +17180,40 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -17402,7 +17227,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -17444,7 +17269,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -18090,6 +17915,23 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -18217,6 +18059,23 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -18275,6 +18134,21 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -18345,17 +18219,43 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -18363,53 +18263,6 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -18424,7 +18277,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -18434,7 +18287,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -18476,119 +18329,52 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -18604,7 +18390,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -18614,7 +18400,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -18665,36 +18451,40 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -18708,7 +18498,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -18750,7 +18540,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -19396,6 +19186,23 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -19523,6 +19330,23 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get("priceCents"),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: "usd",
+                stripeSessionId: session.id,
+                status: "pending"
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -19581,6 +19405,21 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: "pending",
+                stripeSessionId: session.id
+            });
+            $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
@@ -19651,17 +19490,43 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate event ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
                 catch (_e) {
-                    // Record not found, continue
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
+                    });
                 }
-                // Re-verify capacity before saving
+                $app.save(record);
+                // Look up event for email
                 let targetEvent;
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
@@ -19669,53 +19534,6 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 catch (_f) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
-                let currentSold = 0;
-                try {
-                    const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                    paidPurchases.forEach(p => {
-                        const q = p.get("quantity");
-                        currentSold += typeof q === 'number' ? q : 0;
-                    });
-                }
-                catch (_g) {
-                    // Ignore query error
-                }
-                const capacity = targetEvent.get("ticketCapacity");
-                const capacityNum = typeof capacity === 'number' ? capacity : 0;
-                if (capacityNum > 0 && currentSold + quantity > capacityNum) {
-                    // Auto-Refund since capacity exceeded
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase record
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const record = new Record(collection, {
-                    event: eventId,
-                    profile: profile.id,
-                    buyerName: metadata.buyerName || "",
-                    buyerEmail: metadata.buyerEmail || "",
-                    quantity: quantity,
-                    unitPriceCents: Number(metadata.unitPriceCents || 0),
-                    feeCents: Number(metadata.feeCents || 0),
-                    amountPaidCents: session.amount_total || 0,
-                    currency: session.currency || "usd",
-                    stripeSessionId: stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || "",
-                    stripeCustomerId: session.customer || "",
-                    status: "paid",
-                    marketingOptIn: metadata.marketingOptIn === "true",
-                    fulfilledAt: new Date().toISOString()
-                });
-                $app.save(record);
                 // Enqueue Ticket Confirmation email
                 try {
                     const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
@@ -19730,7 +19548,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_h) {
+                    catch (_g) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -19740,7 +19558,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_j) {
+                    catch (_h) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -19782,119 +19600,52 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
                     return e.json(400, { error: "Invalid session metadata" });
                 }
-                // Idempotency: Check if record exists
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 try {
-                    const existing = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
+                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
                         return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
                     }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set("stripeCustomerId", session.customer || "");
+                    record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_k) {
-                    // Record not found, continue
-                }
-                // Re-verify capacity before saving
-                let targetBundle;
-                try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                }
-                catch (_l) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
-                }
-                const bundleEventsVal = targetBundle.get("events");
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                let isCapacityViolated = false;
-                // Verify bundle capacity
-                let bundleSoldCount = 0;
-                if (bundleEventIds.length > 0) {
-                    const firstEventId = bundleEventIds[0];
-                    try {
-                        const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-                        bundlePurchases.forEach(p => {
-                            const q = p.get("quantity");
-                            bundleSoldCount += typeof q === 'number' ? q : 0;
-                        });
-                    }
-                    catch (_m) {
-                        // Ignore query error
-                    }
-                }
-                const bundleCapacity = Number(targetBundle.get("capacity") || 0);
-                if (bundleCapacity > 0 && bundleSoldCount + quantity > bundleCapacity) {
-                    isCapacityViolated = true;
-                }
-                // Verify individual event capacities
-                if (!isCapacityViolated) {
-                    for (const eventId of bundleEventIds) {
-                        let event;
-                        try {
-                            event = $app.findRecordById("events", eventId);
-                        }
-                        catch (_o) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                        let eventSoldCount = 0;
-                        try {
-                            const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                            eventPurchases.forEach(p => {
-                                const q = p.get("quantity");
-                                eventSoldCount += typeof q === 'number' ? q : 0;
-                            });
-                        }
-                        catch (_p) {
-                            // Ignore query error
-                        }
-                        const eventCapacity = Number(event.get("ticketCapacity") || 0);
-                        if (eventCapacity > 0 && eventSoldCount + quantity > eventCapacity) {
-                            isCapacityViolated = true;
-                            break;
-                        }
-                    }
-                }
-                if (isCapacityViolated) {
-                    const pi = session.payment_intent;
-                    if (pi) {
-                        try {
-                            refundPaymentIntent(pi);
-                        }
-                        catch (refundErr) {
-                            console.log("Failed to process auto-refund: " + (refundErr instanceof Error ? refundErr.message : String(refundErr)));
-                        }
-                    }
-                    return e.json(200, { success: true, message: "Capacity exceeded, refund processed" });
-                }
-                // Create purchase records in transaction
-                const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                const ticketPurchasesCollection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
-                const txApp = $app;
-                try {
-                    txApp.runInTransaction((tx) => {
-                        bundleEventIds.forEach(eventId => {
-                            const record = new Record(ticketPurchasesCollection, {
-                                event: eventId,
-                                bundle: bundleId,
-                                profile: profile.id,
-                                buyerName: metadata.buyerName || "",
-                                buyerEmail: metadata.buyerEmail || "",
-                                quantity: quantity,
-                                unitPriceCents: Number(metadata.unitPriceCents || 0),
-                                feeCents: Number(metadata.feeCents || 0),
-                                amountPaidCents: session.amount_total || 0,
-                                currency: session.currency || "usd",
-                                stripeSessionId: stripeSessionId,
-                                stripePaymentIntentId: session.payment_intent || "",
-                                stripeCustomerId: session.customer || "",
-                                status: "paid",
-                                marketingOptIn: metadata.marketingOptIn === "true",
-                                fulfilledAt: new Date().toISOString()
-                            });
-                            tx.save(record);
-                        });
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
+                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || "",
+                        buyerEmail: metadata.buyerEmail || "",
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || "",
+                        stripeCustomerId: session.customer || "",
+                        status: "paid",
+                        marketingOptIn: metadata.marketingOptIn === "true",
+                        fulfilledAt: new Date().toISOString()
                     });
                 }
-                catch (txErr) {
-                    console.log("Failed transaction creation: " + (txErr instanceof Error ? txErr.message : String(txErr)));
-                    return e.json(500, { error: "Failed to create ticket purchases" });
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds = [];
+                try {
+                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
+                    const bundleEventsVal = targetBundle.get("events");
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_k) {
+                    return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
@@ -19910,7 +19661,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_q) {
+                    catch (_l) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -19920,7 +19671,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_m) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -19971,36 +19722,40 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 if (!stripeSessionId) {
                     return e.json(400, { error: "Missing session ID" });
                 }
-                // Idempotency
-                try {
-                    const existing = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (existing) {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
-                    }
-                }
-                catch (_s) {
-                    // Not found, continue
-                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
                 const donorName = metadata.donorName || "";
                 const donorEmail = metadata.donorEmail || "";
                 const tributeType = metadata.tributeType || "none";
                 const tributeName = metadata.tributeName || "";
                 const isAnonymous = metadata.isAnonymous === "true";
-                const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                const collection = $app.findCollectionByNameOrId("pbc_donations_001");
-                const record = new Record(collection, {
-                    amountPaidCents,
-                    donorName,
-                    donorEmail,
-                    profile: profile.id,
-                    tributeType,
-                    tributeName,
-                    isAnonymous,
-                    status: "paid",
-                    stripeSessionId,
-                    stripePaymentIntentId: session.payment_intent || ""
-                });
+                try {
+                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
+                    if (record.get("status") === "paid") {
+                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    }
+                    // Update existing pending record
+                    record.set("status", "paid");
+                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                }
+                catch (_o) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: "paid",
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || ""
+                    });
+                }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
@@ -20014,7 +19769,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_t) {
+                    catch (_p) {
                         // default
                     }
                     let tributeSection = "";
@@ -20056,7 +19811,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_u) {
+                        catch (_q) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -21017,7 +20772,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const profile = app.findRecordById("profiles", parts.p);
             // Double check calendar salt matches
             const activeSalt = profile.get("calendarSalt");
-            if (!activeSalt || activeSalt !== parts.c) {
+            if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
                 return e.json(401, { error: "Token has been reset or is invalid" });
             }
             const timezone = getChoirTimezoneLocal(app);
@@ -21810,7 +21565,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const profile = app.findRecordById("profiles", parts.p);
             // Double check calendar salt matches
             const activeSalt = profile.get("calendarSalt");
-            if (!activeSalt || activeSalt !== parts.c) {
+            if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
                 return e.json(401, { error: "Token has been reset or is invalid" });
             }
             const timezone = getChoirTimezoneLocal(app);
@@ -22603,7 +22358,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const profile = app.findRecordById("profiles", parts.p);
             // Double check calendar salt matches
             const activeSalt = profile.get("calendarSalt");
-            if (!activeSalt || activeSalt !== parts.c) {
+            if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
                 return e.json(401, { error: "Token has been reset or is invalid" });
             }
             const timezone = getChoirTimezoneLocal(app);
@@ -23396,7 +23151,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const profile = app.findRecordById("profiles", parts.p);
             // Double check calendar salt matches
             const activeSalt = profile.get("calendarSalt");
-            if (!activeSalt || activeSalt !== parts.c) {
+            if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
                 return e.json(401, { error: "Token has been reset or is invalid" });
             }
             const timezone = getChoirTimezoneLocal(app);
