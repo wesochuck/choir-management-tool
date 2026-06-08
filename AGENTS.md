@@ -167,6 +167,21 @@ for dynamic filter values.
 
 Do not interpolate dynamic values directly into PocketBase filter strings.
 
+For records with required JSON fields, do not create them via FormData. The request body serializer may leave JSON fields blank, causing `validation_required` errors. Instead, create the record first with a JSON body, then update the file field in a separate FormData call:
+
+```ts
+// ❌ Avoid — JSON field arrives blank
+const formData = new FormData();
+formData.append('value', JSON.stringify({}));
+await pb.collection('coll').create(formData);
+
+// ✅ Safe — create with JSON body, then upload file
+const record = await pb.collection('coll').create({ value: {} });
+const fd = new FormData();
+fd.append('file', file);
+await pb.collection('coll').update(record.id, fd);
+```
+
 ## 9. Network and Rate-Limit Safety
 
 Prefer helpers from:

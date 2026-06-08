@@ -342,34 +342,29 @@ export const settingsService = {
 
   async saveLogo(file: File | null): Promise<void> {
     const key = 'logo';
-    let existing: RecordModel | null = null;
 
+    // Create or find the record using JSON body so the required value field
+    // is properly serialized. FormData + JSON fields can fail on create.
+    let record: RecordModel;
     try {
-      existing = await pb.collection('appSettings').getFirstListItem<RecordModel>(
+      record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
         pb.filter('key = {:key}', { key })
       );
     } catch (err: unknown) {
       if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
         throw err;
       }
+      record = await pb.collection('appSettings').create({
+        key,
+        value: {},
+        isPublic: true,
+      });
     }
 
+    // Upload or clear the file via FormData update on the existing record
     const formData = new FormData();
-    formData.append('key', key);
-    formData.append('isPublic', 'true');
-    formData.append('value', JSON.stringify({}));
-
-    if (file) {
-      formData.append('logo', file);
-    } else {
-      formData.append('logo', '');
-    }
-
-    if (existing) {
-      await pb.collection('appSettings').update(existing.id, formData);
-    } else {
-      await pb.collection('appSettings').create(formData);
-    }
+    formData.append('logo', file ?? '');
+    await pb.collection('appSettings').update(record.id, formData);
   },
 };
 
