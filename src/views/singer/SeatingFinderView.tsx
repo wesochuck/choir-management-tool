@@ -19,6 +19,16 @@ type SelectedSeatInfo = {
 };
 
 export default function SeatingFinderView() {
+  type Perspective = 'singer' | 'director';
+
+  const [perspective, setPerspective] = useState<Perspective>(() => {
+    return (localStorage.getItem('seating-perspective') as Perspective) || 'singer';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('seating-perspective', perspective);
+  }, [perspective]);
+
   const { eventId } = useParams();
   const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
   const [assignedSingerProfiles, setAssignedSingerProfiles] = useState<SeatingSingerProfile[]>([]);
