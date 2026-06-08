@@ -18,6 +18,7 @@ export interface SetListDisplayRow extends SetListItem {
 export interface SetListDurationTotals {
   songs: string;
   intermissions: string;
+  gaps: string;
   total: string;
 }
 
@@ -160,16 +161,60 @@ export function resolveSetListDisplayRows(
  */
 export function calculateSetListDurationTotals(
   items: SetListItem[],
-  library: MusicPiece[]
+  library: MusicPiece[],
+  announcementGapSeconds: number = 0
 ): SetListDurationTotals {
+  // Multi-movement dedup: detect complete works (all children of a parent in setlist)
+  // Map parentId -> count of children in library
+  const parentChildCount: Record<string, number> = {};
+  const presentChildCount: Record<string, number> = {};
+  const completeParents: Record<string, boolean> = {};
+
+  library.forEach((p) => {
+    if (p.parentId) {
+      parentChildCount[p.parentId] = (parentChildCount[p.parentId] || 0) + 1;
+    }
+  });
+
+  items.forEach((item) => {
+    if (item.pieceId) {
+      const piece = library.find((p) => p.id === item.pieceId);
+      if (piece && piece.parentId) {
+        presentChildCount[piece.parentId] = (presentChildCount[piece.parentId] || 0) + 1;
+      }
+    }
+  });
+
+  Object.keys(parentChildCount).forEach((parentId) => {
+    completeParents[parentId] = parentChildCount[parentId] === (presentChildCount[parentId] || 0);
+  });
+
   let songsSeconds = 0;
   let intermissionSeconds = 0;
+  const addedParentDurations = new Set<string>();
 
-  items.forEach(item => {
-    const linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
-    const rawDuration = item.duration || linkedPiece?.duration || '';
+  items.forEach((item) => {
+    const linkedPiece = item.pieceId ? library.find((p) => p.id === item.pieceId) : null;
+    let rawDuration = item.duration || linkedPiece?.duration || '';
+
+    // Multi-movement dedup: skip individual movements when all children present
+    if (
+      linkedPiece &&
+      linkedPiece.parentId &&
+      completeParents[linkedPiece.parentId]
+    ) {
+      if (addedParentDurations.has(linkedPiece.parentId)) {
+        return; // Already accounted for this parent
+      }
+      const parentPiece = library.find((p) => p.id === linkedPiece.parentId);
+      if (parentPiece && parentPiece.duration) {
+        rawDuration = parentPiece.duration;
+      }
+      addedParentDurations.add(linkedPiece.parentId);
+    }
+
     const sec = parseDurationToSeconds(rawDuration);
-    
+
     if (item.type === 'intermission') {
       intermissionSeconds += sec;
     } else {
@@ -177,10 +222,14 @@ export function calculateSetListDurationTotals(
     }
   });
 
+  const numGaps = items.length > 1 ? items.length - 1 : 0;
+  const totalGapSeconds = announcementGapSeconds * numGaps;
+
   return {
     songs: formatSecondsToDuration(songsSeconds),
     intermissions: formatSecondsToDuration(intermissionSeconds),
-    total: formatSecondsToDuration(songsSeconds + intermissionSeconds)
+    gaps: formatSecondsToDuration(totalGapSeconds),
+    total: formatSecondsToDuration(songsSeconds + intermissionSeconds + totalGapSeconds),
   };
 }
 
