@@ -94,6 +94,7 @@ export default function SettingsView() {
     setChoirName(initialChoirName);
     setTimezone(initialTimezone);
     setHomepageUrl(initialHomepageUrl);
+    if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
     setLogoUrl(initialLogoUrl);
     setLogoFile(null);
     setIsLogoRemoved(false);
@@ -119,6 +120,7 @@ export default function SettingsView() {
       setInitialChoirName(choirName);
       setInitialTimezone(timezone);
       setInitialHomepageUrl(homepageUrl);
+      if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
       if (logoFile) {
         const newUrl = await settingsService.getLogoUrl();
         setLogoUrl(newUrl);
@@ -184,11 +186,15 @@ export default function SettingsView() {
                 className="admin-settings-logo-file-input"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) {
-                    setLogoFile(file);
-                    setIsLogoRemoved(false);
-                    setLogoUrl(URL.createObjectURL(file));
+                  if (!file) return;
+                  if (file.size > 5 * 1024 * 1024) {
+                    dialog.showToast('File size must be under 5MB');
+                    return;
                   }
+                  if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
+                  setLogoFile(file);
+                  setIsLogoRemoved(false);
+                  setLogoUrl(URL.createObjectURL(file));
                 }}
               />
             </label>
@@ -279,6 +285,7 @@ export default function SettingsView() {
 }
 
 function QueueWebhookSettings() {
+  const dialog = useDialog();
   const [token, setToken] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
@@ -299,15 +306,21 @@ function QueueWebhookSettings() {
   }, []);
 
   const handleGenerate = async () => {
-    if (!window.confirm('Generating a new token revokes the old one. Update the PocketHost configuration immediately.')) {
-      return;
-    }
+    const confirmed = await dialog.confirm({
+      title: 'Revoke Token?',
+      message: 'Generating a new token revokes the old one. Update the PocketHost configuration immediately.',
+      confirmLabel: 'Regenerate',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
     setIsLoading(true);
     try {
       const data = await queueSettingsService.generateToken();
       setToken(data.secret);
     } catch {
-      alert('Failed to generate token');
+      await dialog.showMessage({ title: 'Error', message: 'Failed to generate token', variant: 'danger' });
     } finally {
       setIsLoading(false);
     }

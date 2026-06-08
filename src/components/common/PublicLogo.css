@@ -4,6 +4,10 @@
   margin-bottom: 2rem;
 }
 
+.public-logo-placeholder {
+  min-height: 100px;
+}
+
 .public-logo-img {
   max-height: 100px;
   max-width: 90%;

@@ -1443,6 +1443,7 @@
   display: flex;
   gap: var(--space-sm);
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .admin-settings-logo-upload-label {
