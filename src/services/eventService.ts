@@ -173,7 +173,7 @@ export const eventService = {
             enabled: false,
           });
         }
-      } catch (auditionErr) {
+      } catch (auditionErr: unknown) {
         console.warn('Failed to update audition settings during event deletion:', auditionErr);
       }
 
@@ -186,7 +186,7 @@ export const eventService = {
         });
         return true;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('Failed to cascade delete rehearsals or archive event client-side:', err);
     }
     return await pb.collection('events').delete(id);
@@ -285,7 +285,7 @@ export const eventService = {
     if (bulkConfig) {
       try {
         await this.bulkCreateRehearsals(createdEvent, bulkConfig);
-      } catch (err) {
+      } catch (err: unknown) {
         // Rollback created event
         await this.deleteEvent(createdEvent.id);
         throw err;
