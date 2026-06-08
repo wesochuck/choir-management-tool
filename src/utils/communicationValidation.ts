@@ -18,6 +18,7 @@ export const checkValidation = (
     '{eventDate}',
     '{eventLocation}',
     '{eventDetails}',
+    '{setlist}',
     '{playerLink}',
     '{rsvpLinks}'
   ];

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import { WizardStepper } from '../../../components/WizardStepper';
@@ -139,6 +140,37 @@ export function ComposePanel({
   };
 
   const selectedEvent = events.find((e) => e.id === filters.eventId) || null;
+
+  const renderSetlistWarning = () => {
+    if (!filters.eventId) return null;
+    const hasApprovedSetList = selectedEvent
+      ? selectedEvent.setListApproved !== false
+      : false;
+    if (hasApprovedSetList) return null;
+    if (!content.toLowerCase().includes('{setlist}')) return null;
+    return (
+      <div className="review-checklist-item warning">
+        <svg
+          className="checklist-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <span>
+          <strong>Set list not approved.</strong> The set list hasn't been approved for singers yet.{' '}
+          <Link to="/admin/setlists" className="review-inline-link">Open Set List Builder</Link>{' '}
+          to approve it before sending.
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="flex-col comm-compose-form">
@@ -416,6 +448,7 @@ export function ComposePanel({
               })()}
               hasCallTime={!!selectedEvent?.callTime?.trim()}
             />
+            {renderSetlistWarning()}
           </div>
       </div>
       )}
@@ -673,6 +706,7 @@ export function ComposePanel({
                     '{eventDate}',
                     '{eventLocation}',
                     '{eventDetails}',
+                    '{setlist}',
                     '{{PLAYER_LINK}}',
                     '{{RSVP_LINKS}}',
                   ];
@@ -741,6 +775,8 @@ export function ComposePanel({
 
                   return null;
                 })()}
+
+                {renderSetlistWarning()}
 
                 {selectedRecipients.some((r) => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
                   <div className="review-checklist-item info">

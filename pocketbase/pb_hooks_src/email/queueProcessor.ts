@@ -1,4 +1,5 @@
 import { parseJsonField } from './hookJson';
+import { renderSetlistHtml } from './hookPlaceholders';
 import { getHmacSecret, generateSignedPlayerToken, generateSignedEventRecipientToken } from '../hmacTokens';
 import type { PocketBaseRecord, PocketBaseApp } from './emailTypes';
 import { escapeHtml, sanitizeEmailSubject, normalizeBaseUrl, formatInTimezone } from './hookText';
@@ -337,6 +338,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                                     .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                                     .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                                     .replace(/{eventInfo}/g, () => eventInfoHtml)
+                                    .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
                                     .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                                     .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
 
@@ -369,6 +371,11 @@ export function processEmailQueue(app: PocketBaseApp): void {
                     // If there's no event context, clear out the player link placeholders
                     htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
                                     .replace(/{playerLink}/g, "");
+                }
+
+                // Clear setlist placeholder when no event
+                if (!event) {
+                    htmlBody = htmlBody.replace(/{setlist}/g, "");
                 }
 
                 // Resolve poll links: {{POLL_LINK:pollId}}

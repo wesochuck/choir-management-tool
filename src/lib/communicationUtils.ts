@@ -1,6 +1,7 @@
 import { type CommunicationRecipient } from '../services/communicationService';
 import { type Event } from '../services/eventService';
 import { formatTime12h } from './dateUtils';
+import { escapeHtml } from './textSafety';
 
 export const COMPLIANT_FOOTER_HTML = `
 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9f0eb; font-family: sans-serif; font-size: 12px; color: #94a3b8; text-align: center;">
@@ -144,6 +145,37 @@ export function resolvePreviewContent(
   result = result.replace(/{eventLocation}/g, location);
   result = result.replace(/{eventCallTime}/g, callTime);
   result = result.replace(/{eventDetails}/g, details);
+
+  // Setlist Placeholder
+  const setlistItems = event?.setList;
+  let setlistHtml: string;
+  if (setlistItems && setlistItems.length > 0) {
+    const rows = setlistItems.map((item, i) => {
+      const num = i + 1;
+      const itemTitle = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+      const composer = escapeHtml(item.composer || '');
+      const duration = escapeHtml(item.duration || '');
+      return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${itemTitle}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+    }).join('');
+    setlistHtml = `
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;">
+  <thead>
+    <tr style="border-bottom: 2px solid #4a7c59;">
+      <th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th>
+      <th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th>
+      <th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th>
+      <th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>`;
+  } else {
+    setlistHtml = `
+<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;">
+  <em>Program to be announced.</em>
+</div>`;
+  }
+  result = result.replace(/{setlist}/g, setlistHtml);
 
   // RSVP Links - Injected as literal HTML
   const rsvpText = `

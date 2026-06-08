@@ -1,4 +1,5 @@
 import { parseJsonField } from './email/hookJson';
+import { renderSetlistHtml } from './email/hookPlaceholders';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -773,7 +774,8 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
                         .replace(/{eventLocation}/g, () => locationHtml)
                         .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                         .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
-                        .replace(/{eventInfo}/g, () => eventInfoHtml);
+                        .replace(/{eventInfo}/g, () => eventInfoHtml)
+                        .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")));
 
         // Resolve RSVP links
         if (htmlBody.indexOf("{{RSVP_LINKS}}") !== -1 || htmlBody.indexOf("{rsvpLinks}") !== -1) {
@@ -812,7 +814,8 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
                         .replace(/{{RSVP_LINKS}}/g, "")
                         .replace(/{rsvpLinks}/g, "")
                         .replace(/{{PLAYER_LINK}}/g, "")
-                        .replace(/{playerLink}/g, "");
+                        .replace(/{playerLink}/g, "")
+                        .replace(/{setlist}/g, "");
     }
 
     // Resolve Poll links

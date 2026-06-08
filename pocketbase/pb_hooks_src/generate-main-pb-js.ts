@@ -9,6 +9,7 @@ const OUTPUT_FILE = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
 export type UtilityBundleName =
     | 'hookJson'
     | 'hookText'
+    | 'hookPlaceholders'
     | 'emailRendering'
     | 'emailStyles'
     | 'mailjetRenderer'
@@ -53,6 +54,11 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
             'formatInTimezone',
         ],
     },
+    hookPlaceholders: {
+        files: ['email/hookPlaceholders.ts'],
+        symbols: ['renderSetlistHtml'],
+        dependsOn: ['hookJson', 'hookText'],
+    },
     emailRendering: {
         files: ['email/emailRendering.ts'],
         symbols: ['renderMarkdown'],
@@ -79,7 +85,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     queueProcessor: {
         files: ['email/queueProcessor.ts'],
         symbols: ['processEmailQueue'],
-        dependsOn: ['hookJson', 'hookText', 'emailRendering', 'mailjetRenderer', 'hmacTokens'],
+        dependsOn: ['hookJson', 'hookText', 'hookPlaceholders', 'emailRendering', 'mailjetRenderer', 'hmacTokens'],
     },
     calendarEndpoint: {
         files: ['calendarEndpoint.ts'],

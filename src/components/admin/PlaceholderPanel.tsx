@@ -17,6 +17,7 @@ const PLACEHOLDERS: Placeholder[] = [
   { tag: '{eventLocation}', label: 'Event Location', desc: 'Name of the venue for the event', category: 'Event', className: 'comm-tag-event' },
   { tag: '{eventCallTime}', label: 'Event Call Time', desc: 'Formatted call time of the performance (e.g. 6:15 PM)', category: 'Event', className: 'comm-tag-event' },
   { tag: '{eventDetails}', label: 'Event Details', desc: 'Administrative details/notes', category: 'Event', className: 'comm-tag-event' },
+  { tag: '{setlist}', label: 'Set List', desc: "The performance program (songs, composers, intermissions)", category: 'Event', className: 'comm-tag-event' },
   { tag: '{{PLAYER_LINK}}', label: 'Practice Player', desc: 'Generates an unauthenticated standalone practice player button (requires Event context)', category: 'Event', className: 'comm-tag-player' },
   { tag: '{{POLL_LINK:pollId}}', label: 'Engagement Poll', desc: 'Inserts a personalized "Volunteer" poll link (choose poll after clicking)', category: 'RSVP', className: 'comm-tag-poll' },
   { tag: '{{RSVP_LINKS}}', label: 'RSVP Buttons', desc: 'Generates beautiful "Yes/No" response buttons', category: 'RSVP', className: 'comm-tag-rsvp' },
