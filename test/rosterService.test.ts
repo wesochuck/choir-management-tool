@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pb } from '../src/lib/pocketbase.ts';
 import { rosterService } from '../src/services/rosterService.ts';
+import { ClientResponseError } from 'pocketbase';
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('updateAttendance returns the saved roster when PocketBase reports a post-commit 400', async (t) => {
   const originalCollection = pb.collection;
-  const error = Object.assign(new Error('Failed to update record.'), { status: 400 });
+  const error = new ClientResponseError({ status: 400, message: 'Failed to update record.', data: {} });
   const update = t.mock.fn(async () => {
     throw error;
   });
