@@ -103,13 +103,21 @@ export default function AttendanceView() {
           }))
         );
 
+        const rosterMaps = rostersLists.map(rosters => {
+          const map = new Map();
+          for (const r of rosters) {
+            map.set(r.profile, r);
+          }
+          return map;
+        });
+
         const counts: Record<string, number> = {};
 
         performingProfileIds.forEach(profileId => {
           let missCount = 0;
           pastRehearsals.forEach((_, index) => {
-            const rosters = rostersLists[index];
-            const r = rosters.find(x => x.profile === profileId);
+            const rosterMap = rosterMaps[index];
+            const r = rosterMap.get(profileId);
 
             const wasDeclined = r?.rsvp === 'No';
             const wasAbsent = r?.attendance === 'Absent';
