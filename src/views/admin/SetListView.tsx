@@ -458,6 +458,7 @@ export default function SetListView() {
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
+      hasDefaultedRef.current = true;
       const urlEventId = searchParams.get('eventId');
       const resolved = resolveInitialEventId(events, urlEventId, {
         futureOnly: true,
@@ -466,7 +467,6 @@ export default function SetListView() {
       
       if (resolved) {
         setSelectedEventId(resolved);
-        hasDefaultedRef.current = true;
       }
     }
   }, [events, selectedEventId, searchParams]);
