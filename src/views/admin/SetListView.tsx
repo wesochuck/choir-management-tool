@@ -127,7 +127,7 @@ export default function SetListView() {
 
   const handlePrintList = () => {
     if (!selectedEvent) return;
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
     if (!printWindow) {
       dialog.showMessage({
         title: 'Popup Blocked',
@@ -334,7 +334,7 @@ export default function SetListView() {
               </button>
               <button 
                 className="btn btn-secondary btn-sm"
-                onClick={() => window.open(url, '_blank')}
+                onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
               >
                 Open Player
               </button>
