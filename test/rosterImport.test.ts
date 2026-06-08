@@ -40,6 +40,52 @@ test('suggestFieldMapping matches headers intelligently', () => {
   assert.equal(mapping.notes, 5);      // 'Notes & Comments'
 });
 
+test('suggestFieldMapping handles case insensitivity and whitespace', () => {
+  const headers = ['   NAME ', 'e-Mail', '  TELEPHONE  ', ' VoicePart ', '  Active  ', ' COMment '];
+  const mapping = suggestFieldMapping(headers);
+
+  assert.equal(mapping.name, 0);
+  assert.equal(mapping.email, 1);
+  assert.equal(mapping.phone, 2);
+  assert.equal(mapping.voicePart, 3);
+  assert.equal(mapping.globalStatus, 4);
+  assert.equal(mapping.notes, 5);
+});
+
+test('suggestFieldMapping handles all keyword aliases for each field', () => {
+  const headers = ['fullname', 'mail', 'cell', 'section', 'status', 'note'];
+  const mapping = suggestFieldMapping(headers);
+
+  assert.equal(mapping.name, 0);
+  assert.equal(mapping.email, 1);
+  assert.equal(mapping.phone, 2);
+  assert.equal(mapping.voicePart, 3);
+  assert.equal(mapping.globalStatus, 4);
+  assert.equal(mapping.notes, 5);
+});
+
+test('suggestFieldMapping respects first-match priority', () => {
+  // If there are multiple headers that could match 'name', the first one wins
+  const headers = ['singer', 'name', 'fullname'];
+  const mapping = suggestFieldMapping(headers);
+
+  assert.equal(mapping.name, 0); // 'singer' gets mapped
+  assert.equal(mapping.email, -1);
+  assert.equal(mapping.phone, -1);
+});
+
+test('suggestFieldMapping handles empty and undefined-like string fields', () => {
+  const headers = ['', ' ', '   '];
+  const mapping = suggestFieldMapping(headers);
+
+  assert.equal(mapping.name, -1);
+  assert.equal(mapping.email, -1);
+  assert.equal(mapping.phone, -1);
+  assert.equal(mapping.voicePart, -1);
+  assert.equal(mapping.globalStatus, -1);
+  assert.equal(mapping.notes, -1);
+});
+
 test('suggestFieldMapping returns -1 for unmappable fields', () => {
   const headers = ['Random Column', 'Another Column'];
   const mapping = suggestFieldMapping(headers);
