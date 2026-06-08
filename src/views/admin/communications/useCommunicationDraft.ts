@@ -104,7 +104,7 @@ export function useCommunicationDraft({
   // Recipient resolution logic
   useEffect(() => {
     if (tab !== 'compose') return;
-    if (lockInitialRecipients) return;
+    if (lockInitialRecipients && recipients.length > 0) return;
     let isCurrent = true;
 
     communicationService
@@ -123,7 +123,7 @@ export function useCommunicationDraft({
     return () => {
       isCurrent = false;
     };
-  }, [filters, tab, lockInitialRecipients]);
+  }, [filters, tab, lockInitialRecipients, recipients]);
 
   const updateFilter = useCallback(
     <K extends keyof CommunicationFilters>(
