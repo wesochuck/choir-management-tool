@@ -728,7 +728,7 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
 
             // Look up bundle for email
             let targetBundle: PocketBaseRecord;
-            let bundleEventIds: string[] = [];
+            let bundleEventIds: string[];
             try {
                 targetBundle = $app.findRecordById("ticketBundles", bundleId);
                 const bundleEventsVal = targetBundle.get("events");

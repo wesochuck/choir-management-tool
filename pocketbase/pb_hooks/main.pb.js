@@ -12229,7 +12229,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");
@@ -13500,7 +13500,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");
@@ -14771,7 +14771,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");
@@ -16042,7 +16042,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");
@@ -17313,7 +17313,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");
@@ -18584,7 +18584,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");
@@ -19855,7 +19855,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 $app.save(record);
                 // Look up bundle for email
                 let targetBundle;
-                let bundleEventIds = [];
+                let bundleEventIds;
                 try {
                     targetBundle = $app.findRecordById("ticketBundles", bundleId);
                     const bundleEventsVal = targetBundle.get("events");

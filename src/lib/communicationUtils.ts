@@ -121,23 +121,31 @@ export function resolvePreviewContent(
   let result = content;
 
   // Recipient Placeholders
-  const name = recipient?.name || 'Sample Singer';
+  const rawName = recipient?.name || 'Sample Singer';
+  const name = isHtml ? escapeHtml(rawName) : rawName;
   result = result.replace(/{singerName}/g, name);
 
   // Event Placeholders
-  const title = event?.title || event?.type || 'Sample Performance';
-  const type = event?.type || 'Performance';
+  const rawTitle = event?.title || event?.type || 'Sample Performance';
+  const title = isHtml ? escapeHtml(rawTitle) : rawTitle;
+  
+  const rawType = event?.type || 'Performance';
+  const type = isHtml ? escapeHtml(rawType) : rawType;
+  
   const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
+  
   const venueName = event?.expand?.venue?.name || 'Main Concert Hall';
   const venueAddress = event?.expand?.venue?.address || '';
   
-  let location = venueName;
+  let location = isHtml ? escapeHtml(venueName) : venueName;
   if (isHtml && venueAddress.trim()) {
-    location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${venueName}</a>`;
+    location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
   }
 
   const callTime = event?.callTime ? formatTime12h(event.callTime) : '';
-  const details = event?.details || 'Join us for an amazing evening of music and harmony!';
+  
+  const rawDetails = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const details = isHtml ? escapeHtml(rawDetails) : rawDetails;
 
   result = result.replace(/{eventTitle}/g, title);
   result = result.replace(/{eventType}/g, type);
