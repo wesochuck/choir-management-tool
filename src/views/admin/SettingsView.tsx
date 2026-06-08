@@ -51,13 +51,18 @@ export default function SettingsView() {
   const [initialChoirName, setInitialChoirName] = useState('');
   const [initialTimezone, setInitialTimezone] = useState('America/New_York');
   const [initialHomepageUrl, setInitialHomepageUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [initialLogoUrl, setInitialLogoUrl] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isLogoRemoved, setIsLogoRemoved] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const [loadedChoirName, loadedTimezone, loadedHomepageUrl] = await Promise.all([
+      const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl] = await Promise.all([
         settingsService.getChoirName(),
         settingsService.getTimezone(),
-        settingsService.getHomepageUrl()
+        settingsService.getHomepageUrl(),
+        settingsService.getLogoUrl()
       ]);
       setChoirName(loadedChoirName);
       setInitialChoirName(loadedChoirName);
@@ -65,6 +70,8 @@ export default function SettingsView() {
       setInitialTimezone(loadedTimezone);
       setHomepageUrl(loadedHomepageUrl);
       setInitialHomepageUrl(loadedHomepageUrl);
+      setLogoUrl(loadedLogoUrl);
+      setInitialLogoUrl(loadedLogoUrl);
       setIsLoading(false);
     };
 
@@ -75,16 +82,21 @@ export default function SettingsView() {
   }, []);
 
   const isDirty = useMemo(() => {
-    return calculateSettingsDirty(
+    const fieldsDirty = calculateSettingsDirty(
       { choirName: initialChoirName, timezone: initialTimezone, homepageUrl: initialHomepageUrl },
       { choirName, timezone, homepageUrl }
     );
-  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl]);
+    const logoDirty = logoFile !== null || isLogoRemoved;
+    return fieldsDirty || logoDirty;
+  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl, logoFile, isLogoRemoved]);
 
   const handleGlobalDiscard = () => {
     setChoirName(initialChoirName);
     setTimezone(initialTimezone);
     setHomepageUrl(initialHomepageUrl);
+    setLogoUrl(initialLogoUrl);
+    setLogoFile(null);
+    setIsLogoRemoved(false);
   };
 
   const handleSave = async () => {
@@ -95,13 +107,28 @@ export default function SettingsView() {
       await Promise.all([
         settingsService.saveChoirName(choirName),
         settingsService.saveTimezone(timezone),
-        settingsService.saveHomepageUrl(homepageUrl)
+        settingsService.saveHomepageUrl(homepageUrl),
+        logoFile !== null
+          ? settingsService.saveLogo(logoFile)
+          : isLogoRemoved
+            ? settingsService.saveLogo(null)
+            : Promise.resolve()
       ]);
       setContextChoirName(choirName);
       setContextTimezone(timezone);
       setInitialChoirName(choirName);
       setInitialTimezone(timezone);
       setInitialHomepageUrl(homepageUrl);
+      if (logoFile) {
+        const newUrl = await settingsService.getLogoUrl();
+        setLogoUrl(newUrl);
+        setInitialLogoUrl(newUrl);
+      } else if (isLogoRemoved) {
+        setLogoUrl(null);
+        setInitialLogoUrl(null);
+      }
+      setLogoFile(null);
+      setIsLogoRemoved(false);
       setMessage('System settings saved.');
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
@@ -132,10 +159,54 @@ export default function SettingsView() {
             value={choirName}
             onChange={(event) => setChoirName(event.target.value)}
             placeholder="e.g. Downtown Community Chorale"
-            className="card admin-settings-input-sm"
+            className="card admin-settings-input-lg"
           />
           <p className="text-muted admin-settings-hint">
             Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
+          </p>
+        </div>
+      </AppCard>
+
+      <AppCard title="Organization Logo">
+        <div className="flex-col admin-settings-field">
+          <label className="text-label">Organization Logo</label>
+          {logoUrl && (
+            <div className="admin-settings-logo-preview">
+              <img src={logoUrl} alt="Organization logo preview" className="admin-settings-logo-img" />
+            </div>
+          )}
+          <div className="flex-row admin-settings-logo-actions">
+            <label className="btn btn-secondary admin-settings-logo-upload-label">
+              {logoUrl ? 'Replace Logo' : 'Upload Logo'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                className="admin-settings-logo-file-input"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setLogoFile(file);
+                    setIsLogoRemoved(false);
+                    setLogoUrl(URL.createObjectURL(file));
+                  }
+                }}
+              />
+            </label>
+            {logoUrl && (
+              <button
+                className="btn btn-ghost btn-danger"
+                onClick={() => {
+                  setLogoFile(null);
+                  setIsLogoRemoved(true);
+                  setLogoUrl(null);
+                }}
+              >
+                Remove Logo
+              </button>
+            )}
+          </div>
+          <p className="text-muted admin-settings-hint">
+            Displayed on public pages (auditions, ticketing, donations) and the singer dashboard. Recommended size: 400px wide or larger. Accepted formats: PNG, JPG, SVG, WebP.
           </p>
         </div>
       </AppCard>
@@ -149,7 +220,7 @@ export default function SettingsView() {
             value={homepageUrl}
             onChange={(event) => setHomepageUrl(event.target.value)}
             placeholder="e.g. https://www.mychoir.org"
-            className="card admin-settings-input-sm"
+            className="card admin-settings-input-lg"
           />
           <p className="text-muted admin-settings-hint">
             The main public website address where applicants are redirected after submitting their audition sheet successfully.
@@ -164,7 +235,7 @@ export default function SettingsView() {
             id="choir-timezone"
             value={timezone}
             onChange={(event) => setTimezone(event.target.value)}
-            className="card admin-settings-input-sm"
+            className="card admin-settings-input-lg"
             // @allow-inline-style - explicit pointer cursor and dynamic background color overrides
             style={{
               backgroundColor: 'var(--card-bg, #ffffff)',
@@ -269,7 +340,7 @@ function QueueWebhookSettings() {
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="card admin-settings-input-sm"
+              className="card admin-settings-input-full"
               // @allow-inline-style - dynamic flex growth and background color overlay
               style={{
                 flex: 1,

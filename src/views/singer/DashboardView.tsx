@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { EventCard } from '../../components/singer/EventCard';
+import PublicLogo from '../../components/common/PublicLogo';
 import { pb } from '../../lib/pocketbase';
 import { PageLayout } from '../../components/common/PageLayout';
 import { Link } from 'react-router-dom';
@@ -196,6 +197,7 @@ export default function DashboardView() {
       }
       maxWidth="1200px"
     >
+      <PublicLogo />
       <div className="sd-dashboard-wrapper">
         {nextEvent && (
           <section className="mobile-singer-quick-panel" aria-label="Singer quick actions">

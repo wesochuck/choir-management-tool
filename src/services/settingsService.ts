@@ -325,6 +325,52 @@ export const settingsService = {
   async saveHomepageUrl(url: string) {
     return await upsertSetting('homepage_url', url, true);
   },
+
+  async getLogoUrl(): Promise<string | null> {
+    try {
+      const record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
+        pb.filter('key = {:key}', { key: 'logo' })
+      );
+      const logo = record['logo'] as string | undefined;
+      if (!logo) return null;
+      return pb.files.getURL(record, logo);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
+      throw err;
+    }
+  },
+
+  async saveLogo(file: File | null): Promise<void> {
+    const key = 'logo';
+    let existing: RecordModel | null = null;
+
+    try {
+      existing = await pb.collection('appSettings').getFirstListItem<RecordModel>(
+        pb.filter('key = {:key}', { key })
+      );
+    } catch (err: unknown) {
+      if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
+        throw err;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('key', key);
+    formData.append('isPublic', 'true');
+    formData.append('value', JSON.stringify({}));
+
+    if (file) {
+      formData.append('logo', file);
+    } else {
+      formData.append('logo', '');
+    }
+
+    if (existing) {
+      await pb.collection('appSettings').update(existing.id, formData);
+    } else {
+      await pb.collection('appSettings').create(formData);
+    }
+  },
 };
 
 export interface SectionDef {

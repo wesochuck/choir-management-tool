@@ -5,6 +5,7 @@ import { donationService, type DonationSettings, DEFAULT_DONATION_SETTINGS } fro
 import { eventService, type Event } from '../services/eventService';
 import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
+import PublicLogo from '../components/common/PublicLogo';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import './PublicForms.css';
@@ -56,6 +57,7 @@ export default function PublicTicketListView() {
 
   return (
     <div className="flex-col pub-style-30">
+      <PublicLogo />
       <AppCard className="pub-style-3">
         <div className="flex-col pub-style-4">
           <div className="flex-col pub-style-31">

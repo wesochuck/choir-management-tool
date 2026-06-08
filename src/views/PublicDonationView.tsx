@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { donationService, type DonationLevel } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
+import PublicLogo from '../components/common/PublicLogo';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import './PublicForms.css';
 
@@ -100,6 +101,7 @@ export default function PublicDonationView() {
 
   return (
     <div className="flex-col pub-style-30">
+      <PublicLogo />
       <AppCard className="pub-style-3">
         <div className="flex-col pub-style-4">
           <Link to="/tickets" className="btn btn-ghost btn-sm pub-style-5">← Back to Concerts</Link>

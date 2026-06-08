@@ -4,6 +4,7 @@ import { pb } from '../lib/pocketbase';
 import { eventService, type Event } from '../services/eventService';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
+import PublicLogo from '../components/common/PublicLogo';
 import { sanitizeHtml } from '../lib/textSafety';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
@@ -100,6 +101,7 @@ export default function PublicTicketPurchaseView() {
 
   return (
     <div className="flex-col pub-style-30">
+      <PublicLogo />
       <AppCard className="pub-style-3">
         <div className="flex-col pub-style-4">
           <Link to="/tickets" className="btn btn-ghost btn-sm pub-style-5">← Back to Events</Link>

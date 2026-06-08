@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
+import PublicLogo from '../components/common/PublicLogo';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
@@ -107,6 +108,7 @@ export default function PublicAuditionView() {
 
   return (
     <div className="flex-col pub-style-2">
+      <PublicLogo />
       <AppCard className="pub-style-3">
         <div className="flex-col pub-style-4">
           <Link to="/login" className="btn btn-ghost btn-sm pub-style-5">Admin Login</Link>

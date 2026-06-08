@@ -1422,3 +1422,33 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
+
+.admin-settings-logo-preview {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg);
+  margin-bottom: var(--space-sm);
+}
+
+.admin-settings-logo-img {
+  max-height: 100px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.admin-settings-logo-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.admin-settings-logo-upload-label {
+  cursor: pointer;
+}
+
+.admin-settings-logo-file-input {
+  display: none;
+}
