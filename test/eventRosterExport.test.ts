@@ -23,6 +23,20 @@ describe('Event Roster CSV Export Utility', () => {
     assert.equal(quoteCsvValue('@username'), '"\'@username"');
   });
 
+  it('quoteCsvValue() handles empty, null, or undefined gracefully', () => {
+    assert.equal(quoteCsvValue(''), '""');
+    assert.equal(quoteCsvValue(undefined as unknown as string), '""');
+    assert.equal(quoteCsvValue(null as unknown as string), '""');
+  });
+
+  it('quoteCsvValue() handles values with commas', () => {
+    assert.equal(quoteCsvValue('hello, world'), '"hello, world"');
+  });
+
+  it('quoteCsvValue() handles values with newlines', () => {
+    assert.equal(quoteCsvValue('hello\nworld'), '"hello\nworld"');
+  });
+
   it('buildEventRosterCsv() includes the expected header', () => {
     const event = { title: 'Spring Concert' };
     const singers: EventRosterExportSinger[] = [];
