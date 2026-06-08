@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings } from '../../services/donationService';
+import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { BaseModal } from '../../components/common/BaseModal';
 import { formatInTimezone } from '../../lib/timezone';
 import { safeLocalStorage } from '../../lib/storage';
+import { getFirstName, getLastName } from '../../lib/stringUtils';
 import './Donations.css';
 
 const STORAGE_KEY_START_DATE = 'donations_view_filter_start_date';
@@ -17,10 +19,12 @@ export default function DonationsView() {
 
   const [donations, setDonations] = useState<DonationRecord[]>([]);
   const [settings, setSettings] = useState<DonationSettings | null>(null);
+  const [timezone, setTimezone] = useState('America/New_York');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState(safeLocalStorage.getItem(STORAGE_KEY_START_DATE) || '');
   const [endDate, setEndDate] = useState('');
+  const [sortBy, setSortBy] = useState<'amount' | 'name' | 'date'>('date');
 
   const handleSetStartDate = (val: string) => {
     setStartDate(val);
@@ -49,12 +53,14 @@ export default function DonationsView() {
   const reloadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [donationsRes, settingsRes] = await Promise.all([
+      const [donationsRes, settingsRes, timezoneRes] = await Promise.all([
         donationService.getDonations(),
-        donationService.getDonationSettings()
+        donationService.getDonationSettings(),
+        settingsService.getTimezone()
       ]);
       setDonations(donationsRes);
       setSettings(settingsRes);
+      setTimezone(timezoneRes);
     } catch (err) {
       console.error(err);
     } finally {
@@ -79,6 +85,28 @@ export default function DonationsView() {
       return matchesSearch && matchesStart && matchesEnd;
     });
   }, [donations, searchQuery, startDate, endDate]);
+
+  const sortedDonations = useMemo(() => {
+    const sorted = [...filteredDonations];
+    sorted.sort((a, b) => {
+      if (sortBy === 'amount') {
+        const diff = b.amountPaidCents - a.amountPaidCents;
+        if (diff !== 0) return diff;
+        const lastA = getLastName(a.donorName).toLowerCase();
+        const lastB = getLastName(b.donorName).toLowerCase();
+        if (lastA !== lastB) return lastA.localeCompare(lastB);
+        return getFirstName(a.donorName).toLowerCase().localeCompare(getFirstName(b.donorName).toLowerCase());
+      }
+      if (sortBy === 'name') {
+        const lastA = getLastName(a.donorName).toLowerCase();
+        const lastB = getLastName(b.donorName).toLowerCase();
+        if (lastA !== lastB) return lastA.localeCompare(lastB);
+        return getFirstName(a.donorName).toLowerCase().localeCompare(getFirstName(b.donorName).toLowerCase());
+      }
+      return new Date(b.created).getTime() - new Date(a.created).getTime();
+    });
+    return sorted;
+  }, [filteredDonations, sortBy]);
 
   const filteredStats = useMemo(() => {
     const paidDonations = filteredDonations.filter(d => d.status === 'paid');
@@ -113,12 +141,13 @@ export default function DonationsView() {
   };
 
   const handleExportCSV = () => {
-    if (filteredDonations.length === 0) {
+    if (sortedDonations.length === 0) {
       dialog.showToast('No donations to export.');
       return;
     }
     const headers = ["ID", "Donor Name", "Donor Email", "Amount", "Tribute", "Tribute Name", "Anonymous", "Status", "Date"];
-    const rows = filteredDonations.map(d => [
+
+    const mapRow = (d: DonationRecord) => [
       d.id,
       d.donorName,
       d.donorEmail,
@@ -128,9 +157,18 @@ export default function DonationsView() {
       d.isAnonymous ? 'Yes' : 'No',
       d.status,
       d.created
-    ]);
+    ];
 
-    const csvContent = [headers, ...rows].map(e => e.map(String).map(s => `"${s.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const nonAnonymous = sortedDonations.filter(d => !d.isAnonymous);
+    const anonymous = sortedDonations.filter(d => d.isAnonymous);
+
+    const dataRows = [...nonAnonymous.map(mapRow)];
+    if (anonymous.length > 0) {
+      dataRows.push(["", "ANONYMOUS DONORS", "", "", "", "", "", "", ""]);
+      dataRows.push(...anonymous.map(mapRow));
+    }
+
+    const csvContent = [headers, ...dataRows].map(e => e.map(String).map(s => `"${s.replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -276,6 +314,17 @@ export default function DonationsView() {
                 <button className="btn btn-ghost" onClick={handleClearFilters}>
                   Reset
                 </button>
+                <div className="donation-sort-wrapper">
+                  <select
+                    className="card donation-sort-select"
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
+                  >
+                    <option value="date">Sort by Date</option>
+                    <option value="amount">Sort by Amount</option>
+                    <option value="name">Sort by Name</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -318,11 +367,11 @@ export default function DonationsView() {
                 <tbody>
                   {loading ? (
                     <tr><td colSpan={7} className="donation-table-td donation-text-center">Loading...</td></tr>
-                  ) : filteredDonations.length === 0 ? (
+                  ) : sortedDonations.length === 0 ? (
                     <tr><td colSpan={7} className="donation-table-td donation-text-center admin-empty-state">No donations found.</td></tr>
-                  ) : filteredDonations.map(d => (
+                  ) : sortedDonations.map(d => (
                     <tr key={d.id} className="donation-table-row">
-                      <td className="donation-table-td">{formatInTimezone(d.created, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                      <td className="donation-table-td">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
                       <td className="donation-table-td-bold">
                         {d.donorName}
                         {d.isAnonymous && <span className="badge badge-ghost donation-ml-sm">Anonymous</span>}
