@@ -17,6 +17,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink } from '../../lib/setList/setListItems';
+import { escapeHtml } from '../../lib/textSafety';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -33,6 +34,8 @@ export default function SetListView() {
   const eventsRef = useRef(events);
   
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [localGapSeconds, setLocalGapSeconds] = useState<number>(0);
+  const [localApproved, setLocalApproved] = useState<boolean>(true);
 
   const selectedEvent = useMemo(() => {
     return events.find(e => e.id === selectedEventId);
@@ -49,8 +52,8 @@ export default function SetListView() {
 
   // Cumulative duration totals incorporating resolved library pieces
   const durationTotals = useMemo(() => {
-    return calculateSetListDurationTotals(items, library, selectedEvent?.announcementGapSeconds || 0);
-  }, [items, library, selectedEvent?.announcementGapSeconds]);
+    return calculateSetListDurationTotals(items, library, localGapSeconds);
+  }, [items, library, localGapSeconds]);
 
   // Resolves linked music library piece info and computes running timestamps
   const itemsWithDetails = useMemo(() => {
@@ -144,23 +147,25 @@ export default function SetListView() {
       hour: 'numeric',
       minute: '2-digit'
     });
-    const venueStr = selectedEvent.expand?.venue?.name || '';
+    const safeEventTitle = escapeHtml(selectedEvent.title || selectedEvent.type);
+    const safeVenue = escapeHtml(selectedEvent.expand?.venue?.name || '');
 
     let songIndex = 1;
     const itemsHTML = itemsWithDetails.map((item) => {
       if (item.type === 'intermission') {
         return `
           <div class="printable-setlist-intermission">
-            ⏸️ ${item.displayTitle || 'Intermission'}
+            ${escapeHtml(item.displayTitle || 'Intermission')}
           </div>
         `;
       } else {
-        const composerHTML = item.displayComposer 
-          ? `<span class="printable-setlist-composer">${item.displayComposer}</span>` 
+        const safeComposer = escapeHtml(item.displayComposer || '');
+        const composerHTML = safeComposer
+          ? `<span class="printable-setlist-composer">${safeComposer}</span>`
           : '';
         const el = `
           <div class="printable-setlist-item">
-            <span class="printable-setlist-title">${songIndex}. ${item.displayTitle}</span>
+            <span class="printable-setlist-title">${songIndex}. ${escapeHtml(item.displayTitle)}</span>
             ${composerHTML}
           </div>
         `;
@@ -173,7 +178,7 @@ export default function SetListView() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Set List: ${selectedEvent.title || selectedEvent.type}</title>
+          <title>Set List: ${safeEventTitle}</title>
           <style>
             @media print {
               body {
@@ -266,9 +271,9 @@ export default function SetListView() {
         <body>
           <div class="printable-setlist">
             <div class="printable-header">
-              <h2 class="printable-title">${selectedEvent.title || selectedEvent.type}</h2>
+              <h2 class="printable-title">${safeEventTitle}</h2>
               <div class="printable-meta">
-                ${dateStr} at ${timeStr} ${venueStr ? ` | ${venueStr}` : ''}
+                ${dateStr} at ${timeStr} ${safeVenue ? ` | ${safeVenue}` : ''}
               </div>
             </div>
             <hr class="printable-divider" />
@@ -475,14 +480,19 @@ export default function SetListView() {
     if (selectedEventId) {
       const ev = eventsRef.current.find(e => e.id === selectedEventId);
       setItems(ev?.setList || []);
+      setLocalGapSeconds(ev?.announcementGapSeconds ?? 0);
+      setLocalApproved(ev?.setListApproved !== false);
     } else {
       setItems([]);
+      setLocalGapSeconds(0);
+      setLocalApproved(true);
     }
     setSaveStatus(null);
   }, [selectedEventId]);
 
   const handleToggleApproved = async (checked: boolean) => {
     if (!selectedEventId) return;
+    setLocalApproved(checked);
     setSaveStatus('saving');
     try {
       await eventService.updateEvent(selectedEventId, { setListApproved: checked });
@@ -491,12 +501,16 @@ export default function SetListView() {
     } catch (error) {
       console.error('Failed to update set list approval status:', error);
       setSaveStatus('error');
+      // Revert local state on error
+      const ev = eventsRef.current.find(e => e.id === selectedEventId);
+      setLocalApproved(ev?.setListApproved !== false);
     }
   };
 
   const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleAnnouncementGapChange = useCallback((seconds: number) => {
+    setLocalGapSeconds(seconds);
     if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
     gapSaveTimerRef.current = setTimeout(async () => {
       if (!selectedEventId) return;
@@ -510,7 +524,7 @@ export default function SetListView() {
         setSaveStatus('error');
       }
     }, 500);
-  }, [selectedEventId]);
+  }, [selectedEventId, refresh]);
 
   const updateItems = (newItems: SetListItem[]) => {
     setItems(newItems);
@@ -679,14 +693,14 @@ export default function SetListView() {
             <div className="flex-col sl-filter-select-col">
               <label className="text-label">Singer Visibility</label>
               <div 
-                className={`card sl-singer-visibility-card ${selectedEvent.setListApproved !== false ? 'approved' : ''}`}
+                className={`card sl-singer-visibility-card ${localApproved ? 'approved' : ''}`}
               >
                 <label 
                   className="sl-approved-label"
                 >
                   <input
                     type="checkbox"
-                    checked={selectedEvent.setListApproved !== false}
+                    checked={localApproved}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
                     className="sl-approved-checkbox"
                   />
@@ -749,7 +763,7 @@ export default function SetListView() {
                         className="sl-gap-input"
                         min={0}
                         step={1}
-                        value={selectedEvent?.announcementGapSeconds ?? 0}
+                        value={localGapSeconds}
                         onChange={(e) => {
                           const val = parseInt(e.target.value, 10);
                           handleAnnouncementGapChange(isNaN(val) ? 0 : val);
