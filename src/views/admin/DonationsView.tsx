@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { donationService, type DonationRecord, type DonationLevel, type DonationSettings } from '../../services/donationService';
+import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
@@ -21,6 +21,8 @@ export default function DonationsView() {
   const [settings, setSettings] = useState<DonationSettings | null>(null);
   const [timezone, setTimezone] = useState('America/New_York');
   const [loading, setLoading] = useState(true);
+  const [donationButtonText, setDonationButtonText] = useState('');
+  const [donationDescription, setDonationDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState(safeLocalStorage.getItem(STORAGE_KEY_START_DATE) || '');
   const [endDate, setEndDate] = useState('');
@@ -60,6 +62,8 @@ export default function DonationsView() {
       ]);
       setDonations(donationsRes);
       setSettings(settingsRes);
+      setDonationButtonText(settingsRes.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText);
+      setDonationDescription(settingsRes.description ?? DEFAULT_DONATION_SETTINGS.description);
       setTimezone(timezoneRes);
     } catch (err) {
       console.error(err);
@@ -194,6 +198,25 @@ export default function DonationsView() {
     setIsModalOpen(true);
   };
 
+  const handleSavePublicSettings = async () => {
+    if (!settings) return;
+    setSaving(true);
+    try {
+      await donationService.saveDonationSettings({
+        ...settings,
+        buttonText: donationButtonText,
+        description: donationDescription,
+      });
+      dialog.showToast('Public donation settings saved.');
+      reloadData();
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({ title: 'Error', message: 'Failed to save public donation settings.', variant: 'danger' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveLevel = async () => {
     if (!settings) return;
     setSaving(true);
@@ -210,7 +233,12 @@ export default function DonationsView() {
         });
       }
 
-      await donationService.saveDonationSettings({ ...settings, levels: newLevels });
+      await donationService.saveDonationSettings({
+        ...settings,
+        levels: newLevels,
+        buttonText: donationButtonText,
+        description: donationDescription,
+      });
       dialog.showToast('Donation levels saved.');
       setIsModalOpen(false);
       reloadData();
@@ -275,7 +303,7 @@ export default function DonationsView() {
           className={`donation-tab-button btn ${activeTab === 'levels' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('levels')}
         >
-          Donor Levels
+          Donor Settings
         </button>
       </div>
 
@@ -411,6 +439,39 @@ export default function DonationsView() {
           <AppCard className="donation-info-box">
             <h3 className="donation-mb-sm donation-color-primary">Donor Levels</h3>
             <p className="donation-m-0">These levels are displayed to donors on the public donation page.</p>
+          </AppCard>
+
+          <AppCard title="Public Page Settings">
+            <div className="donation-form">
+              <div className="donation-form-group">
+                <label className="small uppercase bold text-muted">Call-to-Action Heading</label>
+                <input
+                  type="text"
+                  className="donation-input"
+                  value={donationButtonText}
+                  onChange={e => setDonationButtonText(e.target.value)}
+                  placeholder="e.g. Support our Music"
+                />
+              </div>
+              <div className="donation-form-group">
+                <label className="small uppercase bold text-muted">Description</label>
+                <textarea
+                  className="donation-textarea"
+                  value={donationDescription}
+                  onChange={e => setDonationDescription(e.target.value)}
+                  placeholder="e.g. Your contribution helps us keep the music playing..."
+                />
+              </div>
+              <div className="donation-form-row">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSavePublicSettings}
+                  disabled={saving || !donationButtonText}
+                >
+                  {saving ? 'Saving...' : 'Save Settings'}
+                </button>
+              </div>
+            </div>
           </AppCard>
 
           <AppCard title="Donor Levels Configuration" noPadding>

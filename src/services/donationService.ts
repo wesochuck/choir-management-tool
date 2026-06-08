@@ -27,10 +27,14 @@ export interface DonationRecord extends RecordModel {
 }
 
 export interface DonationSettings {
+  buttonText: string;
+  description: string;
   levels: DonationLevel[];
 }
 
 export const DEFAULT_DONATION_SETTINGS: DonationSettings = {
+  buttonText: 'Support our Music',
+  description: 'Your contribution helps us keep the music playing and supports our mission in the community.',
   levels: [
     { id: 'level-1', label: 'Friend', amount: 25, benefit: 'Mention in program' },
     { id: 'level-2', label: 'Supporter', amount: 50, benefit: 'Mention in program' },

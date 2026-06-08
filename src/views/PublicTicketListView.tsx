@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
+import { donationService, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../services/donationService';
 import { eventService, type Event } from '../services/eventService';
 import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
@@ -15,6 +16,7 @@ export default function PublicTicketListView() {
   const [bundles, setBundles] = useState<TicketBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [timezone, setTimezone] = useState('America/New_York');
+  const [donationSettings, setDonationSettings] = useState<DonationSettings | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -31,6 +33,8 @@ export default function PublicTicketListView() {
         setEvents(eventsRes);
         setBundles(bundlesRes);
         setTimezone(tz);
+        const ds = await donationService.getDonationSettings().catch(() => null);
+        setDonationSettings(ds);
       } catch (err) {
         console.error("Failed to load ticket data", err);
       } finally {
@@ -144,9 +148,9 @@ export default function PublicTicketListView() {
 
         <div className="flex-col pub-style-63 pub-mt-xl pub-border-dashed pub-pt-lg">
           <div className="flex-col pub-style-31 pub-text-center">
-            <h2 className="pub-style-18">Support our Music</h2>
+            <h2 className="pub-style-18">{donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}</h2>
             <p className="text-body pub-max-w-480">
-              Your contribution helps us keep the music playing and supports our mission in the community.
+              {donationSettings?.description ?? DEFAULT_DONATION_SETTINGS.description}
             </p>
           </div>
           <div className="flex-row pub-justify-center pub-mt-md">
