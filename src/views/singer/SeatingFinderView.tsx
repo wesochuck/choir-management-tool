@@ -325,7 +325,13 @@ export default function SeatingFinderView() {
                     <div key={rIdx} className="stage-row">
                       <span className="stage-row-label">Row {rIdx + 1}</span>
                       
-                      <div className="stage-seat-row">
+                      // @allow-inline-style - dynamic flex direction based on perspective toggle
+                      <div
+                        className="stage-seat-row"
+                        style={{
+                          flexDirection: perspective === 'director' ? 'row-reverse' : 'row'
+                        }}
+                      >
                         {Array.from({ length: count }).map((_, sIdx) => {
                           const singerId = assignments[`${rIdx}-${sIdx}`];
                           const isMySeat = singerId === singerProfileId;
