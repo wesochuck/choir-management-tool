@@ -154,7 +154,6 @@ export default function SettingsView() {
 
       <AppCard title="Choir Name">
         <div className="flex-col admin-settings-field">
-          <label className="text-label" htmlFor="choir-name">Organization Name</label>
           <input
             id="choir-name"
             type="text"
@@ -171,7 +170,6 @@ export default function SettingsView() {
 
       <AppCard title="Organization Logo">
         <div className="flex-col admin-settings-field">
-          <label className="text-label">Organization Logo</label>
           {logoUrl && (
             <div className="admin-settings-logo-preview">
               <img src={logoUrl} alt="Organization logo preview" className="admin-settings-logo-img" />
@@ -219,7 +217,6 @@ export default function SettingsView() {
 
       <AppCard title="Public Homepage URL">
         <div className="flex-col admin-settings-field">
-          <label className="text-label" htmlFor="homepage-url">Homepage Address</label>
           <input
             id="homepage-url"
             type="url"
@@ -236,7 +233,6 @@ export default function SettingsView() {
 
       <AppCard title="Choir Timezone">
         <div className="flex-col admin-settings-field">
-          <label className="text-label" htmlFor="choir-timezone">Active Timezone</label>
           <select
             id="choir-timezone"
             value={timezone}
