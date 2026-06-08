@@ -386,8 +386,8 @@ export default function SetListView() {
     }
   };
 
-  const handleSaveItem = (updatedItem: SetListItem) => {
-    updateItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
+  const handleSaveItem = async (updatedItem: SetListItem) => {
+    await updateItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
   };
 
   const handleCreateNewPieceFromSetList = (title: string) => {
@@ -432,7 +432,7 @@ export default function SetListView() {
 
       if (pendingSetListAdd) {
         const newItem = createSetListItemFromMusicPiece(savedPiece);
-        updateItems([...items, newItem]);
+        await updateItems([...items, newItem]);
       }
       setPendingSetListAdd(false);
       setPrefilledTitleForSetList(null);
@@ -526,9 +526,14 @@ export default function SetListView() {
     }, 500);
   }, [selectedEventId, refresh]);
 
-  const updateItems = (newItems: SetListItem[]) => {
+  const updateItems = async (newItems: SetListItem[]): Promise<boolean> => {
+    const previousItems = items;
     setItems(newItems);
-    saveSetList(newItems);
+    const success = await saveSetList(newItems);
+    if (!success) {
+      setItems(previousItems);
+    }
+    return success;
   };
 
   const saveSetList = async (newItems: SetListItem[]): Promise<boolean> => {
@@ -558,21 +563,20 @@ export default function SetListView() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((i) => i.id === active.id);
       const newIndex = items.findIndex((i) => i.id === over.id);
       const newItems = arrayMove(items, oldIndex, newIndex);
-      updateItems(newItems);
+      await updateItems(newItems);
     }
   };
 
   const handleInlineAddItem = async (item: SetListItem) => {
     const nextItems = [...items, item];
-    setItems(nextItems);
-    const savedSetList = await saveSetList(nextItems);
-    if (!savedSetList) return;
+    const success = await updateItems(nextItems);
+    if (!success) return;
 
     const performanceIdToLink = getPerformanceIdForSetListLibraryLink(selectedEvent);
     if (item.pieceId && performanceIdToLink) {
@@ -604,7 +608,7 @@ export default function SetListView() {
       
       if (shouldCopy) {
           const copied = sourceEvent.setList.map(i => ({...i, id: crypto.randomUUID()}));
-          updateItems(copied);
+          await updateItems(copied);
       }
   };
 
@@ -684,7 +688,11 @@ export default function SetListView() {
               <label className="text-label">Copy from Previous</label>
               <select 
                 value="" 
-                onChange={(e) => handleCopyFrom(e.target.value)}
+                onChange={async (e) => {
+                  if (e.target.value) {
+                    await handleCopyFrom(e.target.value);
+                  }
+                }}
                 className="admin-filter-select sl-filter-input"
               >
                 <option value="">-- Copy Set List --</option>
