@@ -503,6 +503,7 @@ export default function SetListView() {
       setSaveStatus('saving');
       try {
         await eventService.updateEvent(selectedEventId, { announcementGapSeconds: seconds });
+        await refresh();
         setSaveStatus('saved');
       } catch (error) {
         console.error('Failed to save announcement gap:', error);
