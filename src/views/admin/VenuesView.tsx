@@ -135,7 +135,7 @@ export default function VenuesView() {
 
       <div className="venue-grid">
         {venues.map(v => (
-          <AppCard key={v.id} title={v.name}>
+          <AppCard key={v.id} title={v.name} className="venue-card">
             <div className="flex-col venue-card-content">
               {v.address && (
                 <div className="text-body">

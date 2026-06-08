@@ -46,8 +46,13 @@
   gap: var(--space-lg);
 }
 
+.venue-card {
+  height: 100%;
+}
+
 .venue-card-content {
   gap: var(--space-xs);
+  flex: 1;
 }
 
 .venue-open-seating {
