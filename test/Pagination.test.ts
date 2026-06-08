@@ -24,3 +24,39 @@ test('computePaginationRange shows both left and right dots when in the middle o
   // [1, DOTS, 4, 5, 6, DOTS, 10]
   assert.deepEqual(range, [1, DOTS, 4, 5, 6, DOTS, 10]);
 });
+
+test('computePaginationRange handles zero total pages by returning an empty array', () => {
+  const range = computePaginationRange(1, 0);
+  assert.deepEqual(range, []);
+});
+
+test('computePaginationRange clamps out-of-bounds current page (zero or negative)', () => {
+  const rangeZero = computePaginationRange(0, 10);
+  assert.deepEqual(rangeZero, [1, 2, 3, 4, 5, DOTS, 10]);
+
+  const rangeNegative = computePaginationRange(-5, 10);
+  assert.deepEqual(rangeNegative, [1, 2, 3, 4, 5, DOTS, 10]);
+});
+
+test('computePaginationRange clamps out-of-bounds current page (exceeding total pages)', () => {
+  const range = computePaginationRange(15, 10);
+  assert.deepEqual(range, [1, DOTS, 6, 7, 8, 9, 10]);
+});
+
+test('computePaginationRange uses a default siblingCount of 1', () => {
+  const rangeWithExplicitDefault = computePaginationRange(5, 10, 1);
+  const rangeWithoutDefault = computePaginationRange(5, 10);
+  assert.deepEqual(rangeWithoutDefault, rangeWithExplicitDefault);
+});
+
+test('computePaginationRange handles custom siblingCount parameter', () => {
+  // siblingCount = 2 -> totalPageNumbers = 7
+  // If we are at page 6 out of 15:
+  // leftSiblingIndex = 6 - 2 = 4
+  // rightSiblingIndex = 6 + 2 = 8
+  // shouldShowLeftDots = 4 > 2 (true)
+  // shouldShowRightDots = 8 < 14 (true)
+  const range = computePaginationRange(6, 15, 2);
+  // [1, DOTS, 4, 5, 6, 7, 8, DOTS, 15]
+  assert.deepEqual(range, [1, DOTS, 4, 5, 6, 7, 8, DOTS, 15]);
+});
