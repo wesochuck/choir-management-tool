@@ -285,7 +285,12 @@ export default function SeatingFinderView() {
                  Row {row + 1}
               </div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                Seat {seat! + 1} <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-muted)' }}>({seat! + 1} from left, {rowCounts[row] - seat!} from right, looking at stage)</span>
+                Seat {seat! + 1} <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  ({perspective === 'singer' 
+                    ? `${seat! + 1} from left, ${rowCounts[row] - seat!} from right, looking at stage`
+                    : `${seat! + 1} from right, ${rowCounts[row] - seat!} from left, looking at choir`
+                  })
+                </span>
               </div>
             </div>
           ) : (
@@ -432,9 +437,14 @@ export default function SeatingFinderView() {
         {/* Standing Neighbors HUD Card */}
         {!isOpenSeating && row !== null && seat !== null && (
           <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-            <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-              Standing Neighbors HUD (Facing Director)
-            </h3>
+            <div className="flex-col" style={{ alignItems: 'center' }}>
+              <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                Standing Neighbors HUD
+              </h3>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                Always from your perspective facing the director
+              </span>
+            </div>
             
             <div className="neighbors-hud-container">
               
