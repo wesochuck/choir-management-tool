@@ -371,3 +371,15 @@
   }
 }
 
+.perspective-toggle-wrapper {
+  justify-content: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  background: var(--surface-muted);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  width: max-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+

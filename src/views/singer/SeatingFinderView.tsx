@@ -297,6 +297,20 @@ export default function SeatingFinderView() {
  
         {!isOpenSeating && (
           <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+            <div className="flex-row perspective-toggle-wrapper">
+              <button
+                className={`btn btn-sm ${perspective === 'singer' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setPerspective('singer')}
+              >
+                Singer View
+              </button>
+              <button
+                className={`btn btn-sm ${perspective === 'director' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setPerspective('director')}
+              >
+                Director View
+              </button>
+            </div>
             <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
               Interactive Stage Layout
             </h3>
