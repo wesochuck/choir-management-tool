@@ -545,9 +545,17 @@ export default function SetListView() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    const newItems = items.filter(i => i.id !== id);
-    updateItems(newItems);
+  const handleDelete = async (id: string) => {
+    const confirmed = await dialog.confirm({
+      title: 'Remove Item',
+      message: 'Are you sure you want to remove this item from the set list?',
+      confirmLabel: 'Remove',
+      variant: 'danger',
+    });
+    if (confirmed) {
+      const newItems = items.filter(i => i.id !== id);
+      await updateItems(newItems);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
