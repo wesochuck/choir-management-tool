@@ -22,6 +22,7 @@ export interface Event extends RecordModel {
   date: string;
   type: 'Performance' | 'Rehearsal';
   durationMinutes?: number;
+  announcementGapSeconds?: number;
   details: string;
   callTime?: string;
   parentPerformanceId: string;
