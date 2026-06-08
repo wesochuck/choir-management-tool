@@ -31,7 +31,6 @@ export default function SetListView() {
   const [searchParams] = useSearchParams();
   const dialog = useDialog();
   const hasDefaultedRef = useRef(false);
-  const eventsRef = useRef(events);
   
   const [selectedEventId, setSelectedEventId] = useState('');
   const [localGapSeconds, setLocalGapSeconds] = useState<number>(0);
@@ -119,7 +118,8 @@ export default function SetListView() {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch (err: unknown) {
       console.error('Failed to copy text: ', err);
     }
@@ -460,16 +460,13 @@ export default function SetListView() {
   };
 
   useEffect(() => {
-    eventsRef.current = events;
-  }, [events]);
-
-  useEffect(() => {
     selectedEventIdRef.current = selectedEventId;
   }, [selectedEventId]);
 
   useEffect(() => {
     return () => {
       if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
 
@@ -502,10 +499,10 @@ export default function SetListView() {
     }).catch(console.error);
   }, []);
 
-  // Load event items ONLY when selectedEventId changes
+  // Load event items when selectedEventId or events change
   useEffect(() => {
     if (selectedEventId) {
-      const ev = eventsRef.current.find(e => e.id === selectedEventId);
+      const ev = events.find(e => e.id === selectedEventId);
       setItems(ev?.setList || []);
       setLocalGapSeconds(ev?.announcementGapSeconds ?? 0);
       setLocalApproved(ev?.setListApproved !== false);
@@ -515,7 +512,7 @@ export default function SetListView() {
       setLocalApproved(true);
     }
     setSaveStatus(null);
-  }, [selectedEventId]);
+  }, [selectedEventId, events]);
 
   const handleToggleApproved = async (checked: boolean) => {
     if (!selectedEventId) return;
@@ -529,12 +526,13 @@ export default function SetListView() {
       console.error('Failed to update set list approval status:', error);
       setSaveStatus('error');
       // Revert local state on error
-      const ev = eventsRef.current.find(e => e.id === selectedEventId);
+      const ev = events.find(e => e.id === selectedEventId);
       setLocalApproved(ev?.setListApproved !== false);
     }
   };
 
   const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const selectedEventIdRef = useRef(selectedEventId);
 
   const handleAnnouncementGapChange = useCallback((seconds: number) => {
