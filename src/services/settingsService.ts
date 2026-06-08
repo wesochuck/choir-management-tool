@@ -356,7 +356,7 @@ export const settingsService = {
       }
       record = await pb.collection('appSettings').create({
         key,
-        value: {},
+        value: 'logo',
         isPublic: true,
       });
     }

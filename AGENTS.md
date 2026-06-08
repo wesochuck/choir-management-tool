@@ -175,12 +175,14 @@ const formData = new FormData();
 formData.append('value', JSON.stringify({}));
 await pb.collection('coll').create(formData);
 
-// ✅ Safe — create with JSON body, then upload file
-const record = await pb.collection('coll').create({ value: {} });
+// ✅ Safe — create with JSON body (non-empty value), then upload file
+const record = await pb.collection('coll').create({ value: 'placeholder' });
 const fd = new FormData();
 fd.append('file', file);
 await pb.collection('coll').update(record.id, fd);
 ```
+
+For JSON `value` fields with `required: true`, use a non-empty placeholder string (e.g. `'placeholder'` or the record key). Empty objects like `{}` can be treated as blank by PocketBase's validator.
 
 ## 9. Network and Rate-Limit Safety
 
