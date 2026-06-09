@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   communicationService,
@@ -102,14 +102,10 @@ export function useCommunicationDraft({
   }, [content, subject, messageType, filters.eventId]);
 
   // Recipient resolution logic
-  const hasResolvedRef = useRef(false);
-
   useEffect(() => {
     if (tab !== 'compose') return;
     if (lockInitialRecipients && recipients.length > 0) return;
-    if (hasResolvedRef.current && !lockInitialRecipients) return;
     let isCurrent = true;
-    hasResolvedRef.current = true;
 
     communicationService
       .resolveRecipients(filters)

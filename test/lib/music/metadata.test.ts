@@ -17,10 +17,10 @@ test('validatePieceForLibrary', async (t) => {
   });
 
   await t.test('returns false for non-string values', () => {
-    assert.equal(validatePieceForLibrary(null as any), false);
-    assert.equal(validatePieceForLibrary(undefined as any), false);
-    assert.equal(validatePieceForLibrary(123 as any), false);
-    assert.equal(validatePieceForLibrary({} as any), false);
+    assert.equal(validatePieceForLibrary(null), false);
+    assert.equal(validatePieceForLibrary(undefined), false);
+    assert.equal(validatePieceForLibrary(123), false);
+    assert.equal(validatePieceForLibrary({}), false);
   });
 });
 

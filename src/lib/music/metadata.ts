@@ -26,7 +26,7 @@ export function resolvePieceMetadata(
  * @param title The title of the piece.
  * @returns true if valid, false otherwise.
  */
-export function validatePieceForLibrary(title: string): boolean {
+export function validatePieceForLibrary(title: unknown): boolean {
   return typeof title === 'string' && title.trim().length > 0;
 }
 
