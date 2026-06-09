@@ -11,7 +11,8 @@ declare class MailerMessage {
         from: { address: string; name?: string };
         to: [{ address: string; name?: string }];
         subject: string;
-        html: string;
+        html?: string;
+        text?: string;
     });
 }
 
@@ -164,6 +165,35 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 const recipientEmail = record.get("recipientEmail") as string;
                 const recipientName = record.get("recipientName") as string || "Singer";
                 const filters = parseJsonField<Record<string, string>>(record.get("filters")) || {};
+                const isSms = filters.channel === 'sms';
+
+                // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                // delivers only the plain-text body to the recipient's phone.
+                if (isSms) {
+                    const subject = record.get("subject") as string || "";
+
+                    // Dispatch as plain text via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || "no-reply@choir.management",
+                            name: settings.meta.senderName || "Choir Management Tool"
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        text: rawContent
+                    });
+
+                    app.newMailClient().send(mailerMessage);
+                    record.set("status", "Sent");
+                    record.set("sentAt", new Date().toISOString());
+                    record.set("processingRunId", null);
+                    record.set("processingStartedAt", null);
+                    record.set("errorMessage", "");
+                    console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                    return;
+                }
+
 
                 let htmlBody = "";
                 if (filters.contentType === "html") {

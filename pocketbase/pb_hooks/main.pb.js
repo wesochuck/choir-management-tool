@@ -1170,6 +1170,29 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;
@@ -2149,6 +2172,29 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;
@@ -2479,6 +2525,14 @@ onRecordAfterCreateSuccess((e) => {
 
     // --- Utility source: email/messageHookRules.ts ---
     "use strict";
+    /**
+     * Normalize a phone number to 10 digits by stripping all non-digits
+     * and taking the last 10 characters.
+     */
+    function normalizePhone(raw) {
+        const digits = raw.replace(/\D/g, '');
+        return digits.length >= 10 ? digits.slice(-10) : '';
+    }
     function shouldQueueMessage(record, oldStatus) {
         if (!record)
             return false;
@@ -2486,7 +2540,7 @@ onRecordAfterCreateSuccess((e) => {
         if (status !== "Sent")
             return false;
         const type = record.get("type");
-        if (type !== "Email" && type !== "Both")
+        if (type !== "Email" && type !== "SMS" && type !== "Both")
             return false;
         // If update, check status transition to prevent duplicate enqueues
         if (oldStatus !== undefined) {
@@ -2500,21 +2554,47 @@ onRecordAfterCreateSuccess((e) => {
         const subject = record.get("subject") || "";
         const content = record.get("content") || "";
         const filters = parseJsonField(record.get("filters")) || {};
+        const type = record.get("type");
+        const isSms = type === "SMS";
+        const isBoth = type === "Both";
         recipients.forEach(recipient => {
-            if (!recipient.email)
-                return;
-            const queueRecord = new Record(queueCollection, {
-                messageRef: record.id,
-                recipientId: recipient.id,
-                recipientEmail: recipient.email,
-                recipientName: recipient.name || "Singer",
-                subject: subject,
-                rawContent: content, // Stored to allow compilation during dispatch
-                status: "Pending",
-                attempts: 0,
-                filters: JSON.stringify(filters)
-            });
-            app.save(queueRecord);
+            // Create SMS queue entries for phone recipients (SMS-only or Both)
+            if (isSms || isBoth) {
+                const phone = normalizePhone(recipient.phone || '');
+                if (phone.length === 10) {
+                    const smsContent = content.length > 160
+                        ? content.slice(0, 159) + '…'
+                        : content;
+                    const smsFilters = Object.assign(Object.assign({}, (typeof filters === 'object' && filters !== null ? filters : {})), { channel: 'sms' });
+                    const smsRecord = new Record(queueCollection, {
+                        messageRef: record.id,
+                        recipientId: recipient.id,
+                        recipientEmail: phone + '@sms.smtp2go.com',
+                        recipientName: recipient.name || "Singer",
+                        subject: '',
+                        rawContent: smsContent,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify(smsFilters)
+                    });
+                    app.save(smsRecord);
+                }
+            }
+            // Create email queue entries for email recipients (Email-only or Both)
+            if (!isSms && recipient.email) {
+                const emailRecord = new Record(queueCollection, {
+                    messageRef: record.id,
+                    recipientId: recipient.id,
+                    recipientEmail: recipient.email,
+                    recipientName: recipient.name || "Singer",
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify(filters)
+                });
+                app.save(emailRecord);
+            }
         });
     }
 
@@ -3063,6 +3143,29 @@ onRecordAfterCreateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;
@@ -3398,6 +3501,14 @@ onRecordAfterUpdateSuccess((e) => {
 
     // --- Utility source: email/messageHookRules.ts ---
     "use strict";
+    /**
+     * Normalize a phone number to 10 digits by stripping all non-digits
+     * and taking the last 10 characters.
+     */
+    function normalizePhone(raw) {
+        const digits = raw.replace(/\D/g, '');
+        return digits.length >= 10 ? digits.slice(-10) : '';
+    }
     function shouldQueueMessage(record, oldStatus) {
         if (!record)
             return false;
@@ -3405,7 +3516,7 @@ onRecordAfterUpdateSuccess((e) => {
         if (status !== "Sent")
             return false;
         const type = record.get("type");
-        if (type !== "Email" && type !== "Both")
+        if (type !== "Email" && type !== "SMS" && type !== "Both")
             return false;
         // If update, check status transition to prevent duplicate enqueues
         if (oldStatus !== undefined) {
@@ -3419,21 +3530,47 @@ onRecordAfterUpdateSuccess((e) => {
         const subject = record.get("subject") || "";
         const content = record.get("content") || "";
         const filters = parseJsonField(record.get("filters")) || {};
+        const type = record.get("type");
+        const isSms = type === "SMS";
+        const isBoth = type === "Both";
         recipients.forEach(recipient => {
-            if (!recipient.email)
-                return;
-            const queueRecord = new Record(queueCollection, {
-                messageRef: record.id,
-                recipientId: recipient.id,
-                recipientEmail: recipient.email,
-                recipientName: recipient.name || "Singer",
-                subject: subject,
-                rawContent: content, // Stored to allow compilation during dispatch
-                status: "Pending",
-                attempts: 0,
-                filters: JSON.stringify(filters)
-            });
-            app.save(queueRecord);
+            // Create SMS queue entries for phone recipients (SMS-only or Both)
+            if (isSms || isBoth) {
+                const phone = normalizePhone(recipient.phone || '');
+                if (phone.length === 10) {
+                    const smsContent = content.length > 160
+                        ? content.slice(0, 159) + '…'
+                        : content;
+                    const smsFilters = Object.assign(Object.assign({}, (typeof filters === 'object' && filters !== null ? filters : {})), { channel: 'sms' });
+                    const smsRecord = new Record(queueCollection, {
+                        messageRef: record.id,
+                        recipientId: recipient.id,
+                        recipientEmail: phone + '@sms.smtp2go.com',
+                        recipientName: recipient.name || "Singer",
+                        subject: '',
+                        rawContent: smsContent,
+                        status: "Pending",
+                        attempts: 0,
+                        filters: JSON.stringify(smsFilters)
+                    });
+                    app.save(smsRecord);
+                }
+            }
+            // Create email queue entries for email recipients (Email-only or Both)
+            if (!isSms && recipient.email) {
+                const emailRecord = new Record(queueCollection, {
+                    messageRef: record.id,
+                    recipientId: recipient.id,
+                    recipientEmail: recipient.email,
+                    recipientName: recipient.name || "Singer",
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify(filters)
+                });
+                app.save(emailRecord);
+            }
         });
     }
 
@@ -3982,6 +4119,29 @@ onRecordAfterUpdateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;
@@ -4862,6 +5022,29 @@ onRecordAfterCreateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;
@@ -5895,6 +6078,29 @@ onRecordAfterUpdateSuccess((e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;
@@ -7316,6 +7522,29 @@ function processEmailQueue(app) {
                 const recipientEmail = record.get("recipientEmail");
                 const recipientName = record.get("recipientName") || "Singer";
                 const filters = parseJsonField(record.get("filters")) || {};
+                const isSms = filters.channel === 'sms';
+                // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                if (isSms) {
+                    const subject = record.get("subject") || "";
+                    // Dispatch as plain text via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || "no-reply@choir.management",
+                            name: settings.meta.senderName || "Choir Management Tool"
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        text: rawContent
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set("status", "Sent");
+                    record.set("sentAt", new Date().toISOString());
+                    record.set("processingRunId", null);
+                    record.set("processingStartedAt", null);
+                    record.set("errorMessage", "");
+                    console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                    return;
+                }
                 let htmlBody = "";
                 if (filters.contentType === "html") {
                     htmlBody = rawContent;
@@ -9430,6 +9659,29 @@ function processEmailQueue(app) {
                 const recipientEmail = record.get("recipientEmail");
                 const recipientName = record.get("recipientName") || "Singer";
                 const filters = parseJsonField(record.get("filters")) || {};
+                const isSms = filters.channel === 'sms';
+                // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                if (isSms) {
+                    const subject = record.get("subject") || "";
+                    // Dispatch as plain text via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || "no-reply@choir.management",
+                            name: settings.meta.senderName || "Choir Management Tool"
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        text: rawContent
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set("status", "Sent");
+                    record.set("sentAt", new Date().toISOString());
+                    record.set("processingRunId", null);
+                    record.set("processingStartedAt", null);
+                    record.set("errorMessage", "");
+                    console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                    return;
+                }
                 let htmlBody = "";
                 if (filters.contentType === "html") {
                     htmlBody = rawContent;
@@ -10644,6 +10896,29 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     const recipientEmail = record.get("recipientEmail");
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    if (isSms) {
+                        const subject = record.get("subject") || "";
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || "no-reply@choir.management",
+                                name: settings.meta.senderName || "Choir Management Tool"
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set("status", "Sent");
+                        record.set("sentAt", new Date().toISOString());
+                        record.set("processingRunId", null);
+                        record.set("processingStartedAt", null);
+                        record.set("errorMessage", "");
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
                     let htmlBody = "";
                     if (filters.contentType === "html") {
                         htmlBody = rawContent;

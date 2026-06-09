@@ -59,7 +59,6 @@ export interface TemplateRecord extends RecordModel {
 export interface SendMessageResult {
   message: MessageRecord;
   mailtoUrl: string;
-  smsUrl: string;
 }
 
 export interface SentTaskStatusOptions {

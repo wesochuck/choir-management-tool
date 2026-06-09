@@ -5,10 +5,6 @@ import type {
   SendMessageResult,
 } from './types';
 
-export function encodeSmsBody(content: string): string {
-  return encodeURIComponent(content.slice(0, 1500));
-}
-
 export async function sendBulkMessage(
   data: SendMessageInput,
   draftId?: string
@@ -31,14 +27,7 @@ export async function sendBulkMessage(
 
   const message = await pb.collection('messages').create<MessageRecord>(payload);
 
-  const phoneRecipients = data.recipients
-    .map((recipient) => recipient.phone.replace(/[^\d+]/g, ''))
-    .filter(Boolean);
-
   const mailtoUrl = ''; // Intentionally left blank. Email is dispatched securely on the server side.
-  const smsUrl = phoneRecipients.length
-    ? `sms:${encodeURIComponent(phoneRecipients.join(','))}&body=${encodeSmsBody(data.content)}`
-    : '';
 
-  return { message, mailtoUrl, smsUrl };
+  return { message, mailtoUrl };
 }

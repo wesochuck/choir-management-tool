@@ -10,6 +10,15 @@ declare class Record implements PocketBaseRecord {
 }
 
 /**
+ * Normalize a phone number to 10 digits by stripping all non-digits
+ * and taking the last 10 characters.
+ */
+function normalizePhone(raw: string): string {
+    const digits = raw.replace(/\D/g, '');
+    return digits.length >= 10 ? digits.slice(-10) : '';
+}
+
+/**
  * Validates if a created or updated message record qualifies for enqueueing.
  */
 export function shouldQueueMessage(record: PocketBaseRecord | null | undefined, oldStatus?: string): boolean {
@@ -19,7 +28,7 @@ export function shouldQueueMessage(record: PocketBaseRecord | null | undefined, 
     if (status !== "Sent") return false;
 
     const type = record.get("type") as string;
-    if (type !== "Email" && type !== "Both") return false;
+    if (type !== "Email" && type !== "SMS" && type !== "Both") return false;
 
     // If update, check status transition to prevent duplicate enqueues
     if (oldStatus !== undefined) {
@@ -38,22 +47,52 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
     const subject = record.get("subject") as string || "";
     const content = record.get("content") as string || "";
     const filters = parseJsonField<unknown>(record.get("filters")) || {};
+    const type = record.get("type") as string;
+    const isSms = type === "SMS";
+    const isBoth = type === "Both";
 
     recipients.forEach(recipient => {
-        if (!recipient.email) return;
+        // Create SMS queue entries for phone recipients (SMS-only or Both)
+        if (isSms || isBoth) {
+            const phone = normalizePhone(recipient.phone || '');
+            if (phone.length === 10) {
+                const smsContent = content.length > 160
+                    ? content.slice(0, 159) + '…'
+                    : content;
 
-        const queueRecord = new Record(queueCollection, {
-            messageRef: record.id,
-            recipientId: recipient.id,
-            recipientEmail: recipient.email,
-            recipientName: recipient.name || "Singer",
-            subject: subject,
-            rawContent: content, // Stored to allow compilation during dispatch
-            status: "Pending",
-            attempts: 0,
-            filters: JSON.stringify(filters)
-        });
+                const smsFilters = { ...(typeof filters === 'object' && filters !== null ? filters : {}), channel: 'sms' };
 
-        app.save(queueRecord);
+                const smsRecord = new Record(queueCollection, {
+                    messageRef: record.id,
+                    recipientId: recipient.id,
+                    recipientEmail: phone + '@sms.smtp2go.com',
+                    recipientName: recipient.name || "Singer",
+                    subject: '',
+                    rawContent: smsContent,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify(smsFilters)
+                });
+
+                app.save(smsRecord);
+            }
+        }
+
+        // Create email queue entries for email recipients (Email-only or Both)
+        if (!isSms && recipient.email) {
+            const emailRecord = new Record(queueCollection, {
+                messageRef: record.id,
+                recipientId: recipient.id,
+                recipientEmail: recipient.email,
+                recipientName: recipient.name || "Singer",
+                subject: subject,
+                rawContent: content,
+                status: "Pending",
+                attempts: 0,
+                filters: JSON.stringify(filters)
+            });
+
+            app.save(emailRecord);
+        }
     });
 }
