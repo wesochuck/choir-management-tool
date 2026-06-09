@@ -21,7 +21,7 @@ test('shouldQueueMessage only returns true for Sent status', async () => {
   assert.equal(shouldQueueMessage(draftEmail), false, 'Draft Email should NOT queue');
   assert.equal(shouldQueueMessage(failedEmail), false, 'Failed Email should NOT queue');
   assert.equal(shouldQueueMessage(sentBoth), true, 'Sent Both should queue');
-  assert.equal(shouldQueueMessage(sentSms), false, 'Sent SMS should NOT queue');
+  assert.equal(shouldQueueMessage(sentSms), true, 'Sent SMS should queue');
 
   // Test status transitions
   assert.equal(shouldQueueMessage(sentEmail, 'Draft'), true, 'Draft -> Sent should queue');

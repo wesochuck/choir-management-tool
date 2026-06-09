@@ -214,6 +214,23 @@ For React retry feedback, prefer:
 src/hooks/useRateLimitRetryToast.ts
 ```
 
+Do not include state variables in `useEffect` dependency arrays when the effect's `.then()` or `.catch()` handlers write to those same state variables. This creates a feedback loop on failure: the catch handler sets fallback state → state change re-fires the effect → more failed requests → infinite cycle. Use a ref-based guard or omit the cyclical state from deps.
+
+```ts
+// ❌ Avoid — setRecipients on error re-triggers the effect
+useEffect(() => {
+  apiCall().then(setData).catch(() => setData([]));
+}, [filters, data]); // data changes -> refire
+
+// ✅ Safe — effect deps only include trigger values
+const hasResolved = useRef(false);
+useEffect(() => {
+  if (hasResolved.current) return;
+  hasResolved.current = true;
+  apiCall().then(setData).catch(() => setData([]));
+}, [filters]);
+```
+
 For high-traffic admin views, estimate worst-case API calls on first load.
 
 ## 10. UI Dialog Rules

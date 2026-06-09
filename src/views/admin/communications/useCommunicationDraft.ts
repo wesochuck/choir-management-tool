@@ -103,12 +103,10 @@ export function useCommunicationDraft({
 
   // Recipient resolution logic
   const hasResolvedRef = useRef(false);
-  const recipientsRef = useRef(recipients);
-  recipientsRef.current = recipients;
 
   useEffect(() => {
     if (tab !== 'compose') return;
-    if (lockInitialRecipients && recipientsRef.current.length > 0) return;
+    if (lockInitialRecipients && recipients.length > 0) return;
     if (hasResolvedRef.current && !lockInitialRecipients) return;
     let isCurrent = true;
     hasResolvedRef.current = true;
@@ -129,6 +127,9 @@ export function useCommunicationDraft({
     return () => {
       isCurrent = false;
     };
+    // recipients intentionally excluded from deps — including it creates a
+    // feedback loop on API failure: catch → setRecipients([]) → re-fires effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, tab, lockInitialRecipients]);
 
   const updateFilter = useCallback(

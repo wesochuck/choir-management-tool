@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import noEffectStateCycle from './eslint-rules/no-effect-state-cycle.js'
 
 export default defineConfig([
   globalIgnores([
@@ -32,6 +33,10 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': 'off',
       'preserve-caught-error': 'off',
+      'no-effect-state-cycle/no-effect-state-cycle': 'error',
+    },
+    plugins: {
+      'no-effect-state-cycle': { rules: { 'no-effect-state-cycle': noEffectStateCycle } },
     },
   },
 ])

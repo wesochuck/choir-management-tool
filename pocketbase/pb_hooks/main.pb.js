@@ -1171,7 +1171,9 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client
@@ -2173,7 +2175,9 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client
@@ -3144,7 +3148,9 @@ onRecordAfterCreateSuccess((e) => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client
@@ -4120,7 +4126,9 @@ onRecordAfterUpdateSuccess((e) => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client
@@ -5023,7 +5031,9 @@ onRecordAfterCreateSuccess((e) => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client
@@ -6079,7 +6089,9 @@ onRecordAfterUpdateSuccess((e) => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client
@@ -7523,7 +7535,9 @@ function processEmailQueue(app) {
                 const recipientName = record.get("recipientName") || "Singer";
                 const filters = parseJsonField(record.get("filters")) || {};
                 const isSms = filters.channel === 'sms';
-                // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
                     const subject = record.get("subject") || "";
                     // Dispatch as plain text via PocketBase SMTP Client
@@ -9660,7 +9674,9 @@ function processEmailQueue(app) {
                 const recipientName = record.get("recipientName") || "Singer";
                 const filters = parseJsonField(record.get("filters")) || {};
                 const isSms = filters.channel === 'sms';
-                // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
                     const subject = record.get("subject") || "";
                     // Dispatch as plain text via PocketBase SMTP Client
@@ -10897,7 +10913,9 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     const recipientName = record.get("recipientName") || "Singer";
                     const filters = parseJsonField(record.get("filters")) || {};
                     const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get("subject") || "";
                         // Dispatch as plain text via PocketBase SMTP Client

@@ -32,7 +32,7 @@ test('shouldQueueMessage validation and transitions', () => {
 
     assert.strictEqual(shouldQueueMessage(null), false);
     assert.strictEqual(shouldQueueMessage(createRecord('Draft', 'Email')), false, 'Draft should not queue');
-    assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'SMS')), false, 'SMS only should not queue');
+    assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'SMS')), true, 'SMS only should queue');
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Email')), true, 'Sent Email should queue');
     assert.strictEqual(shouldQueueMessage(createRecord('Sent', 'Both')), true, 'Sent Both should queue');
     assert.strictEqual(shouldQueueMessage(createRecord('Failed', 'Email')), false, 'Failed Email should NOT queue automatically');
