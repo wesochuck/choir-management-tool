@@ -622,9 +622,13 @@ processEmailQueue($app);`;
     const createHookBody = `
 try {
     const record = e?.record;
+    if (!record) { console.log("[DEBUG] onRecordAfterCreateSuccess: no record"); return; }
+    console.log("[DEBUG] onRecordAfterCreateSuccess: id=" + record.id + " status=" + record.get("status") + " type=" + record.get("type"));
     if (record && shouldQueueMessage(record)) {
         enqueueBulkMessage($app, record);
         processEmailQueue($app);
+    } else {
+        console.log("[DEBUG] onRecordAfterCreateSuccess: shouldQueueMessage returned false for id=" + record.id);
     }
 } catch (hookErr) {
     console.log("[Hook Error] onRecordAfterCreateSuccess: " + hookErr);
@@ -633,11 +637,15 @@ try {
     const updateHookBody = `
 try {
     const record = e?.record;
+    if (!record) { console.log("[DEBUG] onRecordAfterUpdateSuccess: no record"); return; }
     const original = (e.record && typeof e.record.originalCopy === 'function') ? e.record.originalCopy() : e.originalCopy;
     const oldStatus = original ? original.get("status") : "";
+    console.log("[DEBUG] onRecordAfterUpdateSuccess: id=" + record.id + " status=" + record.get("status") + " type=" + record.get("type") + " oldStatus=" + oldStatus);
     if (record && shouldQueueMessage(record, oldStatus)) {
         enqueueBulkMessage($app, record);
         processEmailQueue($app);
+    } else {
+        console.log("[DEBUG] onRecordAfterUpdateSuccess: shouldQueueMessage returned false for id=" + record.id);
     }
 } catch (hookErr) {
     console.log("[Hook Error] onRecordAfterUpdateSuccess: " + hookErr);

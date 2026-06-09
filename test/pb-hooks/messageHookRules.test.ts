@@ -24,6 +24,18 @@ class MockRecord implements PocketBaseRecord {
 // Attach MockRecord to global scope to simulate pocketbase Goja VM
 (global as unknown as Record<string, unknown>).Record = MockRecord;
 
+function makeApp(savedRecords: PocketBaseRecord[] = []): PocketBaseApp {
+  return {
+    findCollectionByNameOrId: (_name: string) => ({ name: _name }),
+    findFirstRecordByFilter: () => new MockRecord('settings', {}),
+    findRecordsByFilter: () => [],
+    findRecordById: () => new MockRecord('events', {}),
+    save: (record: PocketBaseRecord) => { savedRecords.push(record); },
+    settings: () => ({ smtp: { enabled: true }, meta: { senderAddress: 't', senderName: 't' } }),
+    newMailClient: () => ({ send: () => {} }),
+  };
+}
+
 test('shouldQueueMessage validation and transitions', () => {
     // Mock record helper
     const createRecord = (status: string, type: string): PocketBaseRecord => {
@@ -45,31 +57,17 @@ test('shouldQueueMessage validation and transitions', () => {
     assert.strictEqual(shouldQueueMessage(createRecord('Draft', 'Email'), 'Draft'), false, 'Draft to Draft is blocked');
 });
 
-test('enqueueBulkMessage explodes recipients', () => {
+test('enqueueBulkMessage creates email entries for type=Email', () => {
     const savedRecords: PocketBaseRecord[] = [];
-    const mockApp: PocketBaseApp = {
-        findCollectionByNameOrId: (name: string) => ({ name }),
-        findFirstRecordByFilter: () => new MockRecord('settings', {}),
-        findRecordsByFilter: () => [],
-        findRecordById: () => new MockRecord('events', {}),
-        save: (record: PocketBaseRecord) => {
-            savedRecords.push(record);
-        },
-        settings: () => ({
-            smtp: { enabled: true },
-            meta: { senderAddress: 'choir@app.com', senderName: 'Choir Name' }
-        }),
-        newMailClient: () => ({
-            send: () => {}
-        })
-    };
+    const mockApp = makeApp(savedRecords);
 
     const mockMessageRecord = new MockRecord('messages', {
-        id: 'msg-123',
+        id: 'msg-email',
+        type: 'Email',
         recipients: JSON.stringify([
             { id: 'usr-1', email: 'john@example.com', name: 'John Doe' },
-            { id: 'usr-2', email: 'jane@example.com' }, // No name
-            { id: 'usr-3' } // No email, should skip
+            { id: 'usr-2', email: 'jane@example.com' },
+            { id: 'usr-3' }
         ]),
         subject: 'Hello {singerName}!',
         content: 'This is a message body.',
@@ -78,11 +76,9 @@ test('enqueueBulkMessage explodes recipients', () => {
 
     enqueueBulkMessage(mockApp, mockMessageRecord);
 
-    assert.strictEqual(savedRecords.length, 2, 'Should create exactly 2 queue records');
-    
-    // First record (John)
+    assert.strictEqual(savedRecords.length, 2, 'Email type creates 2 queue records');
     const rec1 = savedRecords[0];
-    assert.strictEqual(rec1.get('messageRef'), 'msg-123');
+    assert.strictEqual(rec1.get('messageRef'), 'msg-email');
     assert.strictEqual(rec1.get('recipientId'), 'usr-1');
     assert.strictEqual(rec1.get('recipientEmail'), 'john@example.com');
     assert.strictEqual(rec1.get('recipientName'), 'John Doe');
@@ -92,9 +88,112 @@ test('enqueueBulkMessage explodes recipients', () => {
     assert.strictEqual(rec1.get('attempts'), 0);
     assert.deepEqual(JSON.parse(rec1.get('filters') as string), { eventId: 'evt-1' });
 
-    // Second record (Jane - default name)
     const rec2 = savedRecords[1];
     assert.strictEqual(rec2.get('recipientEmail'), 'jane@example.com');
     assert.strictEqual(rec2.get('recipientName'), 'Singer');
     assert.strictEqual(rec2.get('subject'), 'Hello {singerName}!');
+});
+
+test('enqueueBulkMessage creates SMS entries for type=SMS', () => {
+    const savedRecords: PocketBaseRecord[] = [];
+    const mockApp = makeApp(savedRecords);
+
+    const mockMessageRecord = new MockRecord('messages', {
+        id: 'msg-sms',
+        type: 'SMS',
+        recipients: JSON.stringify([
+            { id: 'usr-1', name: 'John Doe', phone: '555-123-4567' },
+            { id: 'usr-2', phone: '+1 (212) 555-8901' },
+            { id: 'usr-3', phone: '123' },
+            { id: 'usr-4' }
+        ]),
+        subject: '',
+        content: 'This is an SMS message body.',
+        filters: JSON.stringify({})
+    });
+
+    enqueueBulkMessage(mockApp, mockMessageRecord);
+
+    assert.strictEqual(savedRecords.length, 2, 'SMS type creates 2 queue records (2 valid phones, 1 too short, 1 missing)');
+
+    const rec1 = savedRecords[0];
+    assert.strictEqual(rec1.get('recipientId'), 'usr-1');
+    assert.strictEqual(rec1.get('recipientEmail'), '5551234567@sms.smtp2go.com');
+    assert.strictEqual(rec1.get('recipientName'), 'John Doe');
+    assert.strictEqual(rec1.get('subject'), '');
+    assert.strictEqual(rec1.get('rawContent'), 'This is an SMS message body.');
+    assert.strictEqual(rec1.get('status'), 'Pending');
+    assert.strictEqual(rec1.get('attempts'), 0);
+    const f1 = JSON.parse(rec1.get('filters') as string);
+    assert.strictEqual(f1.channel, 'sms');
+
+    const rec2 = savedRecords[1];
+    assert.strictEqual(rec2.get('recipientId'), 'usr-2');
+    assert.strictEqual(rec2.get('recipientEmail'), '2125558901@sms.smtp2go.com');
+    assert.strictEqual(rec2.get('recipientName'), 'Singer');
+    assert.strictEqual(rec2.get('rawContent'), 'This is an SMS message body.');
+    assert.strictEqual(rec2.get('subject'), '');
+    const f2 = JSON.parse(rec2.get('filters') as string);
+    assert.strictEqual(f2.channel, 'sms');
+});
+
+test('enqueueBulkMessage creates both SMS and email entries for type=Both', () => {
+    const savedRecords: PocketBaseRecord[] = [];
+    const mockApp = makeApp(savedRecords);
+
+    const mockMessageRecord = new MockRecord('messages', {
+        id: 'msg-both',
+        type: 'Both',
+        recipients: JSON.stringify([
+            { id: 'usr-1', name: 'John Doe', email: 'john@example.com', phone: '555-123-4567' },
+            { id: 'usr-2', email: 'jane@example.com', phone: '212-555-8901' },
+            { id: 'usr-3', email: 'no-phone@example.com' }
+        ]),
+        subject: 'Hello!',
+        content: 'This is a message sent to Both channels.',
+        filters: JSON.stringify({ eventId: 'evt-1' })
+    });
+
+    enqueueBulkMessage(mockApp, mockMessageRecord);
+
+    assert.strictEqual(savedRecords.length, 5, 'Both type creates 5 records: 2 SMS + 3 email');
+
+    const smsRecords = savedRecords.filter((r) => {
+      const f = JSON.parse(r.get('filters') as string);
+      return f.channel === 'sms';
+    });
+    const emailRecords = savedRecords.filter((r) => {
+      const f = JSON.parse(r.get('filters') as string);
+      return !f.channel;
+    });
+
+    assert.strictEqual(smsRecords.length, 2, '2 SMS entries for recipients with valid phones');
+    assert.strictEqual(emailRecords.length, 3, '3 email entries for recipients with emails');
+
+    assert.strictEqual(smsRecords[0].get('recipientId'), 'usr-1');
+    assert.strictEqual(smsRecords[0].get('recipientEmail'), '5551234567@sms.smtp2go.com');
+    assert.strictEqual(emailRecords[0].get('recipientId'), 'usr-1');
+    assert.strictEqual(emailRecords[0].get('recipientEmail'), 'john@example.com');
+});
+
+test('enqueueBulkMessage truncates SMS content to 160 chars', () => {
+    const savedRecords: PocketBaseRecord[] = [];
+    const mockApp = makeApp(savedRecords);
+    const longBody = 'A'.repeat(200);
+
+    const mockMessageRecord = new MockRecord('messages', {
+        id: 'msg-sms-trunc',
+        type: 'SMS',
+        recipients: JSON.stringify([{ id: 'usr-1', phone: '5551234567' }]),
+        subject: '',
+        content: longBody,
+        filters: JSON.stringify({})
+    });
+
+    enqueueBulkMessage(mockApp, mockMessageRecord);
+
+    assert.strictEqual(savedRecords.length, 1);
+    const raw = savedRecords[0].get('rawContent') as string;
+    assert.strictEqual(raw.length, 160, 'SMS body truncated to 160 chars');
+    assert.strictEqual(raw[159], '…', 'Last char is ellipsis');
 });

@@ -51,10 +51,16 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
     const isSms = type === "SMS";
     const isBoth = type === "Both";
 
+    console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
+
+    let smsCount = 0;
+    let emailCount = 0;
+
     recipients.forEach(recipient => {
         // Create SMS queue entries for phone recipients (SMS-only or Both)
         if (isSms || isBoth) {
             const phone = normalizePhone(recipient.phone || '');
+            console.log("[DEBUG] recipient phone=" + (recipient.phone || '') + " normalized=" + phone);
             if (phone.length === 10) {
                 const smsContent = content.length > 160
                     ? content.slice(0, 159) + '…'
@@ -75,6 +81,7 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
                 });
 
                 app.save(smsRecord);
+                smsCount++;
             }
         }
 
@@ -93,6 +100,9 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
             });
 
             app.save(emailRecord);
+            emailCount++;
         }
     });
+
+    console.log("[DEBUG] enqueueBulkMessage: created smsCount=" + smsCount + " emailCount=" + emailCount);
 }

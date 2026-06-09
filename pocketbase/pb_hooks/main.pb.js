@@ -2561,10 +2561,14 @@ onRecordAfterCreateSuccess((e) => {
         const type = record.get("type");
         const isSms = type === "SMS";
         const isBoth = type === "Both";
+        console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
+        let smsCount = 0;
+        let emailCount = 0;
         recipients.forEach(recipient => {
             // Create SMS queue entries for phone recipients (SMS-only or Both)
             if (isSms || isBoth) {
                 const phone = normalizePhone(recipient.phone || '');
+                console.log("[DEBUG] recipient phone=" + (recipient.phone || '') + " normalized=" + phone);
                 if (phone.length === 10) {
                     const smsContent = content.length > 160
                         ? content.slice(0, 159) + '…'
@@ -2582,6 +2586,7 @@ onRecordAfterCreateSuccess((e) => {
                         filters: JSON.stringify(smsFilters)
                     });
                     app.save(smsRecord);
+                    smsCount++;
                 }
             }
             // Create email queue entries for email recipients (Email-only or Both)
@@ -2598,8 +2603,10 @@ onRecordAfterCreateSuccess((e) => {
                     filters: JSON.stringify(filters)
                 });
                 app.save(emailRecord);
+                emailCount++;
             }
         });
+        console.log("[DEBUG] enqueueBulkMessage: created smsCount=" + smsCount + " emailCount=" + emailCount);
     }
 
     // --- Utility source: email/hookText.ts ---
@@ -3453,9 +3460,13 @@ onRecordAfterCreateSuccess((e) => {
 
     try {
         const record = e?.record;
+        if (!record) { console.log("[DEBUG] onRecordAfterCreateSuccess: no record"); return; }
+        console.log("[DEBUG] onRecordAfterCreateSuccess: id=" + record.id + " status=" + record.get("status") + " type=" + record.get("type"));
         if (record && shouldQueueMessage(record)) {
             enqueueBulkMessage($app, record);
             processEmailQueue($app);
+        } else {
+            console.log("[DEBUG] onRecordAfterCreateSuccess: shouldQueueMessage returned false for id=" + record.id);
         }
     } catch (hookErr) {
         console.log("[Hook Error] onRecordAfterCreateSuccess: " + hookErr);
@@ -3539,10 +3550,14 @@ onRecordAfterUpdateSuccess((e) => {
         const type = record.get("type");
         const isSms = type === "SMS";
         const isBoth = type === "Both";
+        console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
+        let smsCount = 0;
+        let emailCount = 0;
         recipients.forEach(recipient => {
             // Create SMS queue entries for phone recipients (SMS-only or Both)
             if (isSms || isBoth) {
                 const phone = normalizePhone(recipient.phone || '');
+                console.log("[DEBUG] recipient phone=" + (recipient.phone || '') + " normalized=" + phone);
                 if (phone.length === 10) {
                     const smsContent = content.length > 160
                         ? content.slice(0, 159) + '…'
@@ -3560,6 +3575,7 @@ onRecordAfterUpdateSuccess((e) => {
                         filters: JSON.stringify(smsFilters)
                     });
                     app.save(smsRecord);
+                    smsCount++;
                 }
             }
             // Create email queue entries for email recipients (Email-only or Both)
@@ -3576,8 +3592,10 @@ onRecordAfterUpdateSuccess((e) => {
                     filters: JSON.stringify(filters)
                 });
                 app.save(emailRecord);
+                emailCount++;
             }
         });
+        console.log("[DEBUG] enqueueBulkMessage: created smsCount=" + smsCount + " emailCount=" + emailCount);
     }
 
     // --- Utility source: email/hookText.ts ---
@@ -4431,11 +4449,15 @@ onRecordAfterUpdateSuccess((e) => {
 
     try {
         const record = e?.record;
+        if (!record) { console.log("[DEBUG] onRecordAfterUpdateSuccess: no record"); return; }
         const original = (e.record && typeof e.record.originalCopy === 'function') ? e.record.originalCopy() : e.originalCopy;
         const oldStatus = original ? original.get("status") : "";
+        console.log("[DEBUG] onRecordAfterUpdateSuccess: id=" + record.id + " status=" + record.get("status") + " type=" + record.get("type") + " oldStatus=" + oldStatus);
         if (record && shouldQueueMessage(record, oldStatus)) {
             enqueueBulkMessage($app, record);
             processEmailQueue($app);
+        } else {
+            console.log("[DEBUG] onRecordAfterUpdateSuccess: shouldQueueMessage returned false for id=" + record.id);
         }
     } catch (hookErr) {
         console.log("[Hook Error] onRecordAfterUpdateSuccess: " + hookErr);
