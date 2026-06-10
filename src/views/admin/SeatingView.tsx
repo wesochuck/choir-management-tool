@@ -745,24 +745,26 @@ export default function SeatingView() {
                     )}
                   </div>
                 )}
-                <SeatingGrid 
-                  rowCounts={rowCounts}
-                  assignments={optimisticAssignments}
-                  suggestions={suggestions}
-                  activeProfiles={activeProfiles}
-                  sections={sections}
-                  voiceParts={voiceParts}
-                  onAssign={assignSinger}
-                  onUpdateRowCounts={async (newRowCounts, newAssignments) => {
-                    const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
-                    if (newAssignments) {
-                      updates.assignments = newAssignments;
-                    }
-                    await updateChart(updates);
-                  }}
-                  isVoicePartLayout={currentFormation?.isVoicePartLayout}
-                  sectionOrder={currentFormation?.sectionOrder}
-                />
+                {printMode === 'visual' && (
+                  <SeatingGrid 
+                    rowCounts={rowCounts}
+                    assignments={optimisticAssignments}
+                    suggestions={suggestions}
+                    activeProfiles={activeProfiles}
+                    sections={sections}
+                    voiceParts={voiceParts}
+                    onAssign={assignSinger}
+                    onUpdateRowCounts={async (newRowCounts, newAssignments) => {
+                      const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
+                      if (newAssignments) {
+                        updates.assignments = newAssignments;
+                      }
+                      await updateChart(updates);
+                    }}
+                    isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                    sectionOrder={currentFormation?.sectionOrder}
+                  />
+                )}
                 
                 {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
                   <SeatingBottomDock 
@@ -785,7 +787,9 @@ export default function SeatingView() {
                   </div>
                 )}
 
-                <SeatingTextList rows={groupedRows} showVoiceParts={showVoicePartsInList} />
+                {printMode === 'text' && (
+                  <SeatingTextList rows={groupedRows} showVoiceParts={showVoicePartsInList} />
+                )}
 
                 {printMode === 'visual' && (
                   <UnassignedPrintSection 
