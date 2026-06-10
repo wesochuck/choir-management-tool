@@ -46,7 +46,7 @@ export function useCommunicationLibrary() {
 
       const result = await communicationService.getMessagesPaginated(
         pageToFetch,
-        5,
+        10,
         filterString
       );
       setHistory(result.items);
@@ -76,7 +76,7 @@ export function useCommunicationLibrary() {
           loadedConfig,
           loadedChoirName,
         ] = await Promise.all([
-          communicationService.getMessagesPaginated(1, 5, baseFilter),
+          communicationService.getMessagesPaginated(1, 10, baseFilter),
           communicationService.getDrafts(),
           communicationService.getTemplates(),
           settingsService.getCommunicationSettings(),

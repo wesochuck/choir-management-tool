@@ -157,12 +157,14 @@ export function MessageHistory({
                       )}
                     </td>
                     <td className="p-3 px-4 text-right whitespace-nowrap">
-                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>
-                        Details
-                      </button>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => onCopyDraft(message)}>
-                        Copy to Draft
-                      </button>
+                      <div className="flex gap-2 justify-end">
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>
+                          Details
+                        </button>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => onCopyDraft(message)}>
+                          Copy to Draft
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
