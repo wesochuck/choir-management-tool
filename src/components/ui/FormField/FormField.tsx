@@ -1,6 +1,5 @@
 import { isValidElement, cloneElement } from 'react';
 import type { ReactElement } from 'react';
-import styles from './FormField.module.css';
 
 export interface FormFieldProps {
   label: React.ReactNode;
@@ -20,14 +19,14 @@ export function FormField({ label, htmlFor, error, helpText, required = false, c
   }
 
   return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={htmlFor}>
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-text" htmlFor={htmlFor}>
         {label}
-        {required && <span className={styles.required} aria-hidden="true"> *</span>}
+        {required && <span className="text-danger-text ml-0.5" aria-hidden="true"> *</span>}
       </label>
       {childElement}
-      {error && <span className={styles.error} role="alert">{error}</span>}
-      {helpText && <span className={styles.help}>{helpText}</span>}
+      {error && <span className="text-xs text-danger-text" role="alert">{error}</span>}
+      {helpText && <span className="text-xs text-text-muted">{helpText}</span>}
     </div>
   );
 }

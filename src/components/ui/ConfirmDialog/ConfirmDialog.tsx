@@ -1,6 +1,5 @@
 import { Modal } from '../Modal/Modal';
 import { Button } from '../Button/Button';
-import styles from './ConfirmDialog.module.css';
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -28,7 +27,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <div className={styles.message}>{message}</div>
+      <div className="text-text text-base leading-relaxed">{message}</div>
     </Modal>
   );
 }
