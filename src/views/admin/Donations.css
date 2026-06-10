@@ -85,12 +85,20 @@
   min-width: 150px;
 }
 
+.donation-search-input,
 .donation-input {
   width: 100%;
   padding: 0 12px;
-  height: 40px; /* Match Ticketing height */
+  height: 40px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+}
+
+.donation-date-input {
+  width: 100%;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid var(--border);
+  cursor: pointer;
 }
 
 .donation-table-container {
@@ -254,7 +262,7 @@
 }
 
 .donation-sort-select-wrapper {
-  min-width: 180px;
+  min-width: 200px;
 }
 
 .donation-sort-select {
