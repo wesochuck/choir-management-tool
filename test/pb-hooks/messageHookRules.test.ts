@@ -24,13 +24,31 @@ class MockRecord implements PocketBaseRecord {
 // Attach MockRecord to global scope to simulate pocketbase Goja VM
 (global as unknown as Record<string, unknown>).Record = MockRecord;
 
+/** Fields required by the emailQueue schema for a record to survive app.save(). */
+const EMAIL_QUEUE_REQUIRED_FIELDS = [
+  'recipientId',
+  'recipientEmail',
+  'rawContent',
+  'status',
+  'attempts',
+];
+
 function makeApp(savedRecords: PocketBaseRecord[] = []): PocketBaseApp {
   return {
     findCollectionByNameOrId: (_name: string) => ({ name: _name }),
     findFirstRecordByFilter: () => new MockRecord('settings', {}),
     findRecordsByFilter: () => [],
     findRecordById: () => new MockRecord('events', {}),
-    save: (record: PocketBaseRecord) => { savedRecords.push(record); },
+    save: (record: PocketBaseRecord) => {
+      // Simulate PocketBase required-field validation to catch schema mismatches
+      for (const field of EMAIL_QUEUE_REQUIRED_FIELDS) {
+        const val = record.get(field);
+        if (val === '' || val === null || val === undefined) {
+          throw new Error(`GoError: ${field}: cannot be blank.`);
+        }
+      }
+      savedRecords.push(record);
+    },
     settings: () => ({ smtp: { enabled: true }, meta: { senderAddress: 't', senderName: 't' } }),
     newMailClient: () => ({ send: () => {} }),
   };
