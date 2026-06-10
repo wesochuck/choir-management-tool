@@ -100,8 +100,9 @@ test('button system keeps accessible minimum touch target height', () => {
 });
 
 test('singer card name allows full name text with flexible width', () => {
-  const seatSource = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
-  assert.ok(seatSource.includes('singer-card-name'), 'singer-card-name class should still be present in the component');
+  const comp = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
+  assert.match(comp, /flex-1/, 'should have flex-1 for flexible width');
+  assert.match(comp, /min-w-0/, 'should have min-w-0 for flexible width');
 });
 
 test('communication templates replace event placeholders', () => {
