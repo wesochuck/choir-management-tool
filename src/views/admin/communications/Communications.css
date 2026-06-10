@@ -12,9 +12,17 @@
   flex-wrap: wrap;
 }
 
+.comm-compose-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
 .comm-compose-input {
-  height: 44px;
+  height: 40px;
   padding: 0 12px;
+  width: 100%;
+  border: 1px solid var(--border);
 }
 
 .comm-validation-error {
