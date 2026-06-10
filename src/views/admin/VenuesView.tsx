@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useVenues } from '../../hooks/useVenues';
 import { checkVenueDependencies, type Venue } from '../../services/venueService';
 import { AppCard } from '../../components/common/AppCard';
+import { Button } from '../../components/ui/Button/Button';
+import { Spinner } from '../../components/ui/Spinner/Spinner';
 import { useDialog } from '../../contexts/DialogContext';
 import './Venues.css';
 
@@ -76,14 +78,18 @@ export default function VenuesView() {
     await removeVenue(venue.id);
   };
 
-  if (isLoading && venues.length === 0) return <div className="container venue-loading">Loading venues...</div>;
+  if (isLoading && venues.length === 0) return (
+    <div className="container venue-loading">
+      <Spinner size="small" /> Loading venues...
+    </div>
+  );
 
   return (
     <div className="flex-col venue-container">
        <div className="flex-responsive venue-header">
         <h1 className="text-display venue-title">Venue Templates</h1>
         {!isAdding && (
-          <button onClick={() => setIsAdding(true)} className="btn btn-primary">+ New Venue</button>
+          <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
         )}
       </div>
 
@@ -126,8 +132,8 @@ export default function VenuesView() {
               </div>
             )}
             <div className="flex-responsive venue-form-actions">
-              <button type="button" onClick={resetForm} className="btn btn-ghost">Cancel</button>
-              <button type="submit" className="btn btn-primary">Save Template</button>
+              <Button variant="ghost" onClick={resetForm}>Cancel</Button>
+              <Button type="submit" variant="primary">Save Template</Button>
             </div>
           </form>
         </AppCard>
@@ -164,16 +170,17 @@ export default function VenuesView() {
               )}
             </div>
             <div className="flex-responsive venue-card-actions">
-              <button onClick={() => handleEdit(v)} className="btn btn-ghost expanded-hit-area venue-action-btn">Edit</button>
-              <button 
+              <Button variant="ghost" className="venue-action-btn" onClick={() => handleEdit(v)}>Edit</Button>
+              <Button
+                variant="danger"
+                className="venue-action-btn"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(v);
                 }}
-                className="btn btn-danger venue-action-btn"
               >
                 Delete
-              </button>
+              </Button>
             </div>
           </AppCard>
         ))}
