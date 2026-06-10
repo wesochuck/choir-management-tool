@@ -33,12 +33,11 @@
   border: 1px solid var(--border);
 }
 
-.patrons-view .patrons-date-input-wrapper {
-  flex: 1;
-  min-width: 150px;
+.patrons-view .patrons-sort-select-wrapper {
+  min-width: 180px;
 }
 
-.patrons-view .patrons-date-input {
+.patrons-view .patrons-sort-select {
   width: 100%;
   padding: 0 12px;
   height: 40px;
@@ -46,8 +45,14 @@
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 .patrons-view .patrons-sort-select-wrapper {
   min-width: 180px;
+=======
+.patrons-view .patrons-date-input-wrapper {
+  min-width: 150px;
+}
+>>>>>>> c5d4ebb156ccc17b53f07da220e13026e21998a5
 }
 
 .patrons-view .patrons-sort-select {
@@ -172,4 +177,5 @@
   .patrons-view .patrons-date-input-wrapper {
     min-width: 0;
   }
+}
 }
