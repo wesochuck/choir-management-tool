@@ -174,7 +174,7 @@ export default function AttendanceView() {
     'Attendance action is being rate-limited; retrying automatically...',
   );
 
-  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, updateFolder, refresh } = useAttendance(selectedEventId, {
+  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, refresh } = useAttendance(selectedEventId, {
     onRateLimitRetry: onAttendanceRateLimitRetry,
   });
 
@@ -291,18 +291,6 @@ export default function AttendanceView() {
       await dialog.showMessage({
         title: 'Could Not Update Attendance',
         message: err instanceof Error ? err.message : 'Failed to update attendance',
-        variant: 'danger',
-      });
-    }
-  };
-
-  const handleUpdateFolder = async (profileId: string, folderNumber: string, folderReturned: boolean) => {
-    try {
-      await updateFolder(profileId, folderNumber, folderReturned);
-    } catch (err: unknown) {
-      await dialog.showMessage({
-        title: 'Could Not Update Folder',
-        message: err instanceof Error ? err.message : 'Failed to update folder',
         variant: 'danger',
       });
     }
@@ -630,7 +618,6 @@ export default function AttendanceView() {
                 <CheckInList
                   items={checkInItems}
                   onSetAttendance={handleSetAttendance}
-                  onUpdateFolder={handleUpdateFolder}
                   onEdit={handleEditProfile}
                   sortBy={sortBy}
                   missCounts={missCounts}
