@@ -43,7 +43,7 @@ export function VoicePartEditor({
             const section = configSections.find(s => s.code === vp.sectionCode);
             const defaultColor = section?.color || '#e0e0e0';
             return (
-              <div key={index} className="admin-voice-part-grid">
+              <div key={index} className="grid grid-cols-[90px_1fr_150px_130px_90px_80px] gap-4 items-center w-full">
                 <input
                   value={vp.label}
                   onChange={(e) => {
@@ -81,7 +81,7 @@ export function VoicePartEditor({
                   ))}
                 </select>
 
-                <div className="admin-flex-center">
+                <div className="flex items-center gap-1.5">
                   <div className="admin-color-picker-input-wrapper">
                     <input
                       type="color"
@@ -131,7 +131,7 @@ export function VoicePartEditor({
                     className="btn btn-secondary btn-sm admin-action-btn-sm admin-action-btn-sm-gap"
                     title={`Click to view the ${count} singer(s) in this voice part`}
                   >
-                    <span className="admin-font-weight-600">{count}</span>
+                    <span className="font-semibold">{count}</span>
                     <span>singer{count === 1 ? '' : 's'}</span>
                   </button>
                 ) : (

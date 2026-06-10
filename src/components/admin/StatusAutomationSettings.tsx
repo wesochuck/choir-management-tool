@@ -24,14 +24,14 @@ export function StatusAutomationSettings({
   return (
     <AppCard title="Singer Status & Rehearsal Limits">
       <div className="admin-settings-group">
-        <label className="admin-checkbox-label">
+        <label className="flex flex-row items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={configAutomationEnabled}
             onChange={(e) => setConfigAutomationEnabled(e.target.checked)}
-            className="admin-checkbox-input"
+            className="accent-[var(--primary)] w-4 h-4"
           />
-          <span className="text-label admin-font-weight-600">Enable Automated Status Changes</span>
+          <span className="text-label font-semibold">Enable Automated Status Changes</span>
         </label>
         <p className="text-muted admin-checkbox-description">
           Automatically mark singers as Active/Inactive based on their attendance and RSVP history.
@@ -55,14 +55,14 @@ export function StatusAutomationSettings({
             </div>
 
             {/* @allow-inline-style - spacing override */}
-            <label className="admin-checkbox-label" style={{ marginTop: 'var(--space-xs)' }}>
+            <label className="flex flex-row items-center gap-2 cursor-pointer" style={{ marginTop: 'var(--space-xs)' }}>
               <input
                 type="checkbox"
                 checked={configAutomationRecoveryEnabled}
                 onChange={(e) => setConfigAutomationRecoveryEnabled(e.target.checked)}
-                className="admin-checkbox-input"
+                className="accent-[var(--primary)] w-4 h-4"
               />
-              <span className="text-label admin-font-weight-600">Enable Automated Status Recovery</span>
+              <span className="text-label font-semibold">Enable Automated Status Recovery</span>
             </label>
             <p className="text-muted admin-checkbox-description">
               Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future Performance.
@@ -70,10 +70,10 @@ export function StatusAutomationSettings({
           </div>
         )}
 
-        <hr className="admin-divider" />
+        <hr className="border-none border-t border-border my-2" />
 
         <div className="admin-settings-field">
-          <label className="text-label admin-font-weight-600">Maximum Rehearsal Miss Limit</label>
+          <label className="text-label font-semibold">Maximum Rehearsal Miss Limit</label>
           <input
             type="number"
             min={0}

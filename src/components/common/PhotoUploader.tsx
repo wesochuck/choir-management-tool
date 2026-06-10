@@ -467,7 +467,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         {/* Upload spinner overlay */}
         {isUploading && (
           <div className="photo-uploader-spinner-overlay">
-            <div className="photo-spinner" />
+            <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />
           </div>
         )}
 
@@ -603,7 +603,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               <div className="camera-viewfinder-frame">
                 {isCameraLoading && (
                   <div className="camera-loading-container">
-                    <div className="photo-spinner camera-loading-spinner" />
+                    <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin camera-loading-spinner" />
                     <span className="camera-loading-text">Starting camera...</span>
                   </div>
                 )}

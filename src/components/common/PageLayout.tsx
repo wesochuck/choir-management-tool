@@ -26,24 +26,24 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   };
 
   return (
-    <div className="admin-layout-wrapper">
-      <header className="admin-layout-header">
+    <div className="min-h-screen bg-bg">
+      <header className="sticky top-0 z-40 bg-surface border-b border-border shadow-sm">
         {/* @allow-inline-style - maxWidth varies per page layout variant */}
-        <div className="admin-header-container" style={{ maxWidth }}>
-          <div className="admin-header-brand">
-            <Link to="/" className="admin-back-btn" title="Dashboard">🏠 Home</Link>
-            <div className="admin-header-titles">
-              <h2 className="admin-header-title">{title}</h2>
-              {subtitle && <p className="admin-header-subtitle">{subtitle}</p>}
+        <div className="flex items-center justify-between gap-6 mx-auto px-6 py-3" style={{ maxWidth }}>
+          <div className="flex items-center gap-6">
+            <Link to="/" className="inline-flex items-center justify-center h-[38px] px-4 rounded-md font-semibold text-sm bg-transparent text-text-muted border border-border hover:bg-primary-light hover:text-primary-deep transition-all duration-200 no-underline whitespace-nowrap" title="Dashboard">🏠 Home</Link>
+            <div className="flex flex-col">
+              <h2 className="text-xl font-bold text-text">{title}</h2>
+              {subtitle && <p className="text-[0.8125rem] text-text-muted">{subtitle}</p>}
             </div>
           </div>
           {(actions || user?.role === 'admin') && (
-            <div className="admin-header-actions">
+            <div className="flex items-center gap-4">
               {actions}
               {user?.role === 'admin' && (
                 <>
-                  <Link to="/profile" className="btn btn-ghost">My Profile</Link>
-                  <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
+                  <Link to="/profile" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-transparent text-text-muted border border-border hover:bg-primary-light hover:text-primary-deep px-3 py-1.5">My Profile</Link>
+                  <button onClick={handleLogout} className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-transparent text-text-muted border border-border hover:bg-primary-light hover:text-primary-deep px-3 py-1.5 cursor-pointer">Logout</button>
                 </>
               )}
             </div>
@@ -52,7 +52,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
       </header>
 
       {/* @allow-inline-style - maxWidth varies per page layout variant */}
-      <main className="admin-main-content" style={{ maxWidth }}>
+      <main className="w-full mx-auto px-6 py-8" style={{ maxWidth }}>
         {children}
       </main>
     </div>

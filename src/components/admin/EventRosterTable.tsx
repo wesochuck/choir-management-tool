@@ -33,8 +33,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
 }) => {
   return (
     <AppCard noPadding>
-      <div className="admin-table-wrapper">
-        <table className="admin-responsive-table">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full border-collapse text-left">
           <thead>
             <tr>
               <th className="text-label">Name</th>

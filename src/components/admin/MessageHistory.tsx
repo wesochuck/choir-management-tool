@@ -130,7 +130,7 @@ export function MessageHistory({
           );
         })}
         {history.length === 0 && (
-          <div className="admin-empty-state">
+          <div className="flex flex-col items-center justify-center py-12 text-text-muted">
             <p className="text-muted">
               {historySearchQuery 
                 ? `No messages found matching "${historySearchQuery}".` 
