@@ -52,7 +52,7 @@ export function SettingsPanel({
   senderEmail,
 }: SettingsPanelProps) {
   return (
-    <div className="flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {editingTemplate ? (
         <TemplatesPanel
           templates={templates}
@@ -69,7 +69,7 @@ export function SettingsPanel({
       ) : (
         <>
           <AppCard title="Application & Footer Compliance">
-            <div className="flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <SettingsGrid>
                 <Field
                   label="Physical Mailing Address"
@@ -102,7 +102,7 @@ export function SettingsPanel({
           />
 
           <AppCard title="Test Server SMTP Connection">
-            <div className="flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <p className="text-muted text-sm">
                 Send a quick test email using the server's configured SMTP settings to verify that
                 outgoing mail delivery is working.

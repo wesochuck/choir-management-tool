@@ -44,10 +44,10 @@ export function TemplatesPanel({
 
   if (editingTemplate) {
     return (
-      <div className="compose-grid">
-        <div className="flex-col gap-4">
+      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_300px] gap-6 items-start">
+        <div className="flex flex-col gap-4">
           <AppCard title={editingTemplate.id ? 'Edit Template' : 'New Template'}>
-            <div className="composer-form flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <div className="flex gap-4 flex-wrap">
                 <div className="flex flex-col gap-1 flex-1">
                   <label className="text-label">Template Title</label>
@@ -229,17 +229,17 @@ export function TemplatesPanel({
         </button>
       }
     >
-      <div className="flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <p className="text-muted text-sm">
           Manage message templates. Custom templates can be added, edited, or deleted. System-defined templates cannot be deleted.
         </p>
-        <div className="flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {templates.map((tpl) => (
             <div
               key={tpl.id}
               className="card flex flex-col md:flex-row px-4 py-2 justify-between items-center shadow-none border border-border m-0 gap-4"
             >
-              <div className="flex-col gap-0.5">
+              <div className="flex flex-col gap-0.5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <strong className="text-sm">{tpl.title}</strong>
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">

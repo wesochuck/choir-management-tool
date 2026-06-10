@@ -370,7 +370,7 @@ export default function AttendanceView() {
             </button>
           </div>
           
-          <div className="flex flex-flow row wrap gap-[var(--space-lg)] items-center">
+          <div className="flex flex-row flex-wrap gap-6 items-center">
             <span className={`inline-flex items-center text-[0.625rem] px-[8px] py-[3px] rounded font-semibold uppercase tracking-wider bg-primary-light text-primary-deep ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
               {selectedEvent.type}
             </span>
@@ -514,34 +514,34 @@ export default function AttendanceView() {
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="flex-wrap gap-2" aria-label="Attendance progress">
-          <span className="inline-flex border border-[var(--border)] rounded-full text-[0.75rem] font-bold px-[10px] py-1 bg-[var(--surface)] text-[var(--text-muted)]">Present {attendanceCounts.present}</span>
-          <span className="inline-flex border border-[var(--border)] rounded-full text-[0.75rem] font-bold px-[10px] py-1 bg-[var(--surface)] text-[var(--text-muted)]">Absent {attendanceCounts.absent}</span>
-          <span className="inline-flex border border-[var(--border)] rounded-full text-[0.75rem] font-bold px-[10px] py-1 bg-[var(--surface)] text-[var(--text-muted)]">Unmarked {attendanceCounts.unmarked}</span>
+        <div className="flex flex-wrap gap-2" aria-label="Attendance progress">
+          <span className="inline-flex border border-border rounded-full text-xs font-bold px-2.5 py-1 bg-surface text-text-muted">Present {attendanceCounts.present}</span>
+          <span className="inline-flex border border-border rounded-full text-xs font-bold px-2.5 py-1 bg-surface text-text-muted">Absent {attendanceCounts.absent}</span>
+          <span className="inline-flex border border-border rounded-full text-xs font-bold px-2.5 py-1 bg-surface text-text-muted">Unmarked {attendanceCounts.unmarked}</span>
         </div>
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="card p-4 flex flex-flow row wrap gap-[var(--space-md)] items-center border border-[var(--border)] bg-[var(--surface)] rounded-[var(--radius-md)]">
+        <div className="card p-4 flex flex-row flex-wrap gap-4 items-center border border-border bg-surface rounded-md">
           {/* Name Search */}
-          <div className="flex-col flex-[1_1_200px] gap-[6px]">
-            <label className="text-label font-bold text-[0.75rem] uppercase text-[var(--text-muted)]">Search by Name</label>
+          <div className="flex flex-col flex-[1_1_200px] gap-1.5">
+            <label className="text-label font-bold text-xs uppercase text-text-muted">Search by Name</label>
             <input 
               type="text"
               value={filterName}
               onChange={(e) => setFilterName(e.target.value)}
               placeholder="🔍 Search name..."
-              className="card w-full px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
+              className="card w-full px-3 h-10 border border-border rounded-md"
             />
           </div>
 
           {/* Voice Part Filter */}
-          <div className="flex-col w-[160px] gap-[6px]">
-            <label className="text-label font-bold text-[0.75rem] uppercase text-[var(--text-muted)]">Voice Part</label>
+          <div className="flex flex-col w-[160px] gap-1.5">
+            <label className="text-label font-bold text-xs uppercase text-text-muted">Voice Part</label>
             <select
               value={filterVoicePart}
               onChange={(e) => setFilterVoicePart(e.target.value)}
-              className="card w-full px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
+              className="card w-full px-3 h-10 border border-border rounded-md"
             >
               <option value="">All Parts</option>
               {voicePartLabels.map(part => (
@@ -551,12 +551,12 @@ export default function AttendanceView() {
           </div>
 
           {/* Attendance Status Filter */}
-          <div className="flex-col w-[160px] gap-[6px]">
-            <label className="text-label font-bold text-[0.75rem] uppercase text-[var(--text-muted)]">Status</label>
+          <div className="flex flex-col w-[160px] gap-1.5">
+            <label className="text-label font-bold text-xs uppercase text-text-muted">Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="card w-full px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
+              className="card w-full px-3 h-10 border border-border rounded-md"
             >
               <option value="">All Statuses</option>
               <option value="Present">Present</option>
@@ -566,12 +566,12 @@ export default function AttendanceView() {
           </div>
 
           {/* RSVP Status Filter */}
-          <div className="flex-col w-[160px] gap-[6px]">
-            <label className="text-label font-bold text-[0.75rem] uppercase text-[var(--text-muted)]">RSVP Status</label>
+          <div className="flex flex-col w-[160px] gap-1.5">
+            <label className="text-label font-bold text-xs uppercase text-text-muted">RSVP Status</label>
             <select
               value={rsvpFilter}
               onChange={(e) => handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')}
-              className="card w-full px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
+              className="card w-full px-3 h-10 border border-border rounded-md"
             >
               <option value="Both">Both (Attending + Pending)</option>
               <option value="Yes">Attending Only</option>
@@ -580,12 +580,12 @@ export default function AttendanceView() {
           </div>
 
           {/* Sort By Filter */}
-          <div className="flex-col w-[160px] gap-[6px]">
-            <label className="text-label font-bold text-[0.75rem] uppercase text-[var(--text-muted)]">Sort By</label>
+          <div className="flex flex-col w-[160px] gap-1.5">
+            <label className="text-label font-bold text-xs uppercase text-text-muted">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')}
-              className="card w-full px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
+              className="card w-full px-3 h-10 border border-border rounded-md"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
@@ -622,10 +622,10 @@ export default function AttendanceView() {
             <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
           </AppCard>
         ) : (
-          <div className="flex-col gap-[var(--space-md)] w-full">
+          <div className="flex flex-col gap-4 w-full">
             
             {/* Check-In List */}
-            <div className="flex-col gap-[var(--space-xs)] w-full">
+            <div className="flex flex-col gap-1 w-full">
               {checkInItems.length > 0 ? (
                 <CheckInList
                   items={checkInItems}
@@ -645,18 +645,18 @@ export default function AttendanceView() {
 
             {/* 3. Declined Singers Rescue Control */}
             {declinedSingers.length > 0 && (
-              <div className="card p-[var(--space-md)] border border-[#fecaca] rounded-[var(--radius-md)] bg-[#fef2f2]">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-[var(--space-md)]">
-                  <div className="flex-col gap-[2px]">
+              <div className="card p-4 border border-[#fecaca] rounded-md bg-[#fef2f2]">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div className="flex flex-col gap-0.5">
                     <h3 className="text-[0.85rem] font-bold text-[#991b1b]">Rescue Declined RSVP</h3>
                     <p className="text-muted text-xs text-[#92400e]">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
                   </div>
                   
-                  <div className="flex-row gap-[10px] items-center min-w-[280px] flex-wrap">
+                  <div className="flex flex-row gap-2.5 items-center min-w-[280px] flex-wrap">
                     <select
                       value={selectedDeclinedProfileId}
                       onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
-                      className="card flex-1 h-9 px-3 border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--bg)] text-[var(--text)] text-[0.85rem]"
+                      className="card flex-1 h-9 px-3 border border-border rounded-md bg-bg text-text text-[0.85rem]"
                     >
                       <option value="">-- Select Declined Singer --</option>
                       {declinedSingers.map(s => (

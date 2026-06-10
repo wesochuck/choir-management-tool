@@ -91,7 +91,133 @@ body {
   --radius-lg: 12px;
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 5%);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 10%);
+  --font-size-display: clamp(2rem, 5vw, 3rem);
+  --font-size-headline: 1.5rem;
+  --font-size-body: 1rem;
+  --font-size-label: 0.875rem;
+  --font-size-sm: 0.75rem;
+  --font-size-xs: 0.625rem;
+  --font-weight-display: 700;
+  --font-weight-headline: 600;
+  --font-weight-body: 400;
+  --font-weight-label: 500;
+  --font-weight-bold: 700;
 }
+
+/* Core Component CSS Classes */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 var(--space-lg);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-label);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  gap: var(--space-sm);
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--surface);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-deep);
+  border-color: var(--primary-deep);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #d1dfd6;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+}
+
+.btn-danger {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #fecaca;
+  border-color: #fca5a5;
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+/* Badge Classes */
+.badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-performance { background-color: var(--color-performance-bg); color: var(--color-performance-text); }
+.badge-rehearsal { background-color: var(--primary-light); color: var(--primary-deep); }
+.badge-success { background-color: var(--color-success-bg); color: var(--color-success-text); }
+.badge-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
+.badge-muted { background-color: var(--border); color: var(--text-muted); }
+
+/* Typography Utility Classes */
+.text-display { font-size: var(--font-size-display); font-weight: var(--font-weight-display); line-height: 1.1; letter-spacing: 0; }
+.text-headline { font-size: var(--font-size-headline); font-weight: var(--font-weight-headline); line-height: 1.2; }
+.text-body { font-size: var(--font-size-body); font-weight: var(--font-weight-body); line-height: 1.5; }
+.text-label { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: 0.01em; }
+.text-muted { color: var(--text-muted); }
 
 @media print {
     body .no-print.no-print.no-print {

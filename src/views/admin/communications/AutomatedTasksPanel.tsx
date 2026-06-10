@@ -37,8 +37,8 @@ export function AutomatedTasksPanel({
   };
 
   return (
-    <div className="flex-col gap-6">
-      <div className="flex-col gap-4">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <h3 className="text-lg font-semibold text-text">
           Upcoming Automated Tasks
         </h3>
@@ -76,7 +76,7 @@ export function AutomatedTasksPanel({
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <strong className="text-sm font-semibold text-text">
                   {task.event.title || task.event.type}
                 </strong>
@@ -141,7 +141,7 @@ export function AutomatedTasksPanel({
         </div>
       </div>
 
-      <div className="flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <h3 className="text-lg font-semibold text-text-muted">
           Sent / Past Automated Tasks
         </h3>
@@ -189,7 +189,7 @@ export function AutomatedTasksPanel({
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <strong className="text-sm font-semibold text-text">
                   {task.event.title || task.event.type}
                 </strong>

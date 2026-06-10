@@ -325,7 +325,7 @@ if (library.isLoading) {
 return (
   <div className="p-6 max-w-7xl mx-auto">
     <div className="flex items-center justify-between mb-6">
-          <div className="flex-col gap-1">
+      <div className="flex flex-col gap-1">
         <h1 className="text-display m-0">
           Communications
         </h1>

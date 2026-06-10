@@ -49,7 +49,7 @@ export function MessageHistory({
   }, [historySearchQuery]);
 
   return (
-    <div className="flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex gap-2 mb-1">
         <div className="relative flex-1">
           <input

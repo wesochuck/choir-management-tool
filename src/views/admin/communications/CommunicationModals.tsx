@@ -72,8 +72,8 @@ export function CommunicationModals({
         }
       >
         {selectedMessage && (
-          <div className="flex-col gap-4">
-            <div className="flex-col gap-1">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
               <label className="text-label text-muted">Subject</label>
               <strong>
                 {(() => {
@@ -89,7 +89,7 @@ export function CommunicationModals({
                 })()}
               </strong>
             </div>
-            <div className="flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <label className="text-label text-muted">Sent To</label>
               <span>
                 {selectedMessage.status === 'Archived'
@@ -98,13 +98,13 @@ export function CommunicationModals({
               </span>
             </div>
             {selectedMessage.status === 'Archived' && (
-              <div className="card bg-amber-50 border border-amber-200 rounded-md p-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <strong>Archived:</strong> This automated message was archived without sending.
               </div>
             )}
-            <div className="flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <label className="text-label text-muted">Content</label>
-              <div className="card bg-bg border border-border rounded-md p-4 max-h-60 overflow-y-auto">
+              <div className="bg-bg border border-border rounded-lg p-4 max-h-60 overflow-y-auto">
                 {selectedMessage.content}
               </div>
             </div>
@@ -129,7 +129,7 @@ export function CommunicationModals({
       >
         <div className="flex flex-wrap gap-2">
           {recipientPreviewList.recipients.length === 0 ? (
-            <div className="card admin-empty-state">
+            <div className="w-full text-center py-10 text-text-muted">
               <p className="text-muted m-0">
                 {recipientPreviewList.emptyMessage || 'No recipients found.'}
               </p>
@@ -143,7 +143,7 @@ export function CommunicationModals({
             recipientPreviewList.recipients.map((r) => (
               <div
                 key={r.id}
-                className="flex-row card"
+                className="inline-flex items-center gap-2 px-3 py-1.5 border border-border rounded-lg bg-bg"
               >
                 <strong>{r.name}</strong>
                 <span className="text-muted text-xs">{r.voicePart}</span>

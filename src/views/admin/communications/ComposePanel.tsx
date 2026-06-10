@@ -149,9 +149,9 @@ export function ComposePanel({
     if (hasApprovedSetList) return null;
     if (!content.toLowerCase().includes('{setlist}')) return null;
     return (
-      <div className="review-checklist-item warning">
+      <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
         <svg
-          className="checklist-icon"
+          className="flex-shrink-0 w-4 h-4 mt-0.5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -165,7 +165,7 @@ export function ComposePanel({
         </svg>
         <span>
           <strong>Set list not approved.</strong> The set list hasn't been approved for singers yet.{' '}
-          <Link to="/admin/setlists" className="review-inline-link">Open Set List Builder</Link>{' '}
+          <Link to="/admin/setlists" className="underline font-semibold cursor-pointer text-primary hover:text-primary-deep">Open Set List Builder</Link>{' '}
           to approve it before sending.
         </span>
       </div>
@@ -173,7 +173,7 @@ export function ComposePanel({
   };
 
   return (
-    <div className="flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <WizardStepper
         steps={[
           { number: 1, id: 'TARGETS', label: 'Recipients', isValid: true },
@@ -194,13 +194,13 @@ export function ComposePanel({
       />
 
       {wizardStep === 'TARGETS' && (
-        <div className="flex-col gap-4">
-          <div className="wizard-action-header justify-end">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center w-full gap-2 pb-2.5 border-b border-border max-md:flex-col justify-end">
             <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
               Next: Compose Message →
             </button>
           </div>
-          <div className="targets-grid">
+          <div className="flex flex-col lg:grid lg:grid-cols-[360px_1fr] gap-6 items-start">
           <AppCard
             title="Recipients"
             actions={
@@ -211,8 +211,8 @@ export function ComposePanel({
               </span>
             }
           >
-            <div className="flex-col gap-4">
-              <div className="flex-col gap-1">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Event Context</label>
                 <select
                   className="card"
@@ -228,7 +228,7 @@ export function ComposePanel({
                 </select>
               </div>
 
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">RSVP Status</label>
                 <select
                   className="card"
@@ -250,7 +250,7 @@ export function ComposePanel({
                 )}
               </div>
 
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Global Status</label>
                 <select
                   className="card"
@@ -265,7 +265,7 @@ export function ComposePanel({
               </div>
 
               <div
-                className="flex-col gap-1 relative"
+                className="flex flex-col gap-1 relative"
                 ref={dropdownRef}
               >
                 <label className="text-label">Voice Part / Section</label>
@@ -335,7 +335,7 @@ export function ComposePanel({
                 )}
               </div>
 
-              <div className="flex-col gap-2 p-4 bg-primary-light rounded-lg">
+              <div className="flex flex-col gap-2 p-4 bg-primary-light rounded-lg">
                 <div className="flex justify-between">
                   <span>Matched Singers:</span>
                   <strong>
@@ -362,9 +362,9 @@ export function ComposePanel({
             </div>
           </AppCard>
 
-          <div className="flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <AppCard title="Templates & Quick Starts">
-              <div className="flex-col gap-4">
+              <div className="flex flex-col gap-4">
                 <p className="text-muted text-sm">
                   Select a template to pre-fill your message, or start with a blank canvas.
                 </p>
@@ -382,7 +382,7 @@ export function ComposePanel({
               </div>
             </AppCard>
 
-            <div className="wizard-action-footer justify-end">
+            <div className="sticky bottom-0 left-0 right-0 bg-surface border-t border-border p-3 -mx-4 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex gap-2 items-center lg:static lg:bg-transparent lg:border-t-0 lg:p-0 lg:mx-0 lg:shadow-none lg:justify-end lg:w-full">
               <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
                 Next: Compose Message →
               </button>
@@ -393,14 +393,14 @@ export function ComposePanel({
       )}
 
       {wizardStep === 'COMPOSE' && (
-        <div className="flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div
-            className="wizard-action-header flex flex-col md:flex-row justify-between w-full"
+            className="flex items-center w-full gap-2 pb-2.5 border-b border-border flex-col md:flex-row justify-between w-full"
           >
             <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
               ← Back to Recipients
             </button>
-            <div className="flex-row items-center gap-2 flex-wrap wizard-action-subgroup">
+            <div className="flex flex-row items-center gap-2 flex-wrap flex-2 lg:flex-none">
               <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                 {isSavingDraft ? 'Saving...' : 'Save Draft'}
               </button>
@@ -409,8 +409,8 @@ export function ComposePanel({
               </button>
             </div>
           </div>
-          <div className="compose-grid">
-            <div className="flex-col gap-4">
+          <div className="flex flex-col lg:grid lg:grid-cols-[1fr_300px] gap-6 items-start">
+            <div className="flex flex-col gap-4">
               <AppCard title="Composer">
                 <ComposeStep
                   subject={subject}
@@ -425,12 +425,12 @@ export function ComposePanel({
               </AppCard>
 
               <div
-                className="wizard-action-footer flex flex-col md:flex-row justify-between w-full"
+                className="sticky bottom-0 left-0 right-0 bg-surface border-t border-border p-3 -mx-4 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex gap-2 items-center lg:static lg:bg-transparent lg:border-t-0 lg:p-0 lg:mx-0 lg:shadow-none flex-col md:flex-row justify-between w-full"
               >
                 <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Recipients
                 </button>
-                <div className="flex-row items-center gap-2 flex-wrap wizard-action-subgroup">
+                <div className="flex flex-row items-center gap-2 flex-wrap flex-2 lg:flex-none">
                   <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                     {isSavingDraft ? 'Saving...' : 'Save Draft'}
                   </button>
@@ -454,13 +454,13 @@ export function ComposePanel({
       )}
 
       {wizardStep === 'REVIEW' && (
-        <div className="flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div
-            className="wizard-action-header flex flex-col md:flex-row justify-between w-full"
+            className="flex items-center w-full gap-2 pb-2.5 border-b border-border flex-col md:flex-row justify-between w-full"
           >
             <button
               type="button"
-              className="review-btn-action back"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border font-semibold px-4.5 py-2.5 cursor-pointer min-h-11 whitespace-nowrap transition-all duration-200 text-sm active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none bg-white text-text hover:bg-slate-50 hover:border-text-muted [&_svg]:hover:-translate-x-0.5"
               onClick={() => setWizardStep('COMPOSE')}
             >
               <svg
@@ -470,16 +470,16 @@ export function ComposePanel({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="inline-flex mr-1"
+                className="inline-flex mr-1 w-4 h-4 transition-transform duration-200"
               >
                 <polyline points="15 18 9 12 15 6" />
               </svg>
               Back
             </button>
-            <div className="flex-row items-center gap-2 flex-wrap">
+            <div className="flex flex-row items-center gap-2 flex-wrap">
               <button
                 type="button"
-                className="review-btn-action test"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border font-semibold px-4.5 py-2.5 cursor-pointer min-h-11 whitespace-nowrap transition-all duration-200 text-sm active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none bg-white text-text hover:bg-slate-50 hover:border-primary hover:text-primary-deep [&_svg]:hover:rotate-12"
                 onClick={handleSendTest}
                 disabled={isSendingTest || isSending}
                 title={`Send email test to ${user?.email || 'your email'}`}
@@ -488,7 +488,7 @@ export function ComposePanel({
               </button>
               <button
                 type="button"
-                className="review-btn-action primary"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border font-semibold px-4.5 py-2.5 cursor-pointer min-h-11 whitespace-nowrap transition-all duration-200 text-sm active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none bg-primary border-primary text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] hover:bg-primary-deep hover:border-primary-deep hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
                 onClick={sendMessage}
                 disabled={isSending || selectedRecipients.length === 0}
               >
@@ -496,9 +496,9 @@ export function ComposePanel({
               </button>
             </div>
           </div>
-          <div className="review-send-grid">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-6 items-start">
           {/* Left Column: Unified Live Preview */}
-          <div className="review-preview-section">
+          <div className="flex flex-col">
             <AppCard noPadding>
               <div className="p-4">
                 <LivePreview
@@ -516,7 +516,7 @@ export function ComposePanel({
           </div>
 
           {/* Right Column: Sidebar Stack */}
-          <aside className="review-side-stack">
+          <aside className="flex flex-col gap-5">
             {/* Card 1: Recipient summary */}
             <AppCard
               title="Recipient Summary"
@@ -545,16 +545,16 @@ export function ComposePanel({
                 </button>
               }
             >
-              <div className="review-metric-grid">
+              <div className="grid grid-cols-3 max-md:grid-cols-1 gap-3 mt-1">
                 <button
                   type="button"
-                  className="review-metric-tile total"
+                  className="bg-primary-light border border-primary/15 rounded-lg p-4 flex flex-col items-center text-center gap-1.5 transition-all duration-250 relative overflow-hidden font-sans w-full cursor-pointer hover:-translate-y-0.5 hover:shadow-xs hover:border-primary active:scale-95 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed text-primary-deep [&_svg]:hover:text-primary-deep"
                   disabled={selectedRecipients.length === 0}
                   onClick={() => onViewRecipients(selectedRecipients, 'Recipient List (Total Audience)')}
                 >
-                  <div className="metric-tile-header">
+                  <div className="flex items-center gap-1.5 text-text-muted text-[10px] font-bold uppercase tracking-wider">
                     <svg
-                      className="metric-icon"
+                      className="w-4 h-4 text-text-muted transition-colors duration-250"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -567,15 +567,15 @@ export function ComposePanel({
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    <span className="metric-tile-label">Total Audience</span>
+                    <span>Total Audience</span>
                   </div>
-                  <strong className="metric-tile-val">{recipientCounts.total}</strong>
-                  <span className="metric-tile-desc">matched singers</span>
+                  <strong className="text-2xl font-bold text-text mt-1 mb-0.5 leading-none">{recipientCounts.total}</strong>
+                  <span className="text-[10px] text-text-muted">matched singers</span>
                 </button>
 
                 <button
                   type="button"
-                  className="review-metric-tile email"
+                  className="bg-green-50/50 border border-green-600/15 rounded-lg p-4 flex flex-col items-center text-center gap-1.5 transition-all duration-250 relative overflow-hidden font-sans w-full cursor-pointer hover:-translate-y-0.5 hover:shadow-xs hover:border-green-600 active:scale-95 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed text-green-800 [&_svg]:hover:text-green-600"
                   disabled={selectedRecipients.filter((r) => r.email?.trim()).length === 0}
                   onClick={() =>
                     onViewRecipients(
@@ -584,9 +584,9 @@ export function ComposePanel({
                     )
                   }
                 >
-                  <div className="metric-tile-header">
+                  <div className="flex items-center gap-1.5 text-text-muted text-[10px] font-bold uppercase tracking-wider">
                     <svg
-                      className="metric-icon"
+                      className="w-4 h-4 text-text-muted transition-colors duration-250"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -597,15 +597,15 @@ export function ComposePanel({
                       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                       <polyline points="22,6 12,13 2,6" />
                     </svg>
-                    <span className="metric-tile-label">Via Email</span>
+                    <span>Via Email</span>
                   </div>
-                  <strong className="metric-tile-val">{recipientCounts.hasEmail}</strong>
-                  <span className="metric-tile-desc">receive email</span>
+                  <strong className="text-2xl font-bold text-text mt-1 mb-0.5 leading-none">{recipientCounts.hasEmail}</strong>
+                  <span className="text-[10px] text-text-muted">receive email</span>
                 </button>
 
                 <button
                   type="button"
-                  className="review-metric-tile sms"
+                  className="bg-blue-50/50 border border-blue-600/15 rounded-lg p-4 flex flex-col items-center text-center gap-1.5 transition-all duration-250 relative overflow-hidden font-sans w-full cursor-pointer hover:-translate-y-0.5 hover:shadow-xs hover:border-blue-600 active:scale-95 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed text-blue-800 [&_svg]:hover:text-blue-600"
                   disabled={selectedRecipients.filter((r) => r.phone?.trim()).length === 0}
                   onClick={() =>
                     onViewRecipients(
@@ -614,9 +614,9 @@ export function ComposePanel({
                     )
                   }
                 >
-                  <div className="metric-tile-header">
+                  <div className="flex items-center gap-1.5 text-text-muted text-[10px] font-bold uppercase tracking-wider">
                     <svg
-                      className="metric-icon"
+                      className="w-4 h-4 text-text-muted transition-colors duration-250"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -627,21 +627,21 @@ export function ComposePanel({
                       <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
                       <line x1="12" y1="18" x2="12.01" y2="18" />
                     </svg>
-                    <span className="metric-tile-label">Via SMS</span>
+                    <span>Via SMS</span>
                   </div>
-                  <strong className="metric-tile-val">{recipientCounts.hasPhone}</strong>
-                  <span className="metric-tile-desc">receive SMS text</span>
+                  <strong className="text-2xl font-bold text-text mt-1 mb-0.5 leading-none">{recipientCounts.hasPhone}</strong>
+                  <span className="text-[10px] text-text-muted">receive SMS text</span>
                 </button>
               </div>
             </AppCard>
 
             {/* Card 2: Pre-flight checklist */}
             <AppCard title="Pre-Flight Checklist">
-              <div className="review-checklist-list">
+              <div className="flex flex-col gap-2">
                 {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
-                  <div className="review-checklist-item warning">
+                  <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
                     <svg
-                      className="checklist-icon"
+                      className="flex-shrink-0 w-4 h-4 mt-0.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -659,9 +659,9 @@ export function ComposePanel({
                   </div>
                 )}
                 {content.length < 10 && (
-                  <div className="review-checklist-item warning">
+                  <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
                     <svg
-                      className="checklist-icon"
+                      className="flex-shrink-0 w-4 h-4 mt-0.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -679,9 +679,9 @@ export function ComposePanel({
                   </div>
                 )}
                 {selectedRecipients.length === 0 && (
-                  <div className="review-checklist-item warning">
+                  <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
                     <svg
-                      className="checklist-icon"
+                      className="flex-shrink-0 w-4 h-4 mt-0.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -718,9 +718,9 @@ export function ComposePanel({
 
                   if (foundPlaceholders.length > 0) {
                     return (
-                      <div className="review-checklist-item warning">
+                      <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
                         <svg
-                          className="checklist-icon"
+                          className="flex-shrink-0 w-4 h-4 mt-0.5"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -751,9 +751,9 @@ export function ComposePanel({
 
                   if (!hasApprovedSetList && hasPlayerPlaceholder) {
                     return (
-                      <div className="review-checklist-item warning">
+                      <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
                         <svg
-                          className="checklist-icon"
+                          className="flex-shrink-0 w-4 h-4 mt-0.5"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -779,9 +779,9 @@ export function ComposePanel({
                 {renderSetlistWarning()}
 
                 {selectedRecipients.some((r) => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
-                  <div className="review-checklist-item info">
+                  <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-blue-100 border-l-4 border-l-blue-600 transition-transform duration-200 hover:translate-x-0.5 bg-blue-50 text-blue-900">
                     <svg
-                      className="checklist-icon"
+                      className="flex-shrink-0 w-4 h-4 mt-0.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -801,9 +801,9 @@ export function ComposePanel({
                 )}
 
                 {selectedRecipients.some((r) => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
-                  <div className="review-checklist-item info">
+                  <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-blue-100 border-l-4 border-l-blue-600 transition-transform duration-200 hover:translate-x-0.5 bg-blue-50 text-blue-900">
                     <svg
-                      className="checklist-icon"
+                      className="flex-shrink-0 w-4 h-4 mt-0.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -823,9 +823,9 @@ export function ComposePanel({
                 )}
 
                 {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
-                  <div className="review-checklist-item warning">
+                  <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-amber-100 border-l-4 border-l-amber-600 transition-transform duration-200 hover:translate-x-0.5 bg-amber-50 text-amber-900">
                     <svg
-                      className="checklist-icon"
+                      className="flex-shrink-0 w-4 h-4 mt-0.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -841,7 +841,7 @@ export function ComposePanel({
                       <strong>Default physical address active.</strong> Please{' '}
                       <button
                         type="button"
-                        className="review-inline-link"
+                        className="underline font-semibold cursor-pointer text-primary hover:text-primary-deep"
                         onClick={() => {
                           setTab('settings');
                           setEditingTemplate(null);
@@ -854,9 +854,9 @@ export function ComposePanel({
                   </div>
                 )}
 
-                <div className="review-checklist-item success">
+                <div className="flex items-start gap-3 w-full rounded-lg p-3 text-xs leading-normal border border-emerald-100 border-l-4 border-l-emerald-600 transition-transform duration-200 hover:translate-x-0.5 bg-emerald-50 text-emerald-900">
                   <svg
-                    className="checklist-icon"
+                    className="flex-shrink-0 w-4 h-4 mt-0.5"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -874,10 +874,10 @@ export function ComposePanel({
 
             {/* Card 3: Sending Actions */}
             <AppCard title="Sending Actions">
-              <div className="review-action-row">
+              <div className="flex gap-3 w-full max-md:flex-col-reverse">
                 <button
                   type="button"
-                  className="review-btn-action back"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border font-semibold px-4.5 py-2.5 cursor-pointer min-h-11 whitespace-nowrap transition-all duration-200 text-sm active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none bg-white text-text hover:bg-slate-50 hover:border-text-muted [&_svg]:hover:-translate-x-0.5"
                   onClick={() => setWizardStep('COMPOSE')}
                 >
                   <svg
@@ -887,6 +887,7 @@ export function ComposePanel({
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    className="w-4 h-4 transition-transform duration-200"
                   >
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
@@ -895,7 +896,7 @@ export function ComposePanel({
 
                 <button
                   type="button"
-                  className="review-btn-action test"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border font-semibold px-4.5 py-2.5 cursor-pointer min-h-11 whitespace-nowrap transition-all duration-200 text-sm active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none bg-white text-text hover:bg-slate-50 hover:border-primary hover:text-primary-deep [&_svg]:hover:rotate-12"
                   onClick={handleSendTest}
                   disabled={isSendingTest || isSending}
                   title={`Send email test to ${user?.email || 'your email'}`}
@@ -907,6 +908,7 @@ export function ComposePanel({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    className="w-4 h-4 transition-transform duration-200"
                   >
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
@@ -916,7 +918,7 @@ export function ComposePanel({
 
                 <button
                   type="button"
-                  className="review-btn-action primary"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border font-semibold px-4.5 py-2.5 cursor-pointer min-h-11 whitespace-nowrap transition-all duration-200 text-sm active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none bg-primary border-primary text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] hover:bg-primary-deep hover:border-primary-deep hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
                   onClick={sendMessage}
                   disabled={isSending || selectedRecipients.length === 0}
                 >
@@ -927,6 +929,7 @@ export function ComposePanel({
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    className="w-4 h-4 transition-transform duration-200"
                   >
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22 2 15 22 11 13 2 9 22 2" />

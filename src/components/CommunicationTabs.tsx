@@ -20,13 +20,13 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   ];
 
   return (
-    <div className="communication-tabs">
-      <div className="communication-tabs-secondary">
+    <div className="flex items-center justify-between gap-4 w-full overflow-x-auto whitespace-nowrap pb-1 border-b border-border">
+      <div className="flex items-center gap-2">
         {secondaryTabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
-            className={`communication-tab-link ${activeTab === tab.value ? 'active' : ''}`}
+            className={`inline-flex items-center gap-1.5 border-0 bg-transparent text-text-muted text-sm px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 hover:bg-primary-light/50 hover:text-text ${activeTab === tab.value ? 'bg-primary-light text-primary-deep font-semibold' : 'font-medium'}`}
             onClick={() => onTabChange(tab.value)}
           >
             <span>{tab.label}</span>
@@ -39,7 +39,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 
       <button
         type="button"
-        className={`communication-tab-primary ${activeTab === 'compose' ? 'active' : ''}`}
+        className={`inline-flex items-center justify-center gap-1.5 border px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ml-auto ${activeTab === 'compose' ? 'bg-primary border-primary text-white' : 'bg-primary-light border-primary-light text-primary-deep hover:bg-primary hover:border-primary hover:text-white'}`}
         onClick={() => onTabChange('compose')}
       >
         <span aria-hidden="true">+</span>
