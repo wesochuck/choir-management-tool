@@ -182,24 +182,17 @@ export default function PatronsView() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-slate-800">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900">
           Patrons Dashboard
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           View lifetime value and message your donors and ticket buyers.
         </p>
-        <button
-          onClick={handleSendMessage}
-          disabled={selectedIds.size === 0}
-          className="mt-4 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
-        >
-          Send Message ({selectedIds.size})
-        </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Patrons
           </p>
@@ -208,7 +201,7 @@ export default function PatronsView() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Total LTV
           </p>
@@ -218,11 +211,11 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-800">
+              <h2 className="text-lg font-semibold text-slate-900">
                 Patron Directory
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -230,68 +223,78 @@ export default function PatronsView() {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Search
-                </span>
-                <input
-                  type="search"
-                  placeholder="Name or email..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                />
-              </label>
+            <button
+              onClick={handleSendMessage}
+              disabled={selectedIds.size === 0}
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+            >
+              Send Message ({selectedIds.size})
+            </button>
+          </div>
+        </div>
 
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  From
-                </span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={e => handleSetStartDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                />
-              </label>
+        <div className="border-b border-slate-200 bg-slate-50/50 px-6 py-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Search
+              </span>
+              <input
+                type="search"
+                placeholder="Name or email..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              />
+            </label>
 
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  To
-                </span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                />
-              </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                From
+              </span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => handleSetStartDate(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              />
+            </label>
 
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Sort
-                </span>
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-                >
-                  <option value="ltv">Lifetime Value</option>
-                  <option value="name">Name</option>
-                  <option value="lastDate">Last Transaction</option>
-                </select>
-              </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                To
+              </span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              />
+            </label>
 
-              {(searchQuery || startDate || endDate) && (
-                <button
-                  onClick={handleClearFilters}
-                  className="self-end rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:col-span-2 lg:col-span-1"
-                >
-                  Clear Filters
-                </button>
-              )}
-            </div>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Sort
+              </span>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              >
+                <option value="ltv">Lifetime Value</option>
+                <option value="name">Name</option>
+                <option value="lastDate">Last Transaction</option>
+              </select>
+            </label>
+
+            {(searchQuery || startDate || endDate) && (
+              <button
+                onClick={handleClearFilters}
+                className="self-end rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:col-span-2 lg:col-span-1"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
         </div>
 
