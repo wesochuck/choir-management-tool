@@ -44,7 +44,11 @@ export default {
         if (!deps || deps.length === 0) return;
 
         const callback = node.arguments[0];
-        if (!callback || (callback.type !== 'ArrowFunctionExpression' && callback.type !== 'FunctionExpression')) return;
+        if (
+          !callback ||
+          (callback.type !== 'ArrowFunctionExpression' && callback.type !== 'FunctionExpression')
+        )
+          return;
 
         // Walk the effect body for .then()/.catch() calls
         const setterCallsInPromiseChain = findSetterNamesInPromiseChains(callback.body);

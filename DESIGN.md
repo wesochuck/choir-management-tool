@@ -7,29 +7,33 @@ This document defines the visual language and UI standards for the Choir Managem
 All styles should use these tokens from `index.css` instead of hardcoded values.
 
 ### Colors
-| Token | Value | Role |
-| :--- | :--- | :--- |
-| `--primary` | `#4a7c59` | Primary action color (Forest Green) |
-| `--primary-light` | `#e9f0eb` | Background for primary light elements |
-| `--primary-deep` | `#345940` | Deep green for text/borders on primary light |
-| `--bg` | `#fcfcfc` | Main application background |
-| `--surface` | `#ffffff` | Background for cards, modals, and inputs |
-| `--text` | `#2c3e50` | Primary text color |
-| `--text-muted` | `#64748b` | Muted text, labels, and secondary info |
-| `--border` | `#e2e8f0` | Standard border color |
+
+| Token             | Value     | Role                                         |
+| :---------------- | :-------- | :------------------------------------------- |
+| `--primary`       | `#4a7c59` | Primary action color (Forest Green)          |
+| `--primary-light` | `#e9f0eb` | Background for primary light elements        |
+| `--primary-deep`  | `#345940` | Deep green for text/borders on primary light |
+| `--bg`            | `#fcfcfc` | Main application background                  |
+| `--surface`       | `#ffffff` | Background for cards, modals, and inputs     |
+| `--text`          | `#2c3e50` | Primary text color                           |
+| `--text-muted`    | `#64748b` | Muted text, labels, and secondary info       |
+| `--border`        | `#e2e8f0` | Standard border color                        |
 
 ### Semantic Colors
-| Token | Role |
-| :--- | :--- |
-| `--color-performance-bg` | Background for performance-related badges |
+
+| Token                      | Role                                      |
+| :------------------------- | :---------------------------------------- |
+| `--color-performance-bg`   | Background for performance-related badges |
 | `--color-performance-text` | Text color for performance-related badges |
-| `--color-danger-bg` | Background for destructive/error actions |
-| `--color-danger-text` | Text for destructive/error actions |
-| `--color-success-bg` | Background for success/completed states |
-| `--color-success-text` | Text for success/completed states |
+| `--color-danger-bg`        | Background for destructive/error actions  |
+| `--color-danger-text`      | Text for destructive/error actions        |
+| `--color-success-bg`       | Background for success/completed states   |
+| `--color-success-text`     | Text for success/completed states         |
 
 ### Spacing
+
 Scale is based on 8px increments for visual rhythm.
+
 - `--space-xs`: 4px
 - `--space-sm`: 8px
 - `--space-md`: 16px
@@ -37,6 +41,7 @@ Scale is based on 8px increments for visual rhythm.
 - `--space-xl`: 32px
 
 ### Typography
+
 - **Font Family**: Inter, system-ui, sans-serif.
 - **Weights**: 400 (Body), 500 (Labels), 600 (Headlines), 700 (Display/Bold).
 - **Scale**:
@@ -47,12 +52,14 @@ Scale is based on 8px increments for visual rhythm.
   - `font-size-sm`: 12px (Badges, fine print)
 
 ### Radii & Shadow
+
 - **Radii**: 4px (`sm`), 8px (`md`), 12px (`lg`)
 - **Shadows**: Use `--shadow-sm` for cards and `--shadow-md` for interactive elements/modals.
 
 ## 2. Component Scoped Styling
 
 ### Standards
+
 1. **No Inline Styles**: All styles must be moved from TSX `style={{...}}` blocks into dedicated CSS files.
 2. **Naming Convention**: Use kebab-case for classes. Class names should be descriptive (e.g., `.send-wizard-progress-bar` instead of `.progress`).
 3. **File Location**: Component CSS must live in the same directory as the component (e.g., `src/views/admin/EventsView.css`).
@@ -73,9 +80,11 @@ Scale is based on 8px increments for visual rhythm.
 ## 5. Component Library
 
 ### Location
+
 All shared UI components live in `src/components/ui/` using CSS Modules. Each component is a directory with a `.tsx`, `.module.css`, and `.test.ts` file. Components are re-exported through `src/components/ui/index.ts`.
 
 ### Usage
+
 ```tsx
 import { Button, Card, Modal, Badge, Spinner, Tabs, TabPanel } from '../components/ui';
 ```
@@ -92,13 +101,16 @@ import { Button, Card, Modal, Badge, Spinner, Tabs, TabPanel } from '../componen
 `Pagination`, `PhotoUploader`, `MarkdownEditor`, `FloatingSaveBar`, `SavingIndicator`
 
 ### CSS Modules
+
 Each component uses a co-located `.module.css` file for locally scoped styles. No global class name collisions. Design tokens from `index.css` `:root` are consumed via `var(--token)` in each module.
 
 ### Conventions
+
 - Component files do NOT import `React` — React 19's automatic JSX transform handles JSX. Only named type imports from `react` are used.
 - Every component exports a named function (`export function Button(...)`) and a corresponding `XxxProps` interface.
 - Test files are `.test.ts` (not `.test.tsx`) and use `React.createElement(...)` instead of JSX (the project's tsconfig.test.json uses `erasableSyntaxOnly`).
 - Dynamic inline styles require a `// @allow-inline-style` annotation with an explanation.
 
 ### Migration
+
 New features must use library components from `src/components/ui/`. Existing views migrate gradually. The `src/components/common/` and `src/components/admin/` directories contain legacy components that remain until all consumers migrate. No existing code was modified during the library creation sprint.

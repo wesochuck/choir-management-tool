@@ -219,7 +219,7 @@ export default function PublicDonationView() {
             </div>
           </div>
 
-          <div className="flex flex-row p-4 gap-4 items-start bg-neutral-bg border border-border rounded-lg mt-1 items-center">
+          <div className="flex flex-row p-4 gap-4 bg-neutral-bg border border-border rounded-lg mt-1 items-center">
             <input
               id="isAnonymous"
               type="checkbox"

@@ -99,7 +99,7 @@ Logging must be defensive. Do not assume `e.record`, `record.id`, or related rec
 For previous record state, use:
 
 ```ts
-e.record.originalCopy()
+e.record.originalCopy();
 ```
 
 For compatibility:
@@ -108,7 +108,7 @@ For compatibility:
 const previous =
   e.record && typeof e.record.originalCopy === 'function'
     ? e.record.originalCopy()
-    : e.originalCopy
+    : e.originalCopy;
 ```
 
 When generating HTML, sanitize dynamic text with an escaping helper such as `escapeHtml`.
@@ -219,12 +219,16 @@ Do not include state variables in `useEffect` dependency arrays when the effect'
 ```ts
 // ❌ Avoid — setRecipients on error re-triggers the effect
 useEffect(() => {
-  apiCall().then(setData).catch(() => setData([]));
+  apiCall()
+    .then(setData)
+    .catch(() => setData([]));
 }, [filters, data]); // data changes -> refire
 
 // ✅ Safe — effect deps only include trigger values
 useEffect(() => {
-  apiCall().then(setData).catch(() => setData([]));
+  apiCall()
+    .then(setData)
+    .catch(() => setData([]));
 }, [filters]);
 ```
 
@@ -282,7 +286,7 @@ pocketbase/pb_hooks_src/hmacTokens.ts
 Sign the raw canonical payload first, append `&s=<signature>`, then encode the full token only at the outer URL boundary with:
 
 ```ts
-encodeURIComponent(token)
+encodeURIComponent(token);
 ```
 
 Do not use `URLSearchParams` for signed payload construction.
@@ -310,7 +314,7 @@ Composite tokens may contain `&`.
 When constructing URLs, encode the full token:
 
 ```ts
-encodeURIComponent(token)
+encodeURIComponent(token);
 ```
 
 When parsing tokens, defensively handle cases where an unencoded token was split into params such as `token`, `s`, or `p`, and reconstruct the intended token before API calls.
@@ -324,10 +328,10 @@ Decode before parsing or serializing:
 ```ts
 function decodeGoBytes(val: unknown): string {
   if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-    return val.map(b => String.fromCharCode(Number(b))).join('')
+    return val.map((b) => String.fromCharCode(Number(b))).join('');
   }
 
-  return typeof val === 'string' ? val : ''
+  return typeof val === 'string' ? val : '';
 }
 ```
 
@@ -340,9 +344,9 @@ Avoid sorting by `created` or `updated` inside Goja hooks/endpoints unless the s
 Parse numeric fields defensively:
 
 ```ts
-const rawAttempts = record.get('attempts')
-const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0
-const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1
+const rawAttempts = record.get('attempts');
+const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
 ```
 
 In raw SQL passed to `app.db().newQuery(...)`, use dbx named parameter syntax:
@@ -376,7 +380,7 @@ Backend code must resolve the related `users` record through the profile `user` 
 Frontend code must use:
 
 ```ts
-getProfileEmail(profile)
+getProfileEmail(profile);
 ```
 
 from:

@@ -237,10 +237,10 @@ export function TemplatesPanel({
           {templates.map((tpl) => (
             <div
               key={tpl.id}
-              className="card flex flex-col md:flex-row px-4 py-2 justify-between items-center shadow-none border border-border m-0"
+              className="card flex flex-col md:flex-row px-4 py-2 justify-between items-center shadow-none border border-border m-0 gap-4"
             >
               <div className="flex-col gap-0.5">
-                <div className="flex gap-4 flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <strong className="text-sm">{tpl.title}</strong>
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
                     {tpl.type}
@@ -255,7 +255,7 @@ export function TemplatesPanel({
                   {tpl.subject ? `Subject: ${tpl.subject}` : 'No Subject'} • {tpl.content.substring(0, 60)}...
                 </span>
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 shrink-0">
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"

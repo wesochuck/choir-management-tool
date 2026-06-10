@@ -15,7 +15,7 @@ export function DraftsPanel({
   return (
     <AppCard noPadding>
       {drafts.map((draft) => (
-        <div key={draft.id} className="p-3 border-b border-border flex flex-col md:flex-row last:border-b-0">
+        <div key={draft.id} className="p-3 border-b border-border flex flex-col md:flex-row last:border-b-0 justify-between items-start md:items-center gap-4">
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex gap-2 items-center">
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{draft.type}</span>
@@ -28,7 +28,7 @@ export function DraftsPanel({
               {draft.content.substring(0, 100)}...
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => onDeleteDraft(draft)}

@@ -17,8 +17,7 @@
  *   style={{ color: 'red', marginTop: '8px' }}
  */
 
-const legacyWhitelist = new Set([
-]);
+const legacyWhitelist = new Set([]);
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
@@ -32,14 +31,12 @@ export default {
     schema: [],
     messages: {
       noHardcodedInlineStyle:
-        "Avoid hardcoded inline styles. Use CSS classes instead. If the style is truly dynamic, add a preceding comment: // @allow-inline-style - explanation",
+        'Avoid hardcoded inline styles. Use CSS classes instead. If the style is truly dynamic, add a preceding comment: // @allow-inline-style - explanation',
     },
   },
   create(context) {
     const filename = context.filename || context.getFilename();
-    const relPath = filename.includes('/src/')
-      ? 'src/' + filename.split('/src/')[1]
-      : '';
+    const relPath = filename.includes('/src/') ? 'src/' + filename.split('/src/')[1] : '';
     if (legacyWhitelist.has(relPath)) {
       return {};
     }
@@ -58,7 +55,10 @@ export default {
         const currentLine = sourceCode.lines[lineIndex];
         const prevLine = lineIndex > 0 ? sourceCode.lines[lineIndex - 1] : '';
 
-        if (prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style')) {
+        if (
+          prevLine.includes('@allow-inline-style') ||
+          currentLine.includes('@allow-inline-style')
+        ) {
           return;
         }
 
@@ -74,7 +74,6 @@ export default {
           messageId: 'noHardcodedInlineStyle',
         });
       },
-};
-
+    };
   },
 };

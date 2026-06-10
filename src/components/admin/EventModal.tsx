@@ -703,7 +703,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </select>
                     </div>
                     {startDate && (
-                      <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep p-2 text-center normal-case">
+                      <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-primary-light text-primary-deep p-2 text-center">
                         📅 First rehearsal: <strong>{startDate.toLocaleDateString()}</strong>
                       </div>
                     )}

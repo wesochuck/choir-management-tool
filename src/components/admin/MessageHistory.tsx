@@ -92,7 +92,7 @@ export function MessageHistory({
           );
 
           return (
-            <div key={message.id} className="p-3 border-b border-border flex flex-col md:flex-row last:border-b-0">
+            <div key={message.id} className="p-3 border-b border-border flex flex-col md:flex-row last:border-b-0 justify-between items-start md:items-center gap-4">
               <div className="flex flex-col gap-1 flex-1">
                 <div className="flex gap-2 items-center">
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{message.type}</span>
@@ -118,7 +118,7 @@ export function MessageHistory({
                   {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''} →
                 </button>
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 shrink-0">
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>Details</button>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => onCopyDraft(message)}>Copy to Draft</button>
               </div>

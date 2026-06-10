@@ -307,7 +307,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                     }}
                   >
                     <div className="text-xs font-bold">{vp.label}</div>
-                    <div className="text-sm font-semibold font-bold">{count}</div>
+                    <div className="text-sm font-bold">{count}</div>
                   </div>
                 );
               })}

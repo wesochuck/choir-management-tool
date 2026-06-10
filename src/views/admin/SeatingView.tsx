@@ -301,7 +301,7 @@ export default function SeatingView() {
     >
       <div className="no-print justify-between items-center gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
         <div className="flex-row items-center gap-[var(--space-md)] flex-wrap">
-          <h1 className="text-headline m-0 font-bold text-[1.25rem] font-extrabold">
+          <h1 className="text-headline m-0 text-[1.25rem] font-extrabold">
             Seating Chart
           </h1>
           

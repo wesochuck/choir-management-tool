@@ -68,7 +68,7 @@ export const EventList: React.FC<EventListProps> = ({
                 {e.type}
               </span>
               {openAuditionEventId === e.id && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text font-bold">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text">
                   🎵 Auditions Open
                 </span>
               )}

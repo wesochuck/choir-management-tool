@@ -393,7 +393,7 @@ export default function ProfileView() {
                 <button
                   type="button"
                   onClick={handleResetLink}
-                  className="btn btn-ghost text-danger-text border border-danger-text text-sm px-1 px-4 rounded-md bg-transparent cursor-pointer"
+                  className="btn btn-ghost text-danger-text border border-danger-text text-sm px-4 rounded-md bg-transparent cursor-pointer"
                   disabled={isCalendarLoading}
                 >
                   Reset Calendar Link...

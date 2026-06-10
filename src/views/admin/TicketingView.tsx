@@ -623,7 +623,7 @@ export default function TicketingView() {
                             <td className="p-3 px-2">{p.quantity}</td>
                             <td className="p-3 px-2">${(p.amountPaidCents / 100).toFixed(2)}</td>
                             <td className="p-3 px-2">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider capitalize ${p.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${p.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                                 {p.status}
                               </span>
                             </td>
@@ -775,7 +775,7 @@ export default function TicketingView() {
                         <td className="p-3 px-2">{order.quantity}</td>
                         <td className="p-3 px-2">${(order.amountPaidCents / 100).toFixed(2)}</td>
                         <td className="p-3 px-2">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider capitalize ${order.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${order.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                             {order.status}
                           </span>
                         </td>

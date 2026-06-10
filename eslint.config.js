@@ -1,37 +1,48 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
-import prettierConfig from 'eslint-config-prettier'
-import noEffectStateCycle from './eslint-rules/no-effect-state-cycle.js'
-import noHardcodedInlineStyles from './eslint-rules/no-hardcoded-inline-styles.js'
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import prettierConfig from 'eslint-config-prettier';
+import tailwind from 'eslint-plugin-tailwindcss';
+import noEffectStateCycle from './eslint-rules/no-effect-state-cycle.js';
+import noHardcodedInlineStyles from './eslint-rules/no-hardcoded-inline-styles.js';
 
 export default defineConfig([
   globalIgnores([
     'dist',
     'node_modules',
-    'pocketbase/pb_data',
-    'pocketbase/pocketbase',
-    'pocketbase/types.d.ts',
+    'pocketbase/**',
+    'test/**',
     '.planning',
     'docs',
     'scratch',
   ]),
   {
+    ...tailwind.configs.recommended,
+    files: ['src/**/*.{ts,tsx,js,jsx}'],
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
     ],
     languageOptions: {
       globals: globals.browser,
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    extends: [
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    rules: {
       'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': 'off',
       'preserve-caught-error': 'off',
@@ -40,8 +51,15 @@ export default defineConfig([
     },
     plugins: {
       'no-effect-state-cycle': { rules: { 'no-effect-state-cycle': noEffectStateCycle } },
-      'no-hardcoded-inline-styles': { rules: { 'no-hardcoded-inline-styles': noHardcodedInlineStyles } },
+      'no-hardcoded-inline-styles': {
+        rules: { 'no-hardcoded-inline-styles': noHardcodedInlineStyles },
+      },
+    },
+    settings: {
+      tailwindcss: {
+        cssConfigPath: './src/index.css',
+      },
     },
   },
   prettierConfig,
-])
+]);

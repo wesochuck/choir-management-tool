@@ -391,7 +391,7 @@ export default function DonationsView() {
                   {loading ? (
                     <tr><td colSpan={7} className="p-3 px-4 text-center">Loading...</td></tr>
                   ) : sortedDonations.length === 0 ? (
-                    <tr><td colSpan={7} className="p-3 px-4 text-center p-8 text-gray-500">No donations found.</td></tr>
+                    <tr><td colSpan={7} className="text-center p-8 text-gray-500">No donations found.</td></tr>
                   ) : sortedDonations.map(d => (
                     <tr key={d.id} className="border-b border-gray-200 text-sm">
                       <td className="p-3 px-4">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
@@ -409,7 +409,7 @@ export default function DonationsView() {
                         )}
                       </td>
                       <td className="p-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider capitalize ${d.status === 'paid' ? 'bg-success-bg text-success-text' : d.status === 'refunded' ? 'bg-danger-bg text-danger-text' : 'bg-amber-100 text-amber-800'}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${d.status === 'paid' ? 'bg-success-bg text-success-text' : d.status === 'refunded' ? 'bg-danger-bg text-danger-text' : 'bg-amber-100 text-amber-800'}`}>
                           {d.status}
                         </span>
                       </td>
@@ -483,7 +483,7 @@ export default function DonationsView() {
                 </thead>
                 <tbody>
                   {!settings || settings.levels.length === 0 ? (
-                    <tr><td colSpan={4} className="p-3 px-4 text-center p-8 text-gray-500">No donor levels defined.</td></tr>
+                    <tr><td colSpan={4} className="text-center p-8 text-gray-500">No donor levels defined.</td></tr>
                   ) : settings.levels.map(l => (
                     <tr key={l.id} className="border-b border-gray-200 text-sm">
                       <td className="p-3 px-4 font-semibold">{l.label}</td>

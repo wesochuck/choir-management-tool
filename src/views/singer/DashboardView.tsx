@@ -305,7 +305,7 @@ export default function DashboardView() {
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
-              <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6 bg-primary-light" title="📊 Quick Polls">
+              <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6" title="📊 Quick Polls">
                 <div className="flex-col gap-2">
                   {activePolls.map(poll => (
                     <div key={poll.id} className="card p-2 flex flex-col gap-1 shadow-none border border-border">

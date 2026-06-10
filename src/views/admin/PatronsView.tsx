@@ -280,9 +280,9 @@ export default function PatronsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="p-3 text-center p-8">Loading patrons...</td></tr>
+                <tr><td colSpan={7} className="text-center p-8">Loading patrons...</td></tr>
               ) : filteredPatrons.length === 0 ? (
-                <tr><td colSpan={7} className="p-3 text-center p-8 flex flex-col items-center justify-center py-12 text-text-muted">No patrons found matching your search.</td></tr>
+                <tr><td colSpan={7} className="text-center p-8 flex flex-col items-center justify-center py-12 text-text-muted">No patrons found matching your search.</td></tr>
               ) : filteredPatrons.map(p => (
                 <tr key={p.profile.id} className="border-b border-border text-sm cursor-pointer hover:bg-primary-light" onClick={() => handleOpenProfile(p.profile)}>
                   <td className="p-3 w-12 text-center" onClick={e => e.stopPropagation()}>

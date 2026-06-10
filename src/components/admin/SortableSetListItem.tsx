@@ -89,7 +89,7 @@ export const SortableSetListItem: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
-                className="bg-none border-none p-0 text-left font-inherit text-inherit cursor-pointer text-[var(--primary)] underline inline-flex items-center gap-[6px]"
+                className="bg-none border-none p-0 text-left font-inherit cursor-pointer text-[var(--primary)] underline inline-flex items-center gap-[6px]"
               >
                 {titleText}
                 <span title="Linked to Music Library" className="text-[0.85rem] no-underline inline-block">🎼</span>

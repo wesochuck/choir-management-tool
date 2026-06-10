@@ -97,6 +97,8 @@ export default function PublicRsvpView() {
           const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
           if (setting?.value?.timezone) tz = setting.value.timezone;
         } catch {
+          // ignore error and fallback to default timezone
+          void 0;
         }
 
         setEvent(res.event);

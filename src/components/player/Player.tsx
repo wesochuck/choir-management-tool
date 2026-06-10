@@ -200,7 +200,7 @@ export const Player: React.FC<PlayerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap py-4 border-t border-border mb-2 max-sm:flex-wrap max-sm:justify-between max-sm:items-center max-sm:gap-3 max-sm:gap-4">
+        <div className="flex items-center gap-4 flex-wrap py-4 border-t border-border mb-2 max-sm:flex-wrap max-sm:justify-between max-sm:items-center max-sm:gap-3">
           {/* START AT SETTING */}
           <div className="flex items-center gap-1.5">
             <label htmlFor="skip-input" className="text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Start At:</label>
