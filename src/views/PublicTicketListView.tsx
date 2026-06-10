@@ -5,6 +5,8 @@ import { donationService, type DonationSettings, DEFAULT_DONATION_SETTINGS } fro
 import { eventService, type Event } from '../services/eventService';
 import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
+import { Button } from '../components/ui/Button/Button';
+import { Spinner } from '../components/ui/Spinner/Spinner';
 import PublicLogo from '../components/common/PublicLogo';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
@@ -48,6 +50,7 @@ export default function PublicTicketListView() {
   if (loading) {
     return (
       <div className="flex-col pub-style-1">
+        <Spinner size="medium" />
         <p className="text-muted">Loading events...</p>
       </div>
     );
@@ -103,12 +106,14 @@ export default function PublicTicketListView() {
                       <span className="pub-style-50">
                         ${(bundle.priceCents / 100).toFixed(2)}
                       </span>
-                      <Link
+                      <Button
+                        as={Link}
                         to={`/tickets/bundle/${bundle.id}`}
-                        className="btn btn-primary pub-style-51"
+                        variant="primary"
+                        className="pub-style-51"
                       >
                         Buy Season Pass
-                      </Link>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -135,12 +140,14 @@ export default function PublicTicketListView() {
                         {formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     </div>
-                    <Link
+                    <Button
+                      as={Link}
                       to={`/tickets/${event.id}`}
-                      className="btn btn-primary pub-style-51"
+                      variant="primary"
+                      className="pub-style-51"
                     >
                       Buy Tickets
-                    </Link>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -156,9 +163,9 @@ export default function PublicTicketListView() {
             </p>
           </div>
           <div className="flex-row pub-justify-center pub-mt-md">
-            <Link to="/donate" className="btn btn-primary btn-lg pub-min-w-200">
+            <Button as={Link} to="/donate" variant="primary" className="pub-min-w-200">
               Make a Donation
-            </Link>
+            </Button>
           </div>
         </div>
       </AppCard>
