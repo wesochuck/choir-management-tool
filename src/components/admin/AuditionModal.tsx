@@ -143,7 +143,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             onClick={() => setActiveTab('info')}
             className="roster-ut-tab-button"
             style={{ /* @allow-inline-style */
-              // @allow-inline-style - Dynamic styles based on active tab state
+              // @allow-inline-style - tab active state indicator
               borderBottom: activeTab === 'info' ? '2px solid var(--primary)' : '2px solid transparent',
               fontWeight: activeTab === 'info' ? 600 : 500,
               color: activeTab === 'info' ? 'var(--primary)' : 'var(--text-muted)',
@@ -156,7 +156,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             onClick={() => setActiveTab('slots')}
             className="roster-ut-tab-button"
             style={{ /* @allow-inline-style */
-              // @allow-inline-style - Dynamic styles based on active tab state
+              // @allow-inline-style - tab active state indicator
               borderBottom: activeTab === 'slots' ? '2px solid var(--primary)' : '2px solid transparent',
               fontWeight: activeTab === 'slots' ? 600 : 500,
               color: activeTab === 'slots' ? 'var(--primary)' : 'var(--text-muted)',
@@ -199,7 +199,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               <div 
                 className="card flex-row roster-ut-scheduled-time" 
                 style={{ /* @allow-inline-style */ 
-                  // @allow-inline-style - Dynamic color/weight based on scheduled slot existence
+                  // @allow-inline-style - dynamic based on scheduled time slot
                   color: formData.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
                   fontWeight: formData.scheduledTimeSlot ? 700 : 400,
                 }}
@@ -286,7 +286,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                     key={slot} 
                     className="card flex-row roster-ut-slot-label" 
                     style={{ /* @allow-inline-style */ 
-                      // @allow-inline-style - Dynamic styles based on isChecked state
+                      // @allow-inline-style - checkbox checked state
                       border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
                       backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg)',
                     }}

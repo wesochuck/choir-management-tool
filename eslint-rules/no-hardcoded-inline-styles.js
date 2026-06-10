@@ -1,0 +1,80 @@
+/**
+ * ESLint rule: no-hardcoded-inline-styles
+ *
+ * Flags hardcoded inline style objects in JSX (style={{ ... }}) that
+ * are not annotated with // @allow-inline-style.
+ *
+ * ✅ Allowed (variable/expression reference):
+ *   style={dynamicStyles}
+ *   style={condition ? activeStyle : inactiveStyle}
+ *
+ * ✅ Allowed (with @allow-inline-style annotation):
+ *   // @allow-inline-style - dynamic width based on progress
+ *   style={{ width: progress + '%' }}
+ *   style={{ color: 'red' }} // @allow-inline-style - explanation
+ *
+ * ❌ Flagged (hardcoded object literal without annotation):
+ *   style={{ color: 'red', marginTop: '8px' }}
+ */
+
+const legacyWhitelist = new Set([
+]);
+
+/** @type {import('eslint').Rule.RuleModule} */
+export default {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Disallow hardcoded inline style objects in JSX without @allow-inline-style annotation',
+      recommended: false,
+    },
+    schema: [],
+    messages: {
+      noHardcodedInlineStyle:
+        "Avoid hardcoded inline styles. Use CSS classes instead. If the style is truly dynamic, add a preceding comment: // @allow-inline-style - explanation",
+    },
+  },
+  create(context) {
+    const filename = context.filename || context.getFilename();
+    const relPath = filename.includes('/src/')
+      ? 'src/' + filename.split('/src/')[1]
+      : '';
+    if (legacyWhitelist.has(relPath)) {
+      return {};
+    }
+
+    const sourceCode = context.sourceCode || context.getSourceCode();
+
+    return {
+      JSXAttribute(node) {
+        if (node.name.name !== 'style') return;
+        if (!node.value || node.value.type !== 'JSXExpressionContainer') return;
+
+        const expr = node.value.expression;
+        if (!expr || expr.type !== 'ObjectExpression') return;
+
+        const lineIndex = node.loc.start.line - 1;
+        const currentLine = sourceCode.lines[lineIndex];
+        const prevLine = lineIndex > 0 ? sourceCode.lines[lineIndex - 1] : '';
+
+        if (prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style')) {
+          return;
+        }
+
+        const insideComments = sourceCode.getCommentsInside
+          ? sourceCode.getCommentsInside(node.value)
+          : [];
+        if (insideComments.some((c) => c.value.includes('@allow-inline-style'))) {
+          return;
+        }
+
+        context.report({
+          node,
+          messageId: 'noHardcodedInlineStyle',
+        });
+      },
+};
+
+  },
+};

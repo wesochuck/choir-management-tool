@@ -6,6 +6,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { removeSeatFromRow, removeRowAndShiftAssignments } from '../../lib/seatingSync';
 import { isSectionMismatch } from '../../lib/voicePartUtils';
 import { getContrastColor } from '../../lib/colorUtils';
+import './SeatingGrid.css';
 
 interface SeatingGridProps {
   rowCounts: number[];
@@ -180,6 +181,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
     <div
       ref={gridRef}
       className={`flex-col grid-print ${isCompact ? 'grid-print-compact' : ''}`}
+      // @allow-inline-style - dynamic gap, padding, and --max-seats computed from layout
       style={{
         gap: rowGap,
         alignItems: 'center',
@@ -191,26 +193,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
     >
       {/* Warning banner if not enough seats */}
       {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
-        <div className="no-print" style={{
-          backgroundColor: 'var(--color-danger-bg)',
-          border: '1px solid #fecaca',
-          borderRadius: 'var(--radius-md)',
-          padding: 'var(--space-md)',
-          width: '100%',
-          maxWidth: '800px',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 'var(--space-sm)',
-          boxShadow: 'var(--shadow-sm)',
-          color: 'var(--color-danger-text)',
-          boxSizing: 'border-box'
-        }}>
-          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <strong style={{ fontSize: '0.9375rem', fontWeight: 700 }}>Not enough seats configured!</strong>
-            <span style={{ fontSize: '0.8125rem', opacity: 0.9 }}>
-              You have {activeSingersForFormationCount} active singers but only {totalSeats} seats. Click the <strong style={{ color: 'var(--color-danger-text)' }}>+</strong> button at the end of any row to add seats.
+        <div className="seating-grid-error no-print">
+          <span className="seating-grid-error-icon">⚠️</span>
+          <div className="seating-grid-error-body">
+            <strong className="seating-grid-error-title">Not enough seats configured!</strong>
+            <span className="seating-grid-error-message">
+              You have {activeSingersForFormationCount} active singers but only {totalSeats} seats. Click the <strong>+</strong> button at the end of any row to add seats.
             </span>
           </div>
         </div>
@@ -224,20 +212,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const newRowCounts = [...rowCounts, defaultSeats];
             onUpdateRowCounts(newRowCounts);
           }}
-          className="btn btn-sm btn-ghost no-print"
-          style={{
-            backgroundColor: 'var(--primary-light)',
-            color: 'var(--primary-deep)',
-            border: '1px dashed var(--primary)',
-            borderRadius: 'var(--radius-md)',
-            padding: 'var(--space-xs) var(--space-md)',
-            fontWeight: 600,
-            fontSize: '0.8125rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            marginBottom: 'var(--space-xs)'
-          }}
+          className="seating-grid-info btn btn-sm btn-ghost no-print"
+          // @allow-inline-style - static typography and margin overrides for button appearance
+          style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: 'var(--space-xs)' }}
           title="Add a new row with 10 seats at the back"
         >
           ➕ Add Row to Back
@@ -260,15 +237,19 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         }
 
         return (
-          <div key={rowIndex} className="row-print" style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: `${gridGap}px`,
-            justifyContent: 'center',
-            minWidth: 'max-content'
-          }}>
-            <div className="text-xs text-muted" style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
+          <div key={rowIndex} className="row-print"
+            // @allow-inline-style - dynamic gap computed from grid width
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: `${gridGap}px`,
+              justifyContent: 'center',
+              minWidth: 'max-content'
+            }}>
+            <div className="text-xs text-muted"
+              // @allow-inline-style - dynamic width based on compact mode
+              style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
               {rowLabel}
               {(isFront || rowIndex === rowCounts.length - 1) && (
                 <span className="no-print">
@@ -280,7 +261,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "🗑️" remove row button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="no-print btn btn-ghost"
+                className="seat-row-remove-btn no-print btn btn-ghost"
                 onClick={async () => {
                   const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
                   let shouldRemove = true;
@@ -298,26 +279,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     const result = removeRowAndShiftAssignments(rowCounts, rowIndex, assignments);
                     onUpdateRowCounts(result.rowCounts, result.assignments);
                   }
-                }}
-                style={{
-                  minHeight: '28px',
-                  height: '28px',
-                  width: '28px',
-                  minWidth: '28px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--color-danger-bg)',
-                  border: '1px dashed var(--color-danger-text)',
-                  color: 'var(--color-danger-text)',
-                  marginRight: '6px',
-                  fontWeight: 'bold',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
                 }}
                 title="Remove this row"
               >
@@ -442,6 +403,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                   title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}` : `Empty Space ${seatIndex + 1}`)}
                   className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
+                  // @allow-inline-style - all seat dimensions, colors, borders, transform computed from props and state
                   style={{
                     width: `${seatSize}px`,
                     height: `${seatSize}px`,
@@ -467,7 +429,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 >
                   {activeDragOver === seatKey && (
                     <div className="drag-overlay">
-                      <span className="drag-overlay-icon" style={{ fontSize: isCompact ? '1.125rem' : '1.5rem' }}>
+                      <span className="drag-overlay-icon"
+                        // @allow-inline-style - dynamic font size based on compact mode
+                        style={{ fontSize: isCompact ? '1.125rem' : '1.5rem' }}>
                         {assignedProfile ? '🔄' : '📥'}
                       </span>
                     </div>
@@ -477,10 +441,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <select
                       value={profileId || ''}
                       onChange={(e) => onAssign(seatKey, e.target.value)}
-                      style={{
-                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                        opacity: 0, cursor: 'pointer'
-                      }}
+                      className="seat-add-button"
                     >
                        <option value="">-- Assign --</option>
                       <option value="">(Empty)</option>
@@ -547,6 +508,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       className="no-print seat-remove-btn"
                       data-action={assignments[seatKey] ? "unassign" : "delete"}
                       title={assignments[seatKey] ? "Unassign singer" : "Delete empty seat"}
+                      // @allow-inline-style - dynamic background and color based on assignment state
                       style={{
                         position: 'absolute',
                         top: '2px',
@@ -573,25 +535,33 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </button>
                   )}
 
-                  <div className="seat-label" style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
+                  <div className="seat-label"
+                    // @allow-inline-style - dynamic color and font size from computed seat styles
+                    style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                     {displaySuggestion
                       ? (isVoicePartLayout ? `${displaySuggestion} - ${displaySeatNumber}` : `${sectionDef?.name[0] || displaySuggestion}${displaySeatNumber}`)
                       : ''
                     }
                   </div>
                   {assignedProfile ? (
-                    <div className="flex-col seat-person" style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
-                      <div className="seat-initials" style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
+                    <div className="flex-col seat-person"
+                      // @allow-inline-style - dynamic gap based on compact mode
+                      style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
+                      <div className="seat-initials"
+                        // @allow-inline-style - dynamic font size and color from computed styles
+                        style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
-                      <div className="seat-voice-part" style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
+                      <div className="seat-voice-part"
+                        // @allow-inline-style - dynamic font size and color from computed styles
+                        style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
                         {assignedProfile.voicePart}
                       </div>
                       <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'} ${isMismatch ? 'seat-tooltip-mismatch' : ''}`}>
                         {isMismatch ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 800 }}>⚠️ {assignedProfile.name}</span>
-                            <span style={{ fontSize: '0.6875rem', opacity: 0.95, fontWeight: 600, letterSpacing: '0.01em' }}>
+                          <div className="seat-tooltip-mismatch-body">
+                            <span className="seat-tooltip-mismatch-name">⚠️ {assignedProfile.name}</span>
+                            <span className="seat-tooltip-mismatch-desc">
                               Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || displaySuggestion} seat ${displaySeatNumber}` : `${sectionDef?.name || displaySuggestion} seat ${displaySeatNumber}`}
                             </span>
                           </div>
@@ -601,6 +571,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       </div>
                     </div>
                   ) : (
+                    // @allow-inline-style - dynamic font size and color from computed styles
                     <div style={{ fontWeight: 600, color: seatTextColor, fontSize: emptySeatFontSize }}>{isCompact ? '—' : 'Empty'}</div>
                   )}
                 </div>
@@ -610,31 +581,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "+" add seat button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="no-print btn btn-ghost"
+                className="seat-row-action-btn seat-row-action-btn--add no-print btn btn-ghost"
                 onClick={() => {
                   const newRowCounts = [...rowCounts];
                   newRowCounts[rowIndex] += 1;
                   onUpdateRowCounts(newRowCounts);
-                }}
-                style={{
-                  minHeight: '28px',
-                  height: '28px',
-                  width: '28px',
-                  minWidth: '28px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--primary-light)',
-                  border: '1px dashed var(--primary)',
-                  color: 'var(--primary-deep)',
-                  marginLeft: '12px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
                 }}
                 title="Add seat to this row"
               >
@@ -645,7 +596,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "-" remove seat button */}
             {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
               <button
-                className="no-print btn btn-ghost"
+                className="seat-row-action-btn seat-row-action-btn--remove no-print btn btn-ghost"
                 onClick={async () => {
                   const seatIndex = seatCount - 1;
                   const seatKey = `${rowIndex}-${seatIndex}`;
@@ -667,26 +618,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
                     onUpdateRowCounts(result.rowCounts, result.assignments);
                   }
-                }}
-                style={{
-                  minHeight: '28px',
-                  height: '28px',
-                  width: '28px',
-                  minWidth: '28px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--color-danger-bg)',
-                  border: '1px dashed var(--color-danger-text)',
-                  color: 'var(--color-danger-text)',
-                  marginLeft: '6px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
                 }}
                 title="Remove last seat from this row"
               >
@@ -711,18 +642,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             });
             onUpdateRowCounts(newRowCounts, shiftedAssignments);
           }}
-          className="btn btn-sm btn-ghost no-print"
+          className="seating-grid-info btn btn-sm btn-ghost no-print"
+          // @allow-inline-style - static typography and margin overrides for button appearance
           style={{
-            backgroundColor: 'var(--primary-light)',
-            color: 'var(--primary-deep)',
-            border: '1px dashed var(--primary)',
-            borderRadius: 'var(--radius-md)',
-            padding: 'var(--space-xs) var(--space-md)',
             fontWeight: 600,
             fontSize: '0.8125rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
             marginTop: 'var(--space-xs)'
           }}
           title="Add a new row with 10 seats at the front"
@@ -732,24 +656,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Director Indicator */}
-      <div className="director-indicator" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        marginTop: 'var(--space-md)',
-        padding: 'var(--space-xs) var(--space-xl)',
-        backgroundColor: 'var(--primary-light, #e2e8f0)',
-        color: 'var(--primary-deep, #1e293b)',
-        border: '1px solid var(--primary, #cbd5e1)',
-        borderRadius: 'var(--radius-full, 9999px)',
-        fontSize: '0.8125rem',
-        fontWeight: 700,
-        letterSpacing: '0.05em',
-        textTransform: 'uppercase',
-        boxShadow: 'var(--shadow-xs)',
-        width: 'fit-content'
-      }}>
+      <div className="director-indicator">
         <span>🎼</span>
         <span>Director</span>
       </div>

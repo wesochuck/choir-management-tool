@@ -3,6 +3,7 @@ import type { Profile } from '../../services/profileService';
 import { getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { getContrastColor } from '../../lib/colorUtils';
+import './SeatingBottomDock.css';
 
 interface SeatingBottomDockProps {
   activeProfiles: Profile[];
@@ -145,18 +146,17 @@ export function SeatingBottomDock({
         }}
         className="flex-col bottom-dock-container"
       >
-        <div className="flex-row bottom-dock-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <div className="flex-col" style={{ gap: '2px' }}>
+        <div className="flex-row bottom-dock-header seating-dock-toolbar">
+          <div className="flex-col seating-dock-button-group">
             <h3 className="text-headline bottom-dock-title">📥 Unassigned Singers Shelf</h3>
             <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
           </div>
-          <div className="flex-row no-print" style={{ gap: 'var(--space-xs)' }}>
+          <div className="flex-row no-print seating-dock-section-label">
             {onLookupSinger && (
               <button
                 type="button"
                 onClick={onLookupSinger}
-                className="btn btn-secondary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, padding: '0 12px', height: '32px', minHeight: '32px' }}
+                className="btn btn-secondary btn-sm seating-dock-action-button"
               >
                 🔍 Lookup Singer
               </button>
@@ -165,8 +165,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onAddSinger}
-                className="btn btn-secondary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, padding: '0 12px', height: '32px', minHeight: '32px' }}
+                className="btn btn-secondary btn-sm seating-dock-action-button"
               >
                 + Add New Singer
               </button>
@@ -174,6 +173,7 @@ export function SeatingBottomDock({
           </div>
         </div>
 
+        {/* @allow-inline-style - dynamic grid columns based on section count */}
         <div className="bottom-dock-grid" style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}>
           {displaySections.map(({ key, label, color }) => {
             const list = groupedSingers[key] || [];
@@ -220,22 +220,8 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print bottom-dock-remove-btn"
+                          className="no-print bottom-dock-remove-btn seating-dock-close-button"
                           title="Mark as Not Attending"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            padding: 0,
-                            marginLeft: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            transition: 'all 0.2s',
-                          }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
                             e.currentTarget.style.color = '#b91c1c';

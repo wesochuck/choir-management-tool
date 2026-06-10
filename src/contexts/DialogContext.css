@@ -1,0 +1,55 @@
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialog-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  background-color: var(--text-color, #1f2937);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius, 8px);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 30%), 0 8px 10px -6px rgb(0 0 0 / 30%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgb(255 255 255 / 10%);
+  backdrop-filter: blur(8px);
+  animation: toast-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+.dialog-toast-icon {
+  font-size: 15px;
+}
+
+.dialog-toast-body {
+  gap: var(--space-md);
+}
+
+.dialog-toast-message {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.dialog-toast-buttons {
+  gap: 4px;
+}
+
+.dialog-toast-prompt-hint {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

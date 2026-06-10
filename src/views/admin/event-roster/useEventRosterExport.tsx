@@ -12,6 +12,7 @@ import {
   getRsvpStatusLabel,
   type RsvpStatus,
 } from '../../../lib/eventRoster/rsvpLabels';
+import './useEventRosterExport.css';
 
 type VoicePartDef =
   ReturnType<typeof useEventRosterData>['voiceParts'][number];
@@ -76,49 +77,19 @@ export function useEventRosterExport({
     const confirmed = await dialog.confirm({
       title: 'Export RSVP Roster to CSV',
       message: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div
-            style={{
-              padding: '12px 14px',
-              borderRadius: '8px',
-              backgroundColor: 'var(--primary-light)',
-              border: '1px solid rgba(74,117,89,0.2)',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--text-muted)',
-                marginBottom: '4px',
-              }}
-            >
+        <div className="roster-export-container">
+          <div className="roster-export-info-box">
+            <div className="roster-export-label">
               Exporting {filteredSingers.length} singer
               {filteredSingers.length !== 1 ? 's' : ''} currently shown
             </div>
-            <div
-              style={{
-                fontSize: '0.85rem',
-                color: 'var(--primary-deep)',
-                fontWeight: 600,
-              }}
-            >
+            <div className="roster-export-count">
               {filterSummary}
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label
-              style={{
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--text-muted)',
-              }}
-            >
+          <div className="roster-export-sort-container">
+            <label className="roster-export-label">
               Sort Order
             </label>
             <select
@@ -127,15 +98,7 @@ export function useEventRosterExport({
               onChange={(event) => {
                 chosenSort = event.target.value as RsvpExportSort;
               }}
-              style={{
-                height: '40px',
-                padding: '0 12px',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                backgroundColor: 'var(--surface)',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-              }}
+              className="roster-export-select"
             >
               <option value="lastName">Last Name</option>
               <option value="section">Section → Last Name</option>

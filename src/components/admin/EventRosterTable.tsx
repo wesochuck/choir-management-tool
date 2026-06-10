@@ -6,6 +6,7 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { AppCard } from '../common/AppCard';
 import { StatusBadge } from '../common/StatusBadge';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
+import './EventRosterTable.css';
 
 interface EventRosterTableProps {
   singers: Array<{
@@ -32,24 +33,15 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
 }) => {
   return (
     <AppCard noPadding>
-      <style>{`
-        .singer-name-btn {
-          text-decoration: none;
-        }
-        .singer-name-btn:hover {
-          color: var(--primary) !important;
-          text-decoration: underline;
-        }
-      `}</style>
       <div className="admin-table-wrapper">
         <table className="admin-responsive-table">
           <thead>
             <tr>
               <th className="text-label">Name</th>
               <th className="text-label">Voice</th>
-              <th className="text-label" style={{ textAlign: 'center' }}>Missed Rehearsals</th>
-              <th className="text-label" style={{ textAlign: 'center' }}>RSVP Status</th>
-              <th className="text-label" style={{ textAlign: 'right' }}>Actions</th>
+              <th className="text-label roster-table-header-cell-center">Missed Rehearsals</th>
+              <th className="text-label roster-table-header-cell-center">RSVP Status</th>
+              <th className="text-label roster-table-header-cell-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -57,12 +49,12 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
               const p = s.profile;
               const rsvpDisplay = getRsvpDisplay(s.rsvp, { variant: 'eventRoster' });
               return (
-                <tr 
-                  key={p.id} 
+                <tr
+                  key={p.id}
                   className="relative-row"
                 >
-                  <td data-label="Name" style={{ fontWeight: 500 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                  <td data-label="Name" className="roster-table-header-row">
+                    <div className="roster-table-header-name">
                       <PhotoUploader
                         profileId={p.id}
                         profileName={p.name}
@@ -75,19 +67,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onSingerClick(p)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            margin: 0,
-                            font: 'inherit',
-                            color: 'var(--primary-deep)',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'color 0.15s ease',
-                          }}
-                          className="singer-name-btn"
+                          className="roster-table-singer-link"
                         >
                           {p.name}
                         </button>
@@ -97,13 +77,13 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     </div>
                   </td>
                   <td data-label="Voice">
-                    <span className="text-label" style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.voicePart || '--'}</span>
+                    <span className="text-label roster-table-section-header">{p.voicePart || '--'}</span>
                   </td>
-                  <td data-label="Missed Rehearsals" style={{ textAlign: 'center' }}>
+                  <td data-label="Missed Rehearsals" className="roster-table-header-cell-center">
                     {missCounts && missCounts[p.id] !== undefined && missCounts[p.id] > 0 ? (
                       <span
                         className="badge"
-                        style={{
+                        style={{ // @allow-inline-style - miss count color coding
                           fontSize: '9px',
                           padding: '2px 6px',
                           borderRadius: '4px',
@@ -116,40 +96,31 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         ⚠️ {missCounts[p.id]} missed
                       </span>
                     ) : (
-                      <span className="text-muted" style={{ fontSize: '0.85rem' }}>0</span>
+                      <span className="roster-table-note-text">0</span>
                     )}
                   </td>
-                  <td data-label="RSVP Status" style={{ textAlign: 'center' }}>
-                    <div className="flex-col" style={{ alignItems: 'center', gap: '4px' }}>
+                  <td data-label="RSVP Status" className="roster-table-header-cell-center">
+                    <div className="roster-table-flex-col roster-table-rsvp-wrapper">
                       <StatusBadge
                         label={rsvpDisplay.label}
                         tone={rsvpDisplay.tone}
                         size="sm"
                       />
                       {s.roster?.rsvpNote && s.rsvp === 'No' && (
-                        <div 
-                          className="text-xs" 
-                          style={{ 
-                            color: 'var(--text-muted)', 
-                            maxWidth: '160px', 
-                            lineHeight: 1.3,
-                            fontStyle: 'italic',
-                            fontWeight: 400
-                          }}
-                        >
+                        <div className="text-xs roster-table-rsvp-note">
                           "{s.roster.rsvpNote}"
                         </div>
                       )}
                     </div>
                   </td>
-                  <td data-label="Actions" style={{ textAlign: 'right' }}>
-                    <div className="flex-row" style={{ gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <td data-label="Actions" className="roster-table-header-cell-right">
+                    <div className="flex-row roster-table-actions-wrapper">
                       <button
                         type="button"
                         disabled={isUpdating}
                         onClick={() => onUpdateRSVP(p.id, 'Yes')}
                         className="btn btn-sm"
-                        style={{
+                        style={{ // @allow-inline-style - RSVP status button coloring
                           height: '32px',
                           padding: '0 12px',
                           fontSize: '0.75rem',
@@ -169,7 +140,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         disabled={isUpdating}
                         onClick={() => onUpdateRSVP(p.id, 'No')}
                         className="btn btn-sm"
-                        style={{
+                        style={{ // @allow-inline-style - RSVP status button coloring
                           height: '32px',
                           padding: '0 12px',
                           fontSize: '0.75rem',
@@ -189,7 +160,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         disabled={isUpdating}
                         onClick={() => onUpdateRSVP(p.id, 'Pending')}
                         className="btn btn-sm"
-                        style={{
+                        style={{ // @allow-inline-style - RSVP status button coloring
                           height: '32px',
                           padding: '0 12px',
                           fontSize: '0.75rem',
@@ -211,7 +182,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
             })}
             {singers.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                <td colSpan={5} className="roster-table-empty-cell">
                   <p className="text-muted text-sm">No singers found.</p>
                 </td>
               </tr>

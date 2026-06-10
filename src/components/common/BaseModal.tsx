@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from 'react';
+import './BaseModal.css';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -87,41 +88,26 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="modal-overlay"
-      role="presentation"
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'var(--bg)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1000, padding: 'var(--space-md)'
-      }}
-    >
-      <div 
+    <div className="modal-overlay" role="presentation">
+      <div
         ref={modalRef}
-        className="card flex-col modal-content" 
+        className="card flex-col modal-content"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        style={{ 
-          width: '100%', maxWidth, maxHeight: '90vh', 
-          minHeight,
-          overflowY: 'auto', gap: 'var(--space-lg)', 
-          boxShadow: 'var(--shadow-md)',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
+        // @allow-inline-style - dynamic maxWidth/minHeight from props
+        style={{ maxWidth, minHeight }}
       >
-        <div className="flex-row" style={{ alignItems: 'center' }}>
-          <h2 id={titleId} style={{ margin: 0 }}>{title}</h2>
+        <div className="modal-title-row">
+          <h2 id={titleId}>{title}</h2>
         </div>
 
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+        <div className="modal-body">
           {children}
         </div>
 
         {footer && (
-          <div className="flex-row" style={{ justifyContent: 'flex-end', gap: 'var(--space-md)', marginTop: 'auto' }}>
+          <div className="modal-footer">
             {footer}
           </div>
         )}

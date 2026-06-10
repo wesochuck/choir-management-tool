@@ -1,0 +1,37 @@
+.events-tabs-container {
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-xs);
+}
+
+.events-tabs-nav {
+  gap: var(--space-sm);
+}
+
+.events-tab-button {
+  padding: 8px 16px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.events-tab-checkbox-row {
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.events-tab-checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}

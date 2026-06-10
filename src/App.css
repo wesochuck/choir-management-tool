@@ -485,3 +485,8 @@ body:has(.seating-chart-wide-active) .container {
   outline-offset: -3px !important;
   background-color: var(--primary-light) !important;
 }
+
+.app-loading-container {
+  text-align: center;
+  padding-top: var(--space-xl);
+}

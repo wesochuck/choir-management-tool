@@ -6,6 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import prettierConfig from 'eslint-config-prettier'
 import noEffectStateCycle from './eslint-rules/no-effect-state-cycle.js'
+import noHardcodedInlineStyles from './eslint-rules/no-hardcoded-inline-styles.js'
 
 export default defineConfig([
   globalIgnores([
@@ -35,9 +36,11 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
       'preserve-caught-error': 'off',
       'no-effect-state-cycle/no-effect-state-cycle': 'error',
+      'no-hardcoded-inline-styles/no-hardcoded-inline-styles': 'error',
     },
     plugins: {
       'no-effect-state-cycle': { rules: { 'no-effect-state-cycle': noEffectStateCycle } },
+      'no-hardcoded-inline-styles': { rules: { 'no-hardcoded-inline-styles': noHardcodedInlineStyles } },
     },
   },
   prettierConfig,

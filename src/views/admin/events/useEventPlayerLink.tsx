@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { useDialog } from '../../../contexts/DialogContext';
 import type { Event } from '../../../services/eventService';
 import { playerService } from '../../../services/playerService';
+import './useEventPlayerLink.css';
 
 interface UseEventPlayerLinkArgs {
   dialog: ReturnType<typeof useDialog>;
@@ -16,23 +17,14 @@ export function useEventPlayerLink({ dialog }: UseEventPlayerLinkArgs) {
       await dialog.showMessage({
         title: 'Player Link Generated',
         message: (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-col event-player-link-row">
             <p>
               A standalone practice link has been generated for "{event.title || event.type}".
             </p>
-            <div
-              className="card"
-              style={{
-                padding: 'var(--space-sm)',
-                backgroundColor: 'var(--bg)',
-                border: '1px solid var(--border)',
-                wordBreak: 'break-all',
-                fontSize: '0.85rem',
-              }}
-            >
+            <div className="card event-player-link-url">
               {url}
             </div>
-            <div className="flex-row" style={{ gap: 'var(--space-sm)' }}>
+            <div className="flex-row event-player-link-actions">
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => {

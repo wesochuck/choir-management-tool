@@ -1,0 +1,117 @@
+.event-list-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.event-list-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.event-list-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.event-list-date {
+  font-weight: bold;
+}
+
+.event-list-venue {
+  color: var(--primary);
+}
+
+.event-list-call-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.event-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.event-list-dropdown-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.event-list-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  width: 180px;
+  background-color: var(--surface, #fff);
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: var(--radius-md, 8px);
+  padding: 6px 0;
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
+}
+
+.event-list-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+
+.event-list-dropdown-item:hover {
+  background-color: var(--primary-light, #f1f5f9);
+}
+
+.event-list-dropdown-item-primary {
+  color: var(--primary-deep, #345940);
+  font-weight: 700;
+}
+
+.event-list-dropdown-toggle {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  border: 1px solid var(--border);
+}
+
+.event-list-dropdown-separator {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+
+.event-list-empty {
+  padding: var(--space-xl);
+  text-align: center;
+}

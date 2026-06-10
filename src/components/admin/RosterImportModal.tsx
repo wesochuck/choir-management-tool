@@ -365,7 +365,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   key={field.key} 
                   className="card roster-ut-map-item" 
                   style={{ /* @allow-inline-style */ 
-                    // @allow-inline-style - Dynamic border color for invalid required mapping
+                    // @allow-inline-style - conditional field validation border
                     borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
                   }}
                 >
@@ -388,7 +388,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
                     className="card roster-ut-map-select"
                     style={{ /* @allow-inline-style */ 
-                      // @allow-inline-style - Dynamic border color when actively mapped
+                      // @allow-inline-style - conditional match border
                       borderColor: selectedIndex !== -1 ? 'var(--primary)' : undefined,
                     }}
                   >
@@ -444,7 +444,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     <tr 
                       key={idx} 
                       style={{ /* @allow-inline-style */ 
-                        // @allow-inline-style - Dynamic row color based on errors or warnings
+                        // @allow-inline-style - error/warning status background
                         backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
                       }}
                     >
@@ -453,7 +453,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                       </td>
                       <td>
                         <strong style={{ /* @allow-inline-style */ 
-                          // @allow-inline-style - Dynamic name color based on error state
+                          // @allow-inline-style - error text color
                           color: hasErrors ? '#c62828' : 'inherit' 
                         }}>
                           {singer.data.name || '(Empty Name)'}
@@ -512,7 +512,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             <div 
               className="roster-ut-importing-progress-bar"
               style={{ /* @allow-inline-style */ 
-                // @allow-inline-style - Dynamic progress bar width
+                // @allow-inline-style - dynamic progress bar width
                 width: `${importProgress}%`,
               }}
             />
@@ -521,7 +521,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           <div className="roster-ut-importing-stats">
             <span>Successes: <strong className="roster-ut-importing-success">{successCount}</strong></span>
             <span>Failures: <strong style={{ /* @allow-inline-style */ 
-                  // @allow-inline-style - Dynamic error count color
+                  // @allow-inline-style - error count text color
                   color: errorsList.length > 0 ? '#991b1b' : 'inherit' 
                 }}>{errorsList.length}</strong></span>
           </div>

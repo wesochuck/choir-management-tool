@@ -72,7 +72,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
               strokeDashoffset={`${2 * Math.PI * 8 * (1 - progress / 100)}`}
             />
           </svg>
-          <span className="progress-text" style={{ fontSize: '10px' }}>{progress}%</span>
+          <span className="progress-text playlist-track-index">{progress}%</span>
         </span>
       );
     }
@@ -80,12 +80,11 @@ export const Playlist: React.FC<PlaylistProps> = ({
     if (item.isDownloaded) {
       return (
         <button
-          className="track-download-btn downloaded"
+          className="track-download-btn downloaded playlist-action-button accent"
           onClick={(e) => {
             e.stopPropagation();
             onRemoveDownload(item);
           }}
-          style={{ background: 'none', border: 'none', color: 'var(--accent-color)', cursor: 'pointer' }}
           title="Remove offline copy"
           aria-label="Remove download"
         >
@@ -99,12 +98,11 @@ export const Playlist: React.FC<PlaylistProps> = ({
     if (navigator.onLine) {
       return (
         <button
-          className="track-download-btn idle"
+          className="track-download-btn idle playlist-action-button muted"
           onClick={(e) => {
             e.stopPropagation();
             onDownloadTrack(item);
           }}
-          style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
           title="Download for offline playback"
           aria-label="Download track"
         >
@@ -191,14 +189,14 @@ export const Playlist: React.FC<PlaylistProps> = ({
                 <span className="track-number">
                   <MusicIcon />
                 </span>
-                <div className="track-info" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
-                  <span className="track-name" style={{ fontWeight: 600 }}>{item.name}</span>
+                <div className="track-info playlist-track-info">
+                  <span className="track-name playlist-track-title">{item.name}</span>
                   {item.parentTitle && (
                     <span className="track-parent-title">
                       From: {item.parentTitle}
                     </span>
                   )}
-                  {item.composer && <span className="track-composer" style={{ fontSize: '0.75rem', opacity: 0.8 }}>{item.composer}</span>}
+                  {item.composer && <span className="track-composer playlist-track-artist">{item.composer}</span>}
                 </div>
                 {!item.isFolder && (
                   <span className={`playlist-part-badge ${isFallback ? 'fallback' : 'matched'}`}>

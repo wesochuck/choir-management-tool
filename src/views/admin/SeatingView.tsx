@@ -217,8 +217,29 @@ export default function SeatingView() {
 
   const unassignedCount = useMemo(() => {
     const assignedIds = new Set(Object.values(optimisticAssignments));
-    return activeProfiles.filter(p => !assignedIds.has(p.id)).length;
-  }, [activeProfiles, optimisticAssignments]);
+    const order = currentFormation?.sectionOrder || [];
+    const hasOrder = order.length > 0;
+
+    return activeProfiles.filter(p => {
+      if (assignedIds.has(p.id)) return false;
+      if (!hasOrder) return true;
+
+      if (currentFormation?.isVoicePartLayout) {
+        return order.some(key =>
+          key.toLowerCase() === (p.voicePart || '').trim().toLowerCase()
+        );
+      }
+
+      const vpDef = voiceParts.find(vp =>
+        vp.label === p.voicePart || vp.fullName === p.voicePart
+      );
+      let sectionCode = vpDef?.sectionCode;
+      if (!sectionCode) {
+        sectionCode = (p.voicePart || '').trim().charAt(0).toUpperCase() || undefined;
+      }
+      return sectionCode ? order.includes(sectionCode) : false;
+    }).length;
+  }, [activeProfiles, optimisticAssignments, currentFormation, voiceParts]);
 
   const handlePrint = () => {
     window.print();
@@ -280,14 +301,15 @@ export default function SeatingView() {
       data-print-mode={printMode} 
     >
       <div className="no-print seating-controls-bar seating-header">
-        <div className="flex-row" style={{ alignItems: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-          <h1 className="text-headline seating-header-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
+        <div className="flex-row seating-header-row">
+          <h1 className="text-headline seating-header-title seating-header-title-sm">
             Seating Chart
           </h1>
           
-          <div className="flex-row" style={{ display: 'flex', backgroundColor: 'var(--surface-muted, #f1f5f9)', padding: '3px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', gap: '2px' }}>
+          <div className="flex-row seating-tab-group">
             <button
               onClick={() => setActiveTab('chart')}
+              // @allow-inline-style - active tab state
               style={{
                 height: '28px',
                 minHeight: '28px',
@@ -309,6 +331,7 @@ export default function SeatingView() {
             </button>
             <button
               onClick={() => setActiveTab('templates')}
+              // @allow-inline-style - active tab state
               style={{
                 height: '28px',
                 minHeight: '28px',
@@ -332,14 +355,13 @@ export default function SeatingView() {
         </div>
         
         {activeTab === 'chart' && (
-          <div className="flex-row seating-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
-            <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
+          <div className="flex-row seating-controls-group seating-controls-group-wrap">
+            <div className="flex-row seating-control-item seating-control-item-row">
               <span className="seating-control-label">Perf:</span>
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
-                className="seating-select-perf"
-                style={{ height: '32px', minHeight: '32px', padding: '0 24px 0 8px', fontSize: '0.75rem', width: '180px' }}
+                className="seating-select-perf seating-perf-select"
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
@@ -348,13 +370,12 @@ export default function SeatingView() {
               </select>
             </div>
 
-            <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
+            <div className="flex-row seating-control-item seating-control-item-row">
               <span className="seating-control-label">Venue:</span>
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
-                className="seating-select-venue"
-                style={{ height: '32px', minHeight: '32px', padding: '0 24px 0 8px', fontSize: '0.75rem', width: '220px' }}
+                className="seating-select-venue seating-venue-select"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -389,16 +410,15 @@ export default function SeatingView() {
                   }}
                   className="btn btn-sm btn-ghost no-print seating-update-venue-btn" 
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
-                  style={{ height: '32px', minHeight: '32px', padding: '0 var(--space-xs)', fontSize: '0.75rem' }}
                 >
                   💾 Update
                 </button>
               )}
             </div>
 
-            <div className="flex-row seating-control-item" style={{ alignItems: 'center', gap: '6px' }}>
+            <div className="flex-row seating-control-item seating-control-item-row">
               <span className="seating-control-label">Format:</span>
-              <div className="flex-row" style={{ gap: '4px' }}>
+              <div className="flex-row seating-format-row">
                 <select 
                   value={chart?.formationId || seatingSettings.defaultFormationId} 
                   onChange={async (e) => {
@@ -416,8 +436,7 @@ export default function SeatingView() {
 
                     await updateChart({ formationId: selectedId, assignments: {} });
                   }}
-                  className="seating-select-pattern"
-                  style={{ height: '32px', minHeight: '32px', padding: '0 24px 0 8px', fontSize: '0.75rem', width: '130px' }}
+                  className="seating-select-pattern seating-format-select"
                 >
                   {seatingSettings.formations?.map(formation => (
                     <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -434,15 +453,7 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           {/* Seating Charts Tabs Row */}
-          <div ref={tabsContainerRef} className="no-print flex-row seating-charts-tabs-row" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            padding: '0 var(--space-md)',
-            borderBottom: '1px solid var(--border)',
-            width: '100%',
-            marginBottom: 'var(--space-sm)'
-          }}>
+          <div ref={tabsContainerRef} className="no-print flex-row seating-charts-tabs-row">
             {/* Render visible tabs (dynamic count based on container width) */}
             {(charts || []).slice(0, visibleTabCount).map(c => {
               const isActive = c.id === activeChartId;
@@ -450,16 +461,11 @@ export default function SeatingView() {
               return (
                 <div 
                   key={c.id} 
-                  className="flex-row" 
+                  className="flex-row seating-chart-tab"
+                  // @allow-inline-style - dynamic border based on active and drag-over state
                   style={{ 
-                    alignItems: 'center', 
-                    gap: '4px', 
                     borderBottom: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
-                    borderLeft: isDragOver ? '2px solid var(--primary)' : '2px solid transparent',
-                    padding: '8px 12px 8px 10px',
-                    margin: '-8px 0 -1px 0',
-                    transition: 'border-color 0.15s ease, border-left 0.15s ease',
-                    cursor: 'pointer'
+                    borderLeft: isDragOver ? '2px solid var(--primary)' : '2px solid transparent'
                   }}
                   onClick={() => {
                     if (!isActive) {
@@ -503,14 +509,15 @@ export default function SeatingView() {
                       e.dataTransfer.effectAllowed = 'move';
                     }}
                     onDragEnd={() => setDragOverChartId(null)}
+                    // @allow-inline-style - dynamic drag handle color and opacity
                     style={{
+                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
+                      opacity: isActive ? 0.95 : 0.75,
                       cursor: 'grab',
                       padding: '2px 4px',
-                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
                       fontSize: '0.9rem',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      opacity: isActive ? 0.95 : 0.75,
                       userSelect: 'none',
                       marginRight: '2px',
                       fontWeight: 'bold'
@@ -524,24 +531,17 @@ export default function SeatingView() {
                       e.stopPropagation();
                       if (!isActive) setActiveChartId(c.id);
                     }}
-                    className="btn btn-sm btn-ghost"
+                    className="btn btn-sm btn-ghost seating-chart-tab-btn"
+                    // @allow-inline-style - dynamic font weight and color based on active state
                     style={{ 
                       fontWeight: isActive ? 700 : 500,
-                      padding: '4px 8px',
-                      margin: '-4px -8px',
-                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      boxShadow: 'none',
-                      borderRadius: 0,
-                      height: 'auto',
-                      minHeight: 'auto'
+                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)'
                     }}
                   >
                     {c.name}
                   </button>
                   {isActive && (
-                    <div className="flex-row" style={{ gap: '2px', marginLeft: '4px' }} onClick={(e) => e.stopPropagation()}>
+                    <div className="flex-row seating-chart-action-row" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -549,8 +549,7 @@ export default function SeatingView() {
                           setRenameChartName(c.name);
                           setIsRenameChartModalOpen(true);
                         }}
-                        className="btn btn-ghost btn-sm"
-                        style={{ padding: '4px', minWidth: 'auto', fontSize: '0.85rem', height: '28px', minHeight: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        className="btn btn-ghost btn-sm seating-chart-action-btn"
                         title="Rename chart"
                       >
                         ✏️
@@ -569,8 +568,7 @@ export default function SeatingView() {
                               await deleteChart(c.id);
                             }
                           }}
-                          className="btn btn-ghost btn-sm"
-                          style={{ padding: '4px', minWidth: 'auto', fontSize: '0.85rem', color: 'var(--color-danger-text)', height: '28px', minHeight: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          className="btn btn-ghost btn-sm seating-chart-delete-btn"
                           title="Delete chart"
                         >
                           ❌
@@ -584,11 +582,13 @@ export default function SeatingView() {
 
             {/* Render overflow dropdown when charts exceed visible count */}
             {(charts || []).length > visibleTabCount && (
-              <div style={{
-                borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`,
-                paddingBottom: '8px',
-                marginBottom: '-1px'
-              }}>
+              <div 
+                className="seating-overflow-dropdown-wrap"
+                // @allow-inline-style - dynamic border based on active chart visibility
+                style={{
+                  borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`
+                }}
+              >
                 <select
                   value={(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? '' : activeChartId}
                   onChange={(e) => {
@@ -596,19 +596,11 @@ export default function SeatingView() {
                       setActiveChartId(e.target.value);
                     }
                   }}
-                  className="seating-select-perf"
+                  className="seating-select-perf seating-overflow-select"
+                  // @allow-inline-style - dynamic color and weight based on active chart
                   style={{
-                    height: '24px',
-                    minHeight: '24px',
-                    padding: '0 24px 0 8px !important',
-                    fontSize: '0.75rem',
-                    width: '140px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: 'none',
-                    backgroundColor: 'transparent',
                     color: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
-                    fontWeight: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 700 : 500,
-                    boxShadow: 'none'
+                    fontWeight: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 700 : 500
                   }}
                 >
                   <option value="">More Charts... ▼</option>
@@ -622,23 +614,7 @@ export default function SeatingView() {
             {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
             <button
               onClick={() => setIsNewChartModalOpen(true)}
-              className="btn btn-sm btn-ghost"
-              style={{ 
-                fontWeight: 800, 
-                fontSize: '1.25rem', 
-                padding: 0, 
-                height: '28px', 
-                minHeight: '28px', 
-                width: '28px', 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                borderRadius: '50%', 
-                border: '1px dashed var(--border)', 
-                color: 'var(--primary)',
-                marginBottom: '8px',
-                flexShrink: 0
-              }}
+              className="btn btn-sm btn-ghost seating-add-btn"
               title="Create new seating chart"
             >
               +
@@ -648,7 +624,7 @@ export default function SeatingView() {
           <div className="flex-responsive seating-main-layout">
           <AppCard className="flex-col seating-card-editor">
             <div className="no-print flex-responsive seating-toolbar">
-               <div className="flex-row" style={{ gap: 'var(--space-xs)' }}>
+               <div className="flex-row seating-toolbar-row">
                   <button onClick={handleClear} className="btn btn-sm btn-ghost seating-toolbar-btn">
                     🧹 Clear
                   </button>
@@ -673,12 +649,13 @@ export default function SeatingView() {
                </div>
 
                <div className="flex-row no-print seating-segmented-control-wrap">
-                 <button
-                   type="button"
-                   onClick={toggleFullscreen}
-                   className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'} seating-toolbar-btn-fullscreen`}
-                   style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
-                 >
+                  <button
+                    type="button"
+                    onClick={toggleFullscreen}
+                    className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'} seating-toolbar-btn-fullscreen`}
+                    // @allow-inline-style - dynamic fullscreen state background
+                    style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
+                  >
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
 
@@ -696,7 +673,7 @@ export default function SeatingView() {
                </div>
                
                <div className="flex-row seating-copy-section">
-                  <span className="text-label text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>Copy:</span>
+                  <span className="text-label text-muted seating-copy-label">Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
@@ -714,7 +691,7 @@ export default function SeatingView() {
                <button onClick={handlePrint} className="btn btn-sm btn-primary seating-toolbar-btn-print">
                   🖨️ Print
                </button>
-               <div className="flex-row seating-save-feedback-wrap" style={{ alignItems: 'center' }}>
+               <div className="flex-row seating-save-feedback-wrap seating-toolbar-save-wrap">
                  <SavingIndicator isSaving={isSaving} error={saveError} />
                  <span className="text-muted seating-autosave-tag">
                    Auto-saved
@@ -722,6 +699,7 @@ export default function SeatingView() {
                  <button
                    onClick={handleManualSave}
                    className="btn btn-sm btn-ghost seating-toolbar-btn-save"
+                   // @allow-inline-style - dynamic save feedback color
                    style={{ 
                      color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
                    }}
@@ -748,14 +726,14 @@ export default function SeatingView() {
                 )}
               </div>
             ) : (
-              <div className="seating-print-shell flex-col" style={{ gap: 'var(--space-lg)' }}>
+              <div className="seating-print-shell flex-col">
                 {printMode === 'visual' && (
                   <div className="no-print seating-grid-editor-info">
                     <strong>Editor Mode:</strong>{' '}
                     {singersListPosition === 'bottom' ? (
                       <span>
                         Drag singers from the <strong>bottom shelf</strong> below, or click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them.
-                        <span style={{ marginLeft: 'var(--space-sm)', fontWeight: 700, color: 'var(--color-performance-text)' }}>
+                        <span className="seating-editor-info-highlight">
                           👇 Scroll down to see unassigned singers!
                         </span>
                       </span>
@@ -835,22 +813,20 @@ export default function SeatingView() {
                 }}
                 className="seating-sidebar-content"
               >
-                <div className="flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: 'var(--space-xs)' }}>
-                  <h3 className="text-headline seating-sidebar-title" style={{ margin: 0 }}>Unassigned</h3>
-                  <div className="flex-row" style={{ gap: '4px' }}>
+                <div className="flex-row seating-sidebar-header-row">
+                  <h3 className="text-headline seating-sidebar-title">Unassigned</h3>
+                  <div className="flex-row seating-sidebar-buttons-row">
                     <button
                       type="button"
                       onClick={() => setIsSingerLookupOpen(true)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontWeight: 600, padding: '0 8px', height: '28px', minHeight: '28px', fontSize: '11px' }}
+                      className="btn btn-secondary btn-sm seating-sidebar-btn"
                     >
                       🔍 Lookup
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSingerModalOpen(true)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontWeight: 600, padding: '0 8px', height: '28px', minHeight: '28px', fontSize: '11px' }}
+                      className="btn btn-secondary btn-sm seating-sidebar-btn"
                     >
                       + Add New
                     </button>
@@ -867,7 +843,7 @@ export default function SeatingView() {
                         onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
                         className="flex-row seating-sidebar-item"
                       >
-                        <span className="text-label" style={{ fontWeight: 600 }}>{p.name}</span>
+                        <span className="text-label seating-sidebar-item-name">{p.name}</span>
                         <span className="badge badge-rehearsal">{p.voicePart}</span>
                       </div>
                     ))}
@@ -944,15 +920,14 @@ export default function SeatingView() {
             }
           }}
         >
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label" style={{ fontWeight: 600 }}>Chart Name</label>
+          <div className="flex-col seating-modal-row">
+            <label className="text-label seating-new-chart-label">Chart Name</label>
             <input 
-              className="card" 
+              className="card seating-new-chart-input" 
               value={newChartName} 
               onChange={(e) => setNewChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir, Combined Finale"
               required 
-              style={{ padding: '0 12px', height: '44px', width: '100%' }} 
             />
           </div>
         </form>
@@ -1004,15 +979,14 @@ export default function SeatingView() {
             }
           }}
         >
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <label className="text-label" style={{ fontWeight: 600 }}>New Chart Name</label>
+          <div className="flex-col seating-modal-row">
+            <label className="text-label seating-rename-label">New Chart Name</label>
             <input 
-              className="card" 
+              className="card seating-rename-input" 
               value={renameChartName} 
               onChange={(e) => setRenameChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir"
               required 
-              style={{ padding: '0 12px', height: '44px', width: '100%' }} 
             />
           </div>
         </form>

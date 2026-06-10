@@ -827,3 +827,17 @@
     align-items: stretch;
   }
 }
+
+.public-player-loading {
+  text-align: center;
+  padding-top: 4rem;
+}
+
+.public-player-section {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.public-player-footer {
+  margin-top: 2rem;
+}

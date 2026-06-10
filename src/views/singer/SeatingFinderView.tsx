@@ -88,8 +88,7 @@ export default function SeatingFinderView() {
   if (isLoading) {
     return (
       <div
-        className="container"
-        style={{ padding: 'var(--space-xl)', textAlign: 'center' }}
+        className="container seating-finder-loading"
       >
         Loading Seating Assignment...
       </div>
@@ -99,8 +98,7 @@ export default function SeatingFinderView() {
   if (!event) {
     return (
       <div
-        className="container"
-        style={{ padding: 'var(--space-xl)', textAlign: 'center' }}
+        className="container seating-finder-not-found"
       >
         Event not found.
       </div>
@@ -230,17 +228,16 @@ export default function SeatingFinderView() {
       backTo="/"
       maxWidth="1100px"
     >
-      <div className="flex-col" style={{ gap: 'var(--space-xl)', padding: 'var(--space-xl) 0' }}>
+      <div className="flex-col seating-finder-section-gap">
         {charts.length > 1 && (
-          <div className="flex-row" style={{ gap: 'var(--space-xs)', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-xs)' }}>
+          <div className="flex-row seating-finder-chart-selector">
             {charts.map(c => {
               const isActive = c.id === activeChartId;
               return (
                 <button
                   key={c.id}
                   onClick={() => setActiveChartId(c.id)}
-                  className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ fontWeight: 700 }}
+                  className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'} seating-finder-chart-label`}
                 >
                   {c.name}
                 </button>
@@ -250,21 +247,14 @@ export default function SeatingFinderView() {
         )}
         <AppCard>
           {isOpenSeating ? (
-            <div className="flex-col" style={{ 
-              textAlign: 'center', 
-              padding: 'var(--space-xl)', 
-              backgroundColor: 'var(--primary-light)', 
-              borderRadius: 'var(--radius-lg)', 
-              border: '2px solid var(--primary)',
-              gap: 'var(--space-sm)'
-            }}>
-              <div style={{ fontSize: '0.875rem', color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Seating Type</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-deep)', margin: 'var(--space-sm) 0', lineHeight: 1.2 }}>
+            <div className="flex-col seating-finder-card text-center">
+              <div className="seating-finder-card-heading">Seating Type</div>
+              <div className="seating-finder-seat-label">
                  Open Seating
               </div>
               <div className="text-muted">Find a spot with your section when you arrive.</div>
               {address && (
-                <div style={{ marginTop: 'var(--space-md)' }}>
+                <div className="seating-finder-flex-row">
                   <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                     📍 Open in Google Maps
                   </a>
@@ -272,20 +262,13 @@ export default function SeatingFinderView() {
               )}
             </div>
           ) : row !== null ? (
-            <div className="flex-col" style={{ 
-              textAlign: 'center', 
-              padding: 'var(--space-xl)', 
-              backgroundColor: 'var(--primary-light)', 
-              borderRadius: 'var(--radius-lg)', 
-              border: '2px solid var(--primary)',
-              gap: 'var(--space-sm)'
-            }}>
-              <div style={{ fontSize: '0.875rem', color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Assignment</div>
-              <div style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--primary-deep)', margin: 'var(--space-sm) 0', lineHeight: 1 }}>
+            <div className="flex-col seating-finder-card text-center">
+              <div className="seating-finder-card-heading">Your Assignment</div>
+              <div className="seating-finder-seat-label">
                  Row {row + 1}
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                Seat {seat! + 1} <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              <div className="seating-finder-seat-label">
+                Seat {seat! + 1} <span className="seating-finder-seat-label">
                   ({perspective === 'singer' 
                     ? `${seat! + 1} from left, ${rowCounts[row] - seat!} from right, looking at stage`
                     : `${seat! + 1} from right, ${rowCounts[row] - seat!} from left, looking at choir`
@@ -294,14 +277,14 @@ export default function SeatingFinderView() {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: 'var(--space-md)' }}>
+            <div className="seating-finder-loading">
               <p className="text-muted">{noAssignmentMessage}</p>
             </div>
           )}
         </AppCard>
  
         {!isOpenSeating && (
-          <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+          <div className="flex-col seating-finder-section-gap">
             <div className="flex-row perspective-toggle-wrapper">
               <button
                 className={`btn btn-sm ${perspective === 'singer' ? 'btn-primary' : 'btn-ghost'}`}
@@ -316,12 +299,12 @@ export default function SeatingFinderView() {
                 Director View
               </button>
             </div>
-            <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+            <h3 className="seating-finder-section-heading text-center">
               Interactive Stage Layout
             </h3>
             
             {isLoading ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }} className="text-muted">Loading Stage Map...</div>
+              <div className="seating-finder-loading text-muted">Loading Stage Map...</div>
             ) : (
               <div className="stage-container">
                 {/* Mirrored Stage Grid Wrapper */}
@@ -330,9 +313,9 @@ export default function SeatingFinderView() {
                     <div key={rIdx} className="stage-row">
                       <span className="stage-row-label">Row {rIdx + 1}</span>
                       
-                      // @allow-inline-style - dynamic flex direction based on perspective toggle
                       <div
                         className="stage-seat-row"
+                        // @allow-inline-style - dynamic flex direction based on perspective toggle
                         style={{
                           flexDirection: perspective === 'director' ? 'row-reverse' : 'row'
                         }}
@@ -355,6 +338,7 @@ export default function SeatingFinderView() {
                               className={`seat-node ${isMySeat ? 'self' : ''} ${
                                 selectedSeat?.row === rIdx && selectedSeat?.seat === sIdx ? 'selected' : ''
                               }`}
+                              // @allow-inline-style - dynamic singer color based on voice part/section
                               style={{ 
                                 borderColor: singerColor,
                                 color: singerId ? 'white' : 'var(--text-muted)',
@@ -436,12 +420,12 @@ export default function SeatingFinderView() {
 
         {/* Standing Neighbors HUD Card */}
         {!isOpenSeating && row !== null && seat !== null && (
-          <div className="flex-col" style={{ gap: 'var(--space-sm)' }}>
-            <div className="flex-col" style={{ alignItems: 'center' }}>
-              <h3 style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+          <div className="flex-col seating-finder-section-gap">
+            <div className="seating-finder-flex-col">
+              <h3 className="seating-finder-section-heading">
                 Standing Neighbors HUD
               </h3>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              <span className="seating-finder-card-text">
                 Always from your perspective facing the director
               </span>
             </div>

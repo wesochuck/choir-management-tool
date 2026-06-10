@@ -155,7 +155,7 @@ export default function PublicPlayerView() {
     setPlaylist(hydrated);
   };
 
-  if (isLoading) return <div className="chorus-player" style={{ textAlign: 'center', paddingTop: '4rem' }}>Loading playlist...</div>;
+  if (isLoading) return <div className="public-player-loading">Loading playlist...</div>;
   if (error) return <div className="chorus-player"><div className="error-message">{error}</div></div>;
   if (!data) return null;
 
@@ -171,7 +171,7 @@ export default function PublicPlayerView() {
             </Link>
           )}
           <h1>Chorus</h1>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{data.event.title}</div>
+          <div className="public-player-section">{data.event.title}</div>
         </div>
       </header>
 
@@ -206,7 +206,7 @@ export default function PublicPlayerView() {
         isDownloadingAll={isDownloadingAll}
       />
 
-      <div className="help-text" style={{ marginTop: '2rem' }}>
+      <div className="public-player-footer">
         You can download tracks for offline practice. They will be saved in your browser.
       </div>
     </div>

@@ -445,68 +445,11 @@ test('codebase integrity: ensure appSettings lookups for choir name reference ch
 test('codebase integrity: enforce no inline styles rule', () => {
   const files = getSrcFiles(['.tsx', '.jsx']);
   const srcDir = resolveProjectPath('src');
-  
-  // Whitelist of legacy files that currently use inline style={...}
-  const legacyInlineStyleWhitelist = new Set([
-    'src/App.tsx',
-    'src/contexts/DialogContext.tsx',
-    'src/components/admin/SetListItemEditModal.tsx',
-    'src/components/admin/EventModal.tsx',
-    'src/components/admin/MusicImportModal.tsx',
-    'src/components/admin/SeatingBottomDock.tsx',
-    'src/components/admin/SingerRsvpHistoryTab.tsx',
-    'src/components/admin/EventRosterTable.tsx',
-    'src/components/admin/BulkEventModal.tsx',
-    'src/components/admin/SeatingFormationsEditor.tsx',
-    'src/components/admin/SingerLookupModal.tsx',
-    'src/components/admin/EventList.tsx',
-    'src/components/admin/AuditionModal.tsx',
-    'src/components/admin/SortableSetListItem.tsx',
-    'src/components/admin/RosterImportModal.tsx',
-    'src/components/admin/SetListInlineCreator.tsx',
-    'src/components/admin/CheckInList.tsx',
-    'src/components/admin/SeatingGrid.tsx',
-    'src/components/LivePreview.tsx',
-    'src/components/common/MarkdownEditor.tsx',
-    'src/components/common/BaseModal.tsx',
-    'src/components/common/PageLayout.tsx',
-    'src/components/singer/EventCard.tsx',
-    'src/components/player/Playlist.tsx',
-    'src/components/player/Player.tsx',
-    'src/views/PublicAuditionView.tsx',
-
-    'src/views/admin/SeatingView.tsx',
-    'src/views/admin/EventsView.tsx',
-    'src/views/admin/SetListView.tsx',
-    'src/views/admin/EventRosterView.tsx',
-    'src/views/admin/event-roster/useEventRosterExport.tsx',
-    'src/views/admin/music-library/FloatingAudioPlayer.tsx',
-    'src/views/admin/music-library/MusicLibraryTable.tsx',
-    'src/views/admin/music-library/MusicLibraryFilters.tsx',
-    'src/views/admin/music-library/LearningTracksEditor.tsx',
-    'src/views/admin/music-library/MultiSelectDropdown.tsx',
-    'src/views/admin/music-library/MusicPieceModal.tsx',
-    'src/views/admin/events/useEventPlayerLink.tsx',
-    'src/views/admin/events/EventsTabs.tsx',
-    'src/views/admin/AttendanceView.tsx',
-
-    'src/views/PublicPlayerView.tsx',
-    'src/views/PublicTicketPurchaseView.tsx',
-    'src/views/PublicTicketListView.tsx',
-    'src/views/PublicTicketSuccessView.tsx',
-    'src/views/singer/ProfileView.tsx',
-    'src/views/singer/SeatingFinderView.tsx',
-    'src/views/singer/DashboardView.tsx',
-    'src/views/PublicBundlePurchaseView.tsx',
-  ]);
 
   const violations: string[] = [];
   for (const file of files) {
     const relPath = path.relative(srcDir, file);
     const key = `src/${relPath}`;
-    if (legacyInlineStyleWhitelist.has(key)) {
-      continue;
-    }
 
     const content = fs.readFileSync(file, 'utf8');
     if (!content.includes('style={{')) {

@@ -3,6 +3,7 @@ import type { Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
+import './EventList.css';
 
 interface EventListProps {
   events: Event[];
@@ -45,7 +46,7 @@ export const EventList: React.FC<EventListProps> = ({
   }, [activeDropdownId]);
 
   return (
-    <AppCard noPadding style={{ gap: 0 }}>
+    <AppCard noPadding className="event-list-card">
       {events.map((e) => (
         <div 
           key={e.id} 
@@ -61,32 +62,21 @@ export const EventList: React.FC<EventListProps> = ({
             }
           }}
         >
-          <div className="flex-col" style={{ gap: 'var(--space-xs)' }}>
-            <div className="flex-row" style={{ gap: 'var(--space-md)' }}>
+          <div className="event-list-details">
+            <div className="event-list-header">
               <span className={`badge ${e.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
                 {e.type}
               </span>
               {openAuditionEventId === e.id && (
-                <span className="badge badge-success" style={{ fontWeight: 'bold' }}>
+                <span className="badge badge-success event-list-date">
                   🎵 Auditions Open
                 </span>
               )}
-              <span className="text-label" style={{ color: 'var(--primary)' }}>
+              <span className="text-label event-list-venue">
                 {formatInTimezone(e.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
               {e.callTime && (
-                <span className="badge" style={{
-                  backgroundColor: '#eef2ff',
-                  color: '#4338ca',
-                  border: '1px solid #c7d2fe',
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '3px'
-                }}>
+                <span className="badge event-list-call-time-badge">
                   📢 Call: {formatTime12h(e.callTime)}
                 </span>
               )}
@@ -98,21 +88,20 @@ export const EventList: React.FC<EventListProps> = ({
                 target="_blank" 
                 rel="noopener noreferrer"
                 onClick={(event) => event.stopPropagation()}
-                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                className="event-list-actions"
               >
                 📍 <strong>{e.expand?.venue?.name || ''}</strong>
               </a>
             </div>
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <div className="admin-event-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+          <div className="admin-event-actions event-list-dropdown-container">
             <button
               onClick={(event) => {
                 event.stopPropagation();
                 onViewRoster(e);
               }}
-              className={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm"}
-              style={{ fontWeight: 700 }}
+              className={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "btn btn-secondary btn-sm event-list-date" : "btn btn-primary btn-sm event-list-date"}
             >
               RSVP Roster
             </button>
@@ -122,9 +111,8 @@ export const EventList: React.FC<EventListProps> = ({
                   event.stopPropagation();
                   onCheckAttendance(e);
                 }}
-                className="btn btn-secondary btn-sm"
+                className="btn btn-secondary btn-sm event-list-date"
                 title="Take attendance for this event"
-                style={{ fontWeight: 700 }}
               >
                 📋 Attendance
               </button>
@@ -135,34 +123,21 @@ export const EventList: React.FC<EventListProps> = ({
                   event.stopPropagation();
                   onViewSeating(e);
                 }}
-                className="btn btn-secondary btn-sm"
+                className="btn btn-secondary btn-sm event-list-date"
                 title="Open seating chart for this performance"
-                style={{ fontWeight: 700 }}
               >
                 🪑 Seating
               </button>
             )}
 
             {/* Actions Dropdown Button Panel */}
-            <div className="actions-dropdown-container" style={{ position: 'relative' }}>
+            <div className="actions-dropdown-container">
               <button
                 onClick={(event) => {
                   event.stopPropagation();
                   setActiveDropdownId(activeDropdownId === e.id ? null : e.id);
                 }}
-                className="btn btn-secondary btn-sm"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  padding: 0,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '16px',
-                  border: '1px solid var(--border)'
-                }}
+                className="btn btn-secondary btn-sm event-list-dropdown-toggle"
                 title="More Actions"
               >
                 ⋮
@@ -170,23 +145,7 @@ export const EventList: React.FC<EventListProps> = ({
 
               {activeDropdownId === e.id && (
                 <div 
-                  className="dropdown-menu shadow-lg" 
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    right: 0,
-                    marginTop: '6px',
-                    width: '180px',
-                    backgroundColor: 'var(--surface, #ffffff)',
-                    border: '1px solid var(--border, #cbd5e1)',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    padding: '6px 0',
-                    zIndex: 250,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)'
-                  }}
+                  className="dropdown-menu shadow-lg event-list-dropdown-menu"
                 >
                   {onOpenPlayer && (
                     <button
@@ -195,24 +154,7 @@ export const EventList: React.FC<EventListProps> = ({
                         setActiveDropdownId(null);
                         onOpenPlayer(e);
                       }}
-                      className="dropdown-item btn-sm"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        width: '100%',
-                        padding: '8px 16px',
-                        border: 'none',
-                        background: 'transparent',
-                        color: 'var(--text)',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        transition: 'background-color 0.15s ease'
-                      }}
-                      onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
-                      onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                      className="dropdown-item btn-sm event-list-dropdown-item"
                     >
                       🎧 Practice Player
                     </button>
@@ -223,24 +165,7 @@ export const EventList: React.FC<EventListProps> = ({
                       setActiveDropdownId(null);
                       onSendMessage(e);
                     }}
-                    className="dropdown-item btn-sm"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      width: '100%',
-                      padding: '8px 16px',
-                      border: 'none',
-                      background: 'transparent',
-                      color: 'var(--text)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      transition: 'background-color 0.15s ease'
-                    }}
-                    onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
-                    onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                    className="dropdown-item btn-sm event-list-dropdown-item"
                   >
                     ✉️ Send Message
                   </button>
@@ -251,53 +176,19 @@ export const EventList: React.FC<EventListProps> = ({
                         setActiveDropdownId(null);
                         onClone(e);
                       }}
-                      className="dropdown-item btn-sm"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        width: '100%',
-                        padding: '8px 16px',
-                        border: 'none',
-                        background: 'transparent',
-                        color: 'var(--text)',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        transition: 'background-color 0.15s ease'
-                      }}
-                      onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
-                      onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                      className="dropdown-item btn-sm event-list-dropdown-item"
                     >
                       👯 Clone Performance
                     </button>
                   )}
-                  <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '4px 0' }} />
+                  <hr className="event-list-dropdown-separator" />
                   <button 
                     onClick={(event) => {
                       event.stopPropagation();
                       setActiveDropdownId(null);
                       onEdit(e);
                     }}
-                    className="dropdown-item btn-sm"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      width: '100%',
-                      padding: '8px 16px',
-                      border: 'none',
-                      background: 'transparent',
-                      color: 'var(--primary-deep, #345940)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      transition: 'background-color 0.15s ease'
-                    }}
-                    onMouseEnter={(event) => event.currentTarget.style.backgroundColor = 'var(--primary-light, #f1f5f9)'}
-                    onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
+                    className="dropdown-item btn-sm event-list-dropdown-item event-list-dropdown-item-primary"
                   >
                     ✏️ Edit Event
                   </button>
@@ -308,7 +199,7 @@ export const EventList: React.FC<EventListProps> = ({
         </div>
       ))}
       {events.length === 0 && (
-        <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+        <div className="event-list-empty">
           <p className="text-muted text-sm">No events scheduled.</p>
         </div>
       )}

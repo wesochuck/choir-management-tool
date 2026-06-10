@@ -145,7 +145,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                 type="button"
                 onClick={() => handleAddItem()}
                 className="btn btn-ghost sl-suggestion-new-btn"
-                // @allow-inline-style - conditional border based on array length
+                // @allow-inline-style - conditional border when library has results
                 style={{ 
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
                 }}

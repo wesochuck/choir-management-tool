@@ -1,0 +1,15 @@
+.event-player-link-row {
+  gap: var(--space-md);
+}
+
+.event-player-link-url {
+  padding: var(--space-sm);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  word-break: break-all;
+  font-size: 0.85rem;
+}
+
+.event-player-link-actions {
+  gap: var(--space-sm);
+}

@@ -387,3 +387,90 @@
   margin-right: auto;
 }
 
+.seating-finder-loading {
+  padding: var(--space-md);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.seating-finder-not-found {
+  padding: var(--space-md);
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.seating-finder-chart-selector {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: var(--space-xs);
+}
+
+.seating-finder-chart-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.seating-finder-chart-label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.seating-finder-card {
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.seating-finder-card-heading {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.seating-finder-card-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.seating-finder-section-gap {
+  gap: var(--space-md);
+  padding: var(--space-xl) 0;
+}
+
+.seating-finder-section-heading {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.seating-finder-seat-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.seating-finder-flex-row {
+  display: flex;
+  align-items: center;
+}
+
+.seating-finder-flex-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+

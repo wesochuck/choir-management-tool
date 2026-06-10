@@ -60,7 +60,7 @@ export const SortableSetListItem: React.FC<Props> = ({
     <div 
       ref={setNodeRef} 
       className={`card flex-row sl-item-card ${item.type === 'intermission' ? 'sl-item-card-intermission' : 'sl-item-card-song'}`}
-      // @allow-inline-style - dynamic dnd kit positioning
+      // @allow-inline-style - dnd-kit sortable transform and transition
       style={{ 
         ...style 
       }}
