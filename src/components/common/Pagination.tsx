@@ -18,7 +18,7 @@ const paginationBtnClass =
   'motion-reduce:transition-none motion-reduce:transform-none';
 
 const activeBtnClass =
-  'bg-primary-deep text-white border-primary-deep font-semibold shadow-md hover:enabled:translate-y-0';
+  '!bg-primary-deep !text-white !border-primary-deep font-semibold shadow-md hover:enabled:translate-y-0';
 
 export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
