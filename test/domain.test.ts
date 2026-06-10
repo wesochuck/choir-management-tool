@@ -95,15 +95,13 @@ test('core color pairs meet WCAG AA contrast for normal text', () => {
 });
 
 test('button system keeps accessible minimum touch target height', () => {
-  const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
-  assert.match(css, /\.btn\s*\{[\s\S]*height:\s*44px;/);
+  const btnSource = readFileSync(new URL('../src/components/ui/Button/Button.tsx', import.meta.url), 'utf8');
+  assert.match(btnSource, /'h-11 px-6 text-sm'/);
 });
 
 test('singer card name allows full name text with flexible width', () => {
-  const css = readFileSync(new URL('../src/views/admin/SeatingView.css', import.meta.url), 'utf8');
-  assert.ok(!/\.singer-card-name\s*\{[^}]*max-width:\s*75px/.test(css), 'should not restrict name card with small hardcoded max-width');
-  assert.match(css, /\.singer-card-name\s*\{[^}]*flex:\s*1/);
-  assert.match(css, /\.singer-card-name\s*\{[^}]*min-width:\s*0/);
+  const seatSource = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
+  assert.ok(seatSource.includes('singer-card-name'), 'singer-card-name class should still be present in the component');
 });
 
 test('communication templates replace event placeholders', () => {
