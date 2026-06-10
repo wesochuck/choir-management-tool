@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
+import './MarkdownEditor.css';
 
 interface MarkdownEditorProps {
   value: string;
@@ -99,7 +100,7 @@ export function MarkdownEditor({
 
   return (
     <div className={`markdown-editor-wrapper ${className || ''}`}>
-      <textarea ref={textareaRef} style={{ display: 'none' }} />
+      <textarea ref={textareaRef} className="markdown-editor-hidden" />
     </div>
   );
 }
