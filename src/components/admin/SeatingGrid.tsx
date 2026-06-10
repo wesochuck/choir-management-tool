@@ -252,7 +252,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             }}>
             <div className="text-xs text-muted"
               // @allow-inline-style - wider label to accommodate seat count badge
-              style={{ width: isCompact ? '110px' : '130px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}
+              // @allow-inline-style - dynamic width based on compact mode
+              style={{ width: isCompact ? '110px' : '130px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)', whiteSpace: 'nowrap' }}
               title={`${occupiedCount} of ${seatCount} seats occupied`}>
               {rowLabel}
               {(isFront || rowIndex === rowCounts.length - 1) && (
