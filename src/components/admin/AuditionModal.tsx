@@ -192,7 +192,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             />
           </div>
 
-          <div className="flex-responsive gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-col flex-1 gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
               <div 
@@ -227,7 +227,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             </div>
           </div>
 
-          <div className="flex-responsive gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-col flex-1 gap-1">
               <label className="text-label">Status</label>
               <div className="h-[44px] flex items-center font-bold text-lg text-text">

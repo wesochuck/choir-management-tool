@@ -6,7 +6,6 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import EventRosterView from './EventRosterView';
-import './Dashboards.css';
 
 export default function RsvpDashboardView() {
   const [searchParams] = useSearchParams();
@@ -37,18 +36,18 @@ export default function RsvpDashboardView() {
   );
 
   return (
-    <div className="flex-col db-container-vertical db-padding-v">
-      <div className="admin-view-header">
-        <div className="admin-view-titles">
+    <div className="flex-col py-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="admin-view-titles">
           {/* Page title is already handled by PageLayout in App.tsx */}
         </div>
-        <div className="admin-view-actions db-filter-actions">
-          <div className="form-field-group db-flex-1">
-            <label className="text-label db-filter-label db-font-sm">Select Event</label>
+        <div className="flex items-center gap-2 min-w-[320px]">
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-label font-semibold uppercase text-text-muted text-xs">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="form-select"
+              className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
@@ -60,25 +59,25 @@ export default function RsvpDashboardView() {
       </div>
 
       {selectedEvent && (
-        <div className="card-accent db-accent-card">
-          <div className="db-event-title-stack">
-            <span className="text-muted text-xs db-filter-label db-letter-spacing">Active Event</span>
-            {selectedEvent.title && <h2 className="db-event-headline">{selectedEvent.title}</h2>}
+        <div className="card-accent flex flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-muted text-xs font-semibold uppercase tracking-wider">Active Event</span>
+            {selectedEvent.title && <h2 className="m-0 text-2xl font-extrabold text-primary-deep">{selectedEvent.title}</h2>}
           </div>
-          
-          <div className="db-event-meta-row">
-            <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'} db-event-type-badge`}>
+
+          <div className="flex flex-wrap gap-6 items-center">
+            <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'} text-[10px] px-2 py-0.5`}>
               {selectedEvent.type}
             </span>
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label db-venue-link"
+              className="text-label font-semibold text-sm flex items-center gap-1 text-primary-deep"
             >
               📍 {selectedEvent.expand?.venue?.name || ''}
             </a>
-            <span className="text-muted text-sm db-event-date">
+            <span className="text-muted text-sm font-medium">
               📅 {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
@@ -86,18 +85,18 @@ export default function RsvpDashboardView() {
       )}
 
       {isLoading ? (
-        <AppCard className="db-loading-card">
+        <AppCard>
           <p className="text-muted">Loading events...</p>
         </AppCard>
       ) : error ? (
-        <AppCard className="db-error-card">
-          <p className="db-error-text">{error}</p>
+        <AppCard>
+          <p>{error}</p>
         </AppCard>
       ) : selectedEventId ? (
         <EventRosterView eventIdProp={selectedEventId} />
       ) : (
-        <AppCard className="admin-empty-state">
-          <p className="text-muted db-empty-state-text">Please select an event above to view and manage RSVPs.</p>
+        <AppCard className="flex flex-col items-center justify-center py-12 text-text-muted">
+          <p className="text-muted">Please select an event above to view and manage RSVPs.</p>
         </AppCard>
        )}
      </div>

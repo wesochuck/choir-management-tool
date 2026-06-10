@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { BaseModal } from '../components/common/BaseModal';
-import './DialogContext.css';
 
 type DialogVariant = 'info' | 'danger' | 'warning';
 
@@ -104,13 +103,13 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <DialogContext.Provider value={value}>
       {children}
-      
+
       {toast && (
-        <div 
+        <div
           key={toast.id}
-          className="dialog-toast"
+          className="fixed bottom-6 right-6 z-[9999] bg-[var(--text-color,#1f2937)] text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-xs font-medium border border-white/10 backdrop-blur pointer-events-none animate-toast-slide-in"
         >
-          <span className="dialog-toast-icon">ℹ️</span>
+          <span className="text-sm">ℹ️</span>
           <span>{toast.message}</span>
         </div>
       )}
@@ -130,8 +129,8 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
               )}
               <button
                 className={`btn ${
-                  variant === 'danger' ? 'btn-danger' : 
-                  variant === 'warning' ? 'btn-secondary' : 
+                  variant === 'danger' ? 'btn-danger' :
+                  variant === 'warning' ? 'btn-secondary' :
                   'btn-primary'
                 }`}
                 disabled={activeDialog.type === 'prompt' && activeDialog.options.required && !promptValue.trim()}
@@ -143,12 +142,12 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
           )
         }
       >
-        <div className="flex-col dialog-toast-body">
-          <div className="text-body dialog-toast-message">
+        <div className="flex-col gap-4">
+          <div className="text-body m-0 whitespace-pre-wrap">
             {activeDialog?.options.message}
           </div>
           {activeDialog?.type === 'prompt' && (
-            <div className="flex-col dialog-toast-buttons">
+            <div className="flex-col gap-1">
               <textarea
                 autoFocus
                 value={promptValue}
@@ -169,7 +168,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                 }}
               />
               {activeDialog.options.maxLength && (
-                <div className="dialog-toast-prompt-hint">
+                <div className="text-right text-[0.7rem] text-text-muted">
                   {promptValue.length} / {activeDialog.options.maxLength}
                 </div>
               )}

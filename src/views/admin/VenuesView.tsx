@@ -85,7 +85,7 @@ export default function VenuesView() {
 
   return (
     <div className="flex-col gap-8 py-8">
-       <div className="flex-responsive justify-between items-center">
+       <div className="flex flex-col md:flex-row justify-between items-center">
         <h1 className="text-display m-0">Venue Templates</h1>
         {!isAdding && (
           <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
@@ -130,7 +130,7 @@ export default function VenuesView() {
                 <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
               </div>
             )}
-            <div className="flex-responsive justify-end gap-4">
+            <div className="flex flex-col md:flex-row justify-end gap-4">
               <Button variant="ghost" onClick={resetForm}>Cancel</Button>
               <Button type="submit" variant="primary">Save Template</Button>
             </div>
@@ -168,7 +168,7 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="flex-responsive gap-4 mt-4">
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
               <Button variant="ghost" className="flex-1" onClick={() => handleEdit(v)}>Edit</Button>
               <Button
                 variant="danger"

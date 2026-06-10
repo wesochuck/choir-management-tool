@@ -314,8 +314,8 @@ export default function CommunicationView() {
   };
 if (library.isLoading) {
   return (
-    <div className="admin-view-container">
-      <AppCard className="admin-loading-state">
+    <div className="p-6 max-w-7xl mx-auto">
+      <AppCard className="flex items-center justify-center py-12">
         <p>Loading Communications...</p>
       </AppCard>
     </div>
@@ -323,9 +323,9 @@ if (library.isLoading) {
 }
 
 return (
-  <div className="admin-view-container">
-    <div className="admin-view-header">
-      <div className="flex-col gap-xs">
+  <div className="p-6 max-w-7xl mx-auto">
+    <div className="flex items-center justify-between mb-6">
+          <div className="flex-col gap-1">
         <h1 className="text-display m-0">
           Communications
         </h1>

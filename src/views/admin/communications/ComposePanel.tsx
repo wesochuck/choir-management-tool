@@ -395,7 +395,7 @@ export function ComposePanel({
       {wizardStep === 'COMPOSE' && (
         <div className="flex-col comm-compose-form">
           <div
-            className="wizard-action-header flex-responsive comm-justify-between comm-w-full"
+            className="wizard-action-header flex flex-col md:flex-row comm-justify-between comm-w-full"
           >
             <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
               ← Back to Recipients
@@ -425,7 +425,7 @@ export function ComposePanel({
               </AppCard>
 
               <div
-                className="wizard-action-footer flex-responsive comm-justify-between comm-w-full"
+                className="wizard-action-footer flex flex-col md:flex-row comm-justify-between comm-w-full"
               >
                 <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Recipients
@@ -456,7 +456,7 @@ export function ComposePanel({
       {wizardStep === 'REVIEW' && (
         <div className="flex-col comm-compose-form">
           <div
-            className="wizard-action-header flex-responsive comm-justify-between comm-w-full"
+            className="wizard-action-header flex flex-col md:flex-row comm-justify-between comm-w-full"
           >
             <button
               type="button"

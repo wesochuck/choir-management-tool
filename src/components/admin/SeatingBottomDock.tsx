@@ -207,7 +207,7 @@ export function SeatingBottomDock({
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
                       className="flex-row bottom-dock-singer-card"
                     >
-                      <span className="singer-card-name" title={p.name}>
+                      <span className="flex-1 min-w-0 truncate" title={p.name}>
                         {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}
                       </span>
                       <span className="badge badge-rehearsal singer-card-badge">

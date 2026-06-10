@@ -5,7 +5,6 @@ import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
-import '../../views/admin/communications/Communications.css';
 
 interface MessageHistoryProps {
   history: MessageRecord[];
@@ -36,7 +35,6 @@ export function MessageHistory({
 }: MessageHistoryProps) {
   const [searchTerm, setSearchTerm] = useState(historySearchQuery);
 
-  // Debounce sync to parent
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       if (searchTerm !== historySearchQuery) {
@@ -46,18 +44,17 @@ export function MessageHistory({
     return () => window.clearTimeout(timeout);
   }, [searchTerm, historySearchQuery, onHistorySearchChange]);
 
-  // Sync back if parent state changes (e.g. cleared elsewhere)
   useEffect(() => {
     setSearchTerm(historySearchQuery);
   }, [historySearchQuery]);
 
   return (
-    <div className="flex-col comm-compose-form">
-      <div className="comm-message-list-header">
-        <div className="comm-message-search-container">
+    <div className="flex-col gap-4">
+      <div className="flex gap-2 mb-1">
+        <div className="relative flex-1">
           <input
             type="text"
-            className="input comm-message-search-input"
+            className="input w-full"
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -66,7 +63,7 @@ export function MessageHistory({
           {searchTerm && (
             <button
               type="button"
-              className="comm-message-search-clear"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-text-muted text-xl leading-none"
               onClick={() => {
                 setSearchTerm('');
                 onHistorySearchChange('');
@@ -84,8 +81,7 @@ export function MessageHistory({
           const mFilters = message.filters as Record<string, unknown>;
           const mType = mFilters?.type as string | undefined;
           const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-          
-          // Resolve placeholders for subject preview
+
           const eventId = mFilters?.eventId as string | undefined;
           const linkedEvent = events.find(e => e.id === eventId) || null;
           const resolvedSubject = resolvePreviewContent(
@@ -96,22 +92,22 @@ export function MessageHistory({
           );
 
           return (
-            <div key={message.id} className="comm-message-item flex-responsive">
-              <div className="comm-message-info">
-                <div className="comm-message-meta">
-                  <span className="badge badge-rehearsal comm-message-badge">{message.type}</span>
+            <div key={message.id} className="p-3 border-b border-border flex flex-col md:flex-row last:border-b-0">
+              <div className="flex flex-col gap-1 flex-1">
+                <div className="flex gap-2 items-center">
+                  <span className="badge badge-rehearsal text-[10px] px-1.5 py-0.5">{message.type}</span>
                   {message.status === 'Archived' && (
-                    <span className="badge badge-muted comm-message-badge comm-color-muted-bg">
+                    <span className="badge badge-muted text-[10px] px-1.5 py-0.5 bg-slate-400 text-white">
                       Archived
                     </span>
                   )}
-                  {isAutomated && <span className="badge badge-concert comm-message-badge comm-opacity-80">{mType}</span>}
+                  {isAutomated && <span className="badge badge-concert text-[10px] px-1.5 py-0.5 opacity-80">{mType}</span>}
                   <span className="text-muted text-xs">{new Date(message.created).toLocaleString()}</span>
                 </div>
-                <h3 className="comm-message-subject">{resolvedSubject}</h3>
+                <h3 className="m-0 text-sm font-bold">{resolvedSubject}</h3>
                 <button
                   type="button"
-                  className="btn btn-ghost comm-message-recipients-link"
+                  className="btn btn-ghost p-0 border-0 bg-transparent min-h-0 h-auto text-xs text-primary underline self-start cursor-pointer"
                   onClick={() =>
                     onViewRecipients(
                       message.recipients,
@@ -122,7 +118,7 @@ export function MessageHistory({
                   {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''} →
                 </button>
               </div>
-              <div className="flex-row comm-gap-6px">
+              <div className="flex gap-1.5">
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>Details</button>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => onCopyDraft(message)}>Copy to Draft</button>
               </div>

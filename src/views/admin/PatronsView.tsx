@@ -182,13 +182,13 @@ export default function PatronsView() {
   };
 
   return (
-    <div className="admin-view-container">
-      <div className="admin-view-header flex-responsive">
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-6 flex flex-col md:flex-row">
         <div>
           <h1 className="text-display">Patrons Dashboard</h1>
           <p className="text-muted text-sm">View lifetime value and message your donors and ticket buyers.</p>
         </div>
-        <div className="admin-view-actions">
+        <div className="flex items-center gap-2">
           <button 
             className="btn btn-primary" 
             onClick={handleSendMessage}
@@ -216,7 +216,7 @@ export default function PatronsView() {
 
       <AppCard title="Patron Directory">
         <div className="flex flex-col gap-4">
-          <div className="flex-responsive gap-4 items-center w-full flex-wrap max-md:flex-col max-md:items-stretch">
+          <div className="flex flex-col md:flex-row gap-4 items-center w-full flex-wrap max-md:flex-col max-md:items-stretch">
             <div className="flex-1 min-w-[200px] w-full">
               <input 
                 type="text"
@@ -282,7 +282,7 @@ export default function PatronsView() {
               {loading ? (
                 <tr><td colSpan={7} className="p-3 text-center p-8">Loading patrons...</td></tr>
               ) : filteredPatrons.length === 0 ? (
-                <tr><td colSpan={7} className="p-3 text-center p-8 admin-empty-state">No patrons found matching your search.</td></tr>
+                <tr><td colSpan={7} className="p-3 text-center p-8 flex flex-col items-center justify-center py-12 text-text-muted">No patrons found matching your search.</td></tr>
               ) : filteredPatrons.map(p => (
                 <tr key={p.profile.id} className="border-b border-border text-sm cursor-pointer hover:bg-primary-light" onClick={() => handleOpenProfile(p.profile)}>
                   <td className="p-3 w-12 text-center" onClick={e => e.stopPropagation()}>

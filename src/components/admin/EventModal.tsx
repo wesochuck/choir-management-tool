@@ -579,7 +579,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               <div className="flex-col gap-4 bg-[rgb(107_70_193_/_5%)] p-4 rounded-lg border border-dashed border-primary -mt-1">
                 <div className="font-semibold text-primary text-sm">✨ Create New Venue Template Inline</div>
                 
-                <div className="flex-responsive gap-4 w-full">
+                <div className="flex flex-col md:flex-row gap-4 w-full">
                   <div className="flex-col flex-1 gap-1">
                     <label className="text-muted text-xs font-semibold">Venue Name</label>
                     <input 
@@ -785,7 +785,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             {formData.isTicketingEnabled && (
               <div className="flex-col gap-4">
-                <div className="flex-responsive gap-4 items-start">
+                <div className="flex flex-col md:flex-row gap-4 items-start">
                   <div className="flex-col flex-1 gap-1">
                     <label className="text-label">Advance Price ($)</label>
                     <input
@@ -833,7 +833,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex-responsive gap-4">
+                <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-col flex-1 gap-1">
                     <label className="text-label">Ticket Capacity</label>
                     <input

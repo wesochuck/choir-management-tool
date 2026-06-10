@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import EasyMDE from 'easymde';
-import './Communications.css';
 import { AppCard } from '../../../components/common/AppCard';
 import { PlaceholderPanel } from '../../../components/admin/PlaceholderPanel';
 import { MarkdownEditor } from '../../../components/common/MarkdownEditor';
@@ -43,18 +42,17 @@ export function TemplatesPanel({
 }: TemplatesPanelProps) {
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
-
   if (editingTemplate) {
     return (
       <div className="compose-grid">
-        <div className="flex-col comm-compose-form">
+        <div className="flex-col gap-4">
           <AppCard title={editingTemplate.id ? 'Edit Template' : 'New Template'}>
-            <div className="composer-form comm-compose-form">
-              <div className="comm-compose-header-row">
-                <div className="form-field-group">
+            <div className="composer-form flex-col gap-4">
+              <div className="flex gap-4 flex-wrap">
+                <div className="flex flex-col gap-1 flex-1">
                   <label className="text-label">Template Title</label>
                   <input
-                    className="card comm-compose-input"
+                    className="card h-10 px-3 w-full border border-border"
                     value={editingTemplate.title || ''}
                     onChange={(e) =>
                       setEditingTemplate({ ...editingTemplate, title: e.target.value })
@@ -63,10 +61,10 @@ export function TemplatesPanel({
                     required
                   />
                 </div>
-                <div className="form-field-group comm-flex-0-0-150">
+                <div className="flex flex-col gap-1 flex-[0_0_150px]">
                   <label className="text-label">Channel</label>
                   <select
-                    className="card comm-compose-input"
+                    className="card h-10 px-3 w-full border border-border"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
@@ -83,10 +81,10 @@ export function TemplatesPanel({
                 </div>
               </div>
 
-              <div className="form-field-group">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Subject</label>
                 <input
-                  className="card comm-compose-input"
+                  className="card h-10 px-3 w-full border border-border"
                   value={editingTemplate.subject || ''}
                   onChange={(e) =>
                     setEditingTemplate({ ...editingTemplate, subject: e.target.value })
@@ -97,7 +95,7 @@ export function TemplatesPanel({
                 />
               </div>
 
-              <div className="form-field-group">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Template Body (Markdown Supported)</label>
                 <MarkdownEditor
                   instanceRef={editorRef}
@@ -112,21 +110,20 @@ export function TemplatesPanel({
             </div>
           </AppCard>
 
-
           <AppCard
             title="Template Preview"
             actions={
-              <div className="flex-row comm-template-editor-footer">
+              <div className="flex gap-4 p-4 border-t border-border bg-[#f8fafc] rounded-b-lg">
                 <button
                   type="button"
-                  className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'} comm-btn-small-padding`}
+                  className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'} px-2.5 py-1 h-[30px]`}
                   onClick={() => setPreviewDevice('desktop')}
                 >
                   🖥️ Desktop
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'} comm-btn-small-padding`}
+                  className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'} px-2.5 py-1 h-[30px]`}
                   onClick={() => setPreviewDevice('mobile')}
                 >
                   📱 Mobile
@@ -135,27 +132,27 @@ export function TemplatesPanel({
             }
           >
             <div
-              className={`comm-email-mockup ${previewDevice === 'mobile' ? 'mobile-preview' : 'desktop-preview'}`}
+              className={`border border-border rounded-lg overflow-hidden bg-slate-100 flex justify-center transition-all duration-300 ${previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-0'}`}
             >
               <div
-                className={`comm-email-frame ${previewDevice === 'mobile' ? 'mobile-frame' : 'desktop-frame'}`}
+                className={`w-full bg-surface shadow-md flex flex-col transition-all duration-300 min-h-[400px] ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
               >
-                <div className="comm-email-header">
-                  <div className="comm-email-header-row">
-                    <span className="comm-email-header-label">From:</span>
-                    <span className="comm-color-slate-800">
+                <div className="p-4 border-b border-border bg-[#f8fafc] text-xs flex flex-col gap-1.5">
+                  <div className="flex text-text-muted">
+                    <span className="w-[60px] font-semibold">From:</span>
+                    <span className="text-slate-800">
                       {choirName} &lt;{senderEmail}&gt;
                     </span>
                   </div>
-                  <div className="comm-email-header-row">
-                    <span className="comm-email-header-label">Subject:</span>
-                    <strong className="comm-color-slate-900">
+                  <div className="flex text-text-muted">
+                    <span className="w-[60px] font-semibold">Subject:</span>
+                    <strong className="text-slate-900">
                       {resolvePreviewContent(editingTemplate.subject || '', null, null)}
                     </strong>
                   </div>
                 </div>
                 <div
-                  className={`comm-email-body ${previewDevice === 'mobile' ? 'mobile-padding' : 'desktop-padding'}`}
+                  className={`overflow-y-auto flex-1 text-sm leading-relaxed text-slate-600 break-words ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}
                 >
                   <div
                     className="text-body message-preview-content"
@@ -163,7 +160,7 @@ export function TemplatesPanel({
                     dangerouslySetInnerHTML={{
                       __html:
                         previewHtml ||
-                        '<p class="text-muted admin-empty-state-centered">No template content yet.</p>',
+                        '<p class="text-muted" style="text-align:center;padding:2rem 0">No template content yet.</p>',
                     }}
                   />
                 </div>
@@ -171,7 +168,7 @@ export function TemplatesPanel({
             </div>
           </AppCard>
 
-          <div className="flex-row comm-justify-end-gap-sm">
+          <div className="flex justify-end gap-2">
             <button
               type="button"
               className="btn btn-ghost"
@@ -217,7 +214,7 @@ export function TemplatesPanel({
       actions={
         <button
           type="button"
-          className="btn btn-primary btn-sm comm-template-preview-btn"
+          className="btn btn-primary btn-sm h-8 inline-flex items-center gap-1 px-2 text-xs rounded bg-slate-100 text-slate-600 border border-border"
           onClick={() =>
             setEditingTemplate({
               title: '',
@@ -232,33 +229,33 @@ export function TemplatesPanel({
         </button>
       }
     >
-      <div className="flex-col comm-compose-form">
+      <div className="flex-col gap-4">
         <p className="text-muted text-sm">
           Manage message templates. Custom templates can be added, edited, or deleted. System-defined templates cannot be deleted.
         </p>
-        <div className="flex-col comm-gap-sm">
+        <div className="flex-col gap-2">
           {templates.map((tpl) => (
             <div
               key={tpl.id}
-              className="card flex-responsive comm-template-item"
+              className="card flex flex-col md:flex-row px-4 py-2 justify-between items-center shadow-none border border-border m-0"
             >
-              <div className="flex-col comm-gap-xs">
-                <div className="flex-row comm-compose-header-row comm-items-center-gap-6">
-                  <strong className="comm-font-95">{tpl.title}</strong>
-                  <span className="badge badge-rehearsal comm-message-badge">
+              <div className="flex-col gap-0.5">
+                <div className="flex gap-4 flex-wrap items-center gap-1.5">
+                  <strong className="text-sm">{tpl.title}</strong>
+                  <span className="badge badge-rehearsal text-[10px] px-1.5 py-0.5">
                     {tpl.type}
                   </span>
                   {tpl.isSystemTemplate && (
-                    <span className="badge badge-concert comm-message-badge comm-opacity-80">
+                    <span className="badge badge-concert text-[10px] px-1.5 py-0.5 opacity-80">
                       System
                     </span>
                   )}
                 </div>
-                <span className="text-muted text-xs comm-text-ellipsis-max-350">
+                <span className="text-muted text-xs truncate max-w-[350px]">
                   {tpl.subject ? `Subject: ${tpl.subject}` : 'No Subject'} • {tpl.content.substring(0, 60)}...
                 </span>
               </div>
-              <div className="flex-row comm-gap-6px">
+              <div className="flex gap-1.5">
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
@@ -278,7 +275,7 @@ export function TemplatesPanel({
                 {!tpl.isSystemTemplate && (
                   <button
                     type="button"
-                    className="btn btn-ghost btn-sm comm-color-error"
+                    className="btn btn-ghost btn-sm text-red-500"
                     onClick={async () => {
                       if (
                         await dialog.confirm({
@@ -308,7 +305,7 @@ export function TemplatesPanel({
             </div>
           ))}
           {templates.length === 0 && (
-            <div className="admin-empty-state-small">
+            <div className="flex flex-col items-center justify-center py-8 text-text-muted text-sm">
               No templates found.
             </div>
           )}

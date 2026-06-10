@@ -795,7 +795,7 @@ export default function SetListView() {
           <AppCard title="Current Set List">
             <div className="flex-col gap-[var(--space-sm)]">
               {items.length > 0 && (
-                <div className="flex-responsive justify-between items-center bg-[var(--primary-light)] p-[var(--space-sm)_var(--space-md)] rounded-[var(--radius-md)] text-[0.85rem] font-semibold text-[var(--primary-deep)] mb-[var(--space-xs)] border border-[rgb(74_124_89_/_15%)] gap-[var(--space-sm)]">
+                <div className="flex flex-col md:flex-row justify-between items-center bg-[var(--primary-light)] p-[var(--space-sm)_var(--space-md)] rounded-[var(--radius-md)] text-[0.85rem] font-semibold text-[var(--primary-deep)] mb-[var(--space-xs)] border border-[rgb(74_124_89_/_15%)] gap-[var(--space-sm)]">
                   <div className="flex-row gap-[var(--space-md)]">
                     <span>🎼 Songs: {durationTotals.songs}</span>
                     <span>⏸️ Intermissions: {durationTotals.intermissions}</span>

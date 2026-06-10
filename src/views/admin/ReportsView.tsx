@@ -157,7 +157,7 @@ export default function ReportsView() {
 
   return (
     <div className="flex-col gap-8 py-8">
-      <div className="flex-responsive justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-center">
         <h1 className="text-display m-0">Reports & Insights</h1>
         <div className="flex-row gap-2">
             <button className={`btn ${tab === 'attendance' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('attendance')}>
@@ -173,7 +173,7 @@ export default function ReportsView() {
         <div className="flex-col gap-8">
           {/* Selection Header */}
           <div className="card no-print">
-            <div className="flex-responsive justify-between">
+            <div className="flex flex-col md:flex-row justify-between">
               <div className="flex-col gap-1">
                 <label className="text-label text-muted">Select Concert / Performance</label>
                 <select 
@@ -306,7 +306,7 @@ export default function ReportsView() {
 
       {tab === 'repertoire' && (
           <div className="flex-col gap-8">
-            <div className="flex-responsive justify-between">
+            <div className="flex flex-col md:flex-row justify-between">
                 <div>
                     <h3>Repertoire History</h3>
                     <p className="text-muted">A consolidated view of all library pieces and their performance dates.</p>

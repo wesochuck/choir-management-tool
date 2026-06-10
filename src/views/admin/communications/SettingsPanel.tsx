@@ -5,7 +5,6 @@ import type { CommunicationSettings } from '../../../services/settingsService';
 import type { TemplateRecord } from '../../../services/communicationService';
 import { useDialog } from '../../../contexts/DialogContext';
 import { TemplatesPanel } from './TemplatesPanel';
-import './Communications.css';
 
 export interface SettingsPanelProps {
   commSettings: CommunicationSettings;
@@ -53,7 +52,7 @@ export function SettingsPanel({
   senderEmail,
 }: SettingsPanelProps) {
   return (
-    <div className="flex-col comm-compose-form">
+    <div className="flex-col gap-4">
       {editingTemplate ? (
         <TemplatesPanel
           templates={templates}
@@ -70,7 +69,7 @@ export function SettingsPanel({
       ) : (
         <>
           <AppCard title="Application & Footer Compliance">
-            <div className="flex-col comm-compose-form">
+            <div className="flex-col gap-4">
               <SettingsGrid>
                 <Field
                   label="Physical Mailing Address"
@@ -102,17 +101,15 @@ export function SettingsPanel({
             senderEmail={senderEmail}
           />
 
-
-
           <AppCard title="Test Server SMTP Connection">
-            <div className="flex-col comm-compose-form">
+            <div className="flex-col gap-4">
               <p className="text-muted text-sm">
                 Send a quick test email using the server's configured SMTP settings to verify that
                 outgoing mail delivery is working.
               </p>
-              <div className="comm-compose-header-row comm-items-center">
+              <div className="flex gap-4 flex-wrap items-center">
                 <input
-                  className="card comm-compose-input comm-flex-1-max-300"
+                  className="card h-10 px-3 w-full border border-border flex-1 max-w-[300px]"
                   type="email"
                   value={testEmailAddress}
                   onChange={(e) => setTestEmailAddress(e.target.value)}
@@ -130,7 +127,7 @@ export function SettingsPanel({
             </div>
           </AppCard>
 
-          <div className="flex-row comm-justify-end">
+          <div className="flex justify-end">
             <button
               className="btn btn-primary"
               onClick={onSaveSettings}
@@ -147,7 +144,7 @@ export function SettingsPanel({
 
 function SettingsGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="comm-automated-grid">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
       {children}
     </div>
   );
@@ -167,10 +164,10 @@ function Field({
   placeholder?: string;
 }) {
   return (
-    <div className="comm-compose-field">
+    <div className="flex flex-col gap-1">
       <label className="text-label">{label}</label>
       <input
-        className="card comm-compose-input"
+        className="card h-10 px-3 w-full border border-border"
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

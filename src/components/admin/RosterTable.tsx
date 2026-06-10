@@ -124,7 +124,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </table>
       </div>
       {totalCount > 0 && (
-        <div className="flex-responsive no-print justify-between items-center px-6 py-4 border-t border-border bg-surface rounded-b-lg mt-1">
+        <div className="flex flex-col md:flex-row no-print justify-between items-center px-6 py-4 border-t border-border bg-surface rounded-b-lg mt-1">
           <span className="text-sm text-muted font-medium">
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
           </span>

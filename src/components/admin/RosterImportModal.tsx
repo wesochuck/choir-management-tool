@@ -408,7 +408,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       {/* STEP 3: PREVIEW & VALIDATION */}
       {step === 'PREVIEW' && (
         <div className="flex-col gap-4">
-          <div className="flex-responsive justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-muted text-sm m-0">
               Verify parsed singer details and resolve validation warnings or errors before importing.
             </p>

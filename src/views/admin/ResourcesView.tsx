@@ -154,7 +154,7 @@ export default function ResourcesView() {
 
   return (
     <div className="flex-col gap-8 py-8">
-      <div className="flex-responsive justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-center">
         <div>
           <h1 className="text-display m-0">Singer Resources</h1>
           <p className="text-muted text-sm">Upload documents or reference URLs for active singers to view on their dashboard.</p>
@@ -242,7 +242,7 @@ export default function ResourcesView() {
               <span className="text-xs text-muted">Lower numbers show up first on the dashboard.</span>
             </div>
 
-            <div className="flex-responsive justify-end gap-4">
+            <div className="flex flex-col md:flex-row justify-end gap-4">
               <button type="button" onClick={resetForm} disabled={isSaving} className="btn btn-ghost">Cancel</button>
               <button type="submit" disabled={isSaving} className="btn btn-primary">
                 {isSaving ? 'Saving...' : 'Save Resource'}
@@ -277,7 +277,7 @@ export default function ResourcesView() {
                 <span className="text-muted">Sort Order:</span> {r.sortOrder || 0}
               </div>
             </div>
-            <div className="flex-responsive gap-4 mt-4">
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
               <button onClick={() => handleEdit(r)} className="btn btn-ghost expanded-hit-area flex-1">Edit</button>
               <button
                 onClick={(event) => {

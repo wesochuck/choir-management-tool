@@ -15,7 +15,6 @@ import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
-import './music-library/MusicLibrary.css';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
@@ -30,10 +29,8 @@ export default function MusicLibraryView() {
   const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
   const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
 
-  // Tab State
   const [activeTab, setActiveTab] = useState<'catalog' | 'config'>('catalog');
 
-  // Music library settings configuration state
   const [initialSettings, setInitialSettings] = useState<MusicLibrarySettings | null>(null);
   const [musicLibrarySettings, setMusicLibrarySettings] = useState<MusicLibrarySettings>({
     catalogLookupUrlTemplate: '',
@@ -49,12 +46,10 @@ export default function MusicLibraryView() {
     );
   }, [initialSettings, musicLibrarySettings]);
 
-  // Audio player state
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
   const [activeAudioTitle, setActiveAudioTitle] = useState<string>('');
   const [activeAudioPart, setActiveAudioPart] = useState<string>('');
   
-  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handlePlayDefaultTrack = (piece: MusicPiece) => {
@@ -62,7 +57,6 @@ export default function MusicLibraryView() {
     const parts = Object.keys(piece.audioTrackMapping).filter(k => piece.audioTrackMapping?.[k]);
     if (parts.length === 0) return;
     
-    // Prefer tutti, then first available
     const chosenPart = parts.includes('tutti') ? 'tutti' : parts[0];
     const filename = piece.audioTrackMapping[chosenPart];
     if (filename) {
@@ -75,21 +69,17 @@ export default function MusicLibraryView() {
   const [editingPiece, setEditingPiece] = useState<MusicPiece | null>(null);
   const [modalInitialTab, setModalInitialTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>('details');
   
-  // Duplicates & Bulk Delete state
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Sorting State
   const [sortField, setSortField] = useState<MusicLibrarySortField>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [ignoreArticles, setIgnoreArticles] = useState(false);
 
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [recencyFilter, setRecencyFilter] = useState<PerformanceRecencyFilter>('all');
 
-  // Reset to first page when search filters, duplicate filter, page size, sorting, or ignoreArticles changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, sectionFilters, genreFilters, genreFilterMode, recencyFilter, showDuplicatesOnly, pageSize, sortField, sortDirection, ignoreArticles]);
@@ -221,7 +211,6 @@ export default function MusicLibraryView() {
         }
       }
 
-      // Determine newly linked performances
       const oldPerformances = editingPiece?.performances || [];
       const newPerformances = data.performances || [];
       const newlyLinkedIds = newPerformances.filter((id: string) => !oldPerformances.includes(id));
@@ -272,7 +261,6 @@ export default function MusicLibraryView() {
         savedPiece = await musicLibraryService.createPiece(rest);
       }
 
-      // Link newly selected performances
       const newPerformances = data.performances || [];
       if (newPerformances.length > 0) {
         const failedTitles: string[] = [];
@@ -299,7 +287,6 @@ export default function MusicLibraryView() {
         }
       }
 
-      // Keep modal open, reset to new-piece mode, reload background data
       setEditingPiece(null);
       dialog.showToast(`"${savedPiece.title}" saved. Ready to add another piece.`);
       await loadData();
@@ -318,7 +305,6 @@ export default function MusicLibraryView() {
     if (!confirmed) return;
 
     try {
-      // Check if there are child movements
       const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
         filter: pb.filter('parentId = {:id}', { id })
       });
@@ -434,14 +420,14 @@ export default function MusicLibraryView() {
   };
 
   return (
-    <div className="admin-view-container">
-      <header className="admin-view-header no-print">
-        <div className="flex-col gap-xs">
-          <h1 className="ml-header-title">Music Library</h1>
+    <div className="p-6 max-w-7xl mx-auto">
+      <header className="flex items-center justify-between mb-6 no-print">
+        <div className="flex-col gap-1">
+          <h1 className="m-0">Music Library</h1>
           <p className="text-muted text-sm">Manage choir repertoire, movements, and learning tracks.</p>
         </div>
         {activeTab === 'catalog' && (
-          <div className="admin-view-actions">
+          <div className="flex items-center gap-2">
             <button className="btn btn-secondary" onClick={handleExportCSV}>
               Export CSV
             </button>
@@ -455,17 +441,16 @@ export default function MusicLibraryView() {
         )}
       </header>
 
-      {/* Segmented Tab Navigation */}
-      <div className="ml-tabs no-print">
+      <div className="flex flex-row gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-xs)] mb-[var(--space-sm)]">
         <button
           onClick={() => setActiveTab('catalog')}
-          className={`ml-tab-btn ${activeTab === 'catalog' ? 'active' : ''}`}
+          className={`bg-none border-none border-b-3 border-transparent font-medium px-4 py-2 cursor-pointer text-[16px] transition-all duration-200 rounded-t-[var(--radius-sm)] ${activeTab === 'catalog' ? '!border-b-[var(--primary)] !text-[var(--primary)] !font-semibold' : 'text-[var(--text-muted)]'}`}
         >
           Music Catalog
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          className={`ml-tab-btn ${activeTab === 'config' ? 'active' : ''}`}
+          className={`bg-none border-none border-b-3 border-transparent font-medium px-4 py-2 cursor-pointer text-[16px] transition-all duration-200 rounded-t-[var(--radius-sm)] ${activeTab === 'config' ? '!border-b-[var(--primary)] !text-[var(--primary)] !font-semibold' : 'text-[var(--text-muted)]'}`}
         >
           Library Settings
         </button>
@@ -535,33 +520,33 @@ export default function MusicLibraryView() {
           />
         </AppCard>
       ) : (
-        <div className="ml-config-stack">
+        <div className="flex flex-col gap-[var(--space-xl)]">
           <AppCard title="Music Library Settings">
-            <div className="form-field-group">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Catalog Lookup URL Template</label>
               <input
                 type="url"
                 value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
                 onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
                 placeholder="https://example.com/catalog/{catalogId}"
-                className="card ml-settings-input"
+                className="card w-full max-w-[400px] px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
               />
-              <p className="text-muted ml-no-margin">
+              <p className="text-muted !m-0">
                 Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
               </p>
             </div>
           </AppCard>
 
           <AppCard title="Music Library Genres">
-            <div className="ml-genres-container-stack">
-              <p className="text-muted ml-no-margin">
+            <div className="flex flex-col gap-[var(--space-md)]">
+              <p className="text-muted !m-0">
                 Configure standard genre tags used for library organization and advanced layout filtering.
               </p>
-              <div className="ml-genres-list-stack">
+              <div className="flex flex-col gap-[var(--space-sm)]">
                 {musicLibrarySettings.genres?.map((genre, index) => (
-                  <div key={genre.id} className="ml-genre-input-group">
+                  <div key={genre.id} className="flex gap-[var(--space-md)] items-center">
                     <input
-                      className="card ml-genre-input"
+                      className="card h-10 px-3 w-[250px]"
                       value={genre.label}
                       onChange={(e) => {
                         const updated = [...musicLibrarySettings.genres];
@@ -601,11 +586,11 @@ export default function MusicLibraryView() {
                 ))}
               </div>
               
-              <div className="ml-new-genre-row">
+              <div className="flex flex-row gap-[var(--space-sm)]">
                 <input
                   id="new-genre-input"
                   placeholder="New Genre Name (e.g. Sacred)"
-                  className="card ml-new-genre-input"
+                  className="card h-10 px-3 max-w-[250px]"
                 />
                 <button
                   type="button"

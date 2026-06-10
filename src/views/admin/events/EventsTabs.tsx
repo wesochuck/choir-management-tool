@@ -15,7 +15,7 @@ export function EventsTabs({
 }: EventsTabsProps) {
   return (
     <div
-      className="flex-responsive justify-between items-center px-1 gap-4 flex-wrap mb-4 border-b border-border pb-1"
+      className="flex flex-col md:flex-row justify-between items-center px-1 gap-4 flex-wrap mb-4 border-b border-border pb-1"
     >
       {/* Tab buttons */}
       <div className="flex-row gap-2">

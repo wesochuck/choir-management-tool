@@ -50,7 +50,7 @@ export const EventList: React.FC<EventListProps> = ({
       {events.map((e) => (
         <div 
           key={e.id} 
-          className="flex-responsive relative-row clickable-row event-row" 
+          className="flex flex-col md:flex-row relative-row clickable-row p-4 border-b border-border hover:bg-primary-light/50 cursor-pointer" 
           onClick={() => onEdit(e)}
           role="button"
           tabIndex={0}
@@ -95,7 +95,7 @@ export const EventList: React.FC<EventListProps> = ({
             </div>
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <div className="admin-event-actions flex items-center gap-2 relative">
+          <div className="flex items-center gap-2 relative">
             <button
               onClick={(event) => {
                 event.stopPropagation();

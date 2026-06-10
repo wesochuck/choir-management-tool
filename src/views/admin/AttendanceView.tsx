@@ -321,7 +321,7 @@ export default function AttendanceView() {
 
   return (
     <div className="flex-col gap-[var(--space-md)] p-[var(--space-md)_0]">
-      <div className="flex-responsive justify-between items-center gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-md)]">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-md)]">
         <h1 className="text-display !m-0">Attendance Check-in</h1>
         
         <div className="flex-row gap-[var(--space-md)] items-center min-w-[320px]">
@@ -391,7 +391,7 @@ export default function AttendanceView() {
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="flex-responsive justify-between items-center gap-[var(--space-md)] py-1">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-[var(--space-md)] py-1">
           {/* Left Side: Summary info */}
           <span className="text-[0.85rem] font-bold text-[var(--text-muted)] flex items-center gap-[6px]">
             👥 Roster: {attendanceCounts.total} singers
@@ -646,7 +646,7 @@ export default function AttendanceView() {
             {/* 3. Declined Singers Rescue Control */}
             {declinedSingers.length > 0 && (
               <div className="card p-[var(--space-md)] border border-[#fecaca] rounded-[var(--radius-md)] bg-[#fef2f2]">
-                <div className="flex-responsive justify-between items-center gap-[var(--space-md)]">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-[var(--space-md)]">
                   <div className="flex-col gap-[2px]">
                     <h3 className="text-[0.85rem] font-bold text-[#991b1b]">Rescue Declined RSVP</h3>
                     <p className="text-muted text-xs text-[#92400e]">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
