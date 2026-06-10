@@ -470,13 +470,34 @@
   accent-color: var(--primary);
 }
 
-.pub-mt-md { margin-top: var(--space-md); }
-.pub-mt-lg { margin-top: var(--space-lg); }
-.pub-mt-xl { margin-top: var(--space-xl); }
-.pub-pt-lg { padding-top: var(--space-lg); }
-.pub-text-center { text-align: center; }
-.pub-max-w-480 { max-width: 480px; margin: 0 auto; }
-.pub-justify-center { justify-content: center; }
+.pub-mt-md {
+  margin-top: var(--space-md);
+}
+
+.pub-mt-lg {
+  margin-top: var(--space-lg);
+}
+
+.pub-mt-xl {
+  margin-top: var(--space-xl);
+}
+
+.pub-pt-lg {
+  padding-top: var(--space-lg);
+}
+
+.pub-text-center {
+  text-align: center;
+}
+
+.pub-max-w-480 {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.pub-justify-center {
+  justify-content: center;
+}
 .pub-align-center { align-items: center; }
 .pub-min-w-200 { min-width: 200px; }
 .pub-border-dashed { border-top: 2px dashed var(--border); }

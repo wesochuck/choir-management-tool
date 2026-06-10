@@ -196,11 +196,30 @@ a {
   letter-spacing: 0.05em;
 }
 
-.badge-performance { background-color: var(--color-performance-bg); color: var(--color-performance-text); }
-.badge-rehearsal { background-color: var(--primary-light); color: var(--primary-deep); }
-.badge-concert { background-color: var(--color-performance-bg); color: var(--color-performance-text); } /* Alias for backward compat */
-.badge-success { background-color: var(--color-success-bg); color: var(--color-success-text); }
-.badge-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
+.badge-performance {
+  background-color: var(--color-performance-bg);
+  color: var(--color-performance-text);
+}
+
+.badge-rehearsal {
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+}
+
+.badge-concert {
+  background-color: var(--color-performance-bg);
+  color: var(--color-performance-text);
+}
+
+.badge-success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.badge-danger {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
 
 /* StatusBadge component styles */
 .status-badge {
@@ -329,13 +348,23 @@ a {
 
 /* Modal Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-overlay {
