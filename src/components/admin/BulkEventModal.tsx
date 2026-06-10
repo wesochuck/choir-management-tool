@@ -5,7 +5,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { BaseModal } from '../common/BaseModal';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc } from '../../lib/timezone';
-import './BulkEventModal.css';
+
 
 interface BulkEventModalProps {
   isOpen: boolean;
@@ -202,14 +202,14 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         Quickly generate a series of weekly rehearsals leading up to a performance.
       </p>
 
-      <form id="bulk-event-form" onSubmit={handleSubmit} className="flex-col bulk-event-form-section">
-        <div className="flex-col bulk-event-form-col">
+      <form id="bulk-event-form" onSubmit={handleSubmit} className="flex-col gap-4">
+        <div className="flex-col gap-1">
           <label className="text-label">Target Performance</label>
           <select 
             value={selectedPerformanceId} 
             onChange={(e) => handlePerformanceChange(e.target.value)}
             required
-            className="card bulk-event-form-select"
+            className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
           >
             <option value="">-- Select Performance --</option>
             {performances.map(p => (
@@ -220,13 +220,13 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           </select>
         </div>
 
-        <div className="flex-col bulk-event-form-col">
+        <div className="flex-col gap-1">
           <label className="text-label">Rehearsal Venue</label>
           <select 
             value={venue} 
             onChange={(e) => setVenue(e.target.value)} 
             required
-            className="card bulk-event-form-select"
+            className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
           >
             <option value="">-- Select Rehearsal Venue --</option>
             {venues.map(v => (
@@ -235,35 +235,35 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           </select>
         </div>
 
-        <div className="flex-row bulk-event-form-row">
-          <div className="flex-col bulk-event-form-col bulk-event-form-col-fill">
+        <div className="flex-row gap-4">
+          <div className="flex-col gap-1 flex-1">
             <label className="text-label">Count</label>
             <input 
               type="number" 
               value={count} 
               onChange={(e) => setCount(parseInt(e.target.value))} 
               min="1" max="20"
-              className="card bulk-event-form-input"
+              className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
             />
           </div>
-          <div className="flex-col bulk-event-form-col bulk-event-form-col-fill">
+          <div className="flex-col gap-1 flex-1">
              <label className="text-label">Time</label>
              <input 
               type="time" 
               value={time} 
               onChange={(e) => setTime(e.target.value)} 
               required
-              className="card bulk-event-form-input"
+              className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
             />
           </div>
         </div>
 
-        <div className="flex-col bulk-event-form-col">
+        <div className="flex-col gap-1">
           <label className="text-label">Day of Week</label>
           <select 
             value={dayOfWeek} 
             onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-            className="card bulk-event-form-select"
+            className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
           >
             <option value={0}>Sunday</option>
             <option value={1}>Monday</option>
@@ -276,17 +276,17 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         </div>
 
         {range && selectedPerformance && (
-          <div className="card bulk-event-preview-card">
-            <div className="bulk-event-section-header">
-              <span className="bulk-event-emoji-icon">📅</span> Rehearsal Schedule Preview
+          <div className="card bg-primary-light border border-[rgba(74,124,89,0.2)] p-3 px-4 rounded-md shadow-none flex flex-col gap-1 mt-1">
+            <div className="flex items-center gap-2 text-primary-deep font-semibold text-sm">
+              <span className="text-lg">📅</span> Rehearsal Schedule Preview
             </div>
-            <div className="bulk-event-preview-date">
-              First Rehearsal: <strong>{formatInTimezone(range.first, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            <div className="text-[0.8125rem] text-text leading-relaxed">
+              First Rehearsal: <strong className="text-primary-deep">{formatInTimezone(range.first, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
             </div>
-            <div className="bulk-event-preview-date">
-              Last Rehearsal: <strong>{formatInTimezone(range.last, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            <div className="text-[0.8125rem] text-text leading-relaxed">
+              Last Rehearsal: <strong className="text-primary-deep">{formatInTimezone(range.last, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
             </div>
-            <div className="text-muted bulk-event-helper-text">
+            <div className="text-muted text-xs mt-1">
               Generates {count} weekly rehearsals leading up to the performance on {formatInTimezone(selectedPerformance.date, timezone, { year: 'numeric', month: 'long', day: 'numeric' })}.
             </div>
           </div>

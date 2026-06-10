@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AttendanceItem } from '../../hooks/useAttendance';
-import './CheckInList.css';
 import './RosterUtils.css';
 
 interface CheckInListProps {
@@ -68,7 +67,7 @@ const CheckInRow: React.FC<{
 
   return (
     <div
-      className={`card admin-checkin-row checkin-row ${isSecondaryOpen ? 'secondary-open' : ''}`}
+      className={`card admin-checkin-row checkin-row max-[700px]:p-3 max-[700px]:gap-2 ${isSecondaryOpen ? 'secondary-open' : ''}`}
       onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
       style={{ /* @allow-inline-style */
         // @allow-inline-style - Dynamic row styling based on attendance state
@@ -86,7 +85,7 @@ const CheckInRow: React.FC<{
       }}
     >
       {/* Row Segment 1: Singer name, badges, and primary Present/Absent toggles */}
-      <div className="admin-checkin-top-row">
+      <div className="admin-checkin-top-row max-[700px]:items-start max-[700px]:gap-2.5">
         {/* Left Section: Singer name and details */}
         <div className="admin-checkin-singer">
           <div className="admin-checkin-singer-header">
@@ -99,7 +98,7 @@ const CheckInRow: React.FC<{
                 });
                 navigate(`/admin/roster?${query.toString()}`);
               }}
-              className="admin-checkin-name roster-ut-clickable-name"
+              className="admin-checkin-name roster-ut-clickable-name max-[700px]:text-base max-[700px]:leading-[1.15]"
               style={{ /* @allow-inline-style */
                 // @allow-inline-style - Dynamic name color based on attendance state
                 color: isPresent 
@@ -141,20 +140,20 @@ const CheckInRow: React.FC<{
               )}
             </div>
           </div>
-          <div className="admin-checkin-status-summary">
+          <div className="hidden max-[700px]:flex max-[700px]:flex-wrap max-[700px]:gap-1.5 max-[700px]:text-xs max-[700px]:text-text-muted">
             <span>{item.voicePart}</span>
             {item.rsvp === 'Yes' && <span>RSVP</span>}
             <span>Folder {item.folderNumber || '--'}</span>
             <span>{item.folderReturned ? 'Returned' : 'Not returned'}</span>
             {item.rsvpNote && <span className="roster-ut-rsvp-note">📝 {item.rsvpNote}</span>}
           </div>
-          <div className="admin-checkin-primary-hint">
+          <div className="hidden max-[700px]:block max-[700px]:text-[0.72rem] max-[700px]:text-text-muted max-[700px]:font-semibold">
             {isPresent ? 'Checked in' : isAbsent ? 'Marked absent' : 'Tap card to mark present'}
           </div>
         </div>
 
         {/* Right Section: Attendance separated action buttons (Absent on left, Present on right) */}
-        <div className="admin-checkin-actions">
+        <div className="admin-checkin-actions max-[700px]:flex-col max-[700px]:gap-1.5 max-[700px]:items-stretch">
           <button
             type="button"
             aria-pressed={isAbsent}
@@ -162,7 +161,7 @@ const CheckInRow: React.FC<{
               event.stopPropagation();
               onSetAttendance(item.profileId, isAbsent ? 'Pending' : 'Absent');
             }}
-            className="btn admin-checkin-absent-btn"
+            className={`btn admin-checkin-absent-btn min-h-[36px] max-[700px]:min-h-[40px] ${isSecondaryOpen ? 'max-[700px]:inline-flex' : 'max-[700px]:hidden'}`}
             style={{ /* @allow-inline-style */
               // @allow-inline-style - Dynamic styling based on absence state
               backgroundColor: isAbsent ? '#ef4444' : 'var(--surface)',
@@ -181,7 +180,7 @@ const CheckInRow: React.FC<{
               event.stopPropagation();
               onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present');
             }}
-            className="btn admin-checkin-present-btn"
+            className="btn admin-checkin-present-btn min-h-[36px] max-[700px]:min-h-[40px]"
             style={{ /* @allow-inline-style */
               // @allow-inline-style - Dynamic styling based on presence state
               backgroundColor: isPresent ? 'var(--primary)' : 'var(--surface)',
@@ -195,7 +194,7 @@ const CheckInRow: React.FC<{
           </button>
           <button
             type="button"
-            className="btn btn-ghost btn-sm admin-checkin-mobile-more"
+            className="btn btn-ghost btn-sm hidden max-[700px]:inline-flex max-[700px]:justify-center max-[700px]:min-h-[40px]"
             aria-expanded={isSecondaryOpen}
             aria-controls={secondaryPanelId}
             onClick={(event) => {
@@ -209,7 +208,7 @@ const CheckInRow: React.FC<{
       </div>
 
       {/* Row Segment 2: Folder tracking & Edit Singer details */}
-      <div className="admin-checkin-bottom-row admin-checkin-secondary-panel" id={secondaryPanelId}>
+      <div className={`admin-checkin-bottom-row w-full ${isSecondaryOpen ? 'max-[700px]:flex' : 'max-[700px]:hidden'}`} id={secondaryPanelId}>
         <div className="admin-checkin-meta">
           {/* Folder Number */}
           <div className="admin-checkin-folder-group">

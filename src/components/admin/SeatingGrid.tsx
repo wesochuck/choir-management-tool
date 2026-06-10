@@ -6,7 +6,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { removeSeatFromRow, removeRowAndShiftAssignments } from '../../lib/seatingSync';
 import { isSectionMismatch } from '../../lib/voicePartUtils';
 import { getContrastColor } from '../../lib/colorUtils';
-import './SeatingGrid.css';
+
 
 interface SeatingGridProps {
   rowCounts: number[];
@@ -193,11 +193,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
     >
       {/* Warning banner if not enough seats */}
       {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
-        <div className="seating-grid-error no-print">
-          <span className="seating-grid-error-icon">⚠️</span>
-          <div className="seating-grid-error-body">
-            <strong className="seating-grid-error-title">Not enough seats configured!</strong>
-            <span className="seating-grid-error-message">
+        <div className="bg-danger-bg border border-[#fecaca] rounded-md p-4 flex flex-col items-center justify-center gap-4 text-center w-full max-w-[800px] shadow-sm text-danger-text no-print">
+          <span className="text-xl">⚠️</span>
+          <div className="flex-1 flex flex-col gap-0.5">
+            <strong className="text-[0.9375rem] font-bold">Not enough seats configured!</strong>
+            <span className="text-[0.8125rem] opacity-90">
               You have {activeSingersForFormationCount} active singers but only {totalSeats} seats. Click the <strong>+</strong> button at the end of any row to add seats.
             </span>
           </div>
@@ -212,7 +212,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const newRowCounts = [...rowCounts, defaultSeats];
             onUpdateRowCounts(newRowCounts);
           }}
-          className="seating-grid-info btn btn-sm btn-ghost no-print"
+          className="bg-primary-light text-primary-deep border-dashed border-primary rounded-md btn btn-sm btn-ghost no-print"
           // @allow-inline-style - static typography and margin overrides for button appearance
           style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: 'var(--space-xs)' }}
           title="Add a new row with 10 seats at the back"
@@ -266,7 +266,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "🗑️" remove row button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="seat-row-remove-btn no-print btn btn-ghost"
+                className="min-h-7 h-7 w-7 min-w-7 p-0 rounded-full flex items-center justify-center bg-danger-bg border border-dashed border-danger-text text-danger-text mr-1.5 font-bold text-[13px] cursor-pointer transition-all duration-200 shadow-sm no-print btn btn-ghost"
                 onClick={async () => {
                   const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
                   let shouldRemove = true;
@@ -446,7 +446,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <select
                       value={profileId || ''}
                       onChange={(e) => onAssign(seatKey, e.target.value)}
-                      className="seat-add-button"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     >
                        <option value="">-- Assign --</option>
                       <option value="">(Empty)</option>
@@ -586,7 +586,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "+" add seat button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="seat-row-action-btn seat-row-action-btn--add no-print btn btn-ghost"
+                className="min-h-7 h-7 w-7 min-w-7 p-0 rounded-full flex items-center justify-center font-bold text-[15px] cursor-pointer transition-all duration-200 shadow-sm bg-primary-light border border-dashed border-primary text-primary-deep ml-3 no-print btn btn-ghost"
                 onClick={() => {
                   const newRowCounts = [...rowCounts];
                   newRowCounts[rowIndex] += 1;
@@ -601,7 +601,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "-" remove seat button */}
             {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
               <button
-                className="seat-row-action-btn seat-row-action-btn--remove no-print btn btn-ghost"
+                className="min-h-7 h-7 w-7 min-w-7 p-0 rounded-full flex items-center justify-center font-bold text-[15px] cursor-pointer transition-all duration-200 shadow-sm bg-danger-bg border border-dashed border-danger-text text-danger-text ml-1.5 no-print btn btn-ghost"
                 onClick={async () => {
                   const seatIndex = seatCount - 1;
                   const seatKey = `${rowIndex}-${seatIndex}`;
@@ -647,7 +647,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             });
             onUpdateRowCounts(newRowCounts, shiftedAssignments);
           }}
-          className="seating-grid-info btn btn-sm btn-ghost no-print"
+          className="bg-primary-light text-primary-deep border-dashed border-primary rounded-md btn btn-sm btn-ghost no-print"
           // @allow-inline-style - static typography and margin overrides for button appearance
           style={{
             fontWeight: 600,
@@ -661,7 +661,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Director Indicator */}
-      <div className="director-indicator">
+      <div className="flex items-center justify-center gap-2 mt-4 px-8 py-1 bg-primary-light text-primary-deep border border-primary rounded-full text-[0.8125rem] font-bold tracking-wider uppercase shadow-xs w-fit">
         <span>🎼</span>
         <span>Director</span>
       </div>

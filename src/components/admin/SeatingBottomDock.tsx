@@ -3,7 +3,7 @@ import type { Profile } from '../../services/profileService';
 import { getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { getContrastColor } from '../../lib/colorUtils';
-import './SeatingBottomDock.css';
+
 
 interface SeatingBottomDockProps {
   activeProfiles: Profile[];
@@ -146,17 +146,17 @@ export function SeatingBottomDock({
         }}
         className="flex-col bottom-dock-container"
       >
-        <div className="flex-row bottom-dock-header seating-dock-toolbar">
-          <div className="flex-col seating-dock-button-group">
+        <div           className="flex-row bottom-dock-header flex w-full items-center justify-between">
+          <div className="flex-col gap-0.5">
             <h3 className="text-headline bottom-dock-title">📥 Unassigned Singers Shelf</h3>
             <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
           </div>
-          <div className="flex-row no-print seating-dock-section-label">
+          <div className="flex-row no-print gap-1">
             {onLookupSinger && (
               <button
                 type="button"
                 onClick={onLookupSinger}
-                className="btn btn-secondary btn-sm seating-dock-action-button"
+                className="btn btn-secondary btn-sm flex items-center gap-1.5 font-semibold px-3 h-8 min-h-[32px]"
               >
                 🔍 Lookup Singer
               </button>
@@ -165,7 +165,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onAddSinger}
-                className="btn btn-secondary btn-sm seating-dock-action-button"
+                className="btn btn-secondary btn-sm flex items-center gap-1.5 font-semibold px-3 h-8 min-h-[32px]"
               >
                 + Add New Singer
               </button>
@@ -220,7 +220,7 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print bottom-dock-remove-btn seating-dock-close-button"
+                          className="no-print bottom-dock-remove-btn bg-transparent border-0 text-text-muted cursor-pointer p-0 ml-1.5 flex items-center justify-center text-xs font-bold transition-all duration-200"
                           title="Mark as Not Attending"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';

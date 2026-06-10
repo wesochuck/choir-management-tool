@@ -6,7 +6,7 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { AppCard } from '../common/AppCard';
 import { StatusBadge } from '../common/StatusBadge';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
-import './EventRosterTable.css';
+
 
 interface EventRosterTableProps {
   singers: Array<{
@@ -39,9 +39,9 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
             <tr>
               <th className="text-label">Name</th>
               <th className="text-label">Voice</th>
-              <th className="text-label roster-table-header-cell-center">Missed Rehearsals</th>
-              <th className="text-label roster-table-header-cell-center">RSVP Status</th>
-              <th className="text-label roster-table-header-cell-right">Actions</th>
+              <th className="text-label text-center">Missed Rehearsals</th>
+              <th className="text-label text-center">RSVP Status</th>
+              <th className="text-label text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -53,8 +53,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                   key={p.id}
                   className="relative-row"
                 >
-                  <td data-label="Name" className="roster-table-header-row">
-                    <div className="roster-table-header-name">
+                  <td data-label="Name" className="font-medium">
+                    <div className="flex items-center gap-2">
                       <PhotoUploader
                         profileId={p.id}
                         profileName={p.name}
@@ -67,7 +67,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onSingerClick(p)}
-                          className="roster-table-singer-link"
+                          className="bg-transparent border-0 p-0 m-0 font-[inherit] text-primary-deep font-semibold cursor-pointer text-left transition-colors duration-150 hover:text-primary hover:underline"
                         >
                           {p.name}
                         </button>
@@ -77,9 +77,9 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     </div>
                   </td>
                   <td data-label="Voice">
-                    <span className="text-label roster-table-section-header">{p.voicePart || '--'}</span>
+                    <span className="text-label font-bold text-primary">{p.voicePart || '--'}</span>
                   </td>
-                  <td data-label="Missed Rehearsals" className="roster-table-header-cell-center">
+                  <td data-label="Missed Rehearsals" className="text-center">
                     {missCounts && missCounts[p.id] !== undefined && missCounts[p.id] > 0 ? (
                       <span
                         className="badge"
@@ -96,25 +96,25 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         ⚠️ {missCounts[p.id]} missed
                       </span>
                     ) : (
-                      <span className="roster-table-note-text">0</span>
+                      <span className="text-[0.85rem] text-text-muted">0</span>
                     )}
                   </td>
-                  <td data-label="RSVP Status" className="roster-table-header-cell-center">
-                    <div className="roster-table-flex-col roster-table-rsvp-wrapper">
+                  <td data-label="RSVP Status" className="text-center">
+                    <div className="flex flex-col items-center gap-1">
                       <StatusBadge
                         label={rsvpDisplay.label}
                         tone={rsvpDisplay.tone}
                         size="sm"
                       />
                       {s.roster?.rsvpNote && s.rsvp === 'No' && (
-                        <div className="text-xs roster-table-rsvp-note">
+                        <div className="text-xs text-text-muted max-w-[160px] leading-tight italic font-normal">
                           "{s.roster.rsvpNote}"
                         </div>
                       )}
                     </div>
                   </td>
-                  <td data-label="Actions" className="roster-table-header-cell-right">
-                    <div className="flex-row roster-table-actions-wrapper">
+                  <td data-label="Actions" className="text-right">
+                    <div className="flex-row gap-1.5 justify-end items-center">
                       <button
                         type="button"
                         disabled={isUpdating}
@@ -182,7 +182,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
             })}
             {singers.length === 0 && (
               <tr>
-                <td colSpan={5} className="roster-table-empty-cell">
+                <td colSpan={5} className="p-8 text-center">
                   <p className="text-muted text-sm">No singers found.</p>
                 </td>
               </tr>
