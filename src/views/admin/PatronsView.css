@@ -1,8 +1,12 @@
-.patrons-view .patrons-header-card {
+.patrons-view .patrons-stats-card {
+  padding: var(--space-md);
+  background-color: var(--neutral-bg);
+}
+
+.patrons-view .patrons-checklist-container {
   display: flex;
-  flex-direction: row;
-  gap: var(--space-xl);
-  align-items: center;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
 .patrons-view .patrons-search-row {
@@ -15,27 +19,6 @@
 .patrons-view .patrons-search-row .btn {
   height: 40px;
   min-height: 40px;
-}
-
-.patrons-view .patrons-filters-column {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  align-items: center;
-}
-
-.patrons-view .patrons-stats-column {
-  flex: 0 0 320px;
-  border-left: 1px solid var(--border);
-  padding-left: var(--space-xl);
-}
-
-.patrons-view .patrons-stats-inline {
-  display: flex;
-  justify-content: space-around;
-  height: 100%;
-  align-items: center;
 }
 
 .patrons-view .patrons-search-wrapper {
@@ -73,6 +56,13 @@
   height: 40px;
   border: 1px solid var(--border);
   cursor: pointer;
+}
+
+.patrons-view .patrons-stats-inline {
+  display: flex;
+  justify-content: space-around;
+  height: 100%;
+  align-items: center;
 }
 
 .patrons-view .patrons-stat-item {
@@ -170,29 +160,6 @@
 .patrons-view .badge-sage {
   background-color: #e6fffa;
   color: #2c7a7b;
-}
-
-@media (max-width: 1024px) {
-  .patrons-view .patrons-header-card {
-    flex-direction: column;
-  }
-
-  .patrons-view .patrons-filters-column,
-  .patrons-view .patrons-stats-column {
-    width: 100%;
-  }
-
-  .patrons-view .patrons-stats-column {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    padding-left: 0;
-    padding-top: var(--space-md);
-  }
-
-  .patrons-view .patrons-stats-inline {
-    justify-content: flex-start;
-    gap: var(--space-xl);
-  }
 }
 
 @media (max-width: 768px) {

@@ -309,8 +309,29 @@ export default function DonationsView() {
 
       {activeTab === 'history' && (
         <>
-          <AppCard className="donation-header-card flex-responsive">
-            <div className="donation-filters-column">
+          <div className="card donation-stats-card">
+            <div className="donation-stats-inline">
+              <div className="donation-stat-item">
+                <span className="donation-stat-label">Donations</span>
+                <span className="donation-stat-value">{filteredStats.count}</span>
+              </div>
+              <div className="donation-stat-item">
+                <span className="donation-stat-label">Total Raised</span>
+                <span className="donation-stat-value donation-stat-value-primary">
+                  ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="donation-stat-item">
+                <span className="donation-stat-label">Average</span>
+                <span className="donation-stat-value">
+                  ${(filteredStats.avg / 100).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <AppCard noPadding>
+            <div className="donation-checklist-container">
               <div className="donation-search-row flex-responsive">
                 <div className="donation-search-input-wrapper">
                   <input 
@@ -354,33 +375,8 @@ export default function DonationsView() {
                   </select>
                 </div>
               </div>
-            </div>
-
-            <div className="donation-stats-column">
-              <div className="donation-stats-inline">
-                <div className="donation-stat-item">
-                  <span className="donation-stat-label">Donations</span>
-                  <span className="donation-stat-value">{filteredStats.count}</span>
-                </div>
-                <div className="donation-stat-item">
-                  <span className="donation-stat-label">Total Raised</span>
-                  <span className="donation-stat-value donation-stat-value-primary">
-                    ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="donation-stat-item">
-                  <span className="donation-stat-label">Average</span>
-                  <span className="donation-stat-value">
-                    ${(filteredStats.avg / 100).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </AppCard>
-
-          <AppCard noPadding>
-            <div className="donation-table-container">
-              <table className="donation-table w-full text-left">
+              <div className="donation-table-container">
+                <table className="donation-table w-full text-left">
                 <thead>
                   <tr className="donation-table-header-row">
                     <th className="donation-table-th">Date</th>
@@ -429,6 +425,7 @@ export default function DonationsView() {
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           </AppCard>
         </>

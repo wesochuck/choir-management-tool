@@ -206,25 +206,15 @@
 
 /* Responsive Header and Stats Column */
 
-.donation-header-card {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-xl);
-  align-items: center; /* Match Ticketing center alignment */
+.donation-stats-card {
+  padding: var(--space-md);
+  background-color: var(--neutral-bg);
 }
 
-.donation-filters-column {
-  flex: 1;
+.donation-checklist-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-md);
-  align-items: center; /* Match Ticketing center alignment */
-}
-
-.donation-stats-column {
-  flex: 0 0 320px;
-  border-left: 1px solid var(--border);
-  padding-left: var(--space-xl);
 }
 
 .donation-stats-inline {
@@ -274,25 +264,9 @@
   cursor: pointer;
 }
 
-@media (max-width: 1024px) {
-  .donation-header-card {
+@media (max-width: 768px) {
+  .donation-search-row {
     flex-direction: column;
-  }
-  
-  .donation-filters-column,
-  .donation-stats-column {
-    width: 100%;
-  }
-
-  .donation-stats-column {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    padding-left: 0;
-    padding-top: var(--space-md);
-  }
-  
-  .donation-stats-inline {
-    justify-content: flex-start;
-    gap: var(--space-xl);
+    align-items: stretch;
   }
 }

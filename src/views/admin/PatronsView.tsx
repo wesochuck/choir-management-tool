@@ -200,8 +200,23 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <AppCard className="patrons-header-card flex-responsive">
-        <div className="patrons-filters-column">
+      <div className="card patrons-stats-card">
+        <div className="patrons-stats-inline">
+          <div className="patrons-stat-item">
+            <span className="patrons-stat-label">Patrons</span>
+            <span className="patrons-stat-value">{filteredStats.count}</span>
+          </div>
+          <div className="patrons-stat-item">
+            <span className="patrons-stat-label">Total LTV</span>
+            <span className="patrons-stat-value patrons-stat-value-primary">
+              ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <AppCard noPadding>
+        <div className="patrons-checklist-container">
           <div className="patrons-search-row flex-responsive">
             <div className="patrons-search-wrapper">
               <input 
@@ -245,26 +260,8 @@ export default function PatronsView() {
               </select>
             </div>
           </div>
-        </div>
-        <div className="patrons-stats-column">
-          <div className="patrons-stats-inline">
-            <div className="patrons-stat-item">
-              <span className="patrons-stat-label">Patrons</span>
-              <span className="patrons-stat-value">{filteredStats.count}</span>
-            </div>
-            <div className="patrons-stat-item">
-              <span className="patrons-stat-label">Total LTV</span>
-              <span className="patrons-stat-value patrons-stat-value-primary">
-                ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-        </div>
-      </AppCard>
-
-      <AppCard noPadding>
-        <div className="patrons-table-container">
-          <table className="patrons-table w-full text-left">
+          <div className="patrons-table-container">
+            <table className="patrons-table w-full text-left">
             <thead>
               <tr className="patrons-table-header-row">
                 <th className="patrons-table-th patrons-col-check">
@@ -316,6 +313,7 @@ export default function PatronsView() {
               ))}
             </tbody>
           </table>
+        </div>
         </div>
       </AppCard>
 
