@@ -9,7 +9,6 @@ import { formatInTimezone } from '../../lib/timezone';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
-import './PatronsView.css';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -183,7 +182,7 @@ export default function PatronsView() {
   };
 
   return (
-    <div className="admin-view-container patrons-view">
+    <div className="admin-view-container">
       <div className="admin-view-header flex-responsive">
         <div>
           <h1 className="text-display">Patrons Dashboard</h1>
@@ -200,15 +199,15 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <div className="card patrons-stats-card">
-        <div className="patrons-stats-inline">
-          <div className="patrons-stat-item">
-            <span className="patrons-stat-label">Patrons</span>
-            <span className="patrons-stat-value">{filteredStats.count}</span>
+      <div className="card p-4 bg-bg">
+        <div className="flex justify-around h-full items-center">
+          <div className="flex flex-col gap-1 text-center">
+            <span className="text-sm text-text-muted font-bold uppercase tracking-wider">Patrons</span>
+            <span className="text-headline font-bold">{filteredStats.count}</span>
           </div>
-          <div className="patrons-stat-item">
-            <span className="patrons-stat-label">Total LTV</span>
-            <span className="patrons-stat-value patrons-stat-value-primary">
+          <div className="flex flex-col gap-1 text-center">
+            <span className="text-sm text-text-muted font-bold uppercase tracking-wider">Total LTV</span>
+            <span className="text-headline font-bold text-primary">
               ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
           </div>
@@ -216,38 +215,38 @@ export default function PatronsView() {
       </div>
 
       <AppCard title="Patron Directory">
-        <div className="patrons-checklist-container">
-          <div className="patrons-search-row flex-responsive">
-            <div className="patrons-search-input-wrapper">
+        <div className="flex flex-col gap-4">
+          <div className="flex-responsive gap-4 items-center w-full flex-wrap max-md:flex-col max-md:items-stretch">
+            <div className="flex-1 min-w-[200px] w-full">
               <input 
                 type="text"
                 placeholder="Search by name or email..."
-                className="card patrons-search-input"
+                className="card w-full px-3 h-10 border border-border"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="patrons-date-input-wrapper">
+            <div className="flex-1 min-w-[150px]">
               <input 
                 type="date" 
-                className="card patrons-date-input"
+                className="card w-full px-3 h-10 border border-border cursor-pointer"
                 value={startDate}
                 onChange={e => handleSetStartDate(e.target.value)}
                 placeholder="Last Transaction From"
               />
             </div>
-            <div className="patrons-date-input-wrapper">
+            <div className="flex-1 min-w-[150px]">
               <input 
                 type="date" 
-                className="card patrons-date-input"
+                className="card w-full px-3 h-10 border border-border cursor-pointer"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 placeholder="To"
               />
             </div>
-            <div className="patrons-sort-select-wrapper">
+            <div className="min-w-[200px]">
               <select 
-                className="card patrons-sort-select"
+                className="card w-full px-3 h-10 border border-border cursor-pointer"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
               >
@@ -256,59 +255,59 @@ export default function PatronsView() {
                 <option value="lastDate">Sort by Last Transaction</option>
               </select>
             </div>
-            <button className="btn btn-ghost" onClick={handleClearFilters}>
+            <button className="btn btn-ghost h-10 min-h-10" onClick={handleClearFilters}>
               Reset
             </button>
           </div>
-          <div className="patrons-table-container">
-            <table className="patrons-table w-full text-left">
+          <div className="overflow-x-auto">
+            <table className="border-collapse w-full min-w-[600px] text-left">
             <thead>
-              <tr className="patrons-table-header-row">
-                <th className="patrons-table-th patrons-col-check">
+              <tr className="border-b-2 border-border text-text-muted text-sm">
+                <th className="p-3 w-12 text-center">
                   <input 
                     type="checkbox" 
                     checked={filteredPatrons.length > 0 && selectedIds.size === filteredPatrons.length}
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="patrons-table-th">Name</th>
-                <th className="patrons-table-th">Email</th>
-                <th className="patrons-table-th">Type</th>
-                <th className="patrons-table-th-right">LTV</th>
-                <th className="patrons-table-th">Last Transaction</th>
-                <th className="patrons-table-th-right">Orders</th>
+                <th className="p-3 text-left">Name</th>
+                <th className="p-3 text-left">Email</th>
+                <th className="p-3 text-left">Type</th>
+                <th className="p-3 text-right">LTV</th>
+                <th className="p-3 text-left">Last Transaction</th>
+                <th className="p-3 text-right">Orders</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="patrons-table-td patrons-text-center">Loading patrons...</td></tr>
+                <tr><td colSpan={7} className="p-3 text-center p-8">Loading patrons...</td></tr>
               ) : filteredPatrons.length === 0 ? (
-                <tr><td colSpan={7} className="patrons-table-td patrons-text-center admin-empty-state">No patrons found matching your search.</td></tr>
+                <tr><td colSpan={7} className="p-3 text-center p-8 admin-empty-state">No patrons found matching your search.</td></tr>
               ) : filteredPatrons.map(p => (
-                <tr key={p.profile.id} className="patrons-table-row" onClick={() => handleOpenProfile(p.profile)}>
-                  <td className="patrons-table-td patrons-col-check" onClick={e => e.stopPropagation()}>
+                <tr key={p.profile.id} className="border-b border-border text-sm cursor-pointer hover:bg-primary-light" onClick={() => handleOpenProfile(p.profile)}>
+                  <td className="p-3 w-12 text-center" onClick={e => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
                       checked={selectedIds.has(p.profile.id)}
                       onChange={() => toggleSelect(p.profile.id)}
                     />
                   </td>
-                  <td className="patrons-table-td-bold">{p.profile.name}</td>
-                  <td className="patrons-table-td text-sm text-muted">
+                  <td className="p-3 font-semibold">{p.profile.name}</td>
+                  <td className="p-3 text-sm text-muted">
                     {p.profile.expand?.user?.email || 'No email'}
                   </td>
-                  <td className="patrons-table-td">
-                    <span className={`badge ${p.isSinger ? 'badge-sage' : 'badge-ghost'}`}>
+                  <td className="p-3">
+                    <span className={`badge ${p.isSinger ? 'bg-[#e6fffa] text-[#2c7a7b]' : 'badge-ghost'}`}>
                       {p.isSinger ? 'Singer' : 'Patron'}
                     </span>
                   </td>
-                  <td className="patrons-table-td-right-bold">
+                  <td className="p-3 text-right font-bold text-primary">
                     ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
-                  <td className="patrons-table-td text-sm">
+                  <td className="p-3 text-sm">
                     {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="patrons-table-td-right text-muted">{p.transactionCount}</td>
+                  <td className="p-3 text-right text-muted">{p.transactionCount}</td>
                 </tr>
               ))}
             </tbody>

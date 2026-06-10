@@ -1,8 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
-import './PollsDashboardView.css';
-import './Dashboards.css';
 import { BaseModal } from '../../components/common/BaseModal';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
@@ -265,30 +263,30 @@ export default function PollsDashboardView() {
   return (
     <div className="admin-view-container">
       <div className="admin-view-header">
-        <div className="flex-col gap-xs">
-          <h2 className="text-headline db-margin-0">Engagement Polls & Volunteering</h2>
+        <div className="flex-col gap-1">
+          <h2 className="text-headline m-0">Engagement Polls & Volunteering</h2>
           <p className="text-muted text-sm">Review volunteer responses and counts.</p>
         </div>
-        <div className="db-polls-header-actions">
-          <label className="db-polls-archive-toggle">
+        <div className="flex flex-row flex-wrap items-center gap-4 max-md:w-full max-md:justify-start max-md:gap-2">
+          <label className="flex-row gap-2 items-center cursor-pointer text-sm">
             <input 
               type="checkbox" 
               checked={showArchived} 
               onChange={e => setShowArchived(e.target.checked)}
-              className="db-polls-checkbox"
+              className="w-4 h-4"
             />
             Show Archived
           </label>
           <button 
             type="button"
-            className="btn btn-secondary btn-sm db-polls-btn-content" 
+            className="btn btn-secondary btn-sm flex-row gap-1.5 h-9 items-center" 
             onClick={() => setIsSettingsModalOpen(true)}
           >
             ⚙️ Settings
           </button>
           <button 
             type="button"
-            className="btn btn-primary btn-sm db-polls-btn-content" 
+            className="btn btn-primary btn-sm flex-row gap-1.5 h-9 items-center" 
             onClick={openQuickCreate}
           >
             <span>+</span> Start New Poll
@@ -296,7 +294,7 @@ export default function PollsDashboardView() {
         </div>
       </div>
 
-      <div className="flex-col db-container-vertical">
+      <div className="flex-col">
         {loadError && (
           <AppCard className="db-error-card">
             <p className="db-error-text">{loadError}</p>
@@ -304,7 +302,7 @@ export default function PollsDashboardView() {
         )}
         {filteredPolls.length === 0 ? (
           <AppCard className="admin-empty-state">
-            <p className="text-muted db-empty-state-text db-margin-b-md">No active polls found.</p>
+            <p className="text-muted db-empty-state-text mb-4">No active polls found.</p>
             <div>
               <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
                 Start New Poll
@@ -312,8 +310,8 @@ export default function PollsDashboardView() {
             </div>
           </AppCard>
         ) : (
-          <div className="flex-col db-container-vertical">
-            <AppCard noPadding className="polls-list-card">
+          <div className="flex-col">
+            <AppCard noPadding className="gap-0 overflow-hidden">
               {paginatedPolls.map((poll, index) => {
                 const stat = pollStats[poll.id];
                 const isExpanded = expandedPollId === poll.id;
@@ -330,21 +328,21 @@ export default function PollsDashboardView() {
                 return (
                   <div
                     key={poll.id}
-                    className={`polls-list-item${isExpanded ? ' is-expanded' : ''}${index === paginatedPolls.length - 1 ? ' is-last' : ''}`}
+                    className={`border-b border-border ${index === paginatedPolls.length - 1 ? 'border-b-0' : ''}`}
                   >
                   <div
                     role="button"
                     tabIndex={0}
-                    className="polls-list-row"
+                    className={`flex items-center justify-between gap-4 p-3.5 px-5 cursor-pointer select-none transition-colors duration-150 hover:bg-primary-light focus-visible:bg-primary-light focus-visible:outline-none ${isExpanded ? 'bg-[rgb(74_124_89_/_6%)]' : ''} max-md:flex-col max-md:items-stretch`}
                     onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
                   >
-                    <div className="polls-list-main">
-                      <div className="polls-list-title-row">
-                        <h3 className="polls-list-title">{poll.question}</h3>
-                        {isArchived && <span className="badge polls-archived-badge">Archived</span>}
+                    <div className="flex flex-1 auto min-w-0 flex-col gap-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h3 className="m-0 text-text text-base font-bold">{poll.question}</h3>
+                        {isArchived && <span className="badge bg-[#f1f5f9] text-[#64748b]">Archived</span>}
                       </div>
-                      <div className="polls-list-meta">
+                      <div className="flex flex-wrap gap-1 gap-x-4 text-text-muted text-sm font-semibold">
                         {createdLabel && <span>Created {createdLabel}</span>}
                         {archiveLabel && (
                           <span title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}>
@@ -359,24 +357,24 @@ export default function PollsDashboardView() {
                       </div>
                     </div>
 
-                    <div className="polls-list-side">
-                      <div className="polls-stat-group" aria-label="Poll response counts">
-                        <div className="polls-stat">
-                          <span className="polls-stat-value polls-stat-yes">{stat.yes}</span>
-                          <span className="polls-stat-label">Yes</span>
+                    <div className="flex items-center flex-shrink-0 gap-6 max-md:flex-col max-md:gap-4 max-md:items-stretch">
+                      <div className="flex items-center gap-2" aria-label="Poll response counts">
+                        <div className="min-w-[52px] p-1 px-2.5 border border-border rounded-md bg-surface text-center">
+                          <span className="text-base font-extrabold leading-tight text-primary">{stat.yes}</span>
+                          <span className="block text-text-muted text-sm font-bold">Yes</span>
                         </div>
-                        <div className="polls-stat">
-                          <span className="polls-stat-value polls-stat-no">{stat.no}</span>
-                          <span className="polls-stat-label">No</span>
+                        <div className="min-w-[52px] p-1 px-2.5 border border-border rounded-md bg-surface text-center">
+                          <span className="text-base font-extrabold leading-tight text-[#ef4444]">{stat.no}</span>
+                          <span className="block text-text-muted text-sm font-bold">No</span>
                         </div>
                       </div>
 
-                      <div className="polls-list-actions">
-                        <span className="polls-expand-label">
+                      <div className="flex items-center gap-1 max-md:justify-between">
+                        <span className="text-text-muted text-sm font-bold">
                           {isExpanded ? '▲ Hide' : '▼ View Names'}
                         </span>
                         <button
-                          className="btn btn-ghost btn-sm polls-delete-btn"
+                          className="btn btn-ghost btn-sm text-[#ef4444]"
                           onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
                           onKeyDown={(e) => { e.stopPropagation(); }}
                         >
@@ -401,14 +399,14 @@ export default function PollsDashboardView() {
                     })();
 
                     return (
-                      <div className="polls-response-panel flex-col db-container-vertical">
-                        <div className="db-polls-response-header">
+                      <div className="flex gap-8 p-6 px-5 bg-bg border-t border-border max-md:flex-col max-md:items-stretch">
+                        <div className="flex-row justify-between items-center w-full text-sm text-text-muted font-semibold border-b border-border pb-2 mb-1">
                           {contactedSingers.length > 0 ? (
                             <>
                               <span>📨 Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
                               <button
                                 type="button"
-                                className="btn btn-ghost btn-sm db-polls-view-contacted-btn"
+                                className="btn btn-ghost btn-sm px-2 h-6 text-xs underline text-primary cursor-pointer"
                                 onClick={() => setRecipientModal({
                                   isOpen: true,
                                   recipients: contactedSingers,
@@ -423,7 +421,7 @@ export default function PollsDashboardView() {
                               📨 No sent communications found for this poll yet. You can send it from the{' '}
                               <a
                                 href="/admin/communications"
-                                className="db-link-primary"
+                                className="text-primary underline"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   navigate('/admin/communications');
@@ -435,18 +433,18 @@ export default function PollsDashboardView() {
                           )}
                         </div>
 
-                        <div className="db-polls-response-columns polls-response-columns-container">
-                          <div className="polls-response-column">
-                            <h4 className="polls-response-heading polls-response-heading-yes">
+                        <div className="flex gap-8 w-full">
+                          <div className="flex flex-1 flex-col gap-2 min-w-0">
+                            <h4 className="m-0 pb-1 text-sm font-bold border-b-2 border-primary-light text-primary">
                               Volunteers ({stat.yes})
                             </h4>
                             {stat.volunteers.length === 0 ? (
                               <p className="text-muted text-sm">No volunteers yet.</p>
                             ) : (
-                              <div className="polls-response-grid">
+                              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
                                 {stat.volunteers.map(v => (
-                                  <div key={v.id} className="polls-response-person">
-                                    <div className="polls-response-name">{v.expand?.profileId.name}</div>
+                                  <div key={v.id} className="p-2 px-3 border border-border rounded-md bg-surface text-sm">
+                                    <div className="font-bold">{v.expand?.profileId.name}</div>
                                     <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
                                   </div>
                                 ))}
@@ -454,17 +452,17 @@ export default function PollsDashboardView() {
                             )}
                           </div>
 
-                          <div className="polls-response-column">
-                            <h4 className="polls-response-heading polls-response-heading-no">
+                          <div className="flex flex-1 flex-col gap-2 min-w-0">
+                            <h4 className="m-0 pb-1 text-sm font-bold border-b-2 border-[#fee2e2] text-[#ef4444]">
                               Declined ({stat.no})
                             </h4>
                             {stat.decliners.length === 0 ? (
                               <p className="text-muted text-sm">No decliners yet.</p>
                             ) : (
-                              <div className="polls-response-grid">
+                              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
                                 {stat.decliners.map(v => (
-                                  <div key={v.id} className="polls-response-person polls-response-person-muted">
-                                    <div className="polls-response-name">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
+                                  <div key={v.id} className="p-2 px-3 border border-[#fee2e2] rounded-md bg-surface text-sm opacity-85">
+                                    <div className="font-bold">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
                                     <div className="text-muted text-xs">{v.expand?.profileId?.voicePart ?? ''}</div>
                                   </div>
                                 ))}
@@ -495,10 +493,10 @@ export default function PollsDashboardView() {
         title={quickCreateStep === 1 ? 'Quick Create Poll' : 'Confirm & Open Review'}
         maxWidth="560px"
       >
-        <div className="flex-col db-container-vertical">
+        <div className="flex-col">
           {quickCreateStep === 1 ? (
             <>
-              <p className="text-muted db-margin-0">
+              <p className="text-muted m-0">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
               <div className="form-field-group">
@@ -506,7 +504,7 @@ export default function PollsDashboardView() {
                 <input
                   id="quick-poll-question"
                   type="text"
-                  className="card db-form-input"
+                  className="card w-full px-3 h-10 border border-border rounded-md"
                   value={quickPollQuestion}
                   onChange={(e) => setQuickPollQuestion(e.target.value)}
                   placeholder="e.g. Who can help with setup?"
@@ -520,16 +518,16 @@ export default function PollsDashboardView() {
                   type="number"
                   min="1"
                   max="365"
-                  className="card db-form-input-short"
+                  className="card w-[120px] px-3 h-10 border border-border rounded-md"
                   value={quickPollDays}
                   onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
                   required
                 />
               </div>
-              <p className="text-muted text-sm db-margin-0 db-margin-b-sm">
+              <p className="text-muted text-sm m-0 mb-2">
                 Recipients default to all singers with status Active or Idle.
               </p>
-              <div className="db-modal-actions">
+              <div className="flex-row justify-end gap-2">
                 <button type="button" className="btn btn-ghost" onClick={() => setIsQuickCreateOpen(false)}>Cancel</button>
                 <button
                   type="button"
@@ -543,19 +541,19 @@ export default function PollsDashboardView() {
             </>
           ) : (
             <>
-              <p className="db-margin-0">
+              <p className="m-0">
                 We'll create this poll and save a pre-filled message to your <strong>Drafts</strong>. You can review, edit, and send from the Communications page.
               </p>
-              <div className="card db-preview-card">
-                <div className="text-muted text-xs db-preview-label">Poll Question</div>
+              <div className="card p-3">
+                <div className="text-muted text-xs mb-1.5">Poll Question</div>
                 <strong>{quickPollQuestion.trim()}</strong>
               </div>
-              <div className="card db-preview-card">
-                <div className="text-muted text-xs db-preview-label">Draft Preview</div>
+              <div className="card p-3">
+                <div className="text-muted text-xs mb-1.5">Draft Preview</div>
                 <div><strong>Subject:</strong> Quick Choir Poll</div>
-                <div className="db-preview-content">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
+                <div className="mt-2 whitespace-pre-wrap">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
               </div>
-              <div className="db-modal-actions">
+              <div className="flex-row justify-end gap-2">
                 <button type="button" className="btn btn-ghost" disabled={isCreatingQuickPoll} onClick={() => setQuickCreateStep(1)}>Back</button>
                 <button
                   type="button"
@@ -578,8 +576,8 @@ export default function PollsDashboardView() {
         title="⚙️ Engagement Poll Settings"
         maxWidth="400px"
       >
-        <div className="flex-col db-container-vertical">
-          <p className="text-muted db-margin-0">
+        <div className="flex-col">
+          <p className="text-muted m-0">
             Configure global default settings for quick engagement polls.
           </p>
           <div className="form-field-group">
@@ -589,16 +587,16 @@ export default function PollsDashboardView() {
               type="number"
               min="1"
               max="365"
-              className="card db-form-input-short"
+              className="card w-[120px] px-3 h-10 border border-border rounded-md"
               value={globalDefaultDays}
               onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
               required
             />
           </div>
-          <p className="text-muted text-xs db-margin-0">
+          <p className="text-muted text-xs m-0">
             New quick polls will automatically archive after this many days unless overridden.
           </p>
-          <div className="db-modal-actions db-margin-t-sm">
+          <div className="flex-row justify-end gap-2 mt-2">
             <button type="button" className="btn btn-ghost" disabled={isSavingSettings} onClick={() => setIsSettingsModalOpen(false)}>Cancel</button>
             <button
               type="button"
@@ -627,9 +625,9 @@ export default function PollsDashboardView() {
           </button>
         }
       >
-        <div className="flex-col db-container-vertical db-scroll-v">
+        <div className="flex-col max-h-[400px] overflow-y-auto">
           {recipientModal.recipients.map(r => (
-            <div key={r.id} className="flex-row card db-recipient-item">
+            <div key={r.id} className="flex-row card p-2 justify-between shadow-none">
               <strong>{r.name}</strong>
               <span className="text-muted text-xs">{r.voicePart}</span>
             </div>

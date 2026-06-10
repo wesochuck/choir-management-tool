@@ -27,14 +27,11 @@ import { DraftsPanel } from './communications/DraftsPanel';
 import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
-import './communications/Communications.css';
 import type {
   AutomatedTask,
   CommunicationRouteState,
   WizardStep,
 } from './communications/types';
-
-import './CommunicationView.css';
 
 export default function CommunicationView() {
   const dialog = useDialog();
@@ -329,14 +326,14 @@ return (
   <div className="admin-view-container">
     <div className="admin-view-header">
       <div className="flex-col gap-xs">
-        <h1 className="text-display comm-page-title">
+        <h1 className="text-display m-0">
           Communications
         </h1>
 
           {routeState?.returnToPolls && (
             <Link
               to="/admin/polls"
-              className="text-muted text-sm comm-breadcrumb-link"
+              className="text-muted text-sm underline"
             >
               Back to Polls
             </Link>

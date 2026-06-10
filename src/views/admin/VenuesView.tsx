@@ -5,7 +5,6 @@ import { AppCard } from '../../components/common/AppCard';
 import { Button } from '../../components/ui/Button/Button';
 import { Spinner } from '../../components/ui/Spinner/Spinner';
 import { useDialog } from '../../contexts/DialogContext';
-import './Venues.css';
 
 export default function VenuesView() {
   const dialog = useDialog();
@@ -79,15 +78,15 @@ export default function VenuesView() {
   };
 
   if (isLoading && venues.length === 0) return (
-    <div className="container venue-loading">
+    <div className="container text-center pt-8">
       <Spinner size="small" /> Loading venues...
     </div>
   );
 
   return (
-    <div className="flex-col venue-container">
-       <div className="flex-responsive venue-header">
-        <h1 className="text-display venue-title">Venue Templates</h1>
+    <div className="flex-col gap-8 py-8">
+       <div className="flex-responsive justify-between items-center">
+        <h1 className="text-display m-0">Venue Templates</h1>
         {!isAdding && (
           <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
         )}
@@ -95,43 +94,43 @@ export default function VenuesView() {
 
       {isAdding && (
         <AppCard title={editingId ? 'Edit Venue' : 'Create New Venue'}>
-          <form onSubmit={handleSave} className="flex-col venue-form">
-            <div className="flex-col venue-form-field">
+          <form onSubmit={handleSave} className="flex-col gap-4">
+            <div className="flex-col gap-1">
               <label className="text-label">Venue Name</label>
               <input 
                 value={name} onChange={(e) => setName(e.target.value)} required
                 placeholder="e.g. Main Sanctuary"
-                className="card venue-input"
+                className="card w-full px-3 h-11"
               />
             </div>
-            <div className="flex-col venue-form-field">
+            <div className="flex-col gap-1">
               <label className="text-label">Address</label>
               <input 
                 value={address} onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 123 Main St, City, State"
-                className="card venue-input"
+                className="card w-full px-3 h-11"
               />
             </div>
-            <div className="flex-row venue-checkbox-container">
+            <div className="flex-row gap-1 items-center">
               <input 
                 type="checkbox"
                 id="isOpenSeating"
                 checked={isOpenSeating} onChange={(e) => setIsOpenSeating(e.target.checked)}
               />
-              <label htmlFor="isOpenSeating" className="text-label venue-checkbox-label">Open Seating (No assigned seats)</label>
+              <label htmlFor="isOpenSeating" className="text-label m-0">Open Seating (No assigned seats)</label>
             </div>
             {!isOpenSeating && (
-              <div className="flex-col venue-form-field">
+              <div className="flex-col gap-1">
                 <label className="text-label">Row Capacities (Comma separated)</label>
                 <input 
                   value={rowCountsStr} onChange={(e) => setRowCountsStr(e.target.value)} required
                   placeholder="e.g. 12, 15, 18, 20"
-                  className="card venue-input"
+                  className="card w-full px-3 h-11"
                 />
                 <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
               </div>
             )}
-            <div className="flex-responsive venue-form-actions">
+            <div className="flex-responsive justify-end gap-4">
               <Button variant="ghost" onClick={resetForm}>Cancel</Button>
               <Button type="submit" variant="primary">Save Template</Button>
             </div>
@@ -139,10 +138,10 @@ export default function VenuesView() {
         </AppCard>
       )}
 
-      <div className="venue-grid">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (
-          <AppCard key={v.id} title={v.name} className="venue-card">
-            <div className="flex-col venue-card-content">
+          <AppCard key={v.id} title={v.name} className="h-full">
+            <div className="flex-col gap-1 flex-1">
               {v.address && (
                 <div className="text-body">
                   <span className="text-muted">Address:</span>{' '}
@@ -152,7 +151,7 @@ export default function VenuesView() {
                 </div>
               )}
               {v.isOpenSeating ? (
-                <div className="text-body venue-open-seating">
+                <div className="text-body text-primary">
                   <strong>Open Seating</strong>
                 </div>
               ) : (
@@ -169,11 +168,11 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="flex-responsive venue-card-actions">
-              <Button variant="ghost" className="venue-action-btn" onClick={() => handleEdit(v)}>Edit</Button>
+            <div className="flex-responsive gap-4 mt-4">
+              <Button variant="ghost" className="flex-1" onClick={() => handleEdit(v)}>Edit</Button>
               <Button
                 variant="danger"
-                className="venue-action-btn"
+                className="flex-1"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(v);
@@ -187,7 +186,7 @@ export default function VenuesView() {
       </div>
 
       {venues.length === 0 && !isAdding && (
-        <AppCard className="venue-empty">
+        <AppCard className="p-8 text-center">
           <p className="text-muted">No venue templates created yet.</p>
         </AppCard>
       )}
