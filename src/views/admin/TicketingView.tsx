@@ -422,43 +422,45 @@ export default function TicketingView() {
             Manage ticket sales, configure season bundles, and view check-in checklists.
           </p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          {activeTab === 'bundles' && (
-            <button onClick={handleOpenCreateModal} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
-              Create New Bundle
-            </button>
-          )}
-          {activeTab === 'willcall' && selectedEventId && (
-            <button onClick={handleExportCSV} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
-              Export Will Call CSV
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Tab Controls */}
       <div className="mt-8 border-b border-slate-200">
-        <nav className="-mb-px flex gap-2">
-          <button
-            className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'willcall' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-            onClick={() => setActiveTab('willcall')}
-          >
-            Concert Will Call
-          </button>
-          <button
-            className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'bundles' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-            onClick={() => setActiveTab('bundles')}
-          >
-            Season Bundles
-          </button>
-          <button
-            className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'orders' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-            onClick={() => setActiveTab('orders')}
-          >
-            Bundle Orders
-          </button>
-        </nav>
+        <div className="-mb-px flex items-center justify-between">
+          <nav className="flex gap-2">
+            <button
+              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'willcall' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+              onClick={() => setActiveTab('willcall')}
+            >
+              Concert Will Call
+            </button>
+            <button
+              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'bundles' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+              onClick={() => setActiveTab('bundles')}
+            >
+              Season Bundles
+            </button>
+            <button
+              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'orders' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+              onClick={() => setActiveTab('orders')}
+            >
+              Bundle Orders
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            {activeTab === 'bundles' && (
+              <button onClick={handleOpenCreateModal} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
+                Create New Bundle
+              </button>
+            )}
+            {activeTab === 'willcall' && selectedEventId && (
+              <button onClick={handleExportCSV} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
+                Export Will Call CSV
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {activeTab === 'willcall' && (
