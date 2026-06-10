@@ -45,7 +45,6 @@ const legacyWhitelist = new Set([
   'src/views/admin/events/useEventPlayerLink.tsx',
   'src/views/admin/events/EventsTabs.tsx',
   'src/views/admin/AttendanceView.tsx',
-  'src/views/PublicPlayerView.tsx',
   'src/views/singer/SeatingFinderView.tsx',
   'src/views/singer/DashboardView.tsx',
 ]);
