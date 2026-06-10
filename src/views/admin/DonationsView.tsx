@@ -413,9 +413,9 @@ export default function DonationsView() {
                           {d.status}
                         </span>
                       </td>
-                      <td className="p-3 px-4 text-right">
+                      <td className="p-3 px-2 text-right">
                         {d.status === 'paid' && (
-                          <button className="btn btn-sm btn-ghost btn-danger" onClick={() => handleRefund(d.id)}>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleRefund(d.id)}>
                             Refund
                           </button>
                         )}
