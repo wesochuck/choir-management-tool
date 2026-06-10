@@ -377,14 +377,11 @@ return (
       {tab === 'automated' && (
         <AutomatedTasksPanel
           upcomingTasks={automated.upcomingTasks}
-          pastTasks={automated.pastTasks}
           onDraftTaskMessage={handleDraftTaskMessage}
           onTriggerReport={async (task) => {
             const confirmed = await dialog.confirm({
               title: 'Send Report Now?',
-              message: `Generate and send the attendance report for "${
-                task.event.title || task.event.type
-              }" immediately?`,
+              message: `Generate and send the attendance report for "${task.event.title || task.event.type}" immediately?`,
               confirmLabel: 'Send Now',
             });
             if (confirmed) {

@@ -5,6 +5,8 @@ import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
 
+export type SourceFilter = 'all' | 'manual' | 'automated';
+
 interface MessageHistoryProps {
   history: MessageRecord[];
   currentPage: number;
@@ -12,6 +14,8 @@ interface MessageHistoryProps {
   onPageChange: (page: number) => void;
   historySearchQuery: string;
   onHistorySearchChange: (query: string) => void;
+  sourceFilter: SourceFilter;
+  onSourceFilterChange: (filter: SourceFilter) => void;
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
@@ -26,6 +30,8 @@ export function MessageHistory({
   onPageChange,
   historySearchQuery,
   onHistorySearchChange,
+  sourceFilter,
+  onSourceFilterChange,
   onViewDetails,
   onCopyDraft,
   onViewRecipients,
@@ -46,6 +52,15 @@ export function MessageHistory({
   useEffect(() => {
     setSearchTerm(historySearchQuery);
   }, [historySearchQuery]);
+
+  const filteredHistory = sourceFilter === 'all'
+    ? history
+    : history.filter((message) => {
+        const mFilters = message.filters as Record<string, unknown>;
+        const mType = mFilters?.type as string | undefined;
+        const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+        return sourceFilter === 'automated' ? isAutomated : !isAutomated;
+      });
 
   return (
     <div className="flex flex-col gap-4">
@@ -73,31 +88,41 @@ export function MessageHistory({
             </button>
           )}
         </div>
+        <select
+          className="h-10 rounded border border-gray-200 bg-white px-3 text-sm text-gray-700"
+          value={sourceFilter}
+          onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
+        >
+          <option value="all">All Sources</option>
+          <option value="manual">Manual</option>
+          <option value="automated">Automated</option>
+        </select>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px] border-collapse text-left">
+        <table className="w-full min-w-[800px] border-collapse text-left">
           <thead>
             <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
               <th className="p-3 px-4 text-left">Date</th>
               <th className="p-3 px-4 text-left">Type</th>
               <th className="p-3 px-4 text-left">Subject</th>
+              <th className="p-3 px-4 text-left">Source</th>
               <th className="p-3 px-4 text-center">Recipients</th>
               <th className="p-3 px-4 text-left">Status</th>
               <th className="p-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {history.length === 0 ? (
+            {filteredHistory.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
+                <td colSpan={7} className="p-8 text-center text-gray-500">
                   {historySearchQuery
                     ? `No messages found matching "${historySearchQuery}".`
                     : 'No messages logged yet.'}
                 </td>
               </tr>
             ) : (
-              history.map((message) => {
+              filteredHistory.map((message) => {
                 const mFilters = message.filters as Record<string, unknown>;
                 const mType = mFilters?.type as string | undefined;
                 const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
@@ -128,8 +153,19 @@ export function MessageHistory({
                         )}
                       </div>
                     </td>
-                    <td className="max-w-[300px] truncate p-3 px-4 font-semibold">
+                    <td className="max-w-[250px] truncate p-3 px-4 font-semibold">
                       {resolvedSubject}
+                    </td>
+                    <td className="p-3 px-4">
+                      {isAutomated ? (
+                        <span className="inline-flex w-fit items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase">
+                          Automated
+                        </span>
+                      ) : (
+                        <span className="inline-flex w-fit items-center rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
+                          Manual
+                        </span>
+                      )}
                     </td>
                     <td className="p-3 px-4 text-center">
                       <button

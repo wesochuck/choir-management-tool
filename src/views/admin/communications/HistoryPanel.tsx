@@ -1,4 +1,5 @@
-import { MessageHistory } from '../../../components/admin/MessageHistory';
+import { useState } from 'react';
+import { MessageHistory, type SourceFilter } from '../../../components/admin/MessageHistory';
 import type { MessageRecord, CommunicationRecipient } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationSettings } from '../../../services/settingsService';
@@ -33,19 +34,25 @@ export function HistoryPanel({
   onCopyDraft,
   onViewRecipients,
 }: HistoryPanelProps) {
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+
   return (
-    <MessageHistory
-      history={history}
-      currentPage={historyPage}
-      totalPages={totalPages}
-      onPageChange={setHistoryPage}
-      historySearchQuery={historySearchQuery}
-      onHistorySearchChange={onHistorySearchChange}
-      onViewDetails={onViewDetails}
-      onCopyDraft={onCopyDraft}
-      onViewRecipients={onViewRecipients}
-      events={events}
-      commSettings={commSettings}
-    />
+    <div className="flex flex-col gap-4">
+      <MessageHistory
+          history={history}
+          currentPage={historyPage}
+          totalPages={totalPages}
+          onPageChange={setHistoryPage}
+          historySearchQuery={historySearchQuery}
+          onHistorySearchChange={onHistorySearchChange}
+          sourceFilter={sourceFilter}
+          onSourceFilterChange={setSourceFilter}
+          onViewDetails={onViewDetails}
+          onCopyDraft={onCopyDraft}
+          onViewRecipients={onViewRecipients}
+          events={events}
+          commSettings={commSettings}
+        />
+    </div>
   );
 }
