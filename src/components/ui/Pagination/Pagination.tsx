@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { computePaginationRange, DOTS } from '../../../lib/paginationUtils';
-import type { PaginationProps as CommonPaginationProps } from '../../../common/Pagination';
+import type { PaginationProps as CommonPaginationProps } from '../../common/Pagination';
 import styles from './Pagination.module.css';
 
 export type { CommonPaginationProps as PaginationProps };
