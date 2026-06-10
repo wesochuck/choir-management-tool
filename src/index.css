@@ -310,13 +310,13 @@ textarea.card {
   }
 }
 
-/* Global backward-compatibility helper classes for flex layouts */
-.flex-row {
+/* Global backward-compatibility helper classes for flex layouts (wrapped in :where to allow Tailwind overrides) */
+:where(.flex-row) {
   display: flex;
   flex-direction: row;
 }
 
-.flex-col {
+:where(.flex-col) {
   display: flex;
   flex-direction: column;
 }

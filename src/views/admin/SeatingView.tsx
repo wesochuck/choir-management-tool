@@ -21,6 +21,8 @@ import { SingerModal } from '../../components/admin/SingerModal';
 import { SingerLookupModal } from '../../components/admin/SingerLookupModal';
 import { profileService } from '../../services/profileService';
 import { rosterService } from '../../services/rosterService';
+import './SeatingView.css';
+
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
@@ -620,9 +622,9 @@ export default function SeatingView() {
             </button>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start gap-[var(--space-md)] min-w-0 w-full">
+          <div className="flex flex-col sm:flex-row items-start gap-[var(--space-md)] min-w-0 w-full">
           <AppCard className="flex-col flex-1 min-w-0 max-w-full p-[var(--space-md)]">
-            <div className="no-print flex flex-col md:flex-row justify-between p-[6px_12px] bg-[var(--primary-light)] rounded-[var(--radius-md)] gap-[var(--space-sm)] flex-wrap items-center shadow-sm border border-[var(--border)]">
+            <div className="no-print flex flex-col sm:flex-row justify-between p-[6px_12px] bg-[var(--primary-light)] rounded-[var(--radius-md)] gap-[var(--space-sm)] flex-wrap items-center shadow-sm border border-[var(--border)]">
                <div className="flex-row gap-[var(--space-xs)]">
                   <button onClick={handleClear} className="btn btn-sm btn-ghost bg-[var(--surface)] border border-[var(--border)] !h-8 min-h-[32px] px-[10px]">
                     🧹 Clear
