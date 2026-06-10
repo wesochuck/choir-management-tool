@@ -30,7 +30,7 @@ export function SeatingTextList({
   }, [rows]);
 
   return (
-    <div className="seating-text-list text-list-container flex-col">
+    <div className="seating-text-list gap-4 p-4 flex-col">
       {reversedRows.map((row, index) => {
         const originalIndex = rows.length - 1 - index;
         const isFront = originalIndex === 0;

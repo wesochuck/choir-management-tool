@@ -308,7 +308,7 @@ export default function DonationsView() {
 
       {activeTab === 'history' && (
         <>
-          <div className="card bg-neutral-bg p-4">
+          <div className="card bg-neutral-100 p-4">
             <div className="flex h-full items-center justify-around">
               <div className="flex flex-col gap-1 text-center">
                 <span className="text-xs font-bold text-gray-500 uppercase">Donations</span>

@@ -202,7 +202,7 @@ export default function PublicBundlePurchaseView() {
             />
           </div>
 
-          <div className="card bg-neutral-bg flex w-full flex-col gap-1 p-4">
+          <div className="card bg-neutral-100 flex w-full flex-col gap-1 p-4">
             <h4 className="m-0 text-primary-deep">Pricing Summary</h4>
             <div className="flex flex-row justify-between text-sm">
               <span>Season Ticket Pass ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>
@@ -220,7 +220,7 @@ export default function PublicBundlePurchaseView() {
             </div>
           </div>
 
-          <div className="bg-neutral-bg mt-1 flex flex-row items-start gap-4 rounded-lg border border-border p-4">
+          <div className="bg-neutral-100 mt-1 flex flex-row items-start gap-4 rounded-lg border border-border p-4">
             <input
               id="marketingOptIn"
               type="checkbox"

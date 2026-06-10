@@ -168,7 +168,7 @@ export default function PublicPlayerView() {
             </Link>
           )}
           <h1>Chorus</h1>
-          <div className="text-text-secondary text-sm">{data.event.title}</div>
+          <div className="text-text-muted text-sm">{data.event.title}</div>
         </div>
       </header>
 

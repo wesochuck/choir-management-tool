@@ -6,7 +6,7 @@ interface SavingIndicatorProps {
 export function SavingIndicator({ isSaving, error }: SavingIndicatorProps) {
   if (error) {
     return (
-      <span className="text-label text-danger-status">
+      <span className="text-label text-danger-text">
         Save failed
       </span>
     );

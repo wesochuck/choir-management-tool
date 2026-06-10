@@ -506,7 +506,7 @@ export default function AttendanceView() {
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="card flex flex-row flex-wrap items-center gap-4 rounded-md border border-border bg-surface p-4">
+        <div className="card flex flex-row flex-wrap items-end gap-4 rounded-md border border-border bg-surface p-4">
           {/* Name Search */}
           <div className="flex flex-[1_1_200px] flex-col gap-1.5">
             <label className="text-label text-xs font-bold text-text-muted uppercase">Search by Name</label>
@@ -595,7 +595,7 @@ export default function AttendanceView() {
         </AppCard>
       ) : error ? (
         <AppCard className="border-danger-text bg-danger-bg p-8">
-          <p className="text-strong text-danger-text">{error}</p>
+          <p className="font-bold text-danger-text">{error}</p>
         </AppCard>
       ) : selectedEventId ? (
         checkInItems.length === 0 && declinedSingers.length === 0 ? (

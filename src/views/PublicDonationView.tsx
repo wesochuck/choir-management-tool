@@ -116,7 +116,7 @@ export default function PublicDonationView() {
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Select a Donation Level</label>
-            <div className="bg-neutral-bg grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border border-border p-4">
+            <div className="bg-neutral-100 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border border-border p-4">
               {levels.map(level => (
                 <div 
                   key={level.id}
@@ -219,7 +219,7 @@ export default function PublicDonationView() {
             </div>
           </div>
 
-          <div className="bg-neutral-bg mt-1 flex flex-row items-center gap-4 rounded-lg border border-border p-4">
+          <div className="bg-neutral-100 mt-1 flex flex-row items-center gap-4 rounded-lg border border-border p-4">
             <input
               id="isAnonymous"
               type="checkbox"
@@ -234,7 +234,7 @@ export default function PublicDonationView() {
             </label>
           </div>
 
-          <div className="card bg-neutral-bg flex w-full flex-col gap-1 p-4">
+          <div className="card bg-neutral-100 flex w-full flex-col gap-1 p-4">
             <div className="m-0 mt-0 flex flex-row justify-between border-t-0 border-none p-0 pt-0 font-bold">
               <span>Total Donation</span>
               <span>${effectiveAmount.toFixed(2)}</span>

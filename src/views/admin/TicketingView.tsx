@@ -483,7 +483,7 @@ export default function TicketingView() {
             </div>
           </div>
 
-          <div className="card bg-neutral-bg flex flex-wrap items-center gap-4 p-4">
+          <div className="card bg-neutral-100 flex flex-wrap items-center gap-4 p-4">
             <div className="flex flex-1 flex-col gap-1">
               <div className="flex flex-row items-center justify-between">
                 <label className="text-sm font-semibold">Select Performance</label>
@@ -550,7 +550,7 @@ export default function TicketingView() {
           </div>
 
           {showWarning && (
-            <div className="card border-warning-border bg-warning-bg text-warning-text p-4">
+            <div className="card border-yellow-200 bg-yellow-50 text-yellow-700 p-4">
               ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
             </div>
           )}
@@ -892,7 +892,7 @@ export default function TicketingView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold">Included Performances</label>
             {hasPurchases && (
-              <div className="card border-warning-border bg-warning-bg text-warning-text p-2 text-sm">
+              <div className="card border-yellow-200 bg-yellow-50 text-yellow-700 p-2 text-sm">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}

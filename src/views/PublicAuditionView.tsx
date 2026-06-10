@@ -211,7 +211,7 @@ export default function PublicAuditionView() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-label">Available Audition Times (Select all that apply)</label>
-                <div className="bg-neutral-bg grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border border-border p-4">
+                <div className="bg-neutral-100 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border border-border p-4">
                   {(settings.slots || []).map((slot) => {
                     const isChecked = requestedSlots.includes(slot);
                     return (

@@ -392,17 +392,6 @@
 
 /* Shared Presentational Components Style Specifications */
 
-/* SavingIndicator */
-.text-danger-status {
-  color: var(--color-danger-text) !important;
-}
-
-/* SeatingTextList */
-.text-list-container {
-  gap: var(--space-md);
-  padding: var(--space-md);
-}
-
 .row-text-entry {
   gap: var(--space-xs);
 }

@@ -34,7 +34,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
         <div className="composer-subject-field flex flex-col gap-1">
           <label className="text-label">Subject</label>
           <input
-            className={`card ${subjectWarning ? 'border-error' : ''}`}
+            className={`card ${subjectWarning ? 'border-red-200' : ''}`}
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
             disabled={messageType === 'SMS'}
@@ -63,7 +63,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
         <label className="text-label">Message Body (Markdown Supported)</label>
         <MarkdownEditor
           instanceRef={editorRef}
-          className={bodyWarning ? 'border-warning' : ''}
+          className={bodyWarning ? 'border-yellow-200' : ''}
           value={content}
           onChange={onContentChange}
           placeholder="Compose your message here..."

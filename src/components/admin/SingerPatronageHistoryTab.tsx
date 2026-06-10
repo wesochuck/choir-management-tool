@@ -109,7 +109,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
                   </div>
                   <div className="flex-col items-end text-right">
                     <span className="text-sm font-bold">${(item.amountPaidCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                    <span className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success' : 'text-danger'}`}>
+                    <span className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success-text' : 'text-danger-text'}`}>
                       {item.status}
                     </span>
                   </div>

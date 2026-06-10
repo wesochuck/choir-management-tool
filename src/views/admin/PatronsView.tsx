@@ -216,8 +216,8 @@ export default function PatronsView() {
 
       <AppCard title="Patron Directory">
         <div className="flex flex-col gap-4">
-          <div className="flex w-full flex-col flex-wrap items-center gap-4 max-md:flex-col max-md:items-stretch md:flex-row">
-            <div className="w-full min-w-[200px] flex-1">
+          <div className="flex flex-col gap-4 max-md:items-stretch md:flex-row md:items-end">
+            <div className="min-w-[200px] flex-1">
               <input 
                 type="text"
                 placeholder="Search by name or email..."
@@ -244,7 +244,7 @@ export default function PatronsView() {
                 placeholder="To"
               />
             </div>
-            <div className="min-w-[200px]">
+            <div className="min-w-[200px] flex-1">
               <select 
                 className="card h-10 w-full cursor-pointer border border-border px-3"
                 value={sortBy}
@@ -255,7 +255,7 @@ export default function PatronsView() {
                 <option value="lastDate">Sort by Last Transaction</option>
               </select>
             </div>
-            <button className="btn btn-ghost h-10 min-h-10" onClick={handleClearFilters}>
+            <button className="btn btn-ghost h-10 min-h-10 shrink-0" onClick={handleClearFilters}>
               Reset
             </button>
           </div>
