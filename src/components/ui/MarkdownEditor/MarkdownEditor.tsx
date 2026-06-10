@@ -54,7 +54,7 @@ export function MarkdownEditor({
         easyMDERef.current = null;
       }
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const classNames = [styles.wrapper];
   if (className) classNames.push(className);

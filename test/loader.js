@@ -25,7 +25,7 @@ export async function load(url, context, nextLoad) {
     return {
       format: 'module',
       shortCircuit: true,
-      source: 'export default {};',
+      source: `export default new Proxy({}, { get: (_, prop) => prop === '__esModule' ? undefined : String(prop) });`,
     };
   }
 

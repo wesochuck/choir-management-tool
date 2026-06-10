@@ -69,3 +69,36 @@ Scale is based on 8px increments for visual rhythm.
 - **Surgical Edits**: When refactoring, do not change unrelated layout logic.
 - **TDD Requirement**: Before removing inline styles from a complex view, ensure Behavioral Integration Tests are passing to prevent regressions.
 - **Token Usage**: If you find yourself using a hardcoded pixel value, check if a `--space-*` or `--font-size-*` token fits first.
+
+## 5. Component Library
+
+### Location
+All shared UI components live in `src/components/ui/` using CSS Modules. Each component is a directory with a `.tsx`, `.module.css`, and `.test.ts` file. Components are re-exported through `src/components/ui/index.ts`.
+
+### Usage
+```tsx
+import { Button, Card, Modal, Badge, Spinner, Tabs, TabPanel } from '../components/ui';
+```
+
+### Available Components
+
+**Tier 1 — Core Primitives** (thin HTML wrappers):
+`Button`, `Input`, `Select`, `Card`, `Badge`, `Modal`, `Spinner`, `Tabs` / `TabPanel`, `ProgressBar`
+
+**Tier 2 — Compositions** (combine Tier 1 primitives):
+`FormField`, `EmptyState`, `ConfirmDialog`, `Toast`, `Table`
+
+**Tier 3 — Replacements** (shadow existing `src/components/common/` components):
+`Pagination`, `PhotoUploader`, `MarkdownEditor`, `FloatingSaveBar`, `SavingIndicator`
+
+### CSS Modules
+Each component uses a co-located `.module.css` file for locally scoped styles. No global class name collisions. Design tokens from `index.css` `:root` are consumed via `var(--token)` in each module.
+
+### Conventions
+- Component files do NOT import `React` — React 19's automatic JSX transform handles JSX. Only named type imports from `react` are used.
+- Every component exports a named function (`export function Button(...)`) and a corresponding `XxxProps` interface.
+- Test files are `.test.ts` (not `.test.tsx`) and use `React.createElement(...)` instead of JSX (the project's tsconfig.test.json uses `erasableSyntaxOnly`).
+- Dynamic inline styles require a `// @allow-inline-style` annotation with an explanation.
+
+### Migration
+New features must use library components from `src/components/ui/`. Existing views migrate gradually. The `src/components/common/` and `src/components/admin/` directories contain legacy components that remain until all consumers migrate. No existing code was modified during the library creation sprint.

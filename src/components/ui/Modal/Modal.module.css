@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-md);
-  animation: fadeIn 0.2s ease-out;
+  animation: modal-fade-in 0.2s ease-out;
 }
 
 .modal {
@@ -20,7 +20,7 @@
   flex-direction: column;
   gap: var(--space-md);
   width: 100%;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .header {
@@ -68,12 +68,24 @@
   border-top: 1px solid var(--border);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+@keyframes modal-slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

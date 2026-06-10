@@ -10,7 +10,7 @@
   box-shadow: 0 -4px 12px rgb(0 0 0 / 8%);
   z-index: 100;
   gap: var(--space-md);
-  animation: slideUp 0.3s ease;
+  animation: save-bar-slide-up 0.3s ease;
 }
 
 .info {
@@ -27,9 +27,14 @@
   flex-shrink: 0;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+@keyframes save-bar-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @media (width <= 640px) {
@@ -37,6 +42,7 @@
     flex-direction: column;
     align-items: stretch;
   }
+
   .actions {
     flex-direction: column;
   }

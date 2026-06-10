@@ -8,9 +8,33 @@
   letter-spacing: 0.05em;
 }
 
-.performance { background-color: var(--color-performance-bg); color: var(--color-performance-text); }
-.rehearsal { background-color: var(--primary-light); color: var(--primary-deep); }
-.concert { background-color: var(--color-performance-bg); color: var(--color-performance-text); }
-.success { background-color: var(--color-success-bg); color: var(--color-success-text); }
-.danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
-.neutral { background-color: rgb(107 114 128 / 10%); color: #4b5563; border: 1px solid rgb(107 114 128 / 20%); }
+.performance {
+  background-color: var(--color-performance-bg);
+  color: var(--color-performance-text);
+}
+
+.rehearsal {
+  background-color: var(--primary-light);
+  color: var(--primary-deep);
+}
+
+.concert {
+  background-color: var(--color-performance-bg);
+  color: var(--color-performance-text);
+}
+
+.success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.danger {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.neutral {
+  background-color: rgb(107 114 128 / 10%);
+  color: #4b5563;
+  border: 1px solid rgb(107 114 128 / 20%);
+}

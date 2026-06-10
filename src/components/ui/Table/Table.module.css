@@ -44,9 +44,11 @@
   .table {
     display: block;
   }
+
   .header {
     display: none;
   }
+
   .row {
     display: block;
     padding: var(--space-md);
@@ -55,11 +57,13 @@
     margin-bottom: var(--space-sm);
     background-color: var(--surface);
   }
+
   .cell {
     display: flex;
     justify-content: space-between;
     padding: var(--space-xs) 0;
   }
+
   .cell::before {
     content: attr(data-label);
     font-weight: var(--font-weight-label);

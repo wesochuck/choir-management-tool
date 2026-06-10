@@ -22,15 +22,15 @@
   transition: background-color 0.2s, border-color 0.2s;
 }
 
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .btn:hover:not(:disabled) {
   background-color: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary-deep);
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .active {
