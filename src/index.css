@@ -126,3 +126,35 @@ body {
 @page {
   size: landscape;
 }
+
+@media (max-width: 640px) {
+  .roster-summary-sections {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 400px) {
+  .roster-summary-sections {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media print {
+  .print-only {
+    display: block !important;
+  }
+
+  table {
+    border: 1px solid black !important;
+  }
+
+  th,
+  td {
+    border: 1px solid black !important;
+    padding: 4px !important;
+  }
+
+  .badge-danger {
+    color: red !important;
+    font-weight: bold !important;
+  }
+}

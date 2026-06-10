@@ -280,14 +280,6 @@ export default function ReportsView() {
               </div>
 
               <div className="hidden print:block">
-                <style>{`
-                  @media print {
-                    .print-only { display: block !important; }
-                    table { border: 1px solid black !important; }
-                    th, td { border: 1px solid black !important; padding: 4px !important; }
-                    .badge-danger { color: red !important; font-weight: bold !important; }
-                  }
-                `}</style>
                 <h2 className="text-center">Attendance Report: {summary.performance.title}</h2>
                 <p className="text-center">Date: {new Date(summary.performance.date).toLocaleDateString()}</p>
               </div>

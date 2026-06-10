@@ -76,47 +76,6 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       }
       className="admin-settings-group"
     >
-      <style>{`
-        .voice-section-card {
-          transition: all 0.2s ease-in-out;
-          cursor: pointer;
-          border: 2px solid transparent;
-        }
-        .voice-section-card:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-sm);
-          opacity: 0.9;
-        }
-        .voice-section-card.selected {
-          border-color: var(--primary) !important;
-          box-shadow: 0 0 0 1px var(--primary);
-        }
-        .voice-part-card {
-          transition: all 0.2s ease-in-out;
-          cursor: pointer;
-          border: 1px solid var(--border);
-        }
-        .voice-part-card:hover {
-          border-color: var(--primary-deep);
-          background-color: var(--primary-light) !important;
-          transform: translateY(-1px);
-        }
-        .voice-part-card.selected {
-          border-color: var(--primary) !important;
-          background-color: var(--primary-light) !important;
-        }
-        @media (max-width: 640px) {
-          .roster-summary-sections {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-        }
-        @media (max-width: 400px) {
-          .roster-summary-sections {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
-
       {/* Section Subtotals */}
       <div 
         className="roster-summary-sections"
@@ -134,18 +93,14 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={sec.code} 
-              className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
+              className={`flex-col text-center cursor-pointer transition-all duration-200 border-2 hover:-translate-y-0.5 hover:shadow-sm hover:opacity-90 ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
               onClick={() => onVoicePartToggle?.(sec.code)}
-              // @allow-inline-style - dynamic border color
+              // @allow-inline-style - dynamic padding based on selection state
               style={{ 
-                textAlign: 'center', 
                 padding: 'calc(var(--space-md) - 2px)', 
                 borderRadius: 'var(--radius-md)', 
                 backgroundColor: 'var(--primary-light)',
-                gap: 'var(--space-xs)',
-                borderWidth: '2px',
-                borderStyle: 'solid',
-                borderColor: isSelected ? 'var(--primary)' : 'transparent'
+                gap: 'var(--space-xs)'
               }}
             >
               {/* @allow-inline-style - typography overrides */}
@@ -172,15 +127,12 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={vp.label} 
-              className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
+              className={`flex-col text-center cursor-pointer transition-all duration-200 border hover:border-primary-deep hover:bg-primary-light hover:-translate-y-px ${isSelected ? 'border-primary bg-primary-light' : 'border-border bg-[var(--bg)]'}`}
               onClick={() => onVoicePartToggle?.(vp.label)}
-              // @allow-inline-style - dynamic padding and borders based on selection state
+              // @allow-inline-style - dynamic padding based on selection state
               style={{ 
-                textAlign: 'center', 
                 borderRadius: 'var(--radius-sm)', 
-                backgroundColor: 'var(--bg)',
                 gap: '2px',
-                borderStyle: 'solid',
                 borderWidth: isSelected ? '2px' : '1px',
                 padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
               }}
