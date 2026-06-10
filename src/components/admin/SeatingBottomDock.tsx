@@ -194,7 +194,7 @@ export function SeatingBottomDock({
                   <span className="text-label lane-label" style={labelStyle}>
                     {label}
                   </span>
-                  <span className="badge badge-rehearsal lane-badge" style={badgeStyle}>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep lane-badge" style={badgeStyle}>
                     {list.length}
                   </span>
                 </div>
@@ -210,7 +210,7 @@ export function SeatingBottomDock({
                       <span className="flex-1 min-w-0 truncate" title={p.name}>
                         {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}
                       </span>
-                      <span className="badge badge-rehearsal singer-card-badge">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep singer-card-badge">
                         {p.voicePart}
                       </span>
                       {onRemoveRsvp && (

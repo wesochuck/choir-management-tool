@@ -15,7 +15,7 @@ export function UnassignedPrintSection({
   if (unassigned.length === 0) return null;
 
   return (
-    <div className="print-only unassigned-print-section">
+    <div className="hidden print:block unassigned-print-section">
       <div className="unassigned-print-badge">
         ⚠️ Unassigned Singers: {unassigned.length}
       </div>

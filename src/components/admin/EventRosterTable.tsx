@@ -82,7 +82,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                   <td data-label="Missed Rehearsals" className="text-center">
                     {missCounts && missCounts[p.id] !== undefined && missCounts[p.id] > 0 ? (
                       <span
-                        className="badge"
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider"
                         style={{ // @allow-inline-style - miss count color coding
                           fontSize: '9px',
                           padding: '2px 6px',

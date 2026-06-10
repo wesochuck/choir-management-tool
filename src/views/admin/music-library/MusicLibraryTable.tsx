@@ -110,13 +110,13 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                     <tbody>
                         {isLoading ? (
                             <tr>
-                                <td colSpan={9} className="admin-loading-state">
+                                <td colSpan={9} className="flex items-center justify-center py-12">
                                     <p>Loading library...</p>
                                 </td>
                             </tr>
                         ) : filteredPieces.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="admin-empty-state">
+                                <td colSpan={9} className="flex flex-col items-center justify-center py-12 text-text-muted">
                                     <p>No pieces found.</p>
                                 </td>
                             </tr>

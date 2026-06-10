@@ -5,7 +5,7 @@ interface EventsToolbarProps {
 
 export function EventsToolbar({ onBulkAdd, onAdd }: EventsToolbarProps) {
   return (
-    <div className="admin-view-actions">
+    <div className="flex items-center gap-2">
       <button onClick={onBulkAdd} className="btn btn-secondary">
         ⚡ Bulk Add Rehearsals
       </button>

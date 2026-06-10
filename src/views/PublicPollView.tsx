@@ -33,13 +33,11 @@ export default function PublicPollView() {
       try {
         const res = await pollService.getPollDetails(token);
         
-        // Resolve local tz if available
         let tz = 'America/New_York';
         try {
           const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
           if (setting?.value?.timezone) tz = setting.value.timezone;
         } catch {
-          // Fallback to default America/New_York
         }
 
         setPollData(res);
@@ -80,10 +78,10 @@ export default function PublicPollView() {
 
   if (status === 'loading') {
     return (
-      <div className="public-page public-page--primary">
-        <div className="public-loading-container">
-          <div className="public-loading-icon">🔄</div>
-          <h2 className="public-loading-title">Loading Poll Details...</h2>
+      <div className="flex flex-col min-h-screen w-screen bg-primary-light items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="text-4xl animate-spin">🔄</div>
+          <h2 className="text-primary-deep font-extrabold m-0">Loading Poll Details...</h2>
         </div>
       </div>
     );
@@ -91,18 +89,18 @@ export default function PublicPollView() {
 
   if (status === 'error' || !pollData) {
     return (
-      <div className="public-page public-page--error">
-        <AppCard className="public-content-sm public-error-card">
-          <div className="public-error-body">
-            <div className="public-error-icon">⚠️</div>
-            <h2 className="public-error-heading">Poll Request Failed</h2>
-            <p className="public-error-text">
+      <div className="flex flex-col min-h-screen w-screen bg-[#fef2f2] items-center justify-center">
+        <AppCard className="w-full max-w-[min(440px,calc(100vw-32px))] p-6 text-center border border-red-100">
+          <div className="flex flex-col gap-4 items-center">
+            <div className="text-5xl">⚠️</div>
+            <h2 className="m-0 text-red-800 font-extrabold">Poll Request Failed</h2>
+            <p className="text-text-muted leading-relaxed mt-1 m-0">
               {errorMessage}
             </p>
-            <div className="public-error-actions">
+            <div className="mt-4 w-full flex flex-col gap-2">
               <a
                 href="/login"
-                className="btn btn-primary public-error-link"
+                className="btn btn-primary inline-flex w-full justify-center items-center no-underline h-11 font-bold"
               >
                 Sign In to Member Portal
               </a>
@@ -117,48 +115,47 @@ export default function PublicPollView() {
   const hasResponded = selectedResponse !== '';
 
   return (
-    <div className="public-page public-page--primary public-page--top">
-      <div className="public-content-lg">
-        <AppCard className="public-main-card">
+    <div className="flex flex-col min-h-screen w-screen bg-primary-light items-center justify-start px-4 sm:px-6 py-6 lg:py-8">
+      <div className="m-auto w-full max-w-[540px]">
+        <AppCard className="w-full p-6 flex flex-col gap-6 border box-border">
           
-          <div className="flex-col" style-gap="lg">
-            <div className="public-header">
-              <div className="public-header-icon">📊</div>
-              <h1 className="public-header-title">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
+              <div className="text-5xl mb-2">📊</div>
+              <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
                 Engagement Poll
               </h1>
-              <p className="public-header-subtitle text-muted">
+              <p className="m-0 text-sm text-text-muted">
                 Quick question for our choir members.
               </p>
             </div>
 
-            <div className="public-info-box">
-              <h2 className="public-poll-question">
+            <div className="flex flex-col gap-4 p-4 bg-[var(--neutral-bg,#f8fafc)] rounded-lg border border-border">
+              <h2 className="m-0 text-lg font-bold text-center text-text-muted">
                 {poll.question}
               </h2>
 
               {poll.event && (
-                <div className="public-poll-event-divider">
-                  <span className="text-muted public-poll-event-label">Related Event</span>
-                  <div className="public-poll-event-title">{poll.event.title}</div>
-                  <div className="text-muted public-poll-event-date">
+                <div className="border-t border-border pt-2 mt-2 text-center">
+                  <span className="text-xs text-text-muted uppercase font-bold">Related Event</span>
+                  <div className="font-semibold">{poll.event.title}</div>
+                  <div className="text-xs text-text-muted">
                     {formatInTimezone(poll.event.date, timezone, { weekday: 'long', month: 'long', day: 'numeric' })}
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="public-section-gap-12">
-              <p className="text-muted public-poll-prompt">
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-text-muted text-center font-semibold m-0">
                 {hasResponded ? 'Your current response:' : 'Can you help or volunteer?'}
               </p>
               
-              <div className="public-poll-actions">
+              <div className="flex gap-2 w-full">
                 <button
                   onClick={() => handleSubmitResponse('Yes')}
                   disabled={isUpdating}
-                  className={`btn public-poll-btn ${selectedResponse !== 'Yes' ? 'public-poll-btn--unselected' : ''}`}
-                  // @allow-inline-style - dynamic colors based on selectedResponse state
+                  className={`btn flex-1 h-16 font-extrabold text-lg justify-center rounded-xl transition-all ${selectedResponse !== 'Yes' ? 'bg-[var(--primary-light,#f1f5f9)] text-text-muted border border-border' : ''}`}
                   style={selectedResponse === 'Yes' ? {
                     backgroundColor: 'var(--primary)',
                     color: 'white',
@@ -170,8 +167,7 @@ export default function PublicPollView() {
                 <button
                   onClick={() => handleSubmitResponse('No')}
                   disabled={isUpdating}
-                  className={`btn public-poll-btn ${selectedResponse !== 'No' ? 'public-poll-btn--unselected' : ''}`}
-                  // @allow-inline-style - dynamic colors based on selectedResponse state
+                  className={`btn flex-1 h-16 font-extrabold text-lg justify-center rounded-xl transition-all ${selectedResponse !== 'No' ? 'bg-[var(--primary-light,#f1f5f9)] text-text-muted border border-border' : ''}`}
                   style={selectedResponse === 'No' ? {
                     backgroundColor: '#ef4444',
                     color: 'white',
@@ -184,13 +180,13 @@ export default function PublicPollView() {
             </div>
 
             {hasResponded && (
-              <div className="public-success-banner">
+              <div className="text-center p-2 bg-green-50 rounded border border-green-200 text-green-800 font-semibold">
                 ✓ Your response has been recorded. Thank you!
               </div>
             )}
 
-            <div className="public-footer">
-              <a href="/login" className="text-muted public-footer-link">
+            <div className="border-t border-border pt-4 text-center">
+              <a href="/login" className="text-xs text-text-muted underline">
                 Go to Member Portal
               </a>
             </div>

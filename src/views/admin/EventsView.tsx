@@ -149,7 +149,7 @@ export default function EventsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="admin-view-header">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="admin-view-title">Event Management</h1>
         <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />
       </div>

@@ -179,7 +179,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 >
                   📥 Export CSV
                 </button>
-                <span className="badge badge-rehearsal text-sm px-4 py-1.5 rounded-full">
+                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
                   {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
                   {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
                   {rsvpFilter === 'No' && `Total: ${noCount} Declined`}

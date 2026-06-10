@@ -300,11 +300,11 @@ export default function AuditionsView() {
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <div className="admin-view-header">
+      <div className="flex items-center justify-between mb-6">
         <div className="admin-view-titles">
           {/* Page title is already handled by PageLayout in App.tsx */}
         </div>
-        <div className="admin-view-actions">
+        <div className="flex items-center gap-2">
           <button className="btn btn-primary" onClick={() => { setEditingAudition(null); setIsModalOpen(true); }}>
             Add Audition
           </button>
@@ -360,7 +360,7 @@ export default function AuditionsView() {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold">Target Performance</label>
               <select
-                className="form-select"
+                className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
                 value={settings.defaultPerformanceId || ''}
                 onChange={(e) => setSettings({ ...settings, defaultPerformanceId: e.target.value })}
               >
@@ -378,14 +378,14 @@ export default function AuditionsView() {
               <label className="flex items-center gap-1 text-sm font-semibold">
                 <span>Available Audition Times</span>
                 {(!settings.slots || settings.slots.length === 0) && (
-                  <span className="badge badge-rehearsal bg-danger-text text-white px-1.5 py-0.5 text-xs">Required</span>
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded font-semibold uppercase tracking-wider bg-danger-text text-white">Required</span>
                 )}
               </label>
 
               <div className="card p-4 bg-neutral-bg border border-gray-200">
                 <div className="flex flex-col gap-2">
                   <span className="text-label text-xs">Generate Slots</span>
-                  <div className="slots-generator-grid">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 items-end">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Date</span>
                       <input type="date" className="card p-2" value={genDate} onChange={e => setGenDate(e.target.value)} />
@@ -400,7 +400,7 @@ export default function AuditionsView() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Interval (mins)</span>
-                      <select className="form-select" value={genInterval} onChange={e => setGenInterval(e.target.value)}>
+                      <select className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2" value={genInterval} onChange={e => setGenInterval(e.target.value)}>
                         <option value="10">10</option>
                         <option value="15">15</option>
                         <option value="20">20</option>
@@ -416,7 +416,7 @@ export default function AuditionsView() {
 
               <div className="flex flex-row flex-wrap gap-2">
                 {settings.slots?.map(slot => (
-                  <div key={slot} className="badge flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-200">
+                  <div key={slot} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded">
                     <span>{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                     <button type="button" onClick={() => removeSlot(slot)} className="bg-none border-none cursor-pointer p-0 text-gray-500 text-base leading-none">
                       &times;
@@ -500,7 +500,7 @@ export default function AuditionsView() {
           <div className="flex flex-col gap-1 min-w-[240px]">
             <label className="text-sm font-semibold text-gray-500">Filter by Performance</label>
             <select
-              className="form-select"
+              className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
               value={performanceFilter}
               onChange={(e) => setPerformanceFilter(e.target.value)}
             >
@@ -540,7 +540,7 @@ export default function AuditionsView() {
       </div>
 
       <AppCard noPadding>
-        <div className="table-responsive admin-responsive-table">
+        <div className="overflow-x-auto w-full text-left">
           <table className="text-left w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-200 bg-bg">
@@ -582,7 +582,7 @@ export default function AuditionsView() {
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-row gap-2 items-center">
                         <span className="font-semibold">{audition.name}</span>
-                        {audition.voicePart && <span className="badge badge-rehearsal">{audition.voicePart}</span>}
+                        {audition.voicePart && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{audition.voicePart}</span>}
                       </div>
                       {audition.contact.includes('@') ? (
                         <button
@@ -629,7 +629,7 @@ export default function AuditionsView() {
                         {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     ) : (
-                      <span className="badge bg-gray-100 text-gray-700 px-2 py-1 text-xs rounded">
+                      <span className="inline-flex items-center px-2 py-1 text-xs rounded font-semibold uppercase tracking-wider bg-gray-100 text-gray-700">
                         {audition.requestedSlots && audition.requestedSlots.length > 0
                           ? `${audition.requestedSlots.length} slot${audition.requestedSlots.length > 1 ? 's' : ''} requested`
                           : 'No times requested'}
@@ -637,7 +637,7 @@ export default function AuditionsView() {
                     )}
                   </td>
                   <td data-label="Status" className="p-4">
-                    <span className={`badge ${audition.status === 'New' ? 'bg-blue-100 text-blue-700' : audition.status === 'Scheduled' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${audition.status === 'New' ? 'bg-blue-100 text-blue-700' : audition.status === 'Scheduled' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                       {audition.status}
                     </span>
                   </td>
@@ -727,7 +727,7 @@ export default function AuditionsView() {
                           setSchedCustom(slot);
                         }
                       }}
-                      className={`badge cursor-pointer px-3 py-2 border border-gray-200 bg-white text-gray-800 rounded font-medium transition-all duration-200 text-xs ${isSelected ? 'border-primary bg-primary-light text-primary-deep font-bold' : ''}`}
+                      className={`inline-flex items-center cursor-pointer px-3 py-2 border border-gray-200 bg-white text-gray-800 rounded font-medium transition-all duration-200 text-xs ${isSelected ? 'border-primary bg-primary-light text-primary-deep font-bold' : ''}`}
                     >
                       {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </button>
@@ -740,7 +740,7 @@ export default function AuditionsView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold">Select Confirmed Time Slot</label>
             <select
-              className="form-select"
+              className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
               value={schedSlot}
               onChange={(e) => setSchedSlot(e.target.value)}
             >

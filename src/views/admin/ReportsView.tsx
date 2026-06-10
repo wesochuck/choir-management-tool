@@ -203,7 +203,7 @@ export default function ReportsView() {
             </div>
           </div>
 
-          {error && <div className="badge badge-danger p-4 w-full">{error}</div>}
+          {error && <div className="bg-danger-bg text-danger-text p-4 w-full rounded text-xs font-semibold">{error}</div>}
 
           {isAttendanceLoading && (
             <div className="text-center p-8">
@@ -266,7 +266,7 @@ export default function ReportsView() {
                           <td className="p-4 border-b border-border font-semibold">{report.name}</td>
                           <td className="p-4 border-b border-border">{report.voicePart}</td>
                           <td className="p-4 border-b border-border text-center">
-                            <span className={report.absences >= 2 ? 'badge badge-danger' : ''}>
+                            <span className={report.absences >= 2 ? 'inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-danger-bg text-danger-text' : ''}>
                               {report.absences}
                             </span>
                           </td>
@@ -349,7 +349,7 @@ export default function ReportsView() {
                                         <td className="p-4 border-b border-border">{stat.piece.composer || '-'}</td>
                                         <td className="p-4 border-b border-border">{stat.piece.arranger || '-'}</td>
                                         <td className="p-4 border-b border-border text-center">
-                                            <span className="badge badge-performance">{stat.totalPerformances}</span>
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-performance-bg text-performance-text">{stat.totalPerformances}</span>
                                         </td>
                                         <td className="p-4 border-b border-border">
                                             {stat.lastPerformed ? stat.lastPerformed.toLocaleDateString() : '-'}

@@ -66,7 +66,7 @@ export default function RsvpDashboardView() {
           </div>
 
           <div className="flex flex-wrap gap-6 items-center">
-            <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'} text-[10px] px-2 py-0.5`}>
+            <span className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
               {selectedEvent.type}
             </span>
             <a 

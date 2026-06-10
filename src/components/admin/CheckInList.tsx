@@ -66,7 +66,7 @@ const CheckInRow: React.FC<{
 
   return (
     <div
-      className={`card admin-checkin-row checkin-row max-[700px]:p-3 max-[700px]:gap-2 ${isSecondaryOpen ? 'secondary-open' : ''}`}
+      className={`card flex items-center gap-4 p-3 border-b border-border hover:bg-primary-light/50 cursor-pointer max-[700px]:p-3 max-[700px]:gap-2 ${isSecondaryOpen ? 'secondary-open' : ''}`}
       onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
       style={{ /* @allow-inline-style */
         // @allow-inline-style - Dynamic row styling based on attendance state
@@ -84,10 +84,10 @@ const CheckInRow: React.FC<{
       }}
     >
       {/* Row Segment 1: Singer name, badges, and primary Present/Absent toggles */}
-      <div className="admin-checkin-top-row max-[700px]:items-start max-[700px]:gap-2.5">
-        {/* Left Section: Singer name and details */}
-        <div className="admin-checkin-singer">
-          <div className="admin-checkin-singer-header">
+        <div className="flex items-start gap-4 max-[700px]:flex-col max-[700px]:items-start max-[700px]:gap-2.5">
+          {/* Left Section: Singer name and details */}
+          <div className="flex flex-col gap-1 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
             <span
               onClick={(event) => {
                 event.stopPropagation();
@@ -97,7 +97,7 @@ const CheckInRow: React.FC<{
                 });
                 navigate(`/admin/roster?${query.toString()}`);
               }}
-              className="admin-checkin-name cursor-pointer underline max-[700px]:text-base max-[700px]:leading-[1.15]"
+              className="font-semibold cursor-pointer underline max-[700px]:text-base max-[700px]:leading-[1.15]"
               style={{ /* @allow-inline-style */
                 // @allow-inline-style - Dynamic name color based on attendance state
                 color: isPresent 
@@ -111,22 +111,22 @@ const CheckInRow: React.FC<{
               {item.name}
             </span>
             
-            <div className="admin-checkin-badges">
+            <div className="flex items-center gap-1.5">
               {item.rsvp === 'Yes' && (
                 <span 
-                  className="badge badge-rehearsal text-[9px] px-[6px] py-0.5 rounded"
+                  className="inline-flex items-center text-[9px] px-[6px] py-0.5 rounded font-semibold uppercase tracking-wider bg-primary-light text-primary-deep"
                 >
                   RSVP
                 </span>
               )}
               <span
-                className="badge text-[9px] px-[6px] py-0.5 rounded bg-primary-light text-primary-deep border border-[rgb(74_117_89_/_20%)]"
+                className="inline-flex items-center text-[9px] px-[6px] py-0.5 rounded font-semibold uppercase tracking-wider bg-primary-light text-primary-deep border border-[rgb(74_117_89_/_20%)]"
               >
                 {item.voicePart}
               </span>
               {missCounts && missCounts[item.profileId] !== undefined && missCounts[item.profileId] > 0 && (
                 <span
-                  className="badge text-[9px] px-[6px] py-0.5 rounded font-extrabold"
+                  className="inline-flex items-center text-[9px] px-[6px] py-0.5 rounded font-extrabold uppercase tracking-wider"
                   style={{ /* @allow-inline-style */
                     // @allow-inline-style - Dynamic colors based on miss threshold
                     backgroundColor: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '#fee2e2' : '#fef3c7',
@@ -152,7 +152,7 @@ const CheckInRow: React.FC<{
         </div>
 
         {/* Right Section: Attendance separated action buttons (Absent on left, Present on right) */}
-        <div className="admin-checkin-actions max-[700px]:flex-col max-[700px]:gap-1.5 max-[700px]:items-stretch">
+        <div className="flex items-center gap-2 max-[700px]:flex-col max-[700px]:gap-1.5 max-[700px]:items-stretch">
           <button
             type="button"
             aria-pressed={isAbsent}
@@ -160,7 +160,7 @@ const CheckInRow: React.FC<{
               event.stopPropagation();
               onSetAttendance(item.profileId, isAbsent ? 'Pending' : 'Absent');
             }}
-            className={`btn admin-checkin-absent-btn min-h-[36px] max-[700px]:min-h-[40px] ${isSecondaryOpen ? 'max-[700px]:inline-flex' : 'max-[700px]:hidden'}`}
+            className={`btn min-h-[36px] max-[700px]:min-h-[40px] ${isSecondaryOpen ? 'max-[700px]:inline-flex' : 'max-[700px]:hidden'}`}
             style={{ /* @allow-inline-style */
               // @allow-inline-style - Dynamic styling based on absence state
               backgroundColor: isAbsent ? '#ef4444' : 'var(--surface)',
@@ -179,7 +179,7 @@ const CheckInRow: React.FC<{
               event.stopPropagation();
               onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present');
             }}
-            className="btn admin-checkin-present-btn min-h-[36px] max-[700px]:min-h-[40px]"
+            className="btn min-h-[36px] max-[700px]:min-h-[40px]"
             style={{ /* @allow-inline-style */
               // @allow-inline-style - Dynamic styling based on presence state
               backgroundColor: isPresent ? 'var(--primary)' : 'var(--surface)',
@@ -207,11 +207,11 @@ const CheckInRow: React.FC<{
       </div>
 
       {/* Row Segment 2: Folder tracking & Edit Singer details */}
-      <div className={`admin-checkin-bottom-row w-full ${isSecondaryOpen ? 'max-[700px]:flex' : 'max-[700px]:hidden'}`} id={secondaryPanelId}>
-        <div className="admin-checkin-meta">
+      <div className={`flex items-center gap-4 w-full mt-2 pt-2 border-t border-border ${isSecondaryOpen ? 'max-[700px]:flex' : 'max-[700px]:hidden'}`} id={secondaryPanelId}>
+        <div className="flex items-center gap-4">
           {/* Folder Number */}
-          <div className="admin-checkin-folder-group">
-            <span className="admin-checkin-folder-label">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-text-muted font-semibold">
               Folder
             </span>
             <FolderInput
@@ -221,15 +221,15 @@ const CheckInRow: React.FC<{
           </div>
 
           {/* Folder Returned Checkbox */}
-          <label className="admin-checkin-returned-label" onClick={(event) => event.stopPropagation()}>
+          <label className="flex items-center gap-1.5 cursor-pointer select-none" onClick={(event) => event.stopPropagation()}>
             <input
               type="checkbox"
               checked={item.folderReturned}
               onChange={(e) => onUpdateFolder(item.profileId, item.folderNumber, e.target.checked)}
-              className="admin-checkin-returned-checkbox"
+              className="w-4 h-4 accent-primary cursor-pointer"
             />
             <span
-              className="admin-checkin-returned-text"
+              className="text-xs font-bold tracking-wider"
               style={{ /* @allow-inline-style */
                 // @allow-inline-style - Dynamic text color based on returned state
                 color: item.folderReturned ? 'var(--primary)' : 'var(--text-muted)'
@@ -247,7 +247,7 @@ const CheckInRow: React.FC<{
             event.stopPropagation();
             onEdit(item.profileId);
           }}
-          className="admin-checkin-edit-btn"
+          className="btn btn-ghost btn-sm text-xs ml-auto"
         >
           ✏️ Edit
         </button>

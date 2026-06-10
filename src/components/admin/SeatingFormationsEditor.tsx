@@ -131,7 +131,7 @@ function FormationRow({
             {formation.name || 'New Formation'}
           </span>
           <span
-            className="badge bg-[var(--bg-light)] text-text-muted text-xs px-2 py-0.5 rounded-full border border-border font-semibold"
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--bg-light)] text-text-muted border border-border"
           >
             {isRows ? 'Horizontal Rows' : 'Vertical Columns'}
           </span>
@@ -459,7 +459,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
     <div className="flex-col gap-8 pb-16">
       {message && (
         <div 
-          className={`badge self-start px-2 py-1 ${message.startsWith('Error') ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-sky-100 text-sky-700 border border-sky-200'}`}
+          className={`inline-flex items-center rounded text-xs font-semibold uppercase tracking-wider self-start px-2 py-1 ${message.startsWith('Error') ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-sky-100 text-sky-700 border border-sky-200'}`}
         >
           {message}
         </div>

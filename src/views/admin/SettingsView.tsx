@@ -142,46 +142,46 @@ export default function SettingsView() {
     }
   };
 
-  if (isLoading) return <div className="admin-settings-container">Loading system settings...</div>;
+  if (isLoading) return <div className="p-6 max-w-7xl mx-auto">Loading system settings...</div>;
 
   return (
-    <div className="flex-col admin-settings-container">
-      <div className="admin-view-header">
-        <h1 className="admin-header-title">System Settings</h1>
+    <div className="flex-col p-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold">System Settings</h1>
       </div>
 
-      {message && <div className="badge badge-rehearsal admin-badge-inline">{message}</div>}
+      {message && <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-deep">{message}</div>}
 
       <AppCard title="Choir Name">
-        <div className="flex-col admin-settings-field">
-          <input
-            id="choir-name"
-            type="text"
-            value={choirName}
-            onChange={(event) => setChoirName(event.target.value)}
-            placeholder="e.g. Downtown Community Chorale"
-            className="card admin-settings-input-lg"
-          />
-          <p className="text-muted admin-settings-hint">
+          <div className="flex flex-col gap-1">
+            <input
+              id="choir-name"
+              type="text"
+              value={choirName}
+              onChange={(event) => setChoirName(event.target.value)}
+              placeholder="e.g. Downtown Community Chorale"
+              className="card w-full max-w-lg rounded-md border-border text-sm p-2"
+            />
+            <p className="text-muted text-xs text-text-muted">
             Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
           </p>
         </div>
       </AppCard>
 
       <AppCard title="Organization Logo">
-        <div className="flex-col admin-settings-field">
+        <div className="flex flex-col gap-1">
           {logoUrl && (
-            <div className="admin-settings-logo-preview">
-              <img src={logoUrl} alt="Organization logo preview" className="admin-settings-logo-img" />
+            <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-border">
+              <img src={logoUrl} alt="Organization logo preview" className="w-full h-full object-cover" />
             </div>
           )}
-          <div className="flex-row admin-settings-logo-actions">
-            <label className="btn btn-secondary admin-settings-logo-upload-label">
+          <div className="flex items-center gap-2 mt-2">
+            <label className="btn btn-secondary text-sm text-primary cursor-pointer hover:underline">
               {logoUrl ? 'Replace Logo' : 'Upload Logo'}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                className="admin-settings-logo-file-input"
+                className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
@@ -209,35 +209,35 @@ export default function SettingsView() {
               </button>
             )}
           </div>
-          <p className="text-muted admin-settings-hint">
+          <p className="text-muted text-xs text-text-muted">
             Displayed on public pages (auditions, ticketing, donations) and the singer dashboard. Recommended size: 400px wide or larger. Accepted formats: PNG, JPG, SVG, WebP.
           </p>
         </div>
       </AppCard>
 
       <AppCard title="Public Homepage URL">
-        <div className="flex-col admin-settings-field">
+        <div className="flex flex-col gap-1">
           <input
             id="homepage-url"
             type="url"
             value={homepageUrl}
             onChange={(event) => setHomepageUrl(event.target.value)}
             placeholder="e.g. https://www.mychoir.org"
-            className="card admin-settings-input-lg"
+            className="card w-full max-w-lg rounded-md border-border text-sm p-2"
           />
-          <p className="text-muted admin-settings-hint">
+          <p className="text-muted text-xs text-text-muted">
             The main public website address where applicants are redirected after submitting their audition sheet successfully.
           </p>
         </div>
       </AppCard>
 
       <AppCard title="Choir Timezone">
-        <div className="flex-col admin-settings-field">
+        <div className="flex flex-col gap-1">
           <select
             id="choir-timezone"
             value={timezone}
             onChange={(event) => setTimezone(event.target.value)}
-            className="card admin-settings-input-lg"
+            className="card w-full max-w-lg rounded-md border-border text-sm p-2"
             // @allow-inline-style - explicit pointer cursor and dynamic background color overrides
             style={{
               backgroundColor: 'var(--card-bg, #ffffff)',
@@ -260,7 +260,7 @@ export default function SettingsView() {
               ))}
             </optgroup>
           </select>
-          <p className="text-muted admin-settings-hint">
+          <p className="text-muted text-xs text-text-muted">
             This timezone controls all event scheduling, display clocks, and email/SMS automatic reminders.
           </p>
         </div>
@@ -331,25 +331,25 @@ function QueueWebhookSettings() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (isLoading) return <div className="text-muted admin-settings-loading">Loading queue configurations...</div>;
+  if (isLoading) return <div className="text-muted">Loading queue configurations...</div>;
 
   return (
     <AppCard title="Email Queue Webhook">
-      <div className="flex-col admin-settings-group">
-        <p className="text-muted admin-settings-hint">
+      <div className="flex flex-col gap-4">
+        <p className="text-muted text-xs text-text-muted">
           PocketHost triggers this URL to process single-recipient messages sequentially in the background.
         </p>
 
-        <div className="flex-col admin-settings-field">
+        <div className="flex flex-col gap-1">
           <label className="text-label" htmlFor="webhook-url">Target Webhook URL</label>
-          <div className="flex-row admin-settings-inline-row">
+          <div className="flex items-center gap-2">
             {/* @allow-inline-style - layout overrides */}
             <input
               id="webhook-url"
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="card admin-settings-input-full"
+              className="card w-full rounded-md border-border text-sm p-2"
               // @allow-inline-style - dynamic flex growth and background color overlay
               style={{
                 flex: 1,
@@ -370,8 +370,8 @@ function QueueWebhookSettings() {
           </div>
         </div>
 
-        <div className="flex-row admin-settings-terminal-row">
-          <div className="text-muted admin-settings-terminal-text">
+        <div className="flex items-center justify-between">
+          <div className="text-muted text-xs text-text-muted">
             <strong>Status:</strong> {token ? `Active (${token.substring(0, 8)}...)` : 'Unassigned'}
           </div>
           <button

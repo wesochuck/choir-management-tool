@@ -55,29 +55,29 @@ export default function ResetPasswordView() {
   };
 
   return (
-    <div className="public-page public-page--default">
-      <AppCard className="public-content-narrow">
-        <h1 className="text-display public-heading-center">Reset Password</h1>
+    <div className="flex flex-col min-h-screen w-screen items-center justify-center p-4 bg-bg">
+      <AppCard className="w-full max-w-[min(400px,calc(100vw-32px))]">
+        <h1 className="text-display text-center mb-8">Reset Password</h1>
 
         {!token ? (
-          <div className="public-error-body">
-            <p className="public-form-error">
+          <div className="flex flex-col gap-4 items-center">
+            <p className="text-danger-text text-xs m-0">
               ⚠️ Missing or invalid password reset token.
             </p>
-            <p className="text-muted text-xs public-heading-reset">
+            <p className="text-text-muted text-xs m-0">
               The reset link you followed is invalid or has expired. Please go back to the login screen and request a new password reset link.
             </p>
             <Button
               variant="primary"
-              className="public-submit-btn public-margin-top-sm"
+              className="w-full mt-2"
               onClick={() => navigate('/login')}
             >
               Go to Login
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="public-form">
-            <p className="login-instructions">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <p className="m-0 text-center text-sm text-text-muted leading-relaxed">
               Please enter your new password below. It must be at least 8 characters.
             </p>
 
@@ -88,7 +88,7 @@ export default function ResetPasswordView() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="public-form-input"
+                className="px-3 h-11 w-full border border-border rounded-lg bg-surface text-text font-sans text-base transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                 disabled={isLoading || !!success}
               />
             </FormField>
@@ -100,19 +100,19 @@ export default function ResetPasswordView() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="public-form-input"
+                className="px-3 h-11 w-full border border-border rounded-lg bg-surface text-text font-sans text-base transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                 disabled={isLoading || !!success}
               />
             </FormField>
 
-            {error && <p className="public-form-error">{error}</p>}
-            {success && <p className="public-form-success">{success}</p>}
+            {error && <p className="text-danger-text text-xs m-0">{error}</p>}
+            {success && <p className="text-primary text-xs font-semibold m-0">{success}</p>}
 
             <Button
               type="submit"
               disabled={isLoading || !!success}
               variant="primary"
-              className="public-submit-btn--md"
+              className="w-full mt-4"
             >
               {isLoading ? 'Resetting password...' : 'Reset Password'}
             </Button>
@@ -120,7 +120,7 @@ export default function ResetPasswordView() {
             {!success && (
               <button
                 type="button"
-                className="public-back-link"
+                className="self-center border-none bg-none underline cursor-pointer h-auto p-0 text-xs text-text-muted hover:text-text"
                 onClick={() => navigate('/login')}
               >
                 Cancel and return to Login

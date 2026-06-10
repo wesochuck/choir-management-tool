@@ -73,7 +73,7 @@ export const SortableSetListItem: React.FC<Props> = ({
           <div className="flex-row items-center gap-2 flex-wrap">
             <span className="font-semibold text-[var(--primary-deep)] text-[0.95rem]">⏸️ {titleText}</span>
             {displayDuration && (
-              <span className="badge badge-rehearsal text-[0.75rem] px-[8px] py-[2px] bg-[var(--surface)]">
+              <span className="inline-flex items-center px-[8px] py-[2px] rounded text-[0.75rem] font-semibold uppercase tracking-wider bg-[var(--surface)] text-primary-deep">
                 {displayDuration}
               </span>
             )}
@@ -111,7 +111,7 @@ export const SortableSetListItem: React.FC<Props> = ({
               </span>
             )}
             {item.soloSmallGroup && (
-              <span className="badge text-[0.75rem] px-[8px] py-[2px] bg-[rgb(74_124_89_/_8%)] text-[var(--primary-deep)] border border-[rgb(74_124_89_/_15%)] rounded-full font-semibold inline-flex items-center gap-1">
+              <span className="text-[0.75rem] px-[8px] py-[2px] bg-[rgb(74_124_89_/_8%)] text-[var(--primary-deep)] border border-[rgb(74_124_89_/_15%)] rounded-full font-semibold inline-flex items-center gap-1">
                 🎤 Solo / Small Group
               </span>
             )}

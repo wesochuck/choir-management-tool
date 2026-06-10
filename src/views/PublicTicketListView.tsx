@@ -10,7 +10,6 @@ import { Spinner } from '../components/ui/Spinner/Spinner';
 import PublicLogo from '../components/common/PublicLogo';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
-import './PublicForms.css';
 
 export default function PublicTicketListView() {
   useDocumentTitle('Ticket Sales');
@@ -49,9 +48,9 @@ export default function PublicTicketListView() {
 
   if (loading) {
     return (
-      <div className="flex-col pub-style-1">
+      <div className="flex flex-col min-h-screen justify-center items-center w-screen">
         <Spinner size="medium" />
-        <p className="text-muted">Loading events...</p>
+        <p className="text-text-muted">Loading events...</p>
       </div>
     );
   }
@@ -59,58 +58,57 @@ export default function PublicTicketListView() {
   const hasContent = events.length > 0 || bundles.length > 0;
 
   return (
-    <div className="flex-col pub-style-30">
+    <div className="flex flex-col min-h-screen justify-start items-center w-screen p-4">
       <PublicLogo />
-      <AppCard className="pub-style-3">
-        <div className="flex-col pub-style-4">
-          <div className="flex-col pub-style-31">
-            {choirName && <span className="text-xs text-muted pub-style-32">{choirName}</span>}
-            <h1 className="text-display pub-style-6">Ticket Purchases</h1>
+      <AppCard className="w-full max-w-[720px]">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-0.5">
+            {choirName && <span className="text-xs text-text-muted font-bold uppercase tracking-wider">{choirName}</span>}
+            <h1 className="text-display m-0">Ticket Purchases</h1>
           </div>
-          <p className="text-muted pub-style-6">
+          <p className="text-text-muted m-0">
             Select an upcoming performance or a season pass to purchase tickets online.
           </p>
         </div>
 
         {!hasContent ? (
-          <div className="flex-col pub-style-7">
-            <div className="pub-style-8">🎟️</div>
-            <p className="text-body pub-style-9">
+          <div className="flex flex-col gap-4 py-8 text-center">
+            <div className="text-5xl">🎟️</div>
+            <p className="text-body m-0 font-medium">
               No tickets are currently open for online purchase.
             </p>
-            <p className="text-muted text-sm">Please check back later or contact the administrator.</p>
+            <p className="text-text-muted text-sm">Please check back later or contact the administrator.</p>
           </div>
         ) : (
-          <div className="flex-col pub-style-22">
-            {/* Season Passes / Bundles Section */}
+          <div className="flex flex-col gap-6">
             {bundles.length > 0 && (
-              <div className="flex-col pub-style-23">
-                <h2 className="pub-style-45">
+              <div className="flex flex-col gap-4">
+                <h2 className="m-0 border-b-2 border-border pb-1 text-primary-deep">
                   Season Passes
                 </h2>
                 {bundles.map(bundle => (
-                  <div key={bundle.id} className="card flex-responsive pub-style-46">
-                    <div className="flex-col pub-style-24">
-                      <span className="badge badge-success pub-style-47">Best Value</span>
-                      <h3 className="pub-style-18">{bundle.title}</h3>
-                      <p className="text-sm text-body pub-style-6">
+                  <div key={bundle.id} className="card flex flex-col md:flex-row p-4 justify-between items-center gap-4 border-2 border-primary bg-primary-light">
+                    <div className="flex-1 flex flex-col gap-1">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text self-start">Best Value</span>
+                      <h3 className="m-0 text-primary-deep">{bundle.title}</h3>
+                      <p className="text-sm text-body m-0">
                         Discounted package for all included concerts.
                       </p>
                       {bundle.expand?.events && (
-                        <div className="text-muted text-xs pub-style-48">
+                        <div className="text-text-muted text-xs mt-1">
                           <strong>Includes:</strong> {bundle.expand.events.map(e => e.title).join(', ')}
                         </div>
                       )}
                     </div>
-                    <div className="flex-col pub-style-49">
-                      <span className="pub-style-50">
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xl font-bold text-primary-deep">
                         ${(bundle.priceCents / 100).toFixed(2)}
                       </span>
                       <Button
                         as={Link}
                         to={`/tickets/bundle/${bundle.id}`}
                         variant="primary"
-                        className="pub-style-51"
+                        className="no-underline text-center whitespace-nowrap"
                       >
                         Buy Season Pass
                       </Button>
@@ -120,23 +118,22 @@ export default function PublicTicketListView() {
               </div>
             )}
 
-            {/* Individual Concerts Section */}
             {events.length > 0 && (
-              <div className="flex-col pub-style-23">
-                <h2 className="pub-style-52">
+              <div className="flex flex-col gap-4">
+                <h2 className="m-0 border-b-2 border-border pb-1">
                   Concert Tickets
                 </h2>
                 {events.map(event => (
-                  <div key={event.id} className="card flex-responsive pub-style-53">
-                    <div className="flex-col pub-style-24">
+                  <div key={event.id} className="card flex flex-col md:flex-row p-4 justify-between items-center gap-4">
+                    <div className="flex-1 flex flex-col gap-1">
                       {event.eventGraphic && (
                         <img
                           src={pb.files.getURL(event, event.eventGraphic)}
-                          alt={event.title} className="pub-style-54"
+                          alt={event.title} className="w-full max-h-44 object-cover rounded-sm mb-1"
                         />
                       )}
-                      <h3 className="pub-style-6">{event.title}</h3>
-                      <span className="text-muted text-sm">
+                      <h3 className="m-0">{event.title}</h3>
+                      <span className="text-text-muted text-sm">
                         {formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     </div>
@@ -144,7 +141,7 @@ export default function PublicTicketListView() {
                       as={Link}
                       to={`/tickets/${event.id}`}
                       variant="primary"
-                      className="pub-style-51"
+                      className="no-underline text-center whitespace-nowrap"
                     >
                       Buy Tickets
                     </Button>
@@ -155,15 +152,15 @@ export default function PublicTicketListView() {
           </div>
         )}
 
-        <div className="flex-col pub-style-63 pub-mt-xl pub-border-dashed pub-pt-lg">
-          <div className="flex-col pub-style-31 pub-text-center">
-            <h2 className="pub-style-18">{donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}</h2>
-            <p className="text-body pub-max-w-480">
+        <div className="w-full p-4 bg-neutral-bg rounded-lg mt-8 border-t-2 border-dashed border-border pt-6">
+          <div className="flex flex-col gap-0.5 text-center">
+            <h2 className="m-0 text-primary-deep">{donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}</h2>
+            <p className="text-body max-w-[480px] mx-auto">
               {donationSettings?.description ?? DEFAULT_DONATION_SETTINGS.description}
             </p>
           </div>
-          <div className="flex-row pub-justify-center pub-mt-md">
-            <Button as={Link} to="/donate" variant="primary" className="pub-min-w-200">
+          <div className="flex flex-row justify-center mt-4">
+            <Button as={Link} to="/donate" variant="primary" className="min-w-[200px]">
               Make a Donation
             </Button>
           </div>

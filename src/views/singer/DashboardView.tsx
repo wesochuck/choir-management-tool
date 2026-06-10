@@ -200,7 +200,7 @@ export default function DashboardView() {
       <div className="py-4">
         {nextEvent && (
           <section className="hidden max-md:block max-md:mb-6" aria-label="Singer quick actions">
-            <AppCard className="card-glass">
+            <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6">
               <div className="flex flex-col gap-2">
                 <div className="text-[0.72rem] font-extrabold tracking-widest uppercase text-text-muted">Next up</div>
                 <div className="text-lg font-extrabold text-text leading-tight">{nextEvent.title || nextEvent.type}</div>
@@ -294,7 +294,7 @@ export default function DashboardView() {
             ))}
 
             {upcomingEvents.length === 0 && (
-              <div className="card card-glass admin-empty-state">
+              <div className="card bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6 flex flex-col items-center justify-center py-12 text-text-muted">
                 <p className="text-muted">No upcoming events at this time.</p>
               </div>
             )}
@@ -305,7 +305,7 @@ export default function DashboardView() {
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
-              <AppCard className="card-glass bg-primary-light" title="📊 Quick Polls">
+              <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6 bg-primary-light" title="📊 Quick Polls">
                 <div className="flex-col gap-2">
                   {activePolls.map(poll => (
                     <div key={poll.id} className="card p-2 flex flex-col gap-1 shadow-none border border-border">
@@ -341,7 +341,7 @@ export default function DashboardView() {
             )}
 
             {/* Recent Announcements Widget */}
-            <AppCard className="card-glass" title="✉️ Bulletins">
+            <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6" title="✉️ Bulletins">
               {isAnnouncementsLoading ? (
                 <div className="text-muted text-center p-4">Loading bulletins...</div>
               ) : announcements.length > 0 ? (
@@ -371,7 +371,7 @@ export default function DashboardView() {
             </AppCard>
 
             {/* Resources Widget */}
-            <AppCard className="card-glass" title="📂 Resources">
+            <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6" title="📂 Resources">
               {isResourcesLoading ? (
                 <div className="text-muted text-center p-4">Loading resources...</div>
               ) : resources.length > 0 ? (

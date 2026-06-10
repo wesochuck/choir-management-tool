@@ -211,10 +211,10 @@ export default function RosterView() {
 
   return (
     <div className="flex flex-col gap-6 pb-8">
-      <div className="admin-view-header">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="admin-view-title">Global Roster</h1>
         {activeTab === 'roster' && (
-          <div className="admin-view-actions">
+          <div className="flex items-center gap-2">
             <button onClick={handleExportCSV} className="btn btn-secondary">Export Roster</button>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">Import CSV</button>
             <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>

@@ -63,12 +63,12 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
     <AppCard 
       title="Voice Part Balance"
       actions={
-        <div className="admin-flex-row-gap-sm">
-          <span className="badge badge-rehearsal admin-roster-summary-badge-singer">
+        <div className="flex gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
             {singerTotal} Singers
           </span>
           {staffTotal > 0 && (
-            <span className="badge badge-muted admin-roster-summary-badge-staff">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-gray-500/10 text-gray-600 border border-gray-500/20">
               {staffTotal} Staff
             </span>
           )}

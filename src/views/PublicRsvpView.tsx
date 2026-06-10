@@ -43,7 +43,6 @@ export default function PublicRsvpView() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   
-  // RSVP State
   const [selectedRsvp, setSelectedRsvp] = useState<'Yes' | 'No'>('Yes');
   const [dbRsvp, setDbRsvp] = useState<'Yes' | 'No' | 'Pending'>('Pending');
   const [rsvpNote, setRsvpNote] = useState("");
@@ -60,7 +59,6 @@ export default function PublicRsvpView() {
     reason: '',
   });
 
-  // Loaded Details
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [rehearsals, setRehearsals] = useState<EventDetails[]>([]);
@@ -78,7 +76,6 @@ export default function PublicRsvpView() {
 
     const loadDetails = async () => {
       try {
-        // Fetch Event, Profile, and Timezone Details securely without auth
         const res = await pb.send<{
           event: EventDetails;
           profile: ProfileDetails;
@@ -95,13 +92,11 @@ export default function PublicRsvpView() {
           body: { token }
         });
 
-        // Resolve local tz if available
         let tz = 'America/New_York';
         try {
           const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
           if (setting?.value?.timezone) tz = setting.value.timezone;
         } catch {
-          // Fallback to default America/New_York
         }
 
         setEvent(res.event);
@@ -116,18 +111,15 @@ export default function PublicRsvpView() {
           reason: '',
         });
 
-        // Determine default selection and whether we skip confirmation
         if (initialRsvp) {
           setSelectedRsvp(initialRsvp);
         } else if (res.currentRsvp !== 'Pending') {
           setSelectedRsvp(res.currentRsvp);
         }
 
-        // If the user has already recorded a response, skip initial confirmation
         if (res.currentRsvp !== 'Pending') {
           setIsConfirmed(true);
         } else if (initialRsvp) {
-          // If they came from a specific button in email but haven't saved yet, show confirmation
           setIsConfirmed(false);
         }
 
@@ -145,14 +137,13 @@ export default function PublicRsvpView() {
   const handleConfirmRsvp = async (rsvpVal: 'Yes' | 'No', note: string = rsvpNote) => {
     if (!token || isUpdating || !event) return;
 
-    // Client-side validation
     if (event.type === 'Rehearsal' && rsvpVal === 'No' && !note.trim()) {
       await dialog.showMessage({
         title: 'Note Required',
         message: 'Please include a note explaining why you cannot attend this rehearsal.',
         variant: 'danger',
       });
-      setSelectedRsvp('No'); // Ensure the note field is shown
+      setSelectedRsvp('No');
       return;
     }
 
@@ -200,34 +191,34 @@ export default function PublicRsvpView() {
   const renderEventCard = (titleClass?: string) => {
     if (!event) return null;
     return (
-      <div className="rsvp-event-card">
-        <span className={`badge ${event.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'} rsvp-event-badge`}>
+      <div className="flex flex-col gap-2 bg-neutral-bg border border-border p-4 sm:p-5 rounded-xl">
+        <span className={`inline-flex items-center self-start text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${event.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
           {event.type}
         </span>
-        <h2 className={`text-headline rsvp-event-title ${titleClass || ''}`}>
+        <h2 className={`text-headline m-0 text-lg font-bold ${titleClass || ''}`}>
           {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
         </h2>
         
-        <div className="rsvp-event-meta">
-          <div className="rsvp-event-meta-row">
+        <div className="flex flex-col gap-1.5 text-sm text-text-muted mt-1">
+          <div className="flex gap-2 items-center">
             <span>📅</span>
             <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
           </div>
-          <div className="rsvp-event-meta-row">
+          <div className="flex gap-2 items-center">
             <span>⏰</span>
             <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
           </div>
-          <div className="rsvp-event-meta-row rsvp-event-meta-row--top">
+          <div className="flex gap-2 items-start">
             <span>📍</span>
             <span>
               <strong>{event.expand?.venue?.name || event.location}</strong>
-              {event.expand?.venue?.address && <span className="rsvp-event-address">{event.expand?.venue?.address}</span>}
+              {event.expand?.venue?.address && <span className="block text-xs text-text-muted mt-0.5">{event.expand?.venue?.address}</span>}
             </span>
           </div>
         </div>
 
         {event.details && (
-          <div className="rsvp-event-details">
+          <div className="border-t border-border pt-2.5 mt-2.5 text-xs text-text-muted leading-relaxed whitespace-pre-wrap">
             {event.details}
           </div>
         )}
@@ -239,39 +230,39 @@ export default function PublicRsvpView() {
     if (rehearsals.length === 0) return null;
 
     return (
-      <div className="rsvp-rehearsals-container">
+      <div className="border border-border rounded-xl overflow-hidden mt-1">
         <button 
           onClick={() => setShowRehearsals(!showRehearsals)}
-          className="rsvp-rehearsals-toggle"
+          className="w-full px-4 py-3 flex justify-between items-center bg-neutral-bg border-none cursor-pointer text-left"
         >
-          <h3 className="text-label rsvp-rehearsals-heading">
+          <h3 className="text-label font-extrabold uppercase text-primary-deep text-xs tracking-wider m-0">
             📅 Rehearsal Schedule ({rehearsals.length})
           </h3>
-          <span className={`rsvp-rehearsals-arrow ${showRehearsals ? 'rsvp-rehearsals-arrow--open' : ''}`}>
+          <span className={`text-xs text-text-muted transition-transform ${showRehearsals ? 'rotate-180' : ''}`}>
             ▼
           </span>
         </button>
 
         {showRehearsals && (
-          <div className="rsvp-rehearsals-list">
+          <div className="flex flex-col gap-2 p-3 bg-surface border-t border-border">
             {rehearsals.map((reh) => {
               return (
-                <div key={reh.id} className="rsvp-rehearsal-item">
-                  <div className="rsvp-rehearsal-info">
-                    <span className="rsvp-rehearsal-date">
+                <div key={reh.id} className="flex justify-between items-center bg-bg border border-border p-2 px-3 rounded-lg text-xs">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-bold">
                       {formatInTimezone(reh.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })}
                     </span>
-                    <span className="text-muted rsvp-rehearsal-venue">
+                    <span className="text-text-muted text-[0.7rem]">
                       📍 {reh.expand?.venue?.name || 'Rehearsal Venue'}
                     </span>
                   </div>
-                  <span className="text-muted rsvp-rehearsal-time">
+                  <span className="text-text-muted font-medium">
                     {formatInTimezone(reh.date, timezone, { hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
               );
             })}
-            <p className="text-muted rsvp-rehearsal-hint">
+            <p className="text-text-muted text-xs text-center mt-1 m-0">
               Need to report a rehearsal absence? Please use your singer dashboard.
             </p>
           </div>
@@ -283,18 +274,18 @@ export default function PublicRsvpView() {
   const renderNoteSection = (textareaClass?: string) => {
     if (event?.type !== 'Rehearsal' || selectedRsvp !== 'No') return null;
     return (
-      <div className="rsvp-note-section">
-        <label className="rsvp-note-label">
+      <div className="flex flex-col gap-2 mb-2 text-left">
+        <label className="text-sm font-bold text-text-muted">
           Why are you unable to attend?
         </label>
         <textarea
           value={rsvpNote}
           onChange={(e) => setRsvpNote(e.target.value)}
           placeholder="Briefly let the admins know why you cannot make this rehearsal."
-          className={`rsvp-textarea ${textareaClass || ''}`}
+          className={`w-full min-h-[100px] p-3 rounded-lg border border-border text-sm font-inherit resize-y box-border ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
           maxLength={1000}
         />
-        <p className="rsvp-note-hint">
+        <p className="text-xs text-text-muted m-0">
           This note is visible to choir admins.
         </p>
       </div>
@@ -303,11 +294,11 @@ export default function PublicRsvpView() {
 
   if (status === 'loading') {
     return (
-      <div className="public-page public-page--primary">
-        <div className="public-loading-container">
-          <div className="public-loading-icon">🔄</div>
-          <h2 className="public-loading-title">Loading Secure RSVP Details...</h2>
-          <p className="text-muted public-loading-subtitle">Preparing event context, please wait.</p>
+      <div className="flex flex-col min-h-screen w-screen bg-primary-light items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="text-4xl animate-spin">🔄</div>
+          <h2 className="text-primary-deep font-extrabold m-0">Loading Secure RSVP Details...</h2>
+          <p className="text-text-muted m-0">Preparing event context, please wait.</p>
         </div>
       </div>
     );
@@ -315,24 +306,24 @@ export default function PublicRsvpView() {
 
   if (status === 'error' || !event || !profile) {
     return (
-      <div className="public-page public-page--error">
-        <AppCard className="public-content-sm public-error-card">
-          <div className="public-error-body">
-            <div className="public-error-icon">⚠️</div>
-            <h2 className="public-error-heading">RSVP Request Failed</h2>
-            <p className="public-error-text">
+      <div className="flex flex-col min-h-screen w-screen bg-[#fef2f2] items-center justify-center">
+        <AppCard className="w-full max-w-[min(440px,calc(100vw-32px))] p-6 text-center border border-red-100">
+          <div className="flex flex-col gap-4 items-center">
+            <div className="text-5xl">⚠️</div>
+            <h2 className="m-0 text-red-800 font-extrabold">RSVP Request Failed</h2>
+            <p className="text-text-muted leading-relaxed mt-1 m-0">
               {errorMessage}
             </p>
-            <div className="public-error-actions">
+            <div className="mt-4 w-full flex flex-col gap-2">
               <a
                 href="/login"
-                className="btn btn-primary public-error-link"
+                className="btn btn-primary inline-flex w-full justify-center items-center no-underline h-11 font-bold"
               >
                 Sign In to Member Portal
               </a>
               <a
                 href="mailto:admin@choir.org"
-                className="btn btn-ghost public-error-link public-error-link--ghost"
+                className="btn btn-ghost inline-flex w-full justify-center items-center no-underline h-11 font-bold border border-border"
               >
                 📧 Contact Choir Admins
               </a>
@@ -346,17 +337,17 @@ export default function PublicRsvpView() {
   const isAttending = selectedRsvp === 'Yes';
 
   return (
-    <div className="public-page public-page--primary public-page--top">
-      <div className="public-content-lg">
-        <AppCard className="public-main-card">
+    <div className="flex flex-col min-h-screen w-screen bg-primary-light items-center justify-start px-4 sm:px-6 py-6 lg:py-8">
+      <div className="m-auto w-full max-w-[540px]">
+        <AppCard className="w-full p-6 flex flex-col gap-6 border box-border">
           
           {rsvpWindow.isReadOnly && (
-            <div className="card rsvp-readonly-banner">
-              <p className="text-muted">
+            <div className="card p-4 border border-border rounded-lg bg-neutral-bg">
+              <p className="text-text-muted m-0">
                 {rsvpWindow.reason}
               </p>
               {event?.type === 'Performance' && (
-                <p className="text-muted rsvp-readonly-hint">
+                <p className="text-text-muted text-xs mt-1 m-0">
                   You can still report future rehearsal absences from your singer dashboard.
                 </p>
               )}
@@ -364,28 +355,24 @@ export default function PublicRsvpView() {
           )}
 
           {!rsvpWindow.canSubmit ? (
-            /* Read-Only Screen */
-            <div className="public-section">
-              <div className="public-header">
-                <div className="public-header-icon">📅</div>
-                <h1 className="public-header-title">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
+                <div className="text-5xl mb-2">📅</div>
+                <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
                   RSVP Details
                 </h1>
-                <p className="public-header-subtitle text-muted">
+                <p className="m-0 text-sm text-text-muted">
                   Hello <strong>{profile.name}</strong>, the details for this event are shown below.
                 </p>
               </div>
 
-              {/* Event Details Summary */}
               {renderEventCard()}
 
               {renderRehearsalsList()}
 
-              {/* Show the singer's current response as read-only */}
-              <div className="card rsvp-response-card">
-                <div className="rsvp-response-label">Your response</div>
-                {/* @allow-inline-style - dynamic color based on dbRsvp state */}
-                <div className="text-headline rsvp-response-value" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
+              <div className="card p-4 border border-border rounded-lg bg-surface text-center">
+                <div className="font-bold text-xs text-text-muted uppercase tracking-wider">Your response</div>
+                <div className="text-xl font-extrabold mt-2" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
                     : dbRsvp === 'No'
@@ -393,59 +380,55 @@ export default function PublicRsvpView() {
                     : 'No response recorded'}
                 </div>
                 {dbRsvp === 'No' && rsvpNote && (
-                  <div className="rsvp-response-note">
+                  <div className="mt-3 text-sm text-text-muted border-t border-border pt-2 text-left">
                     <strong>Note:</strong> {rsvpNote}
                   </div>
                 )}
               </div>
 
-              <div className="rsvp-actions-row">
+              <div className="flex gap-2 w-full border-t border-border pt-4">
                 {dbRsvp === 'Yes' && (
                   <button 
                     onClick={handleDownloadCalendar}
-                    className="btn btn-secondary rsvp-action-btn"
+                    className="btn btn-secondary flex-1 h-11 font-bold justify-center gap-1.5"
                   >
                     📅 Add to Calendar (.ics)
                   </button>
                 )}
                 <a 
                   href="/login" 
-                  className="btn btn-ghost rsvp-action-link"
+                  className="btn btn-ghost flex-1 h-11 font-bold justify-center no-underline inline-flex items-center border border-border"
                 >
                   Sign In to Portal
                 </a>
               </div>
             </div>
           ) : !isConfirmed ? (
-            /* Confirmation Screen (Prevents pre-clicks, verifies human action) */
-            <div className="public-section">
-              <div className="public-header">
-                <div className="public-header-icon">✉️</div>
-                <h1 className="public-header-title">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
+                <div className="text-5xl mb-2">✉️</div>
+                <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
                   Confirm Your RSVP
                 </h1>
-                <p className="public-header-subtitle text-muted">
+                <p className="m-0 text-sm text-text-muted">
                   Hello <strong>{profile.name}</strong>, please confirm your attendance status below.
                 </p>
               </div>
 
-              {/* Event Details Summary */}
               {renderEventCard()}
 
               {renderRehearsalsList()}
 
-              {/* Interactive Buttons */}
-              <div className="public-section-gap-12">
+              <div className="flex flex-col gap-3">
                 {renderNoteSection()}
-                <p className="text-muted rsvp-prompt">
+                <p className="text-xs text-text-muted text-center m-0">
                   Are you planning to attend?
                 </p>
-                <div className="rsvp-button-group">
+                <div className="flex gap-2 w-full">
                   <button
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
-                    className="btn btn-primary rsvp-confirm-btn"
-                    // @allow-inline-style - dynamic opacity and border based on selectedRsvp state
+                    className="btn btn-primary flex-1 h-12 font-bold justify-center"
                     style={{
                       opacity: selectedRsvp === 'Yes' ? 1 : 0.6,
                       border: selectedRsvp === 'Yes' ? '2px solid var(--primary-deep)' : '1px solid var(--border)'
@@ -462,8 +445,7 @@ export default function PublicRsvpView() {
                       }
                     }}
                     disabled={isUpdating}
-                    className="btn btn-danger rsvp-confirm-btn"
-                    // @allow-inline-style - dynamic opacity and border based on selectedRsvp state
+                    className="btn btn-danger flex-1 h-12 font-bold justify-center"
                     style={{
                       backgroundColor: '#ef4444',
                       color: 'white',
@@ -476,22 +458,18 @@ export default function PublicRsvpView() {
                 </div>
               </div>
 
-              {/* Escape hatch for wrong person / forwarded links */}
-              <div className="public-footer rsvp-identity-row">
+              <div className="border-t border-border pt-4 text-center text-xs text-text-muted">
                 <span>Not <strong>{profile.name}</strong>? </span>
-                <a href="/login" className="rsvp-identity-link">Sign in as yourself</a>
+                <a href="/login" className="text-primary font-semibold underline">Sign in as yourself</a>
                 <span> or </span>
-                <a href="mailto:admin@choir.org" className="rsvp-identity-link">Contact Admins</a>
+                <a href="mailto:admin@choir.org" className="text-primary font-semibold underline">Contact Admins</a>
               </div>
             </div>
           ) : (
-            /* Success Screen (Shown once response confirmed or loaded from previous RSVP) */
-            <div className="public-section">
-              {/* Header Status Visual */}
-              <div className="public-header">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
                 <div 
-                  className="rsvp-status-icon"
-                  // @allow-inline-style - dynamic background/color based on isAttending state
+                  className="text-5xl w-20 h-20 rounded-full flex items-center justify-center mb-1 transition-all duration-300"
                   style={{ 
                     backgroundColor: isAttending ? '#e6f4ea' : '#fce8e6', 
                     color: isAttending ? 'var(--primary)' : '#c5221f',
@@ -499,47 +477,44 @@ export default function PublicRsvpView() {
                 >
                   {isAttending ? '✓' : '✗'}
                 </div>
-                <h1 className="public-header-title">
+                <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
                   {isAttending ? 'Confirmed: Attending' : 'Confirmed: Not Attending'}
                 </h1>
-                <p className="public-header-subtitle text-muted">
+                <p className="m-0 text-sm text-text-muted">
                   Thank you, <strong>{profile.name}</strong>. Your response has been securely recorded.
                 </p>
               </div>
 
-              {/* Event Details Card */}
-              {renderEventCard('rsvp-event-title--lg')}
+              {renderEventCard('text-xl font-bold')}
 
               {renderRehearsalsList()}
 
-              {/* Modify State & Actions */}
-              <div className="rsvp-change-section">
-                {renderNoteSection('rsvp-textarea--short')}
+              <div className="flex flex-col gap-4 pt-4 border-t border-border">
+                {renderNoteSection('min-h-[80px]')}
                 {event.type === 'Rehearsal' && selectedRsvp === 'No' && (
-                  <div className="rsvp-note-footer">
-                    <p className="rsvp-note-hint">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-text-muted m-0">
                       This note is visible to choir admins.
                     </p>
                     <button 
                       onClick={() => handleConfirmRsvp('No')}
                       disabled={isUpdating}
-                      className="btn btn-primary rsvp-save-note-btn"
+                      className="btn btn-primary h-9 font-bold px-4 text-xs"
                     >
                       {isUpdating ? 'Saving...' : 'Save Note'}
                     </button>
                   </div>
                 )}
-                <div className="rsvp-change-toggle-section">
-                  <label className="text-label rsvp-change-label">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-label text-xs font-bold text-text-muted">
                     Need to change your response?
                   </label>
                   
-                  <div className="rsvp-button-group-segment">
+                  <div className="flex bg-[var(--primary-light,#f1f5f9)] p-1 rounded-xl border border-border w-full h-12 max-sm:flex-col max-sm:h-auto max-sm:gap-2 max-sm:bg-transparent max-sm:border-none max-sm:p-0">
                     <button
                       onClick={() => handleConfirmRsvp('Yes')}
                       disabled={isUpdating}
-                      className={`btn rsvp-segment-btn ${!isAttending ? 'rsvp-segment-btn--inactive' : ''}`}
-                      // @allow-inline-style - dynamic active state colors based on isAttending
+                      className={`btn flex-1 h-full border-none rounded-lg cursor-pointer text-sm font-bold transition-all ${!isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted max-sm:border max-sm:border-border max-sm:rounded-lg max-sm:h-12' : ''}`}
                       style={isAttending ? {
                         backgroundColor: 'var(--primary)',
                         color: '#ffffff',
@@ -557,8 +532,7 @@ export default function PublicRsvpView() {
                         }
                       }}
                       disabled={isUpdating}
-                      className={`btn rsvp-segment-btn ${isAttending ? 'rsvp-segment-btn--inactive' : ''}`}
-                      // @allow-inline-style - dynamic active state colors based on isAttending
+                      className={`btn flex-1 h-full border-none rounded-lg cursor-pointer text-sm font-bold transition-all ${isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted max-sm:border max-sm:border-border max-sm:rounded-lg max-sm:h-12' : ''}`}
                       style={!isAttending ? {
                         backgroundColor: '#ef4444',
                         color: '#ffffff',
@@ -570,25 +544,23 @@ export default function PublicRsvpView() {
                   </div>
                 </div>
 
-                {/* Escape hatch for wrong person on success screen */}
-                <div className="rsvp-identity-row rsvp-identity-row--mb">
+                <div className="text-center text-xs text-text-muted mb-2">
                   <span>Not <strong>{profile.name}</strong>? </span>
-                  <a href="/login" className="rsvp-identity-link">Sign in as yourself</a>
+                  <a href="/login" className="text-primary font-semibold underline">Sign in as yourself</a>
                 </div>
 
-                {/* Helper Action Buttons */}
-                <div className="rsvp-actions-row">
+                <div className="flex gap-2 w-full border-t border-border pt-4 max-sm:flex-col max-sm:items-stretch">
                   {isAttending && (
                     <button 
                       onClick={handleDownloadCalendar}
-                      className="btn btn-secondary rsvp-action-btn"
+                      className="btn btn-secondary flex-1 h-11 font-bold justify-center gap-1.5"
                     >
                       📅 Add to Calendar (.ics)
                     </button>
                   )}
                   <a 
                     href="/login" 
-                    className="btn btn-ghost rsvp-action-link"
+                    className="btn btn-ghost flex-1 h-11 font-bold justify-center no-underline inline-flex items-center border border-border"
                   >
                     Sign In to Portal
                   </a>

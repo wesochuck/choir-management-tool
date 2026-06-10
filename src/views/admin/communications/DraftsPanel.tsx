@@ -18,7 +18,7 @@ export function DraftsPanel({
         <div key={draft.id} className="p-3 border-b border-border flex flex-col md:flex-row last:border-b-0">
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex gap-2 items-center">
-              <span className="badge badge-rehearsal text-[10px] px-1.5 py-0.5">{draft.type}</span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{draft.type}</span>
               <span className="text-muted text-xs">
                 Last updated: {new Date(draft.updated).toLocaleString()}
               </span>

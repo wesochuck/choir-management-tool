@@ -843,7 +843,7 @@ export default function SeatingView() {
                         className="flex-row p-[var(--space-sm)_var(--space-md)] bg-[var(--bg)] border border-[var(--border)] rounded-[var(--radius-md)] cursor-grab justify-between"
                       >
                         <span className="text-label font-semibold">{p.name}</span>
-                        <span className="badge badge-rehearsal">{p.voicePart}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{p.voicePart}</span>
                       </div>
                     ))}
                   {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (

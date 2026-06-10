@@ -297,7 +297,7 @@ export default function PatronsView() {
                     {p.profile.expand?.user?.email || 'No email'}
                   </td>
                   <td className="p-3">
-                    <span className={`badge ${p.isSinger ? 'bg-[#e6fffa] text-[#2c7a7b]' : 'badge-ghost'}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${p.isSinger ? 'bg-[#e6fffa] text-[#2c7a7b]' : 'bg-transparent text-text-muted'}`}>
                       {p.isSinger ? 'Singer' : 'Patron'}
                     </span>
                   </td>

@@ -351,7 +351,7 @@ export default function AttendanceView() {
               <span className="text-muted text-xs font-semibold uppercase tracking-[0.05em]">Active Event</span>
               <div className="flex-row items-center gap-2">
                 {selectedEvent.title && <h2 className="text-headline !m-0 text-[1.4rem] font-extrabold text-[var(--primary-deep)]">{selectedEvent.title}</h2>}
-                <span className={`badge text-[0.625rem] px-[8px] py-[3px] ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
+                <span className={`inline-flex items-center text-[0.625rem] px-[8px] py-[3px] rounded font-semibold uppercase tracking-wider ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
                   {selectedEvent.type}
                 </span>
               </div>
@@ -371,7 +371,7 @@ export default function AttendanceView() {
           </div>
           
           <div className="flex flex-flow row wrap gap-[var(--space-lg)] items-center">
-            <span className={`badge badge-desktop text-[0.625rem] px-[8px] py-[3px] ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
+            <span className={`inline-flex items-center text-[0.625rem] px-[8px] py-[3px] rounded font-semibold uppercase tracking-wider bg-primary-light text-primary-deep ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
               {selectedEvent.type}
             </span>
             <a 

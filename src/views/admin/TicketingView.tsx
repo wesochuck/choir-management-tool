@@ -611,7 +611,7 @@ export default function TicketingView() {
                             <td className="p-3 px-2 font-semibold">
                               {p.buyerName}
                               {p.expand?.bundle && (
-                                <span className="badge badge-success ml-2 text-xs align-middle">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text ml-2 align-middle">
                                   Season Ticket: {p.expand.bundle.title}
                                 </span>
                               )}
@@ -623,7 +623,7 @@ export default function TicketingView() {
                             <td className="p-3 px-2">{p.quantity}</td>
                             <td className="p-3 px-2">${(p.amountPaidCents / 100).toFixed(2)}</td>
                             <td className="p-3 px-2">
-                              <span className={`badge capitalize ${p.status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider capitalize ${p.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                                 {p.status}
                               </span>
                             </td>
@@ -683,7 +683,7 @@ export default function TicketingView() {
                         <td className="p-3 px-2 font-semibold">{b.title}</td>
                         <td className="p-3 px-2">${(b.priceCents / 100).toFixed(2)}</td>
                         <td className="p-3 px-2">
-                          <span className={`badge ${b.isActive ? 'badge-success' : 'badge-danger'}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${b.isActive ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                             {b.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
@@ -705,7 +705,7 @@ export default function TicketingView() {
                         <td className="p-3 px-2 max-w-[240px]">
                           <div className="flex flex-wrap gap-1">
                             {b.expand?.events?.map(ev => (
-                              <span key={ev.id} className="badge badge-secondary text-xs whitespace-nowrap">
+                              <span key={ev.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep whitespace-nowrap">
                                 {ev.title}
                               </span>
                             ))}
@@ -775,7 +775,7 @@ export default function TicketingView() {
                         <td className="p-3 px-2">{order.quantity}</td>
                         <td className="p-3 px-2">${(order.amountPaidCents / 100).toFixed(2)}</td>
                         <td className="p-3 px-2">
-                          <span className={`badge capitalize ${order.status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider capitalize ${order.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                             {order.status}
                           </span>
                         </td>

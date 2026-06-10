@@ -205,7 +205,7 @@ export function ComposePanel({
             title="Recipients"
             actions={
               <span
-                className="badge comm-message-badge comm-recipient-count-badge"
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-message-badge comm-recipient-count-badge bg-primary-light text-primary-deep"
               >
                 {recipientCounts.total} Matched
               </span>

@@ -53,17 +53,17 @@ export function AutomatedTasksPanel({
               <div className="comm-automated-header">
                 <span className="comm-automated-status-group">
                   <span
-                    className={`badge comm-automated-type-badge ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-type-badge ${
                       task.type === 'Report'
-                        ? 'badge-concert'
+                        ? 'bg-performance-bg text-performance-text'
                         : task.type === 'RSVP Request'
-                        ? 'badge-concert'
-                        : 'badge-rehearsal'
+                        ? 'bg-performance-bg text-performance-text'
+                        : 'bg-primary-light text-primary-deep'
                     }`}
                   >
                     {task.type}
                   </span>
-                  <span className="badge comm-automated-resolution-badge comm-automated-resolution-scheduled">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-resolution-badge comm-automated-resolution-scheduled bg-primary-light text-primary-deep">
                     Scheduled
                   </span>
                 </span>
@@ -159,19 +159,19 @@ export function AutomatedTasksPanel({
               <div className="comm-automated-header">
                 <span className="comm-automated-status-group">
                   <span
-                    className={`badge comm-automated-type-badge ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-type-badge ${
                       task.status === 'Sent'
-                        ? 'badge-concert'
+                        ? 'bg-performance-bg text-performance-text'
                         : task.status === 'Archived'
-                        ? 'badge-muted'
-                        : 'badge-rehearsal'
+                        ? 'bg-gray-500/10 text-gray-600 border border-gray-500/20'
+                        : 'bg-primary-light text-primary-deep'
                     }`}
                   >
                     {task.type}
                   </span>
 
                   <span
-                    className={`badge comm-automated-resolution-badge comm-automated-resolution-${task.status.toLowerCase()}`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-resolution-badge comm-automated-resolution-${task.status.toLowerCase()}`}
                   >
                     {task.status === 'Sent'
                       ? 'Sent'

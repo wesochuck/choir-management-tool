@@ -64,11 +64,11 @@ export const EventList: React.FC<EventListProps> = ({
         >
           <div className="event-list-details flex flex-col gap-4">
             <div className="event-list-header flex items-center gap-1">
-              <span className={`badge ${e.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${e.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
                 {e.type}
               </span>
               {openAuditionEventId === e.id && (
-                <span className="badge badge-success font-bold">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text font-bold">
                   🎵 Auditions Open
                 </span>
               )}
@@ -76,7 +76,7 @@ export const EventList: React.FC<EventListProps> = ({
                 {formatInTimezone(e.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
               {e.callTime && (
-                <span className="badge inline-flex items-center gap-1 bg-[#eef2ff] text-[#4338ca] border border-[#c7d2fe] font-bold text-xs px-[6px] py-[1px] rounded">
+                <span className="inline-flex items-center gap-1 bg-[#eef2ff] text-[#4338ca] border border-[#c7d2fe] font-bold text-xs px-[6px] py-[1px] rounded">
                   📢 Call: {formatTime12h(e.callTime)}
                 </span>
               )}

@@ -58,7 +58,6 @@ export default function PublicPlayerView() {
 
       setData(result);
       
-      // Read directly from storage to avoid dependency triggers
       const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
       const targetedTracks = playerService.applyVoicePartToFiles(result.files, initialPart, result.allPieces, result.voiceParts);
       const hydrated = await hydrateOfflineStatus(targetedTracks);
@@ -91,7 +90,6 @@ export default function PublicPlayerView() {
 
     if (!data) return;
     
-    // Remap current tracks using the new part selection
     const updatedPlaylist = playerService.applyVoicePartToFiles(playlist, part, data.allPieces, data.voiceParts);
     const hydrated = await hydrateOfflineStatus(updatedPlaylist);
     setPlaylist(hydrated);
@@ -127,7 +125,6 @@ export default function PublicPlayerView() {
     
     const errorIds = new Set<string>();
     
-    // @allow-sequential-await - Downloading tracks sequentially ensures stable connection usage and a cleaner UI progress stream.
     for (const track of toDownload) {
       try {
         setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));
@@ -154,7 +151,7 @@ export default function PublicPlayerView() {
     setPlaylist(hydrated);
   };
 
-  if (isLoading) return <div className="public-player-loading">Loading playlist...</div>;
+  if (isLoading) return <div className="text-center pt-16">Loading playlist...</div>;
   if (error) return <div className="chorus-player"><div className="error-message">{error}</div></div>;
   if (!data) return null;
 
@@ -170,7 +167,7 @@ export default function PublicPlayerView() {
             </Link>
           )}
           <h1>Chorus</h1>
-          <div className="public-player-section">{data.event.title}</div>
+          <div className="text-sm text-text-secondary">{data.event.title}</div>
         </div>
       </header>
 
@@ -205,7 +202,7 @@ export default function PublicPlayerView() {
         isDownloadingAll={isDownloadingAll}
       />
 
-      <div className="public-player-footer">
+      <div className="mt-8">
         You can download tracks for offline practice. They will be saved in your browser.
       </div>
     </div>

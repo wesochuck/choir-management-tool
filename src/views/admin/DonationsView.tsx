@@ -397,7 +397,7 @@ export default function DonationsView() {
                       <td className="p-3 px-4">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
                       <td className="p-3 px-4 font-semibold">
                         {d.donorName}
-                        {d.isAnonymous && <span className="badge badge-ghost ml-2">Anonymous</span>}
+                        {d.isAnonymous && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-transparent text-text-muted ml-2">Anonymous</span>}
                       </td>
                       <td className="p-3 px-4">{d.donorEmail}</td>
                       <td className="p-3 px-4 text-right font-semibold">${(d.amountPaidCents / 100).toFixed(2)}</td>
@@ -409,7 +409,7 @@ export default function DonationsView() {
                         )}
                       </td>
                       <td className="p-3 px-4">
-                        <span className={`badge capitalize ${d.status === 'paid' ? 'badge-success' : d.status === 'refunded' ? 'badge-danger' : 'badge-warning'}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider capitalize ${d.status === 'paid' ? 'bg-success-bg text-success-text' : d.status === 'refunded' ? 'bg-danger-bg text-danger-text' : 'bg-amber-100 text-amber-800'}`}>
                           {d.status}
                         </span>
                       </td>

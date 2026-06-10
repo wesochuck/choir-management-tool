@@ -407,7 +407,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   draggable={!isReadOnly && !!assignedProfile}
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                   title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}` : `Empty Space ${seatIndex + 1}`)}
-                  className={`flex-col seat-cell ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
+                  className={`flex-col group relative w-8 h-8 rounded-md bg-primary-light text-primary-deep text-xs font-medium flex items-center justify-center cursor-pointer hover:bg-primary hover:text-surface transition-colors ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
                   // @allow-inline-style - all seat dimensions, colors, borders, transform computed from props and state
                   style={{
                     width: `${seatSize}px`,
@@ -510,7 +510,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           onUpdateRowCounts(result.rowCounts, result.assignments);
                         }
                       }}
-                      className="no-print seat-remove-btn"
+                      className="no-print"
                       data-action={assignments[seatKey] ? "unassign" : "delete"}
                       title={assignments[seatKey] ? "Unassign singer" : "Delete empty seat"}
                       // @allow-inline-style - dynamic background and color based on assignment state
@@ -562,14 +562,14 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                         style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
                         {assignedProfile.voicePart}
                       </div>
-                      <div className={`no-print ${rowIndex === rowCounts.length - 1 ? 'seat-tooltip-bottom' : 'seat-tooltip'} ${isMismatch ? 'seat-tooltip-mismatch' : ''}`}>
+                      <div className={`no-print absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${isMismatch ? 'bg-red-700' : ''}`}>
                         {isMismatch ? (
-                          <div className="seat-tooltip-mismatch-body">
-                            <span className="seat-tooltip-mismatch-name">⚠️ {assignedProfile.name}</span>
-                            <span className="seat-tooltip-mismatch-desc">
+                          <>
+                            <span>⚠️ {assignedProfile.name}</span>
+                            <span>
                               Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || displaySuggestion} seat ${displaySeatNumber}` : `${sectionDef?.name || displaySuggestion} seat ${displaySeatNumber}`}
                             </span>
-                          </div>
+                          </>
                         ) : (
                           `${assignedProfile.name} (${assignedProfile.voicePart})`
                         )}

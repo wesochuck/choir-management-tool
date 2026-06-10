@@ -71,7 +71,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       />
                       <span>{p.name}</span>
                       {p.expand?.user?.role === 'admin' && (
-                        <span className="badge badge-admin text-[0.65rem] px-[5px] py-[1px] rounded bg-primary-light text-primary font-bold uppercase tracking-wider inline-flex items-center h-fit">Admin</span>
+                        <span className="text-[0.65rem] px-[5px] py-[1px] rounded bg-primary-light text-primary font-bold uppercase tracking-wider inline-flex items-center h-fit">Admin</span>
                       )}
                     </div>
                   </td>

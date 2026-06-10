@@ -31,7 +31,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           >
             <span>{tab.label}</span>
             {tab.value === 'drafts' && draftsCount > 0 && (
-              <span className="badge-count-bubble">{draftsCount}</span>
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-primary text-white leading-none">{draftsCount}</span>
             )}
           </button>
         ))}

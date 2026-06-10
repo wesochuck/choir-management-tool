@@ -47,21 +47,21 @@ export default function PublicUnsubscribeView() {
   }, [token]);
 
   return (
-    <div className="public-unsubscribe-container">
+    <div className="max-w-[500px] pt-20 mx-auto">
       <AppCard title="Unsubscribe from Emails">
-        <div className="public-unsubscribe-body">
+        <div className="flex flex-col gap-4 text-center">
           {status === 'loading' && (
-            <div className="text-muted flex-row"><Spinner size="small" /> Processing your request...</div>
+            <div className="text-text-muted flex flex-row items-center gap-2"><Spinner size="small" /> Processing your request...</div>
           )}
 
           {status === 'success' && (
             <>
-              <div className="public-emoji-lg">✅</div>
+              <div className="text-4xl">✅</div>
               <h3 className="text-headline">Unsubscribed Successfully</h3>
-              <p className="text-muted">
+              <p className="text-text-muted">
                 You have been unsubscribed from all future choir management emails.
               </p>
-              <div className="public-margin-top-md">
+              <div className="mt-4">
                 <Button as={Link} to="/login" variant="primary">Go to Login</Button>
               </div>
             </>
@@ -69,12 +69,12 @@ export default function PublicUnsubscribeView() {
 
           {status === 'error' && (
             <>
-              <div className="public-emoji-lg">❌</div>
-              <h3 className="text-headline public-unsubscribe-error-title">Unsubscribe Failed</h3>
-              <p className="text-muted">
+              <div className="text-4xl">❌</div>
+              <h3 className="text-headline text-danger-text">Unsubscribe Failed</h3>
+              <p className="text-text-muted">
                 {errorMessage}
               </p>
-              <div className="public-margin-top-md">
+              <div className="mt-4">
                 <Button as={Link} to="/login" variant="ghost">Return to Site</Button>
               </div>
             </>

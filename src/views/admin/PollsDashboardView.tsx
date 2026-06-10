@@ -252,8 +252,8 @@ export default function PollsDashboardView() {
 
   if (isLoading && polls.length === 0) {
     return (
-      <div className="admin-view-container">
-        <AppCard className="admin-loading-state">
+      <div className="p-6 max-w-7xl mx-auto">
+        <AppCard className="flex items-center justify-center py-12">
           <p>Loading polls...</p>
         </AppCard>
       </div>
@@ -261,8 +261,8 @@ export default function PollsDashboardView() {
   }
 
   return (
-    <div className="admin-view-container">
-      <div className="admin-view-header">
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex-col gap-1">
           <h2 className="text-headline m-0">Engagement Polls & Volunteering</h2>
           <p className="text-muted text-sm">Review volunteer responses and counts.</p>
@@ -301,7 +301,7 @@ export default function PollsDashboardView() {
           </AppCard>
         )}
         {filteredPolls.length === 0 ? (
-          <AppCard className="admin-empty-state">
+          <AppCard className="flex flex-col items-center justify-center py-12 text-text-muted">
             <p className="text-muted db-empty-state-text mb-4">No active polls found.</p>
             <div>
               <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
@@ -340,7 +340,7 @@ export default function PollsDashboardView() {
                     <div className="flex flex-1 auto min-w-0 flex-col gap-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <h3 className="m-0 text-text text-base font-bold">{poll.question}</h3>
-                        {isArchived && <span className="badge bg-[#f1f5f9] text-[#64748b]">Archived</span>}
+                        {isArchived && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-[#f1f5f9] text-[#64748b]">Archived</span>}
                       </div>
                       <div className="flex flex-wrap gap-1 gap-x-4 text-text-muted text-sm font-semibold">
                         {createdLabel && <span>Created {createdLabel}</span>}
@@ -499,7 +499,7 @@ export default function PollsDashboardView() {
               <p className="text-muted m-0">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
-              <div className="form-field-group">
+              <div className="flex flex-col gap-1">
                 <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
                 <input
                   id="quick-poll-question"
@@ -511,7 +511,7 @@ export default function PollsDashboardView() {
                   required
                 />
               </div>
-              <div className="form-field-group">
+              <div className="flex flex-col gap-1">
                 <label className="text-label" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
                 <input
                   id="quick-poll-days"
@@ -580,7 +580,7 @@ export default function PollsDashboardView() {
           <p className="text-muted m-0">
             Configure global default settings for quick engagement polls.
           </p>
-          <div className="form-field-group">
+          <div className="flex flex-col gap-1">
             <label className="text-label" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
             <input
               id="settings-default-days"

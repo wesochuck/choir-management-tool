@@ -242,11 +242,11 @@ export function TemplatesPanel({
               <div className="flex-col gap-0.5">
                 <div className="flex gap-4 flex-wrap items-center gap-1.5">
                   <strong className="text-sm">{tpl.title}</strong>
-                  <span className="badge badge-rehearsal text-[10px] px-1.5 py-0.5">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
                     {tpl.type}
                   </span>
                   {tpl.isSystemTemplate && (
-                    <span className="badge badge-concert text-[10px] px-1.5 py-0.5 opacity-80">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-performance-bg text-performance-text opacity-80">
                       System
                     </span>
                   )}

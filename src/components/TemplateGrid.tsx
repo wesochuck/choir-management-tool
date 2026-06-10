@@ -78,7 +78,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, onSelect 
         <div className="blank-template-card" onClick={() => onSelect(blankTemplate)}>
           <div className="card-header">
             <BlankIcon />
-            <span className="badge">blank</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">blank</span>
           </div>
           <div>
             <h4>{blankTemplate.title}</h4>
@@ -95,7 +95,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, onSelect 
             <div key={template.id} className="template-card" onClick={() => onSelect(template)}>
               <div className="card-header">
                 <IconComponent />
-                <span className="badge">{template.channel}</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{template.channel}</span>
               </div>
               <h4>{template.title}</h4>
               <p>{template.description}</p>

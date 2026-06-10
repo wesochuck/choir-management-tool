@@ -96,7 +96,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                   <span className="font-semibold text-text">{p.name}</span>
                   <span className="text-xs text-muted">Status: {p.globalStatus}</span>
                 </div>
-                <span className="badge badge-rehearsal uppercase">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
                   {p.voicePart || 'Unknown'}
                 </span>
               </button>

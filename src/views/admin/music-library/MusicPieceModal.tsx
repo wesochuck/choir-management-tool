@@ -854,12 +854,12 @@ export function MusicPieceModal({
                             </div>
                         )}
 
-                        <div className="form-field-group">
+                        <div className="flex flex-col gap-1">
                             <label className="text-label">Title</label>
                             <input ref={titleInputRef} required value={title} onChange={e => setTitle(e.target.value)} className="card px-3 h-10 w-full" />
                         </div>
                         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-md)]">
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Composer</label>
                                 <AutocompleteInput 
                                     value={composer} 
@@ -869,7 +869,7 @@ export function MusicPieceModal({
                                     className="card px-3 h-10 w-full" 
                                 />
                             </div>
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Arranger</label>
                                 <AutocompleteInput 
                                     value={arranger} 
@@ -882,7 +882,7 @@ export function MusicPieceModal({
                         </div>
 
                         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-md)]">
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Applies to Sections</label>
                                 <MultiSelectDropdown
                                     options={sections.map(s => ({ id: s.code, label: s.name }))}
@@ -899,7 +899,7 @@ export function MusicPieceModal({
                                 </span>
                             </div>
 
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Genres</label>
                                 <MultiSelectDropdown
                                     options={[...allGenres].sort((a, b) => a.label.localeCompare(b.label)).map(g => ({ id: g.id, label: g.label }))}
@@ -1004,7 +1004,7 @@ export function MusicPieceModal({
                             </div>
                         )}
                         <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[var(--space-md)]">
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Duration</label>
                                 <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card px-3 h-10 w-full" />
                                 {suggestedDuration && !duration.trim() && (
@@ -1025,11 +1025,11 @@ export function MusicPieceModal({
                                     </div>
                                 )}
                             </div>
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Copies</label>
                                 <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card px-3 h-10 w-full" />
                             </div>
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Catalog ID</label>
                                 <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card px-3 h-10 w-full" />
                                 {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
@@ -1043,7 +1043,7 @@ export function MusicPieceModal({
                                     </a>
                                 )}
                             </div>
-                            <div className="form-field-group">
+                            <div className="flex flex-col gap-1">
                                 <label className="text-label">Purchase Date</label>
                                 <input
                                     value={purchaseDateInput}
@@ -1053,7 +1053,7 @@ export function MusicPieceModal({
                                 />
                             </div>
                         </div>
-                        <div className="form-field-group">
+                        <div className="flex flex-col gap-1">
                             <label className="text-label">Notes</label>
                             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card px-3 py-2 min-h-[54px] resize-y" />
                             <span className="text-xs text-muted mt-[2px]">
@@ -1064,7 +1064,7 @@ export function MusicPieceModal({
 
                         {!piece && (
                             <>
-                            <div className="form-field-group mt-[var(--space-xs)]">
+                            <div className="flex flex-col gap-1 mt-[var(--space-xs)]">
                                 <label className="text-label">Link to Past Performance (Optional)</label>
                                 <div className="flex flex-flow row wrap gap-[var(--space-xs)] min-h-9">
                                     {selectedPerformances.length === 0 ? (
@@ -1099,7 +1099,7 @@ export function MusicPieceModal({
                                     })}
                                 </select>
                             </div>
-                            <div className="form-field-group mt-[var(--space-xs)]">
+                            <div className="flex flex-col gap-1 mt-[var(--space-xs)]">
                                 <label className="text-label">Tutti Practice Track (Optional)</label>
                                 {tuttiFile ? (
                                     <div className="flex flex-row items-center justify-between p-[8px_12px] bg-[rgb(74_124_89_/_5%)] border border-[var(--primary)] rounded-[var(--radius-md)] gap-[var(--space-md)] animate-fade-in">
@@ -1172,7 +1172,7 @@ export function MusicPieceModal({
 
                 {(piece && activeTab === 'performances') && (
                     <>
-                        <div className="form-field-group">
+                        <div className="flex flex-col gap-1">
                             <label className="text-label">Linked Performances</label>
                             
                             {/* Selected performances pills */}
@@ -1226,8 +1226,8 @@ export function MusicPieceModal({
                         {showQuickAdd && (
                             <div className="p-[var(--space-md)] bg-[var(--bg-card-hover)] border border-dashed border-[var(--border)] rounded-[var(--radius)] mt-[var(--space-xs)] card">
                                 <h4 className="text-sm !mt-0 !mb-[var(--space-md)] text-[var(--primary)]">Quick Add Historic Performance</h4>
-                                <div className="form-field-group">
-                                    <div className="form-field-group">
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex flex-col gap-1">
                                         <label className="text-xs text-muted">Performance Title</label>
                                         <input 
                                             value={quickTitle} 
@@ -1238,7 +1238,7 @@ export function MusicPieceModal({
                                     </div>
                                     
                                     <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-[var(--space-md)]">
-                                        <div className="form-field-group">
+                                        <div className="flex flex-col gap-1">
                                             <label className="text-xs text-muted">Date</label>
                                             <input 
                                                 type="datetime-local" 
@@ -1247,7 +1247,7 @@ export function MusicPieceModal({
                                                 className="card px-3 h-9 text-[14px]" 
                                             />
                                         </div>
-                                        <div className="form-field-group">
+                                        <div className="flex flex-col gap-1">
                                             <label className="text-xs text-muted">Venue</label>
                                             <select 
                                                 value={quickVenue} 
@@ -1335,7 +1335,7 @@ export function MusicPieceModal({
                         </div>
 
                         {movements.length === 0 ? (
-                            <div className="card admin-empty-state">
+                            <div className="card flex flex-col items-center justify-center py-12 text-text-muted">
                                 No movements added yet. Add your first movement below.
                             </div>
                         ) : (
