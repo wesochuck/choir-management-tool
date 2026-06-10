@@ -412,20 +412,25 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="flex flex-col gap-8 py-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-display m-0">Ticketing Dashboard</h1>
-          <p className="text-sm text-gray-500">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Ticketing Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Manage ticket sales, configure season bundles, and view check-in checklists.
+          </p>
         </div>
+
         <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'bundles' && (
-            <button onClick={handleOpenCreateModal} className="btn btn-primary">
+            <button onClick={handleOpenCreateModal} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
               Create New Bundle
             </button>
           )}
           {activeTab === 'willcall' && selectedEventId && (
-            <button onClick={handleExportCSV} className="btn btn-primary">
+            <button onClick={handleExportCSV} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
               Export Will Call CSV
             </button>
           )}
@@ -433,225 +438,284 @@ export default function TicketingView() {
       </div>
 
       {/* Tab Controls */}
-      <div className="mb-1 flex flex-row gap-2 border-b border-gray-200 pb-1">
-        <button
-          className={`btn px-4 py-2 font-semibold ${activeTab === 'willcall' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('willcall')}
-        >
-          Concert Will Call
-        </button>
-        <button
-          className={`btn px-4 py-2 font-semibold ${activeTab === 'bundles' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('bundles')}
-        >
-          Season Bundles
-        </button>
-        <button
-          className={`btn px-4 py-2 font-semibold ${activeTab === 'orders' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('orders')}
-        >
-          Bundle Orders
-        </button>
+      <div className="mt-8 border-b border-slate-200">
+        <nav className="-mb-px flex gap-2">
+          <button
+            className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'willcall' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+            onClick={() => setActiveTab('willcall')}
+          >
+            Concert Will Call
+          </button>
+          <button
+            className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'bundles' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+            onClick={() => setActiveTab('bundles')}
+          >
+            Season Bundles
+          </button>
+          <button
+            className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'orders' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            Bundle Orders
+          </button>
+        </nav>
       </div>
 
       {activeTab === 'willcall' && (
         <>
-          <div className="card m-0 rounded-lg border-l-4 border-primary bg-[rgba(74,124,89,0.05)] p-4">
-            <h3 className="m-0 mb-1 flex items-center gap-1.5 text-base text-primary-deep">
-              ℹ️ Ticketing Instructions & Links
-            </h3>
-            <p className="m-0 mb-2 text-sm leading-relaxed text-gray-500">
-              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="font-semibold text-primary-deep underline">Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
+          <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-base font-semibold text-slate-900">
+              Ticketing Instructions & Links
+            </h2>
+
+            <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-600">
+              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="font-medium text-emerald-700 underline underline-offset-2">Events Dashboard</Link>, edit or create a Performance event, click the <strong className="font-semibold text-slate-800">Tickets</strong> tab, and toggle <strong className="font-semibold text-slate-800">Enable Online Ticket Sales</strong>.
             </p>
-            <div className="flex flex-col gap-1.5 text-sm">
-              <div>
-                <strong>📢 Storefront URL:</strong>{' '}
-                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                  {window.location.origin}/tickets
-                </a>
-                <span className="ml-1.5 text-xs text-gray-500">(list of all active ticketed concerts & bundles)</span>
-              </div>
-              {selectedEventId && selectedEvent && (
-                <div>
-                  <strong>🔗 Direct Concert Ticket Link:</strong>{' '}
-                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                    {window.location.origin}/tickets/{selectedEventId}
+
+            <dl className="mt-5 space-y-2 text-sm">
+              <div className="flex flex-col gap-1 sm:flex-row sm:gap-2">
+                <dt className="font-semibold text-slate-900 whitespace-nowrap">Storefront URL:</dt>
+                <dd>
+                  <a href="/tickets" target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 underline underline-offset-2">
+                    {window.location.origin}/tickets
                   </a>
-                  <span className="ml-1.5 text-xs text-gray-500">(direct checkout page for {selectedEvent.title})</span>
+                </dd>
+              </div>
+
+              {selectedEventId && selectedEvent && (
+                <div className="flex flex-col gap-1 sm:flex-row sm:gap-2">
+                  <dt className="font-semibold text-slate-900 whitespace-nowrap">Direct Concert Ticket Link:</dt>
+                  <dd>
+                    <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 underline underline-offset-2">
+                      {window.location.origin}/tickets/{selectedEventId}
+                    </a>
+                  </dd>
                 </div>
               )}
-            </div>
-          </div>
+            </dl>
+          </section>
 
-          <div className="card bg-neutral-100 flex flex-wrap items-center gap-4 p-4">
-            <div className="flex flex-1 flex-col gap-1">
-              <div className="flex flex-row items-center justify-between">
-                <label className="text-sm font-semibold">Select Performance</label>
-                <label className="m-0 flex cursor-pointer flex-row items-center gap-1.5 text-sm">
+          <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Performance Summary
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Choose a performance to view ticket sales, revenue, and will call activity.
+              </p>
+            </div>
+
+            <div className="px-6 py-5">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_auto] lg:items-end">
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Select Performance
+                  </span>
+                  <select
+                    value={selectedEventId}
+                    onChange={e => setSelectedEventId(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  >
+                    {visibleEvents.map(ev => {
+                      const cutoffTime = now - 3 * 60 * 60 * 1000;
+                      const isPast = new Date(ev.date).getTime() < cutoffTime;
+                      const isInactive = !ev.isTicketingEnabled;
+                      const suffix = isInactive ? ' (Inactive)' : isPast ? ' (Past)' : '';
+                      return (
+                        <option key={ev.id} value={ev.id}>
+                          {ev.title} ({formatInTimezone(ev.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}){suffix}
+                        </option>
+                      );
+                    })}
+                    {visibleEvents.length === 0 && (
+                      <option value="">No ticketing-enabled events</option>
+                    )}
+                  </select>
+                </label>
+
+                <label className="flex items-center gap-2 pb-2 text-sm text-slate-600">
                   <input
                     type="checkbox"
                     checked={showPastAndInactive}
                     onChange={e => setShowPastAndInactive(e.target.checked)}
-                    className="cursor-pointer"
+                    className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
                   />
-                  <span>Include past & inactive performances</span>
+                  <span>Include past and inactive performances</span>
                 </label>
               </div>
-              <select
-                className="card h-11 w-full border border-gray-200 px-3"
-                value={selectedEventId}
-                onChange={e => setSelectedEventId(e.target.value)}
-              >
-                {visibleEvents.map(ev => {
-                  const cutoffTime = now - 3 * 60 * 60 * 1000;
-                  const isPast = new Date(ev.date).getTime() < cutoffTime;
-                  const isInactive = !ev.isTicketingEnabled;
-                  const suffix = isInactive ? ' (Inactive)' : isPast ? ' (Past)' : '';
-                  return (
-                    <option key={ev.id} value={ev.id}>
-                      {ev.title} ({formatInTimezone(ev.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}){suffix}
-                    </option>
-                  );
-                })}
-                {visibleEvents.length === 0 && (
-                  <option value="">No ticketing-enabled events</option>
-                )}
-              </select>
-            </div>
 
-            {selectedEvent && (
-              <div className="flex flex-row flex-wrap gap-6 px-4">
-                <div className="flex min-w-[100px] flex-col gap-0.5">
-                  <span className="text-xs text-gray-500">TICKETS SOLD</span>
-                  <span className="text-2xl font-bold">
-                    {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
-                  </span>
-                </div>
-                <div className="flex min-w-[110px] flex-col gap-0.5">
-                  <span className="text-xs text-gray-500">TICKET SALES</span>
-                  <span className="text-2xl font-bold">
-                    ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex min-w-[110px] flex-col gap-0.5">
-                  <span className="text-xs text-gray-500">FEES COLLECTED</span>
-                  <span className="text-2xl font-bold text-gray-500">
-                    ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex min-w-[110px] flex-col gap-0.5">
-                  <span className="text-xs text-gray-500">TOTAL REVENUE</span>
-                  <span className="text-2xl font-bold text-primary">
-                    ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+              {selectedEvent && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Tickets Sold
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-900">
+                      {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
+                    </p>
+                  </div>
 
-          {showWarning && (
-            <div className="card border-yellow-200 bg-yellow-50 text-yellow-700 p-4">
-              ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
-            </div>
-          )}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Ticket Sales
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-900">
+                      ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
+                    </p>
+                  </div>
 
-          <AppCard title="Will Call Checklist">
-            <div className="flex flex-col gap-4">
-              <div className="flex w-full items-center gap-2">
-                <div className="w-full min-w-[200px] flex-1">
-                  <input
-                    type="text"
-                    placeholder="Search buyer name or email..."
-                    className="card h-10 w-full border border-gray-200 px-3"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="min-w-[200px]">
-                  <select
-                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
-                    value={sortBy}
-                    onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
-                  >
-                    <option value="lastName">Sort by Last Name</option>
-                    <option value="firstName">Sort by First Name</option>
-                    <option value="saleDate">Sort by Sale Date</option>
-                  </select>
-                </div>
-              </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Fees Collected
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-700">
+                      ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
+                    </p>
+                  </div>
 
-              {loading ? (
-                <p className="text-gray-500">Loading registrations...</p>
-              ) : filteredPurchases.length === 0 ? (
-                <p className="p-8 text-center text-gray-500">No purchase records found.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[600px] border-collapse text-left">
-                    <thead>
-                      <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-                        <th className="p-3 px-2 text-left">Buyer Name</th>
-                        <th className="p-3 px-2 text-left">Email</th>
-                        <th className="p-3 px-2 text-left">Sale Date</th>
-                        <th className="p-3 px-2 text-left">Qty</th>
-                        <th className="p-3 px-2 text-left">Amount Paid</th>
-                        <th className="p-3 px-2 text-left">Status</th>
-                        <th className="p-3 px-2 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredPurchases.map(p => {
-                        const isRefunded = p.status === 'refunded';
-                        return (
-                          <tr 
-                            key={p.id} 
-                            className="border-b border-gray-200 text-sm" 
-                            // @allow-inline-style - isRefunded text color/opacity
-                            style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
-                          >
-                            <td className="p-3 px-2 font-semibold">
-                              {p.buyerName}
-                              {p.expand?.bundle && (
-                                <span className="ml-2 inline-flex items-center rounded bg-success-bg px-2 py-0.5 align-middle text-xs font-semibold tracking-wider text-success-text uppercase">
-                                  Season Ticket: {p.expand.bundle.title}
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3 px-2">{p.buyerEmail}</td>
-                            <td className="p-3 px-2">
-                              {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                            </td>
-                            <td className="p-3 px-2">{p.quantity}</td>
-                            <td className="p-3 px-2">${(p.amountPaidCents / 100).toFixed(2)}</td>
-                            <td className="p-3 px-2">
-                              <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${p.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
-                                {p.status}
-                              </span>
-                            </td>
-                            <td className="p-3 px-2 text-right">
-                              {p.status === 'paid' && (
-                                <button
-                                  onClick={() => {
-                                    if (p.bundle) {
-                                      handleRefundBundle(p.stripePaymentIntentId);
-                                    } else {
-                                      handleRefund(p.id);
-                                    }
-                                  }}
-                                  className="btn btn-danger btn-sm"
-                                >
-                                  Refund
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                      Total Revenue
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-emerald-700">
+                      ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {showWarning && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                  ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
                 </div>
               )}
             </div>
-          </AppCard>
+          </section>
+
+          <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Will Call Checklist
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Search ticket buyers, confirm payment status, and process refunds.
+              </p>
+            </div>
+
+            <div className="grid gap-3 border-b border-slate-200 bg-slate-50/50 px-6 py-4 lg:grid-cols-[1fr_14rem]">
+              <input
+                type="text"
+                placeholder="Search buyer name or email..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              />
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              >
+                <option value="lastName">Sort by Last Name</option>
+                <option value="firstName">Sort by First Name</option>
+                <option value="saleDate">Sort by Sale Date</option>
+              </select>
+            </div>
+
+            <div className="overflow-x-auto">
+              {loading ? (
+                <div className="px-6 py-12 text-center">
+                  <p className="text-sm font-medium text-slate-700">Loading registrations...</p>
+                </div>
+              ) : filteredPurchases.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <p className="text-sm font-medium text-slate-700">No purchase records found.</p>
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Buyer Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Sale Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Qty
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Amount Paid
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {filteredPurchases.map(p => {
+                      const isRefunded = p.status === 'refunded';
+                      return (
+                        <tr
+                          key={p.id}
+                          className="hover:bg-slate-50"
+                          // @allow-inline-style - isRefunded text color/opacity
+                          style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
+                        >
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                            {p.buyerName}
+                            {p.expand?.bundle && (
+                              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-emerald-700">
+                                Season Ticket: {p.expand.bundle.title}
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {p.buyerEmail}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                            {p.quantity}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                            ${(p.amountPaidCents / 100).toFixed(2)}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                              {p.status}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                            {p.status === 'paid' && (
+                              <button
+                                onClick={() => {
+                                  if (p.bundle) {
+                                    handleRefundBundle(p.stripePaymentIntentId);
+                                  } else {
+                                    handleRefund(p.id);
+                                  }
+                                }}
+                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
+                              >
+                                Refund
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </section>
         </>
       )}
 
