@@ -1,5 +1,3 @@
-import styles from './Badge.module.css';
-
 export type BadgeTone = 'performance' | 'rehearsal' | 'concert' | 'success' | 'danger' | 'neutral';
 
 export interface BadgeProps {
@@ -7,6 +5,21 @@ export interface BadgeProps {
   tone?: BadgeTone;
 }
 
+const toneClasses: Record<BadgeTone, string> = {
+  performance: 'bg-performance-bg text-performance-text',
+  rehearsal: 'bg-primary-light text-primary-deep',
+  concert: 'bg-performance-bg text-performance-text',
+  success: 'bg-success-bg text-success-text',
+  danger: 'bg-danger-bg text-danger-text',
+  neutral: 'bg-gray-500/10 text-gray-600 border border-gray-500/20',
+};
+
 export function Badge({ children, tone = 'neutral' }: BadgeProps) {
-  return <span className={[styles.badge, styles[tone]].join(' ')}>{children}</span>;
+  return (
+    <span
+      className={`inline-flex px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${toneClasses[tone]}`}
+    >
+      {children}
+    </span>
+  );
 }
