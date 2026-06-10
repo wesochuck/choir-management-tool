@@ -373,7 +373,7 @@ export default function PublicRsvpView() {
               <div className="card p-4 border border-border rounded-lg bg-surface text-center">
                 <div className="font-bold text-xs text-text-muted uppercase tracking-wider">Your response</div>
                 {/* @allow-inline-style - dynamic color based on RSVP status */}
-                <div className="text-xl font-extrabold mt-2" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
+                <div className="text-xl font-extrabold mt-2" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : '#6b7280' }}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
                     : dbRsvp === 'No'

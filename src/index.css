@@ -66,6 +66,33 @@ body {
   to { transform: translateY(0); }
 }
 
+:root {
+  --primary: var(--color-primary);
+  --primary-light: var(--color-primary-light);
+  --primary-deep: var(--color-primary-deep);
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --text: var(--color-text);
+  --text-muted: var(--color-text-muted);
+  --border: var(--color-border);
+  --color-danger-bg: #fee2e2;
+  --color-danger-text: #991b1b;
+  --color-success-bg: #dcfce7;
+  --color-success-text: #166534;
+  --color-performance-bg: #fee2e2;
+  --color-performance-text: #991b1b;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 5%);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 10%);
+}
+
 @media print {
     body .no-print.no-print.no-print {
     display: none !important;
