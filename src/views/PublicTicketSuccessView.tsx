@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ticketService, type TicketPurchase } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
+import { Button } from '../components/ui/Button/Button';
+import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pb } from '../lib/pocketbase';
 import './PublicForms.css';
@@ -36,6 +38,7 @@ export default function PublicTicketSuccessView() {
       <div className="flex-col pub-style-1">
         <AppCard className="pub-style-55">
           <h2 className="pub-style-6">Verifying Order...</h2>
+          <Spinner size="medium" />
           <p className="text-muted text-sm">Please wait while we confirm your transaction.</p>
           <div className="flex-col pub-style-56" />
         </AppCard>
@@ -109,9 +112,9 @@ export default function PublicTicketSuccessView() {
           </div>
         )}
 
-        <Link to="/tickets" className="btn btn-primary pub-style-64">
+        <Button as={Link} to="/tickets" variant="primary" className="pub-style-64">
           Back to Events
-        </Link>
+        </Button>
       </AppCard>
     </div>
   );
