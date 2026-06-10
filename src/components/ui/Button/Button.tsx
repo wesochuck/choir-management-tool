@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';
 import { Spinner } from '../Spinner/Spinner';
 import styles from './Button.module.css';
 
@@ -6,6 +6,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'default' | 'small';
 
 export interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
+  as?: ElementType;
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
@@ -13,6 +14,7 @@ export interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
 }
 
 export function Button({
+  as: Component = 'button',
   variant = 'primary',
   size = 'default',
   loading = false,
@@ -28,16 +30,18 @@ export function Button({
     .concat(className ? [className] : [])
     .join(' ');
 
+  const isButton = Component === 'button';
+
   return (
-    <button
+    <Component
       className={classNames}
-      disabled={disabled || loading}
+      disabled={isButton ? (disabled || loading) : undefined}
       onClick={loading ? undefined : onClick}
       {...rest}
     >
       {loading && <Spinner size="small" />}
       {!loading && icon}
       {children}
-    </button>
+    </Component>
   );
 }

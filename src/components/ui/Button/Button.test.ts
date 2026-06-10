@@ -89,3 +89,19 @@ test('Button does NOT call onClick when loading', () => {
   fireEvent.click(el);
   assert.equal(clicked, false, 'onClick was not called');
 });
+
+test('Button renders as anchor when as="a"', () => {
+  const { container } = render(React.createElement(Button, { as: 'a', href: '/login' }, 'Go'));
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
+  assert.equal(el.tagName, 'A', 'renders an anchor');
+  assert.equal(el.getAttribute('href'), '/login', 'passes href prop');
+  assert.ok(!el.hasAttribute('disabled'), 'no disabled attribute on anchor');
+});
+
+test('Button passes className when using as prop', () => {
+  const { container } = render(React.createElement(Button, { as: 'a', className: 'custom-link' }, 'Link'));
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders');
+  assert.ok(el.classList.contains('custom-link'), 'has custom className');
+});
