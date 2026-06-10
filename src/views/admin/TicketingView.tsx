@@ -6,7 +6,6 @@ import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { Link } from 'react-router-dom';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { BaseModal } from '../../components/common/BaseModal';
 
