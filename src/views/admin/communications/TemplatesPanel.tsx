@@ -233,82 +233,102 @@ export function TemplatesPanel({
         <p className="text-muted text-sm">
           Manage message templates. Custom templates can be added, edited, or deleted. System-defined templates cannot be deleted.
         </p>
-        <div className="flex flex-col gap-2">
-          {templates.map((tpl) => (
-            <div
-              key={tpl.id}
-              className="card flex flex-col md:flex-row px-4 py-2 justify-between items-center shadow-none border border-border m-0 gap-4"
-            >
-              <div className="flex flex-col gap-0.5">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <strong className="text-sm">{tpl.title}</strong>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
-                    {tpl.type}
-                  </span>
-                  {tpl.isSystemTemplate && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-performance-bg text-performance-text opacity-80">
-                      System
-                    </span>
-                  )}
-                </div>
-                <span className="text-muted text-xs truncate max-w-[350px]">
-                  {tpl.subject ? `Subject: ${tpl.subject}` : 'No Subject'} • {tpl.content.substring(0, 60)}...
-                </span>
-              </div>
-              <div className="flex gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setEditingTemplate(tpl)}
-                >
-                  Edit
-                </button>
-                {onUseTemplate && (
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => onUseTemplate(tpl)}
-                  >
-                    Use
-                  </button>
-                )}
-                {!tpl.isSystemTemplate && (
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm text-red-500"
-                    onClick={async () => {
-                      if (
-                        await dialog.confirm({
-                          title: 'Delete Template',
-                          message: `Are you sure you want to delete the template "${tpl.title}"?`,
-                          variant: 'danger',
-                        })
-                      ) {
-                        try {
-                          await communicationService.deleteTemplate(tpl.id!);
-                          setTemplates(await communicationService.getTemplates());
-                        } catch (e: unknown) {
-                          const msg = e instanceof Error ? e.message : String(e);
-                          await dialog.showMessage({
-                            title: 'Error',
-                            message: 'Failed to delete template: ' + msg,
-                            variant: 'danger',
-                          });
-                        }
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-          {templates.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-text-muted text-sm">
-              No templates found.
-            </div>
-          )}
+        <div className="overflow-x-auto">
+          <table className="border-collapse w-full min-w-[700px] text-left">
+            <thead>
+              <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                <th className="p-3 px-4 text-left">Title</th>
+                <th className="p-3 px-4 text-left">Type</th>
+                <th className="p-3 px-4 text-left">Subject</th>
+                <th className="p-3 px-4 text-left">Content</th>
+                <th className="p-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {templates.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center p-8 text-gray-500">
+                    No templates found.
+                  </td>
+                </tr>
+              ) : (
+                templates.map((tpl) => (
+                  <tr key={tpl.id} className="border-b border-gray-200 text-sm">
+                    <td className="p-3 px-4 font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <span>{tpl.title}</span>
+                        {tpl.isSystemTemplate && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-performance-bg text-performance-text opacity-80">
+                            System
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-3 px-4">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep w-fit">
+                        {tpl.type}
+                      </span>
+                    </td>
+                    <td className="p-3 px-4 max-w-[250px] truncate text-muted">
+                      {tpl.subject || 'No Subject'}
+                    </td>
+                    <td className="p-3 px-4 max-w-[300px] truncate text-muted">
+                      {tpl.content.substring(0, 60)}...
+                    </td>
+                    <td className="p-3 px-4 text-right whitespace-nowrap">
+                      <div className="flex gap-1.5 justify-end">
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditingTemplate(tpl)}
+                        >
+                          Edit
+                        </button>
+                        {onUseTemplate && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => onUseTemplate(tpl)}
+                          >
+                            Use
+                          </button>
+                        )}
+                        {!tpl.isSystemTemplate && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm text-red-500"
+                            onClick={async () => {
+                              if (
+                                await dialog.confirm({
+                                  title: 'Delete Template',
+                                  message: `Are you sure you want to delete the template "${tpl.title}"?`,
+                                  variant: 'danger',
+                                })
+                              ) {
+                                try {
+                                  await communicationService.deleteTemplate(tpl.id!);
+                                  setTemplates(await communicationService.getTemplates());
+                                } catch (e: unknown) {
+                                  const msg = e instanceof Error ? e.message : String(e);
+                                  await dialog.showMessage({
+                                    title: 'Error',
+                                    message: 'Failed to delete template: ' + msg,
+                                    variant: 'danger',
+                                  });
+                                }
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </AppCard>
