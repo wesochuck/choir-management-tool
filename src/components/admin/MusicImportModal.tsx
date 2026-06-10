@@ -392,7 +392,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   return (
                     <tr 
                       key={idx} 
-                      // @allow-inline-style - Row background highlights validation state (error/warning).
+                      // @allow-inline-style - conditional error/warning background
                       style={{ 
                         backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
                       }}
@@ -458,7 +458,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           <div className="mle-import-modal-importing-progress-bg">
             <div 
               className="mle-import-modal-importing-progress-fill"
-              // @allow-inline-style - Progress bar width is dynamic based on import progress.
+              // @allow-inline-style - dynamic progress bar width
               style={{ 
                 width: `${importProgress}%`,
               }}
