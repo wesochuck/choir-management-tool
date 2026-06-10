@@ -3,7 +3,6 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { donationService, type DonationRecord } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
-import { Card } from '../components/ui/Card/Card';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './PublicForms.css';
@@ -56,7 +55,7 @@ export default function PublicDonationSuccessView() {
         </p>
 
         {donation ? (
-          <Card className="pub-style-59">
+          <div className="card flex-col pub-style-59">
             <div className="flex-row pub-style-38">
               <span className="text-muted">Transaction ID:</span>
               <strong>{donation.id}</strong>
@@ -82,7 +81,7 @@ export default function PublicDonationSuccessView() {
             <p className="text-xs text-muted pub-style-62">
               We are sending your receipt to your email now. You can safely close this page.
             </p>
-          </Card>
+          </div>
         ) : (
           <div className="flex-col pub-style-63">
             <p className="text-muted text-sm pub-style-6">

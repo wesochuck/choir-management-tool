@@ -112,20 +112,19 @@ export default function ResetPasswordView() {
               type="submit"
               disabled={isLoading || !!success}
               variant="primary"
-              size="small"
               className="public-submit-btn--md"
             >
               {isLoading ? 'Resetting password...' : 'Reset Password'}
             </Button>
 
             {!success && (
-              <Button
-                variant="ghost"
+              <button
+                type="button"
                 className="public-back-link"
                 onClick={() => navigate('/login')}
               >
                 Cancel and return to Login
-              </Button>
+              </button>
             )}
           </form>
         )}
