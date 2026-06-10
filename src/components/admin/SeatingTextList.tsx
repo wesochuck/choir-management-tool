@@ -41,7 +41,7 @@ export function SeatingTextList({
         const namesString = assignedSingers.length > 0 
           ? assignedSingers.map(p => {
               const rawDisplayName = uniqueDisplayNames[p.id] || getLastName(p.name);
-              const displayName = rawDisplayName.replace(', ', '');
+              const displayName = rawDisplayName.replace(', ', ' ');
               return showVoiceParts ? `${displayName} (${p.voicePart})` : displayName;
             }).join(', ')
           : 'No singers assigned';
