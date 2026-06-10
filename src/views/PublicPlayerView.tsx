@@ -13,7 +13,6 @@ import {
   clearAllDownloads
 } from '../services/offlineMediaStore';
 import { safeLocalStorage } from '../lib/storage';
-import '../components/player/Player.css';
 
 export default function PublicPlayerView() {
   const [searchParams] = useSearchParams();

@@ -8,7 +8,6 @@ import { AppCard } from '../common/AppCard';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
-import './EventCard.css';
 
 interface EventCardProps {
   event: Event;
@@ -89,63 +88,65 @@ export const EventCard: React.FC<EventCardProps> = ({
     }
   };
 
+  const baseBtnClasses = 'inline-flex items-center justify-center rounded-md font-sans font-medium border cursor-pointer gap-2 whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed h-8 px-4 text-xs';
+
   return (
     <AppCard noPadding>
-      <div className="flex-col ec-card-content">
-        <div className="event-card-top-row flex-row ec-top-row">
-            <span className={`badge ${isPerformance ? 'badge-performance' : 'badge-rehearsal'}`}>
-               {event.type}
-             </span>
-             <div className="flex-row ec-actions">
+      <div className="flex flex-col p-6 gap-4">
+        <div className="flex flex-row justify-between w-full items-center max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
+          <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${isPerformance ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+             {event.type}
+           </span>
+           <div className="flex flex-row gap-1 flex-wrap justify-end max-sm:grid max-sm:grid-cols-[repeat(auto-fit,minmax(80px,1fr))] max-sm:gap-1.5 max-sm:w-full">
+             <button 
+               onClick={() => calendarUtils.generateICS(event)}
+               className={`${baseBtnClasses} bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:text-[0.75rem] max-sm:py-1.5`}
+             >
+               📅 Add
+             </button>
+             {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
                <button 
-                 onClick={() => calendarUtils.generateICS(event)}
-                 className="btn btn-ghost btn-sm"
+                 onClick={handleOpenPlayer}
+                 className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:text-[0.75rem] max-sm:py-1.5`}
                >
-                 📅 Add
+                 🎧 Practice
                </button>
-               {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
-                 <button 
-                   onClick={handleOpenPlayer}
-                   className="btn btn-primary btn-sm"
-                 >
-                   🎧 Practice
-                 </button>
-               )}
-               {isPerformance && rsvp !== 'No' && (
-                 <Link 
-                   to={`/seating/${event.id}`}
-                   className="btn btn-secondary btn-sm"
-                 >
-                   🪑 Seating
-                 </Link>
-               )}
-             </div>
+             )}
+             {isPerformance && rsvp !== 'No' && (
+               <Link 
+                 to={`/seating/${event.id}`}
+                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-[#d1dfd6] max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:text-[0.75rem] max-sm:py-1.5`}
+               >
+                 🪑 Seating
+               </Link>
+             )}
+           </div>
         </div>
 
 
-        <div className="flex-col ec-info-wrapper">
-          <div className="flex-row ec-date-call-row">
-            <h3 className="text-label ec-date-text">
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-row items-center gap-2 flex-wrap">
+            <h3 className="m-0 text-primary text-sm font-medium">
               {formatInTimezone(event.date, timezone)}
             </h3>
             {event.callTime && (
-              <span className="badge ec-call-time-badge">
+              <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm items-center gap-1">
                 📢 Call Time: {formatTime12h(event.callTime)}
               </span>
             )}
           </div>
-          {event.title && <div className="text-headline">{event.title}</div>}
-          <div className="text-label">
+          {event.title && <div className="text-lg font-semibold text-text">{event.title}</div>}
+          <div className="text-sm font-medium text-text">
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand?.venue?.address || event.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="ec-venue-link"
+              className="flex items-center gap-1"
             >
               📍 {event.expand?.venue?.name || ''}
             </a>
           </div>
-          {event.details && <p className="text-muted text-sm">{event.details}</p>}
+          {event.details && <p className="text-text-muted text-sm">{event.details}</p>}
           {missStats && (() => {
             const styles = (() => {
               if (missStats.missed > maxRehearsalMisses) {
@@ -177,7 +178,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 
             return (
               <div 
-                className="ec-miss-stats-container"
+                className="mt-1 px-3 py-2 rounded-md text-sm flex items-center justify-between font-semibold"
                 // @allow-inline-style - Dynamic colors for attendance miss stats
                 style={{
                   backgroundColor: styles.containerBg,
@@ -189,7 +190,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                   Rehearsal Attendance: {missStats.missed} missed of {missStats.total} rehearsals
                 </span>
                 <span 
-                  className="badge ec-miss-stats-badge"
+                  className="inline-flex px-1.5 py-0.5 rounded text-xs font-bold border-none"
                   // @allow-inline-style - Dynamic color for miss stats limit badge
                   style={{
                     backgroundColor: styles.badgeBg,
@@ -203,20 +204,20 @@ export const EventCard: React.FC<EventCardProps> = ({
         </div>
 
         {previewData.visible && previewData.setList.length > 0 && (
-          <div className="setlist-preview-box ec-setlist-preview-box">
-            <h5 className="ec-setlist-label">
+          <div className="p-4 border border-border rounded-xl my-2 bg-surface">
+            <h5 className="m-0 mb-1 text-sm text-text-muted">
               📋 {previewData.label}
             </h5>
 
-            <ol className="ec-setlist-list">
+            <ol className="m-0 pl-5 text-sm">
               {previewData.setList.map((item, idx) => {
                 const rawItem = item as unknown as Record<string, unknown>;
                 const itemTitle = (rawItem.title || rawItem.pieceTitle || 'Untitled Piece') as string;
                 return (
-                  <li key={item.id || `${itemTitle}-${idx}`} className="ec-setlist-item">
+                  <li key={item.id || `${itemTitle}-${idx}`} className="mb-1">
                     <strong>{itemTitle}</strong>
                     {item.composer && (
-                      <span className="ec-composer-text">
+                      <span className="text-text-muted text-xs">
                         {' '}— {item.composer}
                       </span>
                     )}
@@ -228,29 +229,29 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
 
         {isParentPerformanceDeclined ? (
-          <div className="text-center text-xs text-muted ec-excused-message">
+          <div className="text-center text-xs text-text-muted mt-1 w-full p-2.5 border border-dashed border-border rounded-md bg-bg">
             🚫 Excused (Parent Performance Declined)
           </div>
         ) : (
           <>
-            <div className="event-card-rsvp-actions flex-responsive ec-rsvp-actions">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-4 w-full">
               <button 
                 onClick={() => handleRSVP('Yes')}
-                className={`btn ec-rsvp-btn ${rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                className={`inline-flex items-center justify-center rounded-md font-sans font-medium border cursor-pointer gap-2 whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 ${rsvp === 'Yes' ? 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md' : 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
               </button>
               <button 
                 onClick={() => handleRSVP('No')}
-                className={`btn ec-rsvp-btn ${rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                className={`inline-flex items-center justify-center rounded-md font-sans font-medium border cursor-pointer gap-2 whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 ${rsvp === 'No' ? 'bg-danger-bg text-danger-text hover:bg-[#fecaca] hover:border-[#fca5a5]' : 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'No' ? 'Processing...' : labels.no}
               </button>
             </div>
             {isWindowClosed && (
-              <div className="rsvp-closed-message text-center text-xs text-muted ec-rsvp-closed-message">
+              <div className="mt-1 text-center text-xs text-text-muted w-full">
                 {isPerformance 
                   ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
                   : 'This rehearsal has already passed.'}
