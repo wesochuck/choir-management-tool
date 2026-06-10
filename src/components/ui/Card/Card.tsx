@@ -1,5 +1,3 @@
-import styles from './Card.module.css';
-
 export interface CardProps {
   children?: React.ReactNode;
   title?: React.ReactNode;
@@ -9,16 +7,21 @@ export interface CardProps {
 }
 
 export function Card({ children, title, actions, noPadding = false, className }: CardProps) {
-  const cardClass = [styles.card];
-  if (noPadding) cardClass.push(styles.noPadding);
-  if (className) cardClass.push(className);
+  const cardClass = [
+    'bg-surface border border-border rounded-lg shadow-sm hover:shadow-md',
+    'flex flex-col gap-6',
+    noPadding ? 'p-0' : 'p-6',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className={cardClass.join(' ')}>
+    <div className={cardClass}>
       {(title || actions) && (
-        <div className={styles.header}>
-          {title && <h3 className={styles.title}>{title}</h3>}
-          {actions && <div className={styles.actions}>{actions}</div>}
+        <div className="flex items-center justify-between">
+          {title && <h3 className="m-0 text-2xl font-semibold text-text">{title}</h3>}
+          {actions && <div className="flex gap-2">{actions}</div>}
         </div>
       )}
       {children}
