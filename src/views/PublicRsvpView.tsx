@@ -372,6 +372,7 @@ export default function PublicRsvpView() {
 
               <div className="card p-4 border border-border rounded-lg bg-surface text-center">
                 <div className="font-bold text-xs text-text-muted uppercase tracking-wider">Your response</div>
+                {/* @allow-inline-style - dynamic color based on RSVP status */}
                 <div className="text-xl font-extrabold mt-2" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : 'var(--neutral-text)' }}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
@@ -429,6 +430,7 @@ export default function PublicRsvpView() {
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
                     className="btn btn-primary flex-1 h-12 font-bold justify-center"
+                    // @allow-inline-style - dynamic opacity/border based on RSVP selection
                     style={{
                       opacity: selectedRsvp === 'Yes' ? 1 : 0.6,
                       border: selectedRsvp === 'Yes' ? '2px solid var(--primary-deep)' : '1px solid var(--border)'
@@ -446,6 +448,7 @@ export default function PublicRsvpView() {
                     }}
                     disabled={isUpdating}
                     className="btn btn-danger flex-1 h-12 font-bold justify-center"
+                    // @allow-inline-style - dynamic opacity/color/border based on RSVP selection
                     style={{
                       backgroundColor: '#ef4444',
                       color: 'white',
@@ -470,6 +473,7 @@ export default function PublicRsvpView() {
               <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
                 <div 
                   className="text-5xl w-20 h-20 rounded-full flex items-center justify-center mb-1 transition-all duration-300"
+                  // @allow-inline-style - dynamic attendance state background/color
                   style={{ 
                     backgroundColor: isAttending ? '#e6f4ea' : '#fce8e6', 
                     color: isAttending ? 'var(--primary)' : '#c5221f',

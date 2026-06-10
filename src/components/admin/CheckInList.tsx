@@ -403,7 +403,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
         <div 
           className="flex-row items-center mt-6 mb-3 gap-4 w-full"
         >
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent to-border">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent to-border" />
           <span 
             className="bg-surface px-4 py-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] shadow-[0_2px_8px_rgb(0_0_0_/_3%)] flex items-center gap-[6px] text-[0.8rem] font-extrabold text-primary-deep uppercase tracking-widest"
           >

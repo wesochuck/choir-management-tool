@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { MusicPiece } from '../../types/musicLibrary';
-import type { MusicGenreDef } from '../../services/settingsService';
-import { toggleIdInSet, type MusicLibrarySortField, type SortDirection } from '../../lib/music/libraryRows';
-import { Pagination } from '../../components/common/Pagination';
+import type { MusicPiece } from '../../../types/musicLibrary';
+import type { MusicGenreDef } from '../../../services/settingsService';
+import { toggleIdInSet, type MusicLibrarySortField, type SortDirection } from '../../../lib/music/libraryRows';
+import { Pagination } from '../../../components/common/Pagination';
 import { MusicLibraryRow } from './table/MusicLibraryRow';
 import { getChildMovements } from './table/musicLibraryTableUtils';
 
