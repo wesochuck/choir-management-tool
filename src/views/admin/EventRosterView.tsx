@@ -194,79 +194,51 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               <button
                 type="button"
                 onClick={() => setRsvpFilter('All')}
-                className={`btn btn-sm`}
-                // @allow-inline-style - active RSVP filter state
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                  color: rsvpFilter === 'All' ? '#1d4ed8' : 'var(--text-muted)',
-                  border: `1px solid ${rsvpFilter === 'All' ? 'rgba(59, 130, 246, 0.3)' : 'var(--border)'}`,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                  rsvpFilter === 'All'
+                    ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                }`}
               >
                 👥 All Active ({mappedSingers.length})
               </button>
               <button
                 type="button"
                 onClick={() => setRsvpFilter('Yes')}
-                className={`btn btn-sm`}
-                // @allow-inline-style - active RSVP filter state
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.15)' : 'transparent',
-                  color: rsvpFilter === 'Yes' ? 'var(--primary-deep)' : 'var(--text-muted)',
-                  border: `1px solid ${rsvpFilter === 'Yes' ? 'rgba(74, 117, 89, 0.3)' : 'var(--border)'}`,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                  rsvpFilter === 'Yes'
+                    ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                }`}
               >
                 🟢 Attending ({yesCount})
               </button>
               <button
                 type="button"
                 onClick={() => setRsvpFilter('No')}
-                className={`btn btn-sm`}
-                // @allow-inline-style - active RSVP filter state
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
-                  color: rsvpFilter === 'No' ? '#b91c1c' : 'var(--text-muted)',
-                  border: `1px solid ${rsvpFilter === 'No' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                  rsvpFilter === 'No'
+                    ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                }`}
               >
                 🔴 Declined ({noCount})
               </button>
               <button
                 type="button"
                 onClick={() => setRsvpFilter('Pending')}
-                className={`btn btn-sm`}
-                // @allow-inline-style - active RSVP filter state
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.08)' : 'transparent',
-                  color: rsvpFilter === 'Pending' ? '#4b5563' : 'var(--text-muted)',
-                  border: `1px solid ${rsvpFilter === 'Pending' ? 'rgba(107, 114, 128, 0.2)' : 'var(--border)'}`,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                  rsvpFilter === 'Pending'
+                    ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                }`}
               >
                 ⏳ No Response ({pendingCount})
               </button>
             </div>
 
             {/* Section Subtotals */}
-            <div 
+            <div
               className="grid gap-4 border-b border-gray-200 pb-4"
               // @allow-inline-style - dynamic grid columns based on section count
               style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
@@ -274,9 +246,13 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               {sections.map(sec => {
                 const isSelected = selectedVoiceParts.includes(sec.code);
                 return (
-                  <div 
-                    key={sec.code} 
-                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
+                  <div
+                    key={sec.code}
+                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-colors duration-150 hover:bg-primary-light/80 ${
+                      isSelected
+                        ? 'border-primary shadow-[0_0_0_1px_var(--primary)]'
+                        : 'border-transparent'
+                    }`}
                     onClick={() => handleVoicePartToggle(sec.code)}
                     // @allow-inline-style - dynamic border color based on selection
                     style={{ borderColor: isSelected ? 'var(--primary)' : 'transparent' }}
@@ -296,12 +272,14 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 const isSelected = selectedVoiceParts.includes(vp.label);
                 const count = partCounts.get(vp.label) || 0;
                 return (
-                  <div 
-                    key={vp.label} 
-                    className={`flex cursor-pointer flex-col rounded-lg border bg-white transition-all duration-200 ease-in-out hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light ${isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'}`}
+                  <div
+                    key={vp.label}
+                    className={`flex cursor-pointer flex-col rounded-lg border bg-white transition-colors duration-150 hover:bg-primary-light ${
+                      isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'
+                    }`}
                     onClick={() => handleVoicePartToggle(vp.label)}
                     // @allow-inline-style - dynamic border and padding based on selection
-                    style={{ 
+                    style={{
                       borderWidth: isSelected ? '2px' : '1px',
                       padding: isSelected ? 'calc(8px - 1px)' : '8px'
                     }}
@@ -329,13 +307,13 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 placeholder="Search active singers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-[42px] pl-[38px] text-gray-800 shadow-sm"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-gray-500 hover:bg-primary-light hover:text-primary-deep"
+                  className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
                   title="Clear search"
                   aria-label="Clear search"
                 >
@@ -347,10 +325,10 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               )}
             </div>
 
-            <select 
-              value={sortBy} 
+            <select
+              value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="h-11 w-[210px] rounded-lg border border-gray-200 bg-white px-3 pr-9 text-gray-800 shadow-sm"
+              className="h-11 w-[210px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800"
               aria-label="Sort singers"
             >
               <option value="lastName">Last Name</option>
@@ -358,15 +336,19 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </select>
 
             {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedVoiceParts([]);
                   setRsvpFilter('All');
                 }}
-                className="btn btn-secondary h-11 whitespace-nowrap"
+                className="btn btn-secondary flex h-11 items-center gap-1 whitespace-nowrap"
               >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                </svg>
                 Reset Filters
               </button>
             )}
