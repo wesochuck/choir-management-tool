@@ -17,30 +17,32 @@ import { Spinner } from './Spinner';
 
 test('Spinner renders with default size (medium)', () => {
   const { container } = render(React.createElement(Spinner));
-  const div = container.firstChild as HTMLElement;
-  assert.equal(div.tagName, 'DIV');
-  assert.equal(div.getAttribute('role'), 'status');
-  assert.equal(div.getAttribute('aria-label'), 'Loading');
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
+  assert.equal(el.tagName, 'DIV');
+  assert.equal(el.getAttribute('role'), 'status');
+  assert.equal(el.getAttribute('aria-label'), 'Loading');
 });
 
 test('Spinner renders small size', () => {
   const { container } = render(React.createElement(Spinner, { size: 'small' }));
-  const div = container.firstChild as HTMLElement;
-  assert.equal(div.tagName, 'DIV');
-  assert.equal(div.getAttribute('role'), 'status');
-  assert.equal(div.getAttribute('aria-label'), 'Loading');
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
+  assert.equal(el.getAttribute('role'), 'status');
+  assert.equal(el.getAttribute('aria-label'), 'Loading');
 });
 
 test('Spinner renders large size', () => {
   const { container } = render(React.createElement(Spinner, { size: 'large' }));
-  const div = container.firstChild as HTMLElement;
-  assert.equal(div.tagName, 'DIV');
-  assert.equal(div.getAttribute('role'), 'status');
-  assert.equal(div.getAttribute('aria-label'), 'Loading');
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
+  assert.equal(el.getAttribute('role'), 'status');
+  assert.equal(el.getAttribute('aria-label'), 'Loading');
 });
 
 test('Spinner merges className prop', () => {
   const { container } = render(React.createElement(Spinner, { className: 'custom-class' }));
-  const div = container.firstChild as HTMLElement;
-  assert.ok(div.className.includes('custom-class'));
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
+  assert.ok(el.classList.contains('custom-class'), 'has custom class');
 });

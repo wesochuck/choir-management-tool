@@ -1,15 +1,16 @@
-import React from 'react';
 import styles from './Spinner.module.css';
 
 export type SpinnerSize = 'small' | 'medium' | 'large';
 
+export interface SpinnerProps {
+  size?: SpinnerSize;
+  className?: string;
+}
+
 export function Spinner({
   size = 'medium',
   className,
-}: {
-  size?: SpinnerSize;
-  className?: string;
-}) {
+}: SpinnerProps) {
   const classNames = [styles.spinner, styles[size], className]
     .filter(Boolean)
     .join(' ');
