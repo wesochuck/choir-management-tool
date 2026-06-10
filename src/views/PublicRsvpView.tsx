@@ -284,7 +284,7 @@ export default function PublicRsvpView() {
           value={rsvpNote}
           onChange={(e) => setRsvpNote(e.target.value)}
           placeholder="Briefly let the admins know why you cannot make this rehearsal."
-          className={`font-inherit box-border min-h-[100px] w-full resize-y rounded-lg border border-border p-3 text-sm ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
+          className={`font-[inherit] box-border min-h-[100px] w-full resize-y rounded-lg border border-border p-3 text-sm ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
           maxLength={1000}
         />
         <p className="m-0 text-xs text-text-muted">

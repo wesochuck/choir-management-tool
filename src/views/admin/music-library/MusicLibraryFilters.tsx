@@ -120,7 +120,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 </div>
             </div>
 
-            <div className="flex-flow row wrap flex items-center gap-[var(--space-lg)] pt-[2px]">
+            <div className="flex-row flex-wrap flex items-center gap-[var(--space-lg)] pt-[2px]">
                 <div className="flex-row items-center gap-[6px]">
                     <span className="text-muted text-xs font-semibold">Last Performed:</span>
                     <select

@@ -584,7 +584,7 @@ export default function SeatingView() {
             {/* Render overflow dropdown when charts exceed visible count */}
             {(charts || []).length > visibleTabCount && (
               <div 
-                className="border-b-none -mb-px pb-2"
+                className="border-b-0 -mb-px pb-2"
                 // @allow-inline-style - dynamic border based on active chart visibility
                 style={{
                   borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`

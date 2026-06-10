@@ -263,7 +263,7 @@ export default function DashboardView() {
                     {latestAnnouncement && (
                       <button
                         type="button"
-                        className="font-inherit cursor-pointer border-0 bg-transparent p-0 text-left font-bold text-primary"
+                        className="font-[inherit] cursor-pointer border-0 bg-transparent p-0 text-left font-bold text-primary"
                         onClick={() => setSelectedAnnouncement(latestAnnouncement)}
                       >
                         Latest bulletin: {latestAnnouncement.subject || 'Choir Update'}

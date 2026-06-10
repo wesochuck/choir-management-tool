@@ -1066,7 +1066,7 @@ export function MusicPieceModal({
                             <>
                             <div className="mt-[var(--space-xs)] flex flex-col gap-1">
                                 <label className="text-label">Link to Past Performance (Optional)</label>
-                                <div className="flex-flow row wrap flex min-h-9 gap-[var(--space-xs)]">
+                                <div className="flex-row flex-wrap flex min-h-9 gap-[var(--space-xs)]">
                                     {selectedPerformances.length === 0 ? (
                                         <span className="text-muted text-sm">No performances linked.</span>
                                     ) : (
@@ -1176,7 +1176,7 @@ export function MusicPieceModal({
                             <label className="text-label">Linked Performances</label>
                             
                             {/* Selected performances pills */}
-                            <div className="flex-flow row wrap flex min-h-10 gap-[var(--space-xs)] p-[var(--space-xs)]">
+                            <div className="flex-row flex-wrap flex min-h-10 gap-[var(--space-xs)] p-[var(--space-xs)]">
                                 {selectedPerformances.length === 0 ? (
                                     <span className="text-muted text-sm">No performances linked.</span>
                                 ) : (
@@ -1192,7 +1192,7 @@ export function MusicPieceModal({
                                 )}
                             </div>
 
-                            <div className="flex-flow row wrap flex gap-[var(--space-sm)]">
+                            <div className="flex-row flex-wrap flex gap-[var(--space-sm)]">
                                 <select 
                                     className="card h-9 min-w-0 flex-[1_1_200px] px-3 text-[14px]" 
                                     value="" 
@@ -1411,7 +1411,7 @@ export function MusicPieceModal({
 
                         <div className="card rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted,#f8fafc)] p-[var(--space-md)]">
                             <h4 className="!mt-0 !mb-[var(--space-sm)] text-sm text-[var(--primary)]">Add New Movement</h4>
-                            <div className="flex-flow row wrap flex items-end gap-[var(--space-sm)]">
+                            <div className="flex-row flex-wrap flex items-end gap-[var(--space-sm)]">
                                 <div className="flex flex-[2_1_200px] flex-col gap-1">
                                     <label className="text-muted text-xs">Movement Name (defaults sequentially)</label>
                                     <input 
