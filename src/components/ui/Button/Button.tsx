@@ -1,16 +1,20 @@
-import type { ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';
+import type { ElementType, MouseEventHandler, ReactNode } from 'react';
 import { Spinner } from '../Spinner/Spinner';
 import styles from './Button.module.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'default' | 'small';
 
-export interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
+export interface ButtonProps {
   as?: ElementType;
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
   icon?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: MouseEventHandler<HTMLElement>;
 }
 
 export function Button({
@@ -24,7 +28,7 @@ export function Button({
   disabled,
   onClick,
   ...rest
-}: ButtonProps) {
+}: ButtonProps & Record<string, unknown>) {
   const classNames = [styles.btn, styles[variant]]
     .concat(size !== 'default' ? [styles.small] : [])
     .concat(className ? [className] : [])
