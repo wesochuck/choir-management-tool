@@ -28,6 +28,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   return (
     <div className="admin-layout-wrapper">
       <header className="admin-layout-header">
+        // @allow-inline-style - maxWidth varies per page layout variant
         <div className="admin-header-container" style={{ maxWidth }}>
           <div className="admin-header-brand">
             <Link to="/" className="admin-back-btn" title="Dashboard">🏠 Home</Link>
@@ -50,6 +51,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
         </div>
       </header>
 
+      // @allow-inline-style - maxWidth varies per page layout variant
       <main className="admin-main-content" style={{ maxWidth }}>
         {children}
       </main>
