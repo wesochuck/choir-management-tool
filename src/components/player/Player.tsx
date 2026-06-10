@@ -119,7 +119,7 @@ export const Player: React.FC<PlayerProps> = ({
           onError={handleAudioError}
         />
         
-        {playError && <div className="error-message" style={{ margin: '10px 0', padding: '10px', fontSize: '0.9rem' }}>{playError}</div>}
+        {playError && <div className="error-message player-info-row">{playError}</div>}
         
         {/* COUNTDOWN OVERLAY */}
         {countdown !== null && (
@@ -136,8 +136,10 @@ export const Player: React.FC<PlayerProps> = ({
 
         {/* SKIP NOTIFICATION */}
         {showSkipNotify && (
+          // @allow-inline-style - active part badge state
           <div className="countdown-indicator" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
             <span>Skipped first {skipStart}s of track</span>
+            {/* @allow-inline-style - inactive part badge state */}
             <button onClick={() => setShowSkipNotify(false)} className="skip-wait-button" style={{ background: 'var(--border-color)', color: 'var(--text-primary)' }}>Dismiss</button>
           </div>
         )}
@@ -207,7 +209,7 @@ export const Player: React.FC<PlayerProps> = ({
               value={skipStart || ''} 
               onChange={handleSkipStartChange}
               placeholder="0"
-              style={{ width: '60px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+              className="player-track-badge"
             />
             <span className="unit-label">s</span>
           </div>

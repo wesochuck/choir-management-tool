@@ -33,8 +33,6 @@ const legacyWhitelist = new Set([
   'src/components/admin/SetListInlineCreator.tsx',
   'src/components/admin/CheckInList.tsx',
   'src/components/admin/SeatingGrid.tsx',
-  'src/components/player/Playlist.tsx',
-  'src/components/player/Player.tsx',
   'src/views/PublicAuditionView.tsx',
   'src/views/admin/SeatingView.tsx',
   'src/views/admin/EventsView.tsx',

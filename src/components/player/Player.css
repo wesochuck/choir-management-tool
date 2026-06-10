@@ -768,3 +768,18 @@
     display: none !important;
   }
 }
+
+/* ── Player Info Row ────────────────────── */
+
+.player-info-row {
+  margin: 10px 0;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.player-track-badge {
+  width: 60px;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
