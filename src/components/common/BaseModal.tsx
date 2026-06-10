@@ -1,5 +1,4 @@
 import React, { useEffect, useId, useRef } from 'react';
-import './BaseModal.css';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -88,26 +87,26 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" role="presentation">
+    <div className="fixed inset-0 bg-bg flex items-center justify-center z-[1000] p-4" role="presentation">
       <div
         ref={modalRef}
-        className="card flex-col modal-content"
+        className="card flex-col w-full max-h-[90vh] overflow-y-auto gap-6 shadow-md bg-surface rounded-lg p-6 border border-border"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         // @allow-inline-style - dynamic maxWidth/minHeight from props
         style={{ maxWidth, minHeight }}
       >
-        <div className="modal-title-row">
-          <h2 id={titleId}>{title}</h2>
+        <div className="flex items-center">
+          <h2 id={titleId} className="m-0">{title}</h2>
         </div>
 
-        <div className="modal-body">
+        <div className="flex flex-col gap-4">
           {children}
         </div>
 
         {footer && (
-          <div className="modal-footer">
+          <div className="flex items-center justify-end gap-4 mt-auto">
             {footer}
           </div>
         )}

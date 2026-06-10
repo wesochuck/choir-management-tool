@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { settingsService } from '../../services/settingsService';
-import './PublicLogo.css';
 
 export default function PublicLogo() {
   const [logoUrl, setLogoUrl] = useState<string | null | undefined>(undefined);
@@ -12,14 +11,14 @@ export default function PublicLogo() {
   }, []);
 
   if (logoUrl === undefined) {
-    return <div className="public-logo-container public-logo-placeholder" />;
+    return <div className="flex justify-center mb-8 min-h-[100px]" />;
   }
 
   if (!logoUrl) return null;
 
   return (
-    <div className="public-logo-container">
-      <img src={logoUrl} alt="Organization logo" className="public-logo-img" />
+    <div className="flex justify-center mb-8">
+      <img src={logoUrl} alt="Organization logo" className="max-h-[100px] max-w-[90%] object-contain sm:max-h-[80px]" />
     </div>
   );
 }
