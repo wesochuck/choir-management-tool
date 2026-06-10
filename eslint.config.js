@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import prettierConfig from 'eslint-config-prettier'
 import noEffectStateCycle from './eslint-rules/no-effect-state-cycle.js'
 
 export default defineConfig([
@@ -39,4 +40,5 @@ export default defineConfig([
       'no-effect-state-cycle': { rules: { 'no-effect-state-cycle': noEffectStateCycle } },
     },
   },
+  prettierConfig,
 ])
