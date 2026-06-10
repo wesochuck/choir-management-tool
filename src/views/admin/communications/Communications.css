@@ -562,9 +562,7 @@
 .comm-gap-sm { gap: 8px; }
 .comm-gap-6px { gap: 6px; }
 .comm-opacity-80 { opacity: 0.8; }
-.admin-empty-state { padding: var(--space-xl); text-align: center; }
-.admin-empty-state { text-align: center; padding: 40px 0; }
-.admin-empty-state { text-align: center; padding: 20px; color: var(--text-muted); }
+.admin-empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
 
 /* Template specific */
 .comm-template-editor-footer {
@@ -627,10 +625,7 @@
   overflow: hidden;
 }
 
-.admin-empty-state {
-  padding: 40px;
-  text-align: center;
-}
+
 
 /* Placeholder Tag Colors */
 .comm-tag-recipient {

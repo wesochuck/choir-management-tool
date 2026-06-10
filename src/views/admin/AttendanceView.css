@@ -144,7 +144,6 @@
     gap: 0;
     background: rgb(255 255 255 / 85%);
     backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
     border: 1px solid rgb(74 117 89 / 15%);
     box-shadow: 0 4px 20px rgb(0 0 0 / 5%);
     cursor: pointer;

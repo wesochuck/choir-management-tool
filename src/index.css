@@ -75,16 +75,6 @@
 }
 
 /* Base Layout Utilities */
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
-
-.flex-row {
-  display: flex;
-  flex-direction: row;
-}
-
 .flex-center {
   display: flex;
   align-items: center;
@@ -99,11 +89,6 @@
 .flex-wrap {
   display: flex;
   flex-wrap: wrap;
-}
-
-.flex-responsive {
-  display: flex;
-  flex-flow: row wrap;
 }
 
 @media (width <= 768px) {
@@ -410,8 +395,6 @@ input, select, textarea {
 
 /* Custom Dropdown Styling to support Safari macOS/iOS and other platforms natively */
 select {
-  appearance: none !important;
-  appearance: none !important;
   appearance: none !important;
   background-color: var(--surface);
   border: 1px solid var(--border);

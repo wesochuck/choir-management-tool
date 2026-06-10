@@ -123,13 +123,7 @@
   font-weight: 500;
 }
 
-/* Accent Cards & Status Banners */
-.db-accent-card {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-md);
-  align-items: center;
-}
+
 
 .db-polls-archive-toggle {
   display: flex;

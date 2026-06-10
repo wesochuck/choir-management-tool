@@ -112,7 +112,6 @@
   padding: 0 var(--space-lg);
   height: 44px; /* Accessibility minimum */
   backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.2s ease, border-color 0.2s ease;
   text-decoration: none;
   cursor: pointer;
