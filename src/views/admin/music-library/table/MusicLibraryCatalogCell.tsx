@@ -1,5 +1,4 @@
 import { resolveCatalogLookupUrl } from '../../../../lib/musicPieceUtils';
-import '../MusicLibrary.css';
 
 interface MusicLibraryCatalogCellProps {
   catalogId?: string;
@@ -15,7 +14,7 @@ export function MusicLibraryCatalogCell({
     : null;
 
   return (
-    <td className="ml-table-cell ml-table-cell-center">
+    <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle text-center">
       {catalogId && catalogLookupUrl ? (
         <a
           href={catalogLookupUrl}
@@ -23,7 +22,7 @@ export function MusicLibraryCatalogCell({
           rel="noopener noreferrer"
           onClick={(event) => event.stopPropagation()}
           title={`View Catalog ID: ${catalogId}`}
-          className="btn-ghost ml-catalog-link"
+          className="inline-flex items-center justify-center w-6 h-6 rounded-[var(--radius-sm)] text-[var(--primary)]"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>

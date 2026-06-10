@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { CHIP_COLORS, getChipColor } from '../../../lib/chipColorUtils';
-import './MusicLibraryEditors.css';
 
 export interface MultiSelectOption {
     id: string;

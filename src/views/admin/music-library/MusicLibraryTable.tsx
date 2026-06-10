@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { MusicPiece } from '../../../types/musicLibrary';
-import type { MusicGenreDef } from '../../../services/settingsService';
-import { toggleIdInSet, type MusicLibrarySortField, type SortDirection } from '../../../lib/music/libraryRows';
-import { Pagination } from '../../../components/common/Pagination';
+import type { MusicPiece } from '../../types/musicLibrary';
+import type { MusicGenreDef } from '../../services/settingsService';
+import { toggleIdInSet, type MusicLibrarySortField, type SortDirection } from '../../lib/music/libraryRows';
+import { Pagination } from '../../components/common/Pagination';
 import { MusicLibraryRow } from './table/MusicLibraryRow';
 import { getChildMovements } from './table/musicLibraryTableUtils';
 
@@ -50,7 +50,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(new Set());
 
     const toggleRowExpansion = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevents triggering the row's onEditPiece modal callback
+        e.stopPropagation();
         setExpandedParentIds(prev => toggleIdInSet(prev, id));
     };
 
@@ -60,17 +60,17 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         const isActive = sortField === field;
         return (
             <th 
-                className={`text-label ml-table-header ml-table-header-sortable`} 
-                onClick={() => onSortChange(field)}
+                className={`text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold select-none cursor-pointer`}
                 // @allow-inline-style - dynamic color based on sort state
                 style={{ 
                     color: isActive ? 'var(--primary)' : 'var(--text-muted)'
                 }}
+                onClick={() => onSortChange(field)}
             >
-                <div className="flex-row ml-actions-cell-content">
+                <div className="flex gap-[var(--space-xs)] items-center">
                     <span>{label}</span>
                     <span 
-                        className="ml-sort-indicator"
+                        className="text-[10px] inline-block"
                         // @allow-inline-style - dynamic opacity based on sort state
                         style={{ 
                             opacity: isActive ? 1 : 0.35
@@ -84,27 +84,27 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     };
 
     return (
-        <div className="admin-view-container ml-no-margin">
-            <div className="ml-table-container">
-                <table className="table ml-table">
+        <div className="!m-0">
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] border-collapse text-left border border-[var(--border)]">
                     <thead>
-                        <tr className="ml-table-header-row">
-                            <th className="text-label ml-table-header ml-table-header-center ml-table-header-checkbox">
+                        <tr className="bg-[var(--primary-light)]">
+                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold text-center w-10">
                                 <input 
                                     type="checkbox" 
                                     checked={filteredPieces.length > 0 && filteredPieces.every(p => selectedIds.has(p.id))}
                                     onChange={(e) => onSelectAll(e.target.checked)}
-                                    className="ml-checkbox"
+                                    className="!min-h-auto !w-[14px] !h-[14px] !m-0 align-middle cursor-pointer"
                                 />
                             </th>
                             {renderSortHeader('Title', 'title')}
                             {renderSortHeader('Composer/Arranger', 'composer')}
                             {renderSortHeader('Duration', 'duration')}
-                            <th className="text-label ml-table-header ml-table-header-center ml-table-header-perf">Perf</th>
+                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold text-center w-[50px]">Perf</th>
                             {renderSortHeader('Last Performed', 'lastPerformed')}
-                            <th className="text-label ml-table-header">Tracks</th>
-                            <th className="text-label ml-table-header ml-table-header-center ml-table-header-link">Link</th>
-                            <th className="text-label ml-table-header ml-table-header-actions">Actions</th>
+                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold">Tracks</th>
+                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold text-center w-[60px]">Link</th>
+                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold w-20">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,7 +122,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                             </tr>
                         ) : (
                             filteredPieces.map(piece => {
-                                // Exclude child records from the top-level loop to prevent duplicate entries
                                 if (piece.parentId) return null;
 
                                 const isExpanded = expandedParentIds.has(piece.id);
@@ -130,7 +129,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
 
                                 return (
                                     <React.Fragment key={piece.id}>
-                                        {/* Primary Parent Row */}
                                         <MusicLibraryRow
                                             piece={piece}
                                             allPieces={pieces}
@@ -146,7 +144,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                                             onPlayTrack={onPlayTrack}
                                         />
 
-                                        {/* Sub-Movement Rows Rendered Contextually */}
                                         {isExpanded && movements.map(movement => (
                                             <MusicLibraryRow
                                                 key={movement.id}
@@ -172,10 +169,9 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                 </table>
             </div>
 
-            {/* Premium Pagination Navigation Controls */}
             {!isLoading && totalParentCount > 0 && (
-                <div className="flex-responsive no-print ml-pagination-footer">
-                    <span className="text-sm text-muted ml-pagination-info">
+                <div className="flex justify-between items-center px-[var(--space-lg)] py-[var(--space-md)] border-t border-[var(--border)] bg-[var(--bg-card,#fff)] rounded-[0_0_var(--radius-md)_var(--radius-md)] mt-[var(--space-xs)]">
+                    <span className="text-sm text-muted font-medium">
                         Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–{Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
                     </span>
 

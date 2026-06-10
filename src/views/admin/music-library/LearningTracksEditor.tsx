@@ -3,7 +3,6 @@ import { pb } from '../../../lib/pocketbase';
 import type { MusicPiece } from '../../../types/musicLibrary';
 import type { SectionDef, VoicePartDef } from '../../../services/settingsService';
 import { getVisibleTrackKeys } from './learningTrackKeys';
-import './MusicLibraryEditors.css';
 
 export interface LearningTracksEditorProps {
     piece: MusicPiece;
@@ -35,7 +34,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
     const isMovement = !!uploadingKeyPrefix;
 
     return (
-        <div className="flex-col mle-tracks-editor-container">
+        <div className="flex flex-col gap-[var(--space-xs)] border border-[var(--border)] rounded-[var(--radius)] p-[var(--space-sm)] bg-[rgb(0_0_0_/_2%)]">
             {visibleKeys.map(partLabel => {
                 const filename = piece.audioTrackMapping?.[partLabel];
                 const uploadKey = `${uploadingKeyPrefix}${partLabel}`;
@@ -60,7 +59,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                 return (
                     <div 
                         key={partLabel} 
-                        className={`flex-row mle-tracks-editor-item ${isMovement ? 'mle-tracks-editor-item-movement' : 'mle-tracks-editor-item-normal'}`} 
+                        className={`flex-row items-center justify-between gap-[var(--space-md)] transition-all duration-150 ${isMovement ? 'p-[6px_10px] bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-[var(--radius)] scale-100 shadow-none text-[13px]' : 'p-[8px_12px] bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-[var(--radius)] scale-100 shadow-none'}`} 
                         onDragOver={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -95,27 +94,27 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 : undefined,
                         }}
                     >
-                        <div className={`flex-col ${isMovement ? 'mle-tracks-editor-info-movement' : 'mle-tracks-editor-info-normal'}`}>
-                            <strong className={`mle-tracks-editor-display-name ${isMovement ? 'mle-tracks-editor-display-name-movement' : 'mle-tracks-editor-display-name-normal'}`}>
+                        <div className={`flex-col ${isMovement ? 'min-w-[80px]' : 'min-w-[90px]'}`}>
+                            <strong className={`text-[var(--text-color)] ${isMovement ? 'text-[12px]' : 'text-[13px]'}`}>
                                 {displayName}
                             </strong>
-                            <span className={`text-xs text-muted ${isMovement ? 'mle-tracks-editor-full-name-movement' : 'mle-tracks-editor-full-name-normal'}`}>
+                            <span className={`text-xs text-muted ${isMovement ? 'text-[10px]' : 'text-[11px]'}`}>
                                 {fullName}
                             </span>
                         </div>
                         
                         {isUploading ? (
-                            <span className="text-xs text-muted animate-pulse mle-tracks-editor-uploading">Uploading...</span>
+                            <span className="text-xs text-muted animate-pulse text-[12px]">Uploading...</span>
                         ) : filename ? (
-                            <div className="mle-tracks-editor-audio-container">
+                            <div className="flex flex-row items-center gap-[var(--space-sm)] flex-1 justify-end">
                                 <audio 
                                     src={pb.files.getURL(piece, filename)} 
                                     controls 
-                                    className={`mle-tracks-editor-audio ${isMovement ? 'mle-tracks-editor-audio-movement' : 'mle-tracks-editor-audio-normal'}`}
+                                    className={`flex-1 w-full ${isMovement ? 'h-6' : 'h-7'}`}
                                 />
                                 <button 
                                     type="button" 
-                                    className="btn btn-ghost btn-sm mle-tracks-editor-delete-btn" 
+                                    className="btn btn-ghost btn-sm !text-[var(--danger)] !border-none !bg-none cursor-pointer !p-[4px_6px] min-h-auto !h-auto !m-0" 
                                     onClick={() => onDelete(partLabel)}
                                     title="Delete track"
                                 >
@@ -123,9 +122,9 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 </button>
                             </div>
                         ) : (
-                            <div className="mle-tracks-editor-empty-container">
+                            <div className="flex flex-row items-center justify-end flex-1">
                                 <label 
-                                    className="btn btn-secondary btn-sm mle-tracks-editor-upload-label" 
+                                    className="btn btn-secondary btn-sm cursor-pointer inline-flex items-center gap-1 !text-[11px] !p-[2px_8px] !h-6 !min-h-6 !m-0" 
                                 >
                                     📤 Upload
                                     <input 
@@ -137,7 +136,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                                 onUpload(partLabel, file);
                                             }
                                         }}
-                                        className="mle-hidden-input"
+                                        className="hidden"
                                     />
                                 </label>
                             </div>
@@ -147,8 +146,8 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
             })}
 
             {addableParts.length > 0 && (
-                <div className="flex-row animate-fade-in mle-tracks-editor-add-container">
-                    <span className="mle-tracks-editor-add-label">
+                <div className="flex-row items-center gap-[var(--space-xs)] mt-[var(--space-xs)] pt-[var(--space-xs)] border-t border-dashed border-[var(--border)] justify-start animate-fade-in">
+                    <span className="text-[11px] text-[var(--text-muted)] font-semibold">
                         ➕ Add voice part track slot:
                     </span>
                     <select
@@ -159,7 +158,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 onAddPart(val);
                             }
                         }}
-                        className="mle-tracks-editor-add-select"
+                        className="text-[11px] p-[3px_8px] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] text-[var(--text-color)] cursor-pointer outline-none font-medium"
                     >
                         <option value="" disabled>Select voice part...</option>
                         {addableParts.map(vp => (

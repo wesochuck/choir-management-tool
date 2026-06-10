@@ -5,7 +5,6 @@ import type { SetListItem } from '../../services/eventService';
 import type { MusicPiece } from '../../types/musicLibrary';
 import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
 import type { MusicGenreDef } from '../../services/settingsService';
-import '../../views/admin/SetList.css';
 
 interface Props {
   item: SetListItem;
@@ -65,81 +64,81 @@ export const SortableSetListItem: React.FC<Props> = ({
         ...style 
       }}
     >
-      <div {...attributes} {...listeners} className="sl-drag-handle">
-        <span className="sl-drag-icon">⣿</span>
+      <div {...attributes} {...listeners} className="cursor-grab flex items-center p-2 text-[var(--text-muted)]">
+        <span className="text-[1.2rem]">⣿</span>
       </div>
       
-      <div className="flex-col sl-item-content">
+      <div className="flex-col flex-1 gap-[2px]">
         {item.type === 'intermission' ? (
-          <div className="flex-row sl-item-header">
-            <span className="sl-intermission-title">⏸️ {titleText}</span>
+          <div className="flex-row items-center gap-2 flex-wrap">
+            <span className="font-semibold text-[var(--primary-deep)] text-[0.95rem]">⏸️ {titleText}</span>
             {displayDuration && (
-              <span className="badge badge-rehearsal sl-badge-intermission">
+              <span className="badge badge-rehearsal text-[0.75rem] px-[8px] py-[2px] bg-[var(--surface)]">
                 {displayDuration}
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-xs text-muted sl-item-duration">
+              <span className="text-xs text-muted italic">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         ) : (
-          <div className="text-label flex-row sl-solo-group">
+          <div className="text-label flex-row m-0 gap-[6px] items-center flex-wrap">
             {(item.pieceId || linkedPiece?.id) && onPieceClick ? (
               <button
                 type="button"
                 onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
-                className="sl-item-title-linked"
+                className="bg-none border-none p-0 text-left font-inherit text-inherit cursor-pointer text-[var(--primary)] underline inline-flex items-center gap-[6px]"
               >
                 {titleText}
-                <span title="Linked to Music Library" className="sl-library-link">🎼</span>
+                <span title="Linked to Music Library" className="text-[0.85rem] no-underline inline-block">🎼</span>
               </button>
             ) : (
-              <span className="sl-title-wrapper">
+              <span className="inline-flex items-center gap-[6px]">
                 {onEdit ? (
                     <button
                         type="button"
                         onClick={() => onEdit(item)}
-                        className="sl-item-title-edit-btn"
+                        className="bg-none border-none p-0 text-left text-inherit font-inherit font-semibold cursor-pointer underline decoration-dotted decoration-[var(--primary)] underline-offset-[3px]"
                     >
                         {titleText}
                     </button>
                 ) : (
-                    <span className="sl-item-title-unlinked">{titleText}</span>
+                    <span className="font-semibold">{titleText}</span>
                 )}
-                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" className="sl-library-icon">🎼</span>}
+                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" className="text-[0.85rem]">🎼</span>}
               </span>
             )}
             {item.soloSmallGroup && (
-              <span className="badge sl-solo-badge">
+              <span className="badge text-[0.75rem] px-[8px] py-[2px] bg-[rgb(74_124_89_/_8%)] text-[var(--primary-deep)] border border-[rgb(74_124_89_/_15%)] rounded-full font-semibold inline-flex items-center gap-1">
                 🎤 Solo / Small Group
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-xs text-muted sl-composer-text">
+              <span className="text-xs text-muted font-normal ml-1">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         )}
         {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
-          <div className="text-xs text-muted flex-row sl-missing-link">
+          <div className="text-xs text-muted flex-row gap-1">
             {displayComposer && (
-              <span className="sl-missing-link-text">
+              <span className="text-xs text-muted">
                 {displayComposer}
               </span>
             )}
             {displayComposer && displayDuration && <span>•</span>}
             {displayDuration && <span>{displayDuration}</span>}
             {linkedPiece?.genres && linkedPiece.genres.length > 0 && genres && (
-              <div className="flex-row sl-action-buttons">
+              <div className="flex-row gap-1 inline-flex flex-wrap items-center">
                 {linkedPiece.genres.map(id => {
                   const found = genres.find(g => g.id === id);
                   return (
                     <span 
                       key={id}
-                      className="sl-genre-badge"
+                      className="inline-flex px-[5px] py-[1px] rounded bg-[rgb(74_124_89_/_8%)] border border-[rgb(74_124_89_/_15%)] text-[9px] font-semibold text-[var(--primary-deep)] leading-none"
                     >
                       {found ? found.label : id}
                     </span>
@@ -150,7 +149,7 @@ export const SortableSetListItem: React.FC<Props> = ({
           </div>
         )}
         {item.notes && (
-          <div className="text-xs text-muted sl-notes-text">
+          <div className="text-xs text-muted italic mt-[2px]">
             {item.notes}
           </div>
         )}
@@ -163,7 +162,7 @@ export const SortableSetListItem: React.FC<Props> = ({
             e.stopPropagation();
             if (linkedPiece) onPlayTrack(linkedPiece);
           }} 
-          className="btn btn-secondary btn-sm sl-play-btn"
+          className="btn btn-secondary btn-sm !p-[0_8px] min-h-auto !h-6 flex items-center justify-center"
           title="Play default track"
         >
           🎵

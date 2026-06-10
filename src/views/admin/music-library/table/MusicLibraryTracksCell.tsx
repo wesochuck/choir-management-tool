@@ -1,5 +1,4 @@
 import type { MusicPiece } from '../../../../types/musicLibrary';
-import '../MusicLibrary.css';
 
 interface MusicLibraryTracksCellProps {
   piece: MusicPiece;
@@ -17,10 +16,10 @@ export function MusicLibraryTracksCell({
   onEditPiece,
 }: MusicLibraryTracksCellProps) {
   return (
-    <td className="ml-table-cell">
+    <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
       {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
         <button
-          className="btn btn-secondary btn-sm ml-play-btn"
+          className="btn btn-secondary btn-sm !p-[2px_8px] !h-6 !min-h-6 !text-[11px] !inline-flex !items-center !gap-1 !m-0"
           onClick={(e) => {
             e.stopPropagation();
             onPlayTrack(piece);
@@ -34,7 +33,7 @@ export function MusicLibraryTracksCell({
             e.stopPropagation();
             onEditPiece?.(piece, 'tracks');
           }}
-          className="ml-track-in-mvts hover-glow"
+          className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full bg-[rgb(27_77_62_/_8%)] text-[var(--primary)] text-[11px] font-medium border border-[rgb(27_77_62_/_15%)] whitespace-nowrap cursor-pointer hover-glow"
         >
           🎧 {totalMovementTracksCount} in mvts
         </span>

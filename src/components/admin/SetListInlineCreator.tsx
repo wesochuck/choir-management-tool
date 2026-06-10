@@ -2,7 +2,6 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { MusicPiece } from '../../types/musicLibrary';
 import type { SetListItem } from '../../services/eventService';
 import { createSetListItemFromCustomInput, createSetListItemFromMusicPiece, filterMusicLibrarySuggestions } from '../../lib/setList/setListItems';
-import '../../views/admin/SetList.css';
 
 interface SetListInlineCreatorProps {
   library: MusicPiece[];
@@ -79,9 +78,9 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="flex-col sl-creator-container">
-      <div className="flex-row card sl-creator-card">
-        <div className="flex-row sl-type-toggle-group">
+    <div ref={containerRef} className="flex-col gap-[var(--space-xs)] relative">
+      <div className="flex-row card p-[var(--space-sm)_var(--space-md)] gap-[var(--space-md)] items-center bg-[var(--bg-card-hover)] border border-dashed border-[var(--border)]">
+        <div className="flex-row gap-1 bg-[var(--surface)] p-[2px] rounded-[var(--radius-sm)] border border-[var(--border)]">
           <button
             type="button"
             className={`btn btn-sm sl-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
@@ -100,7 +99,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </button>
         </div>
 
-        <div className="sl-search-container">
+        <div className="flex-1 relative flex items-center">
           <input
             type="text"
             placeholder={type === 'song' ? "Search music library..." : "Intermission title..."}
@@ -112,7 +111,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card sl-search-input"
+            className="card w-full px-[36px_12px] h-9 border border-[var(--border)] text-[14px]"
           />
           <svg 
             viewBox="0 0 24 24" 
@@ -121,37 +120,37 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             strokeWidth="2.5" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
-            className="sl-search-icon"
+            className="absolute right-3 w-4 h-4 text-[var(--text-muted)] pointer-events-none"
           >
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
  
           {showSuggestions && query.trim().length > 0 && (
-            <div className="card shadow-md sl-suggestions-dropdown">
+            <div className="card shadow-md absolute top-full left-0 right-0 z-[100] mt-1 max-h-[300px] overflow-y-auto p-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)]">
               {filteredLibrary.map(p => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => handleAddItem(p)}
-                  className="btn btn-ghost sl-suggestion-btn"
+                  className="btn btn-ghost w-full text-left flex flex-col items-start p-[8px_12px] rounded-[var(--radius-sm)] gap-[2px] min-h-auto"
                 >
-                  <span className="sl-suggestion-title">{p.title}</span>
-                  {p.composer && <span className="sl-suggestion-composer">by {p.composer}</span>}
+                  <span className="font-semibold text-[14px]">{p.title}</span>
+                  {p.composer && <span className="text-[12px] opacity-70">by {p.composer}</span>}
                 </button>
               ))}
               
               <button
                 type="button"
                 onClick={() => handleAddItem()}
-                className="btn btn-ghost sl-suggestion-new-btn"
+                className="btn btn-ghost w-full text-left flex flex-row items-center p-[8px_12px] rounded-[var(--radius-sm)] gap-1 text-[var(--primary-deep)] font-semibold text-[14px] min-h-auto"
                 // @allow-inline-style - conditional border when library has results
                 style={{ 
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
                 }}
               >
                 <span>"{query.trim()}"</span>
-                <span className="sl-suggestion-new-subtitle">
+                <span className="font-normal opacity-70 text-[13px]">
                   ({type === 'song' ? 'create new' : 'create new intermission'})
                 </span>
               </button>
@@ -159,7 +158,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           )}
         </div>
  
-        <div className="sl-duration-container">
+        <div className="w-[100px]">
           <input
             type="text"
             placeholder="Duration"
@@ -167,7 +166,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onChange={(e) => setDuration(e.target.value)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card sl-duration-input"
+            className="card w-full px-3 h-9 border border-[var(--border)] text-[14px]"
           />
         </div>
  
@@ -175,13 +174,13 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           type="button"
           onClick={() => handleAddItem()}
           disabled={disabled || !query.trim()}
-          className="btn btn-primary sl-add-btn"
+          className="btn btn-primary !h-9 min-h-auto px-4 text-[13px]"
         >
           + Add
         </button>
       </div>
       {type === 'song' && (
-        <span className="text-xs text-muted sl-creator-tip">
+        <span className="text-xs text-muted pl-[var(--space-md)]">
           Tip: Select the "(create new)" option or press Enter to add a new piece to the music library.
         </span>
       )}

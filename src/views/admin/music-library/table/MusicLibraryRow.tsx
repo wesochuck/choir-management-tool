@@ -13,7 +13,6 @@ import {
   getMovementTrackCount,
   isParentPiece,
 } from './musicLibraryTableUtils';
-import '../MusicLibrary.css';
 
 interface MusicLibraryRowProps {
   piece: MusicPiece;
@@ -53,22 +52,20 @@ export function MusicLibraryRow({
 
   return (
     <tr
-      className={`relative-row ml-table-row ${isDuplicate ? 'ml-table-row-duplicate' : ''} ${isChild ? 'ml-table-row-child' : ''}`}
+      className={`cursor-pointer ${isDuplicate ? 'bg-[rgb(255_138_101_/_5%)]' : ''} ${isChild ? 'bg-[rgb(248_250_252_/_40%)]' : ''}`}
       onClick={() => onEditPiece(piece)}
       data-has-tracks={hasTracks}
     >
-      {/* Column 1: Checkbox Selection */}
-      <td className="ml-table-cell ml-table-cell-center">
+      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle text-center">
         <input
           type="checkbox"
           checked={selectedIds.has(piece.id)}
           onChange={() => onToggleSelection(piece.id)}
           onClick={(event) => event.stopPropagation()}
-          className="ml-checkbox"
+          className="!min-h-auto !w-[14px] !h-[14px] !m-0 align-middle cursor-pointer"
         />
       </td>
 
-      {/* Column 2: Title and Metadata badging */}
       <MusicLibraryTitleCell
         piece={piece}
         isChildMovement={isChild}
@@ -79,22 +76,19 @@ export function MusicLibraryRow({
         onToggleExpansion={(event) => onToggleExpansion(piece.id, event)}
       />
 
-      {/* Column 3: Composer/Arranger */}
-      <td className="ml-table-cell">
+      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
         {piece.composer && piece.arranger
           ? `${piece.composer} / arr. ${piece.arranger}`
           : (piece.composer || piece.arranger || '-')}
       </td>
 
-      {/* Column 4: Duration */}
-      <td className="ml-table-cell">
+      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
         {piece.duration
           ? formatSecondsToDuration(parseDurationToSeconds(piece.duration))
           : '-'}
       </td>
 
-      {/* Column 5: Performance Count */}
-      <td className="ml-table-cell ml-table-cell-center ml-perf-count">
+      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle text-center font-semibold">
         {piece.performances && piece.performances.length > 0 ? (
           <span>
             {piece.performances.length}
@@ -102,13 +96,10 @@ export function MusicLibraryRow({
         ) : '-'}
       </td>
 
-
-      {/* Column 7: Last Performed */}
-      <td className="ml-table-cell">
+      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
         {lastPerformedDate || '-'}
       </td>
 
-      {/* Column 8: Audio Tracks Control Status */}
       <MusicLibraryTracksCell
         piece={piece}
         isParent={isParent}
@@ -117,17 +108,15 @@ export function MusicLibraryRow({
         onEditPiece={onEditPiece}
       />
 
-      {/* Column 6: Catalog Lookup Link */}
       <MusicLibraryCatalogCell
         catalogId={piece.catalogId}
         catalogLookupTemplate={catalogLookupTemplate}
       />
 
-      {/* Column 9: Actions */}
-      <td className="ml-table-cell">
-        <div className="flex-row ml-table-cell-center ml-actions-cell-content">
+      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
+        <div className="flex gap-[var(--space-xs)] items-center justify-center">
           <button
-            className="btn btn-ghost btn-sm ml-edit-btn"
+            className="btn btn-ghost btn-sm !min-h-auto !h-6 !p-[0_8px] !text-[0.75rem] !m-0"
             onClick={(event) => {
               event.stopPropagation();
               onEditPiece(piece);

@@ -12,8 +12,6 @@ import { LearningTracksEditor } from './LearningTracksEditor';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { zonedInputValueToUtc } from '../../../lib/timezone';
 import { AutocompleteInput } from '../../../components/admin/AutocompleteInput';
-import './MusicPieceModal.css';
-import './MusicLibraryEditors.css';
 
 export interface MusicPieceModalProps {
     isOpen: boolean;
@@ -791,7 +789,7 @@ export function MusicPieceModal({
             minHeight={piece ? '580px' : undefined}
             footer={
                 <>
-                    {onDelete && <button type="button" className="btn btn-danger mle-modal-delete-btn" onClick={() => { onClose(); onDelete(); }}>Delete</button>}
+                    {onDelete && <button type="button" className="btn btn-danger mr-auto" onClick={() => { onClose(); onDelete(); }}>Delete</button>}
                     <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
                     {!piece && onSaveAndAddAnother && (
                         <button
@@ -810,25 +808,25 @@ export function MusicPieceModal({
             }
         >
             {piece && (
-                <div className="music-piece-tabs">
+                <div className="flex flex-row border-b border-[var(--border)] mb-[var(--space-md)] gap-[var(--space-md)]">
                     <button
                         type="button"
                         onClick={() => setActiveTab('details')}
-                        className={`music-piece-tab-btn ${activeTab === 'details' ? 'active' : 'inactive'}`}
+                        className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'details' ? 'text-[var(--primary)] border-b-2 border-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] border-b-2 border-transparent font-medium'}`}
                     >
                         Piece Details
                     </button>
                     <button
                         type="button"
                         onClick={() => setActiveTab('tracks')}
-                        className={`music-piece-tab-btn ${activeTab === 'tracks' ? 'active' : 'inactive'}`}
+                        className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'tracks' ? 'text-[var(--primary)] border-b-2 border-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] border-b-2 border-transparent font-medium'}`}
                     >
                         Learning Tracks
                     </button>
                     <button
                         type="button"
                         onClick={() => setActiveTab('performances')}
-                        className={`music-piece-tab-btn ${activeTab === 'performances' ? 'active' : 'inactive'}`}
+                        className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'performances' ? 'text-[var(--primary)] border-b-2 border-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] border-b-2 border-transparent font-medium'}`}
                     >
                         Linked Performances
                     </button>
@@ -836,7 +834,7 @@ export function MusicPieceModal({
                         <button
                             type="button"
                             onClick={() => setActiveTab('movements')}
-                            className={`music-piece-tab-btn ${activeTab === 'movements' ? 'active' : 'inactive'}`}
+                            className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'movements' ? 'text-[var(--primary)] border-b-2 border-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] border-b-2 border-transparent font-medium'}`}
                         >
                             Movements ({movements.length})
                         </button>
@@ -844,12 +842,12 @@ export function MusicPieceModal({
                 </div>
             )}
 
-            <form id="music-piece-form" onSubmit={handleSubmit} className="music-piece-form">
+            <form id="music-piece-form" onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-sm)]">
                 {(!piece || activeTab === 'details') && (
                     <>
                         {/* NEW LINKED PARENT BANNER NOTICE */}
                         {parentPiece && (
-                            <div className="parent-piece-banner">
+                            <div className="bg-[rgb(74_124_89_/_5%)] border-l-4 border-[var(--primary)] px-[var(--space-sm)] py-[var(--space-sm)] rounded-[var(--radius-sm)] text-[0.875rem] text-[var(--text-main)] flex items-center gap-[6px] mb-[var(--space-xs)]">
                                 <span>
                                     🔗 <strong>Multi-Movement Link:</strong> This piece is configured as a movement of <strong>{parentPiece.title}</strong>.
                                 </span>
@@ -858,9 +856,9 @@ export function MusicPieceModal({
 
                         <div className="form-field-group">
                             <label className="text-label">Title</label>
-                            <input ref={titleInputRef} required value={title} onChange={e => setTitle(e.target.value)} className="card music-piece-input" />
+                            <input ref={titleInputRef} required value={title} onChange={e => setTitle(e.target.value)} className="card px-3 h-10 w-full" />
                         </div>
-                        <div className="mle-form-grid-2col">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-md)]">
                             <div className="form-field-group">
                                 <label className="text-label">Composer</label>
                                 <AutocompleteInput 
@@ -868,7 +866,7 @@ export function MusicPieceModal({
                                     onChange={setComposer} 
                                     suggestions={uniqueComposers} 
                                     placeholder="e.g. Ludwig van Beethoven" 
-                                    className="card music-piece-input" 
+                                    className="card px-3 h-10 w-full" 
                                 />
                             </div>
                             <div className="form-field-group">
@@ -878,12 +876,12 @@ export function MusicPieceModal({
                                     onChange={setArranger} 
                                     suggestions={uniqueArrangers} 
                                     placeholder="e.g. Alice Parker" 
-                                    className="card music-piece-input" 
+                                    className="card px-3 h-10 w-full" 
                                 />
                             </div>
                         </div>
 
-                        <div className="mle-form-grid-2col">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-md)]">
                             <div className="form-field-group">
                                 <label className="text-label">Applies to Sections</label>
                                 <MultiSelectDropdown
@@ -893,7 +891,7 @@ export function MusicPieceModal({
                                     placeholder="Sections"
                                     allLabel="All Sections"
                                 />
-                                <span className="text-xs text-muted mle-input-hint">
+                                <span className="text-xs text-muted mt-[2px]">
                                     {sectionBuckets.length === 0 
                                         ? "Applies to all sections. Select to restrict." 
                                         : `Restricted to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
@@ -917,21 +915,21 @@ export function MusicPieceModal({
                             </div>
                         </div>
                         {piece ? (
-                            <div className="mle-checkbox-row-no-margin">
+                            <div className="flex flex-row items-center gap-[var(--space-xs)] m-0">
                                 <input 
                                     type="checkbox" 
                                     id="is-multi-movement"
                                     checked={isMultiMovement} 
                                     onChange={e => setIsMultiMovement(e.target.checked)}
-                                    className="mle-checkbox-input"
+                                    className="cursor-pointer"
                                 />
-                                <label htmlFor="is-multi-movement" className="text-label mle-checkbox-label">
+                                <label htmlFor="is-multi-movement" className="text-label m-0 cursor-pointer font-medium">
                                     This is a multi-movement piece
                                 </label>
                             </div>
                         ) : (
-                            <div className="form-field-group-no-margin">
-                                <div className="mle-checkbox-row">
+                            <div className="flex flex-col gap-[var(--space-xs)] m-0">
+                                <div className="flex flex-row items-center gap-[var(--space-xs)]">
                                     <input 
                                         type="checkbox" 
                                         id="is-multi-movement-input"
@@ -939,27 +937,27 @@ export function MusicPieceModal({
                                         onChange={e => {
                                             setIsMultiMovementInput(e.target.checked);
                                         }}
-                                        className="mle-checkbox-input-styled"
+                                        className="cursor-pointer w-4 h-4 accent-[var(--primary)]"
                                     />
-                                    <label htmlFor="is-multi-movement-input" className="text-label mle-checkbox-label">
+                                    <label htmlFor="is-multi-movement-input" className="text-label m-0 cursor-pointer font-medium">
                                         This piece has multiple movements
                                     </label>
                                 </div>
                                 {isMultiMovementInput && (
-                                    <div className="multi-movement-staging">
-                                        <div className="mle-staging-header-row">
-                                            <span className="staging-movements-header">Staged Movements ({localMovementsList.length})</span>
+                                    <div className="flex flex-col gap-[var(--space-xs)] p-[10px_14px] border border-[var(--border)] rounded-[var(--radius)] bg-[var(--bg-card-hover)] mt-1">
+                                        <div className="flex flex-row justify-between items-center">
+                                            <span className="text-[13px] font-semibold text-[var(--primary)]">Staged Movements ({localMovementsList.length})</span>
                                         </div>
                                         
                                         {localMovementsList.length > 0 && (
-                                            <div className="staging-movements-list">
+                                            <div className="flex flex-col gap-1 max-h-[120px] overflow-y-auto pr-1">
                                                 {localMovementsList.map((m, idx) => (
-                                                    <div key={m.id} className="staged-movement-item animate-fade-in">
-                                                        <span className="staged-movement-text">{idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}</span>
+                                                    <div key={m.id} className="flex justify-between items-center p-1 px-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-[4px] animate-fade-in">
+                                                        <span className="text-[12px] font-medium">{idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}</span>
                                                         <button 
                                                             type="button" 
                                                             onClick={() => handleRemoveStagingMovement(m.id)}
-                                                            className="staged-remove-btn"
+                                                            className="border-none bg-none text-[var(--danger)] text-[11px] cursor-pointer p-[2px_4px]"
                                                         >
                                                             ✕
                                                         </button>
@@ -968,7 +966,7 @@ export function MusicPieceModal({
                                             </div>
                                         )}
 
-                                        <div className="mle-staging-input-row">
+                                        <div className="flex flex-row gap-2 items-center mt-1">
                                             <input 
                                                 type="text" 
                                                 placeholder={`Name (e.g. Movement ${localMovementsList.length + 1})`}
@@ -979,7 +977,7 @@ export function MusicPieceModal({
                                                         handleAddStagingMovement(e);
                                                     }
                                                 }}
-                                                className="card mle-staging-input-name"
+                                                className="card px-2 h-[30px] text-[12px] flex-[2]"
                                             />
                                             <input 
                                                 type="text" 
@@ -991,11 +989,11 @@ export function MusicPieceModal({
                                                         handleAddStagingMovement(e);
                                                     }
                                                 }}
-                                                className="card mle-staging-input-duration"
+                                                className="card px-2 h-[30px] text-[12px] flex-1"
                                             />
                                             <button 
                                                 type="button" 
-                                                className="btn btn-primary mle-staging-add-btn"
+                                                className="btn btn-primary h-[30px] min-h-[30px] px-3 text-[12px]"
                                                 onClick={() => handleAddStagingMovement()}
                                             >
                                                 + Stage
@@ -1005,18 +1003,18 @@ export function MusicPieceModal({
                                 )}
                             </div>
                         )}
-                        <div className="mle-form-grid-duration">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[var(--space-md)]">
                             <div className="form-field-group">
                                 <label className="text-label">Duration</label>
-                                <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card music-piece-input" />
+                                <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card px-3 h-10 w-full" />
                                 {suggestedDuration && !duration.trim() && (
-                                    <div className="duration-suggestion-box">
-                                        <span className="text-xs text-muted mle-duration-suggestion-text">
+                                    <div className="flex flex-row mt-[6px] p-[8px_12px] rounded-[6px] bg-[var(--primary-light)] border border-dashed border-[rgb(27_77_62_/_30%)] items-center justify-between gap-2">
+                                        <span className="text-xs text-muted inline-flex items-center gap-1 text-[var(--primary)] font-medium">
                                             💡 Track length: <strong>{suggestedDuration}</strong>. Use this?
                                         </span>
                                         <button 
                                             type="button"
-                                            className="btn btn-secondary btn-sm mle-duration-suggestion-apply-btn"
+                                            className="btn btn-secondary btn-sm !p-[2px_8px] !h-[22px] !min-h-[22px] !text-[11px] leading-none cursor-pointer"
                                             onClick={() => {
                                                 setDuration(suggestedDuration);
                                                 setSuggestedDuration(null);
@@ -1029,17 +1027,17 @@ export function MusicPieceModal({
                             </div>
                             <div className="form-field-group">
                                 <label className="text-label">Copies</label>
-                                <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card music-piece-input" />
+                                <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card px-3 h-10 w-full" />
                             </div>
                             <div className="form-field-group">
                                 <label className="text-label">Catalog ID</label>
-                                <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card music-piece-input" />
+                                <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card px-3 h-10 w-full" />
                                 {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
                                     <a 
                                         href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="btn btn-secondary mle-catalog-lookup-link"
+                                        className="btn btn-secondary self-start rounded-full !text-[0.75rem] !p-[4px_12px] !h-6 !min-h-6 inline-flex items-center gap-1 no-underline mt-[2px] leading-none"
                                     >
                                         Lookup ↗
                                     </a>
@@ -1051,14 +1049,14 @@ export function MusicPieceModal({
                                     value={purchaseDateInput}
                                     onChange={e => setPurchaseDateInput(e.target.value)}
                                     placeholder="mm/yyyy"
-                                    className="card music-piece-input"
+                                    className="card px-3 h-10 w-full"
                                 />
                             </div>
                         </div>
                         <div className="form-field-group">
                             <label className="text-label">Notes</label>
-                            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card music-piece-textarea" />
-                            <span className="text-xs text-muted mle-notes-hint">
+                            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card px-3 py-2 min-h-[54px] resize-y" />
+                            <span className="text-xs text-muted mt-[2px]">
                                 If this is a medley, please list the names of the different pieces here.
                             </span>
                         </div>
@@ -1066,25 +1064,25 @@ export function MusicPieceModal({
 
                         {!piece && (
                             <>
-                            <div className="form-field-group mle-mt-xs">
+                            <div className="form-field-group mt-[var(--space-xs)]">
                                 <label className="text-label">Link to Past Performance (Optional)</label>
-                                <div className="mle-perf-pills-container">
+                                <div className="flex flex-flow row wrap gap-[var(--space-xs)] min-h-9">
                                     {selectedPerformances.length === 0 ? (
                                         <span className="text-sm text-muted">No performances linked.</span>
                                     ) : (
                                         selectedPerformances.map(perf => {
                                             const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
                                             return (
-                                                <div key={perf.id} className="linked-performance-pill">
+                                                <div key={perf.id} className="flex flex-row items-center gap-[var(--space-xs)] px-[10px] py-1 bg-[rgb(74_124_89_/_10%)] border border-[var(--primary)] rounded-full text-[var(--primary)] text-[13px]">
                                                     <span>{perf.title} {dateStr && `(${dateStr})`}</span>
-                                                    <button type="button" onClick={() => togglePerformance(perf.id)} className="mle-perf-pill-remove-btn">×</button>
+                                                    <button type="button" onClick={() => togglePerformance(perf.id)} className="bg-none border-none text-[var(--primary)] cursor-pointer p-0 text-[14px] font-bold">×</button>
                                                 </div>
                                             );
                                         })
                                     )}
                                 </div>
                                 <select
-                                    className="card mle-perf-select-full"
+                                    className="card px-3 h-9 text-[14px] w-full"
                                     value=""
                                     onChange={e => {
                                         if (e.target.value) togglePerformance(e.target.value);
@@ -1101,14 +1099,14 @@ export function MusicPieceModal({
                                     })}
                                 </select>
                             </div>
-                            <div className="form-field-group mle-mt-xs">
+                            <div className="form-field-group mt-[var(--space-xs)]">
                                 <label className="text-label">Tutti Practice Track (Optional)</label>
                                 {tuttiFile ? (
-                                    <div className="mle-tutti-preview-row animate-fade-in">
-                                        <div className="mle-tutti-info-col">
-                                            <span className="mle-tutti-icon-emoji">🎵</span>
-                                            <div className="mle-tutti-text-stack">
-                                                <strong className="mle-tutti-filename">
+                                    <div className="flex flex-row items-center justify-between p-[8px_12px] bg-[rgb(74_124_89_/_5%)] border border-[var(--primary)] rounded-[var(--radius-md)] gap-[var(--space-md)] animate-fade-in">
+                                        <div className="flex flex-row items-center gap-2 min-w-0 flex-1">
+                                            <span className="text-[18px]">🎵</span>
+                                            <div className="flex flex-col min-w-0 flex-1">
+                                                <strong className="text-[13px] overflow-hidden text-ellipsis whitespace-nowrap block">
                                                     {tuttiFile.name}
                                                 </strong>
                                                 <span className="text-xs text-muted">
@@ -1118,7 +1116,7 @@ export function MusicPieceModal({
                                         </div>
                                         <button 
                                             type="button" 
-                                            className="btn btn-ghost btn-sm mle-tutti-remove-btn" 
+                                            className="btn btn-ghost btn-sm !text-[var(--danger)] !p-[4px_8px] !h-7 min-h-auto !m-0" 
                                             onClick={() => setTuttiFile(null)}
                                         >
                                             Remove
@@ -1145,12 +1143,12 @@ export function MusicPieceModal({
                                                 setTuttiFile(file);
                                             }
                                         }}
-                                        className={`tutti-upload-dropzone ${isTuttiDraggedOver ? 'active' : 'idle'}`}
+                                        className={`rounded-[var(--radius)] p-[12px_16px] cursor-pointer transition-all duration-200 ease-in-out ${isTuttiDraggedOver ? 'border-2 border-dashed border-[var(--primary)] bg-[rgb(27_77_62_/_4%)]' : 'border-2 border-dashed border-[var(--border)] bg-transparent'}`}
                                     >
-                                        <label className="tutti-upload-label">
-                                            <span className="mle-tutti-upload-emoji">📤</span>
-                                            <span className="mle-tutti-upload-hint">
-                                                Drag and drop a Tutti MP3 track here, or <span className="mle-tutti-upload-browse-text">browse</span>
+                                        <label className="cursor-pointer flex items-center justify-center gap-[var(--space-sm)] m-0 w-full">
+                                            <span className="text-[20px]">📤</span>
+                                            <span className="text-[13px] text-[var(--text-color)] font-medium">
+                                                Drag and drop a Tutti MP3 track here, or <span className="text-[var(--primary)] underline font-semibold">browse</span>
                                             </span>
                                             <input 
                                                 type="file" 
@@ -1161,7 +1159,7 @@ export function MusicPieceModal({
                                                         setTuttiFile(file);
                                                     }
                                                 }}
-                                                className="mle-hidden-input"
+                                                className="hidden"
                                             />
                                         </label>
                                     </div>
@@ -1178,25 +1176,25 @@ export function MusicPieceModal({
                             <label className="text-label">Linked Performances</label>
                             
                             {/* Selected performances pills */}
-                            <div className="mle-perf-pills-container-tracks">
+                            <div className="flex flex-flow row wrap gap-[var(--space-xs)] min-h-10 px-[var(--space-xs)] py-[var(--space-xs)]">
                                 {selectedPerformances.length === 0 ? (
                                     <span className="text-sm text-muted">No performances linked.</span>
                                 ) : (
                                     selectedPerformances.map(perf => {
                                         const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
                                         return (
-                                            <div key={perf.id} className="linked-performance-pill">
+                                            <div key={perf.id} className="flex flex-row items-center gap-[var(--space-xs)] px-[10px] py-[4px] bg-[rgb(74_124_89_/_10%)] border border-[var(--primary)] rounded-full text-[var(--primary)] text-[13px]">
                                                 <span>{perf.title} {dateStr && `(${dateStr})`}</span>
-                                                <button type="button" onClick={() => togglePerformance(perf.id)} className="mle-perf-pill-remove-btn">×</button>
+                                                <button type="button" onClick={() => togglePerformance(perf.id)} className="bg-none border-none text-[var(--primary)] cursor-pointer p-0 text-[14px] font-bold">×</button>
                                             </div>
                                         );
                                     })
                                 )}
                             </div>
 
-                            <div className="mle-perf-actions-row">
+                            <div className="flex flex-flow row wrap gap-[var(--space-sm)]">
                                 <select 
-                                    className="card mle-perf-select-half" 
+                                    className="card flex-[1_1_200px] px-3 h-9 text-[14px] min-w-0" 
                                     value="" 
                                     onChange={e => {
                                         if (e.target.value) {
@@ -1216,7 +1214,7 @@ export function MusicPieceModal({
                                 </select>
                                 <button 
                                     type="button" 
-                                    className="btn btn-secondary btn-sm mle-quick-add-btn" 
+                                    className="btn btn-secondary btn-sm flex-[1_1_auto] justify-center" 
                                     onClick={() => setShowQuickAdd(!showQuickAdd)}
                                 >
                                     {showQuickAdd ? 'Cancel Quick Add' : 'Quick Add Performance'}
@@ -1226,8 +1224,8 @@ export function MusicPieceModal({
 
                         {/* Quick Add Performance form */}
                         {showQuickAdd && (
-                            <div className="quick-add-performance-card card">
-                                <h4 className="text-sm mle-quick-add-title">Quick Add Historic Performance</h4>
+                            <div className="p-[var(--space-md)] bg-[var(--bg-card-hover)] border border-dashed border-[var(--border)] rounded-[var(--radius)] mt-[var(--space-xs)] card">
+                                <h4 className="text-sm !mt-0 !mb-[var(--space-md)] text-[var(--primary)]">Quick Add Historic Performance</h4>
                                 <div className="form-field-group">
                                     <div className="form-field-group">
                                         <label className="text-xs text-muted">Performance Title</label>
@@ -1235,18 +1233,18 @@ export function MusicPieceModal({
                                             value={quickTitle} 
                                             onChange={e => setQuickTitle(e.target.value)} 
                                             placeholder="e.g. Spring Concert 2018"
-                                            className="card mle-quick-add-field" 
+                                            className="card px-3 h-9 text-[14px]" 
                                         />
                                     </div>
                                     
-                                    <div className="mle-quick-add-grid-row">
+                                    <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-[var(--space-md)]">
                                         <div className="form-field-group">
                                             <label className="text-xs text-muted">Date</label>
                                             <input 
                                                 type="datetime-local" 
                                                 value={quickDate} 
                                                 onChange={e => setQuickDate(e.target.value)} 
-                                                className="card mle-quick-add-field" 
+                                                className="card px-3 h-9 text-[14px]" 
                                             />
                                         </div>
                                         <div className="form-field-group">
@@ -1254,7 +1252,7 @@ export function MusicPieceModal({
                                             <select 
                                                 value={quickVenue} 
                                                 onChange={e => setQuickVenue(e.target.value)} 
-                                                className="card mle-quick-add-select-field" 
+                                                className="card px-3 h-9 text-[14px] w-full" 
                                             >
                                                 <option value="">-- Select Venue --</option>
                                                 {venues.map(v => (
@@ -1266,7 +1264,7 @@ export function MusicPieceModal({
 
                                     <button 
                                         type="button" 
-                                        className="btn btn-primary btn-sm mle-quick-add-submit-btn" 
+                                        className="btn btn-primary btn-sm self-end mt-[var(--space-xs)]" 
                                         onClick={handleQuickAddPerformance} 
                                         disabled={isQuickAdding}
                                     >
@@ -1280,7 +1278,7 @@ export function MusicPieceModal({
 
                 {(piece && activeTab === 'tracks') && (
                     <div 
-                        className="flex-col mle-tracks-tab-content" 
+                        className="flex-col gap-[var(--space-xs)]" 
                         onDragOver={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1300,18 +1298,18 @@ export function MusicPieceModal({
                                 parentPiece?.title
                             );
                             return (
-                                <div className="learning-tracks-context-header">
-                                    <span className="learning-tracks-context-label">
+                                <div className="flex flex-col gap-[2px] mb-[var(--space-xs)] pb-[var(--space-sm)] border-b border-[var(--border)]">
+                                    <span className="text-[11px] font-bold uppercase tracking-[0.07em] text-[var(--text-muted)]">
                                         🎵 Learning Tracks for
                                     </span>
-                                    <span className="learning-tracks-piece-title">
+                                    <span className="text-[16px] font-bold text-[var(--primary)] tracking-[-0.01em]">
                                         {contextLabel}
                                     </span>
                                 </div>
                             );
                         })()}
                         {!localPiece ? (
-                            <div className="mle-tracks-editor-fallback-container">
+                            <div className="flex flex-row items-center gap-[var(--space-sm)] p-[var(--space-md)] bg-[rgb(74_124_89_/_3%)] border border-dashed border-[var(--border)] rounded-[var(--radius-md)] text-[var(--text-muted)] text-[14px] justify-center">
                                 <span>Please save this piece first to enable learning track uploads.</span>
                             </div>
                         ) : (
@@ -1331,9 +1329,9 @@ export function MusicPieceModal({
                 )}
 
                 {(piece && activeTab === 'movements' && isMultiMovement) && (
-                    <div className="flex-col mle-movements-tab-content">
-                        <div className="flex-row animate-fade-in mle-movements-section-header">
-                            <h3 className="text-md mle-movements-section-title">Movements ({movements.length})</h3>
+                    <div className="flex-col gap-[var(--space-md)]">
+                        <div className="flex-row animate-fade-in flex-row justify-between items-center">
+                            <h3 className="text-md m-0 text-[var(--primary)]">Movements ({movements.length})</h3>
                         </div>
 
                         {movements.length === 0 ? (
@@ -1341,7 +1339,7 @@ export function MusicPieceModal({
                                 No movements added yet. Add your first movement below.
                             </div>
                         ) : (
-                            <div className="flex-col mle-movements-list-container">
+                            <div className="flex-col gap-[var(--space-sm)]">
                                 {movements.map((m, idx) => {
                                     const isExpanded = expandedMovementId === m.id;
                                     const mMapping = m.audioTrackMapping || {};
@@ -1349,16 +1347,16 @@ export function MusicPieceModal({
                                     return (
                                         <div 
                                             key={m.id} 
-                                            className="movement-item-card card"
+                                            className="p-[var(--space-sm)] bg-[var(--bg-card-hover)] border border-[var(--border)] card"
                                         >
-                                            <div className="flex-row mle-movement-item-header">
+                                            <div className="flex-row justify-between items-center gap-[var(--space-md)]">
                                                 <div className="flex-col">
-                                                    <div className="flex-row mle-movement-item-title-row">
-                                                        <strong className="mle-movement-item-title-strong">
+                                                    <div className="flex-row items-center gap-2">
+                                                        <strong className="text-[14px]">
                                                             {idx + 1}. {m.title}
                                                         </strong>
                                                         {mTrackCount > 0 && (
-                                                            <span className="movement-track-badge">
+                                                            <span className="inline-flex items-center gap-[3px] px-[6px] py-[1px] rounded-full bg-[rgb(27_77_62_/_8%)] text-[var(--primary)] text-[10px] font-semibold border border-[rgb(27_77_62_/_15%)] leading-[1.2]">
                                                                 🎧 {mTrackCount} Track{mTrackCount !== 1 ? 's' : ''}
                                                             </span>
                                                         )}
@@ -1369,17 +1367,17 @@ export function MusicPieceModal({
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex-row mle-movement-item-actions">
+                                                <div className="flex-row items-center gap-[var(--space-sm)]">
                                                     <button
                                                         type="button"
-                                                        className="btn btn-ghost btn-sm mle-movement-item-btn"
+                                                        className="btn btn-ghost btn-sm !text-[12px] !p-[4px_8px] !h-7 min-h-auto"
                                                         onClick={() => setExpandedMovementId(isExpanded ? null : m.id)}
                                                     >
                                                         {isExpanded ? 'Hide Tracks ▴' : 'Manage Tracks ▾'}
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="btn btn-ghost btn-sm mle-movement-item-btn mle-movement-item-btn-danger"
+                                                        className="btn btn-ghost btn-sm !text-[12px] !p-[4px_8px] !h-7 min-h-auto !text-[var(--danger)]"
                                                         onClick={() => handleDeleteMovement(m.id, m.title)}
                                                     >
                                                         Delete
@@ -1388,8 +1386,8 @@ export function MusicPieceModal({
                                             </div>
 
                                             {isExpanded && (
-                                                <div className="flex-col mle-movement-tracks-editor-wrapper">
-                                                    <strong className="mle-movement-tracks-editor-label">
+                                                <div className="flex-col gap-1 mt-[var(--space-sm)]">
+                                                    <strong className="text-[11px] text-[var(--text-muted)] mb-[2px] block">
                                                         🎵 Reference & Learning Tracks for {m.title}
                                                     </strong>
                                                     <LearningTracksEditor
@@ -1411,10 +1409,10 @@ export function MusicPieceModal({
                             </div>
                         )}
 
-                        <div className="card mle-movement-add-form-container">
-                            <h4 className="text-sm mle-movement-add-title">Add New Movement</h4>
-                            <div className="flex-row mle-movement-add-inputs-row">
-                                <div className="flex-col mle-movement-add-name-group">
+                        <div className="card p-[var(--space-md)] border border-dashed border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--surface-muted,#f8fafc)]">
+                            <h4 className="text-sm !mt-0 !mb-[var(--space-sm)] text-[var(--primary)]">Add New Movement</h4>
+                            <div className="flex flex-flow row wrap gap-[var(--space-sm)] items-end">
+                                <div className="flex flex-col gap-1 flex-[2_1_200px]">
                                     <label className="text-xs text-muted">Movement Name (defaults sequentially)</label>
                                     <input 
                                         type="text" 
@@ -1426,10 +1424,10 @@ export function MusicPieceModal({
                                                 handleAddMovement(e);
                                             }
                                         }}
-                                        className="card mle-movement-add-input-field"
+                                        className="card px-3 h-9 text-[14px] w-full"
                                     />
                                 </div>
-                                <div className="flex-col mle-movement-add-duration-group">
+                                <div className="flex flex-col gap-1 flex-[1_1_100px]">
                                     <label className="text-xs text-muted">Duration (optional)</label>
                                     <input 
                                         type="text" 
@@ -1441,12 +1439,12 @@ export function MusicPieceModal({
                                                 handleAddMovement(e);
                                             }
                                         }}
-                                        className="card mle-movement-add-input-field"
+                                        className="card px-3 h-9 text-[14px] w-full"
                                     />
                                 </div>
                                 <button 
                                     type="button" 
-                                    className="btn btn-primary mle-movement-add-submit-btn"
+                                    className="btn btn-primary !h-9 min-h-9 !px-4 text-[13px]"
                                     onClick={handleAddMovement}
                                 >
                                     + Add

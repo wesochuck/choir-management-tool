@@ -3,7 +3,6 @@ import type { SectionDef, MusicGenreDef } from '../../../services/settingsServic
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
 import type { FilterMode } from '../../../lib/music/libraryRows';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
-import './MusicLibraryEditors.css';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
@@ -54,31 +53,28 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     ignoreArticles,
     onIgnoreArticlesChange
 }) => {
-    // Sort genres alphabetically by label
     const sortedGenres = React.useMemo(() => {
         return [...genres].sort((a, b) => a.label.localeCompare(b.label));
     }, [genres]);
 
-    // Sort sections alphabetically by name
     const sortedSections = React.useMemo(() => {
         return [...sections].sort((a, b) => a.name.localeCompare(b.name));
     }, [sections]);
 
     return (
-        <div className="flex-col mle-filters-container">
-            {/* Row 1: Search + Filter Dropdowns */}
-            <div className="mle-filters-row1">
+        <div className="flex-col px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--border)] gap-[var(--space-sm)]">
+            <div className="grid grid-cols-3 gap-[var(--space-sm)] items-end">
                 <div className="flex-col form-field-group">
-                    <span className="text-xs text-muted mle-filters-field-label">Search</span>
+                    <span className="text-xs text-muted font-semibold uppercase tracking-[0.04em]">Search</span>
                     <input
-                        className="card mle-filters-input"
+                        className="card w-full h-9 px-[10px] text-[13px]"
                         placeholder="Title, composer, catalog..."
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}
                     />
                 </div>
                 <div className="flex-col form-field-group">
-                    <span className="text-xs text-muted mle-filters-field-label">Sections</span>
+                    <span className="text-xs text-muted font-semibold uppercase tracking-[0.04em]">Sections</span>
                     <MultiSelectDropdown
                         options={sortedSections.map(s => ({ id: s.code, label: s.name }))}
                         selectedIds={sectionFilters}
@@ -88,12 +84,12 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     />
                 </div>
                 <div className="flex-col form-field-group">
-                    <div className="flex-row mle-genre-label-row">
-                        <span className="text-xs text-muted mle-filters-field-label">Genres</span>
-                        <div className="mle-genre-mode-toggle">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted font-semibold uppercase tracking-[0.04em]">Genres</span>
+                        <div className="flex-row bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-[4px] p-[2px]">
                             <button 
                                 type="button" 
-                                className={`mle-genre-mode-btn ${genreFilterMode === 'OR' ? 'active' : ''}`}
+                                className={`border-none bg-none px-[6px] py-[2px] text-[9px] font-bold cursor-pointer rounded-[2px] min-h-auto transition-all duration-200 ${genreFilterMode === 'OR' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)]'}`}
                                 onClick={() => onGenreFilterModeChange('OR')}
                                 title="OR: Match ANY selected genre"
                             >
@@ -101,7 +97,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                             </button>
                             <button 
                                 type="button" 
-                                className={`mle-genre-mode-btn ${genreFilterMode === 'AND' ? 'active' : ''}`}
+                                className={`border-none bg-none px-[6px] py-[2px] text-[9px] font-bold cursor-pointer rounded-[2px] min-h-auto transition-all duration-200 ${genreFilterMode === 'AND' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)]'}`}
                                 onClick={() => onGenreFilterModeChange('AND')}
                                 title="AND: Match ALL selected genres"
                             >
@@ -124,12 +120,11 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 </div>
             </div>
 
-            {/* Row 2: Secondary Controls */}
-            <div className="mle-filters-row2">
-                <div className="mle-filters-select-group">
-                    <span className="text-xs text-muted mle-filters-select-label">Last Performed:</span>
+            <div className="flex flex-flow row wrap gap-[var(--space-lg)] items-center pt-[2px]">
+                <div className="flex-row gap-[6px] items-center">
+                    <span className="text-xs text-muted font-semibold">Last Performed:</span>
                     <select
-                        className="card mle-filters-select"
+                        className="card h-8 px-[8px] text-[13px] cursor-pointer"
                         value={recencyFilter}
                         onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
                     >
@@ -143,10 +138,10 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     </select>
                 </div>
 
-                <div className="mle-filters-select-group">
-                    <span className="text-xs text-muted mle-filters-select-label">Per Page:</span>
+                <div className="flex-row gap-[6px] items-center">
+                    <span className="text-xs text-muted font-semibold">Per Page:</span>
                     <select
-                        className="card mle-filters-select mle-filters-select-per-page"
+                        className="card h-8 px-[8px] text-[13px] cursor-pointer min-w-[60px]"
                         value={pageSize}
                         onChange={(e) => onPageSizeChange(Number(e.target.value))}
                     >
@@ -157,28 +152,28 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     </select>
                 </div>
 
-                <label className="mle-filters-checkbox-label">
+                <label className="flex-row items-center gap-[6px] cursor-pointer">
                     <input 
                         type="checkbox" 
                         checked={showDuplicatesOnly} 
                         onChange={(e) => onShowDuplicatesOnlyChange(e.target.checked)}
-                        className="mle-filters-checkbox"
+                        className="w-[14px] h-[14px] accent-[var(--primary)]"
                     />
-                    <span className="text-xs mle-filters-checkbox-text">Duplicates ({duplicateCount})</span>
+                    <span className="text-xs font-medium">Duplicates ({duplicateCount})</span>
                 </label>
 
-                <label className="mle-filters-checkbox-label">
+                <label className="flex-row items-center gap-[6px] cursor-pointer">
                     <input 
                         type="checkbox" 
                         checked={ignoreArticles} 
                         onChange={(e) => onIgnoreArticlesChange(e.target.checked)}
-                        className="mle-filters-checkbox"
+                        className="w-[14px] h-[14px] accent-[var(--primary)]"
                     />
-                    <span className="text-xs mle-filters-checkbox-text">Ignore articles (A, An, The)</span>
+                    <span className="text-xs font-medium">Ignore articles (A, An, The)</span>
                 </label>
 
                 {selectedCount > 0 && (
-                    <button className="btn btn-danger btn-sm mle-filters-bulk-delete" onClick={onBulkDelete} disabled={isBulkDeleting}>
+                    <button className="btn btn-danger btn-sm ml-auto" onClick={onBulkDelete} disabled={isBulkDeleting}>
                         {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}
                     </button>
                 )}

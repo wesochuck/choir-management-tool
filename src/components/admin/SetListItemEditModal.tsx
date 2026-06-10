@@ -3,7 +3,6 @@ import { BaseModal } from '../common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
 import type { SetListItem } from '../../services/eventService';
-import '../../views/admin/SetList.css';
 
 interface SetListItemEditModalProps {
   isOpen: boolean;
@@ -102,10 +101,10 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </>
       }
     >
-      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col sl-modal-form">
-        <div className="flex-col sl-modal-form-group">
+      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col gap-[var(--space-md)]">
+        <div className="flex-col gap-[var(--space-xs)]">
           <label className="text-label">Item Type</label>
-          <div className="flex-row sl-modal-type-group">
+          <div className="flex-row gap-[var(--space-sm)]">
             <button
               type="button"
               className={`btn btn-sm sl-modal-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
@@ -123,23 +122,23 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-col sl-modal-form-group">
+        <div className="flex-col gap-[var(--space-xs)]">
           <label className="text-label">Title</label>
           <input
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="card sl-modal-input"
+            className="card px-3 h-10"
           />
         </div>
 
         {type === 'song' && (
-          <div className="flex-col sl-modal-form-group">
+          <div className="flex-col gap-[var(--space-xs)]">
             <label className="text-label">Composer/Arranger</label>
             <input
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              className="card sl-modal-input"
+              className="card px-3 h-10"
             />
           </div>
         )}
@@ -154,28 +153,28 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               checked={soloSmallGroup}
               onChange={(e) => setSoloSmallGroup(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
-              className="sl-modal-solo-checkbox"
+              className="w-[18px] h-[18px] accent-[var(--primary)] cursor-pointer"
             />
-            <span className="sl-modal-solo-label">🎤 Mark as Solo / Small Group</span>
+            <span className="text-[14px] font-medium">🎤 Mark as Solo / Small Group</span>
           </div>
         )}
 
-        <div className="flex-col sl-modal-form-group">
+        <div className="flex-col gap-[var(--space-xs)]">
           <label className="text-label">Duration</label>
           <input
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            className="card sl-modal-input"
+            className="card px-3 h-10"
           />
         </div>
 
-        <div className="flex-col sl-modal-form-group">
+        <div className="flex-col gap-[var(--space-xs)]">
           <label className="text-label">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="card sl-modal-textarea"
+            className="card p-3 min-h-[80px] resize-y"
           />
         </div>
       </form>
