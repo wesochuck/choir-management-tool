@@ -215,10 +215,10 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <AppCard noPadding>
+      <AppCard title="Patron Directory">
         <div className="patrons-checklist-container">
           <div className="patrons-search-row flex-responsive">
-            <div className="patrons-search-wrapper">
+            <div className="patrons-search-input-wrapper">
               <input 
                 type="text"
                 placeholder="Search by name or email..."
@@ -245,10 +245,7 @@ export default function PatronsView() {
                 placeholder="To"
               />
             </div>
-            <button className="btn btn-ghost" onClick={handleClearFilters}>
-              Reset
-            </button>
-            <div className="patrons-sort-wrapper">
+            <div className="patrons-sort-select-wrapper">
               <select 
                 className="card patrons-sort-select"
                 value={sortBy}
@@ -259,6 +256,9 @@ export default function PatronsView() {
                 <option value="lastDate">Sort by Last Transaction</option>
               </select>
             </div>
+            <button className="btn btn-ghost" onClick={handleClearFilters}>
+              Reset
+            </button>
           </div>
           <div className="patrons-table-container">
             <table className="patrons-table w-full text-left">

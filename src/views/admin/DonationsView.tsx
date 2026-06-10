@@ -330,14 +330,14 @@ export default function DonationsView() {
             </div>
           </div>
 
-          <AppCard noPadding>
+          <AppCard title="Donations History">
             <div className="donation-checklist-container">
               <div className="donation-search-row flex-responsive">
                 <div className="donation-search-input-wrapper">
                   <input 
                     type="text" 
                     placeholder="Search donor name or email..." 
-                    className="card donation-input"
+                    className="card donation-search-input"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
@@ -345,7 +345,7 @@ export default function DonationsView() {
                 <div className="donation-date-input-wrapper">
                   <input 
                     type="date" 
-                    className="card donation-input"
+                    className="card donation-date-input"
                     value={startDate}
                     onChange={e => handleSetStartDate(e.target.value)}
                     placeholder="View From"
@@ -354,16 +354,13 @@ export default function DonationsView() {
                 <div className="donation-date-input-wrapper">
                   <input 
                     type="date" 
-                    className="card donation-input"
+                    className="card donation-date-input"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
                     placeholder="To"
                   />
                 </div>
-                <button className="btn btn-ghost" onClick={handleClearFilters}>
-                  Reset
-                </button>
-                <div className="donation-sort-wrapper">
+                <div className="donation-sort-select-wrapper">
                   <select
                     className="card donation-sort-select"
                     value={sortBy}
@@ -374,6 +371,9 @@ export default function DonationsView() {
                     <option value="name">Sort by Name</option>
                   </select>
                 </div>
+                <button className="btn btn-ghost" onClick={handleClearFilters}>
+                  Reset
+                </button>
               </div>
               <div className="donation-table-container">
                 <table className="donation-table w-full text-left">
