@@ -21,7 +21,6 @@ const legacyWhitelist = new Set([
   'src/components/admin/SeatingBottomDock.tsx',
   'src/components/admin/EventRosterTable.tsx',
   'src/components/admin/BulkEventModal.tsx',
-  'src/components/admin/SeatingFormationsEditor.tsx',
   'src/components/admin/EventList.tsx',
   'src/components/admin/SortableSetListItem.tsx',
   'src/components/admin/RosterImportModal.tsx',
