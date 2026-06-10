@@ -373,7 +373,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                       <strong className="text-sm text-text">{field.label}</strong>
                       {field.required && (
                         <span 
-                          className="rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold text-[#991b1b]"
+                          className="rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold text-danger-text"
                         >
                           Required
                         </span>
@@ -416,7 +416,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               <span className="card bg-[rgb(74_124_89_/_5%)] px-2 py-1 text-xs font-semibold text-primary-deep">
                 Total Mapped: {mappedSingers.length}
               </span>
-              <span className="card bg-[rgb(153_27_27_/_5%)] px-2 py-1 text-xs font-semibold text-[#991b1b]">
+              <span className="card bg-[rgb(153_27_27_/_5%)] px-2 py-1 text-xs font-semibold text-danger-text">
                 Errors: {mappedSingers.filter(s => !s.isValid).length}
               </span>
             </div>
@@ -563,7 +563,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           {/* Error Details */}
           {errorsList.length > 0 && (
             <div className="flex-col gap-1">
-              <strong className="text-sm text-[#991b1b]">
+              <strong className="text-sm text-danger-text">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
               <div className="max-h-[150px] overflow-y-auto rounded-lg border border-border bg-[#fafafa] p-[8px_12px] text-xs">
@@ -573,7 +573,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                       // @allow-inline-style - Dynamic border based on position in list
                       borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined 
                     }}>
-                    Row {err.row} (<strong>{err.name}</strong>): <span className="text-[#991b1b]">{err.error}</span>
+                    Row {err.row} (<strong>{err.name}</strong>): <span className="text-danger-text">{err.error}</span>
                   </div>
                 ))}
               </div>

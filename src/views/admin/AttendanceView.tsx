@@ -326,7 +326,7 @@ export default function AttendanceView() {
         
         <div className="min-w-[320px] flex-row items-center gap-[var(--space-md)]">
           <div className="flex-1 flex-col gap-1">
-            <label className="text-label text-[0.75rem] font-bold text-[var(--text-muted)] uppercase">Select Event</label>
+            <label className="text-label text-xs font-bold text-[var(--text-muted)] uppercase">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => {
@@ -348,7 +348,7 @@ export default function AttendanceView() {
         <div className="flex flex-col gap-[var(--space-sm)] rounded-[var(--radius-md)] border border-[rgb(74_117_89_/_20%)] bg-[var(--primary-light)] p-[14px_20px] transition-all duration-200">
           <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => setIsEventExpanded(!isEventExpanded)}>
             <div className="flex-col gap-[2px]">
-              <span className="text-muted text-xs font-semibold tracking-[0.05em] uppercase">Active Event</span>
+              <span className="text-muted text-xs font-semibold tracking-wider uppercase">Active Event</span>
               <div className="flex-row items-center gap-2">
                 {selectedEvent.title && <h2 className="text-headline !m-0 text-[1.4rem] font-extrabold text-[var(--primary-deep)]">{selectedEvent.title}</h2>}
                 <span className={`inline-flex items-center rounded px-[8px] py-[3px] text-[0.625rem] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
@@ -448,7 +448,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-sm !h-[34px] rounded-[8px] border border-[rgb(74_117_89_/_25%)] bg-[rgb(74_117_89_/_10%)] px-3 text-[0.75rem] font-bold text-[var(--primary-deep)]"
+              className="btn btn-sm !h-[34px] rounded-[8px] border border-[rgb(74_117_89_/_25%)] bg-[rgb(74_117_89_/_10%)] px-3 text-xs font-bold text-[var(--primary-deep)]"
             >
               ✅ Mark All Present
             </button>
@@ -475,7 +475,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-sm !h-[34px] rounded-[8px] border border-[rgb(217_119_6_/_30%)] bg-[rgb(251_191_36_/_14%)] px-3 text-[0.75rem] font-bold text-[#92400e] disabled:cursor-not-allowed disabled:opacity-55"
+              className="btn btn-sm !h-[34px] rounded-[8px] border border-[rgb(217_119_6_/_30%)] bg-[rgb(251_191_36_/_14%)] px-3 text-xs font-bold text-[#92400e] disabled:cursor-not-allowed disabled:opacity-55"
               disabled={remainingUnmarkedProfileIds.length === 0}
             >
               ⚠️ Mark Remaining Absent
@@ -504,7 +504,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-ghost btn-sm !h-[34px] rounded-[8px] border border-dashed border-[var(--border)] px-3 text-[0.75rem] font-bold text-[var(--text-muted)]"
+              className="btn btn-ghost btn-sm !h-[34px] rounded-[8px] border border-dashed border-[var(--border)] px-3 text-xs font-bold text-[var(--text-muted)]"
             >
               ⏳ Reset All
             </button>
@@ -617,7 +617,7 @@ export default function AttendanceView() {
         checkInItems.length === 0 && declinedSingers.length === 0 ? (
           <AppCard className="flex flex-col items-center rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-transparent p-[var(--space-xl)_var(--space-md)] text-center">
             <span className="text-[2rem]">🔍</span>
-            <h3 className="mt-3 mb-1 text-[1.25rem] font-extrabold text-[var(--text)]">No Matching Singers</h3>
+            <h3 className="mt-3 mb-1 text-xl font-extrabold text-[var(--text)]">No Matching Singers</h3>
             <p className="text-muted mt-0 mb-[var(--space-md)] text-sm">Try adjusting your search terms, voice parts, or attendance filters.</p>
             <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
           </AppCard>
@@ -648,7 +648,7 @@ export default function AttendanceView() {
               <div className="card rounded-md border border-[#fecaca] bg-[#fef2f2] p-4">
                 <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
                   <div className="flex flex-col gap-0.5">
-                    <h3 className="text-[0.85rem] font-bold text-[#991b1b]">Rescue Declined RSVP</h3>
+                    <h3 className="text-[0.85rem] font-bold text-danger-text">Rescue Declined RSVP</h3>
                     <p className="text-muted text-xs text-[#92400e]">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
                   </div>
                   
@@ -666,7 +666,7 @@ export default function AttendanceView() {
                     <button
                       disabled={!selectedDeclinedProfileId}
                       onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
-                      className="btn btn-secondary btn-sm !h-9 border border-[rgb(239_68_68_/_20%)] bg-[#fee2e2] font-bold text-[#991b1b]"
+                      className="btn btn-secondary btn-sm !h-9 border border-[rgb(239_68_68_/_20%)] bg-danger-bg font-bold text-danger-text"
                     >
                       + Add Back
                     </button>

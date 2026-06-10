@@ -18,7 +18,7 @@ export const FloatingAudioPlayer: React.FC<FloatingAudioPlayerProps> = ({
     return (
         <div className="fixed bottom-4 left-1/2 z-[999] flex w-[95%] max-w-[650px] -translate-x-1/2 items-center gap-4 rounded-lg border border-[rgb(255_255_255_/_10%)] bg-[rgb(27_77_62_/_95%)] p-4 shadow-lg">
             <div className="min-w-0 flex-[1_1_180px] flex-col gap-[2px]">
-                <span className="text-[10px] tracking-[0.05em] text-[rgb(255_255_255_/_70%)] uppercase">
+                <span className="text-[10px] tracking-wider text-[rgb(255_255_255_/_70%)] uppercase">
                     Playing Learning Track ({part})
                 </span>
                 <strong className="block truncate text-[13px] text-white">

@@ -847,7 +847,7 @@ export function MusicPieceModal({
                     <>
                         {/* NEW LINKED PARENT BANNER NOTICE */}
                         {parentPiece && (
-                            <div className="mb-[var(--space-xs)] flex items-center gap-[6px] rounded-[var(--radius-sm)] border-l-4 border-[var(--primary)] bg-[rgb(74_124_89_/_5%)] p-[var(--space-sm)] text-[0.875rem] text-[var(--text-main)]">
+                            <div className="mb-[var(--space-xs)] flex items-center gap-[6px] rounded-[var(--radius-sm)] border-l-4 border-[var(--primary)] bg-[rgb(74_124_89_/_5%)] p-[var(--space-sm)] text-sm text-[var(--text-main)]">
                                 <span>
                                     🔗 <strong>Multi-Movement Link:</strong> This piece is configured as a movement of <strong>{parentPiece.title}</strong>.
                                 </span>
@@ -1037,7 +1037,7 @@ export function MusicPieceModal({
                                         href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="btn btn-secondary mt-[2px] inline-flex !h-6 !min-h-6 items-center gap-1 self-start rounded-full !p-[4px_12px] !text-[0.75rem] leading-none no-underline"
+                                        className="btn btn-secondary mt-[2px] inline-flex !h-6 !min-h-6 items-center gap-1 self-start rounded-full !p-[4px_12px] !text-xs leading-none no-underline"
                                     >
                                         Lookup ↗
                                     </a>

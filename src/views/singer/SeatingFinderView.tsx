@@ -298,7 +298,7 @@ export default function SeatingFinderView() {
                 Director View
               </button>
             </div>
-            <h3 className="mb-1 text-center text-lg font-semibold tracking-[0.1em] text-text-muted uppercase">
+            <h3 className="mb-1 text-center text-lg font-semibold tracking-widest text-text-muted uppercase">
               Interactive Stage Layout
             </h3>
             
@@ -380,7 +380,7 @@ export default function SeatingFinderView() {
                 <div className="relative flex w-full flex-col items-center gap-2 border-t border-dashed border-border pt-4">
                   <div className="mb-1 h-2 w-60 rounded-[50%] border-b-2 border-primary-deep opacity-30"></div>
                   <div className="flex items-center justify-center gap-8">
-                    <span className="flex items-center gap-1.5 rounded-full border border-[rgba(74,124,89,0.2)] bg-primary-light px-3 py-1.5 text-[0.75rem] font-bold tracking-wider text-primary-deep uppercase shadow-sm select-none">🎼 Director & Audience</span>
+                    <span className="flex items-center gap-1.5 rounded-full border border-[rgba(74,124,89,0.2)] bg-primary-light px-3 py-1.5 text-xs font-bold tracking-wider text-primary-deep uppercase shadow-sm select-none">🎼 Director & Audience</span>
                   </div>
                 </div>
               </div>
@@ -425,7 +425,7 @@ export default function SeatingFinderView() {
         {!isOpenSeating && row !== null && seat !== null && (
           <div className="flex-col gap-4 py-8">
             <div className="flex flex-col items-center">
-              <h3 className="mb-1 text-lg font-semibold tracking-[0.1em] text-text-muted uppercase">
+              <h3 className="mb-1 text-lg font-semibold tracking-widest text-text-muted uppercase">
                 Standing Neighbors HUD
               </h3>
               <span className="text-sm text-text-muted italic">

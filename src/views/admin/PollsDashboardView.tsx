@@ -279,14 +279,14 @@ export default function PollsDashboardView() {
           </label>
           <button 
             type="button"
-            className="btn btn-secondary btn-sm h-9 flex-row items-center gap-1.5" 
+            className="btn btn-secondary h-9 flex-row items-center gap-1.5" 
             onClick={() => setIsSettingsModalOpen(true)}
           >
             ⚙️ Settings
           </button>
           <button 
             type="button"
-            className="btn btn-primary btn-sm h-9 flex-row items-center gap-1.5" 
+            className="btn btn-primary h-9 flex-row items-center gap-1.5" 
             onClick={openQuickCreate}
           >
             <span>+</span> Start New Poll
@@ -340,7 +340,7 @@ export default function PollsDashboardView() {
                     <div className="auto flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex min-w-0 items-center gap-2">
                         <h3 className="m-0 text-base font-bold text-text">{poll.question}</h3>
-                        {isArchived && <span className="inline-flex items-center rounded bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold tracking-wider text-[#64748b] uppercase">Archived</span>}
+                        {isArchived && <span className="inline-flex items-center rounded bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold tracking-wider text-text-muted uppercase">Archived</span>}
                       </div>
                       <div className="flex flex-wrap gap-1 gap-x-4 text-sm font-semibold text-text-muted">
                         {createdLabel && <span>Created {createdLabel}</span>}
@@ -453,7 +453,7 @@ export default function PollsDashboardView() {
                           </div>
 
                           <div className="flex min-w-0 flex-1 flex-col gap-2">
-                            <h4 className="m-0 border-b-2 border-[#fee2e2] pb-1 text-sm font-bold text-[#ef4444]">
+                            <h4 className="m-0 border-b-2 border-danger-bg pb-1 text-sm font-bold text-[#ef4444]">
                               Declined ({stat.no})
                             </h4>
                             {stat.decliners.length === 0 ? (
@@ -461,7 +461,7 @@ export default function PollsDashboardView() {
                             ) : (
                               <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
                                 {stat.decliners.map(v => (
-                                  <div key={v.id} className="rounded-md border border-[#fee2e2] bg-surface p-2 px-3 text-sm opacity-85">
+                                  <div key={v.id} className="rounded-md border border-danger-bg bg-surface p-2 px-3 text-sm opacity-85">
                                     <div className="font-bold">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
                                     <div className="text-muted text-xs">{v.expand?.profileId?.voicePart ?? ''}</div>
                                   </div>

@@ -116,7 +116,7 @@ export function MusicLibraryRow({
       <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
         <div className="flex items-center justify-center gap-[var(--space-xs)]">
           <button
-            className="btn btn-ghost btn-sm !m-0 !h-6 !min-h-auto !p-[0_8px] !text-[0.75rem]"
+            className="btn btn-ghost btn-sm !m-0 !h-6 !min-h-auto !p-[0_8px] !text-xs"
             onClick={(event) => {
               event.stopPropagation();
               onEditPiece(piece);

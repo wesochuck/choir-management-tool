@@ -303,7 +303,7 @@ export default function SeatingView() {
     >
       <div className="no-print items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
         <div className="flex-row flex-wrap items-center gap-[var(--space-md)]">
-          <h1 className="text-headline m-0 text-[1.25rem] font-extrabold">
+          <h1 className="text-headline m-0 text-xl font-extrabold">
             Seating Chart
           </h1>
           
@@ -362,7 +362,7 @@ export default function SeatingView() {
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
-                className="h-8 min-h-[32px] w-[180px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-[0.75rem]"
+                className="h-8 min-h-[32px] w-[180px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-xs"
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
@@ -376,7 +376,7 @@ export default function SeatingView() {
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
-                className="h-8 min-h-[32px] w-[220px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-[0.75rem]"
+                className="h-8 min-h-[32px] w-[220px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-xs"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -437,7 +437,7 @@ export default function SeatingView() {
 
                     await updateChart({ formationId: selectedId, assignments: {} });
                   }}
-                  className="h-8 min-h-[32px] w-[130px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-[0.75rem]"
+                  className="h-8 min-h-[32px] w-[130px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-xs"
                 >
                   {seatingSettings.formations?.map(formation => (
                     <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -597,7 +597,7 @@ export default function SeatingView() {
                       setActiveChartId(e.target.value);
                     }
                   }}
-                  className="h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-[0.75rem] shadow-none"
+                  className="h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-xs shadow-none"
                   // @allow-inline-style - dynamic color and weight based on active chart
                   style={{
                     color: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
@@ -615,7 +615,7 @@ export default function SeatingView() {
             {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
             <button
               onClick={() => setIsNewChartModalOpen(true)}
-              className="btn btn-sm btn-ghost mb-2 inline-flex !h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--border)] p-0 text-[1.25rem] font-extrabold text-[var(--primary)]"
+              className="btn btn-sm btn-ghost mb-2 inline-flex !h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--border)] p-0 text-xl font-extrabold text-[var(--primary)]"
               title="Create new seating chart"
             >
               +

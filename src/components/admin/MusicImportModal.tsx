@@ -273,7 +273,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--border)] bg-[rgb(74_124_89_/_2%)] px-5 py-10 hover:border-[var(--primary)] hover:bg-[rgb(74_124_89_/_5%)]"
           >
-            <span className="text-[3rem]">🎼</span>
+            <span className="text-5xl">🎼</span>
             <div>
               <strong className="block text-base font-bold text-[var(--primary-deep)]">
                 Select a CSV file to upload
@@ -319,7 +319,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                     <div className="flex items-center gap-[6px]">
                       <strong className="text-[0.9rem] text-[var(--text)]">{field.label}</strong>
                       {field.required && (
-                        <span className="rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold text-[#991b1b]">
+                        <span className="rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold text-danger-text">
                           Required
                         </span>
                       )}
@@ -357,7 +357,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               <span className="card bg-[rgb(74_124_89_/_5%)] !p-[4px_8px] text-xs font-semibold text-[var(--primary-deep)]">
                 Total Mapped: {mappedPieces.length}
               </span>
-              <span className="card bg-[rgb(153_27_27_/_5%)] !p-[4px_8px] text-xs font-semibold text-[#991b1b]">
+              <span className="card bg-[rgb(153_27_27_/_5%)] !p-[4px_8px] text-xs font-semibold text-danger-text">
                 Errors: {mappedPieces.filter(p => !p.isValid).length}
               </span>
             </div>
@@ -436,7 +436,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
       {/* STEP 4: IMPORTING PROGRESS */}
       {step === 'IMPORTING' && (
         <div className="flex flex-col items-center gap-[var(--space-md)] py-5">
-          <span className="animate-[spin_2s_linear_infinite] text-[3rem]">⚙️</span>
+          <span className="animate-[spin_2s_linear_infinite] text-5xl">⚙️</span>
           
           <div className="flex w-full flex-col items-center gap-[6px]">
             <strong className="text-[1.1rem] text-[var(--text)]">
@@ -459,7 +459,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
           <div className="flex gap-5 text-[0.9rem] text-[var(--text-muted)]">
             <span>Successes: <strong className="text-[var(--primary-deep)]">{successCount}</strong></span>
-            <span>Failures: <strong className={errorsList.length > 0 ? 'text-[#991b1b]' : ''}>{errorsList.length}</strong></span>
+            <span>Failures: <strong className={errorsList.length > 0 ? 'text-danger-text' : ''}>{errorsList.length}</strong></span>
           </div>
         </div>
       )}
@@ -477,13 +477,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
           {errorsList.length > 0 && (
             <div className="flex flex-col gap-[var(--space-xs)]">
-              <strong className="text-[0.9rem] text-[#991b1b]">
+              <strong className="text-[0.9rem] text-danger-text">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
               <div className="max-h-[150px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[#fafafa] p-[8px_12px] text-[0.8rem]">
                 {errorsList.map((err, i) => (
                   <div key={i} className="border-b border-[var(--border)] py-1 text-[#444] last:border-b-0">
-                    Row {err.row} (<strong>{err.title}</strong>): <span className="text-[#991b1b]">{err.error}</span>
+                    Row {err.row} (<strong>{err.title}</strong>): <span className="text-danger-text">{err.error}</span>
                   </div>
                 ))}
               </div>

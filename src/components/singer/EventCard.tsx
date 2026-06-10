@@ -100,14 +100,14 @@ export const EventCard: React.FC<EventCardProps> = ({
            <div className="flex flex-row flex-wrap justify-end gap-1 max-sm:grid max-sm:w-full max-sm:grid-cols-[repeat(auto-fit,minmax(80px,1fr))] max-sm:gap-1.5">
              <button 
                onClick={() => calendarUtils.generateICS(event)}
-               className={`${baseBtnClasses} border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-[0.75rem]`}
+               className={`${baseBtnClasses} border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
              >
                📅 Add
              </button>
              {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
                <button 
                  onClick={handleOpenPlayer}
-                 className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-[0.75rem]`}
+                 className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
                >
                  🎧 Practice
                </button>
@@ -115,7 +115,7 @@ export const EventCard: React.FC<EventCardProps> = ({
              {isPerformance && rsvp !== 'No' && (
                <Link 
                  to={`/seating/${event.id}`}
-                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-[#d1dfd6] max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-[0.75rem]`}
+                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-[#d1dfd6] max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
                >
                  🪑 Seating
                </Link>
