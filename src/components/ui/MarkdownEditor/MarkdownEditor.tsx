@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
-import styles from './MarkdownEditor.module.css';
 
 export interface MarkdownEditorProps {
   value: string;
@@ -56,7 +55,7 @@ export function MarkdownEditor({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const classNames = [styles.wrapper];
+  const classNames = ['relative'];
   if (className) classNames.push(className);
 
   return (

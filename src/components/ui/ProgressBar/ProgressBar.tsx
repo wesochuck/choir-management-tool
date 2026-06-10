@@ -1,4 +1,4 @@
-import styles from './ProgressBar.module.css';
+
 
 export interface ProgressBarProps {
   value: number;
@@ -8,7 +8,7 @@ export interface ProgressBarProps {
 
 export function ProgressBar({ value, label, className }: ProgressBarProps) {
   const clamped = Math.max(0, Math.min(100, value));
-  const classNames = [styles.track];
+  const classNames = ['w-full h-2 bg-border rounded overflow-hidden'];
   if (className) classNames.push(className);
 
   return (
@@ -21,7 +21,7 @@ export function ProgressBar({ value, label, className }: ProgressBarProps) {
       aria-label={label}
     >
       <div
-        className={styles.fill}
+        className="h-full bg-primary rounded transition-[width] duration-300 ease-[ease]"
         // @allow-inline-style - dynamic width from value prop
         style={{ width: `${clamped}%` }}
       />

@@ -1,5 +1,4 @@
 import { Spinner } from '../Spinner/Spinner';
-import styles from './SavingIndicator.module.css';
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -17,7 +16,7 @@ export function SavingIndicator({
 
   if (state === 'saving') {
     return (
-      <span className={[styles.indicator, styles.saving].join(' ')}>
+      <span className="inline-flex items-center gap-1 text-sm text-text-muted">
         <Spinner size="small" /> Saving...
       </span>
     );
@@ -28,7 +27,7 @@ export function SavingIndicator({
       ? lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       : '';
     return (
-      <span className={[styles.indicator, styles.saved].join(' ')}>
+      <span className="inline-flex items-center gap-1 text-sm text-success-text">
         {'\u2713'} Saved{timeStr ? ` at ${timeStr}` : ''}
       </span>
     );
@@ -36,10 +35,10 @@ export function SavingIndicator({
 
   if (state === 'error') {
     return (
-      <span className={[styles.indicator, styles.error].join(' ')}>
+      <span className="inline-flex items-center gap-1 text-sm text-danger-text">
         {'\u26A0'} {errorMessage || 'Save failed'}
         {onRetry && (
-          <button className={styles.retryBtn} onClick={onRetry} type="button">Retry</button>
+          <button className="border-none bg-none text-danger-text cursor-pointer text-sm underline p-0 min-h-auto hover:text-primary" onClick={onRetry} type="button">Retry</button>
         )}
       </span>
     );

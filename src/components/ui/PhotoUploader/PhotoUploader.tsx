@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { updateProfilePhoto, deleteProfilePhoto, type Profile } from '../../../services/profileService';
 import { useDialog } from '../../../contexts/DialogContext';
-import styles from './PhotoUploader.module.css';
 
 export type PhotoSize = 'sm' | 'md' | 'lg';
 
@@ -397,18 +396,18 @@ export function PhotoUploader({
   if (readOnlyOnDesktop && !isMobile) {
     return (
       <div
-        className={styles.avatar}
+        className="relative rounded-full overflow-hidden shrink-0 bg-primary-light border border-border"
         style={{ width: px, height: px }} // @allow-inline-style - dynamic sizing px value based on props
       >
         {showImage ? (
           <img
             src={preview || displayUrl}
             alt={profileName}
-            className={styles.avatarImg}
+            className="w-full h-full object-cover block"
           />
         ) : (
           <div
-            className={styles.fallback}
+            className="w-full h-full bg-primary-light text-primary-deep flex items-center justify-center font-semibold"
             style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }} // @allow-inline-style - dynamic font sizing based on props
           >
             {initials}
@@ -419,13 +418,13 @@ export function PhotoUploader({
   }
 
   return (
-    <div className={styles.container}>
+    <div className="flex flex-col items-center shrink-0">
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleAvatarClick}
-        className={styles.trigger}
+        className="relative rounded-full overflow-hidden cursor-pointer transition-all duration-200 bg-primary-light flex items-center justify-center hover:opacity-90"
         // @allow-inline-style - dynamic sizing px value and dragging borders based on component state
         style={{
           width: px,
@@ -438,11 +437,11 @@ export function PhotoUploader({
           <img
             src={preview || displayUrl}
             alt={profileName}
-            className={styles.avatarImg}
+            className="w-full h-full object-cover block"
           />
         ) : (
           <div
-            className={styles.fallback}
+            className="w-full h-full bg-primary-light text-primary-deep flex items-center justify-center font-semibold"
             style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }} // @allow-inline-style - dynamic font sizing based on props
           >
             {initials}
@@ -450,25 +449,25 @@ export function PhotoUploader({
         )}
 
         {isUploading && (
-          <div className={styles.spinnerOverlay}>
-            <div className={styles.photoSpinner} />
+          <div className="absolute inset-0 bg-black/45 flex items-center justify-center z-20">
+            <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-[spin_0.7s_linear_infinite]" />
           </div>
         )}
 
         {!isMobile && isDragging && !isUploading && (
-          <div className={styles.dragOverlay}>
+          <div className="absolute inset-0 bg-[rgba(74,124,89,0.85)] backdrop-blur-sm flex flex-col items-center justify-center text-white z-10">
             <span style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span> {/* @allow-inline-style - dynamic text size based on props */}
           </div>
         )}
       </div>
 
       {!isMobile && size !== 'sm' && (
-        <div className={styles.btnPanel}>
-          <div className={styles.btnGroup}>
+        <div className="flex flex-col items-center gap-[2px] mt-2 w-full">
+          <div className="flex gap-2 items-center">
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}
-              className={styles.actionBtn}
+              className="bg-none border-none text-primary cursor-pointer text-[0.8125rem] font-semibold p-1 min-h-auto inline-flex items-center gap-1 transition-colors duration-200 hover:text-primary-deep"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -478,12 +477,12 @@ export function PhotoUploader({
               Choose File
             </button>
 
-            <span className={`${styles.textXs} ${styles.textMuted}`}>|</span>
+            <span className="text-xs text-text-muted">|</span>
 
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(true); }}
-              className={styles.actionBtn}
+              className="bg-none border-none text-primary cursor-pointer text-[0.8125rem] font-semibold p-1 min-h-auto inline-flex items-center gap-1 transition-colors duration-200 hover:text-primary-deep"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -494,11 +493,11 @@ export function PhotoUploader({
 
             {displayUrl && (
               <>
-                <span className={`${styles.textXs} ${styles.textMuted}`}>|</span>
+                <span className="text-xs text-text-muted">|</span>
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className={styles.removeBtn}
+                  className="bg-none border-none text-[#ef4444] cursor-pointer text-[0.8125rem] font-semibold p-1 min-h-auto inline-flex items-center gap-1 transition-colors duration-200 hover:text-[#dc2626]"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />
@@ -509,22 +508,22 @@ export function PhotoUploader({
               </>
             )}
           </div>
-          <span className={`${styles.textXs} ${styles.textMuted}`}>
+          <span className="text-xs text-text-muted">
             or drag & drop photo here
           </span>
         </div>
       )}
 
       {isMobile && size !== 'sm' && (
-        <div className={styles.btnPanelMobile}>
-          <span className={`${styles.textXs} ${styles.textMuted}`}>
+        <div className="flex flex-col items-center gap-1 mt-2">
+          <span className="text-xs text-text-muted">
             Tap photo to change
           </span>
           {displayUrl && (
             <button
               type="button"
               onClick={handleRemovePhoto}
-              className={styles.removeBtn}
+              className="bg-none border-none text-[#ef4444] cursor-pointer text-[0.8125rem] font-semibold p-1 min-h-auto inline-flex items-center gap-1 transition-colors duration-200 hover:text-[#dc2626]"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
@@ -548,15 +547,15 @@ export function PhotoUploader({
       {showCamera && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={styles.cameraOverlay}
+          className="fixed inset-0 z-[9999] bg-slate-900/85 backdrop-blur-[8px] flex items-center justify-center p-4"
         >
-          <div className={styles.cameraContent}>
-            <div className={styles.cameraHeader}>
-              <h3 className={styles.cameraTitle}>Camera Preview</h3>
+          <div className="max-w-[440px] w-full bg-slate-800 border border-white/10 rounded-lg p-6 flex flex-col gap-4 items-center shadow-2xl text-white">
+            <div className="w-full flex justify-between items-center">
+              <h3 className="m-0 text-xl font-semibold text-white">Camera Preview</h3>
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelCamera(); }}
-                className={styles.cameraCloseBtn}
+                className="bg-none border-none text-slate-400 cursor-pointer p-1 flex items-center justify-center min-h-auto hover:text-white"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -566,22 +565,22 @@ export function PhotoUploader({
             </div>
 
             {cameraError ? (
-              <div className={styles.cameraErrorAlert}>
+              <div className="w-full p-4 bg-red-500/15 border border-red-500/30 rounded-md text-sm text-red-300 text-center flex flex-col gap-2">
                 <div>{cameraError}</div>
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(false); fileRef.current?.click(); }}
-                  className={styles.cameraErrorBtn}
+                  className="bg-white/10 border border-white/20 rounded text-white px-3 py-1.5 text-[0.8125rem] cursor-pointer min-h-auto transition-colors duration-200 hover:bg-white/20"
                 >
                   Choose File from Device
                 </button>
               </div>
             ) : (
-              <div className={styles.viewfinderFrame}>
+              <div className="relative w-full aspect-square rounded-full overflow-hidden border-[3px] border-primary shadow-[0_0_0_4px_rgba(74,124,89,0.2),inset_0_0_20px_rgba(0,0,0,0.8)] bg-slate-900 flex items-center justify-center">
                 {isCameraLoading && (
-                  <div className={styles.cameraLoadingContainer}>
-                    <div className={`${styles.photoSpinner} ${styles.cameraLoadingSpinner}`} />
-                    <span className={styles.cameraLoadingText}>Starting camera...</span>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-9 h-9 border-3 border-white/20 border-t-white rounded-full animate-[spin_0.7s_linear_infinite]" />
+                    <span className="text-[0.8125rem] text-slate-400">Starting camera...</span>
                   </div>
                 )}
 
@@ -593,18 +592,18 @@ export function PhotoUploader({
                   style={{
                     display: isCameraLoading ? 'none' : 'block',
                   }}
-                  className={styles.avatarImg}
+                  className="w-full h-full object-cover -scale-x-100"
                 />
               </div>
             )}
 
             {!cameraError && videoDevices.length > 1 && (
-              <div className={styles.deviceSwitchContainer}>
-                <span className={styles.deviceLabel}>Switch Camera</span>
+              <div className="w-full flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-slate-400">Switch Camera</span>
                 <select
                   value={selectedDeviceId}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className={styles.deviceSelect}
+                  className="w-full px-3 py-2 bg-slate-900 border border-white/10 rounded-md text-white text-sm cursor-pointer min-h-[38px] bg-[url(data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222.5%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E)] bg-no-repeat bg-[right_12px_center] bg-[length:16px]"
                 >
                   {videoDevices.map((device) => (
                     <option key={device.deviceId} value={device.deviceId}>
@@ -616,15 +615,15 @@ export function PhotoUploader({
             )}
 
             {!cameraError && !isCameraLoading && (
-              <div className={styles.shutterContainer}>
+              <div className="flex flex-col items-center mt-2">
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCapture(); }}
-                  className={styles.shutterBtn}
+                  className="relative w-[72px] h-[72px] rounded-full bg-white border-6 border-white/20 outline-none cursor-pointer flex items-center justify-center transition-transform duration-150 p-0 min-h-auto hover:scale-105 hover:border-white/35"
                 >
-                  <div className={styles.shutterInner} />
+                  <div className="w-[52px] h-[52px] rounded-full bg-white border-2 border-black" />
                 </button>
-                <span className={styles.shutterLabel}>Click to capture</span>
+                <span className="text-xs text-slate-400 mt-2">Click to capture</span>
               </div>
             )}
           </div>
@@ -634,20 +633,20 @@ export function PhotoUploader({
       {showCrop && preview && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={styles.cropOverlay}
+          className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4"
         >
-          <div className={styles.cropContent}>
+          <div className="max-w-[400px] w-full p-6 flex flex-col gap-4 items-center bg-surface border border-border rounded-lg">
             <img
               src={preview}
               alt="Preview"
-              className={styles.cropImg}
+              className="w-full max-h-[300px] object-contain rounded-md"
             />
-            <div className={styles.cropActions}>
+            <div className="flex gap-2 flex-wrap justify-center">
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveOriginal(); }}
                 disabled={isUploading}
-                className={styles.cropPrimaryBtn}
+                className="inline-flex items-center justify-center h-11 px-6 rounded-md font-sans text-sm font-medium border border-transparent cursor-pointer transition-all duration-200 gap-2 whitespace-nowrap bg-primary text-surface disabled:opacity-50 disabled:cursor-not-allowed hover:not-disabled:bg-primary-deep hover:not-disabled:shadow-md"
               >
                 {isUploading ? 'Uploading...' : 'Use Photo'}
               </button>
@@ -655,7 +654,7 @@ export function PhotoUploader({
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCrop(); }}
                 disabled={isUploading}
-                className={styles.cropSecondaryBtn}
+                className="inline-flex items-center justify-center h-11 px-6 rounded-md font-sans text-sm font-medium border border-transparent cursor-pointer transition-all duration-200 gap-2 whitespace-nowrap bg-primary-light text-primary-deep disabled:opacity-50 disabled:cursor-not-allowed hover:not-disabled:bg-[#d1dfd6]"
               >
                 Crop to Square
               </button>
@@ -663,7 +662,7 @@ export function PhotoUploader({
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancel(); }}
                 disabled={isUploading}
-                className={styles.cropGhostBtn}
+                className="inline-flex items-center justify-center h-11 px-6 rounded-md font-sans text-sm font-medium border cursor-pointer transition-all duration-200 gap-2 whitespace-nowrap bg-transparent text-text-muted border-border disabled:opacity-50 disabled:cursor-not-allowed hover:not-disabled:bg-primary-light hover:not-disabled:text-primary-deep"
               >
                 Cancel
               </button>
