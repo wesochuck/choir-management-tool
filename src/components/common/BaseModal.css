@@ -41,6 +41,7 @@
 
 .modal-footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-md);
   margin-top: auto;
