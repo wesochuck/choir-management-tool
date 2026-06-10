@@ -23,7 +23,8 @@
 
 .patrons-view .patrons-search-input-wrapper {
   flex: 1;
-  min-width: 250px;
+  min-width: 200px;
+  width: 100%;
 }
 
 .patrons-view .patrons-search-input {
@@ -46,7 +47,7 @@
 }
 
 .patrons-view .patrons-sort-select-wrapper {
-  min-width: 180px;
+  min-width: 200px;
 }
 
 .patrons-view .patrons-sort-select {
