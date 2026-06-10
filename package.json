@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "generate:pb-hooks": "node --import ./test/register.js --experimental-strip-types pocketbase/pb_hooks_src/generate-main-pb-js.ts",
     "check:pb-hooks": "npm run generate:pb-hooks && node --import ./test/register.js --experimental-strip-types --test test/pb-hooks/integrity.test.ts",
-    "test": "node --import ./test/register.js --experimental-strip-types --test test/*.test.ts test/pb-hooks/*.test.ts",
+    "test": "node --import ./test/register.js --experimental-strip-types --test test/*.test.ts test/pb-hooks/*.test.ts src/components/ui/**/*.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
