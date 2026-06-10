@@ -448,8 +448,6 @@ test('codebase integrity: enforce no inline styles rule', () => {
   
   // Whitelist of legacy files that currently use inline style={...}
   const legacyInlineStyleWhitelist = new Set([
-    'src/App.tsx',
-    'src/contexts/DialogContext.tsx',
     'src/components/admin/EventModal.tsx',
     'src/components/admin/MusicImportModal.tsx',
     'src/components/admin/SeatingBottomDock.tsx',

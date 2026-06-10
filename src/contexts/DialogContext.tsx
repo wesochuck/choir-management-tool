@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { BaseModal } from '../components/common/BaseModal';
+import './DialogContext.css';
 
 type DialogVariant = 'info' | 'danger' | 'warning';
 
@@ -104,45 +105,12 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
     <DialogContext.Provider value={value}>
       {children}
       
-      {/* Premium self-contained CSS Toast Keyframes */}
-      <style>{`
-        @keyframes toast-slide-in {
-          from {
-            transform: translateY(24px) scale(0.96);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
-
       {toast && (
         <div 
           key={toast.id}
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 9999,
-            backgroundColor: 'var(--text-color, #1f2937)',
-            color: '#ffffff',
-            padding: '12px 20px',
-            borderRadius: 'var(--radius, 8px)',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '13px',
-            fontWeight: 500,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(8px)',
-            animation: 'toast-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            pointerEvents: 'none'
-          }}
+          className="dialog-toast"
         >
-          <span style={{ fontSize: '15px' }}>ℹ️</span>
+          <span className="dialog-toast-icon">ℹ️</span>
           <span>{toast.message}</span>
         </div>
       )}
@@ -175,18 +143,19 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
           )
         }
       >
-        <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
-          <div className="text-body" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+        <div className="flex-col dialog-toast-body">
+          <div className="text-body dialog-toast-message">
             {activeDialog?.options.message}
           </div>
           {activeDialog?.type === 'prompt' && (
-            <div className="flex-col" style={{ gap: '4px' }}>
+            <div className="flex-col dialog-toast-buttons">
               <textarea
                 autoFocus
                 value={promptValue}
                 onChange={(e) => setPromptValue(e.target.value)}
                 placeholder={activeDialog.options.placeholder}
                 maxLength={activeDialog.options.maxLength}
+                // @allow-inline-style - textarea default styling
                 style={{
                   width: '100%',
                   minHeight: '80px',
@@ -200,7 +169,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                 }}
               />
               {activeDialog.options.maxLength && (
-                <div style={{ textAlign: 'right', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                <div className="dialog-toast-prompt-hint">
                   {promptValue.length} / {activeDialog.options.maxLength}
                 </div>
               )}
