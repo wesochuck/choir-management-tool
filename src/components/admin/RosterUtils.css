@@ -711,10 +711,6 @@
   margin-right: auto;
 }
 
-.roster-ut-margin-0 {
-  margin: 0;
-}
-
 .roster-ut-upload-container {
   gap: var(--space-md);
   text-align: center;
