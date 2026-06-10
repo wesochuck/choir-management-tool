@@ -445,25 +445,11 @@ test('codebase integrity: ensure appSettings lookups for choir name reference ch
 test('codebase integrity: enforce no inline styles rule', () => {
   const files = getSrcFiles(['.tsx', '.jsx']);
   const srcDir = resolveProjectPath('src');
-  
-  // Whitelist of legacy files that currently use inline style={...}
-  const legacyInlineStyleWhitelist = new Set([
-    'src/views/PublicAuditionView.tsx',
-    'src/views/admin/music-library/FloatingAudioPlayer.tsx',
-    'src/views/admin/music-library/MusicLibraryTable.tsx',
-    'src/views/admin/music-library/LearningTracksEditor.tsx',
-    'src/views/admin/music-library/MultiSelectDropdown.tsx',
-    'src/views/singer/SeatingFinderView.tsx',
-    'src/views/singer/DashboardView.tsx',
-  ]);
 
   const violations: string[] = [];
   for (const file of files) {
     const relPath = path.relative(srcDir, file);
     const key = `src/${relPath}`;
-    if (legacyInlineStyleWhitelist.has(key)) {
-      continue;
-    }
 
     const content = fs.readFileSync(file, 'utf8');
     if (!content.includes('style={{')) {

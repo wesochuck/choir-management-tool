@@ -82,7 +82,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 onUpload(partLabel, file);
                             }
                         }}
-                        // @allow-inline-style - Interactive drag-over state styles (border, scale, shadow).
+                        // @allow-inline-style - drag-over drop zone indicator
                         style={{
                             padding: isDraggedOver 
                                 ? (isMovement ? '5px 9px' : '7px 11px') 

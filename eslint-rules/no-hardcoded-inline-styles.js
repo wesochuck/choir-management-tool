@@ -18,13 +18,6 @@
  */
 
 const legacyWhitelist = new Set([
-  'src/views/PublicAuditionView.tsx',
-  'src/views/admin/music-library/FloatingAudioPlayer.tsx',
-  'src/views/admin/music-library/MusicLibraryTable.tsx',
-  'src/views/admin/music-library/LearningTracksEditor.tsx',
-  'src/views/admin/music-library/MultiSelectDropdown.tsx',
-  'src/views/singer/SeatingFinderView.tsx',
-  'src/views/singer/DashboardView.tsx',
 ]);
 
 /** @type {import('eslint').Rule.RuleModule} */
