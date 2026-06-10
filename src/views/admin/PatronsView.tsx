@@ -215,49 +215,85 @@ export default function PatronsView() {
       </div>
 
       <AppCard title="Patron Directory">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 max-md:items-stretch md:flex-row md:items-end">
-            <div className="min-w-[200px] flex-1">
-              <input 
-                type="text"
-                placeholder="Search by name or email..."
-                className="card h-10 w-full border border-border px-3"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
+          <div className="flex flex-col gap-4">
+          <div className="card flex flex-row flex-wrap items-end gap-4 rounded-md border border-border bg-surface p-4">
+            {/* Search */}
+            <div className="flex flex-[1_1_200px] flex-col gap-1.5">
+              <label className="text-label text-xs font-bold text-text-muted uppercase">Search</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Name or email..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="card h-10 w-full rounded-md border border-border py-2 pr-8 pl-9 text-sm"
+                />
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded p-0.5 text-text-muted hover:bg-black/5"
+                    title="Clear search"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="min-w-[150px] flex-1">
-              <input 
-                type="date" 
-                className="card h-10 w-full cursor-pointer border border-border px-3"
+
+            {/* Start Date */}
+            <div className="flex w-[170px] flex-col gap-1.5">
+              <label className="text-label text-xs font-bold text-text-muted uppercase">From</label>
+              <input
+                type="date"
                 value={startDate}
                 onChange={e => handleSetStartDate(e.target.value)}
-                placeholder="Last Transaction From"
+                className="card h-10 w-full cursor-pointer rounded-md border border-border px-3 text-sm"
               />
             </div>
-            <div className="min-w-[150px] flex-1">
-              <input 
-                type="date" 
-                className="card h-10 w-full cursor-pointer border border-border px-3"
+
+            {/* End Date */}
+            <div className="flex w-[170px] flex-col gap-1.5">
+              <label className="text-label text-xs font-bold text-text-muted uppercase">To</label>
+              <input
+                type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                placeholder="To"
+                className="card h-10 w-full cursor-pointer rounded-md border border-border px-3 text-sm"
               />
             </div>
-            <div className="min-w-[200px] flex-1">
-              <select 
-                className="card h-10 w-full cursor-pointer border border-border px-3"
+
+            {/* Sort */}
+            <div className="flex w-[200px] flex-col gap-1.5">
+              <label className="text-label text-xs font-bold text-text-muted uppercase">Sort By</label>
+              <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
+                className="card h-10 w-full cursor-pointer rounded-md border border-border px-3 text-sm"
               >
-                <option value="ltv">Sort by Lifetime Value</option>
-                <option value="name">Sort by Name</option>
-                <option value="lastDate">Sort by Last Transaction</option>
+                <option value="ltv">Lifetime Value</option>
+                <option value="name">Name</option>
+                <option value="lastDate">Last Transaction</option>
               </select>
             </div>
-            <button className="btn btn-ghost h-10 min-h-10 shrink-0" onClick={handleClearFilters}>
-              Reset
-            </button>
+
+            {/* Reset */}
+            {(searchQuery || startDate || endDate) && (
+              <button
+                onClick={handleClearFilters}
+                className="btn btn-ghost !h-10 self-end px-2 text-[0.85rem] font-bold text-[#ef4444]"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] border-collapse text-left">
