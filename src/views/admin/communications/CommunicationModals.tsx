@@ -72,8 +72,8 @@ export function CommunicationModals({
         }
       >
         {selectedMessage && (
-          <div className="comm-modal-stack">
-            <div className="comm-modal-label-stack">
+          <div className="flex-col gap-4">
+            <div className="flex-col gap-1">
               <label className="text-label text-muted">Subject</label>
               <strong>
                 {(() => {
@@ -89,7 +89,7 @@ export function CommunicationModals({
                 })()}
               </strong>
             </div>
-            <div className="comm-modal-label-stack">
+            <div className="flex-col gap-1">
               <label className="text-label text-muted">Sent To</label>
               <span>
                 {selectedMessage.status === 'Archived'
@@ -98,13 +98,13 @@ export function CommunicationModals({
               </span>
             </div>
             {selectedMessage.status === 'Archived' && (
-              <div className="card comm-modal-alert-warning">
+              <div className="card bg-amber-50 border border-amber-200 rounded-md p-4">
                 <strong>Archived:</strong> This automated message was archived without sending.
               </div>
             )}
-            <div className="comm-modal-label-stack">
+            <div className="flex-col gap-1">
               <label className="text-label text-muted">Content</label>
-              <div className="card comm-modal-content-preview">
+              <div className="card bg-bg border border-border rounded-md p-4 max-h-60 overflow-y-auto">
                 {selectedMessage.content}
               </div>
             </div>
@@ -127,14 +127,14 @@ export function CommunicationModals({
           </button>
         }
       >
-        <div className="comm-modal-recipient-list">
+        <div className="flex flex-wrap gap-2">
           {recipientPreviewList.recipients.length === 0 ? (
             <div className="card admin-empty-state">
-              <p className="text-muted comm-no-margin">
+              <p className="text-muted m-0">
                 {recipientPreviewList.emptyMessage || 'No recipients found.'}
               </p>
               {recipientPreviewList.helperText && (
-                <p className="text-muted text-xs comm-recipient-helper-text">
+                <p className="text-muted text-xs">
                   {recipientPreviewList.helperText}
                 </p>
               )}
@@ -143,7 +143,7 @@ export function CommunicationModals({
             recipientPreviewList.recipients.map((r) => (
               <div
                 key={r.id}
-                className="flex-row card comm-modal-recipient-item"
+                className="flex-row card"
               >
                 <strong>{r.name}</strong>
                 <span className="text-muted text-xs">{r.voicePart}</span>

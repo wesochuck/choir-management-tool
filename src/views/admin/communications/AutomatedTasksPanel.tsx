@@ -37,23 +37,23 @@ export function AutomatedTasksPanel({
   };
 
   return (
-    <div className="flex-col comm-automated-container">
-      <div className="flex-col comm-automated-section">
-        <h3 className="text-headline comm-automated-section-title">
+    <div className="flex-col gap-6">
+      <div className="flex-col gap-4">
+        <h3 className="text-lg font-semibold text-text">
           Upcoming Automated Tasks
         </h3>
-        <div className="comm-automated-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {upcomingTasks.length === 0 && (
-            <div className="card comm-automated-empty">
+            <div className="card">
               <p className="text-muted">No upcoming automated tasks found.</p>
             </div>
           )}
           {upcomingTasks.map((task) => (
-            <div key={task.id} className="card comm-automated-card comm-automated-card-active">
-              <div className="comm-automated-header">
-                <span className="comm-automated-status-group">
+            <div key={task.id} className="card border-l-4 border-l-primary">
+              <div className="flex items-start justify-between gap-2">
+                <span className="flex items-center gap-1">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-type-badge ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${
                       task.type === 'Report'
                         ? 'bg-performance-bg text-performance-text'
                         : task.type === 'RSVP Request'
@@ -63,11 +63,11 @@ export function AutomatedTasksPanel({
                   >
                     {task.type}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-resolution-badge comm-automated-resolution-scheduled bg-primary-light text-primary-deep">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
                     Scheduled
                   </span>
                 </span>
-                <span className="comm-automated-timestamp text-muted text-xs">
+                <span className="text-muted text-xs">
                   {task.type === 'RSVP Request'
                     ? 'Pending since:'
                     : task.type === 'Report'
@@ -76,20 +76,20 @@ export function AutomatedTasksPanel({
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>
-              <div className="flex-col comm-automated-info">
-                <strong className="comm-automated-name">
+              <div className="flex-col gap-1">
+                <strong className="text-sm font-semibold text-text">
                   {task.event.title || task.event.type}
                 </strong>
                 <span className="text-muted text-xs">
                   {new Date(task.event.date).toLocaleString()}
                 </span>
                 {task.type === 'Report' && (
-                  <p className="text-muted text-xs comm-automated-desc">
+                  <p className="text-muted text-xs">
                     Sent only to admins who have opted in to attendance reports.
                   </p>
                 )}
               </div>
-              <div className="comm-automated-footer">
+              <div className="flex justify-end gap-2 mt-2">
                 <button
                   className="btn btn-ghost btn-sm"
                   disabled={isSending || isArchiving === task.id}
@@ -141,25 +141,25 @@ export function AutomatedTasksPanel({
         </div>
       </div>
 
-      <div className="flex-col comm-automated-section">
-        <h3 className="text-headline comm-automated-section-title-inactive">
+      <div className="flex-col gap-4">
+        <h3 className="text-lg font-semibold text-text-muted">
           Sent / Past Automated Tasks
         </h3>
-        <div className="comm-automated-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {pastTasks.length === 0 && (
-            <p className="text-muted text-sm comm-automated-empty">
+            <p className="text-muted text-sm">
               No past automated tasks found in the logs.
             </p>
           )}
           {pastTasks.map((task) => (
             <div
               key={task.id}
-              className="card comm-automated-card comm-automated-card-inactive"
+              className="card opacity-60"
             >
-              <div className="comm-automated-header">
-                <span className="comm-automated-status-group">
+              <div className="flex items-start justify-between gap-2">
+                <span className="flex items-center gap-1">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-type-badge ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${
                       task.status === 'Sent'
                         ? 'bg-performance-bg text-performance-text'
                         : task.status === 'Archived'
@@ -171,7 +171,7 @@ export function AutomatedTasksPanel({
                   </span>
 
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider comm-automated-resolution-badge comm-automated-resolution-${task.status.toLowerCase()}`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider`}
                   >
                     {task.status === 'Sent'
                       ? 'Sent'
@@ -180,7 +180,7 @@ export function AutomatedTasksPanel({
                       : 'Passed'}
                   </span>
                 </span>
-                <span className="comm-automated-timestamp text-muted text-xs">
+                <span className="text-muted text-xs">
                   {task.status === 'Sent'
                     ? 'Processed at:'
                     : task.status === 'Archived'
@@ -189,8 +189,8 @@ export function AutomatedTasksPanel({
                   {task.scheduledTime.toLocaleString()}
                 </span>
               </div>
-              <div className="flex-col comm-automated-info">
-                <strong className="comm-automated-name">
+              <div className="flex-col gap-1">
+                <strong className="text-sm font-semibold text-text">
                   {task.event.title || task.event.type}
                 </strong>
                 <span className="text-muted text-xs">

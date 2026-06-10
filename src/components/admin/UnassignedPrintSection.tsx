@@ -16,7 +16,7 @@ export function UnassignedPrintSection({
 
   return (
     <div className="hidden print:block unassigned-print-section">
-      <div className="unassigned-print-badge">
+      <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-gray-200 text-gray-700">
         ⚠️ Unassigned Singers: {unassigned.length}
       </div>
     </div>

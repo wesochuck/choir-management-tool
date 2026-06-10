@@ -29,19 +29,19 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
   const bodyWarning = warnings.find(w => w.field === 'body');
 
   return (
-    <div className="composer-form comm-compose-form">
-      <div className="comm-compose-header-row">
+    <div className="composer-form flex-col gap-4">
+      <div className="flex-row items-center gap-2 flex-wrap">
         <div className="composer-subject-field flex flex-col gap-1">
           <label className="text-label">Subject</label>
           <input
-            className={`card comm-compose-input ${subjectWarning ? 'border-error' : ''}`}
+            className={`card ${subjectWarning ? 'border-error' : ''}`}
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
             disabled={messageType === 'SMS'}
             placeholder={messageType === 'SMS' ? 'Subject not supported for SMS' : 'Enter subject...'}
           />
           {subjectWarning && (
-            <span className="comm-validation-error">
+            <span className="text-danger-text text-xs mt-1">
               ⚠️ {subjectWarning.message}
             </span>
           )}
@@ -49,7 +49,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
         <div className="composer-channel-field flex flex-col gap-1">
           <label className="text-label">Channel</label>
           <select
-            className="card comm-compose-input"
+            className="card"
             value={messageType}
             onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
           >
@@ -70,7 +70,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           minHeight="350px"
         />
         {bodyWarning && (
-          <span className="comm-validation-warning">
+          <span className="text-amber-600 text-xs mt-1">
             ⚠️ {bodyWarning.message}
           </span>
         )}
