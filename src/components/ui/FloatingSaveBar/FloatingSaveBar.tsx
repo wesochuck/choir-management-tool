@@ -16,7 +16,7 @@ export function FloatingSaveBar({
   if (!visible) return null;
 
   return (
-    <div className="sticky bottom-0 flex items-center justify-between py-4 px-6 bg-surface border-t border-border z-[100] gap-4 animate-[save-bar-slide-up_0.3s_ease] max-sm:flex-col max-sm:items-stretch">
+    <div className="sticky bottom-0 z-[100] flex animate-[save-bar-slide-up_0.3s_ease] items-center justify-between gap-4 border-t border-border bg-surface px-6 py-4 max-sm:flex-col max-sm:items-stretch">
       <div className="flex items-center gap-2 text-sm text-text-muted">
         <span>
           {dirtyFieldCount !== undefined
@@ -24,7 +24,7 @@ export function FloatingSaveBar({
             : 'You have unsaved changes.'}
         </span>
       </div>
-      <div className="flex gap-2 shrink-0 max-sm:flex-col">
+      <div className="flex shrink-0 gap-2 max-sm:flex-col">
         {onDiscard && (
           <Button variant="ghost" size="small" disabled={saving} onClick={onDiscard}>
             Discard

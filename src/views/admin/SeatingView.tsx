@@ -297,17 +297,17 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex-col gap-[var(--space-md)] px-0 pt-[var(--space-sm)] pb-[var(--space-sm)] bg-transparent ${isWideLayout ? '' : ''} ${isFullscreen ? '!p-[var(--space-md)] !bg-[var(--bg)]' : ''}`} 
+      className={`flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] ${isWideLayout ? '' : ''} ${isFullscreen ? '!bg-[var(--bg)] !p-[var(--space-md)]' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
-      <div className="no-print justify-between items-center gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
-        <div className="flex-row items-center gap-[var(--space-md)] flex-wrap">
+      <div className="no-print items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
+        <div className="flex-row flex-wrap items-center gap-[var(--space-md)]">
           <h1 className="text-headline m-0 text-[1.25rem] font-extrabold">
             Seating Chart
           </h1>
           
-          <div className="flex-row bg-[var(--surface-muted,#f1f5f9)] p-[3px] rounded-[var(--radius-md)] border border-[var(--border)] gap-[2px]">
+          <div className="flex-row gap-[2px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted,#f1f5f9)] p-[3px]">
             <button
               onClick={() => setActiveTab('chart')}
               // @allow-inline-style - active tab state
@@ -356,13 +356,13 @@ export default function SeatingView() {
         </div>
         
         {activeTab === 'chart' && (
-          <div className="flex-row gap-[var(--space-sm)] flex-wrap items-center">
-            <div className="flex-row gap-[6px] items-center">
-              <span className="text-[var(--text-muted)] font-semibold">Perf:</span>
+          <div className="flex-row flex-wrap items-center gap-[var(--space-sm)]">
+            <div className="flex-row items-center gap-[6px]">
+              <span className="font-semibold text-[var(--text-muted)]">Perf:</span>
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
-                className="h-8 min-h-[32px] px-[8px] text-[0.75rem] w-[180px] border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--surface)]"
+                className="h-8 min-h-[32px] w-[180px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-[0.75rem]"
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
@@ -371,12 +371,12 @@ export default function SeatingView() {
               </select>
             </div>
 
-            <div className="flex-row gap-[6px] items-center">
-              <span className="text-[var(--text-muted)] font-semibold">Venue:</span>
+            <div className="flex-row items-center gap-[6px]">
+              <span className="font-semibold text-[var(--text-muted)]">Venue:</span>
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
-                className="h-8 min-h-[32px] px-[8px] text-[0.75rem] w-[220px] border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--surface)]"
+                className="h-8 min-h-[32px] w-[220px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-[0.75rem]"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -409,7 +409,7 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="btn btn-sm btn-ghost no-print !h-9 min-h-[36px] bg-[var(--primary-light)] text-[var(--primary-deep)] border border-dashed border-[var(--primary)] font-semibold text-[0.8125rem] px-[var(--space-sm)]" 
+                  className="btn btn-sm btn-ghost no-print !h-9 min-h-[36px] border border-dashed border-[var(--primary)] bg-[var(--primary-light)] px-[var(--space-sm)] text-[0.8125rem] font-semibold text-[var(--primary-deep)]" 
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -417,8 +417,8 @@ export default function SeatingView() {
               )}
             </div>
 
-            <div className="flex-row gap-[6px] items-center">
-              <span className="text-[var(--text-muted)] font-semibold">Format:</span>
+            <div className="flex-row items-center gap-[6px]">
+              <span className="font-semibold text-[var(--text-muted)]">Format:</span>
               <div className="flex-row gap-1">
                 <select 
                   value={chart?.formationId || seatingSettings.defaultFormationId} 
@@ -437,7 +437,7 @@ export default function SeatingView() {
 
                     await updateChart({ formationId: selectedId, assignments: {} });
                   }}
-                  className="h-8 min-h-[32px] px-[8px] text-[0.75rem] w-[130px] border border-[var(--border)] rounded-[var(--radius-md)] bg-[var(--surface)]"
+                  className="h-8 min-h-[32px] w-[130px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-[0.75rem]"
                 >
                   {seatingSettings.formations?.map(formation => (
                     <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -454,7 +454,7 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           {/* Seating Charts Tabs Row */}
-          <div ref={tabsContainerRef} className="no-print flex-row items-center gap-[var(--space-sm)] px-[var(--space-md)] border-b border-[var(--border)] w-full mb-[var(--space-sm)] flex-nowrap">
+          <div ref={tabsContainerRef} className="no-print mb-[var(--space-sm)] w-full flex-row flex-nowrap items-center gap-[var(--space-sm)] border-b border-[var(--border)] px-[var(--space-md)]">
             {/* Render visible tabs (dynamic count based on container width) */}
             {(charts || []).slice(0, visibleTabCount).map(c => {
               const isActive = c.id === activeChartId;
@@ -462,7 +462,7 @@ export default function SeatingView() {
               return (
                 <div 
                   key={c.id} 
-                  className="flex-row items-center gap-[4px] px-[10px] py-2 -mb-px cursor-pointer transition-[border-color_0.15s_ease]"
+                  className="-mb-px cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 transition-[border-color_0.15s_ease]"
                   // @allow-inline-style - dynamic border based on active and drag-over state
                   style={{ 
                     borderBottom: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
@@ -532,7 +532,7 @@ export default function SeatingView() {
                       e.stopPropagation();
                       if (!isActive) setActiveChartId(c.id);
                     }}
-                    className="btn btn-sm btn-ghost font-medium p-[4px_8px] bg-transparent border-none shadow-none rounded-none h-auto min-h-auto"
+                    className="btn btn-sm btn-ghost h-auto min-h-auto rounded-none border-none bg-transparent p-[4px_8px] font-medium shadow-none"
                     // @allow-inline-style - dynamic font weight and color based on active state
                     style={{ 
                       fontWeight: isActive ? 700 : 500,
@@ -542,7 +542,7 @@ export default function SeatingView() {
                     {c.name}
                   </button>
                   {isActive && (
-                    <div className="flex-row gap-[2px] ml-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="ml-1 flex-row gap-[2px]" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -550,7 +550,7 @@ export default function SeatingView() {
                           setRenameChartName(c.name);
                           setIsRenameChartModalOpen(true);
                         }}
-                        className="btn btn-ghost btn-sm !p-1 min-w-auto text-[0.85rem] !h-7 min-h-[28px] inline-flex items-center justify-center"
+                        className="btn btn-ghost btn-sm inline-flex !h-7 min-h-[28px] min-w-auto items-center justify-center !p-1 text-[0.85rem]"
                         title="Rename chart"
                       >
                         ✏️
@@ -569,7 +569,7 @@ export default function SeatingView() {
                               await deleteChart(c.id);
                             }
                           }}
-                          className="btn btn-ghost btn-sm !p-1 min-w-auto text-[0.85rem] !text-[var(--color-danger-text)] !h-7 min-h-[28px] inline-flex items-center justify-center"
+                          className="btn btn-ghost btn-sm inline-flex !h-7 min-h-[28px] min-w-auto items-center justify-center !p-1 text-[0.85rem] !text-[var(--color-danger-text)]"
                           title="Delete chart"
                         >
                           ❌
@@ -584,7 +584,7 @@ export default function SeatingView() {
             {/* Render overflow dropdown when charts exceed visible count */}
             {(charts || []).length > visibleTabCount && (
               <div 
-                className="border-b-none pb-2 -mb-px"
+                className="border-b-none -mb-px pb-2"
                 // @allow-inline-style - dynamic border based on active chart visibility
                 style={{
                   borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`
@@ -597,7 +597,7 @@ export default function SeatingView() {
                       setActiveChartId(e.target.value);
                     }
                   }}
-                  className="h-6 min-h-[24px] px-[8px] text-[0.75rem] w-[140px] rounded-sm border-none bg-transparent shadow-none"
+                  className="h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-[0.75rem] shadow-none"
                   // @allow-inline-style - dynamic color and weight based on active chart
                   style={{
                     color: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
@@ -615,15 +615,15 @@ export default function SeatingView() {
             {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
             <button
               onClick={() => setIsNewChartModalOpen(true)}
-              className="btn btn-sm btn-ghost font-extrabold text-[1.25rem] p-0 !h-7 min-h-[28px] w-7 inline-flex items-center justify-center rounded-full border border-dashed border-[var(--border)] text-[var(--primary)] mb-2 shrink-0"
+              className="btn btn-sm btn-ghost mb-2 inline-flex !h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--border)] p-0 text-[1.25rem] font-extrabold text-[var(--primary)]"
               title="Create new seating chart"
             >
               +
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start gap-[var(--space-md)] min-w-0 w-full">
-          <AppCard className="flex-col flex-1 min-w-0 max-w-full p-[var(--space-md)]">
+          <div className="flex w-full min-w-0 flex-col items-start gap-[var(--space-md)] sm:flex-row">
+          <AppCard className="max-w-full min-w-0 flex-1 flex-col p-[var(--space-md)]">
             <div className="no-print seating-toolbar">
                <div className="seating-toolbar-row">
                   <button onClick={handleClear} className="btn btn-sm btn-ghost seating-toolbar-btn">
@@ -634,7 +634,7 @@ export default function SeatingView() {
                   </button>
                </div>
                
-               <div className="flex-row no-print seating-toolbar-segmented-group">
+               <div className="no-print seating-toolbar-segmented-group flex-row">
                 <button 
                   onClick={() => setPrintMode('visual')}
                   className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
@@ -649,7 +649,7 @@ export default function SeatingView() {
                 </button>
                </div>
 
-               <div className="flex-row no-print gap-[var(--space-sm)] flex-wrap">
+               <div className="no-print flex-row flex-wrap gap-[var(--space-sm)]">
                   <button
                     type="button"
                     onClick={toggleFullscreen}
@@ -661,19 +661,19 @@ export default function SeatingView() {
                  </button>
 
                  {printMode === 'text' && (
-                   <label className="flex-row gap-[var(--space-xs)] text-[0.8125rem] font-semibold text-[var(--text-muted)] cursor-pointer select-none items-center ml-[var(--space-sm)]">
+                   <label className="ml-[var(--space-sm)] cursor-pointer flex-row items-center gap-[var(--space-xs)] text-[0.8125rem] font-semibold text-[var(--text-muted)] select-none">
                      <input 
                        type="checkbox" 
                        checked={showVoicePartsInList} 
                        onChange={(e) => setShowVoicePartsInList(e.target.checked)}
-                       className="cursor-pointer w-[15px] h-[15px]"
+                       className="size-[15px] cursor-pointer"
                      />
                      Show Voice Parts
                    </label>
                  )}
                </div>
                
-               <div className="flex-row seating-copy-section">
+               <div className="seating-copy-section flex-row">
                   <span className="text-label text-muted seating-copy-label">Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
@@ -727,9 +727,9 @@ export default function SeatingView() {
                 )}
               </div>
             ) : (
-              <div className="min-w-0 gap-[var(--space-lg)] flex-col">
+              <div className="min-w-0 flex-col gap-[var(--space-lg)]">
                 {printMode === 'visual' && (
-                  <div className="no-print p-[var(--space-sm)] bg-[var(--primary-light)] rounded-[var(--radius-md)] text-sm text-[var(--primary-deep)] text-center border border-[var(--border)] shadow-sm">
+                  <div className="no-print rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--primary-light)] p-[var(--space-sm)] text-center text-sm text-[var(--primary-deep)] shadow-sm">
                     <strong>Editor Mode:</strong>{' '}
                     {singersListPosition === 'bottom' ? (
                       <span>
@@ -782,7 +782,7 @@ export default function SeatingView() {
                 )}
 
                 {printMode === 'text' && unassignedCount > 0 && (
-                  <div className="no-print p-[var(--space-md)] bg-[var(--color-danger-bg)] rounded-[var(--radius-md)] text-sm text-[var(--color-danger-text)] text-center border border-[var(--color-danger-text)] shadow-sm mb-[var(--space-md)] font-semibold">
+                  <div className="no-print mb-[var(--space-md)] rounded-[var(--radius-md)] border border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-[var(--space-md)] text-center text-sm font-semibold text-[var(--color-danger-text)] shadow-sm">
                     ⚠️ You have {unassignedCount} unassigned singer{unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
                   </div>
                 )}
@@ -802,7 +802,7 @@ export default function SeatingView() {
           </AppCard>
 
           {(!selectedVenue?.isOpenSeating && singersListPosition === 'side' && printMode === 'visual') && (
-            <AppCard className="no-print w-[320px] sticky top-[var(--space-lg)] h-[calc(100vh-140px)] flex flex-col border-2 border-dashed border-[var(--border)]">
+            <AppCard className="no-print sticky top-[var(--space-lg)] flex h-[calc(100vh-140px)] w-[320px] flex-col border-2 border-dashed border-[var(--border)]">
               <div 
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -816,28 +816,28 @@ export default function SeatingView() {
                     console.error('Failed to parse sidebar drop data', err);
                   }
                 }}
-                className="flex flex-col h-full w-full"
+                className="flex size-full flex-col"
               >
-                <div className="flex-row justify-between items-center mb-[var(--space-md)] gap-[var(--space-xs)]">
+                <div className="mb-[var(--space-md)] flex-row items-center justify-between gap-[var(--space-xs)]">
                   <h3 className="text-headline m-0">Unassigned</h3>
                   <div className="flex-row gap-1">
                     <button
                       type="button"
                       onClick={() => setIsSingerLookupOpen(true)}
-                      className="btn btn-secondary btn-sm font-semibold px-2 !h-7 min-h-[28px] text-[11px]"
+                      className="btn btn-secondary btn-sm !h-7 min-h-[28px] px-2 text-[11px] font-semibold"
                     >
                       🔍 Lookup
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSingerModalOpen(true)}
-                      className="btn btn-secondary btn-sm font-semibold px-2 !h-7 min-h-[28px] text-[11px]"
+                      className="btn btn-secondary btn-sm !h-7 min-h-[28px] px-2 text-[11px] font-semibold"
                     >
                       + Add New
                     </button>
                   </div>
                 </div>
-                <div className="flex-col gap-[var(--space-sm)] overflow-y-auto pr-1 flex-1">
+                <div className="flex-1 flex-col gap-[var(--space-sm)] overflow-y-auto pr-1">
                   {activeProfiles
                     .filter(p => !Object.values(optimisticAssignments).includes(p.id))
                     .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
@@ -846,10 +846,10 @@ export default function SeatingView() {
                         key={p.id}
                         draggable
                         onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                        className="flex-row p-[var(--space-sm)_var(--space-md)] bg-[var(--bg)] border border-[var(--border)] rounded-[var(--radius-md)] cursor-grab justify-between"
+                        className="cursor-grab flex-row justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)_var(--space-md)]"
                       >
                         <span className="text-label font-semibold">{p.name}</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{p.voicePart}</span>
+                        <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{p.voicePart}</span>
                       </div>
                     ))}
                   {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
@@ -928,7 +928,7 @@ export default function SeatingView() {
           <div className="flex-col gap-[var(--space-xs)]">
             <label className="text-label font-semibold">Chart Name</label>
             <input 
-              className="card px-3 h-11 w-full" 
+              className="card h-11 w-full px-3" 
               value={newChartName} 
               onChange={(e) => setNewChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir, Combined Finale"
@@ -987,7 +987,7 @@ export default function SeatingView() {
           <div className="flex-col gap-[var(--space-xs)]">
             <label className="text-label font-semibold">New Chart Name</label>
             <input 
-              className="card px-3 h-11 w-full" 
+              className="card h-11 w-full px-3" 
               value={renameChartName} 
               onChange={(e) => setRenameChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir"

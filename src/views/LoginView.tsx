@@ -155,24 +155,24 @@ export default function LoginView() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-screen p-4 bg-bg">
-      <div className="w-full max-w-[min(400px,calc(100vw-32px))] shadow-[0_10px_25px_-5px_rgb(0_0_0_/_5%),0_8px_16px_-6px_rgb(0_0_0_/_3%)] transition-all duration-300 bg-surface rounded-xl border border-border p-8 hover:-translate-y-0.5 hover:shadow-[0_20px_30px_-10px_rgb(91_33_182_/_6%),0_10px_20px_-8px_rgb(0_0_0_/_4%)] hover:border-[rgba(109,40,217,0.2)]">
-        <h1 className="text-center text-3xl font-extrabold text-text mb-6 tracking-tight">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-bg p-4">
+      <div className="w-full max-w-[min(400px,calc(100vw-32px))] rounded-xl border border-border bg-surface p-8 shadow-[0_10px_25px_-5px_rgb(0_0_0_/_5%),0_8px_16px_-6px_rgb(0_0_0_/_3%)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(109,40,217,0.2)] hover:shadow-[0_20px_30px_-10px_rgb(91_33_182_/_6%),0_10px_20px_-8px_rgb(0_0_0_/_4%)]">
+        <h1 className="mb-6 text-center text-3xl font-extrabold tracking-tight text-text">
           {isForgotMode ? 'Reset Password' : 'Singer Portal'}
         </h1>
 
         {!isForgotMode && otpStep === 'request' && (
-          <div className="flex border-b-2 border-border mb-6 gap-1">
+          <div className="mb-6 flex gap-1 border-b-2 border-border">
             <button
               type="button"
-              className={`flex-1 bg-transparent border-none text-sm font-semibold py-2 cursor-pointer relative transition-all text-center outline-none ${loginMode === 'otp' ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-[-2px] after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-sm' : 'text-text-muted hover:text-text'}`}
+              className={`relative flex-1 cursor-pointer border-none bg-transparent py-2 text-center text-sm font-semibold transition-all outline-none ${loginMode === 'otp' ? 'font-bold text-primary after:absolute after:inset-x-0 after:bottom-[-2px] after:h-0.5 after:rounded-sm after:bg-primary after:content-[""]' : 'text-text-muted hover:text-text'}`}
               onClick={() => handleSwitchMode('otp')}
             >
               Email Code
             </button>
             <button
               type="button"
-              className={`flex-1 bg-transparent border-none text-sm font-semibold py-2 cursor-pointer relative transition-all text-center outline-none ${loginMode === 'password' ? 'text-primary font-bold after:content-[""] after:absolute after:bottom-[-2px] after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-sm' : 'text-text-muted hover:text-text'}`}
+              className={`relative flex-1 cursor-pointer border-none bg-transparent py-2 text-center text-sm font-semibold transition-all outline-none ${loginMode === 'password' ? 'font-bold text-primary after:absolute after:inset-x-0 after:bottom-[-2px] after:h-0.5 after:rounded-sm after:bg-primary after:content-[""]' : 'text-text-muted hover:text-text'}`}
               onClick={() => handleSwitchMode('password')}
             >
               Password
@@ -181,8 +181,8 @@ export default function LoginView() {
         )}
 
         {isForgotMode ? (
-          <form onSubmit={handleRequestReset} className="flex flex-col gap-6 animate-login-fade-in">
-            <p className="m-0 text-center text-sm text-text-muted leading-relaxed">
+          <form onSubmit={handleRequestReset} className="flex animate-login-fade-in flex-col gap-6">
+            <p className="m-0 text-center text-sm leading-relaxed text-text-muted">
               Enter your email address and we'll send you a custom link to reset your password.
             </p>
 
@@ -194,25 +194,25 @@ export default function LoginView() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="px-3 h-11 w-full border border-border rounded-lg bg-surface text-text font-sans text-base transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                 placeholder="e.g. singer@choir.org"
               />
             </div>
 
-            {error && <p className="text-danger-text text-xs m-0">{error}</p>}
-            {resetSuccess && <p className="text-primary text-xs font-semibold m-0">{resetSuccess}</p>}
+            {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
+            {resetSuccess && <p className="m-0 text-xs font-semibold text-primary">{resetSuccess}</p>}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary w-full mt-1"
+              className="btn btn-primary mt-1 w-full"
             >
               {isLoading ? 'Sending reset link...' : 'Send Reset Link'}
             </button>
 
             <button
               type="button"
-              className="self-center underline cursor-pointer h-auto p-0 text-xs text-text-muted hover:text-text"
+              className="h-auto cursor-pointer self-center p-0 text-xs text-text-muted underline hover:text-text"
               onClick={() => setIsForgotMode(false)}
             >
               ← Back to Login
@@ -224,7 +224,7 @@ export default function LoginView() {
               <div className="animate-login-fade-in">
                 {otpStep === 'request' ? (
                   <form onSubmit={handleRequestOTP} className="flex flex-col gap-6">
-                    <p className="m-0 text-center text-sm text-text-muted leading-relaxed">
+                    <p className="m-0 text-center text-sm leading-relaxed text-text-muted">
                       Sign in securely without a password. We'll email you a 6-digit login code.
                     </p>
                     <div className="flex flex-col gap-1">
@@ -235,28 +235,28 @@ export default function LoginView() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="px-3 h-11 w-full border border-border rounded-lg bg-surface text-text font-sans text-base transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                        className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                         placeholder="singer@choir.org"
                       />
                     </div>
-                    {error && <p className="text-danger-text text-xs m-0">{error}</p>}
+                    {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="btn btn-primary w-full mt-1"
+                      className="btn btn-primary mt-1 w-full"
                     >
                       {isLoading ? 'Sending Login Code...' : 'Send Login Code'}
                     </button>
                   </form>
                 ) : (
                   <form onSubmit={handleVerifyOTP} className="flex flex-col gap-6">
-                    <div className="bg-primary-light border-l-4 border-primary px-4 py-2 rounded-r-lg mb-4">
-                      <p className="m-0 text-sm text-primary-deep leading-relaxed">
+                    <div className="mb-4 rounded-r-lg border-l-4 border-primary bg-primary-light px-4 py-2">
+                      <p className="m-0 text-sm leading-relaxed text-primary-deep">
                         A 6-digit login code has been sent to <strong>{email}</strong>
                       </p>
                     </div>
 
-                    <div className="flex flex-col gap-1 mb-2">
+                    <div className="mb-2 flex flex-col gap-1">
                       <label className="text-label" htmlFor="otp-code">Enter 6-Digit Login Code</label>
                       <input
                         id="otp-code"
@@ -268,10 +268,10 @@ export default function LoginView() {
                         onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                         required
                         placeholder="000000"
-                        className="px-4 h-12 w-full border border-border rounded-lg text-xl font-bold tracking-widest text-center bg-bg text-text font-mono transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:bg-surface focus:outline-none"
+                        className="h-12 w-full rounded-lg border border-border bg-bg px-4 text-center font-mono text-xl font-bold tracking-widest text-text transition-all focus:border-primary focus:bg-surface focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                       />
                       
-                      <div className="flex justify-between items-center text-xs text-text-muted mt-1">
+                      <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
                         <span>
                           Code expires in: <span className="font-bold text-primary tabular-nums">{formatCountdown(countdown)}</span>
                         </span>
@@ -281,7 +281,7 @@ export default function LoginView() {
                         ) : (
                           <button
                             type="button"
-                            className="bg-transparent border-none p-0 min-h-0 text-xs font-semibold text-primary underline cursor-pointer h-auto disabled:text-text-muted disabled:no-underline disabled:cursor-not-allowed"
+                            className="h-auto min-h-0 cursor-pointer border-none bg-transparent p-0 text-xs font-semibold text-primary underline disabled:cursor-not-allowed disabled:text-text-muted disabled:no-underline"
                             onClick={handleResendOTP}
                             disabled={isLoading}
                           >
@@ -291,20 +291,20 @@ export default function LoginView() {
                       </div>
                     </div>
 
-                    {error && <p className="text-danger-text text-xs m-0">{error}</p>}
-                    {resetSuccess && <p className="text-primary text-xs font-semibold m-0">{resetSuccess}</p>}
+                    {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
+                    {resetSuccess && <p className="m-0 text-xs font-semibold text-primary">{resetSuccess}</p>}
 
                     <button
                       type="submit"
                       disabled={isLoading || countdown <= 0}
-                      className="btn btn-primary w-full mt-1"
+                      className="btn btn-primary mt-1 w-full"
                     >
                       {isLoading ? 'Verifying...' : 'Verify & Sign In'}
                     </button>
 
                     <button
                       type="button"
-                      className="self-center text-xs text-text-muted bg-transparent border-none cursor-pointer py-1 mt-2 underline hover:text-text transition-colors"
+                      className="mt-2 cursor-pointer self-center border-none bg-transparent py-1 text-xs text-text-muted underline transition-colors hover:text-text"
                       onClick={() => {
                         setOtpStep('request');
                         setOtpCode('');
@@ -314,10 +314,10 @@ export default function LoginView() {
                       Edit Email Address
                     </button>
 
-                    <div className="flex justify-center mt-4 border-t border-border pt-4">
+                    <div className="mt-4 flex justify-center border-t border-border pt-4">
                       <button
                         type="button"
-                        className="text-xs text-primary font-semibold bg-transparent border-none cursor-pointer underline p-0 hover:text-primary-deep"
+                        className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold text-primary underline hover:text-primary-deep"
                         onClick={() => handleSwitchMode('password')}
                       >
                         Sign in with Password instead
@@ -329,7 +329,7 @@ export default function LoginView() {
             )}
 
             {loginMode === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-6 animate-login-fade-in">
+              <form onSubmit={handlePasswordSubmit} className="flex animate-login-fade-in flex-col gap-6">
                 <div className="flex flex-col gap-1">
                   <label className="text-label" htmlFor="login-email">Email Address</label>
                   <input
@@ -338,16 +338,16 @@ export default function LoginView() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="px-3 h-11 w-full border border-border rounded-lg bg-surface text-text font-sans text-base transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                    className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                     placeholder="e.g. singer@choir.org"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex flex-row justify-between items-center">
+                  <div className="flex flex-row items-center justify-between">
                     <label className="text-label" htmlFor="login-password">Password</label>
                     <button
                       type="button"
-                      className="p-0 border-none bg-none h-auto min-h-0 text-xs text-text-muted underline cursor-pointer hover:text-text"
+                      className="h-auto min-h-0 cursor-pointer border-none bg-none p-0 text-xs text-text-muted underline hover:text-text"
                       onClick={() => {
                         setIsForgotMode(true);
                         setError('');
@@ -363,14 +363,14 @@ export default function LoginView() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="px-3 h-11 w-full border border-border rounded-lg bg-surface text-text font-sans text-base transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                    className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
                   />
                 </div>
-                {error && <p className="text-danger-text text-xs m-0">{error}</p>}
+                {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn btn-primary w-full mt-4"
+                  className="btn btn-primary mt-4 w-full"
                 >
                   {isLoading ? 'Logging in...' : 'Login'}
                 </button>

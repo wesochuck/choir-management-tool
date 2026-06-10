@@ -44,7 +44,7 @@ const FolderInput: React.FC<{
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       placeholder="--"
-      className="card w-[55px] px-[6px] text-center h-8 text-sm rounded-lg border border-border shadow-none bg-surface"
+      className="card h-8 w-[55px] rounded-lg border border-border bg-surface px-[6px] text-center text-sm shadow-none"
     />
   );
 };
@@ -66,7 +66,7 @@ const CheckInRow: React.FC<{
 
   return (
     <div
-      className={`card flex items-center gap-4 p-3 border-b border-border hover:bg-primary-light/50 cursor-pointer max-[700px]:p-3 max-[700px]:gap-2 ${isSecondaryOpen ? 'secondary-open' : ''}`}
+      className={`card flex cursor-pointer items-center gap-4 border-b border-border p-3 hover:bg-primary-light/50 max-[700px]:gap-2 max-[700px]:p-3 ${isSecondaryOpen ? 'secondary-open' : ''}`}
       onClick={() => onSetAttendance(item.profileId, isPresent ? 'Pending' : 'Present')}
       style={{ /* @allow-inline-style */
         // @allow-inline-style - Dynamic row styling based on attendance state
@@ -86,8 +86,8 @@ const CheckInRow: React.FC<{
       {/* Row Segment 1: Singer name, badges, and primary Present/Absent toggles */}
         <div className="flex items-start gap-4 max-[700px]:flex-col max-[700px]:items-start max-[700px]:gap-2.5">
           {/* Left Section: Singer name and details */}
-          <div className="flex flex-col gap-1 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-1 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
             <span
               onClick={(event) => {
                 event.stopPropagation();
@@ -97,7 +97,7 @@ const CheckInRow: React.FC<{
                 });
                 navigate(`/admin/roster?${query.toString()}`);
               }}
-              className="font-semibold cursor-pointer underline max-[700px]:text-base max-[700px]:leading-[1.15]"
+              className="cursor-pointer font-semibold underline max-[700px]:text-base max-[700px]:leading-[1.15]"
               style={{ /* @allow-inline-style */
                 // @allow-inline-style - Dynamic name color based on attendance state
                 color: isPresent 
@@ -114,19 +114,19 @@ const CheckInRow: React.FC<{
             <div className="flex items-center gap-1.5">
               {item.rsvp === 'Yes' && (
                 <span 
-                  className="inline-flex items-center text-[9px] px-[6px] py-0.5 rounded font-semibold uppercase tracking-wider bg-primary-light text-primary-deep"
+                  className="inline-flex items-center rounded bg-primary-light px-[6px] py-0.5 text-[9px] font-semibold tracking-wider text-primary-deep uppercase"
                 >
                   RSVP
                 </span>
               )}
               <span
-                className="inline-flex items-center text-[9px] px-[6px] py-0.5 rounded font-semibold uppercase tracking-wider bg-primary-light text-primary-deep border border-[rgb(74_117_89_/_20%)]"
+                className="inline-flex items-center rounded border border-[rgb(74_117_89_/_20%)] bg-primary-light px-[6px] py-0.5 text-[9px] font-semibold tracking-wider text-primary-deep uppercase"
               >
                 {item.voicePart}
               </span>
               {missCounts && missCounts[item.profileId] !== undefined && missCounts[item.profileId] > 0 && (
                 <span
-                  className="inline-flex items-center text-[9px] px-[6px] py-0.5 rounded font-extrabold uppercase tracking-wider"
+                  className="inline-flex items-center rounded px-[6px] py-0.5 text-[9px] font-extrabold tracking-wider uppercase"
                   style={{ /* @allow-inline-style */
                     // @allow-inline-style - Dynamic colors based on miss threshold
                     backgroundColor: missCounts[item.profileId] > (maxRehearsalMisses ?? 3) ? '#fee2e2' : '#fef3c7',
@@ -144,15 +144,15 @@ const CheckInRow: React.FC<{
             {item.rsvp === 'Yes' && <span>RSVP</span>}
             <span>Folder {item.folderNumber || '--'}</span>
             <span>{item.folderReturned ? 'Returned' : 'Not returned'}</span>
-            {item.rsvpNote && <span className="text-[#b91c1c] font-semibold">📝 {item.rsvpNote}</span>}
+            {item.rsvpNote && <span className="font-semibold text-[#b91c1c]">📝 {item.rsvpNote}</span>}
           </div>
-          <div className="hidden max-[700px]:block max-[700px]:text-[0.72rem] max-[700px]:text-text-muted max-[700px]:font-semibold">
+          <div className="hidden max-[700px]:block max-[700px]:text-[0.72rem] max-[700px]:font-semibold max-[700px]:text-text-muted">
             {isPresent ? 'Checked in' : isAbsent ? 'Marked absent' : 'Tap card to mark present'}
           </div>
         </div>
 
         {/* Right Section: Attendance separated action buttons (Absent on left, Present on right) */}
-        <div className="flex items-center gap-2 max-[700px]:flex-col max-[700px]:gap-1.5 max-[700px]:items-stretch">
+        <div className="flex items-center gap-2 max-[700px]:flex-col max-[700px]:items-stretch max-[700px]:gap-1.5">
           <button
             type="button"
             aria-pressed={isAbsent}
@@ -193,7 +193,7 @@ const CheckInRow: React.FC<{
           </button>
           <button
             type="button"
-            className="btn btn-ghost btn-sm hidden max-[700px]:inline-flex max-[700px]:justify-center max-[700px]:min-h-[40px]"
+            className="btn btn-ghost btn-sm hidden max-[700px]:inline-flex max-[700px]:min-h-[40px] max-[700px]:justify-center"
             aria-expanded={isSecondaryOpen}
             aria-controls={secondaryPanelId}
             onClick={(event) => {
@@ -207,11 +207,11 @@ const CheckInRow: React.FC<{
       </div>
 
       {/* Row Segment 2: Folder tracking & Edit Singer details */}
-      <div className={`flex items-center gap-4 w-full mt-2 pt-2 border-t border-border ${isSecondaryOpen ? 'max-[700px]:flex' : 'max-[700px]:hidden'}`} id={secondaryPanelId}>
+      <div className={`mt-2 flex w-full items-center gap-4 border-t border-border pt-2 ${isSecondaryOpen ? 'max-[700px]:flex' : 'max-[700px]:hidden'}`} id={secondaryPanelId}>
         <div className="flex items-center gap-4">
           {/* Folder Number */}
           <div className="flex items-center gap-1">
-            <span className="text-xs text-text-muted font-semibold">
+            <span className="text-xs font-semibold text-text-muted">
               Folder
             </span>
             <FolderInput
@@ -221,12 +221,12 @@ const CheckInRow: React.FC<{
           </div>
 
           {/* Folder Returned Checkbox */}
-          <label className="flex items-center gap-1.5 cursor-pointer select-none" onClick={(event) => event.stopPropagation()}>
+          <label className="flex cursor-pointer items-center gap-1.5 select-none" onClick={(event) => event.stopPropagation()}>
             <input
               type="checkbox"
               checked={item.folderReturned}
               onChange={(e) => onUpdateFolder(item.profileId, item.folderNumber, e.target.checked)}
-              className="w-4 h-4 accent-primary cursor-pointer"
+              className="size-4 cursor-pointer accent-primary"
             />
             <span
               className="text-xs font-bold tracking-wider"
@@ -247,7 +247,7 @@ const CheckInRow: React.FC<{
             event.stopPropagation();
             onEdit(item.profileId);
           }}
-          className="btn btn-ghost btn-sm text-xs ml-auto"
+          className="btn btn-ghost btn-sm ml-auto text-xs"
         >
           ✏️ Edit
         </button>
@@ -370,14 +370,14 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
         <React.Fragment key={item.id}>
           {showHeader && (
             <div 
-              className="flex items-center my-[18px_0_8px] gap-3 w-full"
+              className="my-[18px_0_8px] flex w-full items-center gap-3"
             >
               <span 
-                className="text-[0.8rem] font-extrabold text-primary-deep tracking-wider pr-2"
+                className="pr-2 text-[0.8rem] font-extrabold tracking-wider text-primary-deep"
               >
                 {headerText}
               </span>
-              <div className="flex-1 h-px bg-[rgb(74_117_89_/_15%)]"></div>
+              <div className="h-px flex-1 bg-[rgb(74_117_89_/_15%)]"></div>
             </div>
           )}
           <CheckInRow 
@@ -394,22 +394,22 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
   };
 
   return (
-    <div className="flex-col gap-3 w-full">
+    <div className="w-full flex-col gap-3">
       {/* 1. Unchecked / Absent Singers */}
       {renderListWithHeaders(notCheckedIn)}
 
       {/* 2. Beautiful Checked-In Divider */}
       {checkedIn.length > 0 && (
         <div 
-          className="flex-row items-center mt-6 mb-3 gap-4 w-full"
+          className="mt-6 mb-3 w-full flex-row items-center gap-4"
         >
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent to-border" />
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
           <span 
-            className="bg-surface px-4 py-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] shadow-[0_2px_8px_rgb(0_0_0_/_3%)] flex items-center gap-[6px] text-[0.8rem] font-extrabold text-primary-deep uppercase tracking-widest"
+            className="flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] bg-surface px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest text-primary-deep uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]"
           >
             ✓ Checked In ({checkedIn.length})
           </span>
-          <div className="flex-1 h-px bg-gradient-to-l from-transparent to-border"></div>
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border"></div>
         </div>
       )}
 
@@ -418,7 +418,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({ items, onSetAttendance
 
       {/* 4. Empty State */}
       {items.length === 0 && (
-        <div className="card text-center p-8">
+        <div className="card p-8 text-center">
           <p className="text-muted text-sm">No active singers found in the roster.</p>
         </div>
       )}

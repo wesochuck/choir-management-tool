@@ -16,10 +16,10 @@ export function MusicLibraryTracksCell({
   onEditPiece,
 }: MusicLibraryTracksCellProps) {
   return (
-    <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
+    <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
       {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
         <button
-          className="btn btn-secondary btn-sm !p-[2px_8px] !h-6 !min-h-6 !text-[11px] !inline-flex !items-center !gap-1 !m-0"
+          className="btn btn-secondary btn-sm !m-0 !inline-flex !h-6 !min-h-6 !items-center !gap-1 !p-[2px_8px] !text-[11px]"
           onClick={(e) => {
             e.stopPropagation();
             onPlayTrack(piece);
@@ -33,12 +33,12 @@ export function MusicLibraryTracksCell({
             e.stopPropagation();
             onEditPiece?.(piece, 'tracks');
           }}
-          className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full bg-[rgb(27_77_62_/_8%)] text-[var(--primary)] text-[11px] font-medium border border-[rgb(27_77_62_/_15%)] whitespace-nowrap cursor-pointer hover-glow"
+          className="hover-glow inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap text-[var(--primary)]"
         >
           🎧 {totalMovementTracksCount} in mvts
         </span>
       ) : (
-        <span className="text-xs text-muted">-</span>
+        <span className="text-muted text-xs">-</span>
       )}
     </td>
   );

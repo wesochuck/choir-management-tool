@@ -30,7 +30,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
 
   return (
     <div className="composer-form flex-col gap-4">
-      <div className="flex-row items-center gap-2 flex-wrap">
+      <div className="flex-row flex-wrap items-center gap-2">
         <div className="composer-subject-field flex flex-col gap-1">
           <label className="text-label">Subject</label>
           <input
@@ -41,7 +41,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
             placeholder={messageType === 'SMS' ? 'Subject not supported for SMS' : 'Enter subject...'}
           />
           {subjectWarning && (
-            <span className="text-danger-text text-xs mt-1">
+            <span className="mt-1 text-xs text-danger-text">
               ⚠️ {subjectWarning.message}
             </span>
           )}
@@ -70,7 +70,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           minHeight="350px"
         />
         {bodyWarning && (
-          <span className="text-amber-600 text-xs mt-1">
+          <span className="mt-1 text-xs text-amber-600">
             ⚠️ {bodyWarning.message}
           </span>
         )}

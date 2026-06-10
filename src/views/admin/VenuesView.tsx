@@ -78,14 +78,14 @@ export default function VenuesView() {
   };
 
   if (isLoading && venues.length === 0) return (
-    <div className="container text-center pt-8">
+    <div className="container pt-8 text-center">
       <Spinner size="small" /> Loading venues...
     </div>
   );
 
   return (
     <div className="flex-col gap-8 py-8">
-       <div className="flex flex-col md:flex-row justify-between items-center">
+       <div className="flex flex-col items-center justify-between md:flex-row">
         <h1 className="text-display m-0">Venue Templates</h1>
         {!isAdding && (
           <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
@@ -100,7 +100,7 @@ export default function VenuesView() {
               <input 
                 value={name} onChange={(e) => setName(e.target.value)} required
                 placeholder="e.g. Main Sanctuary"
-                className="card w-full px-3 h-11"
+                className="card h-11 w-full px-3"
               />
             </div>
             <div className="flex-col gap-1">
@@ -108,10 +108,10 @@ export default function VenuesView() {
               <input 
                 value={address} onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 123 Main St, City, State"
-                className="card w-full px-3 h-11"
+                className="card h-11 w-full px-3"
               />
             </div>
-            <div className="flex-row gap-1 items-center">
+            <div className="flex-row items-center gap-1">
               <input 
                 type="checkbox"
                 id="isOpenSeating"
@@ -125,12 +125,12 @@ export default function VenuesView() {
                 <input 
                   value={rowCountsStr} onChange={(e) => setRowCountsStr(e.target.value)} required
                   placeholder="e.g. 12, 15, 18, 20"
-                  className="card w-full px-3 h-11"
+                  className="card h-11 w-full px-3"
                 />
                 <p className="text-muted text-sm">Enter the number of seats for each row, starting from the front.</p>
               </div>
             )}
-            <div className="flex flex-col md:flex-row justify-end gap-4">
+            <div className="flex flex-col justify-end gap-4 md:flex-row">
               <Button variant="ghost" onClick={resetForm}>Cancel</Button>
               <Button type="submit" variant="primary">Save Template</Button>
             </div>
@@ -141,7 +141,7 @@ export default function VenuesView() {
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (
           <AppCard key={v.id} title={v.name} className="h-full">
-            <div className="flex-col gap-1 flex-1">
+            <div className="flex-1 flex-col gap-1">
               {v.address && (
                 <div className="text-body">
                   <span className="text-muted">Address:</span>{' '}
@@ -168,7 +168,7 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="flex flex-col md:flex-row gap-4 mt-4">
+            <div className="mt-4 flex flex-col gap-4 md:flex-row">
               <Button variant="ghost" className="flex-1" onClick={() => handleEdit(v)}>Edit</Button>
               <Button
                 variant="danger"

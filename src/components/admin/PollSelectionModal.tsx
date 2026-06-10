@@ -99,16 +99,16 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
 
         {tab === 'list' ? (
           <div className="flex-col gap-2">
-            <div className="flex-col gap-2 max-h-[400px] overflow-y-auto">
+            <div className="max-h-[400px] flex-col gap-2 overflow-y-auto">
               {isLoading ? (
-                <p className="text-muted text-center p-4">Loading polls...</p>
+                <p className="text-muted p-4 text-center">Loading polls...</p>
               ) : polls.length === 0 ? (
-                <p className="text-muted text-center p-4">No polls found. Create one to get started!</p>
+                <p className="text-muted p-4 text-center">No polls found. Create one to get started!</p>
               ) : (
                 polls.map(poll => (
                   <button
                     key={poll.id}
-                    className="card flex-col text-left p-2 px-4 gap-1 cursor-pointer border border-border"
+                    className="card cursor-pointer flex-col gap-1 border border-border p-2 px-4 text-left"
                     onClick={() => {
                       onSelect(poll.id, poll.question);
                       onClose();
@@ -124,7 +124,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
                 ))
               )}
             </div>
-            <div className="flex-row justify-end mt-1">
+            <div className="mt-1 flex-row justify-end">
               <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
             </div>
           </div>
@@ -158,7 +158,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
               </select>
             </div>
 
-            <div className="flex-row justify-end mt-1">
+            <div className="mt-1 flex-row justify-end">
               <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn btn-primary" disabled={isCreating || !question}>
                 {isCreating ? 'Creating...' : 'Create & Insert Poll'}

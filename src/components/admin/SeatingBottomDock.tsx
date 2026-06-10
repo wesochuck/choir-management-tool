@@ -144,19 +144,19 @@ export function SeatingBottomDock({
             console.error('Failed to parse bottom dock drop data', err);
           }
         }}
-        className="flex-col bottom-dock-container"
+        className="bottom-dock-container flex-col"
       >
-        <div           className="flex-row bottom-dock-header flex w-full items-center justify-between">
+        <div           className="bottom-dock-header flex w-full flex-row items-center justify-between">
           <div className="flex-col gap-0.5">
             <h3 className="text-headline bottom-dock-title">📥 Unassigned Singers Shelf</h3>
             <span className="text-muted bottom-dock-subtitle">Drag up to assign, or drop here to clear a seat assignment.</span>
           </div>
-          <div className="flex-row no-print gap-1">
+          <div className="no-print flex-row gap-1">
             {onLookupSinger && (
               <button
                 type="button"
                 onClick={onLookupSinger}
-                className="btn btn-secondary btn-sm flex items-center gap-1.5 font-semibold px-3 h-8 min-h-[32px]"
+                className="btn btn-secondary btn-sm flex h-8 min-h-[32px] items-center gap-1.5 px-3 font-semibold"
               >
                 🔍 Lookup Singer
               </button>
@@ -165,7 +165,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onAddSinger}
-                className="btn btn-secondary btn-sm flex items-center gap-1.5 font-semibold px-3 h-8 min-h-[32px]"
+                className="btn btn-secondary btn-sm flex h-8 min-h-[32px] items-center gap-1.5 px-3 font-semibold"
               >
                 + Add New Singer
               </button>
@@ -189,28 +189,28 @@ export function SeatingBottomDock({
             } : undefined;
 
             return (
-              <div key={key} className="flex-col bottom-dock-lane">
-                <div className="flex-row bottom-dock-lane-header">
+              <div key={key} className="bottom-dock-lane flex-col">
+                <div className="bottom-dock-lane-header flex-row">
                   <span className="text-label lane-label" style={labelStyle}>
                     {label}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep" style={badgeStyle}>
+                  <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase" style={badgeStyle}>
                     {list.length}
                   </span>
                 </div>
 
-                <div className="flex-col bottom-dock-lane-list">
+                <div className="bottom-dock-lane-list flex-col">
                   {list.map(p => (
                     <div 
                       key={p.id}
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                      className="flex-row bottom-dock-singer-card"
+                      className="bottom-dock-singer-card flex-row"
                     >
-                      <span className="flex-1 min-w-0 truncate" title={p.name}>
+                      <span className="min-w-0 flex-1 truncate" title={p.name}>
                         {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}
                       </span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
+                      <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
                         {p.voicePart}
                       </span>
                       {onRemoveRsvp && (
@@ -220,7 +220,7 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print bottom-dock-remove-btn bg-transparent border-0 text-text-muted cursor-pointer p-0 ml-1.5 flex items-center justify-center text-xs font-bold transition-all duration-200"
+                          className="no-print bottom-dock-remove-btn ml-1.5 flex cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-xs font-bold text-text-muted transition-all duration-200"
                           title="Mark as Not Attending"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';

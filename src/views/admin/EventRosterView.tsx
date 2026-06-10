@@ -132,7 +132,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     <AppCard
       title={isInline ? '' : `RSVP Management: ${event ? (event.title || event.expand?.venue?.name || '') : ''}`}
       actions={
-        <div className="flex flex-row gap-2 items-center">
+        <div className="flex flex-row items-center gap-2">
           {!isInline && event && (
             <button 
               className="btn btn-secondary btn-sm font-semibold"
@@ -171,7 +171,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           <AppCard 
             title="Voice Part RSVP Balance"
             actions={
-              <div className="flex flex-row gap-2 items-center">
+              <div className="flex flex-row items-center gap-2">
                 <button
                   type="button"
                   onClick={handleExportCSV}
@@ -179,7 +179,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 >
                   📥 Export CSV
                 </button>
-                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
+                <span className="inline-flex items-center rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold tracking-wider text-primary-deep uppercase">
                   {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
                   {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
                   {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
@@ -190,7 +190,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             className="gap-4"
           >
             {/* RSVP Status Filters acting on Voice Part Counts */}
-            <div className="flex flex-row gap-2 flex-wrap pb-2 border-b border-gray-200">
+            <div className="flex flex-row flex-wrap gap-2 border-b border-gray-200 pb-2">
               <button
                 type="button"
                 onClick={() => setRsvpFilter('All')}
@@ -267,7 +267,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
             {/* Section Subtotals */}
             <div 
-              className="grid gap-4 pb-4 border-b border-gray-200"
+              className="grid gap-4 border-b border-gray-200 pb-4"
               // @allow-inline-style - dynamic grid columns based on section count
               style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
             >
@@ -276,29 +276,29 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 return (
                   <div 
                     key={sec.code} 
-                    className={`flex flex-col text-center p-[calc(16px-2px)] rounded-lg bg-primary-light gap-1 border-2 transition-all duration-200 ease-in-out cursor-pointer hover:-translate-y-0.5 hover:shadow-sm hover:opacity-90 ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
+                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
                     onClick={() => handleVoicePartToggle(sec.code)}
                     // @allow-inline-style - dynamic border color based on selection
                     style={{ borderColor: isSelected ? 'var(--primary)' : 'transparent' }}
                   >
-                    <div className="text-xs text-primary-deep font-bold uppercase tracking-wider">
+                    <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
                       {sec.name}
                     </div>
-                    <div className="text-3xl font-extrabold text-primary-deep leading-none">{sectionCounts[sec.code] || 0}</div>
+                    <div className="text-3xl leading-none font-extrabold text-primary-deep">{sectionCounts[sec.code] || 0}</div>
                   </div>
                 );
               })}
             </div>
 
             {/* Individual Part Breakdowns */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2 mt-0">
+            <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
               {voiceParts.map(vp => {
                 const isSelected = selectedVoiceParts.includes(vp.label);
                 const count = partCounts.get(vp.label) || 0;
                 return (
                   <div 
                     key={vp.label} 
-                    className={`flex flex-col rounded-lg bg-white border cursor-pointer transition-all duration-200 ease-in-out hover:border-primary-deep hover:bg-primary-light hover:-translate-y-px ${isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'}`}
+                    className={`flex cursor-pointer flex-col rounded-lg border bg-white transition-all duration-200 ease-in-out hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light ${isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'}`}
                     onClick={() => handleVoicePartToggle(vp.label)}
                     // @allow-inline-style - dynamic border and padding based on selection
                     style={{ 
@@ -315,10 +315,10 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           </AppCard>
         )}
 
-        <div className="flex items-start justify-between gap-4 flex-wrap mt-1">
-          <div className="flex items-center gap-2 flex-wrap flex-[1_1_520px] min-w-[280px]">
-            <div className="relative flex-[1_1_280px] min-w-[240px]">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 flex pointer-events-none" aria-hidden="true">
+        <div className="mt-1 flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-[280px] flex-[1_1_520px] flex-wrap items-center gap-2">
+            <div className="relative min-w-[240px] flex-[1_1_280px]">
+              <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-gray-500" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -329,13 +329,13 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 placeholder="Search active singers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 px-[42px] pl-[38px] border border-gray-200 rounded-lg bg-white text-gray-800 shadow-sm"
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-[42px] pl-[38px] text-gray-800 shadow-sm"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7.5 h-7.5 border-0 rounded bg-transparent text-gray-500 inline-flex items-center justify-center cursor-pointer hover:bg-primary-light hover:text-primary-deep"
+                  className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-gray-500 hover:bg-primary-light hover:text-primary-deep"
                   title="Clear search"
                   aria-label="Clear search"
                 >
@@ -350,7 +350,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="w-[210px] h-11 px-3 pr-9 text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm"
+              className="h-11 w-[210px] rounded-lg border border-gray-200 bg-white px-3 pr-9 text-gray-800 shadow-sm"
               aria-label="Sort singers"
             >
               <option value="lastName">Last Name</option>
@@ -372,8 +372,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap justify-end flex-[0_1_auto]" aria-label="Bulk RSVP actions">
-            <span className="text-gray-500 text-xs font-bold whitespace-nowrap">{sortedSingers.length} shown</span>
+          <div className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2" aria-label="Bulk RSVP actions">
+            <span className="text-xs font-bold whitespace-nowrap text-gray-500">{sortedSingers.length} shown</span>
             <button
               type="button"
               className="btn btn-primary"
@@ -427,15 +427,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         title="Updating RSVPs"
         maxWidth="400px"
       >
-        <div className="flex flex-col gap-4 items-center py-3">
-          <div className="w-10 h-10 border-3 border-gray-200 border-t-primary rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-4 py-3">
+          <div className="size-10 animate-spin rounded-full border-3 border-gray-200 border-t-primary" />
           <div className="text-lg font-bold text-gray-800">
             Processing changes...
           </div>
-          <div className="text-sm text-gray-500 font-semibold">
+          <div className="text-sm font-semibold text-gray-500">
             {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
-          <div className="w-full h-2 bg-gray-200 rounded overflow-hidden mt-1">
+          <div className="mt-1 h-2 w-full overflow-hidden rounded bg-gray-200">
             <div 
               // @allow-inline-style - dynamic progress width
               style={{ 

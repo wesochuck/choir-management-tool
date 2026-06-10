@@ -47,23 +47,23 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
   const categories = Array.from(new Set(visiblePlaceholders.map(p => p.category))) as Placeholder['category'][];
 
   return (
-    <div className="card p-4 bg-surface border border-border rounded-xl sticky top-6 max-h-[calc(100vh-120px)] flex flex-col gap-4 shadow-sm">
+    <div className="card sticky top-6 flex max-h-[calc(100vh-120px)] flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
       <div className="border-b border-border pb-2">
         <div className="flex items-center gap-2">
           <span>⚡</span>
           <h4 className="m-0 text-sm font-bold text-primary-deep">Placeholders</h4>
         </div>
-        <p className="text-muted text-xs mt-1 m-0">
+        <p className="text-muted m-0 mt-1 text-xs">
           Click any badge to insert dynamic text at cursor.
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden pr-1">
+      <div className="flex flex-col gap-4 overflow-x-hidden overflow-y-auto pr-1">
         {categories.map(cat => {
           const items = visiblePlaceholders.filter(p => p.category === cat);
           return (
             <div key={cat} className="flex flex-col gap-1.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5">
+              <div className="mb-0.5 text-[10px] font-bold tracking-wider text-text-muted uppercase">
                 {cat} Placeholders
               </div>
               {items.map((p) => (
@@ -71,18 +71,18 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
                   key={p.tag}
                   type="button"
                   onClick={() => onInsert(p.tag)}
-                  className="flex flex-col items-start text-left p-2.5 bg-bg border border-border rounded-md h-auto cursor-pointer w-full transition-all duration-200 hover:bg-primary-light"
+                  className="flex h-auto w-full cursor-pointer flex-col items-start rounded-md border border-border bg-bg p-2.5 text-left transition-all duration-200 hover:bg-primary-light"
                   title={`Insert ${p.tag}`}
                 >
-                  <div className="flex justify-between w-full items-center">
-                    <code className={`text-sm px-1.5 py-0.5 rounded font-bold ${p.className}`}>
+                  <div className="flex w-full items-center justify-between">
+                    <code className={`rounded px-1.5 py-0.5 text-sm font-bold ${p.className}`}>
                       {p.tag}
                     </code>
-                    <span className="text-xs text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
                       + Insert
                     </span>
                   </div>
-                  <span className="text-[0.72rem] text-text-muted mt-1 leading-tight">{p.desc}</span>
+                  <span className="mt-1 text-[0.72rem] leading-tight text-text-muted">{p.desc}</span>
                 </button>
               ))}
             </div>

@@ -20,18 +20,18 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   ];
 
   return (
-    <div className="flex items-center justify-between gap-4 w-full overflow-x-auto whitespace-nowrap pb-1 border-b border-border">
+    <div className="flex w-full items-center justify-between gap-4 overflow-x-auto border-b border-border pb-1 whitespace-nowrap">
       <div className="flex items-center gap-2">
         {secondaryTabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
-            className={`inline-flex items-center gap-1.5 border-0 bg-transparent text-text-muted text-sm px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 hover:bg-primary-light/50 hover:text-text ${activeTab === tab.value ? 'bg-primary-light text-primary-deep font-semibold' : 'font-medium'}`}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-3 py-2 text-sm text-text-muted transition-all duration-150 hover:bg-primary-light/50 hover:text-text ${activeTab === tab.value ? 'bg-primary-light font-semibold text-primary-deep' : 'font-medium'}`}
             onClick={() => onTabChange(tab.value)}
           >
             <span>{tab.label}</span>
             {tab.value === 'drafts' && draftsCount > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-primary text-white leading-none">{draftsCount}</span>
+              <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-white">{draftsCount}</span>
             )}
           </button>
         ))}
@@ -39,7 +39,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 
       <button
         type="button"
-        className={`inline-flex items-center justify-center gap-1.5 border px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ml-auto ${activeTab === 'compose' ? 'bg-primary border-primary text-white' : 'bg-primary-light border-primary-light text-primary-deep hover:bg-primary hover:border-primary hover:text-white'}`}
+        className={`ml-auto inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-all duration-150 ${activeTab === 'compose' ? 'border-primary bg-primary text-white' : 'border-primary-light bg-primary-light text-primary-deep hover:border-primary hover:bg-primary hover:text-white'}`}
         onClick={() => onTabChange('compose')}
       >
         <span aria-hidden="true">+</span>

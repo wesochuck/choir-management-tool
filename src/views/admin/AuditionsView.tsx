@@ -300,7 +300,7 @@ export default function AuditionsView() {
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="admin-view-titles">
           {/* Page title is already handled by PageLayout in App.tsx */}
         </div>
@@ -317,7 +317,7 @@ export default function AuditionsView() {
 
       {/* Status Banner */}
       {!isLoading && settings && (
-        <div className={`card p-4 px-6 flex justify-between items-center rounded-lg ${settings.enabled && settings.defaultPerformanceId ? 'bg-[rgba(74,117,89,0.05)] border border-primary' : 'bg-[rgba(100,116,139,0.05)] border border-gray-200'}`}>
+        <div className={`card flex items-center justify-between rounded-lg p-4 px-6 ${settings.enabled && settings.defaultPerformanceId ? 'border border-primary bg-[rgba(74,117,89,0.05)]' : 'border border-gray-200 bg-[rgba(100,116,139,0.05)]'}`}>
           <div className="flex flex-row gap-4">
             <div className="text-2xl">{settings.enabled && settings.defaultPerformanceId ? '🟢' : '⚪'}</div>
             <div className="flex flex-col gap-0">
@@ -347,12 +347,12 @@ export default function AuditionsView() {
       {showSettings && settings && (
         <AppCard title="Audition Settings">
           <div className="flex flex-col gap-6">
-            <label className="flex flex-row gap-2 self-start cursor-pointer select-none">
+            <label className="flex cursor-pointer flex-row gap-2 self-start select-none">
               <input
                 type="checkbox"
                 checked={settings.enabled}
                 onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
-                className="w-5 h-5 accent-primary cursor-pointer"
+                className="size-5 cursor-pointer accent-primary"
               />
               <span className="text-sm font-semibold">Accept public audition requests</span>
             </label>
@@ -360,7 +360,7 @@ export default function AuditionsView() {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold">Target Performance</label>
               <select
-                className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
+                className="block w-full rounded-md border-border bg-surface px-3 py-2 text-sm"
                 value={settings.defaultPerformanceId || ''}
                 onChange={(e) => setSettings({ ...settings, defaultPerformanceId: e.target.value })}
               >
@@ -369,7 +369,7 @@ export default function AuditionsView() {
                   <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
                 ))}
               </select>
-              <p className="text-gray-500 m-0 text-xs">
+              <p className="m-0 text-xs text-gray-500">
                 A target performance is <strong>REQUIRED</strong> for the public audition form to accept requests.
               </p>
             </div>
@@ -378,14 +378,14 @@ export default function AuditionsView() {
               <label className="flex items-center gap-1 text-sm font-semibold">
                 <span>Available Audition Times</span>
                 {(!settings.slots || settings.slots.length === 0) && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded font-semibold uppercase tracking-wider bg-danger-text text-white">Required</span>
+                  <span className="inline-flex items-center rounded bg-danger-text px-1.5 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">Required</span>
                 )}
               </label>
 
-              <div className="card p-4 bg-neutral-bg border border-gray-200">
+              <div className="card bg-neutral-bg border border-gray-200 p-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-label text-xs">Generate Slots</span>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 items-end">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-3">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Date</span>
                       <input type="date" className="card p-2" value={genDate} onChange={e => setGenDate(e.target.value)} />
@@ -400,7 +400,7 @@ export default function AuditionsView() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Interval (mins)</span>
-                      <select className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2" value={genInterval} onChange={e => setGenInterval(e.target.value)}>
+                      <select className="block w-full rounded-md border-border bg-surface px-3 py-2 text-sm" value={genInterval} onChange={e => setGenInterval(e.target.value)}>
                         <option value="10">10</option>
                         <option value="15">15</option>
                         <option value="20">20</option>
@@ -416,9 +416,9 @@ export default function AuditionsView() {
 
               <div className="flex flex-row flex-wrap gap-2">
                 {settings.slots?.map(slot => (
-                  <div key={slot} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded">
+                  <div key={slot} className="inline-flex items-center gap-1.5 rounded border border-gray-200 bg-white px-3 py-1.5 text-sm">
                     <span>{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-                    <button type="button" onClick={() => removeSlot(slot)} className="bg-none border-none cursor-pointer p-0 text-gray-500 text-base leading-none">
+                    <button type="button" onClick={() => removeSlot(slot)} className="cursor-pointer border-none bg-none p-0 text-base leading-none text-gray-500">
                       &times;
                     </button>
                   </div>
@@ -426,7 +426,7 @@ export default function AuditionsView() {
               </div>
 
               {(!settings.slots || settings.slots.length === 0) && (
-                <p className="text-danger-text text-xs font-medium m-0">
+                <p className="m-0 text-xs font-medium text-danger-text">
                   ⚠️ Generate at least one audition time slot so applicants can schedule their audition.
                 </p>
               )}
@@ -442,7 +442,7 @@ export default function AuditionsView() {
             </div>
 
             <div className="flex flex-col gap-2 border-t border-gray-200 pt-4">
-              <label className="flex flex-row gap-2 self-start cursor-pointer select-none">
+              <label className="flex cursor-pointer flex-row gap-2 self-start select-none">
                 <input
                   type="checkbox"
                   checked={settings.adminNotifyEnabled || false}
@@ -451,19 +451,19 @@ export default function AuditionsView() {
                     adminNotifyEnabled: e.target.checked,
                     adminNotifyUsers: settings.adminNotifyUsers || []
                   })}
-                  className="w-5 h-5 accent-primary cursor-pointer"
+                  className="size-5 cursor-pointer accent-primary"
                 />
                 <span className="text-sm font-semibold">Notify administrators of new submissions</span>
               </label>
 
               {settings.adminNotifyEnabled && (
                 <div className="flex flex-col gap-1 pl-7">
-                  <span className="text-sm font-semibold text-gray-500 text-sm">Select Administrators to Notify</span>
-                  <div className="flex flex-col gap-2 mt-1">
+                  <span className="text-sm text-sm font-semibold text-gray-500">Select Administrators to Notify</span>
+                  <div className="mt-1 flex flex-col gap-2">
                     {admins.map((admin) => {
                       const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
                       return (
-                        <label key={admin.id} className="flex flex-row gap-2 cursor-pointer items-center select-none">
+                        <label key={admin.id} className="flex cursor-pointer flex-row items-center gap-2 select-none">
                           <input
                             type="checkbox"
                             checked={isChecked}
@@ -474,14 +474,14 @@ export default function AuditionsView() {
                                 : currentUsers.filter(id => id !== admin.id);
                               setSettings({ ...settings, adminNotifyUsers: updatedUsers });
                             }}
-                            className="w-4 h-4 accent-primary cursor-pointer"
+                            className="size-4 cursor-pointer accent-primary"
                           />
                           <span className="text-sm">{admin.name} ({admin.email})</span>
                         </label>
                       );
                     })}
                     {admins.length === 0 && (
-                      <span className="text-gray-500 text-xs">No administrative accounts found.</span>
+                      <span className="text-xs text-gray-500">No administrative accounts found.</span>
                     )}
                   </div>
                 </div>
@@ -495,12 +495,12 @@ export default function AuditionsView() {
         </AppCard>
       )}
 
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <div className="flex flex-wrap flex-1">
-          <div className="flex flex-col gap-1 min-w-[240px]">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-1 flex-wrap">
+          <div className="flex min-w-[240px] flex-col gap-1">
             <label className="text-sm font-semibold text-gray-500">Filter by Performance</label>
             <select
-              className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
+              className="block w-full rounded-md border-border bg-surface px-3 py-2 text-sm"
               value={performanceFilter}
               onChange={(e) => setPerformanceFilter(e.target.value)}
             >
@@ -513,11 +513,11 @@ export default function AuditionsView() {
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold text-gray-500">Filter by Status</label>
-            <div className="flex flex-row gap-4 h-10 items-center flex-wrap">
+            <div className="flex h-10 flex-row flex-wrap items-center gap-4">
               {(['New', 'Scheduled', 'Closed'] as Audition['status'][]).map(status => {
                 const isChecked = statusFilter.includes(status);
                 return (
-                  <label key={status} className="flex flex-row gap-2 cursor-pointer items-center select-none">
+                  <label key={status} className="flex cursor-pointer flex-row items-center gap-2 select-none">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -528,7 +528,7 @@ export default function AuditionsView() {
                           setStatusFilter([...statusFilter, status]);
                         }
                       }}
-                      className="w-4 h-4 accent-primary cursor-pointer"
+                      className="size-4 cursor-pointer accent-primary"
                     />
                     <span>{status}</span>
                   </label>
@@ -540,13 +540,13 @@ export default function AuditionsView() {
       </div>
 
       <AppCard noPadding>
-        <div className="overflow-x-auto w-full text-left">
-          <table className="text-left w-full border-collapse">
+        <div className="w-full overflow-x-auto text-left">
+          <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-200 bg-bg">
                 <th 
                   onClick={() => handleSort('name')}
-                  className="p-4 font-semibold text-sm text-gray-500 cursor-pointer select-none"
+                  className="cursor-pointer p-4 text-sm font-semibold text-gray-500 select-none"
                 >
                   <div className="flex flex-row items-center gap-1.5">
                     <span>Name / Contact</span>
@@ -555,10 +555,10 @@ export default function AuditionsView() {
                     )}
                   </div>
                 </th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Target Performance</th>
+                <th className="p-4 text-sm font-semibold text-gray-500">Target Performance</th>
                 <th 
                   onClick={() => handleSort('scheduledTimeSlot')}
-                  className="p-4 font-semibold text-sm text-gray-500 cursor-pointer select-none"
+                  className="cursor-pointer p-4 text-sm font-semibold text-gray-500 select-none"
                 >
                   <div className="flex flex-row items-center gap-1.5">
                     <span>Audition Time</span>
@@ -567,22 +567,22 @@ export default function AuditionsView() {
                     )}
                   </div>
                 </th>
-                <th className="p-4 font-semibold text-sm text-gray-500 w-[120px]">Status</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-right">Actions</th>
+                <th className="w-[120px] p-4 text-sm font-semibold text-gray-500">Status</th>
+                <th className="p-4 text-right text-sm font-semibold text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody>
               {sortedAuditions.map((audition) => (
                 <tr 
                   key={audition.id} 
-                  className="interactive-row border-b border-gray-200 cursor-pointer" 
+                  className="interactive-row cursor-pointer border-b border-gray-200" 
                   onClick={() => { setEditingAudition(audition); setIsModalOpen(true); }}
                 >
                   <td data-label="Name" className="p-4">
                     <div className="flex flex-col gap-1">
-                      <div className="flex flex-row gap-2 items-center">
+                      <div className="flex flex-row items-center gap-2">
                         <span className="font-semibold">{audition.name}</span>
-                        {audition.voicePart && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{audition.voicePart}</span>}
+                        {audition.voicePart && <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{audition.voicePart}</span>}
                       </div>
                       {audition.contact.includes('@') ? (
                         <button
@@ -591,7 +591,7 @@ export default function AuditionsView() {
                             event.stopPropagation();
                             handleEmailClick(audition.contact, audition.name, audition.voicePart || '');
                           }}
-                          className="btn btn-link text-gray-500 p-0 border-none bg-none cursor-pointer text-left underline text-sm"
+                          className="btn btn-link cursor-pointer border-none bg-none p-0 text-left text-sm text-gray-500 underline"
                         >
                           {audition.contact}
                         </button>
@@ -599,7 +599,7 @@ export default function AuditionsView() {
                         <a
                           href={`tel:${audition.contact}`}
                           onClick={(event) => event.stopPropagation()}
-                          className="text-gray-500 text-sm"
+                          className="text-sm text-gray-500"
                         >
                           {audition.contact}
                         </a>
@@ -614,13 +614,13 @@ export default function AuditionsView() {
                           e.stopPropagation();
                           navigate(`/admin/events?eventId=${audition.performance}&openModal=true`);
                         }}
-                        className="btn btn-link p-0 border-none bg-none cursor-pointer underline text-primary text-left font-semibold inline"
+                        className="btn btn-link inline cursor-pointer border-none bg-none p-0 text-left font-semibold text-primary underline"
                         title="Click to edit performance details"
                       >
                         {audition.expand.performance.title}
                       </button>
                     ) : (
-                      <span className="text-gray-500 text-sm">None</span>
+                      <span className="text-sm text-gray-500">None</span>
                     )}
                   </td>
                   <td data-label="Audition Time" className="p-4 text-sm text-gray-500">
@@ -629,7 +629,7 @@ export default function AuditionsView() {
                         {formatInTimezone(audition.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-1 text-xs rounded font-semibold uppercase tracking-wider bg-gray-100 text-gray-700">
+                      <span className="inline-flex items-center rounded bg-gray-100 px-2 py-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                         {audition.requestedSlots && audition.requestedSlots.length > 0
                           ? `${audition.requestedSlots.length} slot${audition.requestedSlots.length > 1 ? 's' : ''} requested`
                           : 'No times requested'}
@@ -637,12 +637,12 @@ export default function AuditionsView() {
                     )}
                   </td>
                   <td data-label="Status" className="p-4">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${audition.status === 'New' ? 'bg-blue-100 text-blue-700' : audition.status === 'Scheduled' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${audition.status === 'New' ? 'bg-blue-100 text-blue-700' : audition.status === 'Scheduled' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                       {audition.status}
                     </span>
                   </td>
                   <td data-label="Actions" className="p-4 text-right">
-                    <div className="flex flex-row gap-2 justify-end flex-wrap">
+                    <div className="flex flex-row flex-wrap justify-end gap-2">
                       {audition.contact.includes('@') && (
                         <button
                           type="button"
@@ -727,7 +727,7 @@ export default function AuditionsView() {
                           setSchedCustom(slot);
                         }
                       }}
-                      className={`inline-flex items-center cursor-pointer px-3 py-2 border border-gray-200 bg-white text-gray-800 rounded font-medium transition-all duration-200 text-xs ${isSelected ? 'border-primary bg-primary-light text-primary-deep font-bold' : ''}`}
+                      className={`inline-flex cursor-pointer items-center rounded border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-800 transition-all duration-200 ${isSelected ? 'border-primary bg-primary-light font-bold text-primary-deep' : ''}`}
                     >
                       {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </button>
@@ -740,7 +740,7 @@ export default function AuditionsView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold">Select Confirmed Time Slot</label>
             <select
-              className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
+              className="block w-full rounded-md border-border bg-surface px-3 py-2 text-sm"
               value={schedSlot}
               onChange={(e) => setSchedSlot(e.target.value)}
             >

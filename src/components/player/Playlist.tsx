@@ -48,7 +48,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
 
     if (status === 'downloading') {
       return (
-        <span className="flex items-center gap-1 shrink-0" onClick={stopPropagation} aria-label="Downloading">
+        <span className="flex shrink-0 items-center gap-1" onClick={stopPropagation} aria-label="Downloading">
           <svg className="-rotate-90" width="20" height="20">
             <circle
               className="progress-ring__circle-bg"
@@ -79,7 +79,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
     if (item.isDownloaded) {
       return (
         <button
-          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-transparent border-none cursor-pointer text-primary transition-all hover:bg-primary-light hover:text-primary"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-primary transition-all hover:bg-primary-light hover:text-primary"
           onClick={(e) => {
             e.stopPropagation();
             onRemoveDownload(item);
@@ -97,7 +97,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
     if (navigator.onLine) {
       return (
         <button
-          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-transparent border-none cursor-pointer text-text-muted transition-all hover:bg-primary-light hover:text-primary"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-text-muted transition-all hover:bg-primary-light hover:text-primary"
           onClick={(e) => {
             e.stopPropagation();
             onDownloadTrack(item);
@@ -123,16 +123,16 @@ export const Playlist: React.FC<PlaylistProps> = ({
   const allDownloaded = downloadedCount === totalCount && totalCount > 0;
 
   return (
-    <div className="mt-6 bg-surface rounded-xl max-h-[500px] overflow-y-auto border border-border shadow-md relative max-sm:rounded-lg max-sm:max-h-none max-sm:overflow-y-visible">
-      <div className="sticky top-0 z-10 bg-surface flex items-center justify-between gap-3 px-5 py-4 border-b border-border max-[480px]:flex-col max-[480px]:items-stretch">
-        <div className="flex items-baseline gap-2 min-w-0 max-[480px]:justify-between">
-          <span className="text-base font-bold text-text whitespace-nowrap">Set List</span>
+    <div className="relative mt-6 max-h-[500px] overflow-y-auto rounded-xl border border-border bg-surface shadow-md max-sm:max-h-none max-sm:overflow-y-visible max-sm:rounded-lg">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-5 py-4 max-[480px]:flex-col max-[480px]:items-stretch">
+        <div className="flex min-w-0 items-baseline gap-2 max-[480px]:justify-between">
+          <span className="text-base font-bold whitespace-nowrap text-text">Set List</span>
           <span className="text-xs text-text-muted tabular-nums">{totalCount} track{totalCount !== 1 ? 's' : ''}</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0 max-[480px]:grid max-[480px]:grid-cols-2 max-[480px]:w-full">
+        <div className="flex shrink-0 items-center gap-2 max-[480px]:grid max-[480px]:w-full max-[480px]:grid-cols-2">
           {downloadedCount > 0 && (
             <button
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-border bg-primary-light text-text-muted text-xs font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap transition-all hover:border-danger-text hover:text-danger-text hover:bg-danger-bg disabled:opacity-60 disabled:cursor-default max-[480px]:w-full max-[480px]:justify-center"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-border bg-primary-light px-3 py-1.5 text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase transition-all hover:border-danger-text hover:bg-danger-bg hover:text-danger-text disabled:cursor-default disabled:opacity-60 max-[480px]:w-full max-[480px]:justify-center"
               onClick={onClearAll}
               title="Remove all offline downloads"
               aria-label="Clear all downloads"
@@ -148,7 +148,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
           )}
           {!allDownloaded && (
             <button
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap transition-all disabled:opacity-60 disabled:cursor-default ${isDownloadingAll ? 'bg-primary-light text-primary border-primary' : 'border-primary text-primary bg-primary-light hover:bg-primary hover:text-surface'} max-[480px]:w-full max-[480px]:justify-center`}
+              className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all disabled:cursor-default disabled:opacity-60 ${isDownloadingAll ? 'border-primary bg-primary-light text-primary' : 'border-primary bg-primary-light text-primary hover:bg-primary hover:text-surface'} max-[480px]:w-full max-[480px]:justify-center`}
               onClick={onDownloadAll}
               disabled={isDownloadingAll}
               title="Download all tracks for offline playback"
@@ -175,30 +175,30 @@ export const Playlist: React.FC<PlaylistProps> = ({
           )}
         </div>
       </div>
-      <ul className="list-none p-2 px-3 pb-3 m-0 max-sm:p-2">
+      <ul className="m-0 list-none p-2 px-3 pb-3 max-sm:p-2">
         {playlist.map((item, index) => {
             const activeKey = item.trackKey || 'tutti';
             const isFallback = selectedVoicePart && selectedVoicePart !== 'tutti' && activeKey === 'tutti';
             return (
               <li 
                 key={item.id} 
-                className={`p-3 px-4 rounded-lg cursor-pointer flex items-center gap-3 transition-colors mb-1 border border-transparent hover:bg-primary-light ${index === currentIndex ? 'bg-primary-light text-primary font-semibold border-primary' : ''} max-sm:p-2 max-sm:px-3 max-sm:gap-2 max-sm:min-h-[56px]`}
+                className={`mb-1 flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-3 px-4 transition-colors hover:bg-primary-light ${index === currentIndex ? 'border-primary bg-primary-light font-semibold text-primary' : ''} max-sm:min-h-[56px] max-sm:gap-2 max-sm:p-2 max-sm:px-3`}
                 onClick={() => onTrackSelect(index)}
               >
-                <span className={`shrink-0 w-7 h-7 flex items-center justify-center ${index === currentIndex ? 'text-primary' : 'text-text-muted'}`}>
+                <span className={`flex size-7 shrink-0 items-center justify-center ${index === currentIndex ? 'text-primary' : 'text-text-muted'}`}>
                   <MusicIcon />
                 </span>
-                <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-                  <span className="text-sm font-semibold truncate">{item.name}</span>
+                <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                  <span className="truncate text-sm font-semibold">{item.name}</span>
                   {item.parentTitle && (
-                    <span className="text-xs text-text-muted opacity-85 font-medium truncate">
+                    <span className="truncate text-xs font-medium text-text-muted opacity-85">
                       From: {item.parentTitle}
                     </span>
                   )}
-                  {item.composer && <span className="text-xs text-text-muted opacity-80 truncate">{item.composer}</span>}
+                  {item.composer && <span className="truncate text-xs text-text-muted opacity-80">{item.composer}</span>}
                 </div>
                 {!item.isFolder && (
-                  <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 text-xs font-bold tracking-wide uppercase rounded-full transition-colors ${isFallback ? 'bg-amber-50 text-amber-600' : 'bg-primary-light text-primary'} max-sm:text-[0.55rem] max-sm:px-1 max-sm:py-0.5`}>
+                  <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-xs font-bold tracking-wide uppercase transition-colors ${isFallback ? 'bg-amber-50 text-amber-600' : 'bg-primary-light text-primary'} max-sm:px-1 max-sm:py-0.5 max-sm:text-[0.55rem]`}>
                     {activeKey.toUpperCase()}
                   </span>
                 )}

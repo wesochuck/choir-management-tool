@@ -35,7 +35,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 }) => {
   return (
     <AppCard noPadding>
-      <div className="overflow-x-auto w-full">
+      <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
             <tr>
@@ -71,7 +71,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       />
                       <span>{p.name}</span>
                       {p.expand?.user?.role === 'admin' && (
-                        <span className="text-[0.65rem] px-[5px] py-[1px] rounded bg-primary-light text-primary font-bold uppercase tracking-wider inline-flex items-center h-fit">Admin</span>
+                        <span className="inline-flex h-fit items-center rounded bg-primary-light px-[5px] py-[1px] text-[0.65rem] font-bold tracking-wider text-primary uppercase">Admin</span>
                       )}
                     </div>
                   </td>
@@ -94,7 +94,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       type="checkbox" 
                       checked={duesMap?.[p.id]?.paid || false}
                       onChange={(e) => onToggleDues?.(p.id, e.target.checked)}
-                      className="cursor-pointer accent-[var(--primary)] w-[18px] h-[18px]"
+                      className="size-[18px] cursor-pointer accent-[var(--primary)]"
                     />
                   </td>
                 )}
@@ -124,8 +124,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </table>
       </div>
       {totalCount > 0 && (
-        <div className="flex flex-col md:flex-row no-print justify-between items-center px-6 py-4 border-t border-border bg-surface rounded-b-lg mt-1">
-          <span className="text-sm text-muted font-medium">
+        <div className="no-print mt-1 flex flex-col items-center justify-between rounded-b-lg border-t border-border bg-surface px-6 py-4 md:flex-row">
+          <span className="text-muted text-sm font-medium">
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
           </span>
 

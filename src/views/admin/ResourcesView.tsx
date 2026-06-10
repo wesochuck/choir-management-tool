@@ -149,12 +149,12 @@ export default function ResourcesView() {
   };
 
   if (isLoading && resources.length === 0) {
-    return <div className="container text-center pt-8">Loading resources...</div>;
+    return <div className="container pt-8 text-center">Loading resources...</div>;
   }
 
   return (
     <div className="flex-col gap-8 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-center">
+      <div className="flex flex-col items-center justify-between md:flex-row">
         <div>
           <h1 className="text-display m-0">Singer Resources</h1>
           <p className="text-muted text-sm">Upload documents or reference URLs for active singers to view on their dashboard.</p>
@@ -174,14 +174,14 @@ export default function ResourcesView() {
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="e.g. Choir Singer Handbook"
-                className="card w-full px-3 h-11 border border-border"
+                className="card h-11 w-full border border-border px-3"
               />
             </div>
 
             <div className="flex-col gap-1">
               <label className="text-label">Resource Type</label>
               <div className="flex-row gap-4">
-                <label className="flex-row items-center gap-1 cursor-pointer">
+                <label className="cursor-pointer flex-row items-center gap-1">
                   <input
                     type="radio"
                     name="resourceType"
@@ -191,7 +191,7 @@ export default function ResourcesView() {
                   />
                   File Upload
                 </label>
-                <label className="flex-row items-center gap-1 cursor-pointer">
+                <label className="cursor-pointer flex-row items-center gap-1">
                   <input
                     type="radio"
                     name="resourceType"
@@ -211,9 +211,9 @@ export default function ResourcesView() {
                   type="file"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   required={!editingId}
-                  className="card w-full p-2 border border-border"
+                  className="card w-full border border-border p-2"
                 />
-                <span className="text-xs text-muted">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
+                <span className="text-muted text-xs">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
               </div>
             ) : (
               <div className="flex-col gap-1">
@@ -224,9 +224,9 @@ export default function ResourcesView() {
                   onChange={(e) => setUrl(e.target.value)}
                   required
                   placeholder="drive.google.com/..."
-                  className="card w-full px-3 h-11 border border-border"
+                  className="card h-11 w-full border border-border px-3"
                 />
-                <span className="text-xs text-muted">Enter a link URL. https:// will be prepended if missing.</span>
+                <span className="text-muted text-xs">Enter a link URL. https:// will be prepended if missing.</span>
               </div>
             )}
 
@@ -237,12 +237,12 @@ export default function ResourcesView() {
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
                 placeholder="e.g. 1"
-                className="card w-full px-3 h-11 border border-border"
+                className="card h-11 w-full border border-border px-3"
               />
-              <span className="text-xs text-muted">Lower numbers show up first on the dashboard.</span>
+              <span className="text-muted text-xs">Lower numbers show up first on the dashboard.</span>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-end gap-4">
+            <div className="flex flex-col justify-end gap-4 md:flex-row">
               <button type="button" onClick={resetForm} disabled={isSaving} className="btn btn-ghost">Cancel</button>
               <button type="submit" disabled={isSaving} className="btn btn-primary">
                 {isSaving ? 'Saving...' : 'Save Resource'}
@@ -255,19 +255,19 @@ export default function ResourcesView() {
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {resources.map(r => (
           <AppCard key={r.id} title={r.title}>
-            <div className="flex-col gap-1 min-h-[60px]">
+            <div className="min-h-[60px] flex-col gap-1">
               <div className="text-body">
                 <span className="text-muted">Type:</span>{' '}
                 {r.url ? '🔗 Link' : '📄 File Upload'}
               </div>
               {r.url ? (
-                <div className="text-body text-xs text-muted break-all">
+                <div className="text-body text-muted text-xs break-all">
                   <a href={r.url} target="_blank" rel="noopener noreferrer">
                     {r.url}
                   </a>
                 </div>
               ) : (
-                <div className="text-body text-xs text-muted">
+                <div className="text-body text-muted text-xs">
                   <a href={resourceService.getResourceFileUrl(r, r.file || '')} target="_blank" rel="noopener noreferrer">
                     📂 Download Uploaded File
                   </a>
@@ -277,7 +277,7 @@ export default function ResourcesView() {
                 <span className="text-muted">Sort Order:</span> {r.sortOrder || 0}
               </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-4 mt-4">
+            <div className="mt-4 flex flex-col gap-4 md:flex-row">
               <button onClick={() => handleEdit(r)} className="btn btn-ghost expanded-hit-area flex-1">Edit</button>
               <button
                 onClick={(event) => {

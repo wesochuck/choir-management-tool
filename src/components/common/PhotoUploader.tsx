@@ -467,7 +467,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         {/* Upload spinner overlay */}
         {isUploading && (
           <div className="photo-uploader-spinner-overlay">
-            <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
           </div>
         )}
 
@@ -496,7 +496,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               Choose File
             </button>
             
-            <span className="text-xs text-muted">|</span>
+            <span className="text-muted text-xs">|</span>
 
             <button
               type="button"
@@ -512,7 +512,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
             {displayUrl && (
               <>
-                <span className="text-xs text-muted">|</span>
+                <span className="text-muted text-xs">|</span>
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
@@ -527,7 +527,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </>
             )}
           </div>
-          <span className="text-xs text-muted">
+          <span className="text-muted text-xs">
             or drag & drop photo here
           </span>
         </div>
@@ -536,7 +536,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       {/* Mobile-only clean footer instruction */}
       {isMobile && size !== 'sm' && (
         <div className="photo-uploader-btn-panel-mobile">
-          <span className="text-xs text-muted">
+          <span className="text-muted text-xs">
             Tap photo to change
           </span>
           {displayUrl && (
@@ -603,7 +603,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               <div className="camera-viewfinder-frame">
                 {isCameraLoading && (
                   <div className="camera-loading-container">
-                    <div className="w-6 h-6 border-[3px] border-white/30 border-t-white rounded-full animate-spin camera-loading-spinner" />
+                    <div className="camera-loading-spinner size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
                     <span className="camera-loading-text">Starting camera...</span>
                   </div>
                 )}

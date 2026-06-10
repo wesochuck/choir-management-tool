@@ -128,7 +128,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="card px-3 h-10"
+            className="card h-10 px-3"
           />
         </div>
 
@@ -138,14 +138,14 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             <input
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              className="card px-3 h-10"
+              className="card h-10 px-3"
             />
           </div>
         )}
 
         {type === 'song' && (
           <div 
-            className={`flex-row card sl-modal-solo-card ${soloSmallGroup ? 'sl-modal-solo-card-selected' : 'sl-modal-solo-card-unselected'}`}
+            className={`card sl-modal-solo-card flex-row ${soloSmallGroup ? 'sl-modal-solo-card-selected' : 'sl-modal-solo-card-unselected'}`}
             onClick={() => setSoloSmallGroup(!soloSmallGroup)}
           >
             <input
@@ -153,7 +153,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               checked={soloSmallGroup}
               onChange={(e) => setSoloSmallGroup(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
-              className="w-[18px] h-[18px] accent-[var(--primary)] cursor-pointer"
+              className="size-[18px] cursor-pointer accent-[var(--primary)]"
             />
             <span className="text-[14px] font-medium">🎤 Mark as Solo / Small Group</span>
           </div>
@@ -165,7 +165,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            className="card px-3 h-10"
+            className="card h-10 px-3"
           />
         </div>
 
@@ -174,7 +174,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="card p-3 min-h-[80px] resize-y"
+            className="card min-h-[80px] resize-y p-3"
           />
         </div>
       </form>

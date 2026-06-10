@@ -26,7 +26,7 @@ export function Table<T>({ columns, data, keyExtractor, onRowClick, emptyState }
       <thead className="max-md:hidden">
         <tr>
           {columns.map((col) => (
-            <th key={col.key} className="px-4 py-2 text-left text-xs font-medium text-text-muted uppercase tracking-wider border-b border-border"
+            <th key={col.key} className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-text-muted uppercase"
               // @allow-inline-style - dynamic column width from config
               style={col.width ? { minWidth: col.width } : undefined}
             >
@@ -46,7 +46,7 @@ export function Table<T>({ columns, data, keyExtractor, onRowClick, emptyState }
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-2 text-sm text-text max-md:flex max-md:justify-between max-md:px-0 max-md:py-1 max-md:before:content-[attr(data-label)] max-md:before:font-medium max-md:before:text-text-muted max-md:before:mr-4"
+                <td key={col.key} className="px-4 py-2 text-sm text-text max-md:flex max-md:justify-between max-md:px-0 max-md:py-1 max-md:before:mr-4 max-md:before:font-medium max-md:before:text-text-muted max-md:before:content-[attr(data-label)]"
                   data-label={typeof col.header === 'string' ? col.header : col.key}
                 >
                   {col.render(row, index)}

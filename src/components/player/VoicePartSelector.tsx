@@ -19,14 +19,14 @@ export const VoicePartSelector: React.FC<VoicePartSelectorProps> = ({
   ];
 
   return (
-    <div className="flex gap-2 flex-wrap mb-6 justify-center">
+    <div className="mb-6 flex flex-wrap justify-center gap-2">
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
-          className={`px-4 py-2 rounded-full border text-sm font-semibold cursor-pointer transition-all ${
+          className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
             selectedPart === opt.value
-              ? 'bg-primary text-surface border-primary shadow-md'
+              ? 'border-primary bg-primary text-surface shadow-md'
               : 'border-border bg-primary-light text-text-muted hover:bg-border hover:text-text'
           }`}
           onClick={() => onSelect(opt.value)}

@@ -6,7 +6,7 @@ export interface TabsProps {
 
 export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
   return (
-    <div className="flex border-b border-border mb-4" role="tablist">
+    <div className="mb-4 flex border-b border-border" role="tablist">
       {tabs.map((tab) => (
         <button
           key={tab.id}

@@ -11,13 +11,13 @@ export default function PublicLogo() {
   }, []);
 
   if (logoUrl === undefined) {
-    return <div className="flex justify-center mb-8 min-h-[100px]" />;
+    return <div className="mb-8 flex min-h-[100px] justify-center" />;
   }
 
   if (!logoUrl) return null;
 
   return (
-    <div className="flex justify-center mb-8">
+    <div className="mb-8 flex justify-center">
       <img src={logoUrl} alt="Organization logo" className="max-h-[100px] max-w-[90%] object-contain sm:max-h-[80px]" />
     </div>
   );

@@ -33,28 +33,28 @@ export default function PublicDonationSuccessView() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen justify-center items-center w-screen">
-        <AppCard className="w-full max-w-[480px] text-center items-center">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center">
+        <AppCard className="w-full max-w-[480px] items-center text-center">
           <h2 className="m-0">Verifying Donation...</h2>
           <Spinner size="medium" />
-          <p className="text-text-muted text-sm">Please wait while we confirm your contribution.</p>
-          <div className="w-10 h-10 border-4 border-border border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-text-muted">Please wait while we confirm your contribution.</p>
+          <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" />
         </AppCard>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen justify-center items-center w-screen p-4">
-      <AppCard className="w-full max-w-[480px] text-center items-center gap-4">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-center p-4">
+      <AppCard className="w-full max-w-[480px] items-center gap-4 text-center">
         <div className="text-6xl text-success-text">♥</div>
         <h1 className="text-display m-0">Thank You!</h1>
-        <p className="text-text-muted m-0">
+        <p className="m-0 text-text-muted">
           We have successfully processed your donation.
         </p>
 
         {donation ? (
-          <div className="card w-full p-4 flex flex-col gap-1 bg-neutral-bg text-left">
+          <div className="card bg-neutral-bg flex w-full flex-col gap-1 p-4 text-left">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Transaction ID:</span>
               <strong>{donation.id}</strong>
@@ -72,24 +72,24 @@ export default function PublicDonationSuccessView() {
               <strong>${(donation.amountPaidCents / 100).toFixed(2)}</strong>
             </div>
             {donation.tributeType !== 'none' && (
-              <div className="border-t border-border pt-1 mt-1 flex flex-col gap-1">
-                <span className="text-text-muted text-xs">Tribute</span>
+              <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
+                <span className="text-xs text-text-muted">Tribute</span>
                 <strong>{donation.tributeType === 'memory' ? 'In Memory of' : 'In Honor of'} {donation.tributeName}</strong>
               </div>
             )}
-            <p className="text-xs text-text-muted border-t border-border pt-1 m-0 text-center">
+            <p className="m-0 border-t border-border pt-1 text-center text-xs text-text-muted">
               We are sending your receipt to your email now. You can safely close this page.
             </p>
           </div>
         ) : (
-          <div className="w-full p-4 bg-neutral-bg rounded-lg">
-            <p className="text-text-muted text-sm m-0">
+          <div className="bg-neutral-bg w-full rounded-lg p-4">
+            <p className="m-0 text-sm text-text-muted">
               We are sending your receipt to your email now. You can safely close this page.
             </p>
           </div>
         )}
 
-        <Button as={Link} to="/tickets" variant="primary" className="no-underline w-full">
+        <Button as={Link} to="/tickets" variant="primary" className="w-full no-underline">
           Back to Concerts
         </Button>
       </AppCard>

@@ -49,11 +49,11 @@ export function MessageHistory({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2 mb-1">
+      <div className="mb-1 flex gap-2">
         <div className="relative flex-1">
           <input
             type="text"
-            className="card w-full h-10 px-3 border border-gray-200"
+            className="card h-10 w-full border border-gray-200 px-3"
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -62,7 +62,7 @@ export function MessageHistory({
           {searchTerm && (
             <button
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer text-text-muted text-xl leading-none"
+              className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none text-text-muted"
               onClick={() => {
                 setSearchTerm('');
                 onHistorySearchChange('');
@@ -76,9 +76,9 @@ export function MessageHistory({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="border-collapse w-full min-w-[700px] text-left">
+        <table className="w-full min-w-[700px] border-collapse text-left">
           <thead>
-            <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+            <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
               <th className="p-3 px-4 text-left">Date</th>
               <th className="p-3 px-4 text-left">Type</th>
               <th className="p-3 px-4 text-left">Subject</th>
@@ -90,7 +90,7 @@ export function MessageHistory({
           <tbody>
             {history.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center p-8 text-gray-500">
+                <td colSpan={6} className="p-8 text-center text-gray-500">
                   {historySearchQuery
                     ? `No messages found matching "${historySearchQuery}".`
                     : 'No messages logged yet.'}
@@ -118,23 +118,23 @@ export function MessageHistory({
                     </td>
                     <td className="p-3 px-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep w-fit">
+                        <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
                           {message.type}
                         </span>
                         {isAutomated && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-performance-bg text-performance-text opacity-80 w-fit">
+                          <span className="inline-flex w-fit items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase opacity-80">
                             {mType}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="p-3 px-4 font-semibold max-w-[300px] truncate">
+                    <td className="max-w-[300px] truncate p-3 px-4 font-semibold">
                       {resolvedSubject}
                     </td>
                     <td className="p-3 px-4 text-center">
                       <button
                         type="button"
-                        className="btn btn-ghost p-0 border-0 bg-transparent min-h-0 h-auto text-xs text-primary underline cursor-pointer"
+                        className="btn btn-ghost h-auto min-h-0 cursor-pointer border-0 bg-transparent p-0 text-xs text-primary underline"
                         onClick={() =>
                           onViewRecipients(
                             message.recipients,
@@ -147,17 +147,17 @@ export function MessageHistory({
                     </td>
                     <td className="p-3 px-4">
                       {message.status === 'Archived' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-slate-400 text-white">
+                        <span className="inline-flex items-center rounded bg-slate-400 px-2 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
                           Archived
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text">
+                        <span className="inline-flex items-center rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">
                           Sent
                         </span>
                       )}
                     </td>
                     <td className="p-3 px-4 text-right whitespace-nowrap">
-                      <div className="flex gap-2 justify-end">
+                      <div className="flex justify-end gap-2">
                         <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>
                           Details
                         </button>

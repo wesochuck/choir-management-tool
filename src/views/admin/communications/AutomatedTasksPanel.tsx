@@ -42,7 +42,7 @@ export function AutomatedTasksPanel({
         <h3 className="text-lg font-semibold text-text">
           Upcoming Automated Tasks
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {upcomingTasks.length === 0 && (
             <div className="card">
               <p className="text-muted">No upcoming automated tasks found.</p>
@@ -53,7 +53,7 @@ export function AutomatedTasksPanel({
               <div className="flex items-start justify-between gap-2">
                 <span className="flex items-center gap-1">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${
+                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
                       task.type === 'Report'
                         ? 'bg-performance-bg text-performance-text'
                         : task.type === 'RSVP Request'
@@ -63,7 +63,7 @@ export function AutomatedTasksPanel({
                   >
                     {task.type}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
+                  <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
                     Scheduled
                   </span>
                 </span>
@@ -89,7 +89,7 @@ export function AutomatedTasksPanel({
                   </p>
                 )}
               </div>
-              <div className="flex justify-end gap-2 mt-2">
+              <div className="mt-2 flex justify-end gap-2">
                 <button
                   className="btn btn-ghost btn-sm"
                   disabled={isSending || isArchiving === task.id}
@@ -145,7 +145,7 @@ export function AutomatedTasksPanel({
         <h3 className="text-lg font-semibold text-text-muted">
           Sent / Past Automated Tasks
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {pastTasks.length === 0 && (
             <p className="text-muted text-sm">
               No past automated tasks found in the logs.
@@ -159,11 +159,11 @@ export function AutomatedTasksPanel({
               <div className="flex items-start justify-between gap-2">
                 <span className="flex items-center gap-1">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${
+                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
                       task.status === 'Sent'
                         ? 'bg-performance-bg text-performance-text'
                         : task.status === 'Archived'
-                        ? 'bg-gray-500/10 text-gray-600 border border-gray-500/20'
+                        ? 'border border-gray-500/20 bg-gray-500/10 text-gray-600'
                         : 'bg-primary-light text-primary-deep'
                     }`}
                   >
@@ -171,7 +171,7 @@ export function AutomatedTasksPanel({
                   </span>
 
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider`}
+                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase`}
                   >
                     {task.status === 'Sent'
                       ? 'Sent'

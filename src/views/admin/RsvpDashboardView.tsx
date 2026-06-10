@@ -37,17 +37,17 @@ export default function RsvpDashboardView() {
 
   return (
     <div className="flex-col py-4">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="admin-view-titles">
           {/* Page title is already handled by PageLayout in App.tsx */}
         </div>
-        <div className="flex items-center gap-2 min-w-[320px]">
-          <div className="flex flex-col gap-1 flex-1">
-            <label className="text-label font-semibold uppercase text-text-muted text-xs">Select Event</label>
+        <div className="flex min-w-[320px] items-center gap-2">
+          <div className="flex flex-1 flex-col gap-1">
+            <label className="text-label text-xs font-semibold text-text-muted uppercase">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="block w-full rounded-md border-border bg-surface text-sm px-3 py-2"
+              className="block w-full rounded-md border-border bg-surface px-3 py-2 text-sm"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
@@ -59,21 +59,21 @@ export default function RsvpDashboardView() {
       </div>
 
       {selectedEvent && (
-        <div className="card-accent flex flex-wrap justify-between items-center gap-4">
+        <div className="card-accent flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-muted text-xs font-semibold uppercase tracking-wider">Active Event</span>
+            <span className="text-muted text-xs font-semibold tracking-wider uppercase">Active Event</span>
             {selectedEvent.title && <h2 className="m-0 text-2xl font-extrabold text-primary-deep">{selectedEvent.title}</h2>}
           </div>
 
-          <div className="flex flex-wrap gap-6 items-center">
-            <span className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+          <div className="flex flex-wrap items-center gap-6">
+            <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
               {selectedEvent.type}
             </span>
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label font-semibold text-sm flex items-center gap-1 text-primary-deep"
+              className="text-label flex items-center gap-1 text-sm font-semibold text-primary-deep"
             >
               📍 {selectedEvent.expand?.venue?.name || ''}
             </a>

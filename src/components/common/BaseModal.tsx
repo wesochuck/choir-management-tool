@@ -87,10 +87,10 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-bg flex items-center justify-center z-[1000] p-4" role="presentation">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-bg p-4" role="presentation">
       <div
         ref={modalRef}
-        className="card flex-col w-full max-h-[90vh] overflow-y-auto gap-6 shadow-md bg-surface rounded-lg p-6 border border-border"
+        className="card max-h-[90vh] w-full flex-col gap-6 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-md"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -106,7 +106,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         </div>
 
         {footer && (
-          <div className="flex items-center justify-end gap-4 mt-auto">
+          <div className="mt-auto flex items-center justify-end gap-4">
             {footer}
           </div>
         )}

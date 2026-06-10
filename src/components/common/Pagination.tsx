@@ -45,7 +45,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <nav 
-      className="flex-row m-4 mx-auto select-none flex justify-center items-center gap-1 flex-wrap" 
+      className="m-4 mx-auto flex flex-row flex-wrap items-center justify-center gap-1 select-none" 
       role="navigation" 
       aria-label="Pagination Navigation"
     >
@@ -77,7 +77,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           return (
             <span 
               key={`dots-${idx}`} 
-              className="inline-flex items-center justify-center min-w-[32px] h-[38px] text-base text-text-muted cursor-default px-3 font-semibold"
+              className="inline-flex h-[38px] min-w-[32px] cursor-default items-center justify-center px-3 text-base font-semibold text-text-muted"
               aria-hidden="true"
             >
               &#8230;

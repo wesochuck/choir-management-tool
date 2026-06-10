@@ -34,28 +34,28 @@ export default function PublicTicketSuccessView() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen justify-center items-center w-screen">
-        <AppCard className="w-full max-w-[480px] text-center items-center">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center">
+        <AppCard className="w-full max-w-[480px] items-center text-center">
           <h2 className="m-0">Verifying Order...</h2>
           <Spinner size="medium" />
-          <p className="text-text-muted text-sm">Please wait while we confirm your transaction.</p>
-          <div className="w-10 h-10 border-4 border-border border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-text-muted">Please wait while we confirm your transaction.</p>
+          <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" />
         </AppCard>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen justify-center items-center w-screen p-4">
-      <AppCard className="w-full max-w-[480px] text-center items-center gap-4">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-center p-4">
+      <AppCard className="w-full max-w-[480px] items-center gap-4 text-center">
         <div className="text-6xl text-success-text">✓</div>
         <h1 className="text-display m-0">Thank You!</h1>
-        <p className="text-text-muted m-0">
+        <p className="m-0 text-text-muted">
           Your purchase has been successfully processed.
         </p>
 
         {purchase ? (
-          <div className="card w-full p-4 flex flex-col gap-1 bg-neutral-bg text-left">
+          <div className="card bg-neutral-bg flex w-full flex-col gap-1 p-4 text-left">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Order ID:</span>
               <strong>{purchase.id}</strong>
@@ -77,16 +77,16 @@ export default function PublicTicketSuccessView() {
               <strong>${(purchase.amountPaidCents / 100).toFixed(2)}</strong>
             </div>
             {purchase.expand?.bundle ? (
-              <div className="border-t border-border pt-1 mt-1 flex flex-col gap-1">
-                <span className="text-text-muted text-xs">Season Ticket Pass</span>
+              <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
+                <span className="text-xs text-text-muted">Season Ticket Pass</span>
                 <strong>{purchase.expand.bundle.title}</strong>
-                <p className="text-xs text-text-muted m-0">
+                <p className="m-0 text-xs text-text-muted">
                   This pass grants Will Call admission to all performances included in this package.
                 </p>
               </div>
             ) : purchase.expand?.event ? (
-              <div className="border-t border-border pt-1 mt-1 flex flex-col gap-1">
-                <span className="text-text-muted text-xs">Event Details</span>
+              <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
+                <span className="text-xs text-text-muted">Event Details</span>
                 <strong>{purchase.expand.event.title}</strong>
                 <span className="text-xs text-text-muted">
                   {new Date(purchase.expand.event.date).toLocaleString()}
@@ -94,24 +94,24 @@ export default function PublicTicketSuccessView() {
                 {purchase.expand.event.eventGraphic && (
                   <img
                     src={pb.files.getURL(purchase.expand.event, purchase.expand.event.eventGraphic)}
-                    alt={purchase.expand.event.title} className="w-full max-h-30 object-cover rounded-sm mt-1"
+                    alt={purchase.expand.event.title} className="mt-1 max-h-30 w-full rounded-sm object-cover"
                   />
                 )}
               </div>
             ) : null}
-            <p className="text-xs text-text-muted border-t border-border pt-1 m-0 text-center">
+            <p className="m-0 border-t border-border pt-1 text-center text-xs text-text-muted">
               A confirmation email has been sent. Your tickets will be held at Will Call on show day. Please bring a photo ID matching the buyer's name.
             </p>
           </div>
         ) : (
-          <div className="w-full p-4 bg-neutral-bg rounded-lg">
-            <p className="text-text-muted text-sm m-0">
+          <div className="bg-neutral-bg w-full rounded-lg p-4">
+            <p className="m-0 text-sm text-text-muted">
               We're finishing up enqueuing your confirmation email. You can safely navigate away. Your tickets are secured.
             </p>
           </div>
         )}
 
-        <Button as={Link} to="/tickets" variant="primary" className="no-underline w-full">
+        <Button as={Link} to="/tickets" variant="primary" className="w-full no-underline">
           Back to Events
         </Button>
       </AppCard>

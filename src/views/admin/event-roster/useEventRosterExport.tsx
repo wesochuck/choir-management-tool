@@ -77,8 +77,8 @@ export function useEventRosterExport({
       title: 'Export RSVP Roster to CSV',
       message: (
         <div className="flex flex-col gap-4">
-          <div className="p-3 bg-bg border border-border rounded-md">
-            <div className="text-xs text-text-muted uppercase font-semibold">
+          <div className="rounded-md border border-border bg-bg p-3">
+            <div className="text-xs font-semibold text-text-muted uppercase">
               Exporting {filteredSingers.length} singer
               {filteredSingers.length !== 1 ? 's' : ''} currently shown
             </div>
@@ -88,7 +88,7 @@ export function useEventRosterExport({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-text-muted uppercase font-semibold">
+            <label className="text-xs font-semibold text-text-muted uppercase">
               Sort Order
             </label>
             <select
@@ -97,7 +97,7 @@ export function useEventRosterExport({
               onChange={(event) => {
                 chosenSort = event.target.value as RsvpExportSort;
               }}
-              className="py-1.5 px-3 border border-border rounded-md"
+              className="rounded-md border border-border px-3 py-1.5"
             >
               <option value="lastName">Last Name</option>
               <option value="section">Section → Last Name</option>

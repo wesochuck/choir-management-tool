@@ -420,8 +420,8 @@ export default function MusicLibraryView() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <header className="flex items-center justify-between mb-6 no-print">
+    <div className="mx-auto max-w-7xl p-6">
+      <header className="no-print mb-6 flex items-center justify-between">
         <div className="flex-col gap-1">
           <h1 className="m-0">Music Library</h1>
           <p className="text-muted text-sm">Manage choir repertoire, movements, and learning tracks.</p>
@@ -441,16 +441,16 @@ export default function MusicLibraryView() {
         )}
       </header>
 
-      <div className="flex flex-row gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-xs)] mb-[var(--space-sm)]">
+      <div className="mb-[var(--space-sm)] flex flex-row gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-xs)]">
         <button
           onClick={() => setActiveTab('catalog')}
-          className={`bg-none border-none border-b-3 border-transparent font-medium px-4 py-2 cursor-pointer text-[16px] transition-all duration-200 rounded-t-[var(--radius-sm)] ${activeTab === 'catalog' ? '!border-b-[var(--primary)] !text-[var(--primary)] !font-semibold' : 'text-[var(--text-muted)]'}`}
+          className={`cursor-pointer rounded-t-[var(--radius-sm)] border-b-3 border-none border-transparent bg-none px-4 py-2 text-[16px] font-medium transition-all duration-200 ${activeTab === 'catalog' ? '!border-b-[var(--primary)] !font-semibold !text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}
         >
           Music Catalog
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          className={`bg-none border-none border-b-3 border-transparent font-medium px-4 py-2 cursor-pointer text-[16px] transition-all duration-200 rounded-t-[var(--radius-sm)] ${activeTab === 'config' ? '!border-b-[var(--primary)] !text-[var(--primary)] !font-semibold' : 'text-[var(--text-muted)]'}`}
+          className={`cursor-pointer rounded-t-[var(--radius-sm)] border-b-3 border-none border-transparent bg-none px-4 py-2 text-[16px] font-medium transition-all duration-200 ${activeTab === 'config' ? '!border-b-[var(--primary)] !font-semibold !text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}
         >
           Library Settings
         </button>
@@ -529,7 +529,7 @@ export default function MusicLibraryView() {
                 value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
                 onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
                 placeholder="https://example.com/catalog/{catalogId}"
-                className="card w-full max-w-[400px] px-3 h-10 border border-[var(--border)] rounded-[var(--radius-md)]"
+                className="card h-10 w-full max-w-[400px] rounded-[var(--radius-md)] border border-[var(--border)] px-3"
               />
               <p className="text-muted !m-0">
                 Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
@@ -544,9 +544,9 @@ export default function MusicLibraryView() {
               </p>
               <div className="flex flex-col gap-[var(--space-sm)]">
                 {musicLibrarySettings.genres?.map((genre, index) => (
-                  <div key={genre.id} className="flex gap-[var(--space-md)] items-center">
+                  <div key={genre.id} className="flex items-center gap-[var(--space-md)]">
                     <input
-                      className="card h-10 px-3 w-[250px]"
+                      className="card h-10 w-[250px] px-3"
                       value={genre.label}
                       onChange={(e) => {
                         const updated = [...musicLibrarySettings.genres];
@@ -590,7 +590,7 @@ export default function MusicLibraryView() {
                 <input
                   id="new-genre-input"
                   placeholder="New Genre Name (e.g. Sacred)"
-                  className="card h-10 px-3 max-w-[250px]"
+                  className="card h-10 max-w-[250px] px-3"
                 />
                 <button
                   type="button"

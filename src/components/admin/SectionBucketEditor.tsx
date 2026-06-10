@@ -39,7 +39,7 @@ export function SectionBucketEditor({
             });
 
             return (
-              <div key={index} className="grid grid-cols-[80px_1fr_200px_80px] gap-4 items-center w-full">
+              <div key={index} className="grid w-full grid-cols-[80px_1fr_200px_80px] items-center gap-4">
                 <input
                   value={sec.code}
                   onChange={(e) => {
@@ -67,7 +67,7 @@ export function SectionBucketEditor({
                   <button
                     type="button"
                     onClick={() => setActiveColorPickerIndex(activeColorPickerIndex === index ? null : index)}
-                    className="w-8 h-8 rounded-[6px] border border-border cursor-pointer shadow-sm shrink-0 flex items-center justify-center transition-transform duration-100"
+                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border border-border shadow-sm transition-transform duration-100"
                     // @allow-inline-style
                     style={{ backgroundColor: hexBg }}
                     title="Choose color"

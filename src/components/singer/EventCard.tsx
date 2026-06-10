@@ -92,22 +92,22 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   return (
     <AppCard noPadding>
-      <div className="flex flex-col p-6 gap-4">
-        <div className="flex flex-row justify-between w-full items-center max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
-          <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${isPerformance ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+      <div className="flex flex-col gap-4 p-6">
+        <div className="flex w-full flex-row items-center justify-between max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
+          <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase ${isPerformance ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
              {event.type}
            </span>
-           <div className="flex flex-row gap-1 flex-wrap justify-end max-sm:grid max-sm:grid-cols-[repeat(auto-fit,minmax(80px,1fr))] max-sm:gap-1.5 max-sm:w-full">
+           <div className="flex flex-row flex-wrap justify-end gap-1 max-sm:grid max-sm:w-full max-sm:grid-cols-[repeat(auto-fit,minmax(80px,1fr))] max-sm:gap-1.5">
              <button 
                onClick={() => calendarUtils.generateICS(event)}
-               className={`${baseBtnClasses} bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:text-[0.75rem] max-sm:py-1.5`}
+               className={`${baseBtnClasses} border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-[0.75rem]`}
              >
                📅 Add
              </button>
              {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
                <button 
                  onClick={handleOpenPlayer}
-                 className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:text-[0.75rem] max-sm:py-1.5`}
+                 className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-[0.75rem]`}
                >
                  🎧 Practice
                </button>
@@ -115,7 +115,7 @@ export const EventCard: React.FC<EventCardProps> = ({
              {isPerformance && rsvp !== 'No' && (
                <Link 
                  to={`/seating/${event.id}`}
-                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-[#d1dfd6] max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:text-[0.75rem] max-sm:py-1.5`}
+                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-[#d1dfd6] max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-[0.75rem]`}
                >
                  🪑 Seating
                </Link>
@@ -125,12 +125,12 @@ export const EventCard: React.FC<EventCardProps> = ({
 
 
         <div className="flex flex-col gap-1">
-          <div className="flex flex-row items-center gap-2 flex-wrap">
-            <h3 className="m-0 text-primary text-sm font-medium">
+          <div className="flex flex-row flex-wrap items-center gap-2">
+            <h3 className="m-0 text-sm font-medium text-primary">
               {formatInTimezone(event.date, timezone)}
             </h3>
             {event.callTime && (
-              <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-indigo-700 uppercase shadow-sm">
                 📢 Call Time: {formatTime12h(event.callTime)}
               </span>
             )}
@@ -146,7 +146,7 @@ export const EventCard: React.FC<EventCardProps> = ({
               📍 {event.expand?.venue?.name || ''}
             </a>
           </div>
-          {event.details && <p className="text-text-muted text-sm">{event.details}</p>}
+          {event.details && <p className="text-sm text-text-muted">{event.details}</p>}
           {missStats && (() => {
             const styles = (() => {
               if (missStats.missed > maxRehearsalMisses) {
@@ -178,7 +178,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 
             return (
               <div 
-                className="mt-1 px-3 py-2 rounded-md text-sm flex items-center justify-between font-semibold"
+                className="mt-1 flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold"
                 // @allow-inline-style - Dynamic colors for attendance miss stats
                 style={{
                   backgroundColor: styles.containerBg,
@@ -190,7 +190,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                   Rehearsal Attendance: {missStats.missed} missed of {missStats.total} rehearsals
                 </span>
                 <span 
-                  className="inline-flex px-1.5 py-0.5 rounded text-xs font-bold border-none"
+                  className="inline-flex rounded border-none px-1.5 py-0.5 text-xs font-bold"
                   // @allow-inline-style - Dynamic color for miss stats limit badge
                   style={{
                     backgroundColor: styles.badgeBg,
@@ -204,7 +204,7 @@ export const EventCard: React.FC<EventCardProps> = ({
         </div>
 
         {previewData.visible && previewData.setList.length > 0 && (
-          <div className="p-4 border border-border rounded-xl my-2 bg-surface">
+          <div className="my-2 rounded-xl border border-border bg-surface p-4">
             <h5 className="m-0 mb-1 text-sm text-text-muted">
               📋 {previewData.label}
             </h5>
@@ -217,7 +217,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                   <li key={item.id || `${itemTitle}-${idx}`} className="mb-1">
                     <strong>{itemTitle}</strong>
                     {item.composer && (
-                      <span className="text-text-muted text-xs">
+                      <span className="text-xs text-text-muted">
                         {' '}— {item.composer}
                       </span>
                     )}
@@ -229,29 +229,29 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
 
         {isParentPerformanceDeclined ? (
-          <div className="text-center text-xs text-text-muted mt-1 w-full p-2.5 border border-dashed border-border rounded-md bg-bg">
+          <div className="mt-1 w-full rounded-md border border-dashed border-border bg-bg p-2.5 text-center text-xs text-text-muted">
             🚫 Excused (Parent Performance Declined)
           </div>
         ) : (
           <>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-4 w-full">
+            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
               <button 
                 onClick={() => handleRSVP('Yes')}
-                className={`inline-flex items-center justify-center rounded-md font-sans font-medium border cursor-pointer gap-2 whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 ${rsvp === 'Yes' ? 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md' : 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
+                className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-sans font-medium whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${rsvp === 'Yes' ? 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md' : 'border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
               </button>
               <button 
                 onClick={() => handleRSVP('No')}
-                className={`inline-flex items-center justify-center rounded-md font-sans font-medium border cursor-pointer gap-2 whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 ${rsvp === 'No' ? 'bg-danger-bg text-danger-text hover:bg-[#fecaca] hover:border-[#fca5a5]' : 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
+                className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-sans font-medium whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${rsvp === 'No' ? 'bg-danger-bg text-danger-text hover:border-[#fca5a5] hover:bg-[#fecaca]' : 'border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'No' ? 'Processing...' : labels.no}
               </button>
             </div>
             {isWindowClosed && (
-              <div className="mt-1 text-center text-xs text-text-muted w-full">
+              <div className="mt-1 w-full text-center text-xs text-text-muted">
                 {isPerformance 
                   ? 'The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.' 
                   : 'This rehearsal has already passed.'}

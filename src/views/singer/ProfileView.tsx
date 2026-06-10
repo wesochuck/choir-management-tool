@@ -204,12 +204,12 @@ export default function ProfileView() {
     loadProfile();
   };
 
-  if (isLoading) return <div className="container text-center pt-8">Loading profile...</div>;
+  if (isLoading) return <div className="container pt-8 text-center">Loading profile...</div>;
   if (!profile) return <div className="container p-5 text-red-600">{error || 'Profile not found'}</div>;
 
   return (
     <PageLayout title="My Profile" backTo="/" maxWidth="500px">
-      <div className="flex-col gap-8 py-8 items-center">
+      <div className="flex-col items-center gap-8 py-8">
 
         {/* Photo / Avatar */}
         <div className="flex flex-col items-center gap-2">
@@ -222,21 +222,21 @@ export default function ProfileView() {
               onSuccess={handlePhotoSuccess}
             />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-primary-light text-primary flex items-center justify-center text-5xl border-2 border-border">
+            <div className="flex size-24 items-center justify-center rounded-full border-2 border-border bg-primary-light text-5xl text-primary">
               👤
             </div>
           )}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="flex-col gap-4 w-full">
+        <form onSubmit={handleSave} className="w-full flex-col gap-4">
           <div className="flex-col gap-1">
             <label className="text-label">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="card w-full px-3 h-11 border border-border"
+              className="card h-11 w-full border border-border px-3"
             />
           </div>
 
@@ -247,48 +247,48 @@ export default function ProfileView() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="card w-full px-3 h-11 border border-border"
+              className="card h-11 w-full border border-border px-3"
             />
           </div>
 
           {user?.role === 'admin' && (
             <>
-              <label className="flex-row items-center gap-2 cursor-pointer my-1">
+              <label className="my-1 cursor-pointer flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveAttendanceReports}
                   onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
-                  className="accent-primary w-[18px] h-[18px] cursor-pointer shrink-0"
+                  className="size-[18px] shrink-0 cursor-pointer accent-primary"
                 />
                 <div className="flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive attendance reports</span>
-                  <span className="text-xs text-muted">Receive automated after-event reports for all events.</span>
+                  <span className="text-muted text-xs">Receive automated after-event reports for all events.</span>
                 </div>
               </label>
 
-              <label className="flex-row items-center gap-2 cursor-pointer my-1">
+              <label className="my-1 cursor-pointer flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveRsvpDeclineNotices}
                   onChange={(e) => setReceiveRsvpDeclineNotices(e.target.checked)}
-                  className="accent-primary w-[18px] h-[18px] cursor-pointer shrink-0"
+                  className="size-[18px] shrink-0 cursor-pointer accent-primary"
                 />
                 <div className="flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive RSVP decline notifications</span>
-                  <span className="text-xs text-muted">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
+                  <span className="text-muted text-xs">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
                 </div>
               </label>
 
-              <label className="flex-row items-center gap-2 cursor-pointer my-1">
+              <label className="my-1 cursor-pointer flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveAdminNotifications}
                   onChange={(e) => setReceiveAdminNotifications(e.target.checked)}
-                  className="accent-primary w-[18px] h-[18px] cursor-pointer shrink-0"
+                  className="size-[18px] shrink-0 cursor-pointer accent-primary"
                 />
                 <div className="flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive general admin notifications</span>
-                  <span className="text-xs text-muted">Receive automated general admin alerts and system notifications.</span>
+                  <span className="text-muted text-xs">Receive automated general admin alerts and system notifications.</span>
                 </div>
               </label>
             </>
@@ -301,36 +301,36 @@ export default function ProfileView() {
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="card w-full px-3 h-11 border border-border"
+                  className="card h-11 w-full border border-border px-3"
                 />
               </div>
 
               {/* Voice Part — read-only */}
               <div className="flex-col gap-1">
                 <label className="text-label">Voice Part</label>
-                <div className="card w-full px-3 h-11 border border-border flex items-center text-text-muted bg-bg">
+                <div className="card flex h-11 w-full items-center border border-border bg-bg px-3 text-text-muted">
                   {profile.voicePart}
                 </div>
-                <span className="text-xs text-muted">Contact your director to change voice part</span>
+                <span className="text-muted text-xs">Contact your director to change voice part</span>
               </div>
             </>
           ) : (
             <div className="flex-col gap-1">
               <label className="text-label">Role</label>
-              <div className="card w-full px-3 h-11 border border-border flex items-center text-text-muted bg-bg">
+              <div className="card flex h-11 w-full items-center border border-border bg-bg px-3 text-text-muted">
                 Administrator
               </div>
             </div>
           )}
 
           {error && (
-            <div className="text-danger-text bg-danger-bg p-2 px-4 rounded-md text-sm">
+            <div className="rounded-md bg-danger-bg p-2 px-4 text-sm text-danger-text">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="text-success-text bg-success-bg p-2 px-4 rounded-md text-sm">
+            <div className="rounded-md bg-success-bg p-2 px-4 text-sm text-success-text">
               Profile updated!
             </div>
           )}
@@ -342,13 +342,13 @@ export default function ProfileView() {
 
         {profile.id && (
           <AppCard title="📅 Calendar Sync" className="w-full">
-            <p className="text-xs text-muted m-0 mb-4">
+            <p className="text-muted m-0 mb-4 text-xs">
               Subscribe to your personalized choir calendar to sync performances, rehearsals, call times, and set lists directly to your personal Google, Apple, or Outlook calendar.
             </p>
 
             <div className="flex-col gap-4">
               {isCalendarLoading ? (
-                <div className="text-xs text-muted py-2">Loading feed links...</div>
+                <div className="text-muted py-2 text-xs">Loading feed links...</div>
               ) : calendarFeedUrls ? (
                 <div className="flex-col gap-4">
                   {/* Action 1: Subscribe in Calendar App (webcalUrl) */}
@@ -356,7 +356,7 @@ export default function ProfileView() {
                     <label className="text-label">Subscribe Directly</label>
                     <a
                       href={calendarFeedUrls.webcalUrl}
-                      className="btn btn-primary h-10 flex items-center justify-center no-underline text-center w-full"
+                      className="btn btn-primary flex h-10 w-full items-center justify-center text-center no-underline"
                     >
                       Subscribe in Calendar App
                     </a>
@@ -365,41 +365,41 @@ export default function ProfileView() {
                   {/* Action 2: Copy Google Calendar URL (httpsUrl) */}
                   <div className="flex-col gap-1">
                     <label className="text-label">Google Calendar Setup</label>
-                    <div className="flex-row gap-1 items-center w-full">
+                    <div className="w-full flex-row items-center gap-1">
                       <input
                         readOnly
                         value={calendarFeedUrls.httpsUrl}
-                        className="card flex-1 px-3 h-10 border border-border text-sm truncate"
+                        className="card h-10 flex-1 truncate border border-border px-3 text-sm"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <button
                         type="button"
                         onClick={handleCopyGoogleLink}
-                        className={`btn h-10 px-4 min-w-[180px] flex items-center justify-center ${isCopied ? 'btn-success' : 'btn-primary'}`}
+                        className={`btn flex h-10 min-w-[180px] items-center justify-center px-4 ${isCopied ? 'btn-success' : 'btn-primary'}`}
                       >
                         {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
                       </button>
                     </div>
-                    <span className="text-xs text-muted">
+                    <span className="text-muted text-xs">
                       For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="text-xs text-muted">Failed to load calendar link.</div>
+                <div className="text-muted text-xs">Failed to load calendar link.</div>
               )}
 
-              <div className="flex-row justify-start mt-1">
+              <div className="mt-1 flex-row justify-start">
                 <button
                   type="button"
                   onClick={handleResetLink}
-                  className="btn btn-ghost text-danger-text border border-danger-text text-sm px-4 rounded-md bg-transparent cursor-pointer"
+                  className="btn btn-ghost cursor-pointer rounded-md border border-danger-text bg-transparent px-4 text-sm text-danger-text"
                   disabled={isCalendarLoading}
                 >
                   Reset Calendar Link...
                 </button>
               </div>
-              <p className="text-xs text-muted m-0 italic">
+              <p className="text-muted m-0 text-xs italic">
                 Note: Resetting will invalidate any previous link you've set up on your devices.
                 {user?.role === 'admin' && !profile?.voicePart ? (
                   <> Because you are an administrative-only account, this link provides a <strong>master schedule</strong> of all choir rehearsals and performances.</>
@@ -413,7 +413,7 @@ export default function ProfileView() {
 
         {user?.role === 'admin' && (
           <AppCard title="View Preferences" className="w-full">
-            <p className="text-xs text-muted m-0">
+            <p className="text-muted m-0 text-xs">
               These settings customize how directories and rosters are ordered for your account across all your devices.
             </p>
 
@@ -423,7 +423,7 @@ export default function ProfileView() {
                 <select
                   value={user?.preferences?.rosterSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="card w-full px-3 h-11 border border-border"
+                  className="card h-11 w-full border border-border px-3"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part</option>
@@ -435,7 +435,7 @@ export default function ProfileView() {
                 <select
                   value={user?.preferences?.attendanceSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart' | 'section')}
-                  className="card w-full px-3 h-11 border border-border"
+                  className="card h-11 w-full border border-border px-3"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
@@ -448,7 +448,7 @@ export default function ProfileView() {
                 <select
                   value={user?.preferences?.rsvpSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="card w-full px-3 h-11 border border-border"
+                  className="card h-11 w-full border border-border px-3"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
@@ -456,7 +456,7 @@ export default function ProfileView() {
               </div>
 
               {prefSuccess && (
-                <div className="text-success-text bg-success-bg p-2 px-4 rounded-md text-sm text-center">
+                <div className="rounded-md bg-success-bg p-2 px-4 text-center text-sm text-success-text">
                   Preferences updated!
                 </div>
               )}

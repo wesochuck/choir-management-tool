@@ -50,7 +50,7 @@ export const EventList: React.FC<EventListProps> = ({
       {events.map((e) => (
         <div 
           key={e.id} 
-          className="flex flex-col md:flex-row relative-row clickable-row p-4 border-b border-border hover:bg-primary-light/50 cursor-pointer" 
+          className="relative-row clickable-row flex cursor-pointer flex-col border-b border-border p-4 hover:bg-primary-light/50 md:flex-row" 
           onClick={() => onEdit(e)}
           role="button"
           tabIndex={0}
@@ -64,11 +64,11 @@ export const EventList: React.FC<EventListProps> = ({
         >
           <div className="event-list-details flex flex-col gap-4">
             <div className="event-list-header flex items-center gap-1">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${e.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+              <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${e.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
                 {e.type}
               </span>
               {openAuditionEventId === e.id && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text">
+                <span className="inline-flex items-center rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">
                   🎵 Auditions Open
                 </span>
               )}
@@ -76,7 +76,7 @@ export const EventList: React.FC<EventListProps> = ({
                 {formatInTimezone(e.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
               {e.callTime && (
-                <span className="inline-flex items-center gap-1 bg-[#eef2ff] text-[#4338ca] border border-[#c7d2fe] font-bold text-xs px-[6px] py-[1px] rounded">
+                <span className="inline-flex items-center gap-1 rounded border border-[#c7d2fe] bg-[#eef2ff] px-[6px] py-[1px] text-xs font-bold text-[#4338ca]">
                   📢 Call: {formatTime12h(e.callTime)}
                 </span>
               )}
@@ -95,7 +95,7 @@ export const EventList: React.FC<EventListProps> = ({
             </div>
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <div className="flex items-center gap-2 relative">
+          <div className="relative flex items-center gap-2">
             <button
               onClick={(event) => {
                 event.stopPropagation();
@@ -137,7 +137,7 @@ export const EventList: React.FC<EventListProps> = ({
                   event.stopPropagation();
                   setActiveDropdownId(activeDropdownId === e.id ? null : e.id);
                 }}
-                className="btn btn-secondary btn-sm w-8 h-8 p-0 rounded-full flex items-center justify-center font-extrabold text-base border border-border"
+                className="btn btn-secondary btn-sm flex size-8 items-center justify-center rounded-full border border-border p-0 text-base font-extrabold"
                 title="More Actions"
               >
                 ⋮
@@ -145,7 +145,7 @@ export const EventList: React.FC<EventListProps> = ({
 
               {activeDropdownId === e.id && (
                 <div 
-                  className="dropdown-menu shadow-lg absolute right-0 top-full mt-1.5 w-[180px] bg-surface border border-border rounded-md p-1.5 z-[250] flex flex-col gap-0.5"
+                  className="dropdown-menu absolute top-full right-0 z-[250] mt-1.5 flex w-[180px] flex-col gap-0.5 rounded-md border border-border bg-surface p-1.5 shadow-lg"
                 >
                   {onOpenPlayer && (
                     <button
@@ -154,7 +154,7 @@ export const EventList: React.FC<EventListProps> = ({
                         setActiveDropdownId(null);
                         onOpenPlayer(e);
                       }}
-                      className="dropdown-item btn-sm flex items-center gap-2 w-full px-4 py-2 border-0 bg-transparent text-text text-left cursor-pointer text-[13px] font-semibold transition-colors duration-150 hover:bg-primary-light"
+                      className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-primary-light"
                     >
                       🎧 Practice Player
                     </button>
@@ -165,7 +165,7 @@ export const EventList: React.FC<EventListProps> = ({
                       setActiveDropdownId(null);
                       onSendMessage(e);
                     }}
-                    className="dropdown-item btn-sm flex items-center gap-2 w-full px-4 py-2 border-0 bg-transparent text-text text-left cursor-pointer text-[13px] font-semibold transition-colors duration-150 hover:bg-primary-light"
+                    className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-primary-light"
                   >
                     ✉️ Send Message
                   </button>
@@ -176,19 +176,19 @@ export const EventList: React.FC<EventListProps> = ({
                         setActiveDropdownId(null);
                         onClone(e);
                       }}
-                      className="dropdown-item btn-sm flex items-center gap-2 w-full px-4 py-2 border-0 bg-transparent text-text text-left cursor-pointer text-[13px] font-semibold transition-colors duration-150 hover:bg-primary-light"
+                      className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-primary-light"
                     >
                       👯 Clone Performance
                     </button>
                   )}
-                  <hr className="border-0 border-t border-border my-1" />
+                  <hr className="my-1 border-0 border-t border-border" />
                   <button 
                     onClick={(event) => {
                       event.stopPropagation();
                       setActiveDropdownId(null);
                       onEdit(e);
                     }}
-                    className="dropdown-item btn-sm flex items-center gap-2 w-full px-4 py-2 border-0 bg-transparent text-left cursor-pointer text-[13px] transition-colors duration-150 hover:bg-primary-light text-primary-deep font-bold"
+                    className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-bold text-primary-deep transition-colors duration-150 hover:bg-primary-light"
                   >
                     ✏️ Edit Event
                   </button>

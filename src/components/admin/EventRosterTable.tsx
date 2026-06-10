@@ -33,7 +33,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
 }) => {
   return (
     <AppCard noPadding>
-      <div className="overflow-x-auto w-full">
+      <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
             <tr>
@@ -67,7 +67,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onSingerClick(p)}
-                          className="bg-transparent border-0 p-0 m-0 font-[inherit] text-primary-deep font-semibold cursor-pointer text-left transition-colors duration-150 hover:text-primary hover:underline"
+                          className="m-0 cursor-pointer border-0 bg-transparent p-0 text-left font-[inherit] font-semibold text-primary-deep transition-colors duration-150 hover:text-primary hover:underline"
                         >
                           {p.name}
                         </button>
@@ -82,7 +82,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                   <td data-label="Missed Rehearsals" className="text-center">
                     {missCounts && missCounts[p.id] !== undefined && missCounts[p.id] > 0 ? (
                       <span
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider"
+                        className="inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase"
                         style={{ // @allow-inline-style - miss count color coding
                           fontSize: '9px',
                           padding: '2px 6px',
@@ -107,14 +107,14 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                         size="sm"
                       />
                       {s.roster?.rsvpNote && s.rsvp === 'No' && (
-                        <div className="text-xs text-text-muted max-w-[160px] leading-tight italic font-normal">
+                        <div className="max-w-[160px] text-xs leading-tight font-normal text-text-muted italic">
                           "{s.roster.rsvpNote}"
                         </div>
                       )}
                     </div>
                   </td>
                   <td data-label="Actions" className="text-right">
-                    <div className="flex-row gap-1.5 justify-end items-center">
+                    <div className="flex-row items-center justify-end gap-1.5">
                       <button
                         type="button"
                         disabled={isUpdating}

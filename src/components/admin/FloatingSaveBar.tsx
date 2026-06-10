@@ -10,8 +10,8 @@ export function FloatingSaveBar({ isDirty, isSaving, onSave, onDiscard }: Floati
   if (!isDirty) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-surface border border-border rounded-md shadow-xl px-6 py-3 flex items-center gap-6 z-[1000] w-[calc(100%-48px)] max-w-[600px]">
-      <div className="flex items-center gap-2 flex-1">
+    <div className="fixed bottom-6 left-1/2 z-[1000] flex w-[calc(100%-48px)] max-w-[600px] -translate-x-1/2 items-center gap-6 rounded-md border border-border bg-surface px-6 py-3 shadow-xl">
+      <div className="flex flex-1 items-center gap-2">
         <span className="text-sm font-semibold text-text">
           ⚠️ You have unsaved configuration changes.
         </span>

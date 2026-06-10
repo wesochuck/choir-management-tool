@@ -182,8 +182,8 @@ export default function PatronsView() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6 flex flex-col md:flex-row">
+    <div className="mx-auto max-w-7xl p-6">
+      <div className="mb-6 flex flex flex-col items-center justify-between md:flex-row">
         <div>
           <h1 className="text-display">Patrons Dashboard</h1>
           <p className="text-muted text-sm">View lifetime value and message your donors and ticket buyers.</p>
@@ -199,14 +199,14 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <div className="card p-4 bg-bg">
-        <div className="flex justify-around h-full items-center">
+      <div className="card bg-bg p-4">
+        <div className="flex h-full items-center justify-around">
           <div className="flex flex-col gap-1 text-center">
-            <span className="text-sm text-text-muted font-bold uppercase tracking-wider">Patrons</span>
+            <span className="text-sm font-bold tracking-wider text-text-muted uppercase">Patrons</span>
             <span className="text-headline font-bold">{filteredStats.count}</span>
           </div>
           <div className="flex flex-col gap-1 text-center">
-            <span className="text-sm text-text-muted font-bold uppercase tracking-wider">Total LTV</span>
+            <span className="text-sm font-bold tracking-wider text-text-muted uppercase">Total LTV</span>
             <span className="text-headline font-bold text-primary">
               ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
@@ -216,29 +216,29 @@ export default function PatronsView() {
 
       <AppCard title="Patron Directory">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center w-full flex-wrap max-md:flex-col max-md:items-stretch">
-            <div className="flex-1 min-w-[200px] w-full">
+          <div className="flex w-full flex-col flex-wrap items-center gap-4 max-md:flex-col max-md:items-stretch md:flex-row">
+            <div className="w-full min-w-[200px] flex-1">
               <input 
                 type="text"
                 placeholder="Search by name or email..."
-                className="card w-full px-3 h-10 border border-border"
+                className="card h-10 w-full border border-border px-3"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex-1 min-w-[150px]">
+            <div className="min-w-[150px] flex-1">
               <input 
                 type="date" 
-                className="card w-full px-3 h-10 border border-border cursor-pointer"
+                className="card h-10 w-full cursor-pointer border border-border px-3"
                 value={startDate}
                 onChange={e => handleSetStartDate(e.target.value)}
                 placeholder="Last Transaction From"
               />
             </div>
-            <div className="flex-1 min-w-[150px]">
+            <div className="min-w-[150px] flex-1">
               <input 
                 type="date" 
-                className="card w-full px-3 h-10 border border-border cursor-pointer"
+                className="card h-10 w-full cursor-pointer border border-border px-3"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 placeholder="To"
@@ -246,7 +246,7 @@ export default function PatronsView() {
             </div>
             <div className="min-w-[200px]">
               <select 
-                className="card w-full px-3 h-10 border border-border cursor-pointer"
+                className="card h-10 w-full cursor-pointer border border-border px-3"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
               >
@@ -260,10 +260,10 @@ export default function PatronsView() {
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="border-collapse w-full min-w-[600px] text-left">
+            <table className="w-full min-w-[600px] border-collapse text-left">
             <thead>
-              <tr className="border-b-2 border-border text-text-muted text-sm">
-                <th className="p-3 w-12 text-center">
+              <tr className="border-b-2 border-border text-sm text-text-muted">
+                <th className="w-12 p-3 text-center">
                   <input 
                     type="checkbox" 
                     checked={filteredPatrons.length > 0 && selectedIds.size === filteredPatrons.length}
@@ -280,12 +280,12 @@ export default function PatronsView() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center p-8">Loading patrons...</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center">Loading patrons...</td></tr>
               ) : filteredPatrons.length === 0 ? (
-                <tr><td colSpan={7} className="text-center p-8 flex flex-col items-center justify-center py-12 text-text-muted">No patrons found matching your search.</td></tr>
+                <tr><td colSpan={7} className="flex flex-col items-center justify-center p-8 py-12 text-center text-text-muted">No patrons found matching your search.</td></tr>
               ) : filteredPatrons.map(p => (
-                <tr key={p.profile.id} className="border-b border-border text-sm cursor-pointer hover:bg-primary-light" onClick={() => handleOpenProfile(p.profile)}>
-                  <td className="p-3 w-12 text-center" onClick={e => e.stopPropagation()}>
+                <tr key={p.profile.id} className="cursor-pointer border-b border-border text-sm hover:bg-primary-light" onClick={() => handleOpenProfile(p.profile)}>
+                  <td className="w-12 p-3 text-center" onClick={e => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
                       checked={selectedIds.has(p.profile.id)}
@@ -293,11 +293,11 @@ export default function PatronsView() {
                     />
                   </td>
                   <td className="p-3 font-semibold">{p.profile.name}</td>
-                  <td className="p-3 text-sm text-muted">
+                  <td className="text-muted p-3 text-sm">
                     {p.profile.expand?.user?.email || 'No email'}
                   </td>
                   <td className="p-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${p.isSinger ? 'bg-[#e6fffa] text-[#2c7a7b]' : 'bg-transparent text-text-muted'}`}>
+                    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${p.isSinger ? 'bg-[#e6fffa] text-[#2c7a7b]' : 'bg-transparent text-text-muted'}`}>
                       {p.isSinger ? 'Singer' : 'Patron'}
                     </span>
                   </td>
@@ -307,7 +307,7 @@ export default function PatronsView() {
                   <td className="p-3 text-sm">
                     {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="p-3 text-right text-muted">{p.transactionCount}</td>
+                  <td className="text-muted p-3 text-right">{p.transactionCount}</td>
                 </tr>
               ))}
             </tbody>

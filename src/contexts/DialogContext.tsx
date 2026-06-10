@@ -107,7 +107,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
       {toast && (
         <div
           key={toast.id}
-          className="fixed bottom-6 right-6 z-[9999] bg-[var(--text-color,#1f2937)] text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2 text-xs font-medium border border-white/10 backdrop-blur pointer-events-none animate-toast-slide-in"
+          className="pointer-events-none fixed right-6 bottom-6 z-[9999] flex animate-toast-slide-in items-center gap-2 rounded-lg border border-white/10 bg-[var(--text-color,#1f2937)] px-5 py-3 text-xs font-medium text-white shadow-lg backdrop-blur"
         >
           <span className="text-sm">ℹ️</span>
           <span>{toast.message}</span>

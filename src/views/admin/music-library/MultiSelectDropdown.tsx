@@ -189,16 +189,16 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
     return (
         <div 
-            className={`relative inline-flex flex-col w-full min-w-[180px] ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+            className={`relative inline-flex w-full min-w-[180px] flex-col ${disabled ? 'pointer-events-none opacity-60' : ''}`}
             ref={containerRef}
         >
-            {label && <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">{label}</label>}
+            {label && <label className="mb-1.5 text-xs font-semibold tracking-wider text-gray-500 uppercase">{label}</label>}
             
             {/* TRIGGER: chips variant shows inline tags */}
             {isChips ? (
                 <button
                     type="button"
-                    className={`flex items-center justify-between w-full min-h-10 px-3.5 py-1.5 flex-wrap gap-1 bg-white border border-gray-200 rounded-lg cursor-pointer text-left transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--primary-light)] card ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--primary-light)]' : ''}`}
+                    className={`card flex min-h-10 w-full cursor-pointer flex-wrap items-center justify-between gap-1 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-left transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--primary-light)]' : ''}`}
                     onClick={toggleDropdown}
                     disabled={disabled}
                     aria-haspopup="listbox"
@@ -206,17 +206,17 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     aria-label={ariaLabel || label || 'Multi-select dropdown'}
                 >
                     {selectedOptions.length === 0 ? (
-                        <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] font-medium text-gray-400 flex-1 mr-2">
+                        <span className="mr-2 flex-1 truncate text-[13.5px] font-medium text-gray-400">
                             {allLabel}
                         </span>
                     ) : (
-                        <span className="flex flex-wrap gap-1 flex-1 items-center">
+                        <span className="flex flex-1 flex-wrap items-center gap-1">
                             {selectedOptions.map(opt => {
                                 const color = chipColorMap.get(opt.id) || CHIP_COLORS[0];
                                 return (
                                     <span
                                         key={opt.id}
-                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-[11.5px] font-semibold leading-tight whitespace-nowrap transition-opacity duration-150"
+                                        className="inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11.5px] leading-tight font-semibold whitespace-nowrap transition-opacity duration-150"
                                         // @allow-inline-style - Chip colors are dynamic and stable based on option mapping.
                                         style={{
                                             backgroundColor: color.bg,
@@ -228,7 +228,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                         <span
                                             role="button"
                                             tabIndex={0}
-                                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-sm leading-none cursor-pointer opacity-55 hover:opacity-100 hover:bg-black/8 transition-opacity duration-150 ml-0.5"
+                                            className="ml-0.5 inline-flex size-3.5 cursor-pointer items-center justify-center rounded-full text-sm leading-none opacity-55 transition-opacity duration-150 hover:bg-black/8 hover:opacity-100"
                                             onClick={(e) => handleRemoveChip(e, opt.id)}
                                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleRemoveChip(e as unknown as React.MouseEvent, opt.id); }}
                                             aria-label={`Remove ${opt.label}`}
@@ -240,39 +240,39 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             })}
                         </span>
                     )}
-                    <span className="text-[10px] text-gray-500 transition-transform duration-200 flex-shrink-0" aria-hidden="true">
+                    <span className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200" aria-hidden="true">
                         {isOpen ? '▴' : '▾'}
                     </span>
                 </button>
             ) : (
                 <button
                     type="button"
-                    className={`flex items-center justify-between w-full h-10 px-3.5 bg-white border border-gray-200 rounded-lg cursor-pointer text-left transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--primary-light)] card ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--primary-light)]' : ''}`}
+                    className={`card flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-3.5 text-left transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--primary-light)]' : ''}`}
                     onClick={toggleDropdown}
                     disabled={disabled}
                     aria-haspopup="listbox"
                     aria-expanded={isOpen}
                     aria-label={ariaLabel || label || 'Multi-select dropdown'}
                 >
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] font-medium text-gray-800 flex-1 mr-2" title={getSummaryText()}>
+                    <span className="mr-2 flex-1 truncate text-[13.5px] font-medium text-gray-800" title={getSummaryText()}>
                         {getSummaryText()}
                     </span>
-                    <span className="text-[10px] text-gray-500 transition-transform duration-200 flex-shrink-0" aria-hidden="true">
+                    <span className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200" aria-hidden="true">
                         {isOpen ? '▴' : '▾'}
                     </span>
                 </button>
             )}
 
             {isOpen && (
-                <div className="absolute top-[calc(100%+6px)] left-0 w-full min-w-[240px] max-h-[350px] bg-white border border-gray-200 rounded-lg shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.05)] z-50 flex flex-col overflow-hidden animate-fade-in" role="listbox">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-200 bg-gray-50">
-                        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="animate-fade-in absolute top-[calc(100%+6px)] left-0 z-50 flex max-h-[350px] w-full min-w-[240px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.05)]" role="listbox">
+                    <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3.5 py-2.5">
+                        <span className="text-[11px] font-semibold tracking-wider text-gray-500 uppercase">
                             {selectedIds.length} selected
                         </span>
                         {selectedIds.length > 0 && (
                             <button
                                 type="button"
-                                className="bg-none border-none text-[11px] font-semibold text-red-500 cursor-pointer px-1.5 py-0.5 rounded transition-all duration-150 hover:bg-red-500/8"
+                                className="cursor-pointer rounded border-none bg-none px-1.5 py-0.5 text-[11px] font-semibold text-red-500 transition-all duration-150 hover:bg-red-500/8"
                                 onClick={handleClearAll}
                             >
                                 Clear All
@@ -282,11 +282,11 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
                     {/* Search/filter input */}
                     {searchable && (
-                        <div className="flex items-center px-3 py-2 border-b border-gray-200 relative">
+                        <div className="relative flex items-center border-b border-gray-200 px-3 py-2">
                             <input
                                 ref={searchInputRef}
                                 type="text"
-                                className="w-full h-7.5 px-2.5 pr-7 text-xs border border-gray-200 rounded bg-white outline-none transition-colors duration-150 focus:border-primary placeholder:text-gray-400"
+                                className="h-7.5 w-full rounded border border-gray-200 bg-white px-2.5 pr-7 text-xs transition-colors duration-150 outline-none placeholder:text-gray-400 focus:border-primary"
                                 placeholder="Filter..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -304,7 +304,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             {searchQuery && (
                                 <button
                                     type="button"
-                                    className="absolute right-[18px] top-1/2 -translate-y-1/2 bg-none border-none text-base text-gray-400 cursor-pointer px-0.5 leading-none transition-colors duration-150 hover:text-gray-800"
+                                    className="absolute top-1/2 right-[18px] -translate-y-1/2 cursor-pointer border-none bg-none px-0.5 text-base leading-none text-gray-400 transition-colors duration-150 hover:text-gray-800"
                                     onClick={() => setSearchQuery('')}
                                     aria-label="Clear search"
                                 >
@@ -314,7 +314,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                         </div>
                     )}
 
-                    <div className="flex-1 overflow-y-auto max-h-[220px] py-1.5">
+                    <div className="max-h-[220px] flex-1 overflow-y-auto py-1.5">
                         {isChips ? (
                             <>
                                 {filteredOptions.length > 0 ? (
@@ -326,7 +326,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                                 <button
                                                     key={option.id}
                                                     type="button"
-                                                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border-[1.5px] bg-white text-xs font-medium text-gray-500 cursor-pointer select-none transition-all duration-180 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--primary-light)] ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : ''}`}
+                                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--primary-light)] ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : ''}`}
                                                     role="option"
                                                     aria-selected={isChecked}
                                                     onClick={() => handleOptionToggle(option.id)}
@@ -337,7 +337,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                                         color: color.text,
                                                     } : undefined}
                                                 >
-                                                    {isChecked && <span className="text-[10px] font-bold leading-none" aria-hidden="true">✓</span>}
+                                                    {isChecked && <span className="text-[10px] leading-none font-bold" aria-hidden="true">✓</span>}
                                                     {option.label}
                                                 </button>
                                             );
@@ -356,7 +356,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                     return (
                                         <label 
                                             key={option.id} 
-                                            className={`flex items-center px-3.5 py-1 cursor-pointer transition-all duration-150 select-none hover:bg-gray-50 ${isChecked ? 'bg-primary-light hover:bg-primary-light/80' : ''}`}
+                                            className={`flex cursor-pointer items-center px-3.5 py-1 transition-all duration-150 select-none hover:bg-gray-50 ${isChecked ? 'bg-primary-light hover:bg-primary-light/80' : ''}`}
                                             role="option"
                                             aria-selected={isChecked}
                                         >
@@ -364,9 +364,9 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                                 type="checkbox"
                                                 checked={isChecked}
                                                 onChange={() => handleOptionToggle(option.id)}
-                                                className="w-4 h-4 mr-2.5 accent-primary cursor-pointer border border-gray-200 rounded"
+                                                className="mr-2.5 size-4 cursor-pointer rounded border border-gray-200 accent-primary"
                                             />
-                                            <span className={`text-xs font-medium text-gray-800 ${isChecked ? 'text-primary font-semibold' : ''}`}>
+                                            <span className={`text-xs font-medium text-gray-800 ${isChecked ? 'font-semibold text-primary' : ''}`}>
                                                 {option.label}
                                             </span>
                                         </label>
@@ -382,11 +382,11 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     </div>
 
                     {allowCreate && onCreateOption && (
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 border-t border-gray-200 bg-gray-50">
+                        <div className="flex items-center gap-2 border-t border-gray-200 bg-gray-50 px-3.5 py-2.5">
                             <input
                                 ref={inputRef}
                                 type="text"
-                                className="flex-1 h-8 px-2.5 text-xs border border-gray-200 rounded bg-white outline-none transition-colors duration-150 focus:border-primary card"
+                                className="card h-8 flex-1 rounded border border-gray-200 bg-white px-2.5 text-xs transition-colors duration-150 outline-none focus:border-primary"
                                 placeholder="Add new..."
                                 value={newOptionLabel}
                                 onChange={e => setNewOptionLabel(e.target.value)}
@@ -401,7 +401,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             />
                             <button
                                 type="button"
-                                className="btn btn-secondary btn-sm h-8 min-h-8 px-3 text-xs inline-flex items-center justify-center rounded"
+                                className="btn btn-secondary btn-sm inline-flex h-8 min-h-8 items-center justify-center rounded px-3 text-xs"
                                 onClick={handleCreateOption}
                                 disabled={isCreating || !newOptionLabel.trim()}
                             >
@@ -410,10 +410,10 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                         </div>
                     )}
 
-                    <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 flex justify-end">
+                    <div className="flex justify-end border-t border-gray-200 bg-gray-50 px-3 py-2">
                         <button
                             type="button"
-                            className="px-[18px] py-1.5 text-xs font-semibold text-white bg-primary border-none rounded cursor-pointer transition-colors duration-150 hover:bg-primary-dark hover:shadow-[0_1px_4px_rgba(0,0,0,0.12)] focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="hover:bg-primary-dark cursor-pointer rounded border-none bg-primary px-[18px] py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:shadow-[0_1px_4px_rgba(0,0,0,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                             onClick={() => setIsOpen(false)}
                         >
                             Done

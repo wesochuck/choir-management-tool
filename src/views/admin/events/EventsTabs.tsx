@@ -15,7 +15,7 @@ export function EventsTabs({
 }: EventsTabsProps) {
   return (
     <div
-      className="flex flex-col md:flex-row justify-between items-center px-1 gap-4 flex-wrap mb-4 border-b border-border pb-1"
+      className="mb-4 flex flex-col flex-wrap items-center justify-between gap-4 border-b border-border px-1 pb-1 md:flex-row"
     >
       {/* Tab buttons */}
       <div className="flex-row gap-2">
@@ -31,12 +31,12 @@ export function EventsTabs({
       </div>
 
       {/* Show past checkbox */}
-      <label className="flex-row items-center gap-2 cursor-pointer select-none text-sm font-semibold text-text-muted">
+      <label className="cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-text-muted select-none">
         <input
           type="checkbox"
           checked={showPastEvents}
           onChange={(e) => setShowPastEvents(e.target.checked)}
-          className="w-4 h-4 accent-primary cursor-pointer"
+          className="size-4 cursor-pointer accent-primary"
         />
         <span>Show past events</span>
       </label>

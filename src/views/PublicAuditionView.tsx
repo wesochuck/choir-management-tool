@@ -99,21 +99,21 @@ export default function PublicAuditionView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen justify-center items-center w-screen">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center">
         <p className="text-text-muted">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen justify-start items-center w-screen p-4">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
       <PublicLogo />
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <Link to="/login" className="btn btn-ghost btn-sm self-start">Admin Login</Link>
           <h1 className="text-display m-0">Choir Auditions</h1>
           {!submitted && (
-            <p className="text-text-muted m-0">
+            <p className="m-0 text-text-muted">
               Choose an audition time and share the best way to reach you.
             </p>
           )}
@@ -127,18 +127,18 @@ export default function PublicAuditionView() {
                 ? "Auditions are not currently scheduled for an upcoming performance."
                 : "Audition requests are closed right now. Please check back later."}
             </p>
-            <p className="text-text-muted text-sm">Please check our social media or website for the next audition announcement.</p>
+            <p className="text-sm text-text-muted">Please check our social media or website for the next audition announcement.</p>
           </div>
         ) : submitted ? (
           <div className="flex flex-col gap-4 py-4">
-            <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text self-start">Request Sent</div>
+            <div className="inline-flex items-center self-start rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">Request Sent</div>
             <p className="text-body m-0">
               {settings.confirmationMessage}
             </p>
             {homepageUrl && (
               <a 
                 href={homepageUrl} 
-                className="btn btn-primary self-start mt-4 no-underline inline-flex items-center gap-1.5"
+                className="btn btn-primary mt-4 inline-flex items-center gap-1.5 self-start no-underline"
               >
                 🏠 Visit our Homepage
               </a>
@@ -146,10 +146,10 @@ export default function PublicAuditionView() {
           </div>
         ) : (
           <div className="flex flex-col gap-8">
-            <div className="card p-0 overflow-hidden bg-primary-light">
+            <div className="card overflow-hidden bg-primary-light p-0">
               <button 
                 onClick={() => setIsScheduleExpanded(!isScheduleExpanded)}
-                className="w-full px-6 py-4 flex flex-row justify-between border-none bg-none cursor-pointer text-left"
+                className="flex w-full cursor-pointer flex-row justify-between border-none bg-none px-6 py-4 text-left"
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="text-label text-primary-deep">CONCERT DETAILS & SCHEDULE</span>
@@ -163,19 +163,19 @@ export default function PublicAuditionView() {
 
               {isScheduleExpanded && (
                 <div className="px-6 pb-6">
-                  <div className="flex flex-col gap-4 p-4 bg-surface rounded-lg">
+                  <div className="flex flex-col gap-4 rounded-lg bg-surface p-4">
                     <div>
                       <h3 className="m-0 text-primary-deep">{targetPerformance.title}</h3>
-                      <p className="text-sm m-0">
+                      <p className="m-0 text-sm">
                         Performance: <strong>{formatInTimezone(targetPerformance.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</strong>
                       </p>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <span className="text-xs text-text-muted font-bold uppercase">Rehearsal Schedule</span>
+                      <span className="text-xs font-bold text-text-muted uppercase">Rehearsal Schedule</span>
                       <div className="flex flex-col gap-1">
                         {rehearsals.length > 0 ? rehearsals.map((rehearsal) => (
-                          <div key={rehearsal.id} className="flex flex-col md:flex-row text-xs justify-between py-1 border-b border-border">
+                          <div key={rehearsal.id} className="flex flex-col justify-between border-b border-border py-1 text-xs md:flex-row">
                             <span>{formatInTimezone(rehearsal.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })} - {formatInTimezone(rehearsal.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
                             <span className="text-text-muted">{rehearsal.title}</span>
                           </div>
@@ -198,10 +198,10 @@ export default function PublicAuditionView() {
                 <label className="text-label">Email or Phone</label>
                 <input className="card px-3" value={contact} onChange={(e) => setContact(e.target.value)} required />
               </div>
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 flex flex-col gap-1">
+              <div className="flex flex-col gap-4 md:flex-row">
+                <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Voice Part</label>
-                  <select className="card px-3 h-11" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
+                  <select className="card h-11 px-3" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
                     <option value="">Not sure yet</option>
                     {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>
@@ -211,17 +211,17 @@ export default function PublicAuditionView() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-label">Available Audition Times (Select all that apply)</label>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 bg-neutral-bg p-4 rounded-lg border border-border">
+                <div className="bg-neutral-bg grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border border-border p-4">
                   {(settings.slots || []).map((slot) => {
                     const isChecked = requestedSlots.includes(slot);
                     return (
                       <label 
                         key={slot} 
-                        className={`flex items-center gap-2.5 p-3 rounded-sm border cursor-pointer select-none transition-all ${isChecked ? 'border-primary bg-[rgba(74,117,89,0.05)]' : 'border-border bg-surface'}`}
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-sm border p-3 transition-all select-none ${isChecked ? 'border-primary bg-[rgba(74,117,89,0.05)]' : 'border-border bg-surface'}`}
                       >
                         <input 
                           type="checkbox" 
-                          className="w-[18px] h-[18px] accent-primary cursor-pointer"
+                          className="size-[18px] cursor-pointer accent-primary"
                           checked={isChecked}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -239,7 +239,7 @@ export default function PublicAuditionView() {
                     );
                   })}
                   {(!settings.slots || settings.slots.length === 0) && (
-                    <span className="text-text-muted text-sm col-span-full text-center py-3">
+                    <span className="col-span-full py-3 text-center text-sm text-text-muted">
                       No time slots are currently configured. Please contact the administrator.
                     </span>
                   )}
@@ -248,12 +248,12 @@ export default function PublicAuditionView() {
               <div className="flex flex-col gap-1">
                 <label className="text-label">Experience / Musical Background</label>
                 <textarea
-                  className="card min-h-[120px] p-3 resize-y"
+                  className="card min-h-[120px] resize-y p-3"
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                 />
               </div>
-              {error && <p className="text-danger-text m-0">{error}</p>}
+              {error && <p className="m-0 text-danger-text">{error}</p>}
               <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Request Audition'}
               </button>

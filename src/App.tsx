@@ -74,7 +74,7 @@ const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) return <div className="container app-loading-container">Loading...</div>;
+  if (isLoading) return <div className="app-loading-container container">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
 
   const role = user.role || 'singer';
@@ -100,7 +100,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="container app-loading-container">
+        <div className="app-loading-container container">
           <h1>Something went wrong.</h1>
           <p>
             The app may have been updated while your browser still had an older version cached.
@@ -121,7 +121,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <Suspense fallback={<div className="container app-loading-container">Loading...</div>}>
+        <Suspense fallback={<div className="app-loading-container container">Loading...</div>}>
           <Routes>
           <Route path="/login" element={<LoginView />} />
           <Route path="/reset-password" element={<ResetPasswordView />} />

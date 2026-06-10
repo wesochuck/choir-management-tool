@@ -193,34 +193,34 @@ export default function PublicRsvpView() {
   const renderEventCard = (titleClass?: string) => {
     if (!event) return null;
     return (
-      <div className="flex flex-col gap-2 bg-neutral-bg border border-border p-4 sm:p-5 rounded-xl">
-        <span className={`inline-flex items-center self-start text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${event.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+      <div className="bg-neutral-bg flex flex-col gap-2 rounded-xl border border-border p-4 sm:p-5">
+        <span className={`inline-flex items-center self-start rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${event.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
           {event.type}
         </span>
         <h2 className={`text-headline m-0 text-lg font-bold ${titleClass || ''}`}>
           {event.title || `${event.type} at ${event.expand?.venue?.name || 'Venue'}`}
         </h2>
         
-        <div className="flex flex-col gap-1.5 text-sm text-text-muted mt-1">
-          <div className="flex gap-2 items-center">
+        <div className="mt-1 flex flex-col gap-1.5 text-sm text-text-muted">
+          <div className="flex items-center gap-2">
             <span>📅</span>
             <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
             <span>⏰</span>
             <span>{formatInTimezone(event.date, timezone, { hour: 'numeric', minute: '2-digit' })}</span>
           </div>
-          <div className="flex gap-2 items-start">
+          <div className="flex items-start gap-2">
             <span>📍</span>
             <span>
               <strong>{event.expand?.venue?.name || event.location}</strong>
-              {event.expand?.venue?.address && <span className="block text-xs text-text-muted mt-0.5">{event.expand?.venue?.address}</span>}
+              {event.expand?.venue?.address && <span className="mt-0.5 block text-xs text-text-muted">{event.expand?.venue?.address}</span>}
             </span>
           </div>
         </div>
 
         {event.details && (
-          <div className="border-t border-border pt-2.5 mt-2.5 text-xs text-text-muted leading-relaxed whitespace-pre-wrap">
+          <div className="mt-2.5 border-t border-border pt-2.5 text-xs leading-relaxed whitespace-pre-wrap text-text-muted">
             {event.details}
           </div>
         )}
@@ -232,12 +232,12 @@ export default function PublicRsvpView() {
     if (rehearsals.length === 0) return null;
 
     return (
-      <div className="border border-border rounded-xl overflow-hidden mt-1">
+      <div className="mt-1 overflow-hidden rounded-xl border border-border">
         <button 
           onClick={() => setShowRehearsals(!showRehearsals)}
-          className="w-full px-4 py-3 flex justify-between items-center bg-neutral-bg border-none cursor-pointer text-left"
+          className="bg-neutral-bg flex w-full cursor-pointer items-center justify-between border-none px-4 py-3 text-left"
         >
-          <h3 className="text-label font-extrabold uppercase text-primary-deep text-xs tracking-wider m-0">
+          <h3 className="text-label m-0 text-xs font-extrabold tracking-wider text-primary-deep uppercase">
             📅 Rehearsal Schedule ({rehearsals.length})
           </h3>
           <span className={`text-xs text-text-muted transition-transform ${showRehearsals ? 'rotate-180' : ''}`}>
@@ -246,25 +246,25 @@ export default function PublicRsvpView() {
         </button>
 
         {showRehearsals && (
-          <div className="flex flex-col gap-2 p-3 bg-surface border-t border-border">
+          <div className="flex flex-col gap-2 border-t border-border bg-surface p-3">
             {rehearsals.map((reh) => {
               return (
-                <div key={reh.id} className="flex justify-between items-center bg-bg border border-border p-2 px-3 rounded-lg text-xs">
+                <div key={reh.id} className="flex items-center justify-between rounded-lg border border-border bg-bg p-2 px-3 text-xs">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold">
                       {formatInTimezone(reh.date, timezone, { month: 'short', day: 'numeric', weekday: 'short' })}
                     </span>
-                    <span className="text-text-muted text-[0.7rem]">
+                    <span className="text-[0.7rem] text-text-muted">
                       📍 {reh.expand?.venue?.name || 'Rehearsal Venue'}
                     </span>
                   </div>
-                  <span className="text-text-muted font-medium">
+                  <span className="font-medium text-text-muted">
                     {formatInTimezone(reh.date, timezone, { hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
               );
             })}
-            <p className="text-text-muted text-xs text-center mt-1 m-0">
+            <p className="m-0 mt-1 text-center text-xs text-text-muted">
               Need to report a rehearsal absence? Please use your singer dashboard.
             </p>
           </div>
@@ -276,7 +276,7 @@ export default function PublicRsvpView() {
   const renderNoteSection = (textareaClass?: string) => {
     if (event?.type !== 'Rehearsal' || selectedRsvp !== 'No') return null;
     return (
-      <div className="flex flex-col gap-2 mb-2 text-left">
+      <div className="mb-2 flex flex-col gap-2 text-left">
         <label className="text-sm font-bold text-text-muted">
           Why are you unable to attend?
         </label>
@@ -284,10 +284,10 @@ export default function PublicRsvpView() {
           value={rsvpNote}
           onChange={(e) => setRsvpNote(e.target.value)}
           placeholder="Briefly let the admins know why you cannot make this rehearsal."
-          className={`w-full min-h-[100px] p-3 rounded-lg border border-border text-sm font-inherit resize-y box-border ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
+          className={`font-inherit box-border min-h-[100px] w-full resize-y rounded-lg border border-border p-3 text-sm ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
           maxLength={1000}
         />
-        <p className="text-xs text-text-muted m-0">
+        <p className="m-0 text-xs text-text-muted">
           This note is visible to choir admins.
         </p>
       </div>
@@ -296,11 +296,11 @@ export default function PublicRsvpView() {
 
   if (status === 'loading') {
     return (
-      <div className="flex flex-col min-h-screen w-screen bg-primary-light items-center justify-center">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-primary-light">
         <div className="flex flex-col items-center gap-4">
-          <div className="text-4xl animate-spin">🔄</div>
-          <h2 className="text-primary-deep font-extrabold m-0">Loading Secure RSVP Details...</h2>
-          <p className="text-text-muted m-0">Preparing event context, please wait.</p>
+          <div className="animate-spin text-4xl">🔄</div>
+          <h2 className="m-0 font-extrabold text-primary-deep">Loading Secure RSVP Details...</h2>
+          <p className="m-0 text-text-muted">Preparing event context, please wait.</p>
         </div>
       </div>
     );
@@ -308,24 +308,24 @@ export default function PublicRsvpView() {
 
   if (status === 'error' || !event || !profile) {
     return (
-      <div className="flex flex-col min-h-screen w-screen bg-[#fef2f2] items-center justify-center">
-        <AppCard className="w-full max-w-[min(440px,calc(100vw-32px))] p-6 text-center border border-red-100">
-          <div className="flex flex-col gap-4 items-center">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-[#fef2f2]">
+        <AppCard className="w-full max-w-[min(440px,calc(100vw-32px))] border border-red-100 p-6 text-center">
+          <div className="flex flex-col items-center gap-4">
             <div className="text-5xl">⚠️</div>
-            <h2 className="m-0 text-red-800 font-extrabold">RSVP Request Failed</h2>
-            <p className="text-text-muted leading-relaxed mt-1 m-0">
+            <h2 className="m-0 font-extrabold text-red-800">RSVP Request Failed</h2>
+            <p className="m-0 mt-1 leading-relaxed text-text-muted">
               {errorMessage}
             </p>
-            <div className="mt-4 w-full flex flex-col gap-2">
+            <div className="mt-4 flex w-full flex-col gap-2">
               <a
                 href="/login"
-                className="btn btn-primary inline-flex w-full justify-center items-center no-underline h-11 font-bold"
+                className="btn btn-primary inline-flex h-11 w-full items-center justify-center font-bold no-underline"
               >
                 Sign In to Member Portal
               </a>
               <a
                 href="mailto:admin@choir.org"
-                className="btn btn-ghost inline-flex w-full justify-center items-center no-underline h-11 font-bold border border-border"
+                className="btn btn-ghost inline-flex h-11 w-full items-center justify-center border border-border font-bold no-underline"
               >
                 📧 Contact Choir Admins
               </a>
@@ -339,17 +339,17 @@ export default function PublicRsvpView() {
   const isAttending = selectedRsvp === 'Yes';
 
   return (
-    <div className="flex flex-col min-h-screen w-screen bg-primary-light items-center justify-start px-4 sm:px-6 py-6 lg:py-8">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-start bg-primary-light px-4 py-6 sm:px-6 lg:py-8">
       <div className="m-auto w-full max-w-[540px]">
-        <AppCard className="w-full p-6 flex flex-col gap-6 border box-border">
+        <AppCard className="box-border flex w-full flex-col gap-6 border p-6">
           
           {rsvpWindow.isReadOnly && (
-            <div className="card p-4 border border-border rounded-lg bg-neutral-bg">
-              <p className="text-text-muted m-0">
+            <div className="card bg-neutral-bg rounded-lg border border-border p-4">
+              <p className="m-0 text-text-muted">
                 {rsvpWindow.reason}
               </p>
               {event?.type === 'Performance' && (
-                <p className="text-text-muted text-xs mt-1 m-0">
+                <p className="m-0 mt-1 text-xs text-text-muted">
                   You can still report future rehearsal absences from your singer dashboard.
                 </p>
               )}
@@ -358,9 +358,9 @@ export default function PublicRsvpView() {
 
           {!rsvpWindow.canSubmit ? (
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
-                <div className="text-5xl mb-2">📅</div>
-                <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
+              <div className="flex flex-col items-center gap-1 border-b border-border pb-4 text-center">
+                <div className="mb-2 text-5xl">📅</div>
+                <h1 className="m-0 text-2xl font-extrabold text-primary-deep">
                   RSVP Details
                 </h1>
                 <p className="m-0 text-sm text-text-muted">
@@ -372,10 +372,10 @@ export default function PublicRsvpView() {
 
               {renderRehearsalsList()}
 
-              <div className="card p-4 border border-border rounded-lg bg-surface text-center">
-                <div className="font-bold text-xs text-text-muted uppercase tracking-wider">Your response</div>
+              <div className="card rounded-lg border border-border bg-surface p-4 text-center">
+                <div className="text-xs font-bold tracking-wider text-text-muted uppercase">Your response</div>
                 {/* @allow-inline-style - dynamic color based on RSVP status */}
-                <div className="text-xl font-extrabold mt-2" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : '#6b7280' }}>
+                <div className="mt-2 text-xl font-extrabold" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : '#6b7280' }}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
                     : dbRsvp === 'No'
@@ -383,24 +383,24 @@ export default function PublicRsvpView() {
                     : 'No response recorded'}
                 </div>
                 {dbRsvp === 'No' && rsvpNote && (
-                  <div className="mt-3 text-sm text-text-muted border-t border-border pt-2 text-left">
+                  <div className="mt-3 border-t border-border pt-2 text-left text-sm text-text-muted">
                     <strong>Note:</strong> {rsvpNote}
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-2 w-full border-t border-border pt-4">
+              <div className="flex w-full gap-2 border-t border-border pt-4">
                 {dbRsvp === 'Yes' && (
                   <button 
                     onClick={handleDownloadCalendar}
-                    className="btn btn-secondary flex-1 h-11 font-bold justify-center gap-1.5"
+                    className="btn btn-secondary h-11 flex-1 justify-center gap-1.5 font-bold"
                   >
                     📅 Add to Calendar (.ics)
                   </button>
                 )}
                 <a 
                   href="/login" 
-                  className="btn btn-ghost flex-1 h-11 font-bold justify-center no-underline inline-flex items-center border border-border"
+                  className="btn btn-ghost inline-flex h-11 flex-1 items-center justify-center border border-border font-bold no-underline"
                 >
                   Sign In to Portal
                 </a>
@@ -408,9 +408,9 @@ export default function PublicRsvpView() {
             </div>
           ) : !isConfirmed ? (
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
-                <div className="text-5xl mb-2">✉️</div>
-                <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
+              <div className="flex flex-col items-center gap-1 border-b border-border pb-4 text-center">
+                <div className="mb-2 text-5xl">✉️</div>
+                <h1 className="m-0 text-2xl font-extrabold text-primary-deep">
                   Confirm Your RSVP
                 </h1>
                 <p className="m-0 text-sm text-text-muted">
@@ -424,14 +424,14 @@ export default function PublicRsvpView() {
 
               <div className="flex flex-col gap-3">
                 {renderNoteSection()}
-                <p className="text-xs text-text-muted text-center m-0">
+                <p className="m-0 text-center text-xs text-text-muted">
                   Are you planning to attend?
                 </p>
-                <div className="flex gap-2 w-full">
+                <div className="flex w-full gap-2">
                   <button
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
-                    className="btn btn-primary flex-1 h-12 font-bold justify-center"
+                    className="btn btn-primary h-12 flex-1 justify-center font-bold"
                     // @allow-inline-style - dynamic opacity/border based on RSVP selection
                     style={{
                       opacity: selectedRsvp === 'Yes' ? 1 : 0.6,
@@ -449,7 +449,7 @@ export default function PublicRsvpView() {
                       }
                     }}
                     disabled={isUpdating}
-                    className="btn btn-danger flex-1 h-12 font-bold justify-center"
+                    className="btn btn-danger h-12 flex-1 justify-center font-bold"
                     // @allow-inline-style - dynamic opacity/color/border based on RSVP selection
                     style={{
                       backgroundColor: '#ef4444',
@@ -465,16 +465,16 @@ export default function PublicRsvpView() {
 
               <div className="border-t border-border pt-4 text-center text-xs text-text-muted">
                 <span>Not <strong>{profile.name}</strong>? </span>
-                <a href="/login" className="text-primary font-semibold underline">Sign in as yourself</a>
+                <a href="/login" className="font-semibold text-primary underline">Sign in as yourself</a>
                 <span> or </span>
-                <a href="mailto:admin@choir.org" className="text-primary font-semibold underline">Contact Admins</a>
+                <a href="mailto:admin@choir.org" className="font-semibold text-primary underline">Contact Admins</a>
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col items-center text-center gap-1 pb-4 border-b border-border">
+              <div className="flex flex-col items-center gap-1 border-b border-border pb-4 text-center">
                 <div 
-                  className="text-5xl w-20 h-20 rounded-full flex items-center justify-center mb-1 transition-all duration-300"
+                  className="mb-1 flex size-20 items-center justify-center rounded-full text-5xl transition-all duration-300"
                   // @allow-inline-style - dynamic attendance state background/color
                   style={{ 
                     backgroundColor: isAttending ? '#e6f4ea' : '#fce8e6', 
@@ -483,7 +483,7 @@ export default function PublicRsvpView() {
                 >
                   {isAttending ? '✓' : '✗'}
                 </div>
-                <h1 className="text-2xl font-extrabold m-0 text-primary-deep">
+                <h1 className="m-0 text-2xl font-extrabold text-primary-deep">
                   {isAttending ? 'Confirmed: Attending' : 'Confirmed: Not Attending'}
                 </h1>
                 <p className="m-0 text-sm text-text-muted">
@@ -495,17 +495,17 @@ export default function PublicRsvpView() {
 
               {renderRehearsalsList()}
 
-              <div className="flex flex-col gap-4 pt-4 border-t border-border">
+              <div className="flex flex-col gap-4 border-t border-border pt-4">
                 {renderNoteSection('min-h-[80px]')}
                 {event.type === 'Rehearsal' && selectedRsvp === 'No' && (
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-text-muted m-0">
+                  <div className="flex items-center justify-between">
+                    <p className="m-0 text-xs text-text-muted">
                       This note is visible to choir admins.
                     </p>
                     <button 
                       onClick={() => handleConfirmRsvp('No')}
                       disabled={isUpdating}
-                      className="btn btn-primary h-9 font-bold px-4 text-xs"
+                      className="btn btn-primary h-9 px-4 text-xs font-bold"
                     >
                       {isUpdating ? 'Saving...' : 'Save Note'}
                     </button>
@@ -516,11 +516,11 @@ export default function PublicRsvpView() {
                     Need to change your response?
                   </label>
                   
-                  <div className="flex bg-[var(--primary-light,#f1f5f9)] p-1 rounded-xl border border-border w-full h-12 max-sm:flex-col max-sm:h-auto max-sm:gap-2 max-sm:bg-transparent max-sm:border-none max-sm:p-0">
+                  <div className="flex h-12 w-full rounded-xl border border-border bg-[var(--primary-light,#f1f5f9)] p-1 max-sm:h-auto max-sm:flex-col max-sm:gap-2 max-sm:border-none max-sm:bg-transparent max-sm:p-0">
                     <button
                       onClick={() => handleConfirmRsvp('Yes')}
                       disabled={isUpdating}
-                      className={`btn flex-1 h-full border-none rounded-lg cursor-pointer text-sm font-bold transition-all ${!isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted max-sm:border max-sm:border-border max-sm:rounded-lg max-sm:h-12' : ''}`}
+                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${!isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted' : ''}`}
                       style={isAttending ? {
                         backgroundColor: 'var(--primary)',
                         color: '#ffffff',
@@ -538,7 +538,7 @@ export default function PublicRsvpView() {
                         }
                       }}
                       disabled={isUpdating}
-                      className={`btn flex-1 h-full border-none rounded-lg cursor-pointer text-sm font-bold transition-all ${isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted max-sm:border max-sm:border-border max-sm:rounded-lg max-sm:h-12' : ''}`}
+                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted' : ''}`}
                       style={!isAttending ? {
                         backgroundColor: '#ef4444',
                         color: '#ffffff',
@@ -550,23 +550,23 @@ export default function PublicRsvpView() {
                   </div>
                 </div>
 
-                <div className="text-center text-xs text-text-muted mb-2">
+                <div className="mb-2 text-center text-xs text-text-muted">
                   <span>Not <strong>{profile.name}</strong>? </span>
-                  <a href="/login" className="text-primary font-semibold underline">Sign in as yourself</a>
+                  <a href="/login" className="font-semibold text-primary underline">Sign in as yourself</a>
                 </div>
 
-                <div className="flex gap-2 w-full border-t border-border pt-4 max-sm:flex-col max-sm:items-stretch">
+                <div className="flex w-full gap-2 border-t border-border pt-4 max-sm:flex-col max-sm:items-stretch">
                   {isAttending && (
                     <button 
                       onClick={handleDownloadCalendar}
-                      className="btn btn-secondary flex-1 h-11 font-bold justify-center gap-1.5"
+                      className="btn btn-secondary h-11 flex-1 justify-center gap-1.5 font-bold"
                     >
                       📅 Add to Calendar (.ics)
                     </button>
                   )}
                   <a 
                     href="/login" 
-                    className="btn btn-ghost flex-1 h-11 font-bold justify-center no-underline inline-flex items-center border border-border"
+                    className="btn btn-ghost inline-flex h-11 flex-1 items-center justify-center border border-border font-bold no-underline"
                   >
                     Sign In to Portal
                   </a>

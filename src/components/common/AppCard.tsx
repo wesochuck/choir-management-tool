@@ -14,7 +14,7 @@ export const AppCard: React.FC<AppCardProps> = ({
 }) => {
   return (
     <div 
-      className={`card flex-col relative-row ${noPadding ? 'no-padding' : ''} ${className}`} 
+      className={`card relative-row flex-col ${noPadding ? 'no-padding' : ''} ${className}`} 
       style={style}
     >
       {(title || actions) && (

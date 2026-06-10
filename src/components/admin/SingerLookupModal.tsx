@@ -68,20 +68,20 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name, voice part, status..."
-          className="card w-full px-3 h-10 border border-border"
+          className="card h-10 w-full border border-border px-3"
           autoFocus
         />
 
         {isLoading ? (
-          <div className="text-center p-4 text-text-muted">
+          <div className="p-4 text-center text-text-muted">
             Loading roster database...
           </div>
         ) : error ? (
-          <div className="text-danger-text p-4 text-center">
+          <div className="p-4 text-center text-danger-text">
             ⚠️ {error}
           </div>
         ) : (
-          <div className="flex-col gap-[6px] max-h-[300px] overflow-y-auto pr-1">
+          <div className="max-h-[300px] flex-col gap-[6px] overflow-y-auto pr-1">
             {filtered.map(p => (
               <button
                 key={p.id}
@@ -90,19 +90,19 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                   await onSelect(p);
                   onClose();
                 }}
-                className="flex-row card p-[10px_14px] justify-between items-center cursor-pointer border border-border bg-bg text-left w-full gap-2"
+                className="card w-full cursor-pointer flex-row items-center justify-between gap-2 border border-border bg-bg p-[10px_14px] text-left"
               >
                 <div className="flex-col gap-0.5">
                   <span className="font-semibold text-text">{p.name}</span>
-                  <span className="text-xs text-muted">Status: {p.globalStatus}</span>
+                  <span className="text-muted text-xs">Status: {p.globalStatus}</span>
                 </div>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
+                <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
                   {p.voicePart || 'Unknown'}
                 </span>
               </button>
             ))}
             {filtered.length === 0 && (
-              <div className="text-center p-4 text-text-muted text-sm">
+              <div className="p-4 text-center text-sm text-text-muted">
                 No singers found
               </div>
             )}

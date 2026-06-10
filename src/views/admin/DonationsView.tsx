@@ -272,10 +272,10 @@ export default function DonationsView() {
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-display m-0">Donations</h1>
-          <p className="text-gray-500 text-sm">Manage donations and donor levels</p>
+          <p className="text-sm text-gray-500">Manage donations and donor levels</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'history' && (
@@ -291,7 +291,7 @@ export default function DonationsView() {
         </div>
       </div>
 
-      <div className="flex flex-row gap-2 border-b border-gray-200 pb-1 mb-1">
+      <div className="mb-1 flex flex-row gap-2 border-b border-gray-200 pb-1">
         <button 
           className={`btn px-4 py-2 font-semibold ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('history')}
@@ -308,20 +308,20 @@ export default function DonationsView() {
 
       {activeTab === 'history' && (
         <>
-          <div className="card p-4 bg-neutral-bg">
-            <div className="flex justify-around h-full items-center">
+          <div className="card bg-neutral-bg p-4">
+            <div className="flex h-full items-center justify-around">
               <div className="flex flex-col gap-1 text-center">
-                <span className="text-xs uppercase font-bold text-gray-500">Donations</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Donations</span>
                 <span className="text-headline font-bold">{filteredStats.count}</span>
               </div>
               <div className="flex flex-col gap-1 text-center">
-                <span className="text-xs uppercase font-bold text-gray-500">Total Raised</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Total Raised</span>
                 <span className="text-headline font-bold text-pink-600">
                   ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex flex-col gap-1 text-center">
-                <span className="text-xs uppercase font-bold text-gray-500">Average</span>
+                <span className="text-xs font-bold text-gray-500 uppercase">Average</span>
                 <span className="text-headline font-bold">
                   ${(filteredStats.avg / 100).toFixed(2)}
                 </span>
@@ -331,29 +331,29 @@ export default function DonationsView() {
 
           <AppCard title="Donations History">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-row flex-wrap gap-4 w-full items-center">
-                <div className="flex-1 min-w-[200px] w-full">
+              <div className="flex w-full flex-row flex-wrap items-center gap-4">
+                <div className="w-full min-w-[200px] flex-1">
                   <input 
                     type="text" 
                     placeholder="Search donor name or email..." 
-                    className="card w-full h-10 px-3 border border-gray-200"
+                    className="card h-10 w-full border border-gray-200 px-3"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex-1 min-w-[150px]">
+                <div className="min-w-[150px] flex-1">
                   <input 
                     type="date" 
-                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
+                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
                     value={startDate}
                     onChange={e => handleSetStartDate(e.target.value)}
                     placeholder="View From"
                   />
                 </div>
-                <div className="flex-1 min-w-[150px]">
+                <div className="min-w-[150px] flex-1">
                   <input 
                     type="date" 
-                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
+                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
                     placeholder="To"
@@ -361,7 +361,7 @@ export default function DonationsView() {
                 </div>
                 <div className="min-w-[200px]">
                   <select
-                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
+                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
                   >
@@ -375,9 +375,9 @@ export default function DonationsView() {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="border-collapse w-full min-w-[600px] text-left">
+                <table className="w-full min-w-[600px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
                     <th className="p-3 px-4 text-left">Date</th>
                     <th className="p-3 px-4 text-left">Donor</th>
                     <th className="p-3 px-4 text-left">Email</th>
@@ -391,13 +391,13 @@ export default function DonationsView() {
                   {loading ? (
                     <tr><td colSpan={7} className="p-3 px-4 text-center">Loading...</td></tr>
                   ) : sortedDonations.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center p-8 text-gray-500">No donations found.</td></tr>
+                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">No donations found.</td></tr>
                   ) : sortedDonations.map(d => (
                     <tr key={d.id} className="border-b border-gray-200 text-sm">
                       <td className="p-3 px-4">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
                       <td className="p-3 px-4 font-semibold">
                         {d.donorName}
-                        {d.isAnonymous && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-transparent text-text-muted ml-2">Anonymous</span>}
+                        {d.isAnonymous && <span className="ml-2 inline-flex items-center rounded bg-transparent px-2 py-0.5 text-xs font-semibold tracking-wider text-text-muted uppercase">Anonymous</span>}
                       </td>
                       <td className="p-3 px-4">{d.donorEmail}</td>
                       <td className="p-3 px-4 text-right font-semibold">${(d.amountPaidCents / 100).toFixed(2)}</td>
@@ -409,7 +409,7 @@ export default function DonationsView() {
                         )}
                       </td>
                       <td className="p-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${d.status === 'paid' ? 'bg-success-bg text-success-text' : d.status === 'refunded' ? 'bg-danger-bg text-danger-text' : 'bg-amber-100 text-amber-800'}`}>
+                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${d.status === 'paid' ? 'bg-success-bg text-success-text' : d.status === 'refunded' ? 'bg-danger-bg text-danger-text' : 'bg-amber-100 text-amber-800'}`}>
                           {d.status}
                         </span>
                       </td>
@@ -432,27 +432,27 @@ export default function DonationsView() {
 
       {activeTab === 'levels' && (
         <>
-          <AppCard className="p-4 bg-[rgba(219,39,119,0.05)] border-l-4 border-pink-600 rounded-lg m-0">
+          <AppCard className="m-0 rounded-lg border-l-4 border-pink-600 bg-[rgba(219,39,119,0.05)] p-4">
             <h3 className="mb-2 text-pink-600">Donor Levels</h3>
             <p className="m-0">These levels are displayed to donors on the public donation page.</p>
           </AppCard>
 
           <AppCard title="Public Page Settings">
             <div className="flex flex-col gap-4">
-              <div className="flex-1 flex flex-col gap-1">
-                <label className="text-xs uppercase font-bold text-gray-500">Call-to-Action Heading</label>
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Call-to-Action Heading</label>
                 <input
                   type="text"
-                  className="w-full h-10 px-3 border border-gray-200"
+                  className="h-10 w-full border border-gray-200 px-3"
                   value={donationButtonText}
                   onChange={e => setDonationButtonText(e.target.value)}
                   placeholder="e.g. Support our Music"
                 />
               </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <label className="text-xs uppercase font-bold text-gray-500">Description</label>
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
                 <textarea
-                  className="p-2 min-h-[80px] resize-y border border-gray-200"
+                  className="min-h-[80px] resize-y border border-gray-200 p-2"
                   value={donationDescription}
                   onChange={e => setDonationDescription(e.target.value)}
                   placeholder="e.g. Your contribution helps us keep the music playing..."
@@ -472,9 +472,9 @@ export default function DonationsView() {
 
           <AppCard title="Donor Levels Configuration" noPadding>
             <div className="overflow-x-auto">
-              <table className="border-collapse w-full min-w-[600px] text-left">
+              <table className="w-full min-w-[600px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
                     <th className="p-3 px-4 text-left">Label</th>
                     <th className="p-3 px-4 text-right">Amount</th>
                     <th className="p-3 px-4 text-left">Benefit</th>
@@ -483,7 +483,7 @@ export default function DonationsView() {
                 </thead>
                 <tbody>
                   {!settings || settings.levels.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center p-8 text-gray-500">No donor levels defined.</td></tr>
+                    <tr><td colSpan={4} className="p-8 text-center text-gray-500">No donor levels defined.</td></tr>
                   ) : settings.levels.map(l => (
                     <tr key={l.id} className="border-b border-gray-200 text-sm">
                       <td className="p-3 px-4 font-semibold">{l.label}</td>
@@ -512,35 +512,35 @@ export default function DonationsView() {
         title={editingLevel ? 'Edit Donor Level' : 'Add Donor Level'}
       >
         <div className="flex flex-col gap-4">
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs uppercase font-bold text-gray-500">Level Label</label>
+          <div className="flex flex-1 flex-col gap-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">Level Label</label>
             <input 
               type="text" 
-              className="w-full h-10 px-3 border border-gray-200"
+              className="h-10 w-full border border-gray-200 px-3"
               value={levelLabel} 
               onChange={e => setLevelLabel(e.target.value)}
               placeholder="e.g. Supporter"
             />
           </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs uppercase font-bold text-gray-500">Amount ($)</label>
+          <div className="flex flex-1 flex-col gap-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
             <input 
               type="number" 
-              className="w-full h-10 px-3 border border-gray-200"
+              className="h-10 w-full border border-gray-200 px-3"
               value={levelAmount} 
               onChange={e => setLevelAmount(Number(e.target.value))}
             />
           </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs uppercase font-bold text-gray-500">Benefit (Optional)</label>
+          <div className="flex flex-1 flex-col gap-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">Benefit (Optional)</label>
             <textarea 
-              className="p-2 min-h-[80px] resize-y border border-gray-200"
+              className="min-h-[80px] resize-y border border-gray-200 p-2"
               value={levelBenefit} 
               onChange={e => setLevelBenefit(e.target.value)}
               placeholder="e.g. Mention in program"
             />
           </div>
-          <div className="flex gap-4 mt-4">
+          <div className="mt-4 flex gap-4">
             <button className="btn btn-ghost" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </button>

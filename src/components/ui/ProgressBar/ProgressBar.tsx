@@ -21,7 +21,7 @@ export function ProgressBar({ value, label, className }: ProgressBarProps) {
       aria-label={label}
     >
       <div
-        className="h-full bg-primary rounded transition-[width] duration-300 ease-[ease]"
+        className="h-full rounded bg-primary transition-[width] duration-300 ease-[ease]"
         // @allow-inline-style - dynamic width from value prop
         style={{ width: `${clamped}%` }}
       />

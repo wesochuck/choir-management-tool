@@ -48,7 +48,7 @@ export default function PublicTicketListView() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen justify-center items-center w-screen">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center">
         <Spinner size="medium" />
         <p className="text-text-muted">Loading events...</p>
       </div>
@@ -58,15 +58,15 @@ export default function PublicTicketListView() {
   const hasContent = events.length > 0 || bundles.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen justify-start items-center w-screen p-4">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
       <PublicLogo />
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-0.5">
-            {choirName && <span className="text-xs text-text-muted font-bold uppercase tracking-wider">{choirName}</span>}
+            {choirName && <span className="text-xs font-bold tracking-wider text-text-muted uppercase">{choirName}</span>}
             <h1 className="text-display m-0">Ticket Purchases</h1>
           </div>
-          <p className="text-text-muted m-0">
+          <p className="m-0 text-text-muted">
             Select an upcoming performance or a season pass to purchase tickets online.
           </p>
         </div>
@@ -77,7 +77,7 @@ export default function PublicTicketListView() {
             <p className="text-body m-0 font-medium">
               No tickets are currently open for online purchase.
             </p>
-            <p className="text-text-muted text-sm">Please check back later or contact the administrator.</p>
+            <p className="text-sm text-text-muted">Please check back later or contact the administrator.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-6">
@@ -87,15 +87,15 @@ export default function PublicTicketListView() {
                   Season Passes
                 </h2>
                 {bundles.map(bundle => (
-                  <div key={bundle.id} className="card flex flex-col md:flex-row p-4 justify-between items-center gap-4 border-2 border-primary bg-primary-light">
-                    <div className="flex-1 flex flex-col gap-1">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text self-start">Best Value</span>
+                  <div key={bundle.id} className="card flex flex-col items-center justify-between gap-4 border-2 border-primary bg-primary-light p-4 md:flex-row">
+                    <div className="flex flex-1 flex-col gap-1">
+                      <span className="inline-flex items-center self-start rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">Best Value</span>
                       <h3 className="m-0 text-primary-deep">{bundle.title}</h3>
-                      <p className="text-sm text-body m-0">
+                      <p className="text-body m-0 text-sm">
                         Discounted package for all included concerts.
                       </p>
                       {bundle.expand?.events && (
-                        <div className="text-text-muted text-xs mt-1">
+                        <div className="mt-1 text-xs text-text-muted">
                           <strong>Includes:</strong> {bundle.expand.events.map(e => e.title).join(', ')}
                         </div>
                       )}
@@ -108,7 +108,7 @@ export default function PublicTicketListView() {
                         as={Link}
                         to={`/tickets/bundle/${bundle.id}`}
                         variant="primary"
-                        className="no-underline text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap no-underline"
                       >
                         Buy Season Pass
                       </Button>
@@ -124,16 +124,16 @@ export default function PublicTicketListView() {
                   Concert Tickets
                 </h2>
                 {events.map(event => (
-                  <div key={event.id} className="card flex flex-col md:flex-row p-4 justify-between items-center gap-4">
-                    <div className="flex-1 flex flex-col gap-1">
+                  <div key={event.id} className="card flex flex-col items-center justify-between gap-4 p-4 md:flex-row">
+                    <div className="flex flex-1 flex-col gap-1">
                       {event.eventGraphic && (
                         <img
                           src={pb.files.getURL(event, event.eventGraphic)}
-                          alt={event.title} className="w-full max-h-44 object-cover rounded-sm mb-1"
+                          alt={event.title} className="mb-1 max-h-44 w-full rounded-sm object-cover"
                         />
                       )}
                       <h3 className="m-0">{event.title}</h3>
-                      <span className="text-text-muted text-sm">
+                      <span className="text-sm text-text-muted">
                         {formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     </div>
@@ -141,7 +141,7 @@ export default function PublicTicketListView() {
                       as={Link}
                       to={`/tickets/${event.id}`}
                       variant="primary"
-                      className="no-underline text-center whitespace-nowrap"
+                      className="text-center whitespace-nowrap no-underline"
                     >
                       Buy Tickets
                     </Button>
@@ -152,14 +152,14 @@ export default function PublicTicketListView() {
           </div>
         )}
 
-        <div className="w-full p-4 bg-neutral-bg rounded-lg mt-8 border-t-2 border-dashed border-border pt-6">
+        <div className="bg-neutral-bg mt-8 w-full rounded-lg border-t-2 border-dashed border-border p-4 pt-6">
           <div className="flex flex-col gap-0.5 text-center">
             <h2 className="m-0 text-primary-deep">{donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}</h2>
-            <p className="text-body max-w-[480px] mx-auto">
+            <p className="text-body mx-auto max-w-[480px]">
               {donationSettings?.description ?? DEFAULT_DONATION_SETTINGS.description}
             </p>
           </div>
-          <div className="flex flex-row justify-center mt-4">
+          <div className="mt-4 flex flex-row justify-center">
             <Button as={Link} to="/donate" variant="primary" className="min-w-[200px]">
               Make a Donation
             </Button>

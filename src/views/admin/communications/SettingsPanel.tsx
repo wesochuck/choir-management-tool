@@ -107,9 +107,9 @@ export function SettingsPanel({
                 Send a quick test email using the server's configured SMTP settings to verify that
                 outgoing mail delivery is working.
               </p>
-              <div className="flex gap-4 flex-wrap items-center">
+              <div className="flex flex-wrap items-center gap-4">
                 <input
-                  className="card h-10 px-3 w-full border border-border flex-1 max-w-[300px]"
+                  className="card h-10 w-full max-w-[300px] flex-1 border border-border px-3"
                   type="email"
                   value={testEmailAddress}
                   onChange={(e) => setTestEmailAddress(e.target.value)}
@@ -167,7 +167,7 @@ function Field({
     <div className="flex flex-col gap-1">
       <label className="text-label">{label}</label>
       <input
-        className="card h-10 px-3 w-full border border-border"
+        className="card h-10 w-full border border-border px-3"
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

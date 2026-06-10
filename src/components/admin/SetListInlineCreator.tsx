@@ -78,9 +78,9 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="flex-col gap-[var(--space-xs)] relative">
-      <div className="flex-row card p-[var(--space-sm)_var(--space-md)] gap-[var(--space-md)] items-center bg-[var(--bg-card-hover)] border border-dashed border-[var(--border)]">
-        <div className="flex-row gap-1 bg-[var(--surface)] p-[2px] rounded-[var(--radius-sm)] border border-[var(--border)]">
+    <div ref={containerRef} className="relative flex-col gap-[var(--space-xs)]">
+      <div className="card flex-row items-center gap-[var(--space-md)] border border-dashed border-[var(--border)] bg-[var(--bg-card-hover)] p-[var(--space-sm)_var(--space-md)]">
+        <div className="flex-row gap-1 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] p-[2px]">
           <button
             type="button"
             className={`btn btn-sm sl-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
@@ -99,7 +99,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 relative flex items-center">
+        <div className="relative flex flex-1 items-center">
           <input
             type="text"
             placeholder={type === 'song' ? "Search music library..." : "Intermission title..."}
@@ -111,7 +111,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card w-full px-[36px_12px] h-9 border border-[var(--border)] text-[14px]"
+            className="card h-9 w-full border border-[var(--border)] px-[36px_12px] text-[14px]"
           />
           <svg 
             viewBox="0 0 24 24" 
@@ -120,22 +120,22 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             strokeWidth="2.5" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
-            className="absolute right-3 w-4 h-4 text-[var(--text-muted)] pointer-events-none"
+            className="pointer-events-none absolute right-3 size-4 text-[var(--text-muted)]"
           >
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
  
           {showSuggestions && query.trim().length > 0 && (
-            <div className="card shadow-md absolute top-full left-0 right-0 z-[100] mt-1 max-h-[300px] overflow-y-auto p-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)]">
+            <div className="card absolute inset-x-0 top-full z-[100] mt-1 max-h-[300px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-md">
               {filteredLibrary.map(p => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => handleAddItem(p)}
-                  className="btn btn-ghost w-full text-left flex flex-col items-start p-[8px_12px] rounded-[var(--radius-sm)] gap-[2px] min-h-auto"
+                  className="btn btn-ghost flex min-h-auto w-full flex-col items-start gap-[2px] rounded-[var(--radius-sm)] p-[8px_12px] text-left"
                 >
-                  <span className="font-semibold text-[14px]">{p.title}</span>
+                  <span className="text-[14px] font-semibold">{p.title}</span>
                   {p.composer && <span className="text-[12px] opacity-70">by {p.composer}</span>}
                 </button>
               ))}
@@ -143,14 +143,14 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
               <button
                 type="button"
                 onClick={() => handleAddItem()}
-                className="btn btn-ghost w-full text-left flex flex-row items-center p-[8px_12px] rounded-[var(--radius-sm)] gap-1 text-[var(--primary-deep)] font-semibold text-[14px] min-h-auto"
+                className="btn btn-ghost flex min-h-auto w-full flex-row items-center gap-1 rounded-[var(--radius-sm)] p-[8px_12px] text-left text-[14px] font-semibold text-[var(--primary-deep)]"
                 // @allow-inline-style - conditional border when library has results
                 style={{ 
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
                 }}
               >
                 <span>"{query.trim()}"</span>
-                <span className="font-normal opacity-70 text-[13px]">
+                <span className="text-[13px] font-normal opacity-70">
                   ({type === 'song' ? 'create new' : 'create new intermission'})
                 </span>
               </button>
@@ -166,7 +166,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onChange={(e) => setDuration(e.target.value)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card w-full px-3 h-9 border border-[var(--border)] text-[14px]"
+            className="card h-9 w-full border border-[var(--border)] px-3 text-[14px]"
           />
         </div>
  
@@ -180,7 +180,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
         </button>
       </div>
       {type === 'song' && (
-        <span className="text-xs text-muted pl-[var(--space-md)]">
+        <span className="text-muted pl-[var(--space-md)] text-xs">
           Tip: Select the "(create new)" option or press Enter to add a new piece to the music library.
         </span>
       )}

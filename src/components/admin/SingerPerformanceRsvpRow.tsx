@@ -38,41 +38,41 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
       : 'border-border bg-surface text-text';
 
   return (
-    <div className="card p-4 flex items-center justify-between gap-4 border border-border bg-bg transition-colors duration-200 hover:border-primary max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
-      <div className="flex flex-col gap-0.5 min-w-[100px] max-sm:min-w-full">
+    <div className="card flex items-center justify-between gap-4 border border-border bg-bg p-4 transition-colors duration-200 hover:border-primary max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
+      <div className="flex min-w-[100px] flex-col gap-0.5 max-sm:min-w-full">
         <span className="text-[13px] font-semibold text-text">{dateString}</span>
-        <span className="text-xs text-muted">{timeString}</span>
+        <span className="text-muted text-xs">{timeString}</span>
       </div>
 
-      <div className="flex flex-col flex-1 gap-0.5 min-w-[120px] max-sm:min-w-full">
-        <span className="font-semibold text-sm text-text">{performance.title}</span>
-        <span className="text-xs text-muted flex items-center gap-1">
+      <div className="flex min-w-[120px] flex-1 flex-col gap-0.5 max-sm:min-w-full">
+        <span className="text-sm font-semibold text-text">{performance.title}</span>
+        <span className="text-muted flex items-center gap-1 text-xs">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
-          <span className="truncate max-w-[180px]">
+          <span className="max-w-[180px] truncate">
             {performance.expand?.venue?.name || 'No venue'}
           </span>
         </span>
       </div>
 
-      <div className="flex flex-row items-start gap-4 shrink-0 max-sm:mt-1 max-sm:border-t max-sm:border-dashed max-sm:border-border max-sm:pt-2 max-sm:justify-start">
+      <div className="flex shrink-0 flex-row items-start gap-4 max-sm:mt-1 max-sm:justify-start max-sm:border-t max-sm:border-dashed max-sm:border-border max-sm:pt-2">
         {isPast && (
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted">Attended</span>
+            <span className="text-muted text-[10px] font-semibold tracking-wider uppercase">Attended</span>
             <StatusBadge label={attendanceDisplay.label} tone={attendanceDisplay.tone} />
           </div>
         )}
 
         <div className="flex flex-col items-start gap-0.5">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-muted">RSVP</span>
+          <span className="text-muted text-[10px] font-semibold tracking-wider uppercase">RSVP</span>
           <div className="flex flex-row items-center gap-2">
             <select
               value={currentRsvp}
               disabled={isSaving}
               onChange={(e) => onRsvpChange(performance.id, e.target.value as EventRoster['rsvp'])}
-              className={`px-2 h-8 min-h-[32px] rounded text-[13px] font-semibold cursor-pointer transition-all duration-200 outline-none border ${selectToneClass}`}
+              className={`h-8 min-h-[32px] cursor-pointer rounded border px-2 text-[13px] font-semibold transition-all duration-200 outline-none ${selectToneClass}`}
             >
               <option value="Pending">Pending</option>
               <option value="Yes">Yes (Attending)</option>
@@ -81,7 +81,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
 
             {isSaving && (
               <span className="flex items-center gap-1">
-                <span className="w-3 h-3 border-2 border-black/10 border-t-primary rounded-full inline-block animate-spin"></span>
+                <span className="inline-block size-3 animate-spin rounded-full border-2 border-black/10 border-t-primary"></span>
               </span>
             )}
 

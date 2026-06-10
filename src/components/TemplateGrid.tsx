@@ -72,40 +72,40 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, onSelect 
   const BlankIcon = iconMap.blank;
 
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex w-full flex-col gap-4">
       {/* Isolate Blank Message */}
       {blankTemplate && (
         <div 
-          className="flex gap-4 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer items-center transition-all duration-200 bg-bg hover:border-primary hover:bg-primary-light" 
+          className="flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed border-border bg-bg p-4 transition-all duration-200 hover:border-primary hover:bg-primary-light" 
           onClick={() => onSelect(blankTemplate)}
         >
           <div className="flex items-center gap-2 text-primary">
             <BlankIcon />
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">blank</span>
+            <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">blank</span>
           </div>
           <div>
             <h4 className="m-0 mb-1 text-sm font-semibold text-text">{blankTemplate.title}</h4>
-            <p className="m-0 text-xs text-text-muted leading-relaxed">{blankTemplate.description}</p>
+            <p className="m-0 text-xs leading-relaxed text-text-muted">{blankTemplate.description}</p>
           </div>
         </div>
       )}
 
       {/* Standard Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {regularTemplates.map(template => {
           const IconComponent = iconMap[template.category] || MailIcon;
           return (
             <div 
               key={template.id} 
-              className="flex flex-col p-4 border border-border rounded-lg cursor-pointer bg-bg transition-all duration-200 min-h-[120px] hover:border-primary hover:-translate-y-0.5 hover:shadow-md" 
+              className="flex min-h-[120px] cursor-pointer flex-col rounded-lg border border-border bg-bg p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md" 
               onClick={() => onSelect(template)}
             >
-              <div className="flex justify-between items-center mb-2.5 text-primary">
+              <div className="mb-2.5 flex items-center justify-between text-primary">
                 <IconComponent />
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">{template.channel}</span>
+                <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{template.channel}</span>
               </div>
               <h4 className="m-0 mb-1 text-sm font-semibold text-text">{template.title}</h4>
-              <p className="m-0 text-xs text-text-muted leading-relaxed">{template.description}</p>
+              <p className="m-0 text-xs leading-relaxed text-text-muted">{template.description}</p>
             </div>
           );
         })}

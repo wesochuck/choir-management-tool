@@ -148,7 +148,7 @@ export default function DashboardView() {
     }
   };
 
-  if (isLoading && events.length === 0) return <div className="container text-center pt-8">Loading your events...</div>;
+  if (isLoading && events.length === 0) return <div className="container pt-8 text-center">Loading your events...</div>;
   if (error) return <div className="container p-5 text-red-600">Error: {error}</div>;
 
   const upcomingEvents = events.filter(e => new Date(e.date) >= new Date());
@@ -199,11 +199,11 @@ export default function DashboardView() {
       <PublicLogo />
       <div className="py-4">
         {nextEvent && (
-          <section className="hidden max-md:block max-md:mb-6" aria-label="Singer quick actions">
-            <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6">
+          <section className="hidden max-md:mb-6 max-md:block" aria-label="Singer quick actions">
+            <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm">
               <div className="flex flex-col gap-2">
-                <div className="text-[0.72rem] font-extrabold tracking-widest uppercase text-text-muted">Next up</div>
-                <div className="text-lg font-extrabold text-text leading-tight">{nextEvent.title || nextEvent.type}</div>
+                <div className="text-[0.72rem] font-extrabold tracking-widest text-text-muted uppercase">Next up</div>
+                <div className="text-lg leading-tight font-extrabold text-text">{nextEvent.title || nextEvent.type}</div>
                 <div className="text-sm text-text-muted">
                   {getFormattedDate(nextEvent.date)}
                   {nextEvent.expand?.venue?.name ? ` • ${nextEvent.expand.venue.name}` : ''}
@@ -222,7 +222,7 @@ export default function DashboardView() {
                 </div>
 
                 {isNextEventParentPerformanceDeclined ? (
-                  <div className="text-center text-xs text-muted mt-4 w-full p-2 border border-dashed border-white/30 rounded">
+                  <div className="text-muted mt-4 w-full rounded border border-dashed border-white/30 p-2 text-center text-xs">
                     🚫 Excused (Parent Performance Declined)
                   </div>
                 ) : (
@@ -246,7 +246,7 @@ export default function DashboardView() {
                       </button>
                     </div>
                     {isNextEventClosed && (
-                      <div className="text-xs text-muted text-center mt-1">
+                      <div className="text-muted mt-1 text-center text-xs">
                         {nextEvent.type === 'Performance' 
                           ? 'The RSVP window for this performance is closed.' 
                           : 'This rehearsal has already passed.'}
@@ -256,14 +256,14 @@ export default function DashboardView() {
                 )}
 
                 {(activePolls.length > 0 || latestAnnouncement) && (
-                  <div className="flex flex-col gap-1 text-xs text-text-muted pt-1 border-t border-border">
+                  <div className="flex flex-col gap-1 border-t border-border pt-1 text-xs text-text-muted">
                     {activePolls.length > 0 && (
                       <span>{activePolls.length} active poll{activePolls.length === 1 ? '' : 's'}</span>
                     )}
                     {latestAnnouncement && (
                       <button
                         type="button"
-                        className="border-0 p-0 bg-transparent text-primary font-inherit font-bold text-left cursor-pointer"
+                        className="font-inherit cursor-pointer border-0 bg-transparent p-0 text-left font-bold text-primary"
                         onClick={() => setSelectedAnnouncement(latestAnnouncement)}
                       >
                         Latest bulletin: {latestAnnouncement.subject || 'Choir Update'}
@@ -276,11 +276,11 @@ export default function DashboardView() {
           </section>
         )}
 
-        <div className="grid grid-cols-[1fr_340px] gap-8 items-start max-md:grid-cols-1 max-md:gap-6">
+        <div className="grid grid-cols-[1fr_340px] items-start gap-8 max-md:grid-cols-1 max-md:gap-6">
           
           {/* Main timeline panel: Events */}
           <div className="flex-col gap-6">
-            <h2 className="text-2xl font-bold text-text m-0 mb-1">Upcoming Events</h2>
+            <h2 className="m-0 mb-1 text-2xl font-bold text-text">Upcoming Events</h2>
             {upcomingEvents.map((e) => (
               <EventCard 
                 key={e.id} 
@@ -294,7 +294,7 @@ export default function DashboardView() {
             ))}
 
             {upcomingEvents.length === 0 && (
-              <div className="card bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6 flex flex-col items-center justify-center py-12 text-text-muted">
+              <div className="card flex flex-col items-center justify-center rounded-lg bg-surface/80 p-6 py-12 text-text-muted shadow-sm backdrop-blur-sm">
                 <p className="text-muted">No upcoming events at this time.</p>
               </div>
             )}
@@ -305,11 +305,11 @@ export default function DashboardView() {
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
-              <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6" title="📊 Quick Polls">
+              <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="📊 Quick Polls">
                 <div className="flex-col gap-2">
                   {activePolls.map(poll => (
-                    <div key={poll.id} className="card p-2 flex flex-col gap-1 shadow-none border border-border">
-                      <div className="font-bold text-sm">{poll.question}</div>
+                    <div key={poll.id} className="card flex flex-col gap-1 border border-border p-2 shadow-none">
+                      <div className="text-sm font-bold">{poll.question}</div>
                       <div className="flex-row gap-1">
                         <button 
                           className="btn btn-sm flex-1 border border-border font-bold" 
@@ -341,23 +341,23 @@ export default function DashboardView() {
             )}
 
             {/* Recent Announcements Widget */}
-            <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6" title="✉️ Bulletins">
+            <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="✉️ Bulletins">
               {isAnnouncementsLoading ? (
-                <div className="text-muted text-center p-4">Loading bulletins...</div>
+                <div className="text-muted p-4 text-center">Loading bulletins...</div>
               ) : announcements.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {announcements.map(ann => (
                     <div 
                       key={ann.id} 
-                      className="border-l-[3px] border-l-primary bg-surface rounded-r-md p-4 transition-all duration-200 cursor-pointer border-t border-r border-b border-border hover:bg-primary-light hover:translate-x-[3px]"
+                      className="cursor-pointer rounded-r-md border-y border-r border-l-[3px] border-border border-l-primary bg-surface p-4 transition-all duration-200 hover:translate-x-[3px] hover:bg-primary-light"
                       onClick={() => setSelectedAnnouncement(ann)}
                     >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-text text-sm truncate max-w-[180px]">{ann.subject || 'Choir Update'}</span>
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="max-w-[180px] truncate text-sm font-bold text-text">{ann.subject || 'Choir Update'}</span>
                         <span className="text-xs text-text-muted">{getFormattedDate(ann.created)}</span>
                       </div>
                       <div 
-                        className="text-xs text-text-muted line-clamp-2"
+                        className="line-clamp-2 text-xs text-text-muted"
                         dangerouslySetInnerHTML={{ 
                           __html: sanitizeHtml(ann.content).replace(/<[^>]*>/g, '').slice(0, 100) + '...' 
                         }} 
@@ -366,14 +366,14 @@ export default function DashboardView() {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted text-center p-4">No recent updates.</div>
+                <div className="text-muted p-4 text-center">No recent updates.</div>
               )}
             </AppCard>
 
             {/* Resources Widget */}
-            <AppCard className="bg-surface/80 backdrop-blur-sm rounded-lg shadow-sm p-6" title="📂 Resources">
+            <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="📂 Resources">
               {isResourcesLoading ? (
-                <div className="text-muted text-center p-4">Loading resources...</div>
+                <div className="text-muted p-4 text-center">Loading resources...</div>
               ) : resources.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   {resources.map(res => {
@@ -384,7 +384,7 @@ export default function DashboardView() {
                         href={href} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center gap-2 p-[10px_12px] bg-[rgba(74,124,89,0.02)] border border-border rounded-md text-text font-semibold text-sm transition-all duration-200 no-underline hover:bg-primary-light hover:border-primary hover:text-primary-deep hover:translate-x-[2px]"
+                        className="flex items-center gap-2 rounded-md border border-border bg-[rgba(74,124,89,0.02)] p-[10px_12px] text-sm font-semibold text-text no-underline transition-all duration-200 hover:translate-x-[2px] hover:border-primary hover:bg-primary-light hover:text-primary-deep"
                       >
                         <span className="text-xl">{res.url ? '🔗' : '📄'}</span> {res.title}
                       </a>
@@ -392,7 +392,7 @@ export default function DashboardView() {
                   })}
                 </div>
               ) : (
-                <div className="text-muted text-center p-4">No resources available.</div>
+                <div className="text-muted p-4 text-center">No resources available.</div>
               )}
             </AppCard>
 
@@ -419,7 +419,7 @@ export default function DashboardView() {
       >
         {selectedAnnouncement && (
           <div className="flex-col gap-4">
-            <div className="text-xs text-muted -mt-2">
+            <div className="text-muted -mt-2 text-xs">
               Dispatched on {getFormattedDate(selectedAnnouncement.created)}
             </div>
             <div className="message-preview-content max-h-[60vh] overflow-y-auto">

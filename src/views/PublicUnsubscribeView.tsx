@@ -47,11 +47,11 @@ export default function PublicUnsubscribeView() {
   }, [token]);
 
   return (
-    <div className="max-w-[500px] pt-20 mx-auto">
+    <div className="mx-auto max-w-[500px] pt-20">
       <AppCard title="Unsubscribe from Emails">
         <div className="flex flex-col gap-4 text-center">
           {status === 'loading' && (
-            <div className="text-text-muted flex flex-row items-center gap-2"><Spinner size="small" /> Processing your request...</div>
+            <div className="flex flex-row items-center gap-2 text-text-muted"><Spinner size="small" /> Processing your request...</div>
           )}
 
           {status === 'success' && (

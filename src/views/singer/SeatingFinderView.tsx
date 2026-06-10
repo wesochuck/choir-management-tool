@@ -97,7 +97,7 @@ export default function SeatingFinderView() {
   if (!event) {
     return (
       <div
-        className="container p-4 text-center text-text-muted border border-border rounded-md"
+        className="container rounded-md border border-border p-4 text-center text-text-muted"
       >
         Event not found.
       </div>
@@ -229,7 +229,7 @@ export default function SeatingFinderView() {
     >
       <div className="flex-col gap-4 py-8">
         {charts.length > 1 && (
-          <div className="flex-row gap-4 p-4 flex-wrap justify-center mb-1">
+          <div className="mb-1 flex-row flex-wrap justify-center gap-4 p-4">
             {charts.map(c => {
               const isActive = c.id === activeChartId;
               return (
@@ -246,8 +246,8 @@ export default function SeatingFinderView() {
         )}
         <AppCard>
           {isOpenSeating ? (
-            <div className="flex-col p-4 border border-border rounded-md bg-bg text-center">
-              <div className="text-[0.85rem] font-bold text-primary-deep mb-1 uppercase tracking-wider">Seating Type</div>
+            <div className="flex-col rounded-md border border-border bg-bg p-4 text-center">
+              <div className="mb-1 text-[0.85rem] font-bold tracking-wider text-primary-deep uppercase">Seating Type</div>
               <div className="text-lg font-semibold text-text-muted">
                  Open Seating
               </div>
@@ -261,8 +261,8 @@ export default function SeatingFinderView() {
               )}
             </div>
           ) : row !== null ? (
-            <div className="flex-col p-4 border border-border rounded-md bg-bg text-center">
-              <div className="text-[0.85rem] font-bold text-primary-deep mb-1 uppercase tracking-wider">Your Assignment</div>
+            <div className="flex-col rounded-md border border-border bg-bg p-4 text-center">
+              <div className="mb-1 text-[0.85rem] font-bold tracking-wider text-primary-deep uppercase">Your Assignment</div>
               <div className="text-lg font-semibold text-text-muted">
                  Row {row + 1}
               </div>
@@ -284,7 +284,7 @@ export default function SeatingFinderView() {
  
         {!isOpenSeating && (
           <div className="flex-col gap-4 py-8">
-            <div className="flex-row justify-center gap-1 mb-1 bg-[var(--surface-muted)] p-1 rounded-md w-max mx-auto">
+            <div className="mx-auto mb-1 w-max flex-row justify-center gap-1 rounded-md bg-[var(--surface-muted)] p-1">
               <button
                 className={`btn btn-sm ${perspective === 'singer' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setPerspective('singer')}
@@ -298,22 +298,22 @@ export default function SeatingFinderView() {
                 Director View
               </button>
             </div>
-            <h3 className="text-lg font-semibold text-text-muted mb-1 uppercase tracking-[0.1em] text-center">
+            <h3 className="mb-1 text-center text-lg font-semibold tracking-[0.1em] text-text-muted uppercase">
               Interactive Stage Layout
             </h3>
             
             {isLoading ? (
               <div className="p-4 text-center text-text-muted">Loading Stage Map...</div>
             ) : (
-              <div className="bg-surface border border-border rounded-lg p-8 px-6 shadow-sm flex flex-col items-center relative overflow-visible">
+              <div className="relative flex flex-col items-center overflow-visible rounded-lg border border-border bg-surface p-8 px-6 shadow-sm">
                 {/* Mirrored Stage Grid Wrapper */}
-                <div className="flex flex-col-reverse gap-3 w-full mb-8 items-stretch overflow-x-auto overflow-y-visible py-[40px] pb-[10px] scrollbar-thin">
+                <div className="mb-8 flex w-full scrollbar-thin flex-col-reverse items-stretch gap-3 overflow-x-auto overflow-y-visible py-[40px] pb-[10px]">
                   {rowCounts.map((count, rIdx) => (
-                    <div key={rIdx} className="grid grid-cols-[64px_max-content_64px] items-center gap-x-3 justify-center w-max min-w-max mx-auto">
-                      <span className="text-xs text-text-muted font-bold w-auto min-w-16 text-right uppercase tracking-wider select-none whitespace-nowrap">Row {rIdx + 1}</span>
+                    <div key={rIdx} className="mx-auto grid w-max min-w-max grid-cols-[64px_max-content_64px] items-center justify-center gap-x-3">
+                      <span className="w-auto min-w-16 text-right text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase select-none">Row {rIdx + 1}</span>
                       
                       <div
-                        className="flex gap-[10px] items-center justify-center min-w-max"
+                        className="flex min-w-max items-center justify-center gap-[10px]"
                         // @allow-inline-style - dynamic flex direction based on perspective toggle
                         style={{
                           flexDirection: perspective === 'director' ? 'row-reverse' : 'row'
@@ -358,11 +358,11 @@ export default function SeatingFinderView() {
                             >
                               {initials || ''}
                               {profile ? (
-                                <div className="invisible opacity-0 absolute bottom-[130%] left-1/2 -translate-x-1/2 translate-y-1 bg-text text-surface px-[10px] py-1.5 rounded text-xs font-semibold whitespace-nowrap shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] pointer-events-none z-[100] transition-all duration-200 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-text after:border-transparent after:border-t-text after:border-x-transparent after:border-b-transparent">
+                                <div className="pointer-events-none invisible absolute bottom-[130%] left-1/2 z-[100] -translate-x-1/2 translate-y-1 rounded bg-text px-[10px] py-1.5 text-xs font-semibold whitespace-nowrap text-surface opacity-0 shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-text after:border-transparent after:border-x-transparent after:border-t-text after:border-b-transparent after:content-['']">
                                   {profile.name} ({profile.voicePart})
                                 </div>
                               ) : singerId ? (
-                                <div className="invisible opacity-0 absolute bottom-[130%] left-1/2 -translate-x-1/2 translate-y-1 bg-text text-surface px-[10px] py-1.5 rounded text-xs font-semibold whitespace-nowrap shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] pointer-events-none z-[100] transition-all duration-200 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-text after:border-transparent after:border-t-text after:border-x-transparent after:border-b-transparent">
+                                <div className="pointer-events-none invisible absolute bottom-[130%] left-1/2 z-[100] -translate-x-1/2 translate-y-1 rounded bg-text px-[10px] py-1.5 text-xs font-semibold whitespace-nowrap text-surface opacity-0 shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-text after:border-transparent after:border-x-transparent after:border-t-text after:border-b-transparent after:content-['']">
                                   Assigned Singer
                                 </div>
                               ) : null}
@@ -371,16 +371,16 @@ export default function SeatingFinderView() {
                         })}
                       </div>
                       
-                      <span className="text-xs text-text-muted font-bold w-auto min-w-16 text-left uppercase tracking-wider select-none whitespace-nowrap">Row {rIdx + 1}</span>
+                      <span className="w-auto min-w-16 text-left text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase select-none">Row {rIdx + 1}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Stage Front Orienters graphic at the bottom of the stage view */}
-                <div className="flex flex-col items-center gap-2 w-full pt-4 border-t border-dashed border-border relative">
-                  <div className="w-60 h-2 rounded-[50%] border-b-2 border-primary-deep opacity-30 mb-1"></div>
-                  <div className="flex gap-8 justify-center items-center">
-                    <span className="flex items-center gap-1.5 bg-primary-light text-primary-deep border border-[rgba(74,124,89,0.2)] px-3 py-1.5 rounded-full text-[0.75rem] font-bold tracking-wider uppercase shadow-sm select-none">🎼 Director & Audience</span>
+                <div className="relative flex w-full flex-col items-center gap-2 border-t border-dashed border-border pt-4">
+                  <div className="mb-1 h-2 w-60 rounded-[50%] border-b-2 border-primary-deep opacity-30"></div>
+                  <div className="flex items-center justify-center gap-8">
+                    <span className="flex items-center gap-1.5 rounded-full border border-[rgba(74,124,89,0.2)] bg-primary-light px-3 py-1.5 text-[0.75rem] font-bold tracking-wider text-primary-deep uppercase shadow-sm select-none">🎼 Director & Audience</span>
                   </div>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function SeatingFinderView() {
           <AppCard className="max-sm:block">
             <div className="flex items-center justify-between gap-4 max-sm:flex">
               <div>
-                <div className="text-[0.72rem] text-text-muted uppercase tracking-[0.08em] font-extrabold max-sm:text-[0.72rem]">
+                <div className="text-[0.72rem] font-extrabold tracking-[0.08em] text-text-muted uppercase max-sm:text-[0.72rem]">
                   Row {selectedSeat.row + 1} • Seat {selectedSeat.seat + 1}
                 </div>
                 <div className="text-base font-extrabold text-text max-sm:text-base">
@@ -425,7 +425,7 @@ export default function SeatingFinderView() {
         {!isOpenSeating && row !== null && seat !== null && (
           <div className="flex-col gap-4 py-8">
             <div className="flex flex-col items-center">
-              <h3 className="text-lg font-semibold text-text-muted mb-1 uppercase tracking-[0.1em]">
+              <h3 className="mb-1 text-lg font-semibold tracking-[0.1em] text-text-muted uppercase">
                 Standing Neighbors HUD
               </h3>
               <span className="text-sm text-text-muted italic">
@@ -433,28 +433,28 @@ export default function SeatingFinderView() {
               </span>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
               
               {/* Left Neighbor */}
-              <div className={`flex items-center gap-4 p-4 bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${leftNeighbor.status === 'empty' ? '' : ''}`}>
-                <div className={`w-10 h-10 rounded-md bg-primary-light text-primary-deep flex items-center justify-center text-xl font-extrabold shrink-0 ${leftNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>◀</div>
-                <div className="flex flex-col gap-[2px] min-w-0">
-                  <span className="text-[0.675rem] uppercase tracking-wider text-text-muted font-bold">Standing to your Left</span>
-                  <span className="font-bold text-[0.925rem] text-text whitespace-nowrap overflow-hidden text-ellipsis">{getNeighborName(leftNeighbor)}</span>
+              <div className={`flex items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${leftNeighbor.status === 'empty' ? '' : ''}`}>
+                <div className={`flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-light text-xl font-extrabold text-primary-deep ${leftNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>◀</div>
+                <div className="flex min-w-0 flex-col gap-[2px]">
+                  <span className="text-[0.675rem] font-bold tracking-wider text-text-muted uppercase">Standing to your Left</span>
+                  <span className="truncate text-[0.925rem] font-bold text-text">{getNeighborName(leftNeighbor)}</span>
                   {getNeighborPart(leftNeighbor) && (
-                    <span className="text-[0.725rem] text-primary-deep font-semibold">{getNeighborPart(leftNeighbor)}</span>
+                    <span className="text-[0.725rem] font-semibold text-primary-deep">{getNeighborPart(leftNeighbor)}</span>
                   )}
                 </div>
               </div>
 
               {/* Right Neighbor */}
-              <div className={`flex items-center gap-4 p-4 bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${rightNeighbor.status === 'empty' ? '' : ''}`}>
-                <div className={`w-10 h-10 rounded-md bg-primary-light text-primary-deep flex items-center justify-center text-xl font-extrabold shrink-0 ${rightNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>▶</div>
-                <div className="flex flex-col gap-[2px] min-w-0">
-                  <span className="text-[0.675rem] uppercase tracking-wider text-text-muted font-bold">Standing to your Right</span>
-                  <span className="font-bold text-[0.925rem] text-text whitespace-nowrap overflow-hidden text-ellipsis">{getNeighborName(rightNeighbor)}</span>
+              <div className={`flex items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${rightNeighbor.status === 'empty' ? '' : ''}`}>
+                <div className={`flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-light text-xl font-extrabold text-primary-deep ${rightNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>▶</div>
+                <div className="flex min-w-0 flex-col gap-[2px]">
+                  <span className="text-[0.675rem] font-bold tracking-wider text-text-muted uppercase">Standing to your Right</span>
+                  <span className="truncate text-[0.925rem] font-bold text-text">{getNeighborName(rightNeighbor)}</span>
                   {getNeighborPart(rightNeighbor) && (
-                    <span className="text-[0.725rem] text-primary-deep font-semibold">{getNeighborPart(rightNeighbor)}</span>
+                    <span className="text-[0.725rem] font-semibold text-primary-deep">{getNeighborPart(rightNeighbor)}</span>
                   )}
                 </div>
               </div>

@@ -64,11 +64,11 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       title="Voice Part Balance"
       actions={
         <div className="flex gap-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep">
+          <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
             {singerTotal} Singers
           </span>
           {staffTotal > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-gray-500/10 text-gray-600 border border-gray-500/20">
+            <span className="inline-flex items-center rounded border border-gray-500/20 bg-gray-500/10 px-2 py-0.5 text-xs font-semibold tracking-wider text-gray-600 uppercase">
               {staffTotal} Staff
             </span>
           )}
@@ -93,7 +93,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={sec.code} 
-              className={`flex-col text-center cursor-pointer transition-all duration-200 border-2 hover:-translate-y-0.5 hover:shadow-sm hover:opacity-90 ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
+              className={`cursor-pointer flex-col border-2 text-center transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
               onClick={() => onVoicePartToggle?.(sec.code)}
               // @allow-inline-style - dynamic padding based on selection state
               style={{ 
@@ -127,7 +127,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={vp.label} 
-              className={`flex-col text-center cursor-pointer transition-all duration-200 border hover:border-primary-deep hover:bg-primary-light hover:-translate-y-px ${isSelected ? 'border-primary bg-primary-light' : 'border-border bg-[var(--bg)]'}`}
+              className={`cursor-pointer flex-col border text-center transition-all duration-200 hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light ${isSelected ? 'border-primary bg-primary-light' : 'border-border bg-[var(--bg)]'}`}
               onClick={() => onVoicePartToggle?.(vp.label)}
               // @allow-inline-style - dynamic padding based on selection state
               style={{ 
@@ -138,7 +138,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
               }}
             >
               {/* @allow-inline-style - typography overrides */}
-              <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
+              <div className="text-muted text-xs" style={{ fontWeight: 700 }}>{vp.label}</div>
               {/* @allow-inline-style - typography overrides */}
               <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[vp.label] || 0}</div>
             </div>

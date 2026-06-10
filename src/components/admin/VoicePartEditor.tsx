@@ -43,7 +43,7 @@ export function VoicePartEditor({
             const section = configSections.find(s => s.code === vp.sectionCode);
             const defaultColor = section?.color || '#e0e0e0';
             return (
-              <div key={index} className="grid grid-cols-[90px_1fr_150px_130px_90px_80px] gap-4 items-center w-full">
+              <div key={index} className="grid w-full grid-cols-[90px_1fr_150px_130px_90px_80px] items-center gap-4">
                 <input
                   value={vp.label}
                   onChange={(e) => {

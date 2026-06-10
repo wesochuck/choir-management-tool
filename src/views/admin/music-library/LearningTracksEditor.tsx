@@ -34,7 +34,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
     const isMovement = !!uploadingKeyPrefix;
 
     return (
-        <div className="flex flex-col gap-[var(--space-xs)] border border-[var(--border)] rounded-[var(--radius)] p-[var(--space-sm)] bg-[rgb(0_0_0_/_2%)]">
+        <div className="flex flex-col gap-[var(--space-xs)] rounded-[var(--radius)] border border-[var(--border)] bg-[rgb(0_0_0_/_2%)] p-[var(--space-sm)]">
             {visibleKeys.map(partLabel => {
                 const filename = piece.audioTrackMapping?.[partLabel];
                 const uploadKey = `${uploadingKeyPrefix}${partLabel}`;
@@ -59,7 +59,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                 return (
                     <div 
                         key={partLabel} 
-                        className={`flex-row items-center justify-between gap-[var(--space-md)] transition-all duration-150 ${isMovement ? 'p-[6px_10px] bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-[var(--radius)] scale-100 shadow-none text-[13px]' : 'p-[8px_12px] bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-[var(--radius)] scale-100 shadow-none'}`} 
+                        className={`flex-row items-center justify-between gap-[var(--space-md)] transition-all duration-150 ${isMovement ? 'scale-100 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[6px_10px] text-[13px] shadow-none' : 'scale-100 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[8px_12px] shadow-none'}`} 
                         onDragOver={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -98,23 +98,23 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                             <strong className={`text-[var(--text-color)] ${isMovement ? 'text-[12px]' : 'text-[13px]'}`}>
                                 {displayName}
                             </strong>
-                            <span className={`text-xs text-muted ${isMovement ? 'text-[10px]' : 'text-[11px]'}`}>
+                            <span className={`text-muted text-xs ${isMovement ? 'text-[10px]' : 'text-[11px]'}`}>
                                 {fullName}
                             </span>
                         </div>
                         
                         {isUploading ? (
-                            <span className="text-xs text-muted animate-pulse text-[12px]">Uploading...</span>
+                            <span className="text-muted animate-pulse text-xs text-[12px]">Uploading...</span>
                         ) : filename ? (
-                            <div className="flex flex-row items-center gap-[var(--space-sm)] flex-1 justify-end">
+                            <div className="flex flex-1 flex-row items-center justify-end gap-[var(--space-sm)]">
                                 <audio 
                                     src={pb.files.getURL(piece, filename)} 
                                     controls 
-                                    className={`flex-1 w-full ${isMovement ? 'h-6' : 'h-7'}`}
+                                    className={`w-full flex-1 ${isMovement ? 'h-6' : 'h-7'}`}
                                 />
                                 <button 
                                     type="button" 
-                                    className="btn btn-ghost btn-sm !text-[var(--danger)] !border-none !bg-none cursor-pointer !p-[4px_6px] min-h-auto !h-auto !m-0" 
+                                    className="btn btn-ghost btn-sm !m-0 !h-auto min-h-auto cursor-pointer !border-none !bg-none !p-[4px_6px] !text-[var(--danger)]" 
                                     onClick={() => onDelete(partLabel)}
                                     title="Delete track"
                                 >
@@ -122,9 +122,9 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex flex-row items-center justify-end flex-1">
+                            <div className="flex flex-1 flex-row items-center justify-end">
                                 <label 
-                                    className="btn btn-secondary btn-sm cursor-pointer inline-flex items-center gap-1 !text-[11px] !p-[2px_8px] !h-6 !min-h-6 !m-0" 
+                                    className="btn btn-secondary btn-sm !m-0 inline-flex !h-6 !min-h-6 cursor-pointer items-center gap-1 !p-[2px_8px] !text-[11px]" 
                                 >
                                     📤 Upload
                                     <input 
@@ -146,8 +146,8 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
             })}
 
             {addableParts.length > 0 && (
-                <div className="flex-row items-center gap-[var(--space-xs)] mt-[var(--space-xs)] pt-[var(--space-xs)] border-t border-dashed border-[var(--border)] justify-start animate-fade-in">
-                    <span className="text-[11px] text-[var(--text-muted)] font-semibold">
+                <div className="animate-fade-in mt-[var(--space-xs)] flex-row items-center justify-start gap-[var(--space-xs)] border-t border-dashed border-[var(--border)] pt-[var(--space-xs)]">
+                    <span className="text-[11px] font-semibold text-[var(--text-muted)]">
                         ➕ Add voice part track slot:
                     </span>
                     <select
@@ -158,7 +158,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 onAddPart(val);
                             }
                         }}
-                        className="text-[11px] p-[3px_8px] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] text-[var(--text-color)] cursor-pointer outline-none font-medium"
+                        className="cursor-pointer rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[3px_8px] text-[11px] font-medium text-[var(--text-color)] outline-none"
                     >
                         <option value="" disabled>Select voice part...</option>
                         {addableParts.map(vp => (

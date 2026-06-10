@@ -60,17 +60,17 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         const isActive = sortField === field;
         return (
             <th 
-                className={`text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold select-none cursor-pointer`}
+                className={`text-label cursor-pointer border border-[var(--border)] px-[10px] py-[6px] font-semibold text-[var(--text-muted)] select-none`}
                 // @allow-inline-style - dynamic color based on sort state
                 style={{ 
                     color: isActive ? 'var(--primary)' : 'var(--text-muted)'
                 }}
                 onClick={() => onSortChange(field)}
             >
-                <div className="flex gap-[var(--space-xs)] items-center">
+                <div className="flex items-center gap-[var(--space-xs)]">
                     <span>{label}</span>
                     <span 
-                        className="text-[10px] inline-block"
+                        className="inline-block text-[10px]"
                         // @allow-inline-style - dynamic opacity based on sort state
                         style={{ 
                             opacity: isActive ? 1 : 0.35
@@ -86,25 +86,25 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     return (
         <div className="!m-0">
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] border-collapse text-left border border-[var(--border)]">
+                <table className="w-full min-w-[760px] border-collapse border border-[var(--border)] text-left">
                     <thead>
                         <tr className="bg-[var(--primary-light)]">
-                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold text-center w-10">
+                            <th className="text-label w-10 border border-[var(--border)] px-[10px] py-[6px] text-center font-semibold text-[var(--text-muted)]">
                                 <input 
                                     type="checkbox" 
                                     checked={filteredPieces.length > 0 && filteredPieces.every(p => selectedIds.has(p.id))}
                                     onChange={(e) => onSelectAll(e.target.checked)}
-                                    className="!min-h-auto !w-[14px] !h-[14px] !m-0 align-middle cursor-pointer"
+                                    className="!m-0 !h-[14px] !min-h-auto !w-[14px] cursor-pointer align-middle"
                                 />
                             </th>
                             {renderSortHeader('Title', 'title')}
                             {renderSortHeader('Composer/Arranger', 'composer')}
                             {renderSortHeader('Duration', 'duration')}
-                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold text-center w-[50px]">Perf</th>
+                            <th className="text-label w-[50px] border border-[var(--border)] px-[10px] py-[6px] text-center font-semibold text-[var(--text-muted)]">Perf</th>
                             {renderSortHeader('Last Performed', 'lastPerformed')}
-                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold">Tracks</th>
-                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold text-center w-[60px]">Link</th>
-                            <th className="text-label px-[10px] py-[6px] text-[var(--text-muted)] border border-[var(--border)] font-semibold w-20">Actions</th>
+                            <th className="text-label border border-[var(--border)] px-[10px] py-[6px] font-semibold text-[var(--text-muted)]">Tracks</th>
+                            <th className="text-label w-[60px] border border-[var(--border)] px-[10px] py-[6px] text-center font-semibold text-[var(--text-muted)]">Link</th>
+                            <th className="text-label w-20 border border-[var(--border)] px-[10px] py-[6px] font-semibold text-[var(--text-muted)]">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -170,8 +170,8 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
             </div>
 
             {!isLoading && totalParentCount > 0 && (
-                <div className="flex justify-between items-center px-[var(--space-lg)] py-[var(--space-md)] border-t border-[var(--border)] bg-[var(--bg-card,#fff)] rounded-[0_0_var(--radius-md)_var(--radius-md)] mt-[var(--space-xs)]">
-                    <span className="text-sm text-muted font-medium">
+                <div className="mt-[var(--space-xs)] flex items-center justify-between rounded-[0_0_var(--radius-md)_var(--radius-md)] border-t border-[var(--border)] bg-[var(--bg-card,#fff)] px-[var(--space-lg)] py-[var(--space-md)]">
+                    <span className="text-muted text-sm font-medium">
                         Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–{Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
                     </span>
 

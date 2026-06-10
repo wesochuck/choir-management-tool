@@ -41,7 +41,7 @@ export function Pagination({
         aria-label="Go to previous page">{'\u25C0'}</button>
       {paginationRange.map((pageNumber, idx) => {
         if (pageNumber === DOTS) {
-          return <span key={`dots-${idx}`} className="inline-flex items-center justify-center min-w-[36px] h-9 text-text-muted text-sm" aria-hidden="true">{'\u2026'}</span>;
+          return <span key={`dots-${idx}`} className="inline-flex h-9 min-w-[36px] items-center justify-center text-sm text-text-muted" aria-hidden="true">{'\u2026'}</span>;
         }
         const pageNum = pageNumber as number;
         const isCurrent = pageNum === currentPage;

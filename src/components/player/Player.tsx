@@ -76,7 +76,7 @@ export const Player: React.FC<PlayerProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!currentTrack) return <div className="text-center py-12 px-4 text-text-muted text-base">No track selected</div>;
+  if (!currentTrack) return <div className="px-4 py-12 text-center text-base text-text-muted">No track selected</div>;
 
   // Voice part badge logic
   const activeKey = currentTrack.trackKey || 'tutti';
@@ -96,16 +96,16 @@ export const Player: React.FC<PlayerProps> = ({
   const ctrlBtnBase = 'bg-primary-light border border-border text-text w-12 h-12 p-0 rounded-lg cursor-pointer transition-all flex items-center justify-center shadow-sm hover:bg-border hover:shadow-md hover:-translate-y-0.5 disabled:opacity-35 disabled:cursor-default active:opacity-35 max-sm:w-10 max-sm:h-10';
 
   return (
-    <div className="bg-surface border border-border rounded-xl shadow-md p-6 mb-6 transition-all duration-300 max-sm:p-5 max-sm:px-4 max-sm:rounded-lg">
+    <div className="mb-6 rounded-xl border border-border bg-surface p-6 shadow-md transition-all duration-300 max-sm:rounded-lg max-sm:p-5 max-sm:px-4">
       <div className="flex flex-col">
         {currentTrack.parentTitle && (
-          <span className="text-xs text-text-muted uppercase tracking-wider font-bold mb-1 block">
+          <span className="mb-1 block text-xs font-bold tracking-wider text-text-muted uppercase">
             From: {currentTrack.parentTitle}
           </span>
         )}
-        <div className="flex items-center gap-2 mb-5 min-w-0">
-          <h2 className="text-xl font-bold m-0 text-text truncate flex-1 min-w-0 tracking-tight">{currentTrack.name}</h2>
-          <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase ${isFallback ? 'bg-amber-50 text-amber-600 border border-amber-300' : 'bg-primary-light text-primary border border-primary'}`}>
+        <div className="mb-5 flex min-w-0 items-center gap-2">
+          <h2 className="m-0 min-w-0 flex-1 truncate text-xl font-bold tracking-tight text-text">{currentTrack.name}</h2>
+          <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-bold tracking-wide uppercase ${isFallback ? 'border border-amber-300 bg-amber-50 text-amber-600' : 'border border-primary bg-primary-light text-primary'}`}>
             {badgeLabel}
           </span>
         </div>
@@ -120,15 +120,15 @@ export const Player: React.FC<PlayerProps> = ({
           onError={handleAudioError}
         />
         
-        {playError && <div className="bg-danger-bg border border-red-200 text-danger-text rounded-lg p-3 px-4 text-sm mb-4">{playError}</div>}
+        {playError && <div className="mb-4 rounded-lg border border-red-200 bg-danger-bg p-3 px-4 text-sm text-danger-text">{playError}</div>}
         
         {/* COUNTDOWN OVERLAY */}
         {countdown !== null && (
-          <div className="flex items-center justify-center gap-3 p-3 px-4 mb-4 rounded-lg bg-primary-light border border-primary text-primary text-sm font-semibold animate-pulse">
+          <div className="mb-4 flex animate-pulse items-center justify-center gap-3 rounded-lg border border-primary bg-primary-light p-3 px-4 text-sm font-semibold text-primary">
             <span>Next track starting in {countdown}s...</span>
             <button 
               onClick={togglePlay} 
-              className="px-3 py-1.5 rounded-lg border-none bg-primary text-surface text-xs font-semibold cursor-pointer uppercase tracking-wider transition-colors hover:bg-primary-deep"
+              className="cursor-pointer rounded-lg border-none bg-primary px-3 py-1.5 text-xs font-semibold tracking-wider text-surface uppercase transition-colors hover:bg-primary-deep"
             >
               Skip Wait
             </button>
@@ -138,14 +138,14 @@ export const Player: React.FC<PlayerProps> = ({
         {/* SKIP NOTIFICATION */}
         {showSkipNotify && (
           // @allow-inline-style - active part badge state
-          <div className="flex items-center justify-center gap-3 p-3 px-4 mb-4 rounded-lg text-sm font-semibold" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
+          <div className="mb-4 flex items-center justify-center gap-3 rounded-lg p-3 px-4 text-sm font-semibold" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
             <span>Skipped first {skipStart}s of track</span>
             {/* @allow-inline-style - inactive part badge state */}
-            <button onClick={() => setShowSkipNotify(false)} className="px-3 py-1.5 rounded-lg border-none text-xs font-semibold cursor-pointer uppercase tracking-wider transition-colors" style={{ background: 'var(--border-color)', color: 'var(--text-primary)' }}>Dismiss</button>
+            <button onClick={() => setShowSkipNotify(false)} className="cursor-pointer rounded-lg border-none px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors" style={{ background: 'var(--border-color)', color: 'var(--text-primary)' }}>Dismiss</button>
           </div>
         )}
 
-        <div className="flex items-center gap-4 mb-6 text-sm text-text-muted tabular-nums">
+        <div className="mb-6 flex items-center gap-4 text-sm text-text-muted tabular-nums">
           <span>{formatTime(currentTime)}</span>
           <input 
             type="range" 
@@ -158,15 +158,15 @@ export const Player: React.FC<PlayerProps> = ({
             onChange={handleSeekChange} 
             onMouseUp={handleSeekEnd}
             onTouchEnd={handleSeekEnd}
-            className="flex-1 h-1.5 appearance-none rounded-full outline-none cursor-pointer bg-border"
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border outline-none"
             style={seekStyle}
           />
           <span>{formatTime(duration)}</span>
         </div>
 
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-6 w-full">
+        <div className="mb-6 grid w-full grid-cols-[1fr_auto_1fr] items-center">
           <div className="min-w-0"></div>
-          <div className="flex justify-center items-center gap-4">
+          <div className="flex items-center justify-center gap-4">
             <button 
               onClick={handlePrev} 
               disabled={currentIndex === firstAudioIndex && loopMode !== 'all'}
@@ -176,7 +176,7 @@ export const Player: React.FC<PlayerProps> = ({
               <SkipPreviousIcon />
             </button>
             <button 
-              className="bg-text text-surface w-[72px] h-[72px] shadow-md border-none rounded-xl flex items-center justify-center hover:opacity-95 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-35 disabled:cursor-default transition-all max-sm:w-[60px] max-sm:h-[60px]"
+              className="flex size-[72px] items-center justify-center rounded-xl border-none bg-text text-surface shadow-md transition-all hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg disabled:cursor-default disabled:opacity-35 max-sm:size-[60px]"
               onClick={togglePlay}
               disabled={isDownloadNeeded}
               aria-label={isPlaying ? 'Pause' : 'Play'}
@@ -193,17 +193,17 @@ export const Player: React.FC<PlayerProps> = ({
             </button>
           </div>
           <div className="flex justify-end">
-            <button onClick={cycleLoopMode} className={`flex items-center gap-1.5 text-xs font-bold whitespace-nowrap uppercase tracking-wider rounded-full transition-all h-11 px-3.5 max-sm:w-10 max-sm:h-10 max-sm:p-0 max-sm:rounded-full max-sm:justify-center ${loopMode === 'all' || loopMode === 'one' ? 'bg-primary border-primary text-surface hover:bg-primary-deep hover:border-primary-deep' : 'bg-primary-light border border-border text-text-muted hover:bg-border hover:text-text'} max-sm:[&_span]:hidden`}>
+            <button onClick={cycleLoopMode} className={`flex h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all max-sm:size-10 max-sm:justify-center max-sm:rounded-full max-sm:p-0 ${loopMode === 'all' || loopMode === 'one' ? 'border-primary bg-primary text-surface hover:border-primary-deep hover:bg-primary-deep' : 'border border-border bg-primary-light text-text-muted hover:bg-border hover:text-text'} max-sm:[&_span]:hidden`}>
               {loopMode === 'one' ? <RepeatOneIcon /> : <RepeatIcon />}
               <span>{getRepeatLabel()}</span>
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap py-4 border-t border-border mb-2 max-sm:flex-wrap max-sm:justify-between max-sm:items-center max-sm:gap-3">
+        <div className="mb-2 flex flex-wrap items-center gap-4 border-t border-border py-4 max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-3">
           {/* START AT SETTING */}
           <div className="flex items-center gap-1.5">
-            <label htmlFor="skip-input" className="text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Start At:</label>
+            <label htmlFor="skip-input" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Start At:</label>
             <input 
               id="skip-input"
               type="number" 
@@ -212,13 +212,13 @@ export const Player: React.FC<PlayerProps> = ({
               value={skipStart || ''} 
               onChange={handleSkipStartChange}
               placeholder="0"
-              className="w-14 px-2 py-1.5 rounded-lg border border-border bg-primary-light text-text text-sm font-semibold text-center tabular-nums outline-none focus:border-primary appearance-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-14 appearance-none rounded-lg border border-border bg-primary-light px-2 py-1.5 text-center text-sm font-semibold text-text tabular-nums outline-none [-moz-appearance:textfield] focus:border-primary [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">s</span>
+            <span className="text-xs font-bold tracking-wider text-text-muted uppercase">s</span>
           </div>
 
-          <div className="flex items-center gap-4 flex-1 min-w-[120px] max-sm:hidden touch:hidden">
-            <label htmlFor="volume-input" className="text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Volume</label>
+          <div className="touch:hidden flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden">
+            <label htmlFor="volume-input" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Volume</label>
             <input 
               id="volume-input"
               type="range" 
@@ -227,19 +227,19 @@ export const Player: React.FC<PlayerProps> = ({
               step="0.01" 
               value={volume} 
               onChange={handleVolumeChange}
-              className="flex-1 min-w-[80px] h-1 appearance-none rounded-full outline-none cursor-pointer bg-border"
+              className="h-1 min-w-[80px] flex-1 cursor-pointer appearance-none rounded-full bg-border outline-none"
               style={volStyle}
             />
           </div>
           
           {/* INTER-TRACK GAP SETTING */}
           <div className="flex items-center gap-1.5">
-            <label htmlFor="delay-select" className="text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Gap:</label>
+            <label htmlFor="delay-select" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Gap:</label>
             <select 
               id="delay-select"
               value={delaySetting} 
               onChange={(e) => setDelaySetting(Number(e.target.value))}
-              className="px-2 py-1.5 rounded-lg border border-border bg-primary-light text-text text-sm font-semibold cursor-pointer outline-none focus:border-primary"
+              className="cursor-pointer rounded-lg border border-border bg-primary-light px-2 py-1.5 text-sm font-semibold text-text outline-none focus:border-primary"
             >
               <option value={0}>None</option>
               <option value={2}>2s</option>
@@ -250,7 +250,7 @@ export const Player: React.FC<PlayerProps> = ({
         </div>
 
         <button 
-          className="inline-flex items-center justify-center gap-1.5 w-full py-2 bg-transparent border border-border rounded-lg text-text-muted text-xs font-bold uppercase tracking-wider cursor-pointer transition-all hover:bg-primary-light hover:text-text"
+          className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-transparent py-2 text-xs font-bold tracking-wider text-text-muted uppercase transition-all hover:bg-primary-light hover:text-text"
           onClick={toggleHints}
           aria-expanded={showHints}
         >
@@ -270,18 +270,18 @@ export const Player: React.FC<PlayerProps> = ({
           <span>{showHints ? 'Hide Control Guide' : 'Control Guide'}</span>
         </button>
 
-        <div className={`grid grid-cols-3 gap-4 overflow-hidden transition-all duration-300 mt-0 max-sm:grid-cols-1 ${showHints ? 'max-h-[200px] opacity-100 mt-3 p-4 bg-primary-light rounded-lg border border-border' : 'max-h-0 opacity-0'}`}>
+        <div className={`mt-0 grid grid-cols-3 gap-4 overflow-hidden transition-all duration-300 max-sm:grid-cols-1 ${showHints ? 'mt-3 max-h-[200px] rounded-lg border border-border bg-primary-light p-4 opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-text">Start At</span>
-            <span className="text-xs text-text-muted leading-relaxed">Skips the intro for this specific track; saved for future sessions.</span>
+            <span className="text-xs font-bold tracking-wider text-text uppercase">Start At</span>
+            <span className="text-xs leading-relaxed text-text-muted">Skips the intro for this specific track; saved for future sessions.</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-text">Gap</span>
-            <span className="text-xs text-text-muted leading-relaxed">Adds a timed silence between consecutive songs.</span>
+            <span className="text-xs font-bold tracking-wider text-text uppercase">Gap</span>
+            <span className="text-xs leading-relaxed text-text-muted">Adds a timed silence between consecutive songs.</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-text">Repeat</span>
-            <span className="text-xs text-text-muted leading-relaxed">Controls if the playlist stops, loops, or restarts.</span>
+            <span className="text-xs font-bold tracking-wider text-text uppercase">Repeat</span>
+            <span className="text-xs leading-relaxed text-text-muted">Controls if the playlist stops, loops, or restarts.</span>
           </div>
         </div>
       </div>

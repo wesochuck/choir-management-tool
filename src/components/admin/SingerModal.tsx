@@ -203,18 +203,18 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       }
     >
       {initialData && (
-        <div className="flex-row border-b border-border mb-4 gap-4">
+        <div className="mb-4 flex-row gap-4 border-b border-border">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'profile' ? 'border-b-2 border-primary text-primary font-semibold' : 'border-b-2 border-transparent text-text-muted font-medium'}`}
+            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'profile' ? 'border-b-2 border-primary font-semibold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
           >
             Profile Info
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('rsvps')}
-            className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'rsvps' ? 'border-b-2 border-primary text-primary font-semibold' : 'border-b-2 border-transparent text-text-muted font-medium'}`}
+            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'rsvps' ? 'border-b-2 border-primary font-semibold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
           >
             Performance RSVPs
           </button>
@@ -222,7 +222,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <button
               type="button"
               onClick={() => setActiveTab('patronage')}
-              className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 ${activeTab === 'patronage' ? 'border-b-2 border-primary text-primary font-semibold' : 'border-b-2 border-transparent text-text-muted font-medium'}`}
+              className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'patronage' ? 'border-b-2 border-primary font-semibold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
             >
               Patronage
             </button>
@@ -250,10 +250,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               </>
             ) : (
               <>
-                <div className="w-24 h-24 rounded-full bg-bg border-2 border-dashed border-border flex items-center justify-center text-text-muted text-4xl">
+                <div className="flex size-24 items-center justify-center rounded-full border-2 border-dashed border-border bg-bg text-4xl text-text-muted">
                   ?
                 </div>
-                <span className="text-xs text-muted">Save first to add a photo</span>
+                <span className="text-muted text-xs">Save first to add a photo</span>
               </>
             )}
           </div>
@@ -264,31 +264,31 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               value={formData.name || ''} 
               onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
               required
-              className="card w-full px-3 h-[38px] min-h-[38px] border border-border"
+              className="card h-[38px] min-h-[38px] w-full border border-border px-3"
             />
           </div>
           <div className="flex flex-row items-start gap-4">
-            <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex flex-1 flex-col items-start gap-1">
               <label className="text-label">Login Email (Optional)</label>
               <input
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="card w-full px-3 h-[38px] min-h-[38px] border border-border"
+                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
                 placeholder="e.g. singer@example.com"
               />
-              <p className="text-muted text-xs m-0">
+              <p className="text-muted m-0 text-xs">
                 {initialData?.user 
                   ? "Clearing this removes their login account." 
                   : "Provides portal access via password reset email."}
               </p>
               {initialData?.user && formData.email && (
-                <div className="flex-col gap-1 mt-[6px] items-start">
+                <div className="mt-[6px] flex-col items-start gap-1">
                   <button
                     type="button"
                     onClick={handleResetPassword}
                     disabled={isResettingPassword}
-                    className="btn btn-xs btn-secondary h-6 px-2 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                    className="btn btn-xs btn-secondary flex h-6 cursor-pointer items-center gap-1 px-2 text-[11px] font-semibold"
                   >
                     {isResettingPassword ? 'Sending Link...' : '🔑 Reset Password'}
                   </button>
@@ -306,24 +306,24 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 </div>
               )}
             </div>
-            <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex flex-1 flex-col items-start gap-1">
               <label className="text-label">Phone (Optional)</label>
               <input 
                 value={formData.phone || ''} 
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                className="card w-full px-3 h-[38px] min-h-[38px] border border-border"
+                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
                 placeholder="e.g. 555-123-4567"
               />
             </div>
           </div>
           <div className="flex flex-row items-start gap-4">
-            <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex flex-1 flex-col items-start gap-1">
               <label className="text-label">Voice Part</label>
               <select 
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required={formData.role !== 'admin'}
-                className="card w-full px-3 h-[38px] min-h-[38px] border border-border"
+                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
               >
                 {formData.role === 'admin' ? (
                   <option value="">-- Not Applicable (Admin) --</option>
@@ -337,12 +337,12 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 ))}
               </select>
             </div>
-            <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex flex-1 flex-col items-start gap-1">
               <label className="text-label">Status</label>
               <select 
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                className="card w-full px-3 h-[38px] min-h-[38px] border border-border"
+                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>
@@ -352,59 +352,59 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           </div>
           
           <div className="grid grid-cols-2 gap-2 gap-x-4">
-            <label className="flex-row items-center gap-2 cursor-pointer min-h-auto">
+            <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.doNotEmail}
                 onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
-                className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
               />
               <span className="text-label">Do Not Email</span>
             </label>
-            <label className="flex-row items-center gap-2 cursor-pointer min-h-auto">
+            <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.statusIsManual}
                 onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
-                className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
             </label>
-            <label className="flex-row items-center gap-2 cursor-pointer min-h-auto">
+            <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={Boolean(formData.isSectionLeader)}
                 onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
-                className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
               />
               <span className="text-label">Section Leader</span>
             </label>
             {formData.role === 'admin' && (
               <>
-                <label className="flex-row items-center gap-2 cursor-pointer min-h-auto">
+                <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
                   <input
                     type="checkbox"
                     checked={formData.receiveAttendanceReports !== false}
                     onChange={(e) => setFormData({ ...formData, receiveAttendanceReports: e.target.checked })}
-                    className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                    className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
                   />
                   <span className="text-label">Receive Attendance Reports</span>
                 </label>
-                <label className="flex-row items-center gap-2 cursor-pointer min-h-auto">
+                <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
                   <input
                     type="checkbox"
                     checked={Boolean(formData.receiveRsvpDeclineNotices)}
                     onChange={(e) => setFormData({ ...formData, receiveRsvpDeclineNotices: e.target.checked })}
-                    className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                    className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
                   />
                   <span className="text-label">Receive RSVP Decline Notices</span>
                 </label>
-                <label className="flex-row items-center gap-2 cursor-pointer min-h-auto">
+                <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
                   <input
                     type="checkbox"
                     checked={formData.receiveAdminNotifications !== false}
                     onChange={(e) => setFormData({ ...formData, receiveAdminNotifications: e.target.checked })}
-                    className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                    className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
                   />
                   <span className="text-label">Receive General Admin Notifications</span>
                 </label>
@@ -412,7 +412,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             )}
             {formData.email?.trim() ? (
               <label
-                className="flex-row items-center gap-2 cursor-pointer min-h-auto"
+                className="min-h-auto cursor-pointer flex-row items-center gap-2"
                 // @allow-inline-style - dynamic opacity based on isSelf
                 style={{
                   opacity: isSelf ? 0.6 : 1,
@@ -424,7 +424,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   checked={formData.role === 'admin'}
                   onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
                   disabled={Boolean(isSelf)}
-                  className="accent-[var(--primary)] w-4 h-4 min-h-auto cursor-pointer shrink-0"
+                  className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
                   // @allow-inline-style - dynamic cursor based on isSelf
                   style={{
                     cursor: isSelf ? 'not-allowed' : 'pointer',
@@ -436,11 +436,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           </div>
 
           {initialData?.statusLastChangedAt && (
-            <div className="card p-[6px_10px] bg-bg shadow-none border border-border flex flex-row flex-wrap justify-between gap-[4px_12px]">
-              <div className="text-xs text-muted m-0">
+            <div className="card flex flex-row flex-wrap justify-between gap-[4px_12px] border border-border bg-bg p-[6px_10px] shadow-none">
+              <div className="text-muted m-0 text-xs">
                 <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
               </div>
-              <div className="text-xs text-muted m-0">
+              <div className="text-muted m-0 text-xs">
                 <strong>Reason:</strong> {initialData.statusChangeReason || 'Manual update'}
               </div>
             </div>
@@ -451,7 +451,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <textarea 
               value={formData.notes} 
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-              className="card w-full p-3 border border-border rounded-lg h-[60px] min-h-[60px] resize-y"
+              className="card h-[60px] min-h-[60px] w-full resize-y rounded-lg border border-border p-3"
             />
           </div>
         </form>

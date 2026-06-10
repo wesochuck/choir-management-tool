@@ -44,15 +44,15 @@ export function TemplatesPanel({
 
   if (editingTemplate) {
     return (
-      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_300px] gap-6 items-start">
+      <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">
           <AppCard title={editingTemplate.id ? 'Edit Template' : 'New Template'}>
             <div className="flex flex-col gap-4">
-              <div className="flex gap-4 flex-wrap">
-                <div className="flex flex-col gap-1 flex-1">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Template Title</label>
                   <input
-                    className="card h-10 px-3 w-full border border-border"
+                    className="card h-10 w-full border border-border px-3"
                     value={editingTemplate.title || ''}
                     onChange={(e) =>
                       setEditingTemplate({ ...editingTemplate, title: e.target.value })
@@ -61,10 +61,10 @@ export function TemplatesPanel({
                     required
                   />
                 </div>
-                <div className="flex flex-col gap-1 flex-[0_0_150px]">
+                <div className="flex flex-[0_0_150px] flex-col gap-1">
                   <label className="text-label">Channel</label>
                   <select
-                    className="card h-10 px-3 w-full border border-border"
+                    className="card h-10 w-full border border-border px-3"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
@@ -84,7 +84,7 @@ export function TemplatesPanel({
               <div className="flex flex-col gap-1">
                 <label className="text-label">Subject</label>
                 <input
-                  className="card h-10 px-3 w-full border border-border"
+                  className="card h-10 w-full border border-border px-3"
                   value={editingTemplate.subject || ''}
                   onChange={(e) =>
                     setEditingTemplate({ ...editingTemplate, subject: e.target.value })
@@ -113,17 +113,17 @@ export function TemplatesPanel({
           <AppCard
             title="Template Preview"
             actions={
-              <div className="flex gap-4 p-4 border-t border-border bg-[#f8fafc] rounded-b-lg">
+              <div className="flex gap-4 rounded-b-lg border-t border-border bg-[#f8fafc] p-4">
                 <button
                   type="button"
-                  className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'} px-2.5 py-1 h-[30px]`}
+                  className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'} h-[30px] px-2.5 py-1`}
                   onClick={() => setPreviewDevice('desktop')}
                 >
                   🖥️ Desktop
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'} px-2.5 py-1 h-[30px]`}
+                  className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'} h-[30px] px-2.5 py-1`}
                   onClick={() => setPreviewDevice('mobile')}
                 >
                   📱 Mobile
@@ -132,12 +132,12 @@ export function TemplatesPanel({
             }
           >
             <div
-              className={`border border-border rounded-lg overflow-hidden bg-slate-100 flex justify-center transition-all duration-300 ${previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-0'}`}
+              className={`flex justify-center overflow-hidden rounded-lg border border-border bg-slate-100 transition-all duration-300 ${previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-0'}`}
             >
               <div
-                className={`w-full bg-surface shadow-md flex flex-col transition-all duration-300 min-h-[400px] ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
+                className={`flex min-h-[400px] w-full flex-col bg-surface shadow-md transition-all duration-300 ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
               >
-                <div className="p-4 border-b border-border bg-[#f8fafc] text-xs flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 border-b border-border bg-[#f8fafc] p-4 text-xs">
                   <div className="flex text-text-muted">
                     <span className="w-[60px] font-semibold">From:</span>
                     <span className="text-slate-800">
@@ -152,7 +152,7 @@ export function TemplatesPanel({
                   </div>
                 </div>
                 <div
-                  className={`overflow-y-auto flex-1 text-sm leading-relaxed text-slate-600 break-words ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}
+                  className={`flex-1 overflow-y-auto text-sm leading-relaxed break-words text-slate-600 ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}
                 >
                   <div
                     className="text-body message-preview-content"
@@ -214,7 +214,7 @@ export function TemplatesPanel({
       actions={
         <button
           type="button"
-          className="btn btn-primary btn-sm h-8 inline-flex items-center gap-1 px-2 text-xs rounded bg-slate-100 text-slate-600 border border-border"
+          className="btn btn-primary btn-sm inline-flex h-8 items-center gap-1 rounded border border-border bg-slate-100 px-2 text-xs text-slate-600"
           onClick={() =>
             setEditingTemplate({
               title: '',
@@ -234,9 +234,9 @@ export function TemplatesPanel({
           Manage message templates. Custom templates can be added, edited, or deleted. System-defined templates cannot be deleted.
         </p>
         <div className="overflow-x-auto">
-          <table className="border-collapse w-full min-w-[700px] text-left">
+          <table className="w-full min-w-[700px] border-collapse text-left">
             <thead>
-              <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+              <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
                 <th className="p-3 px-4 text-left">Title</th>
                 <th className="p-3 px-4 text-left">Type</th>
                 <th className="p-3 px-4 text-left">Subject</th>
@@ -247,7 +247,7 @@ export function TemplatesPanel({
             <tbody>
               {templates.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center p-8 text-gray-500">
+                  <td colSpan={5} className="p-8 text-center text-gray-500">
                     No templates found.
                   </td>
                 </tr>
@@ -258,25 +258,25 @@ export function TemplatesPanel({
                       <div className="flex items-center gap-1.5">
                         <span>{tpl.title}</span>
                         {tpl.isSystemTemplate && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-performance-bg text-performance-text opacity-80">
+                          <span className="inline-flex items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase opacity-80">
                             System
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="p-3 px-4">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary-light text-primary-deep w-fit">
+                      <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
                         {tpl.type}
                       </span>
                     </td>
-                    <td className="p-3 px-4 max-w-[250px] truncate text-muted">
+                    <td className="text-muted max-w-[250px] truncate p-3 px-4">
                       {tpl.subject || 'No Subject'}
                     </td>
-                    <td className="p-3 px-4 max-w-[300px] truncate text-muted">
+                    <td className="text-muted max-w-[300px] truncate p-3 px-4">
                       {tpl.content.substring(0, 60)}...
                     </td>
                     <td className="p-3 px-4 text-right whitespace-nowrap">
-                      <div className="flex gap-1.5 justify-end">
+                      <div className="flex justify-end gap-1.5">
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm"

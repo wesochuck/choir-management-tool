@@ -98,13 +98,13 @@ export function CommunicationModals({
               </span>
             </div>
             {selectedMessage.status === 'Archived' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <strong>Archived:</strong> This automated message was archived without sending.
               </div>
             )}
             <div className="flex flex-col gap-1">
               <label className="text-label text-muted">Content</label>
-              <div className="bg-bg border border-border rounded-lg p-4 max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-border bg-bg p-4">
                 {selectedMessage.content}
               </div>
             </div>
@@ -129,7 +129,7 @@ export function CommunicationModals({
       >
         <div className="flex flex-wrap gap-2">
           {recipientPreviewList.recipients.length === 0 ? (
-            <div className="w-full text-center py-10 text-text-muted">
+            <div className="w-full py-10 text-center text-text-muted">
               <p className="text-muted m-0">
                 {recipientPreviewList.emptyMessage || 'No recipients found.'}
               </p>
@@ -143,7 +143,7 @@ export function CommunicationModals({
             recipientPreviewList.recipients.map((r) => (
               <div
                 key={r.id}
-                className="inline-flex items-center gap-2 px-3 py-1.5 border border-border rounded-lg bg-bg"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5"
               >
                 <strong>{r.name}</strong>
                 <span className="text-muted text-xs">{r.voicePart}</span>

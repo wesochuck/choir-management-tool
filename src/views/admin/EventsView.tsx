@@ -118,8 +118,8 @@ export default function EventsView() {
 
   if (isLoading && events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 p-8">
-        <div className="spinner-small w-10 h-10 border-3" />
+      <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 p-8">
+        <div className="spinner-small size-10 border-3" />
         <div className="text-muted text-sm">
           Loading scheduled events...
         </div>
@@ -129,9 +129,9 @@ export default function EventsView() {
 
   if (error) {
     return (
-      <div className="card flex flex-col items-center text-center max-w-[500px] mx-auto my-8 p-8 border-danger-text bg-danger-bg">
+      <div className="card mx-auto my-8 flex max-w-[500px] flex-col items-center border-danger-text bg-danger-bg p-8 text-center">
         <span className="text-3xl">⚠️</span>
-        <div className="text-danger-text text-lg font-semibold">
+        <div className="text-lg font-semibold text-danger-text">
           Failed to load events
         </div>
         <p className="text-danger-text opacity-80">
@@ -149,7 +149,7 @@ export default function EventsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="admin-view-title">Event Management</h1>
         <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />
       </div>

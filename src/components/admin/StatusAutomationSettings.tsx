@@ -24,12 +24,12 @@ export function StatusAutomationSettings({
   return (
     <AppCard title="Singer Status & Rehearsal Limits">
       <div className="admin-settings-group">
-        <label className="flex flex-row items-center gap-2 cursor-pointer">
+        <label className="flex cursor-pointer flex-row items-center gap-2">
           <input
             type="checkbox"
             checked={configAutomationEnabled}
             onChange={(e) => setConfigAutomationEnabled(e.target.checked)}
-            className="accent-[var(--primary)] w-4 h-4"
+            className="size-4 accent-[var(--primary)]"
           />
           <span className="text-label font-semibold">Enable Automated Status Changes</span>
         </label>
@@ -55,12 +55,12 @@ export function StatusAutomationSettings({
             </div>
 
             {/* @allow-inline-style - spacing override */}
-            <label className="flex flex-row items-center gap-2 cursor-pointer" style={{ marginTop: 'var(--space-xs)' }}>
+            <label className="flex cursor-pointer flex-row items-center gap-2" style={{ marginTop: 'var(--space-xs)' }}>
               <input
                 type="checkbox"
                 checked={configAutomationRecoveryEnabled}
                 onChange={(e) => setConfigAutomationRecoveryEnabled(e.target.checked)}
-                className="accent-[var(--primary)] w-4 h-4"
+                className="size-4 accent-[var(--primary)]"
               />
               <span className="text-label font-semibold">Enable Automated Status Recovery</span>
             </label>
@@ -70,7 +70,7 @@ export function StatusAutomationSettings({
           </div>
         )}
 
-        <hr className="border-none border-t border-border my-2" />
+        <hr className="my-2 border-t border-none border-border" />
 
         <div className="admin-settings-field">
           <label className="text-label font-semibold">Maximum Rehearsal Miss Limit</label>

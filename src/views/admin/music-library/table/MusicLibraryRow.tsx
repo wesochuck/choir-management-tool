@@ -56,13 +56,13 @@ export function MusicLibraryRow({
       onClick={() => onEditPiece(piece)}
       data-has-tracks={hasTracks}
     >
-      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle text-center">
+      <td className="border border-[var(--border)] px-[10px] py-[6px] text-center align-middle">
         <input
           type="checkbox"
           checked={selectedIds.has(piece.id)}
           onChange={() => onToggleSelection(piece.id)}
           onClick={(event) => event.stopPropagation()}
-          className="!min-h-auto !w-[14px] !h-[14px] !m-0 align-middle cursor-pointer"
+          className="!m-0 !h-[14px] !min-h-auto !w-[14px] cursor-pointer align-middle"
         />
       </td>
 
@@ -76,19 +76,19 @@ export function MusicLibraryRow({
         onToggleExpansion={(event) => onToggleExpansion(piece.id, event)}
       />
 
-      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
+      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
         {piece.composer && piece.arranger
           ? `${piece.composer} / arr. ${piece.arranger}`
           : (piece.composer || piece.arranger || '-')}
       </td>
 
-      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
+      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
         {piece.duration
           ? formatSecondsToDuration(parseDurationToSeconds(piece.duration))
           : '-'}
       </td>
 
-      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle text-center font-semibold">
+      <td className="border border-[var(--border)] px-[10px] py-[6px] text-center align-middle font-semibold">
         {piece.performances && piece.performances.length > 0 ? (
           <span>
             {piece.performances.length}
@@ -96,7 +96,7 @@ export function MusicLibraryRow({
         ) : '-'}
       </td>
 
-      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
+      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
         {lastPerformedDate || '-'}
       </td>
 
@@ -113,10 +113,10 @@ export function MusicLibraryRow({
         catalogLookupTemplate={catalogLookupTemplate}
       />
 
-      <td className="px-[10px] py-[6px] border border-[var(--border)] align-middle">
-        <div className="flex gap-[var(--space-xs)] items-center justify-center">
+      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
+        <div className="flex items-center justify-center gap-[var(--space-xs)]">
           <button
-            className="btn btn-ghost btn-sm !min-h-auto !h-6 !p-[0_8px] !text-[0.75rem] !m-0"
+            className="btn btn-ghost btn-sm !m-0 !h-6 !min-h-auto !p-[0_8px] !text-[0.75rem]"
             onClick={(event) => {
               event.stopPropagation();
               onEditPiece(piece);

@@ -38,7 +38,7 @@ export function SavingIndicator({
       <span className="inline-flex items-center gap-1 text-sm text-danger-text">
         {'\u26A0'} {errorMessage || 'Save failed'}
         {onRetry && (
-          <button className="border-none bg-none text-danger-text cursor-pointer text-sm underline p-0 min-h-auto hover:text-primary" onClick={onRetry} type="button">Retry</button>
+          <button className="min-h-auto cursor-pointer border-none bg-none p-0 text-sm text-danger-text underline hover:text-primary" onClick={onRetry} type="button">Retry</button>
         )}
       </span>
     );

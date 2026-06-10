@@ -209,7 +209,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
             value={selectedPerformanceId} 
             onChange={(e) => handlePerformanceChange(e.target.value)}
             required
-            className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
+            className="card h-11 w-full rounded-md border border-border bg-bg px-3 text-text"
           >
             <option value="">-- Select Performance --</option>
             {performances.map(p => (
@@ -226,7 +226,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
             value={venue} 
             onChange={(e) => setVenue(e.target.value)} 
             required
-            className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
+            className="card h-11 w-full rounded-md border border-border bg-bg px-3 text-text"
           >
             <option value="">-- Select Rehearsal Venue --</option>
             {venues.map(v => (
@@ -236,24 +236,24 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         </div>
 
         <div className="flex-row gap-4">
-          <div className="flex-col gap-1 flex-1">
+          <div className="flex-1 flex-col gap-1">
             <label className="text-label">Count</label>
             <input 
               type="number" 
               value={count} 
               onChange={(e) => setCount(parseInt(e.target.value))} 
               min="1" max="20"
-              className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
+              className="card h-11 w-full rounded-md border border-border bg-bg px-3 text-text"
             />
           </div>
-          <div className="flex-col gap-1 flex-1">
+          <div className="flex-1 flex-col gap-1">
              <label className="text-label">Time</label>
              <input 
               type="time" 
               value={time} 
               onChange={(e) => setTime(e.target.value)} 
               required
-              className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
+              className="card h-11 w-full rounded-md border border-border bg-bg px-3 text-text"
             />
           </div>
         </div>
@@ -263,7 +263,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           <select 
             value={dayOfWeek} 
             onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-            className="card w-full px-3 h-11 border border-border rounded-md bg-bg text-text"
+            className="card h-11 w-full rounded-md border border-border bg-bg px-3 text-text"
           >
             <option value={0}>Sunday</option>
             <option value={1}>Monday</option>
@@ -276,17 +276,17 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         </div>
 
         {range && selectedPerformance && (
-          <div className="card bg-primary-light border border-[rgba(74,124,89,0.2)] p-3 px-4 rounded-md shadow-none flex flex-col gap-1 mt-1">
-            <div className="flex items-center gap-2 text-primary-deep font-semibold text-sm">
+          <div className="card mt-1 flex flex-col gap-1 rounded-md border border-[rgba(74,124,89,0.2)] bg-primary-light p-3 px-4 shadow-none">
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary-deep">
               <span className="text-lg">📅</span> Rehearsal Schedule Preview
             </div>
-            <div className="text-[0.8125rem] text-text leading-relaxed">
+            <div className="text-[0.8125rem] leading-relaxed text-text">
               First Rehearsal: <strong className="text-primary-deep">{formatInTimezone(range.first, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
             </div>
-            <div className="text-[0.8125rem] text-text leading-relaxed">
+            <div className="text-[0.8125rem] leading-relaxed text-text">
               Last Rehearsal: <strong className="text-primary-deep">{formatInTimezone(range.last, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
             </div>
-            <div className="text-muted text-xs mt-1">
+            <div className="text-muted mt-1 text-xs">
               Generates {count} weekly rehearsals leading up to the performance on {formatInTimezone(selectedPerformance.date, timezone, { year: 'numeric', month: 'long', day: 'numeric' })}.
             </div>
           </div>

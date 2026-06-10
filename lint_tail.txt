@@ -1,0 +1,500 @@
+  376:33   warning  Classname 'text-muted' is not a Tailwind CSS class               tailwindcss/no-custom-classname
+  376:44   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  376:56   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:60   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:74   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:100  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:107  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:121  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:132  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:156  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:164  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:179  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:192  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:205  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:249  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  387:273  warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  395:33   warning  Classname 'text-muted' is not a Tailwind CSS class               tailwindcss/no-custom-classname
+  395:44   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  395:56   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  414:24   warning  Classname 'btn' is not a Tailwind CSS class                      tailwindcss/no-custom-classname
+  414:28   warning  Classname 'btn-secondary' is not a Tailwind CSS class            tailwindcss/no-custom-classname
+  414:42   warning  Classname 'btn-sm' is not a Tailwind CSS class                   tailwindcss/no-custom-classname
+  422:29   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  422:37   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  422:37   warning  Classname 'text-muted' is not a Tailwind CSS class               tailwindcss/no-custom-classname
+  422:48   warning  Invalid Tailwind CSS classnames order                            tailwindcss/classnames-order
+  425:29   warning  Classname 'message-preview-content' is not a Tailwind CSS class  tailwindcss/no-custom-classname
+/Users/wesosborn/Downloads/choir-management-tool/src/views/singer/ProfileView.tsx
+  207:51   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  207:63   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  212:32   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  212:38   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  212:43   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:29   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:29   warning  'w-24' can be merged with 'h-24' into 'size-24'              tailwindcss/enforces-shorthand
+  225:34   warning  'h-24' can be merged with 'w-24' into 'size-24'              tailwindcss/enforces-shorthand
+  225:39   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:52   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:69   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:82   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:87   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:100  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:115  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:124  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  225:133  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  232:48   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  232:57   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  232:63   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  234:31   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  239:26   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  239:31   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  239:38   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  239:43   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  239:48   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  239:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  244:31   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  250:26   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  250:31   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  250:38   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  250:43   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  250:48   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  250:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  256:33   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  256:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  256:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  256:61   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  256:76   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  261:30   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  261:45   warning  'w-[18px]' can be merged with 'h-[18px]' into 'size-[18px]'  tailwindcss/enforces-shorthand
+  261:54   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  261:54   warning  'h-[18px]' can be merged with 'w-[18px]' into 'size-[18px]'  tailwindcss/enforces-shorthand
+  261:78   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  264:36   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  265:36   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  265:44   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  265:44   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  269:33   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  269:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  269:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  269:61   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  269:76   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  274:30   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  274:45   warning  'w-[18px]' can be merged with 'h-[18px]' into 'size-[18px]'  tailwindcss/enforces-shorthand
+  274:54   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  274:54   warning  'h-[18px]' can be merged with 'w-[18px]' into 'size-[18px]'  tailwindcss/enforces-shorthand
+  274:78   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  277:36   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  278:36   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  278:44   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  278:44   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  282:33   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  282:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  282:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  282:61   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  282:76   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  287:30   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  287:45   warning  'w-[18px]' can be merged with 'h-[18px]' into 'size-[18px]'  tailwindcss/enforces-shorthand
+  287:54   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  287:54   warning  'h-[18px]' can be merged with 'w-[18px]' into 'size-[18px]'  tailwindcss/enforces-shorthand
+  287:78   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  290:36   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  291:36   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  291:44   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  291:44   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  300:35   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  304:30   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  304:35   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  304:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  304:47   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  304:52   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  304:59   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  310:35   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  311:33   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  311:38   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:45   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:50   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:62   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:76   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:81   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:94   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  311:110  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  314:34   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  314:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  314:42   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  319:33   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  320:31   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  320:36   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:43   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:48   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:53   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:60   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:74   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:79   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:92   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  320:108  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  327:29   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  327:68   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  327:79   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  333:29   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  333:70   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  333:81   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  338:64   warning  Classname 'btn' is not a Tailwind CSS class                  tailwindcss/no-custom-classname
+  338:68   warning  Classname 'btn-primary' is not a Tailwind CSS class          tailwindcss/no-custom-classname
+  345:27   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  345:35   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  345:35   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  345:46   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  345:50   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  351:33   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  351:41   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  351:41   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  351:52   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  356:39   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  359:34   warning  Classname 'btn' is not a Tailwind CSS class                  tailwindcss/no-custom-classname
+  359:38   warning  Classname 'btn-primary' is not a Tailwind CSS class          tailwindcss/no-custom-classname
+  359:50   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  359:55   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  359:60   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  359:73   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  359:88   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  359:113  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  367:39   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  368:37   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  368:46   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  368:65   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  372:36   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  372:41   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  372:48   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  372:53   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  372:79   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  372:87   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  378:37   warning  Classname 'btn' is not a Tailwind CSS class                  tailwindcss/no-custom-classname
+  378:41   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  378:46   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  378:65   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  378:70   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  378:83   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  378:112  warning  Classname 'btn-success' is not a Tailwind CSS class          tailwindcss/no-custom-classname
+  378:128  warning  Classname 'btn-primary' is not a Tailwind CSS class          tailwindcss/no-custom-classname
+  383:38   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  383:46   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  383:46   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  389:33   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  389:41   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  389:41   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  392:31   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  392:40   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  392:54   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:30   warning  Classname 'btn' is not a Tailwind CSS class                  tailwindcss/no-custom-classname
+  396:34   warning  Classname 'btn-ghost' is not a Tailwind CSS class            tailwindcss/no-custom-classname
+  396:44   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:61   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:68   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:87   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:95   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:100  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:111  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  396:126  warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  402:29   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  402:37   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  402:37   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  402:48   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  416:27   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  416:35   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  416:35   warning  Classname 'text-muted' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  416:46   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  422:35   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  426:30   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  426:35   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  426:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  426:47   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  426:52   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  426:59   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  434:35   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  438:30   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  438:35   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  438:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  438:47   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  438:52   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  438:59   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  447:35   warning  Classname 'text-label' is not a Tailwind CSS class           tailwindcss/no-custom-classname
+  451:30   warning  Classname 'card' is not a Tailwind CSS class                 tailwindcss/no-custom-classname
+  451:35   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  451:42   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  451:47   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  451:52   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  451:59   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  459:33   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  459:74   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+  459:93   warning  Invalid Tailwind CSS classnames order                        tailwindcss/classnames-order
+/Users/wesosborn/Downloads/choir-management-tool/src/views/singer/SeatingFinderView.tsx
+  100:30   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  100:34   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  100:46   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  100:62   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  100:69   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  100:83   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  232:27   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  232:36   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  232:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  232:46   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  232:56   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  232:71   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  239:31   warning  Classname 'btn' is not a Tailwind CSS class                                                tailwindcss/no-custom-classname
+  239:35   warning  Classname 'btn-sm' is not a Tailwind CSS class                                             tailwindcss/no-custom-classname
+  239:86   warning  Classname 'btn-primary' is not a Tailwind CSS class                                        tailwindcss/no-custom-classname
+  239:102  warning  Classname 'btn-ghost' is not a Tailwind CSS class                                          tailwindcss/no-custom-classname
+  249:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  249:63   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  249:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  250:31   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  250:46   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  250:56   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  250:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  250:79   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  250:89   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  254:31   warning  Classname 'text-muted' is not a Tailwind CSS class                                         tailwindcss/no-custom-classname
+  257:163  warning  Classname 'btn' is not a Tailwind CSS class                                                tailwindcss/no-custom-classname
+  257:167  warning  Classname 'btn-primary' is not a Tailwind CSS class                                        tailwindcss/no-custom-classname
+  264:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  264:63   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  264:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  265:31   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  265:46   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  265:56   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  265:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  265:79   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  265:89   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  280:29   warning  Classname 'text-muted' is not a Tailwind CSS class                                         tailwindcss/no-custom-classname
+  287:29   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:53   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:55   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:59   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:64   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:105  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  287:111  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  289:29   warning  Classname 'btn' is not a Tailwind CSS class                                                tailwindcss/no-custom-classname
+  289:33   warning  Classname 'btn-sm' is not a Tailwind CSS class                                             tailwindcss/no-custom-classname
+  289:70   warning  Classname 'btn-primary' is not a Tailwind CSS class                                        tailwindcss/no-custom-classname
+  289:86   warning  Classname 'btn-ghost' is not a Tailwind CSS class                                          tailwindcss/no-custom-classname
+  295:29   warning  Classname 'btn' is not a Tailwind CSS class                                                tailwindcss/no-custom-classname
+  295:33   warning  Classname 'btn-sm' is not a Tailwind CSS class                                             tailwindcss/no-custom-classname
+  295:72   warning  Classname 'btn-primary' is not a Tailwind CSS class                                        tailwindcss/no-custom-classname
+  295:88   warning  Classname 'btn-ghost' is not a Tailwind CSS class                                          tailwindcss/no-custom-classname
+  301:28   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  301:36   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  301:50   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  301:66   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  301:71   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  301:81   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  301:81   warning  No need for arbitrary 'tracking-[0.1em]', use 'tracking-widest' instead                    tailwindcss/no-unnecessary-arbitrary-value
+  301:98   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:31   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:42   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:49   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:63   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:78   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:83   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:93   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:98   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:107  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:120  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  308:129  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:33   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:55   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:61   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:68   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:87   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:103  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:122  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:132  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  310:142  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:48   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:53   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:87   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:100  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:108  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:123  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:129  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  312:139  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:40   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:48   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:64   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:81   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:90   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:101  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:111  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:126  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  313:138  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  316:41   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  316:80   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:49   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:59   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:101  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:118  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:132  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:140  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:153  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:163  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:170  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:218  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:261  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:281  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:337  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:361  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:387  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:406  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:421  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:436  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:451  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:474  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:489  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:508  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:526  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:571  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  361:598  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:49   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:59   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:101  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:118  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:132  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:140  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:153  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:163  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:170  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:218  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:261  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:281  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:337  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:361  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:387  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:406  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:421  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:436  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:451  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:474  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:489  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:508  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:526  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:571  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  365:598  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:40   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:48   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:64   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:81   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:90   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:100  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:110  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:125  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  374:137  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:33   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:47   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:60   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:66   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:73   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  380:115  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  381:35   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  381:44   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  381:58   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  381:69   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  381:89   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  381:100  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  382:40   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  382:61   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:64   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:81   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:99   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:106  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:147  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:160  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:160  warning  No need for arbitrary 'text-[0.75rem]', use 'text-xs' instead                              tailwindcss/no-unnecessary-arbitrary-value
+  383:175  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  383:185  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  396:48   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  396:64   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  396:74   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  396:92   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  415:28   warning  Classname 'btn' is not a Tailwind CSS class                                                tailwindcss/no-custom-classname
+  415:32   warning  Classname 'btn-ghost' is not a Tailwind CSS class                                          tailwindcss/no-custom-classname
+  415:42   warning  Classname 'btn-sm' is not a Tailwind CSS class                                             tailwindcss/no-custom-classname
+  428:30   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  428:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  428:52   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  428:68   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  428:73   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  428:83   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  428:83   warning  No need for arbitrary 'tracking-[0.1em]', use 'tracking-widest' instead                    tailwindcss/no-unnecessary-arbitrary-value
+  436:29   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  436:34   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  436:46   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  436:67   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  439:52   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  439:60   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  439:71   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  439:78   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  439:92   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:34   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:34   warning  'w-10' can be merged with 'h-10' into 'size-10'                                            tailwindcss/enforces-shorthand
+  440:39   warning  'h-10' can be merged with 'w-10' into 'size-10'                                            tailwindcss/enforces-shorthand
+  440:44   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:55   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:72   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:90   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:95   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:108  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  440:146  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  441:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  441:47   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  441:57   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  442:52   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  442:93   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  443:36   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  443:62   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  443:72   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  443:72   warning  'whitespace-nowrap' can be merged with 'overflow-hidden', 'text-ellipsis' into 'truncate'  tailwindcss/enforces-shorthand
+  443:90   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  443:90   warning  'overflow-hidden' can be merged with 'text-ellipsis', 'whitespace-nowrap' into 'truncate'  tailwindcss/enforces-shorthand
+  443:106  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  443:106  warning  'text-ellipsis' can be merged with 'overflow-hidden', 'whitespace-nowrap' into 'truncate'  tailwindcss/enforces-shorthand
+  445:54   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  445:72   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  451:52   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  451:60   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  451:71   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  451:78   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  451:92   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:34   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:34   warning  'w-10' can be merged with 'h-10' into 'size-10'                                            tailwindcss/enforces-shorthand
+  452:39   warning  'h-10' can be merged with 'w-10' into 'size-10'                                            tailwindcss/enforces-shorthand
+  452:44   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:55   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:72   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:90   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:95   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:108  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  452:146  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  453:38   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  453:47   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  453:57   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  454:52   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  454:93   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  455:36   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  455:62   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  455:72   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  455:72   warning  'whitespace-nowrap' can be merged with 'overflow-hidden', 'text-ellipsis' into 'truncate'  tailwindcss/enforces-shorthand
+  455:90   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  455:90   warning  'overflow-hidden' can be merged with 'text-ellipsis', 'whitespace-nowrap' into 'truncate'  tailwindcss/enforces-shorthand
+  455:106  warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  455:106  warning  'text-ellipsis' can be merged with 'overflow-hidden', 'whitespace-nowrap' into 'truncate'  tailwindcss/enforces-shorthand
+  457:54   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+  457:72   warning  Invalid Tailwind CSS classnames order                                                      tailwindcss/classnames-order
+✖ 11249 problems (0 errors, 11249 warnings)
+  0 errors and 2146 warnings potentially fixable with the `--fix` option.

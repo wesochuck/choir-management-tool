@@ -142,15 +142,15 @@ export default function SettingsView() {
     }
   };
 
-  if (isLoading) return <div className="p-6 max-w-7xl mx-auto">Loading system settings...</div>;
+  if (isLoading) return <div className="mx-auto max-w-7xl p-6">Loading system settings...</div>;
 
   return (
-    <div className="flex-col p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto max-w-7xl flex-col p-6">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">System Settings</h1>
       </div>
 
-      {message && <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-deep">{message}</div>}
+      {message && <div className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary-deep">{message}</div>}
 
       <AppCard title="Choir Name">
           <div className="flex flex-col gap-1">
@@ -160,7 +160,7 @@ export default function SettingsView() {
               value={choirName}
               onChange={(event) => setChoirName(event.target.value)}
               placeholder="e.g. Downtown Community Chorale"
-              className="card w-full max-w-lg rounded-md border-border text-sm p-2"
+              className="card w-full max-w-lg rounded-md border-border p-2 text-sm"
             />
             <p className="text-muted text-xs text-text-muted">
             Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
@@ -171,12 +171,12 @@ export default function SettingsView() {
       <AppCard title="Organization Logo">
         <div className="flex flex-col gap-1">
           {logoUrl && (
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-border">
-              <img src={logoUrl} alt="Organization logo preview" className="w-full h-full object-cover" />
+            <div className="relative size-24 overflow-hidden rounded-full border-2 border-border">
+              <img src={logoUrl} alt="Organization logo preview" className="size-full object-cover" />
             </div>
           )}
-          <div className="flex items-center gap-2 mt-2">
-            <label className="btn btn-secondary text-sm text-primary cursor-pointer hover:underline">
+          <div className="mt-2 flex items-center gap-2">
+            <label className="btn btn-secondary cursor-pointer text-sm text-primary hover:underline">
               {logoUrl ? 'Replace Logo' : 'Upload Logo'}
               <input
                 type="file"
@@ -223,7 +223,7 @@ export default function SettingsView() {
             value={homepageUrl}
             onChange={(event) => setHomepageUrl(event.target.value)}
             placeholder="e.g. https://www.mychoir.org"
-            className="card w-full max-w-lg rounded-md border-border text-sm p-2"
+            className="card w-full max-w-lg rounded-md border-border p-2 text-sm"
           />
           <p className="text-muted text-xs text-text-muted">
             The main public website address where applicants are redirected after submitting their audition sheet successfully.
@@ -237,7 +237,7 @@ export default function SettingsView() {
             id="choir-timezone"
             value={timezone}
             onChange={(event) => setTimezone(event.target.value)}
-            className="card w-full max-w-lg rounded-md border-border text-sm p-2"
+            className="card w-full max-w-lg rounded-md border-border p-2 text-sm"
             // @allow-inline-style - explicit pointer cursor and dynamic background color overrides
             style={{
               backgroundColor: 'var(--card-bg, #ffffff)',
@@ -349,7 +349,7 @@ function QueueWebhookSettings() {
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="card w-full rounded-md border-border text-sm p-2"
+              className="card w-full rounded-md border-border p-2 text-sm"
               // @allow-inline-style - dynamic flex growth and background color overlay
               style={{
                 flex: 1,

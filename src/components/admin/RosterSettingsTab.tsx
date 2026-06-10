@@ -72,7 +72,7 @@ export function RosterSettingsTab({
     <div className="admin-settings-layout">
       {configMessage && (
         <div 
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${configMessage.startsWith('Error') ? 'bg-primary-light text-primary-deep' : 'bg-performance-bg text-performance-text'}`} 
+          className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${configMessage.startsWith('Error') ? 'bg-primary-light text-primary-deep' : 'bg-performance-bg text-performance-text'}`} 
           // @allow-inline-style
           style={{ alignSelf: 'flex-start', padding: '8px 12px', fontSize: '14px' }}
         >

@@ -152,7 +152,7 @@ export default function PublicPlayerView() {
     setPlaylist(hydrated);
   };
 
-  if (isLoading) return <div className="text-center pt-16">Loading playlist...</div>;
+  if (isLoading) return <div className="pt-16 text-center">Loading playlist...</div>;
   if (error) return <div className="chorus-player"><div className="error-message">{error}</div></div>;
   if (!data) return null;
 
@@ -168,7 +168,7 @@ export default function PublicPlayerView() {
             </Link>
           )}
           <h1>Chorus</h1>
-          <div className="text-sm text-text-secondary">{data.event.title}</div>
+          <div className="text-text-secondary text-sm">{data.event.title}</div>
         </div>
       </header>
 

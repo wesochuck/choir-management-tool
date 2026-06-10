@@ -27,7 +27,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <div className="text-text text-base leading-relaxed">{message}</div>
+      <div className="text-base leading-relaxed text-text">{message}</div>
     </Modal>
   );
 }

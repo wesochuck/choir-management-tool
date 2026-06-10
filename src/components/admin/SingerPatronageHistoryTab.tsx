@@ -75,7 +75,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
 
   if (loading) {
     return (
-      <div className="text-sm text-muted p-4">
+      <div className="text-muted p-4 text-sm">
         Loading patronage history...
       </div>
     );
@@ -83,33 +83,33 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
 
   return (
     <div className="flex-col gap-4">
-      <div className="card p-4 bg-primary-light border border-[rgb(74_117_89_/_20%)] flex flex-col gap-1">
-        <div className="text-xs uppercase tracking-wider font-semibold text-primary-deep">Lifetime Value</div>
+      <div className="card flex flex-col gap-1 border border-[rgb(74_117_89_/_20%)] bg-primary-light p-4">
+        <div className="text-xs font-semibold tracking-wider text-primary-deep uppercase">Lifetime Value</div>
         <div className="text-2xl font-extrabold text-primary">
           ${(ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </div>
       </div>
 
       <div>
-        <h4 className="m-0 mb-2 text-xs uppercase tracking-wider text-text-muted">
+        <h4 className="m-0 mb-2 text-xs tracking-wider text-text-muted uppercase">
           Transaction History ({items.length})
         </h4>
         <div className="flex-col gap-2">
           {items.length === 0 ? (
-            <p className="text-sm text-muted m-0">No patronage history found.</p>
+            <p className="text-muted m-0 text-sm">No patronage history found.</p>
           ) : (
             items.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="card p-3 px-4 shadow-none border border-border m-0">
-                <div className="flex-row justify-between align-center">
+              <div key={`${item.type}-${item.id}`} className="card m-0 border border-border p-3 px-4 shadow-none">
+                <div className="align-center flex-row justify-between">
                   <div className="flex-col">
                     <span className="text-sm font-medium">{item.description}</span>
-                    <span className="text-xs text-muted">
+                    <span className="text-muted text-xs">
                       {formatInTimezone(item.date, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <div className="flex-col text-right items-end">
+                  <div className="flex-col items-end text-right">
                     <span className="text-sm font-bold">${(item.amountPaidCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                    <span className={`text-xs uppercase font-bold ${item.status === 'paid' ? 'text-success' : 'text-danger'}`}>
+                    <span className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success' : 'text-danger'}`}>
                       {item.status}
                     </span>
                   </div>

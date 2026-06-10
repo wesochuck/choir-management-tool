@@ -413,10 +413,10 @@ export default function TicketingView() {
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-display m-0">Ticketing Dashboard</h1>
-          <p className="text-gray-500 text-sm">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
+          <p className="text-sm text-gray-500">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'bundles' && (
@@ -433,7 +433,7 @@ export default function TicketingView() {
       </div>
 
       {/* Tab Controls */}
-      <div className="flex flex-row gap-2 border-b border-gray-200 pb-1 mb-1">
+      <div className="mb-1 flex flex-row gap-2 border-b border-gray-200 pb-1">
         <button
           className={`btn px-4 py-2 font-semibold ${activeTab === 'willcall' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('willcall')}
@@ -456,38 +456,38 @@ export default function TicketingView() {
 
       {activeTab === 'willcall' && (
         <>
-          <div className="card p-4 bg-[rgba(74,124,89,0.05)] border-l-4 border-primary rounded-lg m-0">
-            <h3 className="m-0 mb-1 text-base text-primary-deep flex items-center gap-1.5">
+          <div className="card m-0 rounded-lg border-l-4 border-primary bg-[rgba(74,124,89,0.05)] p-4">
+            <h3 className="m-0 mb-1 flex items-center gap-1.5 text-base text-primary-deep">
               ℹ️ Ticketing Instructions & Links
             </h3>
-            <p className="text-gray-500 text-sm m-0 mb-2 leading-relaxed">
-              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="font-semibold underline text-primary-deep">Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
+            <p className="m-0 mb-2 text-sm leading-relaxed text-gray-500">
+              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="font-semibold text-primary-deep underline">Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
             </p>
             <div className="flex flex-col gap-1.5 text-sm">
               <div>
                 <strong>📢 Storefront URL:</strong>{' '}
-                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="underline text-primary">
+                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="text-primary underline">
                   {window.location.origin}/tickets
                 </a>
-                <span className="text-xs text-gray-500 ml-1.5">(list of all active ticketed concerts & bundles)</span>
+                <span className="ml-1.5 text-xs text-gray-500">(list of all active ticketed concerts & bundles)</span>
               </div>
               {selectedEventId && selectedEvent && (
                 <div>
                   <strong>🔗 Direct Concert Ticket Link:</strong>{' '}
-                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="underline text-primary">
+                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                     {window.location.origin}/tickets/{selectedEventId}
                   </a>
-                  <span className="text-xs text-gray-500 ml-1.5">(direct checkout page for {selectedEvent.title})</span>
+                  <span className="ml-1.5 text-xs text-gray-500">(direct checkout page for {selectedEvent.title})</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="card flex flex-wrap gap-4 items-center p-4 bg-neutral-bg">
-            <div className="flex-1 flex flex-col gap-1">
-              <div className="flex flex-row justify-between items-center">
+          <div className="card bg-neutral-bg flex flex-wrap items-center gap-4 p-4">
+            <div className="flex flex-1 flex-col gap-1">
+              <div className="flex flex-row items-center justify-between">
                 <label className="text-sm font-semibold">Select Performance</label>
-                <label className="flex flex-row items-center gap-1.5 text-sm cursor-pointer m-0">
+                <label className="m-0 flex cursor-pointer flex-row items-center gap-1.5 text-sm">
                   <input
                     type="checkbox"
                     checked={showPastAndInactive}
@@ -498,7 +498,7 @@ export default function TicketingView() {
                 </label>
               </div>
               <select
-                className="card w-full h-11 px-3 border border-gray-200"
+                className="card h-11 w-full border border-gray-200 px-3"
                 value={selectedEventId}
                 onChange={e => setSelectedEventId(e.target.value)}
               >
@@ -521,25 +521,25 @@ export default function TicketingView() {
 
             {selectedEvent && (
               <div className="flex flex-row flex-wrap gap-6 px-4">
-                <div className="flex flex-col gap-0.5 min-w-[100px]">
+                <div className="flex min-w-[100px] flex-col gap-0.5">
                   <span className="text-xs text-gray-500">TICKETS SOLD</span>
                   <span className="text-2xl font-bold">
                     {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                <div className="flex min-w-[110px] flex-col gap-0.5">
                   <span className="text-xs text-gray-500">TICKET SALES</span>
                   <span className="text-2xl font-bold">
                     ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                <div className="flex min-w-[110px] flex-col gap-0.5">
                   <span className="text-xs text-gray-500">FEES COLLECTED</span>
                   <span className="text-2xl font-bold text-gray-500">
                     ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                <div className="flex min-w-[110px] flex-col gap-0.5">
                   <span className="text-xs text-gray-500">TOTAL REVENUE</span>
                   <span className="text-2xl font-bold text-primary">
                     ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
@@ -550,26 +550,26 @@ export default function TicketingView() {
           </div>
 
           {showWarning && (
-            <div className="card p-4 border-warning-border bg-warning-bg text-warning-text">
+            <div className="card border-warning-border bg-warning-bg text-warning-text p-4">
               ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
             </div>
           )}
 
           <AppCard title="Will Call Checklist">
             <div className="flex flex-col gap-4">
-              <div className="flex gap-2 w-full items-center">
-                <div className="flex-1 min-w-[200px] w-full">
+              <div className="flex w-full items-center gap-2">
+                <div className="w-full min-w-[200px] flex-1">
                   <input
                     type="text"
                     placeholder="Search buyer name or email..."
-                    className="card w-full h-10 px-3 border border-gray-200"
+                    className="card h-10 w-full border border-gray-200 px-3"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <div className="min-w-[200px]">
                   <select
-                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
+                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
                   >
@@ -583,12 +583,12 @@ export default function TicketingView() {
               {loading ? (
                 <p className="text-gray-500">Loading registrations...</p>
               ) : filteredPurchases.length === 0 ? (
-                <p className="text-gray-500 p-8 text-center">No purchase records found.</p>
+                <p className="p-8 text-center text-gray-500">No purchase records found.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="border-collapse w-full min-w-[600px] text-left">
+                  <table className="w-full min-w-[600px] border-collapse text-left">
                     <thead>
-                      <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                      <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
                         <th className="p-3 px-2 text-left">Buyer Name</th>
                         <th className="p-3 px-2 text-left">Email</th>
                         <th className="p-3 px-2 text-left">Sale Date</th>
@@ -611,7 +611,7 @@ export default function TicketingView() {
                             <td className="p-3 px-2 font-semibold">
                               {p.buyerName}
                               {p.expand?.bundle && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-success-bg text-success-text ml-2 align-middle">
+                                <span className="ml-2 inline-flex items-center rounded bg-success-bg px-2 py-0.5 align-middle text-xs font-semibold tracking-wider text-success-text uppercase">
                                   Season Ticket: {p.expand.bundle.title}
                                 </span>
                               )}
@@ -623,7 +623,7 @@ export default function TicketingView() {
                             <td className="p-3 px-2">{p.quantity}</td>
                             <td className="p-3 px-2">${(p.amountPaidCents / 100).toFixed(2)}</td>
                             <td className="p-3 px-2">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${p.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
+                              <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${p.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                                 {p.status}
                               </span>
                             </td>
@@ -660,12 +660,12 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-gray-500">Loading bundles...</p>
           ) : bundles.length === 0 ? (
-            <p className="text-gray-500 p-8 text-center">No season bundles configured.</p>
+            <p className="p-8 text-center text-gray-500">No season bundles configured.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="border-collapse w-full text-left">
+              <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
                     <th className="p-3 px-2 text-left">Bundle Title</th>
                     <th className="p-3 px-2 text-left">Price</th>
                     <th className="p-3 px-2 text-left">Active</th>
@@ -683,14 +683,14 @@ export default function TicketingView() {
                         <td className="p-3 px-2 font-semibold">{b.title}</td>
                         <td className="p-3 px-2">${(b.priceCents / 100).toFixed(2)}</td>
                         <td className="p-3 px-2">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${b.isActive ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
+                          <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${b.isActive ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                             {b.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="p-3 px-2">
                           <div className="flex flex-col gap-1">
                             <span>{sold} / {b.capacity} sold</span>
-                            <div className="w-[100px] h-1.5 bg-gray-200 rounded overflow-hidden">
+                            <div className="h-1.5 w-[100px] overflow-hidden rounded bg-gray-200">
                               <div 
                                 className="h-full bg-primary" 
                                 // @allow-inline-style - progress bar width
@@ -702,10 +702,10 @@ export default function TicketingView() {
                         <td className="p-3 px-2">
                           {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </td>
-                        <td className="p-3 px-2 max-w-[240px]">
+                        <td className="max-w-[240px] p-3 px-2">
                           <div className="flex flex-wrap gap-1">
                             {b.expand?.events?.map(ev => (
-                              <span key={ev.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-light text-primary-deep whitespace-nowrap">
+                              <span key={ev.id} className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider whitespace-nowrap text-primary-deep uppercase">
                                 {ev.title}
                               </span>
                             ))}
@@ -740,12 +740,12 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-gray-500">Loading orders...</p>
           ) : bundleOrders.length === 0 ? (
-            <p className="text-gray-500 p-8 text-center">No season pass orders found.</p>
+            <p className="p-8 text-center text-gray-500">No season pass orders found.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="border-collapse w-full text-left">
+              <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
                     <th className="p-3 px-2 text-left">Buyer Name</th>
                     <th className="p-3 px-2 text-left">Email</th>
                     <th className="p-3 px-2 text-left">Purchase Date</th>
@@ -775,7 +775,7 @@ export default function TicketingView() {
                         <td className="p-3 px-2">{order.quantity}</td>
                         <td className="p-3 px-2">${(order.amountPaidCents / 100).toFixed(2)}</td>
                         <td className="p-3 px-2">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${order.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
+                          <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${order.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
                             {order.status}
                           </span>
                         </td>
@@ -827,13 +827,13 @@ export default function TicketingView() {
       >
         <form id="bundle-form" onSubmit={handleSaveBundle} className="flex flex-col gap-4">
           {editingBundle && (
-            <div className="card p-2 bg-[rgba(74,124,89,0.05)] border-l-4 border-primary rounded text-sm">
+            <div className="card rounded border-l-4 border-primary bg-[rgba(74,124,89,0.05)] p-2 text-sm">
               <strong>🔗 Share Season Pass Link:</strong>{' '}
               <a 
                 href={`/tickets/bundle/${editingBundle.id}`} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="underline text-primary break-all"
+                className="break-all text-primary underline"
               >
                 {window.location.origin}/tickets/bundle/{editingBundle.id}
               </a>
@@ -852,8 +852,8 @@ export default function TicketingView() {
             />
           </div>
 
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex flex-col gap-1 flex-1">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-1 flex-col gap-1">
               <label className="text-sm font-semibold">Price (USD)</label>
               <input
                 type="number"
@@ -865,7 +865,7 @@ export default function TicketingView() {
                 onChange={e => setPrice(Number(e.target.value))}
               />
             </div>
-            <div className="flex flex-col gap-1 flex-1">
+            <div className="flex flex-1 flex-col gap-1">
               <label className="text-sm font-semibold">Capacity Limit</label>
               <input
                 type="number"
@@ -892,11 +892,11 @@ export default function TicketingView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold">Included Performances</label>
             {hasPurchases && (
-              <div className="card p-2 border-warning-border bg-warning-bg text-warning-text text-sm">
+              <div className="card border-warning-border bg-warning-bg text-warning-text p-2 text-sm">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}
-            <div className="card max-h-[200px] overflow-y-auto p-2 border border-gray-200 flex flex-col gap-2">
+            <div className="card flex max-h-[200px] flex-col gap-2 overflow-y-auto border border-gray-200 p-2">
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
@@ -927,7 +927,7 @@ export default function TicketingView() {
                   );
                 })}
               {events.filter(ev => ev.isTicketingEnabled).length === 0 && (
-                <span className="text-gray-500 text-xs">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
+                <span className="text-xs text-gray-500">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
               )}
             </div>
           </div>
@@ -936,19 +936,19 @@ export default function TicketingView() {
             <label className="text-sm font-semibold">Public Details / Instructions</label>
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
-              className="card p-2 min-h-[100px] resize-y border border-gray-200"
+              className="card min-h-[100px] resize-y border border-gray-200 p-2"
               value={publicDetails}
               onChange={e => setPublicDetails(e.target.value)}
             />
           </div>
 
-          <label className="flex flex-row items-center gap-2 cursor-pointer">
+          <label className="flex cursor-pointer flex-row items-center gap-2">
             <input
               type="checkbox"
               checked={isActive}
               onChange={e => setIsActive(e.target.checked)}
             />
-            <span className="text-sm font-semibold m-0">Active and visible to the public</span>
+            <span className="m-0 text-sm font-semibold">Active and visible to the public</span>
           </label>
         </form>
       </BaseModal>

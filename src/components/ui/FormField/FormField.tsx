@@ -22,7 +22,7 @@ export function FormField({ label, htmlFor, error, helpText, required = false, c
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-text" htmlFor={htmlFor}>
         {label}
-        {required && <span className="text-danger-text ml-0.5" aria-hidden="true"> *</span>}
+        {required && <span className="ml-0.5 text-danger-text" aria-hidden="true"> *</span>}
       </label>
       {childElement}
       {error && <span className="text-xs text-danger-text" role="alert">{error}</span>}

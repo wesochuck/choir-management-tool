@@ -17,8 +17,8 @@ const toneClasses: Record<DisplayTone, string> = {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ label, tone, size = 'md' }) => (
   <span
-    className={`inline-flex items-center rounded font-semibold uppercase tracking-wider ${toneClasses[tone]} ${
-      size === 'sm' ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-0.5'
+    className={`inline-flex items-center rounded font-semibold tracking-wider uppercase ${toneClasses[tone]} ${
+      size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
     }`}
   >
     {label}

@@ -319,7 +319,7 @@ export default function SetListView() {
         message: (
           <div className="flex-col gap-[var(--space-md)]">
             <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
-            <div className="card p-[var(--space-sm)] bg-[var(--bg)] border border-[var(--border)] break-all text-[0.85rem]">
+            <div className="card border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)] text-[0.85rem] break-all">
               {url}
             </div>
             <div className="flex-row gap-[var(--space-sm)]">
@@ -659,12 +659,12 @@ export default function SetListView() {
                 </>
               )}
               {saveStatus === 'saved' && (
-                <span className="text-[var(--primary-deep)] font-medium">
+                <span className="font-medium text-[var(--primary-deep)]">
                   ✓ Saved
                 </span>
               )}
               {saveStatus === 'error' && (
-                <span className="text-[var(--danger)] font-medium">
+                <span className="font-medium text-[var(--danger)]">
                   ✗ Save failed
                 </span>
               )}
@@ -675,7 +675,7 @@ export default function SetListView() {
           <div className="admin-view-actions">
             <button
               type="button"
-              className="btn btn-secondary flex items-center gap-2 !h-[42px]"
+              className="btn btn-secondary flex !h-[42px] items-center gap-2"
               onClick={() => handleOpenPlayer(selectedEvent)}
               title="Open practice player link generator"
             >
@@ -683,7 +683,7 @@ export default function SetListView() {
             </button>
             <button
               type="button"
-              className="btn btn-secondary flex items-center gap-2 !h-[42px]"
+              className="btn btn-secondary flex !h-[42px] items-center gap-2"
               onClick={() => setIsPrintModalOpen(true)}
               title="View printable set list"
             >
@@ -694,7 +694,7 @@ export default function SetListView() {
       </div>
 
       <div className="roster-filters-bar items-stretch">
-          <div className="flex-col gap-[var(--space-xs)] flex-1 min-w-[260px]">
+          <div className="min-w-[260px] flex-1 flex-col gap-[var(--space-xs)]">
             <label className="text-label">Select Event</label>
             <select 
               value={selectedEventId} 
@@ -711,7 +711,7 @@ export default function SetListView() {
           </div>
 
           {selectedEvent && (
-            <div className="flex-col gap-[var(--space-xs)] flex-1 min-w-[260px]">
+            <div className="min-w-[260px] flex-1 flex-col gap-[var(--space-xs)]">
               <label className="text-label">Copy from Previous</label>
               <select 
                 value="" 
@@ -733,19 +733,19 @@ export default function SetListView() {
           )}
 
           {selectedEvent && selectedEvent.type === 'Performance' && (
-            <div className="flex-col gap-[var(--space-xs)] min-w-[200px]">
+            <div className="min-w-[200px] flex-col gap-[var(--space-xs)]">
               <label className="text-label">Singer Visibility</label>
               <div 
                 className={`card sl-singer-visibility-card ${localApproved ? 'approved' : ''}`}
               >
                 <label 
-                  className="flex items-center gap-[10px] cursor-pointer select-none font-medium !m-0"
+                  className="!m-0 flex cursor-pointer items-center gap-[10px] font-medium select-none"
                 >
                   <input
                     type="checkbox"
                     checked={localApproved}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
-                    className="w-[18px] h-[18px] accent-[var(--primary)] cursor-pointer !m-0"
+                    className="!m-0 size-[18px] cursor-pointer accent-[var(--primary)]"
                   />
                   <span>Approved for Singers</span>
                 </label>
@@ -754,18 +754,18 @@ export default function SetListView() {
           )}
 
           {selectedEvent && selectedEvent.type === 'Rehearsal' && (
-            <div className="flex-col gap-[var(--space-xs)] min-w-[200px]">
+            <div className="min-w-[200px] flex-col gap-[var(--space-xs)]">
               <label className="text-label">Parent Set List</label>
               {parentPerformance ? (
                 <button
                   type="button"
-                  className="btn btn-secondary !h-11 w-full flex justify-center items-center"
+                  className="btn btn-secondary flex !h-11 w-full items-center justify-center"
                   onClick={() => setSelectedEventId(parentPerformance.id)}
                 >
                   🔗 Go to parent: {parentPerformance.title || 'Concert'}
                 </button>
               ) : (
-                <div className="card !h-11 flex items-center justify-center px-[var(--space-md)]">
+                <div className="card flex !h-11 items-center justify-center px-[var(--space-md)]">
                   No parent linked
                 </div>
               )}
@@ -774,16 +774,16 @@ export default function SetListView() {
       </div>
 
       {selectedEventId ? (
-        <div className="flex-col gap-[var(--space-lg)] w-full">
+        <div className="w-full flex-col gap-[var(--space-lg)]">
           {selectedEvent?.type === 'Rehearsal' && (
-            <div className="bg-[rgb(74_124_89_/_5%)] border-l-4 border-[var(--primary)] p-[var(--space-sm)_var(--space-md)] mb-[var(--space-md)] text-[0.9rem] text-[var(--text-muted)] leading-[1.4]">
+            <div className="mb-[var(--space-md)] border-l-4 border-[var(--primary)] bg-[rgb(74_124_89_/_5%)] p-[var(--space-sm)_var(--space-md)] text-[0.9rem] leading-[1.4] text-[var(--text-muted)]">
               <div>
                 <strong>⚠️ Rehearsal Mode:</strong> This rehearsal inherits its set list and singer visibility from the parent Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct edits here will not be visible on the Singer Dashboard.
               </div>
               {parentPerformance && (
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm whitespace-nowrap max-w-full"
+                  className="btn btn-secondary btn-sm max-w-full whitespace-nowrap"
                   onClick={() => setSelectedEventId(parentPerformance.id)}
                 >
                   Manage Parent Set List
@@ -795,15 +795,15 @@ export default function SetListView() {
           <AppCard title="Current Set List">
             <div className="flex-col gap-[var(--space-sm)]">
               {items.length > 0 && (
-                <div className="flex flex-col md:flex-row justify-between items-center bg-[var(--primary-light)] p-[var(--space-sm)_var(--space-md)] rounded-[var(--radius-md)] text-[0.85rem] font-semibold text-[var(--primary-deep)] mb-[var(--space-xs)] border border-[rgb(74_124_89_/_15%)] gap-[var(--space-sm)]">
+                <div className="mb-[var(--space-xs)] flex flex-col items-center justify-between gap-[var(--space-sm)] rounded-[var(--radius-md)] border border-[rgb(74_124_89_/_15%)] bg-[var(--primary-light)] p-[var(--space-sm)_var(--space-md)] text-[0.85rem] font-semibold text-[var(--primary-deep)] md:flex-row">
                   <div className="flex-row gap-[var(--space-md)]">
                     <span>🎼 Songs: {durationTotals.songs}</span>
                     <span>⏸️ Intermissions: {durationTotals.intermissions}</span>
-                    <span className="flex-row items-center gap-1 flex-wrap">
+                    <span className="flex-row flex-wrap items-center gap-1">
                       📢 Gaps:
                       <input
                         type="number"
-                        className="w-12 p-[2px_4px] text-[0.85em] text-center border border-[#d1d5db] rounded bg-white text-[#333]"
+                        className="w-12 rounded border border-[#d1d5db] bg-white p-[2px_4px] text-center text-[0.85em] text-[#333]"
                         min={0}
                         step={1}
                         value={localGapSeconds}
@@ -815,13 +815,13 @@ export default function SetListView() {
                       s × {Math.max(0, items.length - 1)} = {durationTotals.gaps}
                     </span>
                   </div>
-                  <span className="text-[0.9rem] text-[var(--primary-deep)] border-l border-[rgb(74_124_89_/_30%)] pl-[var(--space-md)]">
+                  <span className="border-l border-[rgb(74_124_89_/_30%)] pl-[var(--space-md)] text-[0.9rem] text-[var(--primary-deep)]">
                     ⏱️ Total: {durationTotals.total}
                   </span>
                 </div>
               )}
 
-              <div className="mb-[var(--space-md)] pb-[var(--space-md)] border-b border-[var(--border)]">
+              <div className="mb-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-md)]">
                 <SetListInlineCreator 
                   library={library}
                   onAddItem={handleInlineAddItem}
@@ -831,7 +831,7 @@ export default function SetListView() {
               </div>
 
               {items.length === 0 ? (
-                <div className="text-muted text-center p-[var(--space-lg)]">No items in set list.</div>
+                <div className="text-muted p-[var(--space-lg)] text-center">No items in set list.</div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -856,7 +856,7 @@ export default function SetListView() {
                 </DndContext>
               )}
             </div>
-            <p className="text-muted text-sm mt-[var(--space-md)] px-[var(--space-md)] pb-[var(--space-md)]">
+            <p className="text-muted mt-[var(--space-md)] px-[var(--space-md)] pb-[var(--space-md)] text-sm">
                 Tip: Drag the ⣿ handle to reorder items. Changes are saved automatically.
             </p>
           </AppCard>
@@ -931,18 +931,18 @@ export default function SetListView() {
           </>
         }
       >
-        <div className="card bg-white text-[#333] border border-[var(--border)] rounded-[var(--radius-md)] p-[var(--space-lg)] font-[Georgia,serif] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
-          <div className="text-center mb-[var(--space-md)]">
-            <h3 className="!m-0 mb-[var(--space-xxs)] text-[1.4rem] text-[#111] font-bold">
+        <div className="card rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-[var(--space-lg)] font-[Georgia,serif] text-[#333] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
+          <div className="mb-[var(--space-md)] text-center">
+            <h3 className="!m-0 mb-[var(--space-xxs)] text-[1.4rem] font-bold text-[#111]">
               {selectedEvent?.title || selectedEvent?.type}
             </h3>
-            <div className="text-[0.85rem] text-[#666] font-medium">
+            <div className="text-[0.85rem] font-medium text-[#666]">
               {selectedEvent && formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
             </div>
           </div>
-          <div className="border-b border-[#eee] mb-[var(--space-md)]"></div>
+          <div className="mb-[var(--space-md)] border-b border-[#eee]"></div>
           <div className="flex flex-col gap-2">
             {(() => {
               let songIndex = 1;
@@ -951,7 +951,7 @@ export default function SetListView() {
                   return (
                     <div 
                       key={item.id} 
-                      className="font-bold text-[#666] text-center py-[6px] border-t border-dashed border-[#eee] border-b border-dashed border-[#eee] my-2 text-[0.95rem]"
+                      className="my-2 border-y border-dashed border-dashed border-[#eee] border-[#eee] py-[6px] text-center text-[0.95rem] font-bold text-[#666]"
                     >
                       ⏸️ {item.displayTitle || 'Intermission'}
                     </div>
@@ -960,11 +960,11 @@ export default function SetListView() {
                   const el = (
                     <div 
                       key={item.id} 
-                      className="text-[1.05rem] py-[2px] border-b border-[#fafafa] flex justify-between"
+                      className="flex justify-between border-b border-[#fafafa] py-[2px] text-[1.05rem]"
                     >
                       <span className="font-medium">{songIndex}. {item.displayTitle}</span>
                       {item.displayComposer && (
-                        <span className="text-[0.9rem] text-[#666] italic text-right">
+                        <span className="text-right text-[0.9rem] text-[#666] italic">
                           {item.displayComposer}
                         </span>
                       )}

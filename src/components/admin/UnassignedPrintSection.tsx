@@ -15,8 +15,8 @@ export function UnassignedPrintSection({
   if (unassigned.length === 0) return null;
 
   return (
-    <div className="hidden print:block unassigned-print-section">
-      <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-gray-200 text-gray-700">
+    <div className="unassigned-print-section hidden print:block">
+      <div className="inline-flex items-center rounded bg-gray-200 px-2 py-0.5 text-xs font-semibold tracking-wider text-gray-700 uppercase">
         ⚠️ Unassigned Singers: {unassigned.length}
       </div>
     </div>
