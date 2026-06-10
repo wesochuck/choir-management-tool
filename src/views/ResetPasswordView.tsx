@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
 import { AppCard } from '../components/common/AppCard';
+import { Button } from '../components/ui/Button/Button';
+import { Input } from '../components/ui/Input/Input';
+import { FormField } from '../components/ui/FormField/FormField';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function ResetPasswordView() {
@@ -64,13 +67,13 @@ export default function ResetPasswordView() {
             <p className="text-muted text-xs public-heading-reset">
               The reset link you followed is invalid or has expired. Please go back to the login screen and request a new password reset link.
             </p>
-            <button
-              type="button"
-              className="btn btn-primary public-submit-btn public-margin-top-sm"
+            <Button
+              variant="primary"
+              className="public-submit-btn public-margin-top-sm"
               onClick={() => navigate('/login')}
             >
               Go to Login
-            </button>
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="public-form">
@@ -78,9 +81,8 @@ export default function ResetPasswordView() {
               Please enter your new password below. It must be at least 8 characters.
             </p>
 
-            <div className="public-form-group">
-              <label className="text-label" htmlFor="new-password">New Password</label>
-              <input
+            <FormField label="New Password" htmlFor="new-password">
+              <Input
                 id="new-password"
                 type="password"
                 value={password}
@@ -89,11 +91,10 @@ export default function ResetPasswordView() {
                 className="public-form-input"
                 disabled={isLoading || !!success}
               />
-            </div>
+            </FormField>
 
-            <div className="public-form-group">
-              <label className="text-label" htmlFor="confirm-password">Confirm Password</label>
-              <input
+            <FormField label="Confirm Password" htmlFor="confirm-password">
+              <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
@@ -102,27 +103,29 @@ export default function ResetPasswordView() {
                 className="public-form-input"
                 disabled={isLoading || !!success}
               />
-            </div>
+            </FormField>
 
             {error && <p className="public-form-error">{error}</p>}
             {success && <p className="public-form-success">{success}</p>}
 
-            <button
+            <Button
               type="submit"
               disabled={isLoading || !!success}
-              className="btn btn-primary public-submit-btn--md"
+              variant="primary"
+              size="small"
+              className="public-submit-btn--md"
             >
               {isLoading ? 'Resetting password...' : 'Reset Password'}
-            </button>
+            </Button>
 
             {!success && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 className="public-back-link"
                 onClick={() => navigate('/login')}
               >
                 Cancel and return to Login
-              </button>
+              </Button>
             )}
           </form>
         )}
