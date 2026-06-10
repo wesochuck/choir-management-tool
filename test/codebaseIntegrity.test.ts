@@ -449,13 +449,10 @@ test('codebase integrity: enforce no inline styles rule', () => {
   // Whitelist of legacy files that currently use inline style={...}
   const legacyInlineStyleWhitelist = new Set([
     'src/views/PublicAuditionView.tsx',
-    'src/views/admin/SeatingView.tsx',
-    'src/views/admin/EventRosterView.tsx',
     'src/views/admin/music-library/FloatingAudioPlayer.tsx',
     'src/views/admin/music-library/MusicLibraryTable.tsx',
     'src/views/admin/music-library/LearningTracksEditor.tsx',
     'src/views/admin/music-library/MultiSelectDropdown.tsx',
-    'src/views/admin/AttendanceView.tsx',
     'src/views/singer/SeatingFinderView.tsx',
     'src/views/singer/DashboardView.tsx',
   ]);

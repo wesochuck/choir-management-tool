@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
 import { useRsvpBulkActions } from './event-roster/useRsvpBulkActions';
 import { useEventRosterExport } from './event-roster/useEventRosterExport';
+import './EventRosterView.css';
 
 
 interface EventRosterViewProps {
@@ -86,7 +87,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const [selectedSingerProfile, setSelectedSingerProfile] = useState<Profile | null>(null);
 
   if (isLoading || !event) {
-    return <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>Loading RSVP details...</div>;
+    return <div className="event-roster-loading">Loading RSVP details...</div>;
   }
 
   const handleVoicePartToggle = (part: string) => {
@@ -131,10 +132,10 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     <AppCard
       title={isInline ? '' : `RSVP Management: ${event ? (event.title || event.expand?.venue?.name || '') : ''}`}
       actions={
-        <div className="flex-row" style={{ gap: 'var(--space-sm)', alignItems: 'center' }}>
+        <div className="flex-row event-roster-actions">
           {!isInline && event && (
             <button 
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm event-roster-edit-btn"
               onClick={() => {
                 const query = new URLSearchParams({
                   eventId: event.id,
@@ -142,7 +143,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 });
                 navigate(`/admin/events?${query.toString()}`);
               }}
-              style={{ fontWeight: 600 }}
             >
               ✏️ Edit Event
             </button>
@@ -165,22 +165,21 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         </div>
       }
     >
-      <div className="flex-col" style={{ gap: 'var(--space-md)' }}>
+      <div className="flex-col event-roster-controls">
         {/* Voice Part RSVP Balance Summary Card */}
         {voiceParts.length > 0 && (
           <AppCard 
             title="Voice Part RSVP Balance"
             actions={
-              <div style={{ display: 'flex', flexDirection: 'row', gap: 'var(--space-sm)', alignItems: 'center' }}>
+              <div className="flex-row event-roster-sort-row">
                 <button
                   type="button"
                   onClick={handleExportCSV}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontWeight: 700 }}
+                  className="btn btn-secondary btn-sm event-roster-export-btn"
                 >
                   📥 Export CSV
                 </button>
-                <span className="badge badge-rehearsal" style={{ fontSize: 'var(--font-size-label)', padding: '6px 16px', borderRadius: '20px' }}>
+                <span className="badge badge-rehearsal event-roster-badge-lg">
                   {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
                   {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
                   {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
@@ -188,7 +187,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 </span>
               </div>
             }
-            style={{ gap: 'var(--space-md)' }}
+            className="event-roster-card"
           >
             <style>{`
               .voice-section-card {
@@ -225,19 +224,12 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             `}</style>
 
             {/* RSVP Status Filters acting on Voice Part Counts */}
-            <div 
-              className="flex-row" 
-              style={{ 
-                gap: 'var(--space-sm)', 
-                flexWrap: 'wrap', 
-                paddingBottom: 'var(--space-sm)',
-                borderBottom: '1px solid var(--border)'
-              }}
-            >
+            <div className="flex-row event-roster-filters-row">
               <button
                 type="button"
                 onClick={() => setRsvpFilter('All')}
                 className={`btn btn-sm`}
+                // @allow-inline-style - active RSVP filter state
                 style={{
                   height: '38px',
                   padding: '0 16px',
@@ -255,6 +247,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 type="button"
                 onClick={() => setRsvpFilter('Yes')}
                 className={`btn btn-sm`}
+                // @allow-inline-style - active RSVP filter state
                 style={{
                   height: '38px',
                   padding: '0 16px',
@@ -272,6 +265,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 type="button"
                 onClick={() => setRsvpFilter('No')}
                 className={`btn btn-sm`}
+                // @allow-inline-style - active RSVP filter state
                 style={{
                   height: '38px',
                   padding: '0 16px',
@@ -289,6 +283,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 type="button"
                 onClick={() => setRsvpFilter('Pending')}
                 className={`btn btn-sm`}
+                // @allow-inline-style - active RSVP filter state
                 style={{
                   height: '38px',
                   padding: '0 16px',
@@ -305,67 +300,48 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </div>
 
             {/* Section Subtotals */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: `repeat(${sections.length}, 1fr)`, 
-              gap: 'var(--space-md)',
-              paddingBottom: 'var(--space-md)',
-              borderBottom: '1px solid var(--border)'
-            }}>
+            <div 
+              className="event-roster-section-grid"
+              // @allow-inline-style - dynamic grid columns based on section count
+              style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
+            >
               {sections.map(sec => {
                 const isSelected = selectedVoiceParts.includes(sec.code);
                 return (
                   <div 
                     key={sec.code} 
-                    className={`flex-col voice-section-card ${isSelected ? 'selected' : ''}`}
+                    className={`flex-col voice-section-card event-roster-section-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => handleVoicePartToggle(sec.code)}
-                    style={{ 
-                      textAlign: 'center', 
-                      padding: 'calc(var(--space-md) - 2px)', 
-                      borderRadius: 'var(--radius-md)', 
-                      backgroundColor: 'var(--primary-light)',
-                      gap: 'var(--space-xs)',
-                      borderWidth: '2px',
-                      borderStyle: 'solid',
-                      borderColor: isSelected ? 'var(--primary)' : 'transparent'
-                    }}
+                    // @allow-inline-style - dynamic border color based on selection
+                    style={{ borderColor: isSelected ? 'var(--primary)' : 'transparent' }}
                   >
-                    <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div className="text-xs event-roster-section-label">
                       {sec.name}
                     </div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec.code] || 0}</div>
+                    <div className="event-roster-section-count">{sectionCounts[sec.code] || 0}</div>
                   </div>
                 );
               })}
             </div>
 
             {/* Individual Part Breakdowns */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
-              gap: 'var(--space-sm)',
-              marginTop: 0
-            }}>
+            <div className="event-roster-voice-part-grid">
               {voiceParts.map(vp => {
                 const isSelected = selectedVoiceParts.includes(vp.label);
                 const count = partCounts.get(vp.label) || 0;
                 return (
                   <div 
                     key={vp.label} 
-                    className={`flex-col voice-part-card ${isSelected ? 'selected' : ''}`}
+                    className={`flex-col voice-part-card event-roster-voice-part-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => handleVoicePartToggle(vp.label)}
+                    // @allow-inline-style - dynamic border and padding based on selection
                     style={{ 
-                      textAlign: 'center', 
-                      borderRadius: 'var(--radius-sm)', 
-                      backgroundColor: 'var(--bg)',
-                      gap: '2px',
-                      borderStyle: 'solid',
                       borderWidth: isSelected ? '2px' : '1px',
                       padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
                     }}
                   >
-                    <div className="text-xs text-muted" style={{ fontWeight: 700 }}>{vp.label}</div>
-                    <div className="text-label" style={{ fontWeight: 700 }}>{count}</div>
+                    <div className="text-xs event-roster-voice-part-label">{vp.label}</div>
+                    <div className="text-label event-roster-voice-part-count">{count}</div>
                   </div>
                 );
               })}
@@ -484,16 +460,17 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         title="Updating RSVPs"
         maxWidth="400px"
       >
-        <div className="flex-col" style={{ gap: 'var(--space-md)', alignItems: 'center', padding: '12px 0' }}>
-          <div className="loader" style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)' }}>
+        <div className="flex-col event-roster-bulk-progress-wrap">
+          <div className="event-roster-spinner" />
+          <div className="event-roster-progress-label">
             Processing changes...
           </div>
-          <div style={{ fontSize: 'var(--font-size-label)', color: 'var(--text-muted)', fontWeight: 600 }}>
+          <div className="event-roster-progress-text">
             {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
-          <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border)', borderRadius: '4px', overflow: 'hidden', marginTop: 'var(--space-xs)' }}>
+          <div className="event-roster-progress-bar">
             <div 
+              // @allow-inline-style - dynamic progress width
               style={{ 
                 width: bulkProgress ? `${(bulkProgress.current / bulkProgress.total) * 100}%` : '0%', 
                 height: '100%', 

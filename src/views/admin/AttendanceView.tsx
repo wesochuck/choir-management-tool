@@ -350,9 +350,9 @@ export default function AttendanceView() {
           <div className="attendance-active-event-header" onClick={() => setIsEventExpanded(!isEventExpanded)}>
             <div className="flex-col attendance-active-event-main">
               <span className="text-muted text-xs attendance-active-event-label">Active Event</span>
-              <div className="flex-row attendance-active-event-title-row" style={{ alignItems: 'center', gap: '8px' }}>
+              <div className="flex-row attendance-active-event-title-row">
                 {selectedEvent.title && <h2 className="text-headline attendance-active-event-title">{selectedEvent.title}</h2>}
-                <span className={`badge ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
+                <span className={`badge attendance-badge-sm ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
                   {selectedEvent.type}
                 </span>
               </div>
@@ -372,20 +372,19 @@ export default function AttendanceView() {
           </div>
           
           <div className="attendance-active-event-details">
-            <span className={`badge badge-desktop ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`} style={{ fontSize: '10px', padding: '3px 8px' }}>
+            <span className={`badge badge-desktop attendance-badge-sm ${selectedEvent.type === 'Performance' ? 'badge-performance' : 'badge-rehearsal'}`}>
               {selectedEvent.type}
             </span>
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label attendance-active-event-venue"
+              className="text-label attendance-active-event-venue attendance-date-link"
               onClick={(e) => e.stopPropagation()}
-              style={{ fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary-deep)' }}
             >
               📍 {selectedEvent.expand?.venue?.name || ''}
             </a>
-            <span className="text-muted text-sm attendance-active-event-date" style={{ fontWeight: 500 }}>
+            <span className="text-muted text-sm attendance-active-event-date">
               📅 {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
@@ -608,26 +607,26 @@ export default function AttendanceView() {
       )}
 
       {isLoading ? (
-        <AppCard style={{ textAlign: 'center', padding: '32px' }}>
+        <AppCard className="attendance-loading-card">
           <p className="text-muted">Loading attendance data...</p>
         </AppCard>
       ) : error ? (
-        <AppCard style={{ textAlign: 'center', border: '1px solid var(--color-danger-text)', padding: '24px' }}>
-          <p style={{ color: 'var(--color-danger-text)', fontWeight: 600 }}>{error}</p>
+        <AppCard className="attendance-error-card">
+          <p className="attendance-error-text text-strong">{error}</p>
         </AppCard>
       ) : selectedEventId ? (
         checkInItems.length === 0 && declinedSingers.length === 0 ? (
-          <AppCard style={{ textAlign: 'center', padding: '48px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
-            <span style={{ fontSize: '2rem' }}>🔍</span>
-            <h3 style={{ marginTop: '12px', marginBottom: '4px', fontWeight: 800, fontSize: '1.25rem' }}>No Matching Singers</h3>
-            <p className="text-muted text-sm" style={{ marginTop: '0', marginBottom: '16px' }}>Try adjusting your search terms, voice parts, or attendance filters.</p>
+          <AppCard className="attendance-no-match-content">
+            <span className="attendance-no-match-icon">🔍</span>
+            <h3 className="attendance-no-match-heading">No Matching Singers</h3>
+            <p className="text-muted text-sm attendance-no-match-text">Try adjusting your search terms, voice parts, or attendance filters.</p>
             <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
           </AppCard>
         ) : (
-          <div className="flex-col" style={{ gap: 'var(--space-md)', width: '100%' }}>
+          <div className="flex-col attendance-list-wrap">
             
             {/* Check-In List */}
-            <div className="flex-col" style={{ gap: 'var(--space-xs)', width: '100%' }}>
+            <div className="flex-col attendance-list-wrap-xs">
               {checkInItems.length > 0 ? (
                 <CheckInList
                   items={checkInItems}
@@ -639,36 +638,26 @@ export default function AttendanceView() {
                   maxRehearsalMisses={maxRehearsalMisses}
                 />
               ) : (
-                <AppCard style={{ textAlign: 'center', padding: '24px', border: '1px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
-                  <p className="text-muted text-sm" style={{ margin: 0 }}>No singers match your RSVP filters.</p>
+                <AppCard className="attendance-no-rsvp-match">
+                  <p className="text-muted text-sm attendance-no-rsvp-text">No singers match your RSVP filters.</p>
                 </AppCard>
               )}
             </div>
 
             {/* 3. Declined Singers Rescue Control */}
             {declinedSingers.length > 0 && (
-              <div 
-                className="card" 
-                style={{ 
-                  marginTop: 'var(--space-md)', 
-                  padding: '16px 20px', 
-                  border: '1px dashed var(--border)', 
-                  backgroundColor: 'rgba(239, 68, 68, 0.02)',
-                  borderRadius: 'var(--radius-md)'
-                }}
-              >
-                <div className="flex-responsive" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)' }}>
-                  <div className="flex-col" style={{ gap: '2px' }}>
-                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#991b1b' }}>Rescue Declined RSVP</h3>
-                    <p className="text-muted text-xs" style={{ margin: 0 }}>Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
+              <div className="card attendance-rescue-card">
+                <div className="flex-responsive attendance-rescue-row">
+                  <div className="flex-col attendance-rescue-info">
+                    <h3 className="attendance-rescue-title">Rescue Declined RSVP</h3>
+                    <p className="text-muted text-xs attendance-rescue-note">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
                   </div>
                   
-                  <div className="flex-row" style={{ gap: '10px', alignItems: 'center', minWidth: '280px', flexWrap: 'wrap' }}>
+                  <div className="flex-row attendance-rescue-controls-row">
                     <select
                       value={selectedDeclinedProfileId}
                       onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
-                      className="card"
-                      style={{ flex: 1, padding: '0 12px', height: '36px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}
+                      className="card attendance-select"
                     >
                       <option value="">-- Select Declined Singer --</option>
                       {declinedSingers.map(s => (
@@ -678,14 +667,7 @@ export default function AttendanceView() {
                     <button
                       disabled={!selectedDeclinedProfileId}
                       onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ 
-                        height: '36px', 
-                        backgroundColor: '#fee2e2', 
-                        color: '#991b1b', 
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        fontWeight: 700 
-                      }}
+                      className="btn btn-secondary btn-sm attendance-rescue-btn"
                     >
                       + Add Back
                     </button>
@@ -697,8 +679,8 @@ export default function AttendanceView() {
           </div>
         )
       ) : (
-        <AppCard style={{ textAlign: 'center', padding: '48px', border: '2px dashed var(--border)', backgroundColor: 'transparent', boxShadow: 'none' }}>
-          <p className="text-muted" style={{ fontSize: '1rem', margin: 0 }}>Please select an event above to start check-in.</p>
+        <AppCard className="attendance-empty-state-card">
+          <p className="text-muted attendance-empty-state-text">Please select an event above to start check-in.</p>
         </AppCard>
       )}
 

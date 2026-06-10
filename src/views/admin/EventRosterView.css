@@ -1,0 +1,174 @@
+.event-roster-loading {
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.event-roster-sort-row {
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.event-roster-section-title {
+  font-weight: 600;
+}
+
+.event-roster-controls {
+  gap: var(--space-md);
+}
+
+.event-roster-rsvp-filters {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.event-roster-count {
+  font-weight: 700;
+}
+
+.event-roster-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.event-roster-voice-part-section {
+  gap: var(--space-md);
+}
+
+.event-roster-voice-part-card {
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.event-roster-voice-part-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.event-roster-voice-part-name {
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.event-roster-actions {
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.event-roster-edit-btn {
+  font-weight: 600;
+}
+
+.event-roster-export-btn {
+  font-weight: 700;
+}
+
+.event-roster-badge-lg {
+  font-size: var(--font-size-label);
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+.event-roster-card {
+  gap: var(--space-md);
+}
+
+.event-roster-section-grid {
+  display: grid;
+  gap: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.event-roster-section-card {
+  text-align: center;
+  padding: calc(var(--space-md) - 2px);
+  border-radius: var(--radius-md);
+  background-color: var(--primary-light);
+  gap: var(--space-xs);
+  border: 2px solid transparent;
+}
+
+.event-roster-section-label {
+  color: var(--primary-deep);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.event-roster-section-count {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary-deep);
+  line-height: 1;
+}
+
+.event-roster-voice-part-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: var(--space-sm);
+  margin-top: 0;
+}
+
+.event-roster-voice-part-label {
+  font-weight: 700;
+}
+
+.event-roster-voice-part-count {
+  font-weight: 700;
+}
+
+.event-roster-bulk-progress-wrap {
+  gap: var(--space-md);
+  align-items: center;
+  padding: 12px 0;
+}
+
+.event-roster-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.event-roster-progress-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.event-roster-progress-text {
+  font-size: var(--font-size-label);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.event-roster-progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: var(--space-xs);
+}
+
+.event-roster-progress-fill {
+  height: 100%;
+  background-color: var(--primary);
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.event-roster-filters-row {
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
