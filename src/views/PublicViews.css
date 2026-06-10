@@ -205,6 +205,9 @@
 
 .public-back-link {
   align-self: center;
+  border: none;
+  background: none;
+  min-height: 0;
   text-decoration: underline;
   cursor: pointer;
   height: auto;

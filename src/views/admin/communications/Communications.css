@@ -210,6 +210,9 @@
 
 .comm-message-recipients-link {
   padding: 0;
+  border: none;
+  background: none;
+  min-height: 0;
   height: auto;
   font-size: 0.75rem;
   color: var(--primary);
