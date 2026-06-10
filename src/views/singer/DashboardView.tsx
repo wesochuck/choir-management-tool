@@ -13,7 +13,6 @@ import { useDialog } from '../../contexts/DialogContext';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
 import { BaseModal } from '../../components/common/BaseModal';
-import './SingerDashboard.css';
 
 
 export default function DashboardView() {
@@ -149,8 +148,8 @@ export default function DashboardView() {
     }
   };
 
-  if (isLoading && events.length === 0) return <div className="container sd-loading-container">Loading your events...</div>;
-  if (error) return <div className="container sd-error-container">Error: {error}</div>;
+  if (isLoading && events.length === 0) return <div className="container text-center pt-8">Loading your events...</div>;
+  if (error) return <div className="container p-5 text-red-600">Error: {error}</div>;
 
   const upcomingEvents = events.filter(e => new Date(e.date) >= new Date());
   
@@ -190,7 +189,7 @@ export default function DashboardView() {
     <PageLayout 
       title="Singer Dashboard" 
       actions={
-        <div className="flex-row sd-page-actions">
+        <div className="flex-row gap-2">
           <Link to="/profile" className="btn btn-ghost">My Profile</Link>
           <button onClick={() => pb.authStore.clear()} className="btn btn-ghost">Logout</button>
         </div>
@@ -198,19 +197,19 @@ export default function DashboardView() {
       maxWidth="1200px"
     >
       <PublicLogo />
-      <div className="sd-dashboard-wrapper">
+      <div className="py-4">
         {nextEvent && (
-          <section className="mobile-singer-quick-panel" aria-label="Singer quick actions">
+          <section className="hidden max-md:block max-md:mb-6" aria-label="Singer quick actions">
             <AppCard className="card-glass">
-              <div className="mobile-singer-quick-content">
-                <div className="mobile-singer-quick-eyebrow">Next up</div>
-                <div className="mobile-singer-quick-title">{nextEvent.title || nextEvent.type}</div>
-                <div className="mobile-singer-quick-meta">
+              <div className="flex flex-col gap-2">
+                <div className="text-[0.72rem] font-extrabold tracking-widest uppercase text-text-muted">Next up</div>
+                <div className="text-lg font-extrabold text-text leading-tight">{nextEvent.title || nextEvent.type}</div>
+                <div className="text-sm text-text-muted">
                   {getFormattedDate(nextEvent.date)}
                   {nextEvent.expand?.venue?.name ? ` • ${nextEvent.expand.venue.name}` : ''}
                 </div>
 
-                <div className="mobile-singer-quick-actions">
+                <div className="grid grid-cols-2 gap-2">
                   <Link to={`/player?eventId=${nextEvent.id}`} className="btn btn-primary">
                     🎵 Practice
                   </Link>
@@ -223,12 +222,12 @@ export default function DashboardView() {
                 </div>
 
                 {isNextEventParentPerformanceDeclined ? (
-                  <div className="text-center text-xs text-muted sd-excused-message">
+                  <div className="text-center text-xs text-muted mt-4 w-full p-2 border border-dashed border-white/30 rounded">
                     🚫 Excused (Parent Performance Declined)
                   </div>
                 ) : (
                   <>
-                    <div className="mobile-singer-quick-rsvp">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
@@ -247,7 +246,7 @@ export default function DashboardView() {
                       </button>
                     </div>
                     {isNextEventClosed && (
-                      <div className="text-xs text-muted sd-rsvp-closed-message">
+                      <div className="text-xs text-muted text-center mt-1">
                         {nextEvent.type === 'Performance' 
                           ? 'The RSVP window for this performance is closed.' 
                           : 'This rehearsal has already passed.'}
@@ -257,14 +256,14 @@ export default function DashboardView() {
                 )}
 
                 {(activePolls.length > 0 || latestAnnouncement) && (
-                  <div className="mobile-singer-quick-notices">
+                  <div className="flex flex-col gap-1 text-xs text-text-muted pt-1 border-t border-border">
                     {activePolls.length > 0 && (
                       <span>{activePolls.length} active poll{activePolls.length === 1 ? '' : 's'}</span>
                     )}
                     {latestAnnouncement && (
                       <button
                         type="button"
-                        className="mobile-singer-bulletin-link"
+                        className="border-0 p-0 bg-transparent text-primary font-inherit font-bold text-left cursor-pointer"
                         onClick={() => setSelectedAnnouncement(latestAnnouncement)}
                       >
                         Latest bulletin: {latestAnnouncement.subject || 'Choir Update'}
@@ -277,11 +276,11 @@ export default function DashboardView() {
           </section>
         )}
 
-        <div className="dashboard-container">
+        <div className="grid grid-cols-[1fr_340px] gap-8 items-start max-md:grid-cols-1 max-md:gap-6">
           
           {/* Main timeline panel: Events */}
-          <div className="flex-col sd-timeline-panel">
-            <h2 className="sd-upcoming-events-header">Upcoming Events</h2>
+          <div className="flex-col gap-6">
+            <h2 className="text-2xl font-bold text-text m-0 mb-1">Upcoming Events</h2>
             {upcomingEvents.map((e) => (
               <EventCard 
                 key={e.id} 
@@ -302,18 +301,18 @@ export default function DashboardView() {
           </div>
 
           {/* Right sidebar: Quick widgets */}
-          <div className="flex-col sd-sidebar">
+          <div className="flex-col gap-6">
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
-              <AppCard className="card-glass sd-polls-card" title="📊 Quick Polls">
-                <div className="flex-col sd-polls-list">
+              <AppCard className="card-glass bg-primary-light" title="📊 Quick Polls">
+                <div className="flex-col gap-2">
                   {activePolls.map(poll => (
-                    <div key={poll.id} className="card sd-poll-item">
-                      <div className="sd-poll-question">{poll.question}</div>
-                      <div className="flex-row sd-poll-actions">
+                    <div key={poll.id} className="card p-2 flex flex-col gap-1 shadow-none border border-border">
+                      <div className="font-bold text-sm">{poll.question}</div>
+                      <div className="flex-row gap-1">
                         <button 
-                          className="btn btn-sm sd-poll-btn-base" 
+                          className="btn btn-sm flex-1 border border-border font-bold" 
                           // @allow-inline-style - Dynamic color based on poll status
                           style={{ 
                             backgroundColor: poll.status === 'Yes' ? 'var(--primary)' : 'white',
@@ -324,7 +323,7 @@ export default function DashboardView() {
                           {poll.status === 'Yes' ? '✓ Yes' : 'Yes'}
                         </button>
                         <button 
-                          className="btn btn-sm sd-poll-btn-base" 
+                          className="btn btn-sm flex-1 border border-border font-bold" 
                           // @allow-inline-style - Dynamic color based on poll status
                           style={{ 
                             backgroundColor: poll.status === 'No' ? '#ef4444' : 'white',
@@ -344,21 +343,21 @@ export default function DashboardView() {
             {/* Recent Announcements Widget */}
             <AppCard className="card-glass" title="✉️ Bulletins">
               {isAnnouncementsLoading ? (
-                <div className="text-muted sd-centered-muted-padding">Loading bulletins...</div>
+                <div className="text-muted text-center p-4">Loading bulletins...</div>
               ) : announcements.length > 0 ? (
-                <div className="bulletin-feed">
+                <div className="flex flex-col gap-4">
                   {announcements.map(ann => (
                     <div 
                       key={ann.id} 
-                      className="bulletin-item"
+                      className="border-l-[3px] border-l-primary bg-surface rounded-r-md p-4 transition-all duration-200 cursor-pointer border-t border-r border-b border-border hover:bg-primary-light hover:translate-x-[3px]"
                       onClick={() => setSelectedAnnouncement(ann)}
                     >
-                      <div className="bulletin-header">
-                        <span className="bulletin-title">{ann.subject || 'Choir Update'}</span>
-                        <span className="bulletin-date">{getFormattedDate(ann.created)}</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-text text-sm truncate max-w-[180px]">{ann.subject || 'Choir Update'}</span>
+                        <span className="text-xs text-text-muted">{getFormattedDate(ann.created)}</span>
                       </div>
                       <div 
-                        className="bulletin-snippet"
+                        className="text-xs text-text-muted line-clamp-2"
                         dangerouslySetInnerHTML={{ 
                           __html: sanitizeHtml(ann.content).replace(/<[^>]*>/g, '').slice(0, 100) + '...' 
                         }} 
@@ -367,16 +366,16 @@ export default function DashboardView() {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted sd-centered-muted-padding">No recent updates.</div>
+                <div className="text-muted text-center p-4">No recent updates.</div>
               )}
             </AppCard>
 
             {/* Resources Widget */}
             <AppCard className="card-glass" title="📂 Resources">
               {isResourcesLoading ? (
-                <div className="text-muted sd-centered-muted-padding">Loading resources...</div>
+                <div className="text-muted text-center p-4">Loading resources...</div>
               ) : resources.length > 0 ? (
-                <div className="resource-locker-list">
+                <div className="flex flex-col gap-2">
                   {resources.map(res => {
                     const href = res.url || (res.file ? resourceService.getResourceFileUrl(res, res.file) : '#');
                     return (
@@ -385,15 +384,15 @@ export default function DashboardView() {
                         href={href} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="resource-locker-item"
+                        className="flex items-center gap-2 p-[10px_12px] bg-[rgba(74,124,89,0.02)] border border-border rounded-md text-text font-semibold text-sm transition-all duration-200 no-underline hover:bg-primary-light hover:border-primary hover:text-primary-deep hover:translate-x-[2px]"
                       >
-                        <span className="resource-icon">{res.url ? '🔗' : '📄'}</span> {res.title}
+                        <span className="text-xl">{res.url ? '🔗' : '📄'}</span> {res.title}
                       </a>
                     );
                   })}
                 </div>
               ) : (
-                <div className="text-muted sd-centered-muted-padding">No resources available.</div>
+                <div className="text-muted text-center p-4">No resources available.</div>
               )}
             </AppCard>
 
@@ -419,11 +418,11 @@ export default function DashboardView() {
         }
       >
         {selectedAnnouncement && (
-          <div className="flex-col sd-announcement-modal-content">
-            <div className="text-xs text-muted sd-dispatched-date">
+          <div className="flex-col gap-4">
+            <div className="text-xs text-muted -mt-2">
               Dispatched on {getFormattedDate(selectedAnnouncement.created)}
             </div>
-            <div className="message-preview-content sd-message-preview-content">
+            <div className="message-preview-content max-h-[60vh] overflow-y-auto">
               {/* Secure content rendering */}
               <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement.content) }} />
             </div>

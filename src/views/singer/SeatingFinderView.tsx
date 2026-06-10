@@ -6,7 +6,6 @@ import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { type Profile } from '../../services/profileService';
 import { seatingService, type SeatingSingerProfile } from '../../services/seatingService';
-import './SeatingFinderView.css';
 
 type SingerDisplayProfile = Pick<Profile, 'id' | 'name' | 'voicePart'> | SeatingSingerProfile;
 
@@ -88,7 +87,7 @@ export default function SeatingFinderView() {
   if (isLoading) {
     return (
       <div
-        className="container seating-finder-loading"
+        className="container p-4 text-center text-text-muted"
       >
         Loading Seating Assignment...
       </div>
@@ -98,7 +97,7 @@ export default function SeatingFinderView() {
   if (!event) {
     return (
       <div
-        className="container seating-finder-not-found"
+        className="container p-4 text-center text-text-muted border border-border rounded-md"
       >
         Event not found.
       </div>
@@ -228,16 +227,16 @@ export default function SeatingFinderView() {
       backTo="/"
       maxWidth="1100px"
     >
-      <div className="flex-col seating-finder-section-gap">
+      <div className="flex-col gap-4 py-8">
         {charts.length > 1 && (
-          <div className="flex-row seating-finder-chart-selector">
+          <div className="flex-row gap-4 p-4 flex-wrap justify-center mb-1">
             {charts.map(c => {
               const isActive = c.id === activeChartId;
               return (
                 <button
                   key={c.id}
                   onClick={() => setActiveChartId(c.id)}
-                  className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-ghost'} seating-finder-chart-label`}
+                  className={`btn btn-sm font-semibold text-text-muted ${isActive ? 'btn-primary' : 'btn-ghost'}`}
                 >
                   {c.name}
                 </button>
@@ -247,14 +246,14 @@ export default function SeatingFinderView() {
         )}
         <AppCard>
           {isOpenSeating ? (
-            <div className="flex-col seating-finder-card text-center">
-              <div className="seating-finder-card-heading">Seating Type</div>
-              <div className="seating-finder-seat-label">
+            <div className="flex-col p-4 border border-border rounded-md bg-bg text-center">
+              <div className="text-[0.85rem] font-bold text-primary-deep mb-1 uppercase tracking-wider">Seating Type</div>
+              <div className="text-lg font-semibold text-text-muted">
                  Open Seating
               </div>
               <div className="text-muted">Find a spot with your section when you arrive.</div>
               {address && (
-                <div className="seating-finder-flex-row">
+                <div className="flex items-center">
                   <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                     📍 Open in Google Maps
                   </a>
@@ -262,13 +261,13 @@ export default function SeatingFinderView() {
               )}
             </div>
           ) : row !== null ? (
-            <div className="flex-col seating-finder-card text-center">
-              <div className="seating-finder-card-heading">Your Assignment</div>
-              <div className="seating-finder-seat-label">
+            <div className="flex-col p-4 border border-border rounded-md bg-bg text-center">
+              <div className="text-[0.85rem] font-bold text-primary-deep mb-1 uppercase tracking-wider">Your Assignment</div>
+              <div className="text-lg font-semibold text-text-muted">
                  Row {row + 1}
               </div>
-              <div className="seating-finder-seat-label">
-                Seat {seat! + 1} <span className="seating-finder-seat-label">
+              <div className="text-lg font-semibold text-text-muted">
+                Seat {seat! + 1} <span className="text-lg font-semibold text-text-muted">
                   ({perspective === 'singer' 
                     ? `${seat! + 1} from left, ${rowCounts[row] - seat!} from right, looking at stage`
                     : `${seat! + 1} from right, ${rowCounts[row] - seat!} from left, looking at choir`
@@ -277,15 +276,15 @@ export default function SeatingFinderView() {
               </div>
             </div>
           ) : (
-            <div className="seating-finder-loading">
+            <div className="p-4 text-center text-text-muted">
               <p className="text-muted">{noAssignmentMessage}</p>
             </div>
           )}
         </AppCard>
  
         {!isOpenSeating && (
-          <div className="flex-col seating-finder-section-gap">
-            <div className="flex-row perspective-toggle-wrapper">
+          <div className="flex-col gap-4 py-8">
+            <div className="flex-row justify-center gap-1 mb-1 bg-[var(--surface-muted)] p-1 rounded-md w-max mx-auto">
               <button
                 className={`btn btn-sm ${perspective === 'singer' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setPerspective('singer')}
@@ -299,22 +298,22 @@ export default function SeatingFinderView() {
                 Director View
               </button>
             </div>
-            <h3 className="seating-finder-section-heading text-center">
+            <h3 className="text-lg font-semibold text-text-muted mb-1 uppercase tracking-[0.1em] text-center">
               Interactive Stage Layout
             </h3>
             
             {isLoading ? (
-              <div className="seating-finder-loading text-muted">Loading Stage Map...</div>
+              <div className="p-4 text-center text-text-muted">Loading Stage Map...</div>
             ) : (
-              <div className="stage-container">
+              <div className="bg-surface border border-border rounded-lg p-8 px-6 shadow-sm flex flex-col items-center relative overflow-visible">
                 {/* Mirrored Stage Grid Wrapper */}
-                <div className="stage-rows-wrapper">
+                <div className="flex flex-col-reverse gap-3 w-full mb-8 items-stretch overflow-x-auto overflow-y-visible py-[40px] pb-[10px] scrollbar-thin">
                   {rowCounts.map((count, rIdx) => (
-                    <div key={rIdx} className="stage-row">
-                      <span className="stage-row-label">Row {rIdx + 1}</span>
+                    <div key={rIdx} className="grid grid-cols-[64px_max-content_64px] items-center gap-x-3 justify-center w-max min-w-max mx-auto">
+                      <span className="text-xs text-text-muted font-bold w-auto min-w-16 text-right uppercase tracking-wider select-none whitespace-nowrap">Row {rIdx + 1}</span>
                       
                       <div
-                        className="stage-seat-row"
+                        className="flex gap-[10px] items-center justify-center min-w-max"
                         // @allow-inline-style - dynamic flex direction based on perspective toggle
                         style={{
                           flexDirection: perspective === 'director' ? 'row-reverse' : 'row'
@@ -335,14 +334,18 @@ export default function SeatingFinderView() {
                             <button
                               key={sIdx}
                               type="button"
-                              className={`seat-node ${isMySeat ? 'self' : ''} ${
-                                selectedSeat?.row === rIdx && selectedSeat?.seat === sIdx ? 'selected' : ''
-                              }`}
+                              className={[
+                                'group appearance-none p-0 w-8 h-8 min-w-8 min-h-8 shrink-0 aspect-square rounded-full flex items-center justify-center text-[0.7rem] font-bold cursor-pointer relative transition-all duration-200 shadow-[0_1px_3px_rgb(0_0_0_/_5%)] hover:scale-120 hover:shadow-[0_4px_10px_rgb(0_0_0_/_10%)] hover:z-10',
+                                isMySeat ? 'shadow-[0_0_0_4px_rgba(74,124,89,0.3)] z-[5] !border-primary-deep' : '',
+                                selectedSeat?.row === rIdx && selectedSeat?.seat === sIdx ? 'outline-[3px] outline-primary-deep outline-offset-[3px]' : '',
+                              ].join(' ')}
                               // @allow-inline-style - dynamic singer color based on voice part/section
                               style={{ 
                                 borderColor: singerColor,
+                                borderWidth: isMySeat ? '2px' : '2px',
                                 color: singerId ? 'white' : 'var(--text-muted)',
                                 backgroundColor: singerId ? singerColor : 'white',
+                                borderStyle: 'solid',
                               }}
                               onClick={() => handleSeatSelect(rIdx, sIdx, singerId)}
                               aria-label={
@@ -355,11 +358,11 @@ export default function SeatingFinderView() {
                             >
                               {initials || ''}
                               {profile ? (
-                                <div className="seat-tooltip">
+                                <div className="invisible opacity-0 absolute bottom-[130%] left-1/2 -translate-x-1/2 translate-y-1 bg-text text-surface px-[10px] py-1.5 rounded text-xs font-semibold whitespace-nowrap shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] pointer-events-none z-[100] transition-all duration-200 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-text after:border-transparent after:border-t-text after:border-x-transparent after:border-b-transparent">
                                   {profile.name} ({profile.voicePart})
                                 </div>
                               ) : singerId ? (
-                                <div className="seat-tooltip">
+                                <div className="invisible opacity-0 absolute bottom-[130%] left-1/2 -translate-x-1/2 translate-y-1 bg-text text-surface px-[10px] py-1.5 rounded text-xs font-semibold whitespace-nowrap shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] pointer-events-none z-[100] transition-all duration-200 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-text after:border-transparent after:border-t-text after:border-x-transparent after:border-b-transparent">
                                   Assigned Singer
                                 </div>
                               ) : null}
@@ -368,16 +371,16 @@ export default function SeatingFinderView() {
                         })}
                       </div>
                       
-                      <span className="stage-row-label label-right">Row {rIdx + 1}</span>
+                      <span className="text-xs text-text-muted font-bold w-auto min-w-16 text-left uppercase tracking-wider select-none whitespace-nowrap">Row {rIdx + 1}</span>
                     </div>
                   ))}
                 </div>
- 
+
                 {/* Stage Front Orienters graphic at the bottom of the stage view */}
-                <div className="stage-front-orienter">
-                  <div className="stage-podium-arc"></div>
-                  <div className="orienter-badges-wrapper">
-                    <span className="orienter-badge">🎼 Director & Audience</span>
+                <div className="flex flex-col items-center gap-2 w-full pt-4 border-t border-dashed border-border relative">
+                  <div className="w-60 h-2 rounded-[50%] border-b-2 border-primary-deep opacity-30 mb-1"></div>
+                  <div className="flex gap-8 justify-center items-center">
+                    <span className="flex items-center gap-1.5 bg-primary-light text-primary-deep border border-[rgba(74,124,89,0.2)] px-3 py-1.5 rounded-full text-[0.75rem] font-bold tracking-wider uppercase shadow-sm select-none">🎼 Director & Audience</span>
                   </div>
                 </div>
               </div>
@@ -387,23 +390,23 @@ export default function SeatingFinderView() {
 
         {/* Selected Seat Card */}
         {!isOpenSeating && selectedSeat && (
-          <AppCard className="selected-seat-card">
-            <div className="selected-seat-content">
+          <AppCard className="max-sm:block">
+            <div className="flex items-center justify-between gap-4 max-sm:flex">
               <div>
-                <div className="selected-seat-eyebrow">
+                <div className="text-[0.72rem] text-text-muted uppercase tracking-[0.08em] font-extrabold max-sm:text-[0.72rem]">
                   Row {selectedSeat.row + 1} • Seat {selectedSeat.seat + 1}
                 </div>
-                <div className="selected-seat-title">
+                <div className="text-base font-extrabold text-text max-sm:text-base">
                   {selectedSeat.status === 'empty' && 'Empty seat'}
                   {selectedSeat.status === 'assignedUnknown' && 'Assigned singer'}
                   {selectedSeat.status === 'assigned' && selectedSeat.name}
                   {selectedSeat.status === 'self' && 'Your seat'}
                 </div>
                 {selectedSeat.status === 'self' && selectedSeat.name && (
-                  <div className="selected-seat-meta">{selectedSeat.name}</div>
+                  <div className="text-sm text-text-muted max-sm:text-sm">{selectedSeat.name}</div>
                 )}
                 {selectedSeat.voicePart && (
-                  <div className="selected-seat-meta">{selectedSeat.voicePart}</div>
+                  <div className="text-sm text-text-muted max-sm:text-sm">{selectedSeat.voicePart}</div>
                 )}
               </div>
 
@@ -420,38 +423,38 @@ export default function SeatingFinderView() {
 
         {/* Standing Neighbors HUD Card */}
         {!isOpenSeating && row !== null && seat !== null && (
-          <div className="flex-col seating-finder-section-gap">
-            <div className="seating-finder-flex-col">
-              <h3 className="seating-finder-section-heading">
+          <div className="flex-col gap-4 py-8">
+            <div className="flex flex-col items-center">
+              <h3 className="text-lg font-semibold text-text-muted mb-1 uppercase tracking-[0.1em]">
                 Standing Neighbors HUD
               </h3>
-              <span className="seating-finder-card-text">
+              <span className="text-sm text-text-muted italic">
                 Always from your perspective facing the director
               </span>
             </div>
             
-            <div className="neighbors-hud-container">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
               
               {/* Left Neighbor */}
-              <div className={`neighbor-card ${leftNeighbor.status === 'empty' ? 'empty' : ''}`}>
-                <div className="neighbor-direction-icon">◀</div>
-                <div className="neighbor-details">
-                  <span className="neighbor-label">Standing to your Left</span>
-                  <span className="neighbor-name">{getNeighborName(leftNeighbor)}</span>
+              <div className={`flex items-center gap-4 p-4 bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${leftNeighbor.status === 'empty' ? '' : ''}`}>
+                <div className={`w-10 h-10 rounded-md bg-primary-light text-primary-deep flex items-center justify-center text-xl font-extrabold shrink-0 ${leftNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>◀</div>
+                <div className="flex flex-col gap-[2px] min-w-0">
+                  <span className="text-[0.675rem] uppercase tracking-wider text-text-muted font-bold">Standing to your Left</span>
+                  <span className="font-bold text-[0.925rem] text-text whitespace-nowrap overflow-hidden text-ellipsis">{getNeighborName(leftNeighbor)}</span>
                   {getNeighborPart(leftNeighbor) && (
-                    <span className="neighbor-part">{getNeighborPart(leftNeighbor)}</span>
+                    <span className="text-[0.725rem] text-primary-deep font-semibold">{getNeighborPart(leftNeighbor)}</span>
                   )}
                 </div>
               </div>
 
               {/* Right Neighbor */}
-              <div className={`neighbor-card ${rightNeighbor.status === 'empty' ? 'empty' : ''}`}>
-                <div className="neighbor-direction-icon">▶</div>
-                <div className="neighbor-details">
-                  <span className="neighbor-label">Standing to your Right</span>
-                  <span className="neighbor-name">{getNeighborName(rightNeighbor)}</span>
+              <div className={`flex items-center gap-4 p-4 bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${rightNeighbor.status === 'empty' ? '' : ''}`}>
+                <div className={`w-10 h-10 rounded-md bg-primary-light text-primary-deep flex items-center justify-center text-xl font-extrabold shrink-0 ${rightNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>▶</div>
+                <div className="flex flex-col gap-[2px] min-w-0">
+                  <span className="text-[0.675rem] uppercase tracking-wider text-text-muted font-bold">Standing to your Right</span>
+                  <span className="font-bold text-[0.925rem] text-text whitespace-nowrap overflow-hidden text-ellipsis">{getNeighborName(rightNeighbor)}</span>
                   {getNeighborPart(rightNeighbor) && (
-                    <span className="neighbor-part">{getNeighborPart(rightNeighbor)}</span>
+                    <span className="text-[0.725rem] text-primary-deep font-semibold">{getNeighborPart(rightNeighbor)}</span>
                   )}
                 </div>
               </div>

@@ -6,7 +6,6 @@ import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import './Profile.css';
 
 export default function ProfileView() {
   const { user, updatePreferences } = useAuth();
@@ -205,15 +204,15 @@ export default function ProfileView() {
     loadProfile();
   };
 
-  if (isLoading) return <div className="container prof-loading-container">Loading profile...</div>;
-  if (!profile) return <div className="container prof-error-container">{error || 'Profile not found'}</div>;
+  if (isLoading) return <div className="container text-center pt-8">Loading profile...</div>;
+  if (!profile) return <div className="container p-5 text-red-600">{error || 'Profile not found'}</div>;
 
   return (
     <PageLayout title="My Profile" backTo="/" maxWidth="500px">
-      <div className="flex-col prof-layout">
+      <div className="flex-col gap-8 py-8 items-center">
 
         {/* Photo / Avatar */}
-        <div className="prof-avatar-wrapper">
+        <div className="flex flex-col items-center gap-2">
           {profile.id ? (
             <PhotoUploader
               profileId={profile.id}
@@ -223,72 +222,72 @@ export default function ProfileView() {
               onSuccess={handlePhotoSuccess}
             />
           ) : (
-            <div className="prof-default-avatar">
+            <div className="w-24 h-24 rounded-full bg-primary-light text-primary flex items-center justify-center text-5xl border-2 border-border">
               👤
             </div>
           )}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="flex-col prof-form">
-          <div className="flex-col prof-form-field">
+        <form onSubmit={handleSave} className="flex-col gap-4 w-full">
+          <div className="flex-col gap-1">
             <label className="text-label">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="card prof-input"
+              className="card w-full px-3 h-11 border border-border"
             />
           </div>
 
-          <div className="flex-col prof-form-field">
+          <div className="flex-col gap-1">
             <label className="text-label">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="card prof-input"
+              className="card w-full px-3 h-11 border border-border"
             />
           </div>
 
           {user?.role === 'admin' && (
             <>
-              <label className="flex-row prof-checkbox-label">
+              <label className="flex-row items-center gap-2 cursor-pointer my-1">
                 <input
                   type="checkbox"
                   checked={receiveAttendanceReports}
                   onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
-                  className="prof-checkbox"
+                  className="accent-primary w-[18px] h-[18px] cursor-pointer shrink-0"
                 />
-                <div className="flex-col prof-checkbox-text-wrapper">
-                  <span className="text-label prof-checkbox-title">Receive attendance reports</span>
+                <div className="flex-col gap-[2px]">
+                  <span className="text-label font-semibold">Receive attendance reports</span>
                   <span className="text-xs text-muted">Receive automated after-event reports for all events.</span>
                 </div>
               </label>
 
-              <label className="flex-row prof-checkbox-label">
+              <label className="flex-row items-center gap-2 cursor-pointer my-1">
                 <input
                   type="checkbox"
                   checked={receiveRsvpDeclineNotices}
                   onChange={(e) => setReceiveRsvpDeclineNotices(e.target.checked)}
-                  className="prof-checkbox"
+                  className="accent-primary w-[18px] h-[18px] cursor-pointer shrink-0"
                 />
-                <div className="flex-col prof-checkbox-text-wrapper">
-                  <span className="text-label prof-checkbox-title">Receive RSVP decline notifications</span>
+                <div className="flex-col gap-[2px]">
+                  <span className="text-label font-semibold">Receive RSVP decline notifications</span>
                   <span className="text-xs text-muted">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
                 </div>
               </label>
 
-              <label className="flex-row prof-checkbox-label">
+              <label className="flex-row items-center gap-2 cursor-pointer my-1">
                 <input
                   type="checkbox"
                   checked={receiveAdminNotifications}
                   onChange={(e) => setReceiveAdminNotifications(e.target.checked)}
-                  className="prof-checkbox"
+                  className="accent-primary w-[18px] h-[18px] cursor-pointer shrink-0"
                 />
-                <div className="flex-col prof-checkbox-text-wrapper">
-                  <span className="text-label prof-checkbox-title">Receive general admin notifications</span>
+                <div className="flex-col gap-[2px]">
+                  <span className="text-label font-semibold">Receive general admin notifications</span>
                   <span className="text-xs text-muted">Receive automated general admin alerts and system notifications.</span>
                 </div>
               </label>
@@ -297,110 +296,110 @@ export default function ProfileView() {
 
           {profile.id ? (
             <>
-              <div className="flex-col prof-form-field">
+              <div className="flex-col gap-1">
                 <label className="text-label">Phone</label>
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="card prof-input"
+                  className="card w-full px-3 h-11 border border-border"
                 />
               </div>
 
               {/* Voice Part — read-only */}
-              <div className="flex-col prof-form-field">
+              <div className="flex-col gap-1">
                 <label className="text-label">Voice Part</label>
-                <div className="card prof-read-only-field">
+                <div className="card w-full px-3 h-11 border border-border flex items-center text-text-muted bg-bg">
                   {profile.voicePart}
                 </div>
                 <span className="text-xs text-muted">Contact your director to change voice part</span>
               </div>
             </>
           ) : (
-            <div className="flex-col prof-form-field">
+            <div className="flex-col gap-1">
               <label className="text-label">Role</label>
-              <div className="card prof-read-only-field">
+              <div className="card w-full px-3 h-11 border border-border flex items-center text-text-muted bg-bg">
                 Administrator
               </div>
             </div>
           )}
 
           {error && (
-            <div className="prof-error-box">
+            <div className="text-danger-text bg-danger-bg p-2 px-4 rounded-md text-sm">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="prof-success-box">
+            <div className="text-success-text bg-success-bg p-2 px-4 rounded-md text-sm">
               Profile updated!
             </div>
           )}
 
-          <button type="submit" disabled={isSaving} className="btn btn-primary prof-full-width-btn">
+          <button type="submit" disabled={isSaving} className="btn btn-primary w-full">
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
 
         {profile.id && (
-          <AppCard title="📅 Calendar Sync" className="prof-calendar-card">
-            <p className="text-xs text-muted prof-calendar-description">
+          <AppCard title="📅 Calendar Sync" className="w-full">
+            <p className="text-xs text-muted m-0 mb-4">
               Subscribe to your personalized choir calendar to sync performances, rehearsals, call times, and set lists directly to your personal Google, Apple, or Outlook calendar.
             </p>
 
-            <div className="flex-col prof-calendar-links-wrapper">
+            <div className="flex-col gap-4">
               {isCalendarLoading ? (
-                <div className="text-xs text-muted prof-calendar-loading">Loading feed links...</div>
+                <div className="text-xs text-muted py-2">Loading feed links...</div>
               ) : calendarFeedUrls ? (
-                <div className="flex-col prof-calendar-links-content">
+                <div className="flex-col gap-4">
                   {/* Action 1: Subscribe in Calendar App (webcalUrl) */}
-                  <div className="flex-col prof-form-field">
+                  <div className="flex-col gap-1">
                     <label className="text-label">Subscribe Directly</label>
                     <a
                       href={calendarFeedUrls.webcalUrl}
-                      className="btn btn-primary prof-subscribe-btn"
+                      className="btn btn-primary h-10 flex items-center justify-center no-underline text-center w-full"
                     >
                       Subscribe in Calendar App
                     </a>
                   </div>
 
                   {/* Action 2: Copy Google Calendar URL (httpsUrl) */}
-                  <div className="flex-col prof-form-field">
+                  <div className="flex-col gap-1">
                     <label className="text-label">Google Calendar Setup</label>
-                    <div className="flex-row prof-https-url-wrapper">
+                    <div className="flex-row gap-1 items-center w-full">
                       <input
                         readOnly
                         value={calendarFeedUrls.httpsUrl}
-                        className="card prof-https-url-input"
+                        className="card flex-1 px-3 h-10 border border-border text-sm truncate"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <button
                         type="button"
                         onClick={handleCopyGoogleLink}
-                        className={`btn prof-copy-btn ${isCopied ? 'btn-success' : 'btn-primary'}`}
+                        className={`btn h-10 px-4 min-w-[180px] flex items-center justify-center ${isCopied ? 'btn-success' : 'btn-primary'}`}
                       >
                         {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
                       </button>
                     </div>
-                    <span className="text-xs text-muted prof-https-hint">
+                    <span className="text-xs text-muted">
                       For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="text-xs text-muted prof-error-text">Failed to load calendar link.</div>
+                <div className="text-xs text-muted">Failed to load calendar link.</div>
               )}
 
-              <div className="flex-row prof-reset-btn-wrapper">
+              <div className="flex-row justify-start mt-1">
                 <button
                   type="button"
                   onClick={handleResetLink}
-                  className="btn btn-ghost prof-reset-btn"
+                  className="btn btn-ghost text-danger-text border border-danger-text text-sm px-1 px-4 rounded-md bg-transparent cursor-pointer"
                   disabled={isCalendarLoading}
                 >
                   Reset Calendar Link...
                 </button>
               </div>
-              <p className="text-xs text-muted prof-calendar-note">
+              <p className="text-xs text-muted m-0 italic">
                 Note: Resetting will invalidate any previous link you've set up on your devices.
                 {user?.role === 'admin' && !profile?.voicePart ? (
                   <> Because you are an administrative-only account, this link provides a <strong>master schedule</strong> of all choir rehearsals and performances.</>
@@ -413,30 +412,30 @@ export default function ProfileView() {
         )}
 
         {user?.role === 'admin' && (
-          <AppCard title="View Preferences" className="prof-preferences-card">
-            <p className="text-xs text-muted prof-preferences-description">
+          <AppCard title="View Preferences" className="w-full">
+            <p className="text-xs text-muted m-0">
               These settings customize how directories and rosters are ordered for your account across all your devices.
             </p>
 
-            <div className="flex-col prof-preferences-list">
-              <div className="flex-col prof-form-field">
+            <div className="flex-col gap-4">
+              <div className="flex-col gap-1">
                 <label className="text-label">Directory Sort</label>
                 <select
                   value={user?.preferences?.rosterSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="card prof-input"
+                  className="card w-full px-3 h-11 border border-border"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part</option>
                 </select>
               </div>
 
-              <div className="flex-col prof-form-field">
+              <div className="flex-col gap-1">
                 <label className="text-label">Attendance Sort</label>
                 <select
                   value={user?.preferences?.attendanceSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart' | 'section')}
-                  className="card prof-input"
+                  className="card w-full px-3 h-11 border border-border"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
@@ -444,12 +443,12 @@ export default function ProfileView() {
                 </select>
               </div>
 
-              <div className="flex-col prof-form-field">
+              <div className="flex-col gap-1">
                 <label className="text-label">Event RSVP Sort</label>
                 <select
                   value={user?.preferences?.rsvpSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="card prof-input"
+                  className="card w-full px-3 h-11 border border-border"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
@@ -457,7 +456,7 @@ export default function ProfileView() {
               </div>
 
               {prefSuccess && (
-                <div className="prof-preferences-success">
+                <div className="text-success-text bg-success-bg p-2 px-4 rounded-md text-sm text-center">
                   Preferences updated!
                 </div>
               )}
