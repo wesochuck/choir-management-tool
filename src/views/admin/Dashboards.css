@@ -79,10 +79,9 @@
 /* Accent Cards & Status Banners */
 .db-accent-card {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--space-md);
 }
 
@@ -101,10 +100,9 @@
 
 .db-event-meta-row {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   gap: var(--space-lg);
   align-items: center;
-  flex-wrap: wrap;
 }
 
 .db-event-type-badge {
@@ -127,7 +125,6 @@
 
 /* Accent Cards & Status Banners */
 .db-accent-card {
-
   display: flex;
   flex-direction: row;
   gap: var(--space-md);

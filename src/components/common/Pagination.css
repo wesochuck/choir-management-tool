@@ -17,7 +17,7 @@
   padding: 0 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background-color: var(--card-bg, #ffffff);
+  background-color: var(--card-bg, #fff);
   color: var(--text, #1e293b);
   font-size: 14px;
   font-weight: 500;
@@ -38,7 +38,7 @@
 }
 
 .pagination-btn:focus-visible {
-  box-shadow: 0 0 0 2px var(--card-bg, #ffffff), 0 0 0 4px var(--primary-deep, #1e3a8a);
+  box-shadow: 0 0 0 2px var(--card-bg, #fff), 0 0 0 4px var(--primary-deep, #1e3a8a);
 }
 
 .pagination-btn:disabled {
@@ -52,15 +52,15 @@
 
 .pagination-btn.active {
   background-color: var(--primary-deep, #1e3a8a);
-  color: #ffffff;
+  color: #fff;
   border-color: var(--primary-deep, #1e3a8a);
   font-weight: 600;
-  box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.1), 0 2px 4px -1px rgba(30, 58, 138, 0.06);
+  box-shadow: 0 4px 6px -1px rgb(30 58 138 / 10%), 0 2px 4px -1px rgb(30 58 138 / 6%);
 }
 
 .pagination-btn.active:hover {
   background-color: var(--primary-deep, #1e3a8a);
-  color: #ffffff;
+  color: #fff;
   transform: none;
 }
 

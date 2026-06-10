@@ -20,12 +20,12 @@
 }
 
 .audition-status-banner-open {
-  background-color: rgba(74, 117, 89, 0.05);
+  background-color: rgb(74 117 89 / 5%);
   border: 1px solid var(--primary);
 }
 
 .audition-status-banner-closed {
-  background-color: rgba(100, 116, 139, 0.05);
+  background-color: rgb(100 116 139 / 5%);
   border: 1px solid var(--border);
 }
 
@@ -125,7 +125,7 @@
   gap: 6px;
   padding: 6px 12px;
   font-size: 0.85rem;
-  background-color: #ffffff;
+  background-color: #fff;
   border: 1px solid var(--border);
 }
 
@@ -387,7 +387,7 @@
   cursor: pointer;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  background-color: #ffffff;
+  background-color: #fff;
   color: var(--text);
   border-radius: var(--radius-sm);
   font-weight: 500;

@@ -104,7 +104,7 @@
 .chorus-player .playlist-action-btn.clear-btn:hover:not(:disabled) {
   border-color: var(--error-color);
   color: var(--error-color);
-  background: oklch(97% 0.02 20);
+  background: oklch(97% 0.02 20deg);
 }
 
 /* Spin animation for download-all in-progress icon */
@@ -235,7 +235,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 600px) {
+@media (width <= 600px) {
   .chorus-player .playlist {
     border-radius: var(--radius-sm);
     max-height: none;
@@ -263,7 +263,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .chorus-player .playlist-header {
     flex-direction: column;
     align-items: stretch;

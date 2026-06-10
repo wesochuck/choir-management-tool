@@ -225,7 +225,7 @@
 .roster-ut-patronage-summary {
     padding: var(--space-md);
     background-color: var(--primary-light);
-    border: 1px solid rgba(74, 117, 89, 0.2);
+    border: 1px solid rgb(74 117 89 / 20%);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -273,7 +273,7 @@
     border-radius: var(--radius-lg);
     padding: 40px 20px;
     cursor: pointer;
-    background-color: rgba(74, 124, 89, 0.02);
+    background-color: rgb(74 124 89 / 2%);
     transition: border-color 0.2s, background-color 0.2s;
     display: flex;
     flex-direction: column;
@@ -348,7 +348,7 @@
 
 .roster-ut-import-map-req-badge {
     font-size: 0.7rem;
-    background-color: rgba(153, 27, 27, 0.1);
+    background-color: rgb(153 27 27 / 10%);
     color: #991b1b;
     padding: 1px 6px;
     border-radius: 4px;
@@ -380,14 +380,14 @@
 
 .roster-ut-import-preview-stat-mapped {
     padding: 4px 8px;
-    background: rgba(74, 124, 89, 0.05);
+    background: rgb(74 124 89 / 5%);
     color: var(--primary-deep);
     font-weight: 600;
 }
 
 .roster-ut-import-preview-stat-errors {
     padding: 4px 8px;
-    background: rgba(153, 27, 27, 0.05);
+    background: rgb(153 27 27 / 5%);
     color: #991b1b;
     font-weight: 600;
 }
@@ -542,8 +542,8 @@
 }
 
 .roster-ut-import-cred-card {
-    background-color: rgba(74, 124, 89, 0.06);
-    border-color: rgba(74, 124, 89, 0.2);
+    background-color: rgb(74 124 89 / 6%);
+    border-color: rgb(74 124 89 / 20%);
     padding: 16px 20px;
     border-radius: var(--radius-lg);
     display: flex;
@@ -606,40 +606,47 @@
   box-shadow: none;
   background-color: var(--surface);
 }
+
 .roster-ut-clickable-name {
   cursor: pointer;
   text-decoration: underline;
 }
+
 .roster-ut-badge-rsvp {
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
 }
+
 .roster-ut-badge-voicepart {
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
   background-color: var(--primary-light);
   color: var(--primary-deep);
-  border: 1px solid rgba(74, 117, 89, 0.2);
+  border: 1px solid rgb(74 117 89 / 20%);
 }
+
 .roster-ut-badge-misses {
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 800;
 }
+
 .roster-ut-rsvp-note {
   color: #b91c1c;
   font-weight: 600;
 }
+
 .roster-ut-list-header-container {
   display: flex;
   align-items: center;
-  margin: 18px 0 8px 0;
+  margin: 18px 0 8px;
   gap: 12px;
   width: 100%;
 }
+
 .roster-ut-list-header-text {
   font-size: 0.8rem;
   font-weight: 800;
@@ -647,31 +654,37 @@
   letter-spacing: 0.05em;
   padding-right: 8px;
 }
+
 .roster-ut-list-header-line {
   flex: 1;
   height: 1px;
-  background-color: rgba(74, 117, 89, 0.15);
+  background-color: rgb(74 117 89 / 15%);
 }
+
 .roster-ut-checkin-wrapper {
   gap: 12px;
   width: 100%;
 }
+
 .roster-ut-checked-in-divider-container {
   align-items: center;
-  margin: 24px 0 12px 0;
+  margin: 24px 0 12px;
   gap: 16px;
   width: 100%;
 }
+
 .roster-ut-checked-in-divider-line-left {
   flex: 1;
   height: 1px;
   background: linear-gradient(to right, transparent, var(--border));
 }
+
 .roster-ut-checked-in-divider-line-right {
   flex: 1;
   height: 1px;
   background: linear-gradient(to left, transparent, var(--border));
 }
+
 .roster-ut-checked-in-divider-text {
   font-size: 0.8rem;
   font-weight: 800;
@@ -681,12 +694,13 @@
   background-color: var(--surface);
   padding: 6px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(74, 117, 89, 0.25);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  border: 1px solid rgb(74 117 89 / 25%);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 3%);
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .roster-ut-empty-state-card {
   text-align: center;
   padding: 32px;
@@ -696,20 +710,23 @@
 .roster-ut-mr-auto {
   margin-right: auto;
 }
+
 .roster-ut-margin-0 {
   margin: 0;
 }
+
 .roster-ut-upload-container {
   gap: var(--space-md);
   text-align: center;
   padding: 20px 0;
 }
+
 .roster-ut-upload-dropzone {
   border: 2px dashed var(--border);
   border-radius: var(--radius-lg);
   padding: 40px 20px;
   cursor: pointer;
-  background-color: rgba(74, 124, 89, 0.02);
+  background-color: rgb(74 124 89 / 2%);
   transition: border-color 0.2s, background-color 0.2s;
   display: flex;
   flex-direction: column;
@@ -717,18 +734,22 @@
   justify-content: center;
   gap: 12px;
 }
+
 .roster-ut-upload-icon {
   font-size: 3rem;
 }
+
 .roster-ut-upload-title {
   color: var(--primary-deep);
   display: block;
   font-size: 1rem;
 }
+
 .roster-ut-upload-subtitle {
   margin-top: 4px;
   display: block;
 }
+
 .roster-ut-upload-hint {
   display: flex;
   gap: 8px;
@@ -737,15 +758,18 @@
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
 .roster-ut-map-container {
   gap: var(--space-md);
 }
+
 .roster-ut-map-list {
   gap: var(--space-sm);
   max-height: 350px;
   overflow-y: auto;
   padding-right: 4px;
 }
+
 .roster-ut-map-item {
   padding: 12px 16px;
   display: flex;
@@ -754,27 +778,32 @@
   justify-content: space-between;
   gap: 12px;
 }
+
 .roster-ut-map-item-info {
   gap: 2px;
   flex: 1;
 }
+
 .roster-ut-map-item-header {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .roster-ut-map-item-title {
   font-size: 0.9rem;
   color: var(--text);
 }
+
 .roster-ut-map-item-required {
   font-size: 0.7rem;
-  background-color: rgba(153, 27, 27, 0.1);
+  background-color: rgb(153 27 27 / 10%);
   color: #991b1b;
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
 }
+
 .roster-ut-map-select {
   width: 200px;
   height: 38px;
@@ -783,37 +812,44 @@
   font-size: 0.85rem;
   box-shadow: none;
 }
+
 .roster-ut-preview-header {
   justify-content: space-between;
   align-items: center;
 }
+
 .roster-ut-preview-stats {
   display: flex;
   gap: 12px;
 }
+
 .roster-ut-preview-stat-mapped {
   padding: 4px 8px;
-  background: rgba(74, 124, 89, 0.05);
+  background: rgb(74 124 89 / 5%);
   color: var(--primary-deep);
   font-weight: 600;
 }
+
 .roster-ut-preview-stat-errors {
   padding: 4px 8px;
-  background: rgba(153, 27, 27, 0.05);
+  background: rgb(153 27 27 / 5%);
   color: #991b1b;
   font-weight: 600;
 }
+
 .roster-ut-preview-table-container {
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   max-height: 350px;
 }
+
 .roster-ut-preview-table {
   width: 100%;
   min-width: 600px;
   margin: 0;
 }
+
 .roster-ut-preview-thead {
   position: sticky;
   top: 0;
@@ -821,34 +857,43 @@
   z-index: 1;
   box-shadow: 0 1px 0 var(--border);
 }
+
 .roster-ut-preview-th-row {
   width: 60px;
   text-align: center;
 }
+
 .roster-ut-preview-th-voicepart {
   width: 100px;
 }
+
 .roster-ut-preview-th-status {
   width: 130px;
 }
+
 .roster-ut-preview-td-row {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.8rem;
 }
+
 .roster-ut-preview-td-email {
   font-size: 0.85rem;
 }
+
 .roster-ut-preview-td-voicepart {
   text-align: center;
 }
+
 .roster-ut-fw-600 {
   font-weight: 600;
 }
+
 .roster-ut-preview-status-badge {
   padding: 2px 6px;
   display: inline-block;
 }
+
 .roster-ut-preview-errors-list {
   color: #c62828;
   font-size: 0.8rem;
@@ -856,6 +901,7 @@
   flex-direction: column;
   gap: 2px;
 }
+
 .roster-ut-preview-warnings-list {
   color: #b78103;
   font-size: 0.8rem;
@@ -863,28 +909,34 @@
   flex-direction: column;
   gap: 2px;
 }
+
 .roster-ut-preview-ready {
   color: var(--primary-deep);
   font-size: 0.8rem;
 }
+
 .roster-ut-importing-container {
   gap: var(--space-md);
   padding: 20px 0;
   align-items: center;
 }
+
 .roster-ut-importing-icon {
   font-size: 3rem;
   animation: spin 2s linear infinite;
 }
+
 .roster-ut-importing-header {
   gap: 6px;
   width: 100%;
   align-items: center;
 }
+
 .roster-ut-importing-title {
   font-size: 1.1rem;
   color: var(--text);
 }
+
 .roster-ut-importing-progress-track {
   width: 100%;
   height: 12px;
@@ -893,24 +945,29 @@
   overflow: hidden;
   margin-top: 10px;
 }
+
 .roster-ut-importing-progress-bar {
   height: 100%;
   background-color: var(--primary);
   transition: width 0.1s ease-out;
 }
+
 .roster-ut-importing-stats {
   display: flex;
   gap: 20px;
   font-size: 0.9rem;
   color: var(--text-muted);
 }
+
 .roster-ut-importing-success {
   color: var(--primary-deep);
 }
+
 .roster-ut-complete-container {
   gap: var(--space-lg);
   padding: 10px 0;
 }
+
 .roster-ut-complete-header {
   display: flex;
   flex-direction: column;
@@ -918,17 +975,20 @@
   gap: 8px;
   text-align: center;
 }
+
 .roster-ut-complete-icon {
   font-size: 3.5rem;
 }
+
 .roster-ut-complete-title {
   margin: 0;
   font-size: 1.3rem;
   color: var(--primary-deep);
 }
+
 .roster-ut-complete-creds-callout {
-  background-color: rgba(74, 124, 89, 0.06);
-  border-color: rgba(74, 124, 89, 0.2);
+  background-color: rgb(74 124 89 / 6%);
+  border-color: rgb(74 124 89 / 20%);
   padding: 16px 20px;
   border-radius: var(--radius-lg);
   display: flex;
@@ -937,17 +997,21 @@
   justify-content: space-between;
   gap: 16px;
 }
+
 .roster-ut-complete-creds-info {
   gap: 4px;
   flex: 1;
 }
+
 .roster-ut-complete-creds-title {
   color: var(--primary-deep);
   font-size: 0.95rem;
 }
+
 .roster-ut-complete-creds-desc {
   line-height: 1.4;
 }
+
 .roster-ut-complete-creds-btn {
   height: 40px;
   display: flex;
@@ -955,13 +1019,16 @@
   gap: 6px;
   white-space: nowrap;
 }
+
 .roster-ut-complete-errors {
   gap: var(--space-xs);
 }
+
 .roster-ut-complete-errors-title {
   font-size: 0.9rem;
   color: #991b1b;
 }
+
 .roster-ut-complete-errors-list {
   max-height: 150px;
   overflow-y: auto;
@@ -971,13 +1038,16 @@
   background-color: #fafafa;
   font-size: 0.8rem;
 }
+
 .roster-ut-complete-error-item {
   padding: 4px 0;
   color: #444;
 }
+
 .roster-ut-complete-error-text {
   color: #991b1b;
 }
+
 .roster-ut-d-none {
   display: none;
 }

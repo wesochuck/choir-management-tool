@@ -41,7 +41,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 1px 2px rgba(67, 56, 202, 0.05);
+  box-shadow: 0 1px 2px rgb(67 56 202 / 5%);
 }
 
 .ec-venue-link {
@@ -122,7 +122,7 @@
   width: 100%;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .event-card-top-row {
     flex-direction: column !important;
     align-items: stretch !important;

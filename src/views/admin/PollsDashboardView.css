@@ -29,7 +29,7 @@
 }
 
 .polls-list-item.is-expanded .polls-list-row {
-  background-color: rgba(74, 124, 89, 0.06);
+  background-color: rgb(74 124 89 / 6%);
 }
 
 .polls-list-main {
@@ -183,7 +183,7 @@
   font-weight: 700;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .polls-list-row,
   .polls-list-side,
   .polls-response-panel {
@@ -202,13 +202,12 @@
 
 .db-polls-header-actions {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   align-items: center;
   gap: var(--space-md);
-  flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .db-polls-header-actions {
     width: 100%;
     justify-content: flex-start;

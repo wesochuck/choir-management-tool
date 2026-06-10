@@ -124,11 +124,11 @@
 }
 
 .ml-table-row-duplicate {
-  background-color: rgba(255, 138, 101, 0.05);
+  background-color: rgb(255 138 101 / 5%);
 }
 
 .ml-table-row-child {
-  background-color: rgba(248, 250, 252, 0.4);
+  background-color: rgb(248 250 252 / 40%);
 }
 
 .ml-table-row-child .ml-title-cell {
@@ -144,10 +144,9 @@
 
 .ml-title-row {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
 }
 
 .ml-title-text {
@@ -190,15 +189,15 @@
 }
 
 .ml-badge-multi {
-  background-color: var(--primary-light, rgba(27, 77, 62, 0.1));
+  background-color: var(--primary-light, rgb(27 77 62 / 10%));
   color: var(--primary, #1b4d3e);
-  border-color: rgba(27, 77, 62, 0.2);
+  border-color: rgb(27 77 62 / 20%);
 }
 
 .ml-badge-mvt {
-  background-color: rgba(100, 116, 139, 0.1);
+  background-color: rgb(100 116 139 / 10%);
   color: var(--text-muted, #64748b);
-  border-color: rgba(100, 116, 139, 0.2);
+  border-color: rgb(100 116 139 / 20%);
   padding: 1px 5px;
   font-size: 9px;
   font-weight: 500;
@@ -208,8 +207,8 @@
   display: inline-flex;
   padding: 1px 5px;
   border-radius: 4px;
-  background-color: rgba(100, 116, 139, 0.06);
-  border: 1px solid rgba(100, 116, 139, 0.15);
+  background-color: rgb(100 116 139 / 6%);
+  border: 1px solid rgb(100 116 139 / 15%);
   font-size: 9px;
   font-weight: 500;
   color: var(--text-muted);
@@ -229,11 +228,11 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: 12px;
-  background-color: rgba(27, 77, 62, 0.08);
+  background-color: rgb(27 77 62 / 8%);
   color: var(--primary, #1b4d3e);
   font-size: 11px;
   font-weight: 500;
-  border: 1px solid rgba(27, 77, 62, 0.15);
+  border: 1px solid rgb(27 77 62 / 15%);
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.2s, opacity 0.2s;

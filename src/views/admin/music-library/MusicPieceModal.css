@@ -30,7 +30,7 @@
 
 /* Parent Banner */
 .parent-piece-banner {
-  background-color: rgba(74, 124, 89, 0.05);
+  background-color: rgb(74 124 89 / 5%);
   border-left: 4px solid var(--primary);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
@@ -119,8 +119,8 @@
   margin-top: 6px;
   padding: 8px 12px;
   border-radius: 6px;
-  background-color: var(--primary-light, rgba(27, 77, 62, 0.08));
-  border: 1px dashed rgba(27, 77, 62, 0.3);
+  background-color: var(--primary-light, rgb(27 77 62 / 8%));
+  border: 1px dashed rgb(27 77 62 / 30%);
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -133,7 +133,7 @@
   align-items: center;
   gap: var(--space-xs);
   padding: 4px 10px;
-  background-color: rgba(74, 124, 89, 0.1);
+  background-color: rgb(74 124 89 / 10%);
   border: 1px solid var(--primary);
   border-radius: 16px;
   color: var(--primary);
@@ -155,7 +155,7 @@
 
 .tutti-upload-dropzone.active {
   border: 2px dashed var(--primary);
-  background-color: rgba(27, 77, 62, 0.04);
+  background-color: rgb(27 77 62 / 4%);
 }
 
 .tutti-upload-label {
@@ -215,10 +215,10 @@
   gap: 3px;
   padding: 1px 6px;
   border-radius: 10px;
-  background-color: rgba(27, 77, 62, 0.08);
+  background-color: rgb(27 77 62 / 8%);
   color: var(--primary, #1b4d3e);
   font-size: 10px;
   font-weight: 600;
-  border: 1px solid rgba(27, 77, 62, 0.15);
+  border: 1px solid rgb(27 77 62 / 15%);
   line-height: 1.2;
 }

@@ -25,7 +25,7 @@
 
 .ticket-info-box {
   padding: var(--space-md);
-  background-color: rgba(74, 124, 89, 0.05);
+  background-color: rgb(74 124 89 / 5%);
   border-left: 4px solid var(--primary);
   border-radius: var(--radius-md);
   margin: 0;
@@ -111,10 +111,9 @@
 
 .ticket-stats-row {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   gap: var(--space-xl);
   padding: 0 var(--space-md);
-  flex-wrap: wrap;
 }
 
 .ticket-stat-box {
@@ -187,7 +186,6 @@
 }
 
 .ticket-table-container {
-
   overflow-x: auto;
 }
 
@@ -313,7 +311,7 @@
 
 .ticket-share-box {
   padding: var(--space-sm);
-  background-color: rgba(74, 124, 89, 0.05);
+  background-color: rgb(74 124 89 / 5%);
   border-left: 4px solid var(--primary);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;

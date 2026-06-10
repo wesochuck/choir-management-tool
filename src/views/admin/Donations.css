@@ -2,7 +2,7 @@
 
 :root {
   --donation-pink: #db2777;
-  --donation-pink-light: rgba(219, 39, 119, 0.05);
+  --donation-pink-light: rgb(219 39 119 / 5%);
 }
 
 .donation-title {
@@ -38,10 +38,9 @@
 
 .donation-stats-row {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   gap: var(--space-xl);
   padding: 0 var(--space-md);
-  flex-wrap: wrap;
 }
 
 .donation-stat-box {
@@ -62,11 +61,10 @@
 
 .donation-search-row {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   gap: var(--space-md);
   width: 100%;
   align-items: center; /* Match Ticketing center alignment */
-  flex-wrap: wrap;
 }
 
 .donation-search-row .btn {
@@ -273,7 +271,7 @@
   cursor: pointer;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .donation-search-row {
     flex-direction: column;
     align-items: stretch;

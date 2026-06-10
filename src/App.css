@@ -27,8 +27,8 @@
 
   body,
   html {
-    background: #ffffff !important;
-    color: #000000 !important;
+    background: #fff !important;
+    color: #000 !important;
     min-height: 0 !important;
     height: auto !important;
   }
@@ -85,7 +85,7 @@
     border: 1px solid #ddd !important;
     color: black !important;
     padding: var(--space-sm) !important;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   /* Seating Visual Grid Print Styles */
@@ -95,7 +95,7 @@
     padding: 0 10px !important;
     box-sizing: border-box !important;
     margin: 0 auto !important;
-    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     align-items: center !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -130,7 +130,7 @@
   .row-print>.text-xs {
     width: 38px !important;
     padding-right: 4px !important;
-    color: #000000 !important;
+    color: #000 !important;
     font-size: clamp(9px, calc(var(--print-seat-size) * 0.18), 12px) !important;
     line-height: 1.2 !important;
     font-weight: 700 !important;
@@ -154,7 +154,7 @@
     transform: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     overflow: hidden !important;
     padding: 0 !important;
     gap: 1px !important;
@@ -249,7 +249,7 @@
 
 .segmented-control button:hover {
   color: var(--primary-deep);
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgb(255 255 255 / 40%);
 }
 
 .segmented-control button.active {
@@ -332,12 +332,12 @@ body:has(.seating-chart-wide-active) .container {
 
 .seat-cell:hover .seat-remove-btn:hover[data-action="unassign"] {
   background-color: var(--primary, #3b82f6) !important;
-  color: #ffffff !important;
+  color: #fff !important;
 }
 
 .seat-cell:hover .seat-remove-btn:hover[data-action="delete"] {
   background-color: #ef4444 !important;
-  color: #ffffff !important;
+  color: #fff !important;
 }
 
 /* Instantly visible custom tooltips on seat hover */
@@ -391,17 +391,17 @@ body:has(.seating-chart-wide-active) .container {
 
 .seat-tooltip-mismatch {
   background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.35) !important;
+  color: #fff !important;
+  border: 1px solid rgb(255 255 255 / 20%) !important;
+  box-shadow: 0 4px 12px rgb(153 27 27 / 35%) !important;
 }
 
 .seat-tooltip-mismatch.seat-tooltip::after {
-  border-color: #b91c1c transparent transparent transparent !important;
+  border-color: #b91c1c transparent transparent !important;
 }
 
 .seat-tooltip-mismatch.seat-tooltip-bottom::after {
-  border-color: transparent transparent #b91c1c transparent !important;
+  border-color: transparent transparent #b91c1c !important;
 }
 
 .seat-cell:hover .seat-tooltip,
@@ -419,8 +419,8 @@ body:has(.seating-chart-wide-active) .container {
 
 .checkin-row:hover {
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05), var(--shadow-sm);
-  border-color: rgba(74, 117, 89, 0.4) !important;
+  box-shadow: 0 6px 12px rgb(0 0 0 / 5%), var(--shadow-sm);
+  border-color: rgb(74 117 89 / 40%) !important;
 }
 
 .checkin-row:active {
@@ -443,7 +443,7 @@ body:has(.seating-chart-wide-active) .container {
   grid-column: span 1;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .setlist-grid {
     grid-template-columns: 1fr;
     gap: var(--space-md);
@@ -459,7 +459,7 @@ body:has(.seating-chart-wide-active) .container {
 .photo-spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid rgb(255 255 255 / 30%);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;

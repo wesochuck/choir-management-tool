@@ -163,7 +163,7 @@
   color: #2c7a7b;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .patrons-view .patrons-search-row {
     flex-direction: column;
     align-items: stretch;

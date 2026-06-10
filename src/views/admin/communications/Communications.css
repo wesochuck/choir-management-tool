@@ -40,7 +40,7 @@
 /* Placeholder Panel */
 .comm-placeholder-panel {
   padding: var(--space-md);
-  background-color: var(--card-bg, #ffffff);
+  background-color: var(--card-bg, #fff);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg, 12px);
   position: sticky;
@@ -49,7 +49,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  box-shadow: var(--shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.05));
+  box-shadow: var(--shadow-sm, 0 1px 3px 0 rgb(0 0 0 / 5%));
 }
 
 .comm-placeholder-header {
@@ -72,15 +72,14 @@
 
 .comm-placeholder-header-desc {
   font-size: 0.75rem;
-  margin: 4px 0 0 0;
+  margin: 4px 0 0;
 }
 
 .comm-placeholder-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding-right: 4px;
   box-sizing: border-box;
 }
@@ -277,8 +276,8 @@
 
 .comm-email-frame {
   width: 100%;
-  background-color: #ffffff;
-  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  background-color: #fff;
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgb(0 0 0 / 10%));
   display: flex;
   flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -452,7 +451,6 @@
 }
 
 .comm-modal-recipient-item {
-
   padding: var(--space-sm);
   justify-content: space-between;
   box-shadow: none;
@@ -583,6 +581,7 @@
 
 .comm-template-list-scroll { max-height: 100%; overflow-y: auto; padding: var(--space-md); flex: 1; }
 .comm-template-list-header { margin-bottom: var(--space-md); gap: var(--space-sm); }
+
 .comm-template-info-box {
   background: #f8fafc;
   padding: 16px;

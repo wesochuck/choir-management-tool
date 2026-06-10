@@ -22,19 +22,17 @@
 
 .roster-controls {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   align-items: center;
   gap: var(--space-md);
-  flex-wrap: wrap;
 }
 
 /* Filters & Search */
 .roster-filters-bar {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   gap: var(--space-md);
   align-items: flex-end;
-  flex-wrap: wrap;
 }
 
 .search-input-wrapper {
@@ -165,7 +163,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .roster-filters-bar {
     flex-direction: column;
     align-items: stretch;
@@ -200,7 +198,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 8%), 0 1px 3px rgb(0 0 0 / 6%);
   max-height: 320px;
   overflow-y: auto;
 }
@@ -233,7 +231,7 @@
 }
 
 .voice-part-option-label:hover {
-  background-color: var(--primary-light, rgba(99,102,241,0.08));
+  background-color: var(--primary-light, rgb(99 102 241 / 8%));
 }
 
 .voice-part-option-label span {
