@@ -34,7 +34,6 @@ const legacyWhitelist = new Set([
   'src/components/admin/CheckInList.tsx',
   'src/components/admin/SeatingGrid.tsx',
   'src/components/common/MarkdownEditor.tsx',
-  'src/components/common/BaseModal.tsx',
   'src/components/common/PageLayout.tsx',
   'src/components/singer/EventCard.tsx',
   'src/components/player/Playlist.tsx',
