@@ -66,5 +66,5 @@ test('FormField injects invalid into library Input child', () => {
   );
   const input = container.querySelector('input');
   assert.ok(input, 'renders an input element');
-  assert.ok(input.className.includes('invalid'), 'input has invalid class');
+  assert.ok(input.classList.contains('border-danger-text'), 'input has invalid class');
 });
