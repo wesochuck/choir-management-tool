@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { donationService, type DonationRecord } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
+import { Button } from '../components/ui/Button/Button';
+import { Card } from '../components/ui/Card/Card';
+import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './PublicForms.css';
 
@@ -35,6 +38,7 @@ export default function PublicDonationSuccessView() {
       <div className="flex-col pub-style-1">
         <AppCard className="pub-style-55">
           <h2 className="pub-style-6">Verifying Donation...</h2>
+          <Spinner size="medium" />
           <p className="text-muted text-sm">Please wait while we confirm your contribution.</p>
           <div className="flex-col pub-style-56" />
         </AppCard>
@@ -52,7 +56,7 @@ export default function PublicDonationSuccessView() {
         </p>
 
         {donation ? (
-          <div className="card flex-col pub-style-59">
+          <Card className="pub-style-59">
             <div className="flex-row pub-style-38">
               <span className="text-muted">Transaction ID:</span>
               <strong>{donation.id}</strong>
@@ -78,7 +82,7 @@ export default function PublicDonationSuccessView() {
             <p className="text-xs text-muted pub-style-62">
               We are sending your receipt to your email now. You can safely close this page.
             </p>
-          </div>
+          </Card>
         ) : (
           <div className="flex-col pub-style-63">
             <p className="text-muted text-sm pub-style-6">
@@ -87,9 +91,9 @@ export default function PublicDonationSuccessView() {
           </div>
         )}
 
-        <Link to="/tickets" className="btn btn-primary pub-style-64">
+        <Button as={Link} to="/tickets" variant="primary" className="pub-style-64">
           Back to Concerts
-        </Link>
+        </Button>
       </AppCard>
     </div>
   );
