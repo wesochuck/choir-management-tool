@@ -288,3 +288,37 @@
     grid-column: 1 / -1;
   }
 }
+
+.playlist-track-index {
+  font-size: 10px;
+}
+
+.playlist-action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.playlist-action-button.accent {
+  color: var(--accent-color);
+}
+
+.playlist-action-button.muted {
+  color: var(--text-secondary);
+}
+
+.playlist-track-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.playlist-track-title {
+  font-weight: 600;
+}
+
+.playlist-track-artist {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
