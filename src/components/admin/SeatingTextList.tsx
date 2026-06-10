@@ -48,8 +48,8 @@ export function SeatingTextList({
 
         return (
           <div key={originalIndex} className="flex-col row-text-entry">
-            <h3 className="text-label row-text-header">
-              {label}
+            <h3 className="text-label row-text-header" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
+              {label} {assignedSingers.length}/{row.length}
             </h3>
             <div className="text-sm row-text-content">
               {namesString}

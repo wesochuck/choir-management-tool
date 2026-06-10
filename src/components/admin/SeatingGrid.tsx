@@ -226,6 +226,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         const seatCount = rowCounts[rowIndex];
         const isFront = rowIndex === 0;
         const rowLabel = `Row ${rowIndex + 1}`;
+        const occupiedCount = Object.keys(assignments).filter(key =>
+          key.startsWith(`${rowIndex}-`) && !!assignments[key]
+        ).length;
         // Calculate suggestion-based seat numbers in this row
         const suggestedSeatNumbers: Record<number, number> = {};
         let suggestedCount = 0;
@@ -248,14 +251,16 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               minWidth: 'max-content'
             }}>
             <div className="text-xs text-muted"
-              // @allow-inline-style - dynamic width based on compact mode
-              style={{ width: isCompact ? '75px' : '105px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}>
+              // @allow-inline-style - wider label to accommodate seat count badge
+              style={{ width: isCompact ? '110px' : '130px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}
+              title={`${occupiedCount} of ${seatCount} seats occupied`}>
               {rowLabel}
               {(isFront || rowIndex === rowCounts.length - 1) && (
                 <span className="no-print">
                   {isFront ? ' (Front)' : ' (Back)'}
                 </span>
               )}
+              <span> {occupiedCount}/{seatCount}</span>
             </div>
 
             {/* "🗑️" remove row button */}
