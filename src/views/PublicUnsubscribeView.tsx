@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
+import { Button } from '../components/ui/Button/Button';
+import { Spinner } from '../components/ui/Spinner/Spinner';
 import { pb } from '../lib/pocketbase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
@@ -49,7 +51,7 @@ export default function PublicUnsubscribeView() {
       <AppCard title="Unsubscribe from Emails">
         <div className="public-unsubscribe-body">
           {status === 'loading' && (
-            <p className="text-muted">Processing your request...</p>
+            <div className="text-muted flex-row"><Spinner size="small" /> Processing your request...</div>
           )}
 
           {status === 'success' && (
@@ -60,7 +62,7 @@ export default function PublicUnsubscribeView() {
                 You have been unsubscribed from all future choir management emails.
               </p>
               <div className="public-margin-top-md">
-                <Link to="/login" className="btn btn-primary">Go to Login</Link>
+                <Button as={Link} to="/login" variant="primary">Go to Login</Button>
               </div>
             </>
           )}
@@ -73,7 +75,7 @@ export default function PublicUnsubscribeView() {
                 {errorMessage}
               </p>
               <div className="public-margin-top-md">
-                <Link to="/login" className="btn btn-ghost">Return to Site</Link>
+                <Button as={Link} to="/login" variant="ghost">Return to Site</Button>
               </div>
             </>
           )}
