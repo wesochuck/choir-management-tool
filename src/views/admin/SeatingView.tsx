@@ -624,26 +624,26 @@ export default function SeatingView() {
 
           <div className="flex flex-col sm:flex-row items-start gap-[var(--space-md)] min-w-0 w-full">
           <AppCard className="flex-col flex-1 min-w-0 max-w-full p-[var(--space-md)]">
-            <div className="no-print flex flex-col sm:flex-row justify-between p-[6px_12px] bg-[var(--primary-light)] rounded-[var(--radius-md)] gap-[var(--space-sm)] flex-wrap items-center shadow-sm border border-[var(--border)]">
-               <div className="flex-row gap-[var(--space-xs)]">
-                  <button onClick={handleClear} className="btn btn-sm btn-ghost bg-[var(--surface)] border border-[var(--border)] !h-8 min-h-[32px] px-[10px]">
+            <div className="no-print seating-toolbar">
+               <div className="seating-toolbar-row">
+                  <button onClick={handleClear} className="btn btn-sm btn-ghost seating-toolbar-btn">
                     🧹 Clear
                   </button>
-                  <button onClick={handleReset} className="btn btn-sm btn-danger !h-8 min-h-[32px] px-[10px]">
+                  <button onClick={handleReset} className="btn btn-sm btn-danger seating-toolbar-btn-danger">
                     💥 Reset
                   </button>
                </div>
                
-               <div className="flex-row no-print bg-[var(--surface)] rounded-[var(--radius-md)] border border-[var(--border)] p-[2px] gap-[2px] h-8 items-center">
+               <div className="flex-row no-print seating-toolbar-segmented-group">
                 <button 
                   onClick={() => setPrintMode('visual')}
-                  className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'} !h-[26px] min-h-[26px] px-[10px] text-[0.75rem]`}
+                  className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
                 >
                   Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
-                  className={`btn btn-sm ${printMode === 'text' ? 'btn-primary' : 'btn-ghost'} !h-[26px] min-h-[26px] px-[10px] text-[0.75rem]`}
+                  className={`btn btn-sm ${printMode === 'text' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
                 >
                   List
                 </button>
@@ -653,7 +653,7 @@ export default function SeatingView() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'} border border-[var(--border)] !h-8 min-h-[32px] px-[10px]`}
+                    className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'} seating-toolbar-btn-fullscreen`}
                     // @allow-inline-style - dynamic fullscreen state background
                     style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
                   >
@@ -673,12 +673,12 @@ export default function SeatingView() {
                  )}
                </div>
                
-               <div className="flex-row gap-[var(--space-xs)] flex-[1_1_auto] justify-center min-w-[200px]">
-                  <span className="text-label text-muted text-[0.75rem] font-semibold whitespace-nowrap">Copy:</span>
+               <div className="flex-row seating-copy-section">
+                  <span className="text-label text-muted seating-copy-label">Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="text-[0.8125rem] px-[30px_10px] h-8 min-h-[32px] flex-1 max-w-[200px] border border-[var(--border)] bg-[var(--surface)] rounded-[var(--radius-md)]"
+                    className="seating-copy-select"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
@@ -689,17 +689,17 @@ export default function SeatingView() {
                   </select>
                </div>
 
-               <button onClick={handlePrint} className="btn btn-sm btn-primary !h-8 min-h-[32px] px-[10px]">
+               <button onClick={handlePrint} className="btn btn-sm btn-primary seating-toolbar-btn-print">
                   🖨️ Print
                </button>
-               <div className="flex-row gap-[var(--space-xs)] relative items-center">
+               <div className="seating-save-feedback-wrap seating-toolbar-save-wrap">
                  <SavingIndicator isSaving={isSaving} error={saveError} />
-                 <span className="text-muted whitespace-nowrap text-[0.75rem] font-medium mr-1">
+                 <span className="seating-autosave-tag">
                    Auto-saved
                  </span>
                  <button
                    onClick={handleManualSave}
-                   className="btn btn-sm btn-ghost border border-[var(--border)] !h-8 min-h-[32px] px-[10px]"
+                   className="btn btn-sm btn-ghost seating-toolbar-btn-save"
                    // @allow-inline-style - dynamic save feedback color
                    style={{ 
                      color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'

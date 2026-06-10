@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const seatingView = readFileSync(new URL('../src/views/admin/SeatingView.tsx', import.meta.url), 'utf8');
 const seatingGrid = readFileSync(new URL('../src/components/admin/SeatingGrid.tsx', import.meta.url), 'utf8');
+const indexCss = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
 
 test('seating wide layout is reserved for actual fullscreen mode', () => {
   assert.match(
@@ -48,5 +49,33 @@ test('seating drag and drop does not rely on visible grab-handle dots', () => {
     seatingGrid,
     /draggable=\{!isReadOnly\s*&&\s*!!assignedProfile\}/,
     'assigned seats must remain draggable after removing visual grab handles',
+  );
+});
+
+test('legacy flex helpers keep their direction when Tailwind is enabled', () => {
+  assert.match(
+    indexCss,
+    /:where\(\.flex-row\)\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*row;/s,
+    'legacy flex-row helper must continue to provide display:flex for older row-only layout classes',
+  );
+
+  assert.match(
+    indexCss,
+    /:where\(\.flex-col\)\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s,
+    'legacy flex-col helper must stay low-specificity so responsive Tailwind classes like sm:flex-row can override direction',
+  );
+});
+
+test('seating layout does not rely on Tailwind button utilities that are overridden by btn', () => {
+  assert.match(
+    seatingGrid,
+    /className="[^"]*\bseating-row-action-btn\b[^"]*"/,
+    'row add/remove controls need a seating-specific class because .btn is defined after Tailwind utilities',
+  );
+
+  assert.match(
+    seatingView,
+    /className="[^"]*\bseating-toolbar\b[^"]*"/,
+    'seating toolbar should use its seating-specific CSS hook instead of depending only on Tailwind utilities',
   );
 });

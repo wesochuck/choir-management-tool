@@ -267,7 +267,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "🗑️" remove row button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="min-h-7 h-7 w-7 min-w-7 p-0 rounded-full flex items-center justify-center bg-danger-bg border border-dashed border-danger-text text-danger-text mr-1.5 font-bold text-[13px] cursor-pointer transition-all duration-200 shadow-sm no-print btn btn-ghost"
+                className="seating-row-action-btn seating-row-action-btn-remove mr-1.5 text-[13px] cursor-pointer transition-all duration-200 shadow-sm no-print btn btn-ghost"
                 onClick={async () => {
                   const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
                   let shouldRemove = true;
@@ -587,7 +587,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "+" add seat button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="min-h-7 h-7 w-7 min-w-7 p-0 rounded-full flex items-center justify-center font-bold text-[15px] cursor-pointer transition-all duration-200 shadow-sm bg-primary-light border border-dashed border-primary text-primary-deep ml-3 no-print btn btn-ghost"
+                className="seating-row-action-btn seating-row-action-btn-add cursor-pointer transition-all duration-200 shadow-sm no-print btn btn-ghost"
                 onClick={() => {
                   const newRowCounts = [...rowCounts];
                   newRowCounts[rowIndex] += 1;
@@ -602,7 +602,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "-" remove seat button */}
             {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
               <button
-                className="min-h-7 h-7 w-7 min-w-7 p-0 rounded-full flex items-center justify-center font-bold text-[15px] cursor-pointer transition-all duration-200 shadow-sm bg-danger-bg border border-dashed border-danger-text text-danger-text ml-1.5 no-print btn btn-ghost"
+                className="seating-row-action-btn seating-row-action-btn-remove cursor-pointer transition-all duration-200 shadow-sm no-print btn btn-ghost"
                 onClick={async () => {
                   const seatIndex = seatCount - 1;
                   const seatKey = `${rowIndex}-${seatIndex}`;
