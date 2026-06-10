@@ -200,60 +200,64 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <AppCard className="patrons-filter-card">
-        <div className="patrons-filter-row flex-responsive">
-          <div className="patrons-search-wrapper">
-            <input 
-              type="text"
-              placeholder="Search by name or email..."
-              className="card patrons-search-input"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="patrons-date-input-wrapper">
-            <input 
-              type="date" 
-              className="card patrons-date-input"
-              value={startDate}
-              onChange={e => handleSetStartDate(e.target.value)}
-              placeholder="Last Transaction From"
-            />
-          </div>
-          <div className="patrons-date-input-wrapper">
-            <input 
-              type="date" 
-              className="card patrons-date-input"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              placeholder="To"
-            />
-          </div>
-          <button className="btn btn-ghost" onClick={handleClearFilters}>
-            Reset
-          </button>
-          <div className="patrons-sort-wrapper">
-            <select 
-              className="card patrons-sort-select"
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-            >
-              <option value="ltv">Sort by Lifetime Value</option>
-              <option value="name">Sort by Name</option>
-              <option value="lastDate">Sort by Last Transaction</option>
-            </select>
+      <AppCard className="patrons-header-card flex-responsive">
+        <div className="patrons-filters-column">
+          <div className="patrons-search-row flex-responsive">
+            <div className="patrons-search-wrapper">
+              <input 
+                type="text"
+                placeholder="Search by name or email..."
+                className="card patrons-search-input"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="patrons-date-input-wrapper">
+              <input 
+                type="date" 
+                className="card patrons-date-input"
+                value={startDate}
+                onChange={e => handleSetStartDate(e.target.value)}
+                placeholder="Last Transaction From"
+              />
+            </div>
+            <div className="patrons-date-input-wrapper">
+              <input 
+                type="date" 
+                className="card patrons-date-input"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                placeholder="To"
+              />
+            </div>
+            <button className="btn btn-ghost" onClick={handleClearFilters}>
+              Reset
+            </button>
+            <div className="patrons-sort-wrapper">
+              <select 
+                className="card patrons-sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
+              >
+                <option value="ltv">Sort by Lifetime Value</option>
+                <option value="name">Sort by Name</option>
+                <option value="lastDate">Sort by Last Transaction</option>
+              </select>
+            </div>
           </div>
         </div>
-        <div className="patrons-stats-row">
-          <div className="patrons-stat-item">
-            <span className="patrons-stat-label">Patrons</span>
-            <span className="patrons-stat-value">{filteredStats.count}</span>
-          </div>
-          <div className="patrons-stat-item">
-            <span className="patrons-stat-label">Total LTV</span>
-            <span className="patrons-stat-value patrons-stat-value-primary">
-              ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </span>
+        <div className="patrons-stats-column">
+          <div className="patrons-stats-inline">
+            <div className="patrons-stat-item">
+              <span className="patrons-stat-label">Patrons</span>
+              <span className="patrons-stat-value">{filteredStats.count}</span>
+            </div>
+            <div className="patrons-stat-item">
+              <span className="patrons-stat-label">Total LTV</span>
+              <span className="patrons-stat-value patrons-stat-value-primary">
+                ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
+            </div>
           </div>
         </div>
       </AppCard>

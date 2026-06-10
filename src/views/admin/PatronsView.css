@@ -1,17 +1,46 @@
-.patrons-view .patrons-filter-card {
+.patrons-view .patrons-header-card {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
+  flex-direction: row;
+  gap: var(--space-xl);
+  align-items: center;
 }
 
-.patrons-view .patrons-filter-row {
+.patrons-view .patrons-search-row {
+  gap: var(--space-md);
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.patrons-view .patrons-search-row .btn {
+  height: 40px;
+  min-height: 40px;
+}
+
+.patrons-view .patrons-filters-column {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-md);
   align-items: center;
 }
 
+.patrons-view .patrons-stats-column {
+  flex: 0 0 320px;
+  border-left: 1px solid var(--border);
+  padding-left: var(--space-xl);
+}
+
+.patrons-view .patrons-stats-inline {
+  display: flex;
+  justify-content: space-around;
+  height: 100%;
+  align-items: center;
+}
+
 .patrons-view .patrons-search-wrapper {
-  flex: 1;
-  min-width: 200px;
+  flex: 2;
+  min-width: 220px;
 }
 
 .patrons-view .patrons-search-input {
@@ -22,7 +51,8 @@
 }
 
 .patrons-view .patrons-date-input-wrapper {
-  min-width: 160px;
+  flex: 1;
+  min-width: 150px;
 }
 
 .patrons-view .patrons-date-input {
@@ -34,7 +64,7 @@
 }
 
 .patrons-view .patrons-sort-wrapper {
-  min-width: 200px;
+  min-width: 180px;
 }
 
 .patrons-view .patrons-sort-select {
@@ -45,32 +75,24 @@
   cursor: pointer;
 }
 
-.patrons-view .patrons-stats-row {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-xl);
-  padding: var(--space-xs) 0 0 0;
-  border-top: 1px solid var(--border);
-}
-
 .patrons-view .patrons-stat-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 100px;
+  gap: var(--space-xs);
+  text-align: center;
 }
 
 .patrons-view .patrons-stat-label {
-  font-size: 0.75rem;
+  font-size: var(--font-size-sm);
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .patrons-view .patrons-stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: var(--font-size-headline);
+  font-weight: var(--font-weight-bold);
 }
 
 .patrons-view .patrons-stat-value-primary {
@@ -150,8 +172,31 @@
   color: #2c7a7b;
 }
 
+@media (max-width: 1024px) {
+  .patrons-view .patrons-header-card {
+    flex-direction: column;
+  }
+
+  .patrons-view .patrons-filters-column,
+  .patrons-view .patrons-stats-column {
+    width: 100%;
+  }
+
+  .patrons-view .patrons-stats-column {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-left: 0;
+    padding-top: var(--space-md);
+  }
+
+  .patrons-view .patrons-stats-inline {
+    justify-content: flex-start;
+    gap: var(--space-xl);
+  }
+}
+
 @media (max-width: 768px) {
-  .patrons-view .patrons-filter-row {
+  .patrons-view .patrons-search-row {
     flex-direction: column;
     align-items: stretch;
   }
