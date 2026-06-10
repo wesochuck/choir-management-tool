@@ -42,18 +42,18 @@ export function AutomatedTasksPanel({
         <h3 className="text-headline comm-automated-section-title">
           Upcoming Automated Tasks
         </h3>
-        <div className="automated-grid">
+        <div className="comm-automated-grid">
           {upcomingTasks.length === 0 && (
             <div className="card comm-automated-empty">
               <p className="text-muted">No upcoming automated tasks found.</p>
             </div>
           )}
           {upcomingTasks.map((task) => (
-            <div key={task.id} className="card automated-task-card comm-automated-card-active">
-              <div className="automated-task-header">
-                <span className="automated-task-status-group">
+            <div key={task.id} className="card comm-automated-card comm-automated-card-active">
+              <div className="comm-automated-header">
+                <span className="comm-automated-status-group">
                   <span
-                    className={`badge automated-task-type-badge ${
+                    className={`badge comm-automated-type-badge ${
                       task.type === 'Report'
                         ? 'badge-concert'
                         : task.type === 'RSVP Request'
@@ -63,11 +63,11 @@ export function AutomatedTasksPanel({
                   >
                     {task.type}
                   </span>
-                  <span className="badge automated-task-resolution-badge automated-task-resolution-scheduled">
+                  <span className="badge comm-automated-resolution-badge comm-automated-resolution-scheduled">
                     Scheduled
                   </span>
                 </span>
-                <span className="automated-task-timestamp text-muted text-xs">
+                <span className="comm-automated-timestamp text-muted text-xs">
                   {task.type === 'RSVP Request'
                     ? 'Pending since:'
                     : task.type === 'Report'
@@ -89,7 +89,7 @@ export function AutomatedTasksPanel({
                   </p>
                 )}
               </div>
-              <div className="automated-task-footer">
+              <div className="comm-automated-footer">
                 <button
                   className="btn btn-ghost btn-sm"
                   disabled={isSending || isArchiving === task.id}
@@ -145,7 +145,7 @@ export function AutomatedTasksPanel({
         <h3 className="text-headline comm-automated-section-title-inactive">
           Sent / Past Automated Tasks
         </h3>
-        <div className="automated-grid">
+        <div className="comm-automated-grid">
           {pastTasks.length === 0 && (
             <p className="text-muted text-sm comm-automated-empty">
               No past automated tasks found in the logs.
@@ -154,12 +154,12 @@ export function AutomatedTasksPanel({
           {pastTasks.map((task) => (
             <div
               key={task.id}
-              className="card automated-task-card comm-automated-card-inactive"
+              className="card comm-automated-card comm-automated-card-inactive"
             >
-              <div className="automated-task-header">
-                <span className="automated-task-status-group">
+              <div className="comm-automated-header">
+                <span className="comm-automated-status-group">
                   <span
-                    className={`badge automated-task-type-badge ${
+                    className={`badge comm-automated-type-badge ${
                       task.status === 'Sent'
                         ? 'badge-concert'
                         : task.status === 'Archived'
@@ -171,7 +171,7 @@ export function AutomatedTasksPanel({
                   </span>
 
                   <span
-                    className={`badge automated-task-resolution-badge automated-task-resolution-${task.status.toLowerCase()}`}
+                    className={`badge comm-automated-resolution-badge comm-automated-resolution-${task.status.toLowerCase()}`}
                   >
                     {task.status === 'Sent'
                       ? 'Sent'
@@ -180,7 +180,7 @@ export function AutomatedTasksPanel({
                       : 'Passed'}
                   </span>
                 </span>
-                <span className="automated-task-timestamp text-muted text-xs">
+                <span className="comm-automated-timestamp text-muted text-xs">
                   {task.status === 'Sent'
                     ? 'Processed at:'
                     : task.status === 'Archived'
