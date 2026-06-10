@@ -445,50 +445,11 @@ export default function TicketingView() {
               onClick={() => setActiveTab('orders')}
             >
               Bundle Orders
-            <button
-              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'info' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-              onClick={() => setActiveTab('info')}
-            >
-              Info & Links
             </button>
           </nav>
 
           <div className="flex items-center gap-4">
-      {activeTab === 'info' && (
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">
-            Ticketing Instructions & Links
-          </h2>
-
-          <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-600">
-            Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="font-medium text-emerald-700 underline underline-offset-2">Events Dashboard</Link>, edit or create a Performance event, click the <strong className="font-semibold text-slate-800">Tickets</strong> tab, and toggle <strong className="font-semibold text-slate-800">Enable Online Ticket Sales</strong>.
-          </p>
-
-          <dl className="mt-5 space-y-2 text-sm">
-            <div className="flex flex-col gap-1 sm:flex-row sm:gap-2">
-              <dt className="font-semibold text-slate-900 whitespace-nowrap">Storefront URL:</dt>
-              <dd>
-                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 underline underline-offset-2">
-                  {window.location.origin}/tickets
-                </a>
-              </dd>
-            </div>
-
-            {selectedEventId && selectedEvent && (
-              <div className="flex flex-col gap-1 sm:flex-row sm:gap-2">
-                <dt className="font-semibold text-slate-900 whitespace-nowrap">Direct Concert Ticket Link:</dt>
-                <dd>
-                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 underline underline-offset-2">
-                    {window.location.origin}/tickets/{selectedEventId}
-                  </a>
-                </dd>
-              </div>
-            )}
-          </dl>
-        </section>
-      )}
-
-      {activeTab === 'bundles' && (
+            {activeTab === 'bundles' && (
               <button onClick={handleOpenCreateModal} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
                 Create New Bundle
               </button>
