@@ -173,7 +173,7 @@ export function SeatingBottomDock({
           </div>
         </div>
 
-        // @allow-inline-style - dynamic grid columns based on section count
+        {/* @allow-inline-style - dynamic grid columns based on section count */}
         <div className="bottom-dock-grid" style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}>
           {displaySections.map(({ key, label, color }) => {
             const list = groupedSingers[key] || [];
