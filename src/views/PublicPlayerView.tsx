@@ -125,6 +125,7 @@ export default function PublicPlayerView() {
     
     const errorIds = new Set<string>();
     
+    // @allow-sequential-await - downloads must be sequential to avoid overwhelming the server
     for (const track of toDownload) {
       try {
         setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));

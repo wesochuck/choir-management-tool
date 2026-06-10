@@ -56,7 +56,7 @@ test('EventCard set list preview renders all items without truncating or showing
   );
 
   // Assert that all 8 song titles are rendered
-  const listItems = container.querySelectorAll('.setlist-preview-box li');
+  const listItems = container.querySelectorAll('ol li');
   assert.equal(listItems.length, 8, 'Should render all 8 items');
 
   const textContent = container.textContent || '';
