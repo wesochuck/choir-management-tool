@@ -308,20 +308,20 @@ export default function AttendanceView() {
   };
 
   return (
-    <div className="flex-col gap-[var(--space-md)] p-[var(--space-md)_0]">
-      <div className="flex flex-col items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-md)] md:flex-row">
+    <div className="mx-auto max-w-7xl flex-col gap-6 p-6">
+      <div className="flex flex-col justify-between gap-6 border-b border-border pb-6 md:flex-row md:items-center">
         <h1 className="text-display !m-0">Attendance Check-in</h1>
         
-        <div className="min-w-[320px] flex-row items-center gap-[var(--space-md)]">
+        <div className="w-full flex-row items-center gap-6 md:w-auto md:min-w-[320px]">
           <div className="flex-1 flex-col gap-1">
-            <label className="text-label text-xs font-bold text-[var(--text-muted)] uppercase">Select Event</label>
+            <label className="text-label text-xs font-bold text-text-muted uppercase">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => {
                 setSelectedEventId(e.target.value);
                 handleResetFilters(); // Reset filters when changing active event
               }}
-              className="card h-10 w-full rounded-[var(--radius-md)] border border-[var(--border)] px-3"
+              className="card h-10 w-full rounded-md border border-border px-3"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
@@ -333,13 +333,13 @@ export default function AttendanceView() {
       </div>
 
       {selectedEvent && (
-        <div className="flex flex-col gap-[var(--space-sm)] rounded-[var(--radius-md)] border border-[rgb(74_117_89_/_20%)] bg-[var(--primary-light)] p-[14px_20px] transition-all duration-200">
+        <div className="flex flex-col gap-3 rounded-md border border-[rgb(74_117_89_/_20%)] bg-primary-light p-4 transition-all duration-200">
           <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => setIsEventExpanded(!isEventExpanded)}>
-            <div className="flex-col gap-[2px]">
+            <div className="flex-col gap-0.5">
               <span className="text-muted text-xs font-semibold tracking-wider uppercase">Active Event</span>
               <div className="flex-row items-center gap-2">
-                {selectedEvent.title && <h2 className="text-headline !m-0 text-[1.4rem] font-extrabold text-[var(--primary-deep)]">{selectedEvent.title}</h2>}
-                <span className={`inline-flex items-center rounded px-[8px] py-[3px] text-[0.625rem] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+                {selectedEvent.title && <h2 className="text-headline !m-0 text-xl font-extrabold text-primary-deep">{selectedEvent.title}</h2>}
+                <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
                   {selectedEvent.type}
                 </span>
               </div>
@@ -359,14 +359,14 @@ export default function AttendanceView() {
           </div>
           
           <div className="flex flex-row flex-wrap items-center gap-6">
-            <span className={`inline-flex items-center rounded bg-primary-light px-[8px] py-[3px] text-[0.625rem] font-semibold tracking-wider text-primary-deep uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+            <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
               {selectedEvent.type}
             </span>
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label flex items-center gap-1 text-[0.85rem] font-semibold text-[var(--primary-deep)]"
+              className="text-label flex items-center gap-1 text-sm font-semibold text-primary-deep"
               onClick={(e) => e.stopPropagation()}
             >
               📍 {selectedEvent.expand?.venue?.name || ''}
@@ -379,11 +379,15 @@ export default function AttendanceView() {
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="flex flex-col items-center justify-between gap-[var(--space-md)] py-1 md:flex-row">
-          {/* Left Side: Summary info */}
-          <span className="flex items-center gap-[6px] text-[0.85rem] font-bold text-[var(--text-muted)]">
-            👥 Roster: {attendanceCounts.total} singers
-          </span>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold text-text-muted">
+              👥 Roster: {attendanceCounts.total} singers
+            </span>
+            <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Present {attendanceCounts.present}</span>
+            <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Absent {attendanceCounts.absent}</span>
+            <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Unmarked {attendanceCounts.unmarked}</span>
+          </div>
 
           <div className="flex flex-col items-end gap-2">
             <button
@@ -397,7 +401,7 @@ export default function AttendanceView() {
             </button>
 
             <div
-              className={`flex-row flex-wrap items-center gap-[10px] ${isMobileActionsOpen ? 'is-open' : ''}`}
+              className={`flex-row flex-wrap items-center gap-2.5 ${isMobileActionsOpen ? 'is-open' : ''}`}
               id="attendance-mobile-actions"
             >
             {/* Refresh Button */}
@@ -405,14 +409,14 @@ export default function AttendanceView() {
               onClick={() => {
                 refresh();
               }}
-              className="btn btn-ghost btn-sm flex !h-[34px] !w-[34px] items-center justify-center rounded-[8px] border border-[var(--border)] !p-0"
+              className="btn btn-ghost btn-sm flex !h-[34px] !w-[34px] items-center justify-center rounded-lg border border-border !p-0"
               title="Refresh Roster"
               aria-label="Refresh roster"
             >
               🔄
             </button>
 
-            <span className="h-5 w-px bg-[var(--border)]"></span>
+            <span className="h-5 w-px bg-border"></span>
 
             {/* Bulk Present */}
             <button
@@ -436,7 +440,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-sm !h-[34px] rounded-[8px] border border-[rgb(74_117_89_/_25%)] bg-[rgb(74_117_89_/_10%)] px-3 text-xs font-bold text-[var(--primary-deep)]"
+              className="btn btn-sm !h-[34px] rounded-lg border border-[rgb(74_117_89_/_25%)] bg-[rgb(74_117_89_/_10%)] px-3 text-xs font-bold text-primary-deep"
             >
               ✅ Mark All Present
             </button>
@@ -463,7 +467,7 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-sm !h-[34px] rounded-[8px] border border-[rgb(217_119_6_/_30%)] bg-[rgb(251_191_36_/_14%)] px-3 text-xs font-bold text-[#92400e] disabled:cursor-not-allowed disabled:opacity-55"
+              className="btn btn-sm !h-[34px] rounded-lg border border-[rgb(217_119_6_/_30%)] bg-[rgb(251_191_36_/_14%)] px-3 text-xs font-bold text-[#92400e] disabled:cursor-not-allowed disabled:opacity-55"
               disabled={remainingUnmarkedProfileIds.length === 0}
             >
               ⚠️ Mark Remaining Absent
@@ -492,20 +496,12 @@ export default function AttendanceView() {
                   }
                 }
               }}
-              className="btn btn-ghost btn-sm !h-[34px] rounded-[8px] border border-dashed border-[var(--border)] px-3 text-xs font-bold text-[var(--text-muted)]"
+              className="btn btn-ghost btn-sm !h-[34px] rounded-lg border border-dashed border-border px-3 text-xs font-bold text-text-muted"
             >
               ⏳ Reset All
             </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {selectedEventId && !isLoading && !error && (
-        <div className="flex flex-wrap gap-2" aria-label="Attendance progress">
-          <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Present {attendanceCounts.present}</span>
-          <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Absent {attendanceCounts.absent}</span>
-          <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Unmarked {attendanceCounts.unmarked}</span>
         </div>
       )}
 
@@ -594,19 +590,19 @@ export default function AttendanceView() {
       )}
 
       {isLoading ? (
-        <AppCard className="p-[var(--space-xl)] text-center">
+        <AppCard className="p-8 text-center">
           <p className="text-muted">Loading attendance data...</p>
         </AppCard>
       ) : error ? (
-        <AppCard className="border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-[var(--space-xl)]">
-          <p className="text-strong text-[var(--color-danger-text)]">{error}</p>
+        <AppCard className="border-danger-text bg-danger-bg p-8">
+          <p className="text-strong text-danger-text">{error}</p>
         </AppCard>
       ) : selectedEventId ? (
         checkInItems.length === 0 && declinedSingers.length === 0 ? (
-          <AppCard className="flex flex-col items-center rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-transparent p-[var(--space-xl)_var(--space-md)] text-center">
+          <AppCard className="flex flex-col items-center rounded-md border border-dashed border-border bg-transparent p-8 text-center">
             <span className="text-[2rem]">🔍</span>
-            <h3 className="mt-3 mb-1 text-xl font-extrabold text-[var(--text)]">No Matching Singers</h3>
-            <p className="text-muted mt-0 mb-[var(--space-md)] text-sm">Try adjusting your search terms, voice parts, or attendance filters.</p>
+            <h3 className="mt-3 mb-1 text-xl font-extrabold text-text">No Matching Singers</h3>
+            <p className="text-muted mt-0 mb-4 text-sm">Try adjusting your search terms, voice parts, or attendance filters.</p>
             <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
           </AppCard>
         ) : (
@@ -624,7 +620,7 @@ export default function AttendanceView() {
                   maxRehearsalMisses={maxRehearsalMisses}
                 />
               ) : (
-                <AppCard className="border border-dashed border-[var(--border)] bg-transparent p-[var(--space-md)] text-center shadow-none">
+                <AppCard className="border border-dashed border-border bg-transparent p-4 text-center shadow-none">
                   <p className="text-muted !m-0 text-sm">No singers match your RSVP filters.</p>
                 </AppCard>
               )}
@@ -665,7 +661,7 @@ export default function AttendanceView() {
           </div>
         )
       ) : (
-        <AppCard className="border-2 border-dashed border-[var(--border)] bg-transparent p-12 text-center shadow-none">
+        <AppCard className="border-2 border-dashed border-border bg-transparent p-12 text-center shadow-none">
           <p className="text-muted !m-0 text-base">Please select an event above to start check-in.</p>
         </AppCard>
       )}
