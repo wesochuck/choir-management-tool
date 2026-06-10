@@ -1,0 +1,36 @@
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-label);
+}
+
+.saving {
+  color: var(--text-muted);
+}
+
+.saved {
+  color: var(--color-success-text);
+}
+
+.error {
+  color: var(--color-danger-text);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.retryBtn {
+  border: none;
+  background: none;
+  color: var(--color-danger-text);
+  cursor: pointer;
+  font-size: var(--font-size-label);
+  text-decoration: underline;
+  padding: 0;
+  min-height: auto;
+}
+
+.retryBtn:hover {
+  color: var(--primary);
+}
