@@ -8,7 +8,6 @@ import { BaseModal } from '../../components/common/BaseModal';
 import { formatInTimezone } from '../../lib/timezone';
 import { safeLocalStorage } from '../../lib/storage';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import './Donations.css';
 
 const STORAGE_KEY_START_DATE = 'donations_view_filter_start_date';
 
@@ -272,13 +271,13 @@ export default function DonationsView() {
   };
 
   return (
-    <div className="admin-view-container">
-      <div className="admin-view-header flex-responsive">
+    <div className="flex flex-col gap-8 py-8">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
-          <h1 className="text-display donation-title">Donations</h1>
-          <p className="text-muted text-sm">Manage donations and donor levels</p>
+          <h1 className="text-display m-0">Donations</h1>
+          <p className="text-gray-500 text-sm">Manage donations and donor levels</p>
         </div>
-        <div className="admin-view-actions">
+        <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'history' && (
             <button className="btn btn-secondary" onClick={handleExportCSV}>
               Export CSV
@@ -292,15 +291,15 @@ export default function DonationsView() {
         </div>
       </div>
 
-      <div className="donation-tabs">
+      <div className="flex flex-row gap-2 border-b border-gray-200 pb-1 mb-1">
         <button 
-          className={`donation-tab-button btn ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'}`}
+          className={`btn px-4 py-2 font-semibold ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('history')}
         >
           History
         </button>
         <button 
-          className={`donation-tab-button btn ${activeTab === 'levels' ? 'btn-primary' : 'btn-ghost'}`}
+          className={`btn px-4 py-2 font-semibold ${activeTab === 'levels' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('levels')}
         >
           Donor Settings
@@ -309,21 +308,21 @@ export default function DonationsView() {
 
       {activeTab === 'history' && (
         <>
-          <div className="card donation-stats-card">
-            <div className="donation-stats-inline">
-              <div className="donation-stat-item">
-                <span className="donation-stat-label">Donations</span>
-                <span className="donation-stat-value">{filteredStats.count}</span>
+          <div className="card p-4 bg-neutral-bg">
+            <div className="flex justify-around h-full items-center">
+              <div className="flex flex-col gap-1 text-center">
+                <span className="text-xs uppercase font-bold text-gray-500">Donations</span>
+                <span className="text-headline font-bold">{filteredStats.count}</span>
               </div>
-              <div className="donation-stat-item">
-                <span className="donation-stat-label">Total Raised</span>
-                <span className="donation-stat-value donation-stat-value-primary">
+              <div className="flex flex-col gap-1 text-center">
+                <span className="text-xs uppercase font-bold text-gray-500">Total Raised</span>
+                <span className="text-headline font-bold text-pink-600">
                   ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="donation-stat-item">
-                <span className="donation-stat-label">Average</span>
-                <span className="donation-stat-value">
+              <div className="flex flex-col gap-1 text-center">
+                <span className="text-xs uppercase font-bold text-gray-500">Average</span>
+                <span className="text-headline font-bold">
                   ${(filteredStats.avg / 100).toFixed(2)}
                 </span>
               </div>
@@ -331,38 +330,38 @@ export default function DonationsView() {
           </div>
 
           <AppCard title="Donations History">
-            <div className="donation-checklist-container">
-              <div className="donation-search-row flex-responsive">
-                <div className="donation-search-input-wrapper">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-row flex-wrap gap-4 w-full items-center">
+                <div className="flex-1 min-w-[200px] w-full">
                   <input 
                     type="text" 
                     placeholder="Search donor name or email..." 
-                    className="card donation-search-input"
+                    className="card w-full h-10 px-3 border border-gray-200"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="donation-date-input-wrapper">
+                <div className="flex-1 min-w-[150px]">
                   <input 
                     type="date" 
-                    className="card donation-date-input"
+                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
                     value={startDate}
                     onChange={e => handleSetStartDate(e.target.value)}
                     placeholder="View From"
                   />
                 </div>
-                <div className="donation-date-input-wrapper">
+                <div className="flex-1 min-w-[150px]">
                   <input 
                     type="date" 
-                    className="card donation-date-input"
+                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
                     placeholder="To"
                   />
                 </div>
-                <div className="donation-sort-select-wrapper">
+                <div className="min-w-[200px]">
                   <select
-                    className="card donation-sort-select"
+                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
                   >
@@ -375,46 +374,46 @@ export default function DonationsView() {
                   Reset
                 </button>
               </div>
-              <div className="donation-table-container">
-                <table className="donation-table w-full text-left">
+              <div className="overflow-x-auto">
+                <table className="border-collapse w-full min-w-[600px] text-left">
                 <thead>
-                  <tr className="donation-table-header-row">
-                    <th className="donation-table-th">Date</th>
-                    <th className="donation-table-th">Donor</th>
-                    <th className="donation-table-th">Email</th>
-                    <th className="donation-table-th-right">Amount</th>
-                    <th className="donation-table-th">Tribute</th>
-                    <th className="donation-table-th">Status</th>
-                    <th className="donation-table-th-right">Actions</th>
+                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                    <th className="p-3 px-4 text-left">Date</th>
+                    <th className="p-3 px-4 text-left">Donor</th>
+                    <th className="p-3 px-4 text-left">Email</th>
+                    <th className="p-3 px-4 text-right">Amount</th>
+                    <th className="p-3 px-4 text-left">Tribute</th>
+                    <th className="p-3 px-4 text-left">Status</th>
+                    <th className="p-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={7} className="donation-table-td donation-text-center">Loading...</td></tr>
+                    <tr><td colSpan={7} className="p-3 px-4 text-center">Loading...</td></tr>
                   ) : sortedDonations.length === 0 ? (
-                    <tr><td colSpan={7} className="donation-table-td donation-text-center admin-empty-state">No donations found.</td></tr>
+                    <tr><td colSpan={7} className="p-3 px-4 text-center p-8 text-gray-500">No donations found.</td></tr>
                   ) : sortedDonations.map(d => (
-                    <tr key={d.id} className="donation-table-row">
-                      <td className="donation-table-td">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
-                      <td className="donation-table-td-bold">
+                    <tr key={d.id} className="border-b border-gray-200 text-sm">
+                      <td className="p-3 px-4">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                      <td className="p-3 px-4 font-semibold">
                         {d.donorName}
-                        {d.isAnonymous && <span className="badge badge-ghost donation-ml-sm">Anonymous</span>}
+                        {d.isAnonymous && <span className="badge badge-ghost ml-2">Anonymous</span>}
                       </td>
-                      <td className="donation-table-td">{d.donorEmail}</td>
-                      <td className="donation-table-td-right-bold">${(d.amountPaidCents / 100).toFixed(2)}</td>
-                      <td className="donation-table-td">
+                      <td className="p-3 px-4">{d.donorEmail}</td>
+                      <td className="p-3 px-4 text-right font-semibold">${(d.amountPaidCents / 100).toFixed(2)}</td>
+                      <td className="p-3 px-4">
                         {d.tributeType !== 'none' && (
-                          <span className="text-muted">
+                          <span className="text-gray-500">
                             In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of <strong>{d.tributeName}</strong>
                           </span>
                         )}
                       </td>
-                      <td className="donation-table-td">
-                        <span className={`badge ${d.status === 'paid' ? 'badge-success' : d.status === 'refunded' ? 'badge-danger' : 'badge-warning'} donation-status-badge`}>
+                      <td className="p-3 px-4">
+                        <span className={`badge capitalize ${d.status === 'paid' ? 'badge-success' : d.status === 'refunded' ? 'badge-danger' : 'badge-warning'}`}>
                           {d.status}
                         </span>
                       </td>
-                      <td className="donation-table-td-right">
+                      <td className="p-3 px-4 text-right">
                         {d.status === 'paid' && (
                           <button className="btn btn-sm btn-ghost btn-danger" onClick={() => handleRefund(d.id)}>
                             Refund
@@ -433,33 +432,33 @@ export default function DonationsView() {
 
       {activeTab === 'levels' && (
         <>
-          <AppCard className="donation-info-box">
-            <h3 className="donation-mb-sm donation-color-primary">Donor Levels</h3>
-            <p className="donation-m-0">These levels are displayed to donors on the public donation page.</p>
+          <AppCard className="p-4 bg-[rgba(219,39,119,0.05)] border-l-4 border-pink-600 rounded-lg m-0">
+            <h3 className="mb-2 text-pink-600">Donor Levels</h3>
+            <p className="m-0">These levels are displayed to donors on the public donation page.</p>
           </AppCard>
 
           <AppCard title="Public Page Settings">
-            <div className="donation-form">
-              <div className="donation-form-group">
-                <label className="small uppercase bold text-muted">Call-to-Action Heading</label>
+            <div className="flex flex-col gap-4">
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs uppercase font-bold text-gray-500">Call-to-Action Heading</label>
                 <input
                   type="text"
-                  className="donation-input"
+                  className="w-full h-10 px-3 border border-gray-200"
                   value={donationButtonText}
                   onChange={e => setDonationButtonText(e.target.value)}
                   placeholder="e.g. Support our Music"
                 />
               </div>
-              <div className="donation-form-group">
-                <label className="small uppercase bold text-muted">Description</label>
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs uppercase font-bold text-gray-500">Description</label>
                 <textarea
-                  className="donation-textarea"
+                  className="p-2 min-h-[80px] resize-y border border-gray-200"
                   value={donationDescription}
                   onChange={e => setDonationDescription(e.target.value)}
                   placeholder="e.g. Your contribution helps us keep the music playing..."
                 />
               </div>
-              <div className="donation-form-row">
+              <div className="flex gap-4">
                 <button
                   className="btn btn-primary"
                   onClick={handleSavePublicSettings}
@@ -472,25 +471,25 @@ export default function DonationsView() {
           </AppCard>
 
           <AppCard title="Donor Levels Configuration" noPadding>
-            <div className="donation-table-container">
-              <table className="donation-table w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="border-collapse w-full min-w-[600px] text-left">
                 <thead>
-                  <tr className="donation-table-header-row">
-                    <th className="donation-table-th">Label</th>
-                    <th className="donation-table-th-right">Amount</th>
-                    <th className="donation-table-th">Benefit</th>
-                    <th className="donation-table-th-right">Actions</th>
+                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                    <th className="p-3 px-4 text-left">Label</th>
+                    <th className="p-3 px-4 text-right">Amount</th>
+                    <th className="p-3 px-4 text-left">Benefit</th>
+                    <th className="p-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {!settings || settings.levels.length === 0 ? (
-                    <tr><td colSpan={4} className="donation-table-td donation-text-center admin-empty-state">No donor levels defined.</td></tr>
+                    <tr><td colSpan={4} className="p-3 px-4 text-center p-8 text-gray-500">No donor levels defined.</td></tr>
                   ) : settings.levels.map(l => (
-                    <tr key={l.id} className="donation-table-row">
-                      <td className="donation-table-td-bold">{l.label}</td>
-                      <td className="donation-table-td-right-bold">${l.amount}</td>
-                      <td className="donation-table-td">{l.benefit}</td>
-                      <td className="donation-table-td-right">
+                    <tr key={l.id} className="border-b border-gray-200 text-sm">
+                      <td className="p-3 px-4 font-semibold">{l.label}</td>
+                      <td className="p-3 px-4 text-right font-semibold">${l.amount}</td>
+                      <td className="p-3 px-4">{l.benefit}</td>
+                      <td className="p-3 px-4 text-right">
                         <button className="btn btn-sm btn-ghost" onClick={() => openLevelModal(l)}>
                           Edit
                         </button>
@@ -512,36 +511,36 @@ export default function DonationsView() {
         onClose={() => setIsModalOpen(false)}
         title={editingLevel ? 'Edit Donor Level' : 'Add Donor Level'}
       >
-        <div className="donation-form">
-          <div className="donation-form-group">
-            <label className="small uppercase bold text-muted">Level Label</label>
+        <div className="flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-1">
+            <label className="text-xs uppercase font-bold text-gray-500">Level Label</label>
             <input 
               type="text" 
-              className="donation-input" 
+              className="w-full h-10 px-3 border border-gray-200"
               value={levelLabel} 
               onChange={e => setLevelLabel(e.target.value)}
               placeholder="e.g. Supporter"
             />
           </div>
-          <div className="donation-form-group">
-            <label className="small uppercase bold text-muted">Amount ($)</label>
+          <div className="flex-1 flex flex-col gap-1">
+            <label className="text-xs uppercase font-bold text-gray-500">Amount ($)</label>
             <input 
               type="number" 
-              className="donation-input" 
+              className="w-full h-10 px-3 border border-gray-200"
               value={levelAmount} 
               onChange={e => setLevelAmount(Number(e.target.value))}
             />
           </div>
-          <div className="donation-form-group">
-            <label className="small uppercase bold text-muted">Benefit (Optional)</label>
+          <div className="flex-1 flex flex-col gap-1">
+            <label className="text-xs uppercase font-bold text-gray-500">Benefit (Optional)</label>
             <textarea 
-              className="donation-textarea" 
+              className="p-2 min-h-[80px] resize-y border border-gray-200"
               value={levelBenefit} 
               onChange={e => setLevelBenefit(e.target.value)}
               placeholder="e.g. Mention in program"
             />
           </div>
-          <div className="donation-form-row donation-mt-md">
+          <div className="flex gap-4 mt-4">
             <button className="btn btn-ghost" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </button>

@@ -9,7 +9,6 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Link } from 'react-router-dom';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { BaseModal } from '../../components/common/BaseModal';
-import './Ticketing.css';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -413,13 +412,13 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="admin-view-container">
-      <div className="admin-view-header flex-responsive">
+    <div className="flex flex-col gap-8 py-8">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
-          <h1 className="text-display ticket-title">Ticketing Dashboard</h1>
-          <p className="text-muted text-sm">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
+          <h1 className="text-display m-0">Ticketing Dashboard</h1>
+          <p className="text-gray-500 text-sm">Manage ticket sales, configure season bundles, and view check-in checklists.</p>
         </div>
-        <div className="admin-view-actions">
+        <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'bundles' && (
             <button onClick={handleOpenCreateModal} className="btn btn-primary">
               Create New Bundle
@@ -434,21 +433,21 @@ export default function TicketingView() {
       </div>
 
       {/* Tab Controls */}
-      <div className="ticket-tabs">
+      <div className="flex flex-row gap-2 border-b border-gray-200 pb-1 mb-1">
         <button
-          className={`btn ${activeTab === 'willcall' ? 'btn-primary' : 'btn-ghost'} ticket-tab-button`}
+          className={`btn px-4 py-2 font-semibold ${activeTab === 'willcall' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('willcall')}
         >
           Concert Will Call
         </button>
         <button
-          className={`btn ${activeTab === 'bundles' ? 'btn-primary' : 'btn-ghost'} ticket-tab-button`}
+          className={`btn px-4 py-2 font-semibold ${activeTab === 'bundles' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('bundles')}
         >
           Season Bundles
         </button>
         <button
-          className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-ghost'} ticket-tab-button`}
+          className={`btn px-4 py-2 font-semibold ${activeTab === 'orders' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('orders')}
         >
           Bundle Orders
@@ -457,49 +456,49 @@ export default function TicketingView() {
 
       {activeTab === 'willcall' && (
         <>
-          <div className="card ticket-info-box">
-            <h3 className="ticket-info-title">
+          <div className="card p-4 bg-[rgba(74,124,89,0.05)] border-l-4 border-primary rounded-lg m-0">
+            <h3 className="m-0 mb-1 text-base text-primary-deep flex items-center gap-1.5">
               ℹ️ Ticketing Instructions & Links
             </h3>
-            <p className="text-muted text-sm ticket-info-description">
-              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="ticket-link-strong">Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
+            <p className="text-gray-500 text-sm m-0 mb-2 leading-relaxed">
+              Tickets are enabled on a per-performance basis. Go to the <Link to="/admin/events" className="font-semibold underline text-primary-deep">Events Dashboard</Link>, edit or create a Performance event, click the <strong>Tickets</strong> tab, and toggle <strong>Enable Online Ticket Sales</strong>.
             </p>
-            <div className="ticket-info-links">
+            <div className="flex flex-col gap-1.5 text-sm">
               <div>
                 <strong>📢 Storefront URL:</strong>{' '}
-                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="ticket-link-primary">
+                <a href="/tickets" target="_blank" rel="noopener noreferrer" className="underline text-primary">
                   {window.location.origin}/tickets
                 </a>
-                <span className="text-xs text-muted ticket-link-muted-note">(list of all active ticketed concerts & bundles)</span>
+                <span className="text-xs text-gray-500 ml-1.5">(list of all active ticketed concerts & bundles)</span>
               </div>
               {selectedEventId && selectedEvent && (
                 <div>
                   <strong>🔗 Direct Concert Ticket Link:</strong>{' '}
-                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="ticket-link-primary">
+                  <a href={`/tickets/${selectedEventId}`} target="_blank" rel="noopener noreferrer" className="underline text-primary">
                     {window.location.origin}/tickets/{selectedEventId}
                   </a>
-                  <span className="text-xs text-muted ticket-link-muted-note">(direct checkout page for {selectedEvent.title})</span>
+                  <span className="text-xs text-gray-500 ml-1.5">(direct checkout page for {selectedEvent.title})</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="card flex-responsive ticket-selector-card">
-            <div className="ticket-selector-controls">
-              <div className="ticket-selector-header">
-                <label className="text-label">Select Performance</label>
-                <label className="ticket-checkbox-label">
+          <div className="card flex flex-wrap gap-4 items-center p-4 bg-neutral-bg">
+            <div className="flex-1 flex flex-col gap-1">
+              <div className="flex flex-row justify-between items-center">
+                <label className="text-sm font-semibold">Select Performance</label>
+                <label className="flex flex-row items-center gap-1.5 text-sm cursor-pointer m-0">
                   <input
                     type="checkbox"
                     checked={showPastAndInactive}
                     onChange={e => setShowPastAndInactive(e.target.checked)}
-                    className="ticket-cursor-pointer"
+                    className="cursor-pointer"
                   />
                   <span>Include past & inactive performances</span>
                 </label>
               </div>
               <select
-                className="card ticket-select-full"
+                className="card w-full h-11 px-3 border border-gray-200"
                 value={selectedEventId}
                 onChange={e => setSelectedEventId(e.target.value)}
               >
@@ -521,28 +520,28 @@ export default function TicketingView() {
             </div>
 
             {selectedEvent && (
-              <div className="ticket-stats-row">
-                <div className="ticket-stat-box">
-                  <span className="text-xs text-muted">TICKETS SOLD</span>
-                  <span className="ticket-stat-value">
+              <div className="flex flex-row flex-wrap gap-6 px-4">
+                <div className="flex flex-col gap-0.5 min-w-[100px]">
+                  <span className="text-xs text-gray-500">TICKETS SOLD</span>
+                  <span className="text-2xl font-bold">
                     {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
                   </span>
                 </div>
-                <div className="ticket-stat-box ticket-stat-box-large">
-                  <span className="text-xs text-muted">TICKET SALES</span>
-                  <span className="ticket-stat-value">
+                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                  <span className="text-xs text-gray-500">TICKET SALES</span>
+                  <span className="text-2xl font-bold">
                     ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="ticket-stat-box ticket-stat-box-large">
-                  <span className="text-xs text-muted">FEES COLLECTED</span>
-                  <span className="ticket-stat-value ticket-stat-value-muted">
+                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                  <span className="text-xs text-gray-500">FEES COLLECTED</span>
+                  <span className="text-2xl font-bold text-gray-500">
                     ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="ticket-stat-box ticket-stat-box-large">
-                  <span className="text-xs text-muted">TOTAL REVENUE</span>
-                  <span className="ticket-stat-value ticket-stat-value-primary">
+                <div className="flex flex-col gap-0.5 min-w-[110px]">
+                  <span className="text-xs text-gray-500">TOTAL REVENUE</span>
+                  <span className="text-2xl font-bold text-primary">
                     ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
                   </span>
                 </div>
@@ -551,26 +550,26 @@ export default function TicketingView() {
           </div>
 
           {showWarning && (
-            <div className="card ticket-warning-box">
+            <div className="card p-4 border-warning-border bg-warning-bg text-warning-text">
               ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
             </div>
           )}
 
           <AppCard title="Will Call Checklist">
-            <div className="ticket-checklist-container">
-              <div className="ticket-search-row flex-responsive">
-                <div className="ticket-search-input-wrapper">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-2 w-full items-center">
+                <div className="flex-1 min-w-[200px] w-full">
                   <input
                     type="text"
                     placeholder="Search buyer name or email..."
-                    className="card ticket-search-input"
+                    className="card w-full h-10 px-3 border border-gray-200"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="ticket-sort-select-wrapper">
+                <div className="min-w-[200px]">
                   <select
-                    className="card ticket-sort-select"
+                    className="card w-full h-10 px-3 border border-gray-200 cursor-pointer"
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
                   >
@@ -582,21 +581,21 @@ export default function TicketingView() {
               </div>
 
               {loading ? (
-                <p className="text-muted">Loading registrations...</p>
+                <p className="text-gray-500">Loading registrations...</p>
               ) : filteredPurchases.length === 0 ? (
-                <p className="text-muted admin-empty-state">No purchase records found.</p>
+                <p className="text-gray-500 p-8 text-center">No purchase records found.</p>
               ) : (
-                <div className="ticket-table-container">
-                  <table className="ticket-table w-full text-left">
+                <div className="overflow-x-auto">
+                  <table className="border-collapse w-full min-w-[600px] text-left">
                     <thead>
-                      <tr className="ticket-table-header-row">
-                        <th className="ticket-table-th">Buyer Name</th>
-                        <th className="ticket-table-th">Email</th>
-                        <th className="ticket-table-th">Sale Date</th>
-                        <th className="ticket-table-th">Qty</th>
-                        <th className="ticket-table-th">Amount Paid</th>
-                        <th className="ticket-table-th">Status</th>
-                        <th className="ticket-table-th-right">Actions</th>
+                      <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                        <th className="p-3 px-2 text-left">Buyer Name</th>
+                        <th className="p-3 px-2 text-left">Email</th>
+                        <th className="p-3 px-2 text-left">Sale Date</th>
+                        <th className="p-3 px-2 text-left">Qty</th>
+                        <th className="p-3 px-2 text-left">Amount Paid</th>
+                        <th className="p-3 px-2 text-left">Status</th>
+                        <th className="p-3 px-2 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -605,30 +604,30 @@ export default function TicketingView() {
                         return (
                           <tr 
                             key={p.id} 
-                            className="ticket-table-row" 
+                            className="border-b border-gray-200 text-sm" 
                             // @allow-inline-style - isRefunded text color/opacity
                             style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
                           >
-                            <td className="ticket-table-td-bold">
+                            <td className="p-3 px-2 font-semibold">
                               {p.buyerName}
                               {p.expand?.bundle && (
-                                <span className="badge badge-success ticket-bundle-badge">
+                                <span className="badge badge-success ml-2 text-xs align-middle">
                                   Season Ticket: {p.expand.bundle.title}
                                 </span>
                               )}
                             </td>
-                            <td className="ticket-table-td">{p.buyerEmail}</td>
-                            <td className="ticket-table-td">
+                            <td className="p-3 px-2">{p.buyerEmail}</td>
+                            <td className="p-3 px-2">
                               {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                             </td>
-                            <td className="ticket-table-td">{p.quantity}</td>
-                            <td className="ticket-table-td">${(p.amountPaidCents / 100).toFixed(2)}</td>
-                            <td className="ticket-table-td">
-                              <span className={`badge ${p.status === 'paid' ? 'badge-success' : 'badge-danger'} ticket-status-badge`}>
+                            <td className="p-3 px-2">{p.quantity}</td>
+                            <td className="p-3 px-2">${(p.amountPaidCents / 100).toFixed(2)}</td>
+                            <td className="p-3 px-2">
+                              <span className={`badge capitalize ${p.status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
                                 {p.status}
                               </span>
                             </td>
-                            <td className="ticket-table-td-right">
+                            <td className="p-3 px-2 text-right">
                               {p.status === 'paid' && (
                                 <button
                                   onClick={() => {
@@ -659,63 +658,63 @@ export default function TicketingView() {
       {activeTab === 'bundles' && (
         <AppCard title="Season Bundles Configuration">
           {loading ? (
-            <p className="text-muted">Loading bundles...</p>
+            <p className="text-gray-500">Loading bundles...</p>
           ) : bundles.length === 0 ? (
-            <p className="text-muted admin-empty-state">No season bundles configured.</p>
+            <p className="text-gray-500 p-8 text-center">No season bundles configured.</p>
           ) : (
-            <div className="ticket-table-container">
-              <table className="ticket-table-full w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="border-collapse w-full text-left">
                 <thead>
-                  <tr className="ticket-table-header-row">
-                    <th className="ticket-table-th">Bundle Title</th>
-                    <th className="ticket-table-th">Price</th>
-                    <th className="ticket-table-th">Active</th>
-                    <th className="ticket-table-th">Capacity Sold</th>
-                    <th className="ticket-table-th">Sale End Date</th>
-                    <th className="ticket-table-th">Included Events</th>
-                    <th className="ticket-table-th-right">Actions</th>
+                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                    <th className="p-3 px-2 text-left">Bundle Title</th>
+                    <th className="p-3 px-2 text-left">Price</th>
+                    <th className="p-3 px-2 text-left">Active</th>
+                    <th className="p-3 px-2 text-left">Capacity Sold</th>
+                    <th className="p-3 px-2 text-left">Sale End Date</th>
+                    <th className="p-3 px-2 text-left">Included Events</th>
+                    <th className="p-3 px-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bundles.map(b => {
                     const sold = getBundleSoldQty(b.id, b.events);
                     return (
-                      <tr key={b.id} className="ticket-table-row">
-                        <td className="ticket-table-td-bold">{b.title}</td>
-                        <td className="ticket-table-td">${(b.priceCents / 100).toFixed(2)}</td>
-                        <td className="ticket-table-td">
+                      <tr key={b.id} className="border-b border-gray-200 text-sm">
+                        <td className="p-3 px-2 font-semibold">{b.title}</td>
+                        <td className="p-3 px-2">${(b.priceCents / 100).toFixed(2)}</td>
+                        <td className="p-3 px-2">
                           <span className={`badge ${b.isActive ? 'badge-success' : 'badge-danger'}`}>
                             {b.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="ticket-table-td">
-                          <div className="ticket-progress-container">
+                        <td className="p-3 px-2">
+                          <div className="flex flex-col gap-1">
                             <span>{sold} / {b.capacity} sold</span>
-                            <div className="ticket-progress-bar-bg">
+                            <div className="w-[100px] h-1.5 bg-gray-200 rounded overflow-hidden">
                               <div 
-                                className="ticket-progress-bar-fill" 
+                                className="h-full bg-primary" 
                                 // @allow-inline-style - progress bar width
                                 style={{ width: `${Math.min(100, (sold / b.capacity) * 100)}%` }} 
                               />
                             </div>
                           </div>
                         </td>
-                        <td className="ticket-table-td">
+                        <td className="p-3 px-2">
                           {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </td>
-                        <td className="ticket-events-td">
-                          <div className="ticket-events-container">
+                        <td className="p-3 px-2 max-w-[240px]">
+                          <div className="flex flex-wrap gap-1">
                             {b.expand?.events?.map(ev => (
-                              <span key={ev.id} className="badge badge-secondary ticket-event-badge">
+                              <span key={ev.id} className="badge badge-secondary text-xs whitespace-nowrap">
                                 {ev.title}
                               </span>
                             ))}
                           </div>
                         </td>
-                        <td className="ticket-actions-td">
+                        <td className="p-3 px-2 text-right whitespace-nowrap">
                           <button
                             onClick={() => handleOpenEditModal(b)}
-                            className="btn btn-secondary btn-sm ticket-edit-btn"
+                            className="btn btn-secondary btn-sm mr-2"
                           >
                             Edit
                           </button>
@@ -739,22 +738,22 @@ export default function TicketingView() {
       {activeTab === 'orders' && (
         <AppCard title="Season Pass Orders">
           {loading ? (
-            <p className="text-muted">Loading orders...</p>
+            <p className="text-gray-500">Loading orders...</p>
           ) : bundleOrders.length === 0 ? (
-            <p className="text-muted admin-empty-state">No season pass orders found.</p>
+            <p className="text-gray-500 p-8 text-center">No season pass orders found.</p>
           ) : (
-            <div className="ticket-table-container">
-              <table className="ticket-table-full w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="border-collapse w-full text-left">
                 <thead>
-                  <tr className="ticket-table-header-row">
-                    <th className="ticket-table-th">Buyer Name</th>
-                    <th className="ticket-table-th">Email</th>
-                    <th className="ticket-table-th">Purchase Date</th>
-                    <th className="ticket-table-th">Season Bundle</th>
-                    <th className="ticket-table-th">Qty</th>
-                    <th className="ticket-table-th">Amount Paid</th>
-                    <th className="ticket-table-th">Status</th>
-                    <th className="ticket-table-th-right">Actions</th>
+                  <tr className="border-b-2 border-gray-200 text-gray-500 text-sm">
+                    <th className="p-3 px-2 text-left">Buyer Name</th>
+                    <th className="p-3 px-2 text-left">Email</th>
+                    <th className="p-3 px-2 text-left">Purchase Date</th>
+                    <th className="p-3 px-2 text-left">Season Bundle</th>
+                    <th className="p-3 px-2 text-left">Qty</th>
+                    <th className="p-3 px-2 text-left">Amount Paid</th>
+                    <th className="p-3 px-2 text-left">Status</th>
+                    <th className="p-3 px-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -763,24 +762,24 @@ export default function TicketingView() {
                     return (
                       <tr 
                         key={order.stripeSessionId} 
-                        className="ticket-table-row" 
+                        className="border-b border-gray-200 text-sm" 
                         // @allow-inline-style - isRefunded text color/opacity
                         style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
                       >
-                        <td className="ticket-table-td-bold">{order.buyerName}</td>
-                        <td className="ticket-table-td">{order.buyerEmail}</td>
-                        <td className="ticket-table-td">
+                        <td className="p-3 px-2 font-semibold">{order.buyerName}</td>
+                        <td className="p-3 px-2">{order.buyerEmail}</td>
+                        <td className="p-3 px-2">
                           {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </td>
-                        <td className="ticket-table-td-medium">{order.bundleTitle}</td>
-                        <td className="ticket-table-td">{order.quantity}</td>
-                        <td className="ticket-table-td">${(order.amountPaidCents / 100).toFixed(2)}</td>
-                        <td className="ticket-table-td">
-                          <span className={`badge ${order.status === 'paid' ? 'badge-success' : 'badge-danger'} ticket-status-badge`}>
+                        <td className="p-3 px-2 font-medium">{order.bundleTitle}</td>
+                        <td className="p-3 px-2">{order.quantity}</td>
+                        <td className="p-3 px-2">${(order.amountPaidCents / 100).toFixed(2)}</td>
+                        <td className="p-3 px-2">
+                          <span className={`badge capitalize ${order.status === 'paid' ? 'badge-success' : 'badge-danger'}`}>
                             {order.status}
                           </span>
                         </td>
-                        <td className="ticket-table-td-right">
+                        <td className="p-3 px-2 text-right">
                           {order.status === 'paid' && (
                             <button
                               onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
@@ -807,7 +806,7 @@ export default function TicketingView() {
         title={editingBundle ? "Edit Season Bundle" : "Create Season Bundle"}
         maxWidth="600px"
         footer={
-          <div className="ticket-modal-footer">
+          <div className="flex flex-row gap-4">
             <button
               type="button"
               className="btn btn-ghost"
@@ -826,78 +825,78 @@ export default function TicketingView() {
           </div>
         }
       >
-        <form id="bundle-form" onSubmit={handleSaveBundle} className="ticket-form">
+        <form id="bundle-form" onSubmit={handleSaveBundle} className="flex flex-col gap-4">
           {editingBundle && (
-            <div className="card ticket-share-box">
+            <div className="card p-2 bg-[rgba(74,124,89,0.05)] border-l-4 border-primary rounded text-sm">
               <strong>🔗 Share Season Pass Link:</strong>{' '}
               <a 
                 href={`/tickets/bundle/${editingBundle.id}`} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="ticket-share-link"
+                className="underline text-primary break-all"
               >
                 {window.location.origin}/tickets/bundle/{editingBundle.id}
               </a>
             </div>
           )}
 
-          <div className="form-field-group">
-            <label className="text-label">Bundle Title</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-semibold">Bundle Title</label>
             <input
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
-              className="card ticket-form-input"
+              className="card h-10 px-3"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
           </div>
 
-          <div className="ticket-form-row flex-responsive">
-            <div className="form-field-group ticket-flex-1">
-              <label className="text-label">Price (USD)</label>
+          <div className="flex gap-4 flex-wrap">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-sm font-semibold">Price (USD)</label>
               <input
                 type="number"
                 required
                 min="0.01"
                 step="0.01"
-                className="card ticket-form-input"
+                className="card h-10 px-3"
                 value={price || ''}
                 onChange={e => setPrice(Number(e.target.value))}
               />
             </div>
-            <div className="form-field-group ticket-flex-1">
-              <label className="text-label">Capacity Limit</label>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-sm font-semibold">Capacity Limit</label>
               <input
                 type="number"
                 required
                 min="1"
-                className="card ticket-form-input"
+                className="card h-10 px-3"
                 value={capacity || ''}
                 onChange={e => setCapacity(Number(e.target.value))}
               />
             </div>
           </div>
 
-          <div className="form-field-group">
-            <label className="text-label">Sale End Date</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-semibold">Sale End Date</label>
             <input
               type="datetime-local"
               required
-              className="card ticket-form-input"
+              className="card h-10 px-3"
               value={saleEndDate}
               onChange={e => setSaleEndDate(e.target.value)}
             />
           </div>
 
-          <div className="form-field-group">
-            <label className="text-label">Included Performances</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-semibold">Included Performances</label>
             {hasPurchases && (
-              <div className="card ticket-warning-text-box">
+              <div className="card p-2 border-warning-border bg-warning-bg text-warning-text text-sm">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}
-            <div className="card ticket-events-list-box">
+            <div className="card max-h-[200px] overflow-y-auto p-2 border border-gray-200 flex flex-col gap-2">
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
@@ -905,7 +904,7 @@ export default function TicketingView() {
                   return (
                     <label 
                       key={ev.id} 
-                      className="ticket-event-label" 
+                      className="flex flex-row items-center gap-2 text-sm" 
                       // @allow-inline-style - hasPurchases cursor
                       style={{ cursor: hasPurchases ? 'not-allowed' : 'pointer' }}
                     >
@@ -928,28 +927,28 @@ export default function TicketingView() {
                   );
                 })}
               {events.filter(ev => ev.isTicketingEnabled).length === 0 && (
-                <span className="text-muted text-xs">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
+                <span className="text-gray-500 text-xs">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
               )}
             </div>
           </div>
 
-          <div className="form-field-group">
-            <label className="text-label">Public Details / Instructions</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-semibold">Public Details / Instructions</label>
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
-              className="card ticket-textarea"
+              className="card p-2 min-h-[100px] resize-y border border-gray-200"
               value={publicDetails}
               onChange={e => setPublicDetails(e.target.value)}
             />
           </div>
 
-          <label className="ticket-active-label">
+          <label className="flex flex-row items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={isActive}
               onChange={e => setIsActive(e.target.checked)}
             />
-            <span className="text-label ticket-label-no-margin">Active and visible to the public</span>
+            <span className="text-sm font-semibold m-0">Active and visible to the public</span>
           </label>
         </form>
       </BaseModal>

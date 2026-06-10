@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import './EventsView.css';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -119,9 +118,9 @@ export default function EventsView() {
 
   if (isLoading && events.length === 0) {
     return (
-      <div className="flex-col events-loading">
-        <div className="spinner-small events-spinner" />
-        <div className="text-muted text-label events-spinner-text">
+      <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 p-8">
+        <div className="spinner-small w-10 h-10 border-3" />
+        <div className="text-muted text-sm">
           Loading scheduled events...
         </div>
       </div>
@@ -130,12 +129,12 @@ export default function EventsView() {
 
   if (error) {
     return (
-      <div className="card flex-col events-error">
-        <span className="events-error-icon">⚠️</span>
-        <div className="text-headline events-error-message">
+      <div className="card flex flex-col items-center text-center max-w-[500px] mx-auto my-8 p-8 border-danger-text bg-danger-bg">
+        <span className="text-3xl">⚠️</span>
+        <div className="text-danger-text text-lg font-semibold">
           Failed to load events
         </div>
-        <p className="text-muted events-error-detail">
+        <p className="text-danger-text opacity-80">
           {error}
         </p>
         <button
@@ -149,7 +148,7 @@ export default function EventsView() {
   }
 
   return (
-    <div className="flex-col events-list-gap">
+    <div className="flex flex-col gap-6">
       <div className="admin-view-header">
         <h1 className="admin-view-title">Event Management</h1>
         <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />

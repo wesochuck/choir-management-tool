@@ -16,8 +16,6 @@ import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
-import './RosterView.css';
-import './Roster.css';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
@@ -208,11 +206,11 @@ export default function RosterView() {
     document.body.removeChild(link);
   };
 
-  if (isLoading && profiles.length === 0) return <div className="roster-loading">Loading roster...</div>;
-  if (error) return <div className="roster-error">Error: {error}</div>;
+  if (isLoading && profiles.length === 0) return <div className="p-5">Loading roster...</div>;
+  if (error) return <div className="p-5 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="roster-container">
+    <div className="flex flex-col gap-6 pb-8">
       <div className="admin-view-header">
         <h1 className="admin-view-title">Global Roster</h1>
         {activeTab === 'roster' && (
@@ -225,16 +223,16 @@ export default function RosterView() {
       </div>
 
       {/* Segmented Tab Navigation */}
-      <div className="roster-tabs no-print roster-tabs-nav">
+      <div className="flex flex-row gap-2 no-print border-b border-gray-200 pb-1 mb-2">
         <button
           onClick={() => setActiveTab('roster')}
-          className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-ghost'} roster-tab-button`}
+          className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-ghost'} px-4 py-2 text-base`}
         >
           Singer Directory
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          className={`btn ${activeTab === 'config' ? 'btn-primary' : 'btn-ghost'} roster-tab-button`}
+          className={`btn ${activeTab === 'config' ? 'btn-primary' : 'btn-ghost'} px-4 py-2 text-base`}
         >
           Roster Settings
         </button>
@@ -248,16 +246,16 @@ export default function RosterView() {
             onVoicePartToggle={handleVoicePartToggle}
           />
 
-          <div className="roster-filters-bar">
-            <div className="search-input-wrapper">
+          <div className="flex flex-row flex-wrap gap-4 items-end">
+            <div className="relative flex-1 min-w-[250px]">
               <input
                 type="text"
                 placeholder="Search by name or email..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
-                className="card search-input roster-search-input-field"
+                className="card w-full h-11 pl-10 pr-3 text-base"
               />
-              <span className="search-icon">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -266,7 +264,7 @@ export default function RosterView() {
               {filters.name && (
                 <button
                   onClick={() => setFilter('name', '')}
-                  className="roster-search-clear-btn"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-none border-none text-gray-500 cursor-pointer flex items-center justify-center p-1 rounded-full hover:bg-black/5"
                   title="Clear search"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -277,14 +275,14 @@ export default function RosterView() {
               )}
             </div>
 
-            <div id="voice-part-dropdown-container" className="voice-part-filter-container">
+            <div id="voice-part-dropdown-container" className="relative w-[200px]">
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="voice-part-dropdown-trigger flex-row"
+                className="h-11 px-3 w-full justify-between items-center cursor-pointer text-left border border-gray-200 rounded-lg bg-surface text-base text-gray-800 shadow-none flex flex-row"
               >
                 <span 
-                  className="roster-voice-part-label"
+                  className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[145px]"
                   // @allow-inline-style - dynamic font weight based on filter state
                   style={{
                     fontWeight: (filters.voiceParts || []).length > 0 ? 600 : 400
@@ -299,10 +297,11 @@ export default function RosterView() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
-                  className="roster-dropdown-arrow"
+                  className="text-gray-500"
                   // @allow-inline-style - dynamic transform based on dropdown state
                   style={{
-                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                    transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s'
                   }}
                 >
                   <polyline points="6 9 12 15 18 9"></polyline>
@@ -310,51 +309,51 @@ export default function RosterView() {
               </button>
 
               {isDropdownOpen && (
-                <div className="voice-part-dropdown-panel shadow-lg">
-                  <div className="dropdown-section-title">Sections</div>
-                  <div className="dropdown-grid-sections">
+                <div className="absolute top-full left-0 mt-1 w-[240px] bg-surface border border-gray-200 rounded-lg py-1.5 z-100 flex flex-col gap-0.5 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)] max-h-80 overflow-y-auto">
+                  <div className="text-[0.65rem] font-bold text-gray-500 uppercase tracking-wider px-2.5 py-0.5">Sections</div>
+                  <div className="flex flex-col gap-0">
                     {configSectionsHook.map(sec => {
                       const isChecked = (filters.voiceParts || []).includes(sec.code);
                       return (
-                        <label key={sec.code} className="voice-part-option-label">
+                        <label key={sec.code} className="flex items-center gap-2 px-2.5 py-1 cursor-pointer transition-colors duration-[0.12s] select-none hover:bg-primary-light">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => handleVoicePartToggle(sec.code)}
-                            className="voice-part-checkbox"
+                            className="cursor-pointer m-0"
                           />
-                          <span className={isChecked ? 'selected' : ''}>{sec.name}</span>
+                          <span className={`text-xs font-[450] text-gray-800 ${isChecked ? 'font-[650] text-primary-deep' : ''}`}>{sec.name}</span>
                         </label>
                       );
                     })}
                   </div>
 
-                  <hr className="voice-part-divider" />
+                  <hr className="h-px bg-gray-200 mx-2.5 my-0.5 border-none" />
 
-                  <div className="dropdown-section-title">Individual Parts</div>
-                  <div className="dropdown-grid-parts">
+                  <div className="text-[0.65rem] font-bold text-gray-500 uppercase tracking-wider px-2.5 py-0.5">Individual Parts</div>
+                  <div className="flex flex-col gap-0">
                     {voicePartLabels.map(part => {
                       const isChecked = (filters.voiceParts || []).includes(part);
                       return (
-                        <label key={part} className="voice-part-option-label">
+                        <label key={part} className="flex items-center gap-2 px-2.5 py-1 cursor-pointer transition-colors duration-[0.12s] select-none hover:bg-primary-light">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => handleVoicePartToggle(part)}
-                            className="voice-part-checkbox"
+                            className="cursor-pointer m-0"
                           />
-                          <span className={isChecked ? 'selected' : ''}>{part}</span>
+                          <span className={`text-xs font-[450] text-gray-800 ${isChecked ? 'font-[650] text-primary-deep' : ''}`}>{part}</span>
                         </label>
                       );
                     })}
-                    <label className="voice-part-option-label roster-staff-option">
+                    <label className="flex items-center gap-2 px-2.5 py-1 cursor-pointer transition-colors duration-[0.12s] select-none hover:bg-primary-light col-span-full mt-1 border-t border-dashed border-gray-200 pt-2">
                       <input
                         type="checkbox"
                         checked={(filters.voiceParts || []).includes('__STAFF__')}
                         onChange={() => handleVoicePartToggle('__STAFF__')}
-                        className="voice-part-checkbox"
+                        className="cursor-pointer m-0"
                       />
-                      <span className={(filters.voiceParts || []).includes('__STAFF__') ? 'selected' : ''}>Staff / Admin (No Part)</span>
+                      <span className={`text-xs font-[450] text-gray-800 ${(filters.voiceParts || []).includes('__STAFF__') ? 'font-[650] text-primary-deep' : ''}`}>Staff / Admin (No Part)</span>
                     </label>
                   </div>
                 </div>
@@ -364,7 +363,7 @@ export default function RosterView() {
             <select 
               value={filters.status} 
               onChange={(e) => setFilter('status', e.target.value)}
-              className="admin-filter-select"
+              className="w-[200px] h-11 px-3 pr-9 text-gray-800 bg-surface text-base border border-gray-200 rounded-lg"
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
@@ -375,7 +374,7 @@ export default function RosterView() {
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="admin-filter-select"
+              className="w-[200px] h-11 px-3 pr-9 text-gray-800 bg-surface text-base border border-gray-200 rounded-lg"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
@@ -388,7 +387,7 @@ export default function RosterView() {
                   setFilter('voiceParts', []);
                   setFilter('status', '');
                 }}
-                className="btn btn-secondary admin-filter-reset"
+                className="btn btn-secondary h-11 flex items-center gap-1 whitespace-nowrap"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>

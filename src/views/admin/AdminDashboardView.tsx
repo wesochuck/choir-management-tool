@@ -3,8 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { pb } from '../../lib/pocketbase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import './AdminDashboardView.css';
-import './Dashboards.css';
 
 const dashboardSections = [
   {
@@ -99,15 +97,15 @@ export default function AdminDashboardView() {
   const greeting = `${getGreeting()}, ${userName}`;
 
   return (
-    <div className="admin-dashboard">
-      <header className="admin-dashboard-header">
-        <div className="admin-dashboard-header-container">
-          <div className="admin-dashboard-brand">
-            <div className="admin-dashboard-titles">
-              <h2 className="admin-dashboard-title">Choir Admin</h2>
+    <div className="flex flex-col min-h-screen bg-bg">
+      <header className="bg-surface border-b border-gray-200 sticky top-0 z-10">
+        <div className="w-full max-w-[1200px] mx-auto px-6 py-2 flex flex-row items-center justify-between gap-6">
+          <div className="flex flex-row items-center gap-6">
+            <div className="flex flex-col">
+              <h2 className="m-0 text-xl font-bold text-gray-800">Choir Admin</h2>
             </div>
           </div>
-          <div className="admin-dashboard-actions">
+          <div className="flex flex-row items-center gap-4">
             <Link to="/profile" className="btn btn-ghost">My Profile</Link>
             <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
           </div>
@@ -115,28 +113,28 @@ export default function AdminDashboardView() {
       </header>
 
       {/* Hero Banner Section */}
-      <section className="admin-dashboard-hero">
-        <div className="admin-dashboard-hero-container">
-          <div className="admin-dashboard-hero-welcome">
-            <h1>{greeting}</h1>
+      <section className="bg-gradient-to-r from-primary-deep to-primary text-surface py-8 w-full mb-6 shadow-sm">
+        <div className="max-w-[1200px] mx-auto px-6 flex flex-wrap justify-between items-center gap-6">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-surface m-0 text-[clamp(2rem,4vw,2.5rem)] font-bold tracking-tight">{greeting}</h1>
           </div>
 
-          <div className="admin-dashboard-stats-row">
-            <Link to="/admin/roster" className="admin-dashboard-stat-pill">
-              <span className="admin-dashboard-stat-label">Active Singers</span>
-              <span className="admin-dashboard-stat-value">
+          <div className="flex flex-wrap gap-4">
+            <Link to="/admin/roster" className="flex items-center gap-4 bg-white/10 border border-white/20 rounded-full px-6 h-11 backdrop-blur transition-all duration-200 hover:bg-white/15 hover:border-white/30 no-underline cursor-pointer">
+              <span className="text-sm font-semibold text-white/90 uppercase tracking-wider">Active Singers</span>
+              <span className="text-xl font-bold text-section-amber">
                 {activeSingers !== null ? activeSingers : '...'}
               </span>
             </Link>
-            <Link to="/admin/events" className="admin-dashboard-stat-pill">
-              <span className="admin-dashboard-stat-label">Upcoming Events</span>
-              <span className="admin-dashboard-stat-value">
+            <Link to="/admin/events" className="flex items-center gap-4 bg-white/10 border border-white/20 rounded-full px-6 h-11 backdrop-blur transition-all duration-200 hover:bg-white/15 hover:border-white/30 no-underline cursor-pointer">
+              <span className="text-sm font-semibold text-white/90 uppercase tracking-wider">Upcoming Events</span>
+              <span className="text-xl font-bold text-section-amber">
                 {upcomingEvents !== null ? upcomingEvents : '...'}
               </span>
             </Link>
-            <Link to="/admin/auditions" className="admin-dashboard-stat-pill">
-              <span className="admin-dashboard-stat-label">Pending Auditions</span>
-              <span className="admin-dashboard-stat-value">
+            <Link to="/admin/auditions" className="flex items-center gap-4 bg-white/10 border border-white/20 rounded-full px-6 h-11 backdrop-blur transition-all duration-200 hover:bg-white/15 hover:border-white/30 no-underline cursor-pointer">
+              <span className="text-sm font-semibold text-white/90 uppercase tracking-wider">Pending Auditions</span>
+              <span className="text-xl font-bold text-section-amber">
                 {pendingAuditions !== null ? pendingAuditions : '...'}
               </span>
             </Link>
@@ -145,25 +143,25 @@ export default function AdminDashboardView() {
       </section>
 
       {/* Main Content Area */}
-      <main className="container">
+      <main className="w-full max-w-[1200px] mx-auto px-6">
         {/* Quick Action Bar */}
-        <div className="admin-dashboard-quick-actions-title-outside">Quick Actions</div>
-        <section className="admin-dashboard-quick-actions">
-          <div className="admin-dashboard-quick-actions-row">
-            <Link to="/admin/attendance" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">✅</span> Take Attendance
+        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 mt-1">Quick Actions</div>
+        <section className="bg-surface border border-gray-200 rounded-xl p-4 mb-8 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            <Link to="/admin/attendance" className="inline-flex items-center gap-2 bg-bg text-gray-800 border border-gray-200 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-200 cursor-pointer no-underline hover:bg-primary-light hover:text-primary-deep hover:border-primary hover:-translate-y-px active:translate-y-0">
+              <span className="text-lg">✅</span> Take Attendance
             </Link>
-            <Link to="/admin/communications" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">✉️</span> Send Announcement
+            <Link to="/admin/communications" className="inline-flex items-center gap-2 bg-bg text-gray-800 border border-gray-200 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-200 cursor-pointer no-underline hover:bg-primary-light hover:text-primary-deep hover:border-primary hover:-translate-y-px active:translate-y-0">
+              <span className="text-lg">✉️</span> Send Announcement
             </Link>
-            <Link to="/admin/roster?add=true" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">👥</span> Add Singer
+            <Link to="/admin/roster?add=true" className="inline-flex items-center gap-2 bg-bg text-gray-800 border border-gray-200 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-200 cursor-pointer no-underline hover:bg-primary-light hover:text-primary-deep hover:border-primary hover:-translate-y-px active:translate-y-0">
+              <span className="text-lg">👥</span> Add Singer
             </Link>
-            <Link to="/admin/events?add=true" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">📅</span> New Event
+            <Link to="/admin/events?add=true" className="inline-flex items-center gap-2 bg-bg text-gray-800 border border-gray-200 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-200 cursor-pointer no-underline hover:bg-primary-light hover:text-primary-deep hover:border-primary hover:-translate-y-px active:translate-y-0">
+              <span className="text-lg">📅</span> New Event
             </Link>
-            <Link to="/admin/library" className="admin-dashboard-quick-btn">
-              <span className="admin-dashboard-quick-icon">🎼</span> Add Music
+            <Link to="/admin/library" className="inline-flex items-center gap-2 bg-bg text-gray-800 border border-gray-200 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-200 cursor-pointer no-underline hover:bg-primary-light hover:text-primary-deep hover:border-primary hover:-translate-y-px active:translate-y-0">
+              <span className="text-lg">🎼</span> Add Music
             </Link>
           </div>
         </section>
@@ -171,28 +169,28 @@ export default function AdminDashboardView() {
         {/* Categorized Link Sections */}
         {dashboardSections.map((section) => (
           <section key={section.title}>
-            <div className="admin-dashboard-section-header">
+            <div className="flex items-center gap-2 mb-4 mt-8">
               <div 
-                className="admin-dashboard-section-dot" 
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                 // @allow-inline-style - dynamic dot color from section config
                 style={{ backgroundColor: section.dotColor }}
               />
-              <h2 className="admin-dashboard-section-title">{section.title}</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 m-0">{section.title}</h2>
             </div>
 
-            <div className="admin-dashboard-grid">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-8">
               {section.links.map((link) => (
                 <Link 
                   key={link.to} 
                   to={link.to} 
-                  className="admin-dashboard-card"
+                  className="flex flex-col items-start no-underline bg-surface border border-gray-200 rounded-xl p-6 shadow-sm transition-all duration-200 relative min-h-[180px] cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-primary group"
                 >
-                  <div className={`admin-dashboard-card-icon-block ${link.iconClass}`}>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl mb-4 transition-transform duration-200 group-hover:scale-105 ${link.iconClass === 'ic-green' ? 'bg-[rgba(16,185,129,0.1)] text-section-green' : link.iconClass === 'ic-sage' ? 'bg-[rgba(74,124,89,0.1)] text-primary' : link.iconClass === 'ic-slate' ? 'bg-[rgba(100,116,139,0.1)] text-section-slate' : link.iconClass === 'ic-pink' ? 'bg-[rgba(236,72,153,0.1)] text-section-pink' : link.iconClass === 'ic-amber' ? 'bg-[rgba(245,158,11,0.1)] text-section-amber' : link.iconClass === 'ic-teal' ? 'bg-[rgba(6,182,212,0.1)] text-section-cyan' : ''}`}>
                     {link.icon}
                   </div>
-                  <h3>{link.label}</h3>
-                  <p>{link.desc}</p>
-                  <span className="admin-dashboard-card-arrow">→</span>
+                  <h3 className="m-0 mb-1 text-lg font-semibold text-gray-800">{link.label}</h3>
+                  <p className="m-0 text-sm text-gray-500 leading-relaxed flex-1 mb-4">{link.desc}</p>
+                  <span className="self-end text-xl text-gray-500 transition-all duration-200 mt-auto leading-none group-hover:translate-x-1 group-hover:text-primary">→</span>
                 </Link>
               ))}
             </div>
