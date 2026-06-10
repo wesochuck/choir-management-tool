@@ -326,7 +326,9 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     const hasOrder = order.length > 0;
 
     if (currentFormation?.isVoicePartLayout) {
-      const parts = voicePartSettings?.voiceParts || DEFAULT_VOICE_PARTS;
+      const parts = voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
+        ? voicePartSettings.voiceParts
+        : DEFAULT_VOICE_PARTS;
       parts.forEach(vp => {
         if (!hasOrder || order.includes(vp.label)) {
           counts[vp.label] = 0;
@@ -343,7 +345,12 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         }
       });
     } else {
-      const sections = voicePartSettings?.sections || DEFAULT_SECTIONS;
+      const sections = voicePartSettings?.sections && voicePartSettings.sections.length > 0
+        ? voicePartSettings.sections
+        : DEFAULT_SECTIONS;
+      const vParts = voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
+        ? voicePartSettings.voiceParts
+        : DEFAULT_VOICE_PARTS;
       sections.forEach(s => {
         if (!hasOrder || order.includes(s.code)) {
           counts[s.code] = 0;
@@ -351,8 +358,8 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       });
       
       activeProfiles.forEach(p => {
-        const voicePart = voicePartSettings?.voiceParts.find(vp => vp.label === p.voicePart);
-        const sectionCode = voicePart?.sectionCode || p.voicePart[0];
+        const voicePart = vParts.find(vp => vp.label === p.voicePart);
+        const sectionCode = voicePart?.sectionCode || (p.voicePart && p.voicePart[0]);
         if (!hasOrder || order.includes(sectionCode)) {
           if (counts[sectionCode] !== undefined) {
             counts[sectionCode]++;
@@ -522,8 +529,8 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     formationType,
     sectionOrder,
     currentFormation,
-    sections: voicePartSettings?.sections || DEFAULT_SECTIONS,
-    voiceParts: voicePartSettings?.voiceParts || DEFAULT_VOICE_PARTS,
+    sections: (voicePartSettings?.sections && voicePartSettings.sections.length > 0) ? voicePartSettings.sections : DEFAULT_SECTIONS,
+    voiceParts: (voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0) ? voicePartSettings.voiceParts : DEFAULT_VOICE_PARTS,
     seatingSettings,
     isLoading,
     isSaving,
