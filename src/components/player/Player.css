@@ -278,8 +278,6 @@
   flex-grow: 1;
   height: 6px;
   appearance: none;
-  appearance: none;
-  appearance: none;
   border-radius: 3px;
   outline: none;
   cursor: pointer;
@@ -372,12 +370,12 @@
   }
 }
 
-.chorus-player .controls button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+.chorus-player .controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
-.chorus-player .controls button:disabled {
+.chorus-player .controls button:active:not(:disabled) {
   opacity: 0.35;
   cursor: default;
 }
@@ -436,6 +434,7 @@
   transition: all 0.2s ease;
 }
 
+/* stylelint-disable-next-line no-descending-specificity */
 .chorus-player .repeat-button svg {
   width: 16px;
   height: 16px;
@@ -565,6 +564,7 @@
   font-variant-numeric: tabular-nums;
   outline: none;
   transition: border-color 0.2s;
+  appearance: textfield;
 }
 
 .chorus-player .skip-setting-container input[type="number"]:focus {
@@ -576,11 +576,6 @@
 .chorus-player .skip-setting-container input[type="number"]::-webkit-outer-spin-button {
   appearance: none;
   margin: 0;
-}
-
-.chorus-player .skip-setting-container input[type="number"] {
-  appearance: textfield;
-  appearance: textfield;
 }
 
 .chorus-player .unit-label {
@@ -714,16 +709,6 @@
     border-radius: var(--radius-sm);
   }
 
-  .chorus-player .controls .play-button {
-    width: 60px;
-    height: 60px;
-  }
-
-  .chorus-player .controls .play-button svg {
-    width: 26px;
-    height: 26px;
-  }
-
   .chorus-player .controls button {
     width: 40px;
     height: 40px;
@@ -732,6 +717,16 @@
   .chorus-player .controls button svg {
     width: 18px;
     height: 18px;
+  }
+
+  .chorus-player .controls .play-button {
+    width: 60px;
+    height: 60px;
+  }
+
+  .chorus-player .controls .play-button svg {
+    width: 26px;
+    height: 26px;
   }
 
   .chorus-player .repeat-button {

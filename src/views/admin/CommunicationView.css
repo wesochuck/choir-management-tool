@@ -502,6 +502,11 @@
   width: 100%;
 }
 
+.review-metric-tile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .review-metric-tile:hover:not(:disabled) {
   transform: translateY(-2.5px);
   box-shadow: var(--shadow-sm);
@@ -510,11 +515,6 @@
 .review-metric-tile:active:not(:disabled) {
   transform: scale(0.96) translateY(0);
   box-shadow: none;
-}
-
-.review-metric-tile:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .metric-tile-header {

@@ -545,25 +545,25 @@
 }
 
 /* Seating Drag Target drop zone styles */
-@keyframes dropZonePulse {
+@keyframes drop-zone-pulse {
   0% {
     box-shadow: 0 0 0 0 rgb(59 130 246 / 50%);
-    border-color: #3b82f6 !important;
+    border-color: #3b82f6;
   }
 
   70% {
     box-shadow: 0 0 0 8px rgb(59 130 246 / 0%);
-    border-color: #2563eb !important;
+    border-color: #2563eb;
   }
 
   100% {
     box-shadow: 0 0 0 0 rgb(59 130 246 / 0%);
-    border-color: #3b82f6 !important;
+    border-color: #3b82f6;
   }
 }
 
 .seat-cell.drag-target {
-  animation: dropZonePulse 1.2s infinite;
+  animation: drop-zone-pulse 1.2s infinite;
   border-style: dashed !important;
   border-width: 2px !important;
   opacity: 0.95;

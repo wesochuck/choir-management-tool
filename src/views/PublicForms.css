@@ -72,7 +72,7 @@
 }
 
 .pub-style-14 {
-  gap: 2;
+  gap: 2px;
 }
 
 .pub-style-15 {
@@ -369,7 +369,6 @@
 .pub-style-62 {
   border-top: 1px solid var(--border);
   padding-top: var(--space-xs);
-  margin-top: var(--space-xs);
   margin: 0;
   text-align: center;
 }

@@ -194,6 +194,7 @@
   background-color: var(--surface);
   border-radius: var(--radius-md);
 }
+
 .attendance-search-control {
   flex: 1 1 200px;
   gap: 6px;
@@ -282,10 +283,10 @@
 
   .attendance-active-event-card.is-expanded .attendance-active-event-details {
     display: flex;
-    animation: slideDown 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: slide-down 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
-  @keyframes slideDown {
+  @keyframes slide-down {
     from {
       opacity: 0;
       transform: translateY(-4px);
@@ -328,6 +329,7 @@
     background-color: rgb(74 117 89 / 20%) !important;
     transform: scale(0.98);
   }
+
   .attendance-bulk-actions {
     display: none;
     width: 100%;

@@ -112,7 +112,7 @@
   font-size: 15px;
   line-height: 1.6;
   color: #334155;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .mobile-frame .preview-email-body {
@@ -189,7 +189,7 @@
   max-width: 85%;
   font-size: 14px;
   line-height: 1.4;
-  word-break: break-word;
+  overflow-wrap: break-word;
   white-space: pre-wrap;
 }
 

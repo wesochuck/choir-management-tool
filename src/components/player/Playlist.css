@@ -70,12 +70,12 @@
   transition: all 0.2s ease;
 }
 
-.chorus-player .playlist-action-btn:hover:not(:disabled) {
-  background: var(--border-color);
-  color: var(--text-primary);
+.chorus-player .playlist-action-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.chorus-player .playlist-action-btn:disabled {
+.chorus-player .playlist-action-btn:hover:not(:disabled) {
   opacity: 0.6;
   cursor: default;
 }

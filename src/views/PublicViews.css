@@ -66,10 +66,10 @@
 
 .public-loading-icon {
   font-size: 2.5rem;
-  animation: publicSpin 1.5s linear infinite;
+  animation: public-spin 1.5s linear infinite;
 }
 
-@keyframes publicSpin {
+@keyframes public-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }

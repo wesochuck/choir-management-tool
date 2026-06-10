@@ -26,17 +26,6 @@
   outline: none;
 }
 
-.pagination-btn:hover:not(:disabled) {
-  border-color: var(--primary-deep, #1e3a8a);
-  background-color: var(--bg-hover, #f8fafc);
-  color: var(--primary-deep, #1e3a8a);
-  transform: translateY(-1px);
-}
-
-.pagination-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
 .pagination-btn:focus-visible {
   box-shadow: 0 0 0 2px var(--card-bg, #fff), 0 0 0 4px var(--primary-deep, #1e3a8a);
 }
@@ -48,6 +37,17 @@
   color: var(--text-muted, #94a3b8);
   border-color: var(--border);
   transform: none;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary-deep, #1e3a8a);
+  background-color: var(--bg-hover, #f8fafc);
+  color: var(--primary-deep, #1e3a8a);
+  transform: translateY(-1px);
+}
+
+.pagination-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .pagination-btn.active {
