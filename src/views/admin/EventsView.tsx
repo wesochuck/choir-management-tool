@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './EventsView.css';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -118,21 +119,9 @@ export default function EventsView() {
 
   if (isLoading && events.length === 0) {
     return (
-      <div
-        className="flex-col"
-        style={{
-          padding: 'var(--space-xl)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '300px',
-          gap: 'var(--space-md)',
-        }}
-      >
-        <div
-          className="spinner-small"
-          style={{ width: '40px', height: '40px', borderWidth: '3px' }}
-        />
-        <div className="text-muted text-label" style={{ opacity: 0.8 }}>
+      <div className="flex-col events-loading">
+        <div className="spinner-small events-spinner" />
+        <div className="text-muted text-label events-spinner-text">
           Loading scheduled events...
         </div>
       </div>
@@ -141,29 +130,12 @@ export default function EventsView() {
 
   if (error) {
     return (
-      <div
-        className="card flex-col"
-        style={{
-          padding: 'var(--space-xl)',
-          borderColor: 'var(--color-danger-text)',
-          backgroundColor: 'var(--color-danger-bg)',
-          alignItems: 'center',
-          textAlign: 'center',
-          maxWidth: '500px',
-          margin: 'var(--space-xl) auto',
-        }}
-      >
-        <span style={{ fontSize: '2rem' }}>⚠️</span>
-        <div
-          className="text-headline"
-          style={{ color: 'var(--color-danger-text)' }}
-        >
+      <div className="card flex-col events-error">
+        <span className="events-error-icon">⚠️</span>
+        <div className="text-headline events-error-message">
           Failed to load events
         </div>
-        <p
-          className="text-muted"
-          style={{ color: 'var(--color-danger-text)', opacity: 0.8 }}
-        >
+        <p className="text-muted events-error-detail">
           {error}
         </p>
         <button
@@ -177,7 +149,7 @@ export default function EventsView() {
   }
 
   return (
-    <div className="flex-col" style={{ gap: 'var(--space-lg)' }}>
+    <div className="flex-col events-list-gap">
       <div className="admin-view-header">
         <h1 className="admin-view-title">Event Management</h1>
         <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />
