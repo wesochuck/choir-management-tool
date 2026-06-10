@@ -1,6 +1,5 @@
 import type { ElementType, MouseEventHandler, ReactNode } from 'react';
 import { Spinner } from '../Spinner/Spinner';
-import styles from './Button.module.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'default' | 'small';
@@ -17,6 +16,18 @@ export interface ButtonProps {
   onClick?: MouseEventHandler<HTMLElement>;
 }
 
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md',
+  secondary: 'bg-primary-light text-primary-deep hover:bg-[#d1dfd6]',
+  ghost: 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
+  danger: 'bg-danger-bg text-danger-text hover:bg-[#fecaca] hover:border-[#fca5a5]',
+};
+
+const sizeClasses: Record<ButtonSize, string> = {
+  default: 'h-11 px-6 text-sm',
+  small: 'h-8 px-4 text-xs',
+};
+
 export function Button({
   as: Component = 'button',
   variant = 'primary',
@@ -29,10 +40,14 @@ export function Button({
   onClick,
   ...rest
 }: ButtonProps & Record<string, unknown>) {
-  const classNames = [styles.btn, styles[variant]]
-    .concat(size !== 'default' ? [styles.small] : [])
-    .concat(className ? [className] : [])
-    .join(' ');
+  const classNames = [
+    'inline-flex items-center justify-center rounded-md font-sans font-medium',
+    'border border-transparent cursor-pointer transition-all gap-2 whitespace-nowrap',
+    'disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px',
+    variantClasses[variant],
+    sizeClasses[size],
+    className,
+  ].join(' ');
 
   const isButton = Component === 'button';
 
