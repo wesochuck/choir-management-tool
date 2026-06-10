@@ -18,7 +18,6 @@
  */
 
 const legacyWhitelist = new Set([
-  'src/components/admin/EventModal.tsx',
   'src/components/admin/MusicImportModal.tsx',
   'src/components/admin/SeatingBottomDock.tsx',
   'src/components/admin/EventRosterTable.tsx',
