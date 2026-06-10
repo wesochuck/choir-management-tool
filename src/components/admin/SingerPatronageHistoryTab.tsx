@@ -3,7 +3,6 @@ import { ticketService } from '../../services/ticketService';
 import { donationService } from '../../services/donationService';
 import { formatInTimezone } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
-import './RosterUtils.css';
 
 interface SingerPatronageHistoryTabProps {
   profileId: string;
@@ -76,31 +75,31 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
 
   if (loading) {
     return (
-      <div className="text-sm text-muted roster-ut-history-loading">
+      <div className="text-sm text-muted p-4">
         Loading patronage history...
       </div>
     );
   }
 
   return (
-    <div className="flex-col roster-ut-history-container">
-      <div className="card roster-ut-patronage-summary">
-        <div className="roster-ut-patronage-summary-label">Lifetime Value</div>
-        <div className="roster-ut-patronage-summary-value">
+    <div className="flex-col gap-4">
+      <div className="card p-4 bg-primary-light border border-[rgb(74_117_89_/_20%)] flex flex-col gap-1">
+        <div className="text-xs uppercase tracking-wider font-semibold text-primary-deep">Lifetime Value</div>
+        <div className="text-2xl font-extrabold text-primary">
           ${(ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </div>
       </div>
 
       <div>
-        <h4 className="roster-ut-history-header">
+        <h4 className="m-0 mb-2 text-xs uppercase tracking-wider text-text-muted">
           Transaction History ({items.length})
         </h4>
-        <div className="flex-col roster-ut-history-list">
+        <div className="flex-col gap-2">
           {items.length === 0 ? (
-            <p className="text-sm text-muted roster-ut-margin-0">No patronage history found.</p>
+            <p className="text-sm text-muted m-0">No patronage history found.</p>
           ) : (
             items.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="card roster-ut-history-row">
+              <div key={`${item.type}-${item.id}`} className="card p-3 px-4 shadow-none border border-border m-0">
                 <div className="flex-row justify-between align-center">
                   <div className="flex-col">
                     <span className="text-sm font-medium">{item.description}</span>
@@ -108,7 +107,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
                       {formatInTimezone(item.date, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <div className="flex-col roster-ut-align-right">
+                  <div className="flex-col text-right items-end">
                     <span className="text-sm font-bold">${(item.amountPaidCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     <span className={`text-xs uppercase font-bold ${item.status === 'paid' ? 'text-success' : 'text-danger'}`}>
                       {item.status}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { SingerPerformanceRsvpRow } from './SingerPerformanceRsvpRow';
 import { useSingerRsvpHistory } from '../../hooks/useSingerRsvpHistory';
-import './RosterUtils.css';
 
 interface SingerRsvpHistoryTabProps {
   singerId: string;
@@ -22,21 +21,21 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
 
   if (loadingRsvps) {
     return (
-      <div className="text-sm text-muted roster-ut-history-loading">
+      <div className="text-sm text-muted p-4">
         Loading RSVP history...
       </div>
     );
   }
 
   return (
-    <div className="flex-col roster-ut-history-container">
+    <div className="flex-col gap-4">
       <div>
-        <h4 className="roster-ut-history-header">
+        <h4 className="m-0 mb-2 text-xs uppercase tracking-wider text-text-muted">
           Upcoming Performances ({upcomingPerformances.length})
         </h4>
-        <div className="flex-col roster-ut-history-list">
+        <div className="flex-col gap-2">
           {upcomingPerformances.length === 0 ? (
-            <p className="text-sm text-muted roster-ut-margin-0">No upcoming performances.</p>
+            <p className="text-sm text-muted m-0">No upcoming performances.</p>
           ) : (
             upcomingPerformances.map((performance) => {
               const rosterEntry = rosters.find((roster) => roster.event === performance.id);
@@ -57,12 +56,12 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
       </div>
 
       <div>
-        <h4 className="roster-ut-history-header">
+        <h4 className="m-0 mb-2 text-xs uppercase tracking-wider text-text-muted">
           Past Performances ({pastPerformances.length})
         </h4>
-        <div className="flex-col roster-ut-history-list">
+        <div className="flex-col gap-2">
           {pastPerformances.length === 0 ? (
-            <p className="text-sm text-muted roster-ut-margin-0">No past performances.</p>
+            <p className="text-sm text-muted m-0">No past performances.</p>
           ) : (
             pastPerformances.map((performance) => {
               const rosterEntry = rosters.find((roster) => roster.event === performance.id);

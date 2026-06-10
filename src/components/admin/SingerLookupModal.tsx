@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
 import { BaseModal } from '../common/BaseModal';
-import './RosterUtils.css';
 
 interface SingerLookupModalProps {
   isOpen: boolean;
@@ -63,26 +62,26 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
       maxWidth="500px"
       footer={<button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>}
     >
-      <div className="flex-col roster-ut-lookup-container">
+      <div className="flex-col gap-4">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name, voice part, status..."
-          className="card roster-ut-lookup-search"
+          className="card w-full px-3 h-10 border border-border"
           autoFocus
         />
 
         {isLoading ? (
-          <div className="roster-ut-lookup-status">
+          <div className="text-center p-4 text-text-muted">
             Loading roster database...
           </div>
         ) : error ? (
-          <div className="roster-ut-lookup-error">
+          <div className="text-danger-text p-4 text-center">
             ⚠️ {error}
           </div>
         ) : (
-          <div className="flex-col roster-ut-lookup-list">
+          <div className="flex-col gap-[6px] max-h-[300px] overflow-y-auto pr-1">
             {filtered.map(p => (
               <button
                 key={p.id}
@@ -91,19 +90,19 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                   await onSelect(p);
                   onClose();
                 }}
-                className="flex-row card roster-ut-lookup-item"
+                className="flex-row card p-[10px_14px] justify-between items-center cursor-pointer border border-border bg-bg text-left w-full gap-2"
               >
-                <div className="flex-col roster-ut-lookup-item-content">
-                  <span className="roster-ut-lookup-item-name">{p.name}</span>
+                <div className="flex-col gap-0.5">
+                  <span className="font-semibold text-text">{p.name}</span>
                   <span className="text-xs text-muted">Status: {p.globalStatus}</span>
                 </div>
-                <span className="badge badge-rehearsal roster-ut-lookup-badge">
+                <span className="badge badge-rehearsal uppercase">
                   {p.voicePart || 'Unknown'}
                 </span>
               </button>
             ))}
             {filtered.length === 0 && (
-              <div className="roster-ut-lookup-empty">
+              <div className="text-center p-4 text-text-muted text-sm">
                 No singers found
               </div>
             )}

@@ -7,7 +7,6 @@ import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
-import './EventModal.css';
 
 
 interface EventModalProps {
@@ -418,7 +417,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             <button 
               type="button" 
               onClick={handleDelete}
-              className="btn btn-danger event-delete-btn"
+              className="btn btn-danger mr-auto"
             >
               Delete
             </button>
@@ -436,40 +435,40 @@ export const EventModal: React.FC<EventModalProps> = ({
       }
     >
       {formData.type === 'Performance' && (
-        <div className="event-modal-tabs">
+        <div className="flex flex-row border-b border-border mb-4 gap-4">
           <button
             type="button"
             onClick={() => setActiveTab('details')}
-            className={`event-modal-tab-btn ${activeTab === 'details' ? 'active' : 'inactive'}`}
+            className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 min-h-[40px] flex items-center justify-center ${activeTab === 'details' ? 'text-primary border-b-2 border-primary font-semibold' : 'text-text-muted border-b-2 border-transparent font-medium'}`}
           >
             Event Details
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('tickets')}
-            className={`event-modal-tab-btn ${activeTab === 'tickets' ? 'active' : 'inactive'}`}
+            className={`bg-none border-none px-4 py-2 cursor-pointer text-[15px] transition-all duration-200 min-h-[40px] flex items-center justify-center ${activeTab === 'tickets' ? 'text-primary border-b-2 border-primary font-semibold' : 'text-text-muted border-b-2 border-transparent font-medium'}`}
           >
             Tickets
           </button>
         </div>
       )}
 
-      <form id="event-form" onSubmit={handleSubmit} className="flex-col event-form-section">
+      <form id="event-form" onSubmit={handleSubmit} className="flex-col gap-4">
         {activeTab === 'details' && (
           <>
-            <div className="flex-col event-form-col">
+            <div className="flex-col gap-1">
               <label className="text-label">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
               <input 
                 ref={titleInputRef}
                 value={formData.title} 
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
                 placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
-                className="card event-form-input"
+                className="card w-full px-3 h-[44px] border border-border"
               />
             </div>
 
-            <div className="flex-row event-form-row">
-              <div className="flex-col event-form-col-flex">
+            <div className="flex-row gap-4 items-center">
+              <div className="flex-col flex-1 gap-1">
                 <label className="text-label">Type</label>
                 <select 
                   value={formData.type} 
@@ -494,30 +493,30 @@ export const EventModal: React.FC<EventModalProps> = ({
                       setActiveTab('details');
                     }
                   }}
-                  className="card event-form-input"
+                  className="card w-full px-3 h-[44px] border border-border"
                 >
                   <option value="Rehearsal">Rehearsal</option>
                   <option value="Performance">Performance</option>
                 </select>
               </div>
-              <div className="flex-col event-form-col-flex">
+              <div className="flex-col flex-1 gap-1">
                 <label className="text-label">Date & Time</label>
                 <input 
                   type="datetime-local"
                   value={formData.date} 
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
                   required
-                  className="card event-form-input"
+                  className="card w-full px-3 h-[44px] border border-border"
                 />
               </div>
             </div>
 
-            <div className="flex-col event-form-col">
+            <div className="flex-col gap-1">
               <label className="text-label">Event Duration</label>
               <select 
                 value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
                 onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                className="card event-form-input"
+                className="card w-full px-3 h-[44px] border border-border"
               >
                 <option value={30}>30 minutes</option>
                 <option value={45}>45 minutes</option>
@@ -534,23 +533,23 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <option value={240}>4 hours</option>
               </select>
               {endTime && (
-                <div className="text-xs text-muted event-end-time">
-                  Ends at approximately <span className="event-end-time-value">{endTime}</span>
+                <div className="text-xs text-muted mt-0.5 font-medium">
+                  Ends at approximately <span className="text-primary">{endTime}</span>
                 </div>
               )}
             </div>
 
-            <label className="flex-row event-checkbox-label">
+            <label className="flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.isOpenForRSVP || false}
                 onChange={(e) => setFormData({ ...formData, isOpenForRSVP: e.target.checked })}
-                className="event-checkbox"
+                className="accent-[var(--primary)] w-4 h-4"
               />
               <span className="text-label">Open for RSVP Links</span>
             </label>
 
-            <div className="flex-col event-form-col">
+            <div className="flex-col gap-1">
               <label className="text-label">Venue</label>
               <select
                 value={formData.venue || ''}
@@ -566,56 +565,56 @@ export const EventModal: React.FC<EventModalProps> = ({
                   }
                 }}
                 required
-                className="card event-form-input"
+                className="card w-full px-3 h-[44px] border border-border"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
-                <option value="new" className="event-option-venue">+ Add New Venue...</option>
+                <option value="new" className="font-bold text-primary">+ Add New Venue...</option>
               </select>
             </div>
 
             {isAddingNewVenue && (
-              <div className="flex-col event-form-section event-section-venue">
-                <div className="event-label-badge">✨ Create New Venue Template Inline</div>
+              <div className="flex-col gap-4 bg-[rgb(107_70_193_/_5%)] p-4 rounded-lg border border-dashed border-primary -mt-1">
+                <div className="font-semibold text-primary text-sm">✨ Create New Venue Template Inline</div>
                 
-                <div className="flex-responsive event-form-responsive">
-                  <div className="flex-col event-form-col-flex">
-                    <label className="text-muted text-xs event-label-bold">Venue Name</label>
+                <div className="flex-responsive gap-4 w-full">
+                  <div className="flex-col flex-1 gap-1">
+                    <label className="text-muted text-xs font-semibold">Venue Name</label>
                     <input 
                       value={newVenueName} 
                       onChange={(e) => setNewVenueName(e.target.value)}
                       placeholder="e.g. Grace Hall"
-                      className="card event-form-input-sm"
+                      className="card w-full px-2 h-9 text-sm border border-border"
                     />
                   </div>
-                  <div className="flex-col event-form-col-flex">
-                    <label className="text-muted text-xs event-label-bold">Row Capacities (e.g. 10, 12, 14)</label>
+                  <div className="flex-col flex-1 gap-1">
+                    <label className="text-muted text-xs font-semibold">Row Capacities (e.g. 10, 12, 14)</label>
                     <input 
                       value={newVenueRows} 
                       onChange={(e) => setNewVenueRows(e.target.value)}
                       placeholder="e.g. 8, 10, 12"
-                      className="card event-form-input-sm"
+                      className="card w-full px-2 h-9 text-sm border border-border"
                     />
                   </div>
                 </div>
 
-                <div className="flex-col event-form-col event-form-full-width">
-                  <label className="text-muted text-xs event-label-bold">Venue Address (Optional, for Google Maps)</label>
+                <div className="flex-col gap-1 w-full">
+                  <label className="text-muted text-xs font-semibold">Venue Address (Optional, for Google Maps)</label>
                   <input 
                     value={newVenueAddress} 
                     onChange={(e) => setNewVenueAddress(e.target.value)}
                     placeholder="e.g. 123 Main St, Anytown, ST 12345"
-                      className="card event-form-input-sm"
+                      className="card w-full px-2 h-9 text-sm border border-border"
                     />
                 </div>
 
-                <div className="flex-row event-form-row-end">
+                <div className="flex-row gap-2 justify-end w-full">
                   <button 
                     type="button" 
                     onClick={() => setIsAddingNewVenue(false)}
-                    className="btn btn-ghost btn-sm event-btn-sm"
+                    className="btn btn-ghost btn-sm h-7 px-3 text-xs"
                   >
                     Cancel
                   </button>
@@ -623,7 +622,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     type="button" 
                     onClick={handleCreateVenueInline}
                     disabled={isSavingVenue || !newVenueName.trim() || !newVenueRows.trim()}
-                    className="btn btn-primary btn-sm event-btn-sm"
+                    className="btn btn-primary btn-sm h-7 px-3 text-xs"
                   >
                     {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
                   </button>
@@ -632,16 +631,16 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             {formData.type === 'Performance' && (
-              <div className="flex-col event-form-gap-sm event-section-auditions">
-                <label className="flex-row event-checkbox-label-clickable">
+              <div className="flex-col gap-2 bg-[rgb(255_138_101_/_5%)] p-4 rounded-lg border border-dashed border-[#ff8a65]">
+                <label className="flex-row gap-2 cursor-pointer">
                   <input 
                     type="checkbox" 
                     checked={isOpenAuditions} 
                     onChange={(e) => setIsOpenAuditions(e.target.checked)}
-                    className="event-checkbox-audition"
+                    className="accent-[#ff8a65] w-5 h-5"
                   />
-                  <div className="flex-col event-form-col-no-gap">
-                    <span className="text-label event-label-audition">Open Public Auditions?</span>
+                  <div className="flex-col gap-0">
+                    <span className="text-label font-bold text-[#e64a19]">Open Public Auditions?</span>
                     <span className="text-xs text-muted">If checked, this performance will be the target for new audition requests.</span>
                   </div>
                 </label>
@@ -649,53 +648,53 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             {formData.type === 'Performance' && !initialData && (
-              <div className="flex-col event-form-section event-section-bulk">
-                <label className="flex-row event-checkbox-label-bold">
+              <div className="flex-col gap-4 bg-bg p-4 rounded-lg border border-dashed border-border">
+                <label className="flex-row gap-2 cursor-pointer font-semibold">
                   <input 
                     type="checkbox" 
                     checked={shouldBulkAdd} 
                     onChange={(e) => setShouldBulkAdd(e.target.checked)}
-                    className="event-checkbox-lg"
+                    className="accent-[var(--primary)] w-5 h-5"
                   />
                   <span className="text-label">Auto-generate weekly rehearsals?</span>
                 </label>
 
                 {shouldBulkAdd && (
-                  <div className="flex-col event-form-section">
-                    <div className="flex-row event-form-gap-sm">
-                      <div className="flex-col event-form-col-tight">
-                        <label className="text-xs text-muted event-label-bold-tiny">Count</label>
+                  <div className="flex-col gap-4">
+                    <div className="flex-row gap-2">
+                      <div className="flex-col flex-1 gap-0.5">
+                        <label className="text-xs text-muted font-bold">Count</label>
                         <input 
                           type="number" min="1" max="20"
                           value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
-                          className="card event-form-input-numeric"
+                          className="card w-full px-2 border border-border h-9"
                         />
                       </div>
-                      <div className="flex-col event-form-col-wide">
-                        <label className="text-xs text-muted event-label-bold-tiny">Day</label>
+                      <div className="flex-col flex-[2] gap-0.5">
+                        <label className="text-xs text-muted font-bold">Day</label>
                         <select 
                           value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
-                          className="card event-form-input-numeric"
+                          className="card w-full px-2 border border-border h-9"
                         >
                           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
                             <option key={d} value={i}>{d}</option>
                           ))}
                         </select>
                       </div>
-                      <div className="flex-col event-form-col-wide">
-                        <label className="text-xs text-muted event-label-bold-tiny">Time</label>
+                      <div className="flex-col flex-[2] gap-0.5">
+                        <label className="text-xs text-muted font-bold">Time</label>
                         <input 
                           type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
-                          className="card event-form-input-numeric"
+                          className="card w-full px-2 border border-border h-9"
                         />
                       </div>
                     </div>
-                    <div className="flex-col event-form-gap-tight">
-                      <label className="text-xs text-muted event-label-bold-tiny">Rehearsal Venue</label>
+                    <div className="flex-col gap-0.5">
+                      <label className="text-xs text-muted font-bold">Rehearsal Venue</label>
                       <select 
                         value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
                         required
-                        className="card event-form-input-numeric"
+                        className="card w-full px-2 border border-border h-9"
                       >
                         <option value="">-- Select Rehearsal Venue --</option>
                         {venues.map(v => (
@@ -704,7 +703,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </select>
                     </div>
                     {startDate && (
-                      <div className="badge badge-rehearsal event-badge-rehearsal">
+                      <div className="badge badge-rehearsal p-2 rounded text-center normal-case">
                         📅 First rehearsal: <strong>{startDate.toLocaleDateString()}</strong>
                       </div>
                     )}
@@ -714,12 +713,12 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             {formData.type === 'Rehearsal' && (
-              <div className="flex-col event-form-col">
+              <div className="flex-col gap-1">
                 <label className="text-label">Linked Performance (Parent)</label>
                 <select 
                   value={formData.parentPerformanceId} 
                   onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
-                  className="card event-form-input"
+                  className="card w-full px-3 h-[44px] border border-border"
                 >
                   <option value="">None</option>
                   {performances.filter(p => p.id !== initialData?.id).map(p => (
@@ -729,12 +728,12 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
             )}
 
-            <div className="flex-col event-form-col">
+            <div className="flex-col gap-1">
               <label className="text-label">Details / Notes</label>
               <textarea 
                 value={formData.details} 
                 onChange={(e) => setFormData({ ...formData, details: e.target.value })} 
-                className="card event-form-textarea event-form-textarea-sm"
+                className="card w-full p-3 border border-border rounded-lg resize-y h-20"
               />
             </div>
           </>
@@ -742,31 +741,31 @@ export const EventModal: React.FC<EventModalProps> = ({
 
         {formData.type === 'Performance' && activeTab === 'tickets' && (
           <>
-            <div className="event-label-badge">🎟️ Ticketing Configuration</div>
+            <div className="font-semibold text-primary text-sm">🎟️ Ticketing Configuration</div>
             
-            <label className="flex-row event-checkbox-label">
+            <label className="flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.isTicketingEnabled || false}
                 onChange={(e) => setFormData({ ...formData, isTicketingEnabled: e.target.checked })}
-                className="event-checkbox"
+                className="accent-[var(--primary)] w-4 h-4"
               />
               <span className="text-label">Enable Online Ticket Sales</span>
             </label>
 
             {formData.isTicketingEnabled && (
-              <div className="card event-tickets-link-card">
-                <div className="event-tickets-link-inner">
+              <div className="card p-[4px_16px] bg-primary-light border-l-4 border-primary rounded-lg m-[4px_0_0] shadow-none">
+                <div className="flex flex-col gap-[6px] text-sm">
                   <div>
                     <strong>⚙️ Admin:</strong>{' '}
-                    <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" className="event-link">
+                    <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" className="underline text-primary-deep font-semibold">
                       Go to Ticketing Dashboard
                     </a>
                   </div>
                   {initialData?.id && (
                     <div>
                       <strong>🔗 Storefront Link:</strong>{' '}
-                      <a href={`/tickets/${initialData.id}`} target="_blank" rel="noopener noreferrer" className="event-link">
+                      <a href={`/tickets/${initialData.id}`} target="_blank" rel="noopener noreferrer" className="underline text-primary-deep font-semibold">
                         View Concert Ticket Page
                       </a>
                     </div>
@@ -776,18 +775,18 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             {hasPurchases && !formData.isTicketingEnabled && (
-              <div className="card event-warning-card">
+              <div className="card p-4 border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] mt-1 shadow-none">
                 <strong>⚠️ Existing Ticket Sales</strong>
-                <p className="event-warning-text">
-                  This event already has active ticket sales. Disabling ticket sales hides it from the storefront, but you can still view its Will Call checklist and process refunds in the <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" className="event-link-inherit">Ticketing Dashboard</a> by checking <em>"Include past & inactive performances"</em>.
+                <p className="m-[4px_0_0] text-sm leading-[1.4]">
+                  This event already has active ticket sales. Disabling ticket sales hides it from the storefront, but you can still view its Will Call checklist and process refunds in the <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" className="font-semibold underline text-inherit">Ticketing Dashboard</a> by checking <em>"Include past & inactive performances"</em>.
                 </p>
               </div>
             )}
 
             {formData.isTicketingEnabled && (
-              <div className="flex-col event-form-section">
-                <div className="flex-responsive event-form-responsive-start">
-                  <div className="flex-col event-form-col-flex">
+              <div className="flex-col gap-4">
+                <div className="flex-responsive gap-4 items-start">
+                  <div className="flex-col flex-1 gap-1">
                     <label className="text-label">Advance Price ($)</label>
                     <input
                       type="number"
@@ -804,10 +803,10 @@ export const EventModal: React.FC<EventModalProps> = ({
                           setFormData(prev => ({ ...prev, advancePriceCents: Math.round(parsed * 100) }));
                         }
                       }}
-                      className="card event-form-input"
+                      className="card w-full px-3 h-[44px] border border-border"
                     />
                   </div>
-                  <div className="flex-col event-form-col-flex">
+                  <div className="flex-col flex-1 gap-1">
                     <label className="text-label">Day-Of Price ($)</label>
                     <input
                       type="number"
@@ -824,40 +823,40 @@ export const EventModal: React.FC<EventModalProps> = ({
                           setFormData(prev => ({ ...prev, dayOfPriceCents: Math.round(parsed * 100) }));
                         }
                       }}
-                      className="card event-form-input"
+                      className="card w-full px-3 h-[44px] border border-border"
                     />
                     {dayOfLiveText && (
-                      <div className="text-xs text-muted event-day-of-text">
+                      <div className="text-xs text-muted mt-1 text-primary">
                         {dayOfLiveText}
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="flex-responsive event-form-gap-md">
-                  <div className="flex-col event-form-col-flex">
+                <div className="flex-responsive gap-4">
+                  <div className="flex-col flex-1 gap-1">
                     <label className="text-label">Ticket Capacity</label>
                     <input
                       type="number"
                       placeholder="e.g. 150"
                       value={formData.ticketCapacity === undefined ? '' : formData.ticketCapacity}
                       onChange={(e) => setFormData({ ...formData, ticketCapacity: e.target.value === '' ? undefined : Number(e.target.value) })}
-                      className="card event-form-input"
+                      className="card w-full px-3 h-[44px] border border-border"
                     />
                   </div>
-                  <div className="flex-col event-form-col-flex">
+                  <div className="flex-col flex-1 gap-1">
                     <label className="text-label">Doors Open Time</label>
                     <input
                       type="text"
                       placeholder="e.g. 6:30 PM"
                       value={formData.doorsOpenTime || ''}
                       onChange={(e) => setFormData({ ...formData, doorsOpenTime: e.target.value })}
-                      className="card event-form-input"
+                      className="card w-full px-3 h-[44px] border border-border"
                     />
                   </div>
                 </div>
 
-                <div className="flex-col event-form-col">
+                <div className="flex-col gap-1">
                   <label className="text-label">Event Graphic / Flyer Image</label>
                   <input
                     type="file"
@@ -866,22 +865,22 @@ export const EventModal: React.FC<EventModalProps> = ({
                       const file = e.target.files?.[0] || null;
                       setEventGraphicFile(file);
                     }}
-                    className="card event-form-input-file"
+                    className="card w-full p-[8px_12px] border border-border block h-auto"
                   />
                   {initialData?.eventGraphic && !eventGraphicFile && (
                     <span className="text-xs text-muted">Current file: {initialData.eventGraphic}</span>
                   )}
                   {graphicPreviewUrl && (
-                    <div className="event-preview-wrapper">
+                    <div className="mt-1 relative w-fit">
                       <img
                         src={graphicPreviewUrl}
                         alt="Event flyer preview"
-                        className="event-preview-img"
+                        className="max-h-[120px] max-w-[240px] object-cover rounded border border-border block"
                       />
                       {eventGraphicFile && (
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm event-preview-clear-btn"
+                          className="btn btn-ghost btn-sm mt-1 px-2 py-0.5 h-auto text-xs text-danger-text"
                         >
                           Clear Selection
                         </button>
@@ -890,13 +889,13 @@ export const EventModal: React.FC<EventModalProps> = ({
                   )}
                 </div>
 
-                <div className="flex-col event-form-col">
+                <div className="flex-col gap-1">
                   <label className="text-label">Public Details (HTML / Text)</label>
                   <textarea
                     placeholder="Describe the concert program, parking info, dress code, etc."
                     value={formData.publicDetails || ''}
                     onChange={(e) => setFormData({ ...formData, publicDetails: e.target.value })}
-                    className="card event-form-textarea event-form-textarea-md"
+                    className="card w-full p-3 border border-border rounded-lg resize-y h-[100px]"
                   />
                 </div>
               </div>

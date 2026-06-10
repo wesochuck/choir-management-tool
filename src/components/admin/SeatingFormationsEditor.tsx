@@ -8,7 +8,7 @@ import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
 import { toggleAccordion } from '../../lib/seatingFormationsUtils';
-import './SeatingFormationsEditor.css';
+
 
 
 
@@ -53,19 +53,19 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
       <span
         {...attributes}
         {...listeners}
-        className="formation-drag-handle"
+        className="flex items-center text-inherit opacity-55 text-base cursor-grab shrink-0"
         title="Drag to reorder"
       >
         ⣿
       </span>
-      <span className="formation-name-row">
-        {!hasSec && <span title="Unknown item — click × to remove" className="formation-help-icon">⚠️</span>}
+      <span className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">
+        {!hasSec &&                     <span title="Unknown item — click × to remove" className="cursor-help shrink-0">⚠️</span>}
         {label}
       </span>
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="formation-action-button"
+        className="bg-none border-none text-inherit cursor-pointer px-0.5 text-base font-bold opacity-65 flex items-center shrink-0 leading-none"
         title="Remove"
       >
         ×
@@ -117,26 +117,26 @@ function FormationRow({
 
   return (
     <div
-      className="formation-row"
+      className="flex flex-col w-full p-2 border border-border rounded-lg bg-bg transition-all duration-200 ease-out"
       // @allow-inline-style - expansion toggle
       style={{ gap: isExpanded ? 'var(--space-sm)' : '0' }}
     >
       {/* Collapsible Accordion Header */}
       <div
         onClick={onToggleExpand}
-        className="formation-header"
+        className="flex justify-between items-center cursor-pointer py-1 select-none"
       >
-        <div className="formation-header-left">
-          <span className="formation-header-name">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-[1.05rem] text-text">
             {formation.name || 'New Formation'}
           </span>
           <span
-            className="badge formation-badge"
+            className="badge bg-[var(--bg-light)] text-text-muted text-xs px-2 py-0.5 rounded-full border border-border font-semibold"
           >
             {isRows ? 'Horizontal Rows' : 'Vertical Columns'}
           </span>
         </div>
-        <div className="formation-header-right">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={(e) => {
@@ -146,13 +146,13 @@ function FormationRow({
                 return { ...prev, formations: newFormations };
               });
             }}
-            className="formation-delete-btn"
+            className="bg-none border-none text-red-600 cursor-pointer inline-flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded transition-colors duration-200"
             onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-light)')}
             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             🗑 Delete template
           </button>
-          <span className="formation-chevron">
+          <span className="text-sm text-text-muted font-bold pr-1">
             {isExpanded ? '▲' : '▼'}
           </span>
         </div>
@@ -160,10 +160,10 @@ function FormationRow({
 
       {/* Collapsible details body container */}
       <div
-        className={isExpanded ? 'formation-body' : 'formation-body formation-body-collapsed'}
+        className={isExpanded ? 'flex flex-col gap-2 border-t border-border pt-2' : 'hidden'}
       >
         {/* Row 1: name input + strategy select */}
-        <div className="formation-controls-grid">
+        <div className="grid grid-cols-[1fr_170px] gap-2 items-center">
           <input
             value={formation.name}
             onChange={(e) => {
@@ -174,7 +174,7 @@ function FormationRow({
               });
             }}
             placeholder="Formation Name"
-            className="card formation-input"
+            className="card w-full px-2 h-[38px]"
           />
           <select
             value={formation.strategy}
@@ -185,7 +185,7 @@ function FormationRow({
                 return { ...prev, formations: newFormations };
               });
             }}
-            className="card formation-input"
+            className="card w-full px-2 h-[38px]"
           >
             <option value="vertical_column">Vertical Columns</option>
             <option value="horizontal_row">Horizontal Rows</option>
@@ -193,8 +193,8 @@ function FormationRow({
         </div>
 
         {/* Checkbox: Voice Part Layout Toggle */}
-        <div className="formation-checkbox-row">
-          <label className="formation-checkbox-label">
+        <div className="flex items-center px-1">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
             <input
               type="checkbox"
               checked={isVoice}
@@ -210,14 +210,14 @@ function FormationRow({
                   return { ...prev, formations: newFormations };
                 });
               }}
-              className="formation-checkbox"
+              className="accent-primary cursor-pointer w-[15px] h-[15px]"
             />
             Layout by Voice Parts (S1, S2...) instead of Section Buckets
           </label>
         </div>
 
         {/* Row 2: section/voice part order preview */}
-        <div className="formation-dnd-container">
+        <div className="p-[6px_8px] border border-border rounded-lg bg-surface min-h-[44px]">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={dndItems} strategy={horizontalListSortingStrategy}>
               <div
@@ -282,9 +282,9 @@ function FormationRow({
         </div>
 
         {/* Row 3: Section/Voice dropdown pill creators */}
-        <div className="formation-add-row">
+        <div className="flex flex-wrap gap-1 items-center">
           <div
-            className={`formation-add-wrapper${formation.sectionOrder.length > 0 ? ' formation-add-wrapper-padding' : ''}`}
+            className={`relative inline-block${formation.sectionOrder.length > 0 ? ' mt-[6px]' : ''}`}
           >              <select
               value=""
               onChange={(e) => {
@@ -299,7 +299,7 @@ function FormationRow({
                   return { ...prev, formations: newFormations };
                 });
               }}
-              className="formation-hidden-select"
+              className="opacity-0 absolute top-0 left-0 w-full h-full cursor-pointer z-[2]"
               title={isVoice ? "Add voice part to order" : "Add section to order"}
             >
               <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
@@ -319,7 +319,7 @@ function FormationRow({
             </select>
             <button
               type="button"
-              className="btn btn-secondary btn-sm formation-add-btn"
+              className="btn btn-secondary btn-sm px-2 h-[26px] text-[0.8rem] border border-dashed border-border bg-transparent flex items-center gap-1 pointer-events-none"
             >
               {isVoice ? "+ Add Voice Part" : "+ Add Section"}
             </button>
@@ -452,46 +452,46 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
   };
 
   if (isLoading) {
-    return <div className="formation-loading">Loading seating templates...</div>;
+    return <div className="p-8">Loading seating templates...</div>;
   }
 
   return (
-    <div className="flex-col formation-outer">
+    <div className="flex-col gap-8 pb-16">
       {message && (
         <div 
-          className={`badge ${message.startsWith('Error') ? 'formation-message-error' : 'formation-message-info'}`}
+          className={`badge self-start px-2 py-1 ${message.startsWith('Error') ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-sky-100 text-sky-700 border border-sky-200'}`}
         >
           {message}
         </div>
       )}
 
       <AppCard title="Default Seating Formation">
-        <div className="flex-col formation-default-wrapper">
+          <div className="flex-col gap-1">
           <label className="text-label">Default Seating Formation</label>
           <select
             value={customSeatingSettings.defaultFormationId}
             onChange={(e) => setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))}
-            className="card formation-default-select"
+            className="card w-full max-w-[400px] px-3 h-10 border border-border rounded-lg"
           >
             {customSeatingSettings.formations?.map(form => (
               <option key={form.id} value={form.id}>{form.name}</option>
             ))}
           </select>
-          <p className="text-muted formation-help-text">
+          <p className="text-muted m-0">
             This formation logic will be used by default for newly created seating charts.
           </p>
         </div>
       </AppCard>
 
       <AppCard title="Seating Formations">
-        <div className="flex-col formation-list-wrapper">
-          <div className="flex-row formation-list-header">
-            <p className="text-muted formation-help-text">
+        <div className="flex-col gap-4">
+          <div className="flex-row flex-wrap justify-between items-center gap-2">
+          <p className="text-muted m-0">
               Define reusable seating formations for your choir.
             </p>
             <Link 
               to="/admin/roster" 
-              className="btn btn-ghost btn-sm formation-roster-link"
+              className="btn btn-ghost btn-sm text-sm inline-flex items-center gap-[6px] text-primary font-semibold px-2 py-1"
             >
               🎨 Edit Section Colors in Roster
             </Link>
@@ -522,7 +522,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
                 ]
               }));
             }}
-            className="btn btn-secondary formation-add-preset"
+            className="btn btn-secondary self-start"
           >
             + Add Formation Preset
           </button>

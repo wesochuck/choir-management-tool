@@ -9,7 +9,6 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { formatInTimezone } from '../../lib/timezone';
 import { auditionToFormData, isAuditionFormDirty, defaultAuditionInput } from '../../lib/auditionForm';
-import './RosterUtils.css';
 
 interface AuditionModalProps {
   audition: Audition | null;
@@ -98,10 +97,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         </>
       }
     >
-      <form id="audition-form" onSubmit={handleSubmit} className="flex-col roster-ut-form-container">
+      <form id="audition-form" onSubmit={handleSubmit} className="flex-col gap-4">
         {audition && (
-          <div className="flex-row roster-ut-quick-contact-container">
-            <span className="text-label roster-ut-quick-contact-label">Quick Contact:</span>
+          <div className="flex-row gap-4 justify-between items-center bg-primary-light px-4 py-2 rounded">
+            <span className="text-label text-primary-deep">Quick Contact:</span>
             {formData.contact.includes('@') ? (
               <button
                 type="button"
@@ -122,14 +121,14 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   });
                   onClose();
                 }}
-                className="btn btn-link roster-ut-quick-contact-btn"
+                className="btn btn-link underline font-semibold"
               >
                 {formData.contact}
               </button>
             ) : (
               <a
                 href={`tel:${formData.contact}`}
-                className="roster-ut-quick-contact-link"
+                className="underline font-semibold text-text"
               >
                 {formData.contact}
               </a>
@@ -137,11 +136,11 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           </div>
         )}
 
-        <div className="flex-row roster-ut-tabs-container">
+        <div className="flex-row border-b border-border mb-1 gap-4">
           <button
             type="button"
             onClick={() => setActiveTab('info')}
-            className="roster-ut-tab-button"
+            className="px-4 py-2 bg-none border-none cursor-pointer text-[15px] transition-all duration-200"
             style={{ /* @allow-inline-style */
               // @allow-inline-style - tab active state indicator
               borderBottom: activeTab === 'info' ? '2px solid var(--primary)' : '2px solid transparent',
@@ -154,7 +153,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('slots')}
-            className="roster-ut-tab-button"
+            className="px-4 py-2 bg-none border-none cursor-pointer text-[15px] transition-all duration-200"
             style={{ /* @allow-inline-style */
               // @allow-inline-style - tab active state indicator
               borderBottom: activeTab === 'slots' ? '2px solid var(--primary)' : '2px solid transparent',
@@ -167,14 +166,14 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         </div>
 
         {/* Tab 1: Information Form Fields */}
-        <div className="roster-ut-info-container" style={{ /* @allow-inline-style */ 
+        <div className="flex-col gap-4" style={{ /* @allow-inline-style */ 
           // @allow-inline-style - Dynamic display based on active tab state
           display: activeTab === 'info' ? 'flex' : 'none' 
         }}>
-          <div className="flex-col roster-ut-field-col">
+          <div className="flex-col gap-1">
             <label className="text-label">Name</label>
             <input
-              className="card roster-ut-input-standard"
+              className="card px-3 h-[44px]"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
@@ -182,10 +181,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             />
           </div>
 
-          <div className="flex-col roster-ut-field-col">
+          <div className="flex-col gap-1">
             <label className="text-label">Email or Phone</label>
             <input
-              className="card roster-ut-input-standard"
+              className="card px-3 h-[44px]"
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
               required
@@ -193,11 +192,11 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             />
           </div>
 
-          <div className="flex-responsive roster-ut-responsive-row">
-            <div className="flex-col roster-ut-flex-1 roster-ut-field-col">
+          <div className="flex-responsive gap-4">
+            <div className="flex-col flex-1 gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
               <div 
-                className="card flex-row roster-ut-scheduled-time" 
+                className="card flex-row h-[44px] px-2 items-center bg-bg border border-border text-sm whitespace-nowrap overflow-hidden text-ellipsis" 
                 style={{ /* @allow-inline-style */ 
                   // @allow-inline-style - dynamic based on scheduled time slot
                   color: formData.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
@@ -213,10 +212,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-col roster-ut-flex-1 roster-ut-field-col">
+            <div className="flex-col flex-1 gap-1">
               <label className="text-label">Voice Part</label>
               <select
-                className="card roster-ut-input-standard"
+                className="card px-3 h-[44px]"
                 value={formData.voicePart || ''}
                 onChange={(event) => setFormData({ ...formData, voicePart: event.target.value as Audition['voicePart'] })}
               >
@@ -228,18 +227,18 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             </div>
           </div>
 
-          <div className="flex-responsive roster-ut-responsive-row">
-            <div className="flex-col roster-ut-flex-1 roster-ut-field-col">
+          <div className="flex-responsive gap-4">
+            <div className="flex-col flex-1 gap-1">
               <label className="text-label">Status</label>
-              <div className="roster-ut-status-display">
+              <div className="h-[44px] flex items-center font-bold text-lg text-text">
                 {formData.status}
               </div>
             </div>
 
-            <div className="flex-col roster-ut-flex-1 roster-ut-field-col">
+            <div className="flex-col flex-1 gap-1">
               <label className="text-label">Tied to Performance</label>
               <select
-                className="card roster-ut-input-standard"
+                className="card px-3 h-[44px]"
                 value={formData.performance || ''}
                 onChange={(event) => setFormData({ ...formData, performance: event.target.value })}
               >
@@ -251,20 +250,20 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             </div>
           </div>
 
-          <div className="flex-col roster-ut-field-col">
+          <div className="flex-col gap-1">
             <label className="text-label">Experience / Musical Background</label>
             <textarea
-              className="card roster-ut-textarea"
+              className="card min-h-20 p-3 resize-y"
               value={formData.experience}
               onChange={(event) => setFormData({ ...formData, experience: event.target.value })}
               placeholder="Describe background..."
             />
           </div>
 
-          <div className="flex-col roster-ut-field-col">
+          <div className="flex-col gap-1">
             <label className="text-label">Internal Notes</label>
             <textarea
-              className="card roster-ut-textarea"
+              className="card min-h-20 p-3 resize-y"
               value={formData.notes}
               onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
               placeholder="Add internal notes..."
@@ -274,17 +273,17 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
         {/* Tab 2: Requested Timeslots Selection */}
         {activeTab === 'slots' && (
-          <div className="flex-col roster-ut-slots-container">
-            <p className="text-muted text-sm roster-ut-margin-0">
+          <div className="flex-col gap-4 py-2">
+            <p className="text-muted text-sm m-0">
               Select the potential time slots this applicant requested or is available for:
             </p>
-            <div className="flex-col roster-ut-slots-list">
+            <div className="flex-col gap-[10px] max-h-[300px] overflow-y-auto pr-1">
               {(settings?.slots || []).map((slot) => {
                 const isChecked = formData.requestedSlots?.includes(slot);
                 return (
                   <label 
                     key={slot} 
-                    className="card flex-row roster-ut-slot-label" 
+                    className="card flex-row p-3 items-center gap-3 cursor-pointer shadow-none m-0" 
                     style={{ /* @allow-inline-style */ 
                       // @allow-inline-style - checkbox checked state
                       border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
@@ -302,9 +301,9 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                           setFormData({ ...formData, requestedSlots: [...current, slot].sort() });
                         }
                       }}
-                      className="roster-ut-slot-checkbox"
+                      className="accent-[var(--primary)] w-4 h-4 cursor-pointer"
                     />
-                    <span className="roster-ut-slot-text" style={{ /* @allow-inline-style */ 
+                    <span className="text-sm text-text" style={{ /* @allow-inline-style */ 
                       // @allow-inline-style - Dynamic fontWeight based on isChecked state
                       fontWeight: isChecked ? 600 : 400 
                     }}>
@@ -314,7 +313,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 );
               })}
               {(!settings?.slots || settings.slots.length === 0) && (
-                <p className="text-muted text-center roster-ut-empty-slots-msg">
+                <p className="text-muted text-center py-5">
                   No potential audition times configured in settings.
                 </p>
               )}
