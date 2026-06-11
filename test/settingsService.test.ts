@@ -171,6 +171,57 @@ test('getCommunicationSettings and saveCommunicationSettings processes automatic
   }
 });
 
+test('getRosterSettings deduplicates concurrent in-flight requests', async (t) => {
+  const { settingsService } = await import('../src/services/settingsService.ts');
+  const originalCollection = pb.collection;
+
+  let callCount = 0;
+  let resolveFirst: (value: unknown) => void = () => {};
+  const firstPromise = new Promise((resolve) => { resolveFirst = resolve; });
+
+  const mockGetFirstListItem = t.mock.fn(async () => {
+    callCount++;
+    if (callCount === 1) {
+      await firstPromise;
+    }
+    return {
+      key: 'roster',
+      value: { defaultStatus: 'Active', defaultSort: 'lastName' }
+    };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'appSettings') {
+      return { getFirstListItem: mockGetFirstListItem } as unknown as ReturnType<typeof pb.collection>;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const call1 = settingsService.getRosterSettings();
+    const call2 = settingsService.getRosterSettings();
+
+    // Small delay to ensure both calls are in-flight
+    await new Promise(r => setTimeout(r, 10));
+    assert.equal(callCount, 1);
+
+    resolveFirst({} as never);
+    const [result1, result2] = await Promise.all([call1, call2]);
+
+    assert.equal(result1.defaultStatus, 'Active');
+    assert.equal(result2.defaultStatus, 'Active');
+    assert.equal(callCount, 1);
+
+    // After resolution, a fresh call should make a new network request
+    const result3 = await settingsService.getRosterSettings();
+    assert.equal(callCount, 2);
+    assert.equal(result3.defaultStatus, 'Active');
+
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
 test('getRosterSettings and saveRosterSettings processes roster settings fields', async (t) => {
   const { settingsService } = await import('../src/services/settingsService.ts');
   const originalCollection = pb.collection;

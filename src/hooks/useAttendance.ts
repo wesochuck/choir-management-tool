@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { rosterService, type EventRoster } from '../services/rosterService';
-import { profileService } from '../services/profileService';
-import { eventService, type Event } from '../services/eventService';
+import type { Event } from '../services/eventService';
+import type { Profile } from '../services/profileService';
 import type { Retry429Options } from '../lib/networkSafety';
 
 export interface AttendanceItem {
@@ -22,32 +22,26 @@ export interface UseAttendanceOptions {
   onRateLimitRetry?: Retry429Options['onRetry'];
 }
 
-export const useAttendance = (eventId: string, options: UseAttendanceOptions = {}) => {
+export const useAttendance = (eventId: string, events: Event[], profiles: Profile[], options: UseAttendanceOptions = {}) => {
   const onRateLimitRetryRef = useRef(options.onRateLimitRetry);
   const [items, setItems] = useState<AttendanceItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [event, setEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     onRateLimitRetryRef.current = options.onRateLimitRetry;
   }, [options.onRateLimitRetry]);
 
   const fetchAttendance = useCallback(async () => {
-    if (!eventId) return;
+    if (!eventId || events.length === 0 || profiles.length === 0) return;
     setIsLoading(true);
     try {
-      const [currentEvent, activeProfiles, eventRosters] = await Promise.all([
-        eventService.getEvents().then(events => events.find(e => e.id === eventId) || null),
-        profileService.getActiveProfiles({
-          onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
-        }),
-        rosterService.getEventRoster(eventId, {
-          onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
-        }),
-      ]);
+      const currentEvent = events.find(e => e.id === eventId) || null;
+      const activeProfiles = profiles.filter(p => p.globalStatus === 'Active');
 
-      setEvent(currentEvent);
+      const eventRosters = await rosterService.getEventRoster(eventId, {
+        onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err)
+      });
 
       // If this is a Rehearsal, fetch the Parent Performance rosters to get folder info
       let parentRosters: EventRoster[] = [];
@@ -102,7 +96,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     } finally {
       setIsLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, events, profiles]);
 
   useEffect(() => {
     fetchAttendance();
@@ -285,7 +279,6 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     items,
     isLoading,
     error,
-    event,
     setAttendance,
     setRSVP,
     setAllAttendance,

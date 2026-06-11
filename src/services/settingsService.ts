@@ -177,14 +177,26 @@ export const DEFAULT_POLL_SETTINGS: PollSettings = {
   defaultAutoArchiveDays: 3,
 };
 
+const inFlightRequests = new Map<string, Promise<unknown>>();
+
 const getSetting = async <T>(key: string) => {
-  try {
-    const setting = await pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }));
-    return setting;
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
-    throw err;
-  }
+  const inFlight = inFlightRequests.get(key);
+  if (inFlight) return inFlight as Promise<AppSetting<T> | null>;
+
+  const promise = (async () => {
+    try {
+      const setting = await pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }));
+      return setting;
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
+      throw err;
+    } finally {
+      inFlightRequests.delete(key);
+    }
+  })();
+
+  inFlightRequests.set(key, promise);
+  return promise;
 };
 
 const upsertSetting = async <T>(key: string, value: T, isPublic: boolean) => {
