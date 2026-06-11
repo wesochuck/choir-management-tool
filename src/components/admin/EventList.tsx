@@ -116,7 +116,7 @@ export const EventList: React.FC<EventListProps> = ({
         return (
           <div
             key={e.id}
-            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-start gap-4 border-b border-border px-6 py-4 transition-colors duration-150 last:border-b-0 hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
+            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border px-6 py-4 transition-colors duration-150 last:border-b-0 hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
             onClick={() => onEdit(e)}
             role="button"
             tabIndex={0}
@@ -129,14 +129,14 @@ export const EventList: React.FC<EventListProps> = ({
             }}
           >
             {/* Date column */}
-            <div className="flex min-w-14 flex-col items-center pt-0.5">
+            <div className="flex min-w-14 flex-col items-center">
               <span className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">{weekday}</span>
               <span className="text-2xl font-bold leading-tight text-text">{day}</span>
               <span className="text-[11px] font-semibold tracking-wide text-text-muted uppercase">{month} {year}</span>
             </div>
 
             {/* Details column */}
-            <div className="flex min-w-0 flex-col gap-1 pt-0.5">
+            <div className="flex min-w-0 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge tone={isPerformance ? 'performance' : 'rehearsal'}>
                   {e.type}
@@ -173,7 +173,7 @@ export const EventList: React.FC<EventListProps> = ({
             </div>
 
             {/* Actions column */}
-            <div className="flex items-center gap-2 pt-0.5 max-sm:col-span-full max-sm:justify-end max-sm:border-t max-sm:border-border/60 max-sm:pt-2">
+            <div className="flex items-center gap-2 max-sm:col-span-full max-sm:justify-end max-sm:border-t max-sm:border-border/60 max-sm:pt-2">
               <Button
                 onClick={(event) => {
                   event.stopPropagation();
