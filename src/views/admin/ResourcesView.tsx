@@ -4,6 +4,34 @@ import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { Button, Input, FormField, Badge } from '../../components/ui';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortableResourceRow({
+  resource,
+  children,
+  dragHandle,
+}: {
+  resource: SingerResource;
+  children: React.ReactNode;
+  dragHandle: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: resource.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? 'none' : (transition || undefined),
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <tr ref={setNodeRef} {...attributes} style={style} className="transition-colors hover:bg-slate-50/50">
+      <td className="w-10 px-2 py-4 text-center" {...listeners}>
+        {dragHandle}
+      </td>
+      {children}
+    </tr>
+  );
+}
 
 export default function ResourcesView() {
   const dialog = useDialog();
@@ -17,7 +45,6 @@ export default function ResourcesView() {
   const [resourceType, setResourceType] = useState<'file' | 'link'>('file');
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [sortOrder, setSortOrder] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
   const loadResources = useCallback(async () => {
@@ -48,7 +75,6 @@ export default function ResourcesView() {
       setUrl('');
       setFile(null);
     }
-    setSortOrder(r.sortOrder !== undefined ? String(r.sortOrder) : '');
     setIsAdding(true);
   };
 
@@ -57,7 +83,6 @@ export default function ResourcesView() {
     setResourceType('file');
     setUrl('');
     setFile(null);
-    setSortOrder('');
     setEditingId(null);
     setIsAdding(false);
   };
@@ -70,7 +95,7 @@ export default function ResourcesView() {
     try {
       const formData = new FormData();
       formData.append('title', title.trim());
-      formData.append('sortOrder', sortOrder ? String(Number(sortOrder)) : '0');
+      formData.append('sortOrder', '0');
 
       if (resourceType === 'file') {
         if (file) {
@@ -156,6 +181,30 @@ export default function ResourcesView() {
     const links = resources.filter(r => !!r.url).length;
     return { total, files, links };
   }, [resources]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = resources.findIndex((r) => r.id === active.id);
+    const newIndex = resources.findIndex((r) => r.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(resources, oldIndex, newIndex);
+    setResources(reordered);
+    try {
+      await Promise.all(
+        reordered.map((r, i) => resourceService.updateResource(r.id, { sortOrder: i }))
+      );
+    } catch (err) {
+      console.error('Failed to save reorder', err);
+      await loadResources();
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -275,24 +324,17 @@ export default function ResourcesView() {
               <span className="mt-1 block text-xs text-text-muted">Enter a link URL. https:// will be prepended if missing.</span>
             </FormField>
           )}
-
-          <FormField label="Sort Order (Optional)">
-            <Input
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              placeholder="e.g. 1"
-            />
-            <span className="mt-1 block text-xs text-text-muted">Lower numbers show up first on the dashboard.</span>
-          </FormField>
         </form>
       </BaseModal>
 
       <AppCard>
-        <div className="overflow-x-auto">
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-slate-50/50">
               <tr>
+                <th className="w-10 px-2 py-3 text-center text-xs font-semibold tracking-wide text-text-muted uppercase">
+                  <span className="text-slate-300">⣿</span>
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
                   Resource Title
                 </th>
@@ -301,9 +343,6 @@ export default function ResourcesView() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
                   Destination / Link
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
-                  Sort Order
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
                   Actions
@@ -324,66 +363,77 @@ export default function ResourcesView() {
                   </td>
                 </tr>
               ) : (
-                resources.map(r => (
-                  <tr 
-                    key={r.id} 
-                    className="transition-colors hover:bg-slate-50/50"
-                  >
-                    <td className="px-6 py-4 text-sm font-semibold text-text">
-                      {r.title}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <Badge tone={r.url ? 'neutral' : 'rehearsal'}>
-                        {r.url ? 'Link' : 'File'}
-                      </Badge>
-                    </td>
-                    <td className="max-w-xs truncate px-6 py-4 text-sm text-text-muted">
-                      {r.url ? (
-                        <a 
-                          href={r.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {r.url}
-                        </a>
-                      ) : (
-                        <a 
-                          href={resourceService.getResourceFileUrl(r, r.file || '')} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {r.file || 'Download File'}
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-text-muted">
-                      {r.sortOrder || 0}
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          onClick={() => handleEdit(r)} 
-                          variant="ghost" 
-                          size="small"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => handleDelete(r)}
-                          variant="danger"
-                          size="small"
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={resources.map(r => r.id)} strategy={verticalListSortingStrategy}>
+                    {resources.map(r => (
+                      <SortableResourceRow
+                        key={r.id}
+                        resource={r}
+                        dragHandle={
+                          <div className="inline-flex cursor-grab items-center p-1 text-slate-400 select-none hover:text-slate-600">
+                            <span className="text-lg leading-none">⣿</span>
+                          </div>
+                        }
+                      >
+                        <td className="px-6 py-4 text-sm font-semibold text-text">
+                          {r.title}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <Badge tone={r.url ? 'neutral' : 'rehearsal'}>
+                            {r.url ? 'Link' : 'File'}
+                          </Badge>
+                        </td>
+                        <td className="max-w-xs truncate px-6 py-4 text-sm text-text-muted">
+                          {r.url ? (
+                            <a 
+                              href={r.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {r.url}
+                            </a>
+                          ) : (
+                            <a 
+                              href={resourceService.getResourceFileUrl(r, r.file || '')} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {r.file || 'Download File'}
+                            </a>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              onClick={() => handleEdit(r)} 
+                              variant="ghost" 
+                              size="small"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={() => handleDelete(r)}
+                              variant="danger"
+                              size="small"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </SortableResourceRow>
+                    ))}
+                  </SortableContext>
+                </DndContext>
               )}
             </tbody>
           </table>
+          {resources.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-2 text-xs text-text-muted">
+              <span className="italic">Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved automatically.</span>
+            </div>
+          )}
         </div>
       </AppCard>
     </div>
