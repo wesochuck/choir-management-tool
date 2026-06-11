@@ -11,7 +11,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import { type UserAccount } from '../../services/profileService';
-import { Button, Select, Input, Badge, EmptyState } from '../../components/ui';
+import { Button, Select, Input, Badge, EmptyState, Modal } from '../../components/ui';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -306,12 +306,6 @@ export default function AuditionsView() {
         <Button onClick={() => { setEditingAudition(null); setIsModalOpen(true); }} icon={<span className="text-base font-semibold">+</span>}>
           Add Audition
         </Button>
-        <Button variant="secondary" onClick={() => setShowSettings(!showSettings)}>
-          {showSettings ? 'Hide Settings' : 'Configure Times & Settings'}
-        </Button>
-        <Button as="a" href="/auditions" target="_blank" rel="noopener noreferrer" variant="ghost">
-          Preview Public Form ↗
-        </Button>
       </div>
 
       {/* Status Banner */}
@@ -333,28 +327,51 @@ export default function AuditionsView() {
               </div>
               <div className="text-xs text-text-muted mt-0.5">
                 {settings.enabled && settings.defaultPerformanceId 
-                  ? `Accepting requests for: ${performances.find(p => p.id === settings.defaultPerformanceId)?.title || 'Selected Performance'}`
+                  ? (
+                    <>
+                      Accepting requests for: {performances.find(p => p.id === settings.defaultPerformanceId)?.title || 'Selected Performance'}
+                      <br />
+                      <span className="inline-flex items-center gap-1 mt-1">
+                        <span>🔗</span>
+                        <a href="/auditions" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary-deep transition-colors">
+                          Preview Public Form
+                        </a>
+                      </span>
+                    </>
+                  )
                   : !settings.enabled 
                     ? 'The public form is currently disabled.'
                     : 'A target performance must be selected to open the form.'}
               </div>
             </div>
           </div>
-          {!showSettings && (
-            <Button 
-              variant={settings.enabled && settings.defaultPerformanceId ? "secondary" : "primary"} 
-              size="small"
-              onClick={() => setShowSettings(true)}
-            >
-              {settings.enabled && settings.defaultPerformanceId ? 'Configure Times' : 'Configure & Open'}
-            </Button>
-          )}
+          <Button 
+            variant={settings.enabled && settings.defaultPerformanceId ? "secondary" : "primary"} 
+            size="small"
+            onClick={() => setShowSettings(true)}
+          >
+            {settings.enabled && settings.defaultPerformanceId ? 'Configure Times' : 'Configure & Open'}
+          </Button>
         </div>
       )}
 
-      {/* Settings Configuration Card */}
-      {showSettings && settings && (
-        <AppCard title="Audition Settings">
+      <Modal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        title="Audition Settings"
+        isDirty={false}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setShowSettings(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSettings} loading={isSavingSettings}>
+              Save Settings
+            </Button>
+          </div>
+        }
+      >
+        {settings && (
           <div className="flex flex-col gap-6">
             <label className="flex cursor-pointer flex-row gap-2 self-start select-none items-center">
               <input
@@ -500,13 +517,9 @@ export default function AuditionsView() {
                 </div>
               )}
             </div>
-
-            <Button onClick={handleSaveSettings} loading={isSavingSettings}>
-              Save Settings
-            </Button>
           </div>
-        </AppCard>
-      )}
+        )}
+      </Modal>
 
       {/* Filters Bar */}
       <div className="flex flex-wrap items-end justify-between gap-4 bg-surface p-4 border border-border rounded-xl shadow-sm">
