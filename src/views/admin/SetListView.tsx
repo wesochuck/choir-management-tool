@@ -372,14 +372,11 @@ export default function SetListView() {
     setIsLibraryModalOpen(true);
   };
 
-  const handleEditLinkedPiece = (item: SetListItem) => {
-    if (!item.pieceId) return;
-    handleOpenPieceEditor(item.pieceId);
-  };
-
   const handleEdit = (item: SetListItem) => {
-    if (item.pieceId) {
-      handleEditLinkedPiece(item);
+    const displayRow = itemsWithDetails.find(i => i.id === item.id);
+    const pieceId = item.pieceId || displayRow?.resolvedPiece?.id;
+    if (pieceId) {
+      handleOpenPieceEditor(pieceId);
     } else {
       setItemEditing(item);
       setIsItemEditModalOpen(true);
@@ -649,7 +646,7 @@ export default function SetListView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="no-print flex flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Set Lists
@@ -660,26 +657,6 @@ export default function SetListView() {
         </div>
         
         <div className="flex items-center gap-3">
-          {selectedEventId && (
-            <div className="flex items-center gap-2 text-sm text-text-muted mr-2">
-              {saveStatus === 'saving' && (
-                <>
-                  <span className="spinner-small" />
-                  <span>Saving changes...</span>
-                </>
-              )}
-              {saveStatus === 'saved' && (
-                <span className="font-medium text-emerald-700">
-                  ✓ Saved
-                </span>
-              )}
-              {saveStatus === 'error' && (
-                <span className="font-medium text-red-600">
-                  ✗ Save failed
-                </span>
-              )}
-            </div>
-          )}
           {selectedEvent && (
             <>
               <Button
@@ -869,10 +846,43 @@ export default function SetListView() {
               )}
             </div>
             
-            {items.length > 0 && (
-              <p className="text-text-muted m-0 px-2 py-1 text-xs italic">
-                Tip: Drag the ⣿ handle on any row to reorder set list items. Changes are saved automatically.
-              </p>
+            {items.length > 0 ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-2 py-1 text-xs text-text-muted">
+                <span className="italic">Tip: Drag the ⣿ handle on any row to reorder set list items. Changes are saved automatically.</span>
+                {saveStatus && (
+                  <div className="flex items-center gap-1.5 font-medium shrink-0">
+                    {saveStatus === 'saving' && (
+                      <>
+                        <span className="spinner-small !size-3.5 !border-[1.5px]" />
+                        <span>Saving...</span>
+                      </>
+                    )}
+                    {saveStatus === 'saved' && (
+                      <span className="text-emerald-700">✓ Saved</span>
+                    )}
+                    {saveStatus === 'error' && (
+                      <span className="text-red-600">✗ Save failed</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              saveStatus && (
+                <div className="flex justify-end px-2 py-1 text-xs text-text-muted font-medium">
+                  {saveStatus === 'saving' && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="spinner-small !size-3.5 !border-[1.5px]" />
+                      <span>Saving...</span>
+                    </div>
+                  )}
+                  {saveStatus === 'saved' && (
+                    <span className="text-emerald-700">✓ Saved</span>
+                  )}
+                  {saveStatus === 'error' && (
+                    <span className="text-red-600">✗ Save failed</span>
+                  )}
+                </div>
+              )
             )}
           </div>
         ) : (

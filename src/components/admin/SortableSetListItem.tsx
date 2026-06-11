@@ -59,7 +59,7 @@ export const SortableSetListItem: React.FC<Props> = ({
   return (
     <div 
       ref={setNodeRef} 
-      className={`flex flex-row items-center border border-border rounded-md px-3 py-2 transition-colors gap-3 ${
+      className={`flex flex-row items-center border border-border rounded-md px-3.5 py-2.5 transition-colors gap-3 ${
         item.type === 'intermission' 
           ? 'bg-emerald-50/15 border-dashed border-emerald-300/80' 
           : 'bg-white hover:bg-slate-50/70 shadow-sm'
@@ -76,20 +76,20 @@ export const SortableSetListItem: React.FC<Props> = ({
       <div className="flex-1 flex flex-col gap-[2px]">
         {item.type === 'intermission' ? (
           <div className="flex flex-row flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-emerald-800">⏸️ {titleText}</span>
+            <span className="text-lg font-semibold text-emerald-800">⏸️ {titleText}</span>
             {displayDuration && (
               <span className="inline-flex items-center rounded bg-emerald-100/70 px-2 py-0.5 text-xs font-semibold text-emerald-800">
                 {displayDuration}
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-text-muted text-xs italic">
+              <span className="text-text-muted text-base italic">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         ) : (
-          <div className="text-sm m-0 flex flex-row flex-wrap items-center gap-1.5">
+          <div className="text-lg m-0 flex flex-row flex-wrap items-center gap-1.5">
             {(item.pieceId || linkedPiece?.id) && onPieceClick ? (
               <button
                 type="button"
@@ -121,14 +121,14 @@ export const SortableSetListItem: React.FC<Props> = ({
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-text-muted text-xs font-normal">
+              <span className="text-text-muted text-base font-normal">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         )}
         {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
-          <div className="text-text-muted flex flex-row flex-wrap items-center gap-1.5 text-xs">
+          <div className="text-text-muted flex flex-row flex-wrap items-center gap-1.5 text-base">
             {displayComposer && (
               <span>
                 {displayComposer}
@@ -143,7 +143,7 @@ export const SortableSetListItem: React.FC<Props> = ({
                   return (
                     <span 
                       key={id}
-                      className="inline-flex rounded border border-emerald-100/70 bg-emerald-50/50 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-emerald-800"
+                      className="inline-flex rounded border border-emerald-100/70 bg-emerald-50/50 px-1.5 py-0.5 text-[11px] leading-none font-semibold text-emerald-800"
                     >
                       {found ? found.label : id}
                     </span>
@@ -154,7 +154,7 @@ export const SortableSetListItem: React.FC<Props> = ({
           </div>
         )}
         {item.notes && (
-          <div className="text-text-muted mt-0.5 text-xs italic">
+          <div className="text-text-muted mt-0.5 text-base italic">
             {item.notes}
           </div>
         )}
