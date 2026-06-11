@@ -342,7 +342,7 @@ export default function AttendanceView() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
       <AppCard
-        title={selectedEvent ? `Attendance Check-in: ${selectedEvent.title || selectedEvent.expand?.venue?.name || ''}` : 'Attendance Check-in'}
+        title="Attendance Check-in"
         actions={
           <div className="flex flex-row items-center gap-3">
             <div className="flex flex-col gap-0.5">
@@ -374,52 +374,62 @@ export default function AttendanceView() {
             
             {/* Event Summary Details Block */}
             {selectedEvent && (
-              <div className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary-light/50 p-4 transition-all duration-200 shadow-xs">
-                <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => setIsEventExpanded(!isEventExpanded)}>
-                  <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary-light/30 p-5 transition-all duration-200 shadow-xs">
+                <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => selectedEvent.details && setIsEventExpanded(!isEventExpanded)}>
+                  <div className="flex flex-col gap-1">
                     <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Active Event</span>
-                    <div className="flex flex-row items-center gap-2">
-                      {selectedEvent.title && <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">{selectedEvent.title}</h2>}
+                    <div className="flex flex-row items-center gap-2.5">
+                      <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">{selectedEvent.title || selectedEvent.expand?.venue?.name || 'Untitled Event'}</h2>
                       <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary/20 text-primary-deep'}`}>
                         {selectedEvent.type}
                       </span>
                     </div>
                   </div>
                   
-                  <button 
-                    type="button" 
-                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-text-muted transition-colors hover:bg-black/5 active:bg-black/10 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEventExpanded(!isEventExpanded);
-                    }}
-                    aria-expanded={isEventExpanded}
-                  >
-                    {isEventExpanded ? '▲ Hide' : '▼ Details'}
-                  </button>
+                  {selectedEvent.details && (
+                    <button 
+                      type="button" 
+                      className="flex items-center gap-1.5 rounded-lg bg-white/50 border border-border/40 px-3 py-1.5 text-xs font-bold text-primary-deep transition-all hover:bg-white hover:shadow-xs active:scale-95 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEventExpanded(!isEventExpanded);
+                      }}
+                      aria-expanded={isEventExpanded}
+                    >
+                      {isEventExpanded ? '▲ Hide Details' : '▼ View Details'}
+                    </button>
+                  )}
                 </div>
                 
-                <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2">
+                <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2 border-t border-primary/10 pt-3">
                   <a 
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm font-bold text-primary-deep transition-colors hover:underline"
+                    className="flex items-center gap-1.5 text-sm font-bold text-primary hover:text-primary-deep transition-colors hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <span>📍</span>
+                    <svg className="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
                     {selectedEvent.expand?.venue?.name || 'Unknown Venue'}
                   </a>
                   <span className="flex items-center gap-1.5 text-sm font-medium text-text-muted">
-                    <span>📅</span>
+                    <svg className="size-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                      <line x1="16" x2="16" y1="2" y2="6" />
+                      <line x1="8" x2="8" y1="2" y2="6" />
+                      <line x1="3" x2="21" y1="10" y2="10" />
+                    </svg>
                     {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
 
                 {isEventExpanded && selectedEvent.details && (
                   <div className="mt-3 border-t border-primary/10 pt-3 text-sm text-text-muted">
-                    <span className="font-bold block text-[0.65rem] uppercase tracking-wider text-text-muted mb-1">Details / Notes</span>
-                    <p className="m-0 whitespace-pre-wrap">{selectedEvent.details}</p>
+                    <span className="font-bold block text-[0.65rem] uppercase tracking-wider text-text-muted mb-1.5">Details / Notes</span>
+                    <p className="m-0 whitespace-pre-wrap leading-relaxed text-slate-600">{selectedEvent.details}</p>
                   </div>
                 )}
               </div>
