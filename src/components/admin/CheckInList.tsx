@@ -56,7 +56,7 @@ const CheckInRow: React.FC<{
   const rsvpDisplay = getRsvpDisplay(item.rsvp, { variant: 'eventRoster' });
 
   return (
-    <tr className="hover:bg-slate-50/80 transition-colors">
+    <tr className="transition-colors hover:bg-slate-50/80">
       {/* Name and Avatar */}
       <td className="px-6 py-4 text-sm whitespace-nowrap">
         <div className="flex items-center gap-3">
@@ -78,7 +78,10 @@ const CheckInRow: React.FC<{
               {item.name}
             </button>
             {item.rsvpNote && (
-              <span className="text-xs font-semibold text-red-600 max-w-[200px] truncate italic" title={item.rsvpNote}>
+              <span
+                className="max-w-[200px] truncate text-xs font-semibold text-red-600 italic"
+                title={item.rsvpNote}
+              >
                 📝 {item.rsvpNote}
               </span>
             )}
@@ -93,7 +96,9 @@ const CheckInRow: React.FC<{
 
       {/* Missed Rehearsals */}
       <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
-        {missCounts && missCounts[item.profileId] !== undefined && missCounts[item.profileId] > 0 ? (
+        {missCounts &&
+        missCounts[item.profileId] !== undefined &&
+        missCounts[item.profileId] > 0 ? (
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
               missCounts[item.profileId] > (maxRehearsalMisses ?? 3)
@@ -110,11 +115,7 @@ const CheckInRow: React.FC<{
 
       {/* RSVP Status */}
       <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
-        <StatusBadge
-          label={rsvpDisplay.label}
-          tone={rsvpDisplay.tone}
-          size="sm"
-        />
+        <StatusBadge label={rsvpDisplay.label} tone={rsvpDisplay.tone} size="sm" />
       </td>
 
       {/* Attendance Action Buttons */}
@@ -126,7 +127,7 @@ const CheckInRow: React.FC<{
             className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
               isPresent
                 ? 'bg-emerald-700 text-white'
-                : 'border border-slate-300 text-slate-500 hover:bg-slate-50 bg-white'
+                : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
             }`}
           >
             Present
@@ -137,7 +138,7 @@ const CheckInRow: React.FC<{
             className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
               isAbsent
                 ? 'bg-red-600 text-white'
-                : 'border border-slate-300 text-slate-500 hover:bg-slate-50 bg-white'
+                : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
             }`}
           >
             Absent
@@ -148,23 +149,12 @@ const CheckInRow: React.FC<{
             className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
               isPending
                 ? 'bg-slate-500 text-white'
-                : 'border border-slate-300 text-slate-500 hover:bg-slate-50 bg-white'
+                : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
             }`}
           >
             Reset
           </button>
         </div>
-      </td>
-
-      {/* Edit Button */}
-      <td className="px-6 py-4 text-right text-sm whitespace-nowrap max-[700px]:hidden">
-        <button
-          type="button"
-          onClick={() => onEdit(item.profileId)}
-          className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          ✏️ Edit
-        </button>
       </td>
     </tr>
   );
@@ -198,7 +188,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
 
   const voicePartToSectionMap = useMemo(() => {
     const map: Record<string, string> = {};
-    voiceParts.forEach(vp => {
+    voiceParts.forEach((vp) => {
       map[vp.label] = vp.sectionCode;
     });
     return map;
@@ -206,7 +196,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
 
   const sectionNameMap = useMemo(() => {
     const map: Record<string, string> = {};
-    sections.forEach(s => {
+    sections.forEach((s) => {
       map[s.code] = s.name;
     });
     return map;
@@ -272,9 +262,9 @@ export const CheckInList: React.FC<CheckInListProps> = ({
         <React.Fragment key={item.id}>
           {showHeader && (
             <tr className="border-none">
-              <td colSpan={6} className="p-0 pt-6 pb-2">
+              <td colSpan={5} className="p-0 pt-6 pb-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-[0.8rem] font-extrabold tracking-wider text-primary-deep uppercase">
+                  <span className="text-primary-deep text-[0.8rem] font-extrabold tracking-wider uppercase">
                     {headerText}
                   </span>
                   <div className="h-px flex-1 bg-[rgb(74_117_89_/_15%)]" />
@@ -295,7 +285,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col gap-3">
+    <div className="flex w-full flex-col gap-3">
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full divide-y divide-slate-200 text-left">
           <thead className="bg-slate-50">
@@ -315,15 +305,12 @@ export const CheckInList: React.FC<CheckInListProps> = ({
               <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Attendance
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase max-[700px]:hidden">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
             {notCheckedIn.length === 0 && checkedIn.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   No singers expected or matching current filters.
                 </td>
               </tr>
@@ -332,13 +319,13 @@ export const CheckInList: React.FC<CheckInListProps> = ({
                 {renderRowsWithHeaders(notCheckedIn)}
                 {checkedIn.length > 0 && (
                   <tr className="border-none">
-                    <td colSpan={6} className="p-0 pt-6 pb-2">
+                    <td colSpan={5} className="p-0 pt-6 pb-2">
                       <div className="flex items-center gap-4">
-                        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
-                        <span className="flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] bg-surface px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest text-primary-deep uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]">
+                        <div className="to-border h-px flex-1 bg-gradient-to-r from-transparent" />
+                        <span className="bg-surface text-primary-deep flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]">
                           ✓ Checked In ({checkedIn.length})
                         </span>
-                        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
+                        <div className="to-border h-px flex-1 bg-gradient-to-l from-transparent" />
                       </div>
                     </td>
                   </tr>
