@@ -5,6 +5,7 @@ import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
+import { Button } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
@@ -134,8 +135,10 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       actions={
         <div className="flex flex-row items-center gap-2">
           {!isInline && event && (
-            <button 
-              className="btn btn-secondary btn-sm font-semibold"
+            <Button 
+              variant="secondary"
+              size="small"
+              className="font-semibold"
               onClick={() => {
                 const query = new URLSearchParams({
                   eventId: event.id,
@@ -145,22 +148,24 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               }}
             >
               ✏️ Edit Event
-            </button>
+            </Button>
           )}
           {!isInline ? (
-            <button 
-              className="btn btn-ghost btn-sm" 
+            <Button 
+              variant="ghost"
+              size="small"
               onClick={() => navigate('/admin/events')}
             >
               Close
-            </button>
+            </Button>
           ) : onClose ? (
-            <button 
-              className="btn btn-ghost btn-sm" 
+            <Button 
+              variant="ghost"
+              size="small"
               onClick={onClose}
             >
               Close
-            </button>
+            </Button>
           ) : null}
         </div>
       }
@@ -172,13 +177,14 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             title="Voice Part RSVP Balance"
             actions={
               <div className="flex flex-row items-center gap-2">
-                <button
-                  type="button"
+                <Button
                   onClick={handleExportCSV}
-                  className="btn btn-secondary btn-sm font-bold"
+                  variant="secondary"
+                  size="small"
+                  className="font-bold"
                 >
                   📥 Export CSV
-                </button>
+                </Button>
                 <span className="inline-flex items-center rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold tracking-wider text-primary-deep uppercase">
                   {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
                   {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
@@ -336,50 +342,47 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </select>
 
             {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-              <button
-                type="button"
+              <Button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedVoiceParts([]);
                   setRsvpFilter('All');
                 }}
-                className="btn btn-secondary flex h-11 items-center gap-1 whitespace-nowrap"
+                variant="secondary"
+                className="flex h-11 items-center gap-1 whitespace-nowrap"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                   <path d="M3 3v5h5"></path>
                 </svg>
                 Reset Filters
-              </button>
+              </Button>
             )}
           </div>
 
           <div className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2" aria-label="Bulk RSVP actions">
             <span className="text-xs font-bold whitespace-nowrap text-gray-500">{sortedSingers.length} shown</span>
-            <button
-              type="button"
-              className="btn btn-primary"
+            <Button
               disabled={isUpdating || sortedSingers.length === 0}
               onClick={() => handleBulkUpdateRSVP('Yes')}
+              variant="primary"
             >
               Mark Attending
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
+            </Button>
+            <Button
               disabled={isUpdating || sortedSingers.length === 0}
               onClick={() => handleBulkUpdateRSVP('No')}
+              variant="danger"
             >
               Mark Declined
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
+            </Button>
+            <Button
               disabled={isUpdating || sortedSingers.length === 0}
               onClick={() => handleBulkUpdateRSVP('Pending')}
+              variant="secondary"
             >
               Reset RSVPs
-            </button>
+            </Button>
           </div>
         </div>
 
