@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { EventRosterTable } from '../src/components/admin/EventRosterTable';
-import { DialogProvider } from '../src/contexts/DialogContext';
+import { DialogProvider } from '../src/contexts/DialogProvider';
 import type { Profile } from '../src/services/profileService';
 
 function createProfile(id: string, name: string, voicePart: string): Profile {

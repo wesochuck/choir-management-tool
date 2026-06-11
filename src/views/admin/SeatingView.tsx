@@ -297,7 +297,7 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] ${isWideLayout ? '' : ''} ${isFullscreen ? '!bg-[var(--bg)] !p-[var(--space-md)]' : ''}`} 
+      className={`flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] print-landscape ${isWideLayout ? '' : ''} ${isFullscreen ? '!bg-[var(--bg)] !p-[var(--space-md)]' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
     >

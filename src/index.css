@@ -203,6 +203,10 @@ body {
 .text-label { font-size: var(--font-size-label); font-weight: var(--font-weight-label); letter-spacing: 0.01em; }
 .text-muted { color: var(--text-muted); }
 
+.print-only {
+  display: none;
+}
+
 @media print {
     body .no-print.no-print.no-print {
     display: none !important;
@@ -233,12 +237,22 @@ body {
   }
 }
 
-@page {
-  size: landscape;
+@media print {
+  /* Enforce standard portrait layout globally */
+  @page {
+    size: portrait;
+  }
+  
+  /* Allocate a named canvas geometry rule for large layouts */
+  @page landscape-canvas {
+    size: landscape;
+    margin: 0.5in;
+  }
 }
 
-@page setlist {
-  size: portrait;
+/* Expose a utility class to assign target views to the landscape geometry block */
+@utility print-landscape {
+  page: landscape-canvas;
 }
 
 @media (max-width: 640px) {

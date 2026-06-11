@@ -10,7 +10,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import { type UserAccount } from '../../services/profileService';
-import { Button, Select, Input, Badge, EmptyState, Modal } from '../../components/ui';
+import { Button, Select, Input, Badge, Modal } from '../../components/ui';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -776,21 +776,8 @@ export default function AuditionsView() {
               ))}
               {sortedAuditions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-0">
-                    <EmptyState
-                      icon="👥"
-                      title="No Auditions Found"
-                      description="There are no audition requests matching the current filters."
-                      action={
-                        <Button 
-                          variant="primary" 
-                          size="small" 
-                          onClick={() => { setEditingAudition(null); setIsModalOpen(true); }}
-                        >
-                          + Add Audition Manually
-                        </Button>
-                      }
-                    />
+                  <td colSpan={5} className="p-8 text-center text-sm text-text-muted">
+                    No auditions found.
                   </td>
                 </tr>
               )}

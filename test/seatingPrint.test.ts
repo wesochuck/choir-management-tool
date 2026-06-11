@@ -21,7 +21,7 @@ test('seating list print mode keeps navigation and editor controls out of the pr
 
   assert.match(
     printRules,
-    /@page\s*\{[^}]*size:\s*landscape;/,
+    /@page\s*(?:landscape-canvas)?\s*\{[^}]*size:\s*landscape;/,
     'text print mode should use the shared landscape print page setup',
   );
 });
@@ -61,7 +61,7 @@ test('seating grid print mode prints only the visual grid surface', () => {
 
   assert.match(
     printRules,
-    /@page\s*\{[^}]*size:\s*landscape;/,
+    /@page\s*(?:landscape-canvas)?\s*\{[^}]*size:\s*landscape;/,
     'print CSS should request landscape orientation for wide seating charts',
   );
 
