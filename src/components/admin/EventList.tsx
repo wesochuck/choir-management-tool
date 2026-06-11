@@ -50,7 +50,7 @@ export const EventList: React.FC<EventListProps> = ({
       {events.map((e) => (
         <div 
           key={e.id} 
-          className="relative-row clickable-row flex cursor-pointer flex-col justify-between gap-4 border-b border-border p-4 hover:bg-primary-light/50 md:flex-row md:items-center" 
+          className="relative flex w-full cursor-pointer flex-col justify-between gap-4 border-b border-border p-4 hover:bg-primary-light/50 md:flex-row md:items-center" 
           onClick={() => onEdit(e)}
           role="button"
           tabIndex={0}
