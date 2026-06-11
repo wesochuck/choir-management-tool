@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
+import { Button, Input, FormField, Badge } from '../../components/ui';
 
 export default function ResourcesView() {
   const dialog = useDialog();
@@ -148,156 +149,239 @@ export default function ResourcesView() {
     }
   };
 
-  if (isLoading && resources.length === 0) {
-    return <div className="container pt-8 text-center">Loading resources...</div>;
-  }
+  const stats = useMemo(() => {
+    const total = resources.length;
+    const files = resources.filter(r => !r.url).length;
+    const links = resources.filter(r => !!r.url).length;
+    return { total, files, links };
+  }, [resources]);
 
   return (
-    <div className="flex-col gap-8 py-8">
-      <div className="flex flex-col items-center justify-between md:flex-row">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-display m-0">Singer Resources</h1>
-          <p className="text-muted text-sm">Upload documents or reference URLs for active singers to view on their dashboard.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Singer Resources
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Upload documents or reference URLs for active singers to view on their dashboard.
+          </p>
         </div>
         {!isAdding && (
-          <button onClick={() => setIsAdding(true)} className="btn btn-primary">+ New Resource</button>
+          <Button onClick={() => setIsAdding(true)} variant="primary">
+            + New Resource
+          </Button>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+            Total Resources
+          </p>
+          <p className="mt-2 text-3xl font-bold text-text">
+            {stats.total}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+            Files
+          </p>
+          <p className="mt-2 text-3xl font-bold text-text">
+            {stats.files}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+            Links
+          </p>
+          <p className="mt-2 text-3xl font-bold text-text">
+            {stats.links}
+          </p>
+        </div>
       </div>
 
       {isAdding && (
         <AppCard title={editingId ? 'Edit Resource' : 'Create New Resource'}>
-          <form onSubmit={handleSave} className="flex-col gap-4">
-            <div className="flex-col gap-1">
-              <label className="text-label">Resource Title</label>
-              <input
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <FormField label="Resource Title" required>
+              <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="e.g. Choir Singer Handbook"
-                className="card h-11 w-full border border-border px-3"
               />
-            </div>
+            </FormField>
 
-            <div className="flex-col gap-1">
-              <label className="text-label">Resource Type</label>
-              <div className="flex-row gap-4">
-                <label className="cursor-pointer flex-row items-center gap-1">
+            <FormField label="Resource Type">
+              <div className="flex items-center gap-6 mt-1">
+                <label className="cursor-pointer flex items-center gap-2 text-sm text-text">
                   <input
                     type="radio"
                     name="resourceType"
                     checked={resourceType === 'file'}
                     onChange={() => setResourceType('file')}
-                    className="accent-primary"
+                    className="accent-primary h-4 w-4"
                   />
                   File Upload
                 </label>
-                <label className="cursor-pointer flex-row items-center gap-1">
+                <label className="cursor-pointer flex items-center gap-2 text-sm text-text">
                   <input
                     type="radio"
                     name="resourceType"
                     checked={resourceType === 'link'}
                     onChange={() => setResourceType('link')}
-                    className="accent-primary"
+                    className="accent-primary h-4 w-4"
                   />
                   Link URL
                 </label>
               </div>
-            </div>
+            </FormField>
 
             {resourceType === 'file' ? (
-              <div className="flex-col gap-1">
-                <label className="text-label">File Upload</label>
-                <input
+              <FormField label="File Upload" required={!editingId}>
+                <Input
                   type="file"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   required={!editingId}
-                  className="card w-full border border-border p-2"
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 />
-                <span className="text-muted text-xs">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
-              </div>
+                <span className="text-text-muted text-xs block mt-1">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
+              </FormField>
             ) : (
-              <div className="flex-col gap-1">
-                <label className="text-label">Link URL</label>
-                <input
+              <FormField label="Link URL" required>
+                <Input
                   type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   required
                   placeholder="drive.google.com/..."
-                  className="card h-11 w-full border border-border px-3"
                 />
-                <span className="text-muted text-xs">Enter a link URL. https:// will be prepended if missing.</span>
-              </div>
+                <span className="text-text-muted text-xs block mt-1">Enter a link URL. https:// will be prepended if missing.</span>
+              </FormField>
             )}
 
-            <div className="flex-col gap-1">
-              <label className="text-label">Sort Order (Optional)</label>
-              <input
+            <FormField label="Sort Order (Optional)">
+              <Input
                 type="number"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
                 placeholder="e.g. 1"
-                className="card h-11 w-full border border-border px-3"
               />
-              <span className="text-muted text-xs">Lower numbers show up first on the dashboard.</span>
-            </div>
+              <span className="text-text-muted text-xs block mt-1">Lower numbers show up first on the dashboard.</span>
+            </FormField>
 
-            <div className="flex flex-col justify-end gap-4 md:flex-row">
-              <button type="button" onClick={resetForm} disabled={isSaving} className="btn btn-ghost">Cancel</button>
-              <button type="submit" disabled={isSaving} className="btn btn-primary">
+            <div className="flex justify-end gap-3 mt-4">
+              <Button type="button" onClick={resetForm} disabled={isSaving} variant="ghost">Cancel</Button>
+              <Button type="submit" disabled={isSaving} variant="primary">
                 {isSaving ? 'Saving...' : 'Save Resource'}
-              </button>
+              </Button>
             </div>
           </form>
         </AppCard>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
-        {resources.map(r => (
-          <AppCard key={r.id} title={r.title}>
-            <div className="min-h-[60px] flex-col gap-1">
-              <div className="text-body">
-                <span className="text-muted">Type:</span>{' '}
-                {r.url ? '🔗 Link' : '📄 File Upload'}
-              </div>
-              {r.url ? (
-                <div className="text-body text-muted text-xs break-all">
-                  <a href={r.url} target="_blank" rel="noopener noreferrer">
-                    {r.url}
-                  </a>
-                </div>
+      <AppCard>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                  Resource Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                  Destination / Link
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
+                  Sort Order
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-surface">
+              {isLoading && resources.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-text-muted">
+                    Loading resources...
+                  </td>
+                </tr>
+              ) : resources.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-text-muted">
+                    No resources uploaded yet.
+                  </td>
+                </tr>
               ) : (
-                <div className="text-body text-muted text-xs">
-                  <a href={resourceService.getResourceFileUrl(r, r.file || '')} target="_blank" rel="noopener noreferrer">
-                    📂 Download Uploaded File
-                  </a>
-                </div>
+                resources.map(r => (
+                  <tr 
+                    key={r.id} 
+                    className="transition-colors hover:bg-slate-50/50"
+                  >
+                    <td className="px-6 py-4 text-sm font-semibold text-text">
+                      {r.title}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <Badge tone={r.url ? 'neutral' : 'rehearsal'}>
+                        {r.url ? 'Link' : 'File'}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-text-muted max-w-xs truncate">
+                      {r.url ? (
+                        <a 
+                          href={r.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {r.url}
+                        </a>
+                      ) : (
+                        <a 
+                          href={resourceService.getResourceFileUrl(r, r.file || '')} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {r.file || 'Download File'}
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm text-text-muted">
+                      {r.sortOrder || 0}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          onClick={() => handleEdit(r)} 
+                          variant="ghost" 
+                          size="small"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(r)}
+                          variant="danger"
+                          size="small"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
-              <div className="text-body">
-                <span className="text-muted">Sort Order:</span> {r.sortOrder || 0}
-              </div>
-            </div>
-            <div className="mt-4 flex flex-col gap-4 md:flex-row">
-              <button onClick={() => handleEdit(r)} className="btn btn-ghost expanded-hit-area flex-1">Edit</button>
-              <button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleDelete(r);
-                }}
-                className="btn btn-danger flex-1"
-              >
-                Delete
-              </button>
-            </div>
-          </AppCard>
-        ))}
-      </div>
-
-      {resources.length === 0 && !isAdding && (
-        <AppCard className="p-8 text-center">
-          <p className="text-muted">No resources uploaded yet.</p>
-        </AppCard>
-      )}
+            </tbody>
+          </table>
+        </div>
+      </AppCard>
     </div>
   );
 }
+

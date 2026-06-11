@@ -797,7 +797,8 @@ export default function SetListView() {
                           handleAnnouncementGapChange(isNaN(val) ? 0 : val);
                         }}
                       />
-                      <span className="text-xs font-normal text-emerald-700/80">s × {Math.max(0, items.length - 1)} = {durationTotals.gaps}</span>
+                      <span className="text-xs font-normal text-emerald-700/80">s × {Math.max(0, items.length - 1)} =</span>
+                      <span className="text-slate-900">{durationTotals.gaps}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[0.95rem] font-bold text-emerald-800">
