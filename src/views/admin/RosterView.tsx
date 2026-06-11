@@ -16,6 +16,7 @@ import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
+import { Button } from '../../components/ui';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
@@ -211,13 +212,26 @@ export default function RosterView() {
 
   return (
     <div className="flex flex-col gap-6 pb-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="admin-view-title">Global Roster</h1>
+      <div className="flex flex-row items-start justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Global Roster
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Manage choir members, voice parts, sections, and configurations. Import or export roster data.
+          </p>
+        </div>
         {activeTab === 'roster' && (
-          <div className="flex items-center gap-2">
-            <button onClick={handleExportCSV} className="btn btn-secondary">Export Roster</button>
-            <button onClick={() => setIsImportModalOpen(true)} className="btn btn-secondary">Import CSV</button>
-            <button onClick={handleAdd} className="btn btn-primary">+ Add Singer</button>
+          <div className="mt-1 flex flex-shrink-0 items-center gap-2">
+            <Button onClick={handleExportCSV} variant="secondary">
+              Export Roster
+            </Button>
+            <Button onClick={() => setIsImportModalOpen(true)} variant="secondary">
+              Import CSV
+            </Button>
+            <Button onClick={handleAdd} variant="primary">
+              + Add Singer
+            </Button>
           </div>
         )}
       </div>
