@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
-import { useAttendance } from '../../hooks/useAttendance';
+import { useAttendance, type AttendanceItem } from '../../hooks/useAttendance';
 import { useProfiles } from '../../hooks/useProfiles';
 import { CheckInList } from '../../components/admin/CheckInList';
 import { useDialog } from '../../contexts/DialogContext';
@@ -17,6 +17,9 @@ import { pb } from '../../lib/pocketbase';
 import type { EventRoster } from '../../services/rosterService';
 import { chunkArray } from '../../lib/networkSafety';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
+import { AppCard } from '../../components/common/AppCard';
+import { Button } from '../../components/ui';
+import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
 
 export default function AttendanceView() {
   const dialog = useDialog();
@@ -25,6 +28,7 @@ export default function AttendanceView() {
   const { events } = useEvents();
   const { profiles, editProfile } = useProfiles();
   const { user, updatePreferences } = useAuth();
+  
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const hasDefaultedRef = useRef(false);
@@ -33,8 +37,8 @@ export default function AttendanceView() {
   
   // Filter States
   const [filterName, setFilterName] = useState('');
-  const [filterVoicePart, setFilterVoicePart] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [selectedVoiceParts, setSelectedVoiceParts] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState<'' | 'Present' | 'Absent' | 'Pending'>('');
   const [isEventExpanded, setIsEventExpanded] = useState(false);
   
   // Sorting preference state
@@ -42,6 +46,7 @@ export default function AttendanceView() {
   const handleSortChange = (val: 'lastName' | 'voicePart' | 'section') => {
     updatePreferences({ attendanceSort: val });
   };
+  
   // RSVP filter preference state
   const defaultRsvpFilter = 'Both';
   const rsvpFilter = user?.preferences?.attendanceRsvpFilter || defaultRsvpFilter;
@@ -49,9 +54,8 @@ export default function AttendanceView() {
     updatePreferences({ attendanceRsvpFilter: val });
   };
   
-  const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false);
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
-  const { labels: voicePartLabels } = useVoiceParts();
+  const { voiceParts, sections } = useVoiceParts();
 
   useEffect(() => {
     settingsService.getRosterSettings()
@@ -188,69 +192,104 @@ export default function AttendanceView() {
     [events, selectedEventId]
   );
 
-  // Compute filtered items dynamically
-  const filteredItems = useMemo(() => {
+  const handleVoicePartToggle = (part: string) => {
+    setSelectedVoiceParts(prev => 
+      prev.includes(part)
+        ? prev.filter(p => p !== part)
+        : [...prev, part]
+    );
+  };
+
+  const handleResetFilters = () => {
+    setFilterName('');
+    setSelectedVoiceParts([]);
+    setFilterStatus('');
+    handleRsvpFilterChange('Both');
+  };
+
+  const matchesRsvpFilter = useCallback((item: AttendanceItem) => {
+    if (rsvpFilter === 'Yes') return item.rsvp === 'Yes';
+    if (rsvpFilter === 'Pending') return item.rsvp === 'Pending';
+    return item.rsvp === 'Yes' || item.rsvp === 'Pending';
+  }, [rsvpFilter]);
+
+  // Compute filtered items dynamically for the check-in list
+  const filteredCheckInItems = useMemo(() => {
     return items.filter(item => {
-      // 1. Filter by Name (case-insensitive search)
+      // 1. Filter out Declined RSVPs (they are handled at the bottom rescue section)
+      if (!matchesRsvpFilter(item)) return false;
+
+      // 2. Filter by Attendance Status (Present, Absent, Unmarked)
+      if (filterStatus && item.attendance !== filterStatus) return false;
+
+      // 3. Filter by Search Name
       if (filterName.trim()) {
         const query = filterName.toLowerCase();
-        if (!item.name.toLowerCase().includes(query)) {
-          return false;
-        }
+        if (!item.name.toLowerCase().includes(query)) return false;
       }
 
-      // 2. Filter by Voice Part
-      if (filterVoicePart) {
-        if (item.voicePart !== filterVoicePart) {
-          return false;
-        }
-      }
-
-      // 3. Filter by Attendance Status
-      if (filterStatus) {
-        if (item.attendance !== filterStatus) {
-          return false;
-        }
+      // 4. Filter by Voice Part (selectedVoiceParts array)
+      if (selectedVoiceParts.length > 0) {
+        const matches = matchesVoiceParts(item.voicePart, selectedVoiceParts, voiceParts);
+        if (!matches) return false;
       }
 
       return true;
     });
-  }, [items, filterName, filterVoicePart, filterStatus]);
-
-  const checkInItems = useMemo(() => {
-    return filteredItems.filter(item => {
-      if (rsvpFilter === 'Yes') {
-        return item.rsvp === 'Yes';
-      }
-      if (rsvpFilter === 'Pending') {
-        return item.rsvp === 'Pending';
-      }
-      return item.rsvp === 'Yes' || item.rsvp === 'Pending';
-    });
-  }, [filteredItems, rsvpFilter]);
+  }, [items, matchesRsvpFilter, filterStatus, filterName, selectedVoiceParts, voiceParts]);
 
   const declinedSingers = useMemo(() => {
     return items.filter(item => item.rsvp === 'No');
   }, [items]);
 
-  const attendanceCounts = useMemo(() => {
-    const present = items.filter((item) => item.attendance === 'Present').length;
-    const absent = items.filter((item) => item.attendance === 'Absent').length;
-    const unmarked = items.filter((item) => item.attendance === 'Pending').length;
+  // Compute total counts for the summary card tabs
+  const expectedCount = useMemo(() => items.filter(matchesRsvpFilter).length, [items, matchesRsvpFilter]);
+  const presentCount = useMemo(() => items.filter(item => matchesRsvpFilter(item) && item.attendance === 'Present').length, [items, matchesRsvpFilter]);
+  const absentCount = useMemo(() => items.filter(item => matchesRsvpFilter(item) && item.attendance === 'Absent').length, [items, matchesRsvpFilter]);
+  const unmarkedCount = useMemo(() => items.filter(item => matchesRsvpFilter(item) && item.attendance === 'Pending').length, [items, matchesRsvpFilter]);
 
-    return {
-      total: items.length,
-      present,
-      absent,
-      unmarked,
-    };
-  }, [items]);
+  // Filter list specifically for counting section/part balance in cards (ignores name/part filters but respects RSVP and Attendance tabs)
+  const baseCountList = useMemo(() => {
+    return items.filter(item => {
+      if (!matchesRsvpFilter(item)) return false;
+      if (filterStatus && item.attendance !== filterStatus) return false;
+      return true;
+    });
+  }, [items, matchesRsvpFilter, filterStatus]);
+
+  const sectionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    sections.forEach(sec => {
+      counts[sec.code] = 0;
+    });
+    baseCountList.forEach(item => {
+      if (item.voicePart) {
+        const vpDef = voiceParts.find(vp => vp.label === item.voicePart);
+        const section = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(item.voicePart);
+        if (counts[section] !== undefined) {
+          counts[section]++;
+        } else {
+          counts[section] = (counts[section] || 0) + 1;
+        }
+      }
+    });
+    return counts;
+  }, [baseCountList, sections, voiceParts]);
+
+  const partCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    voiceParts.forEach(vp => {
+      const count = baseCountList.filter(item => item.voicePart === vp.label).length;
+      counts.set(vp.label, count);
+    });
+    return counts;
+  }, [baseCountList, voiceParts]);
 
   const remainingUnmarkedProfileIds = useMemo(() => {
     return items
-      .filter((item) => item.attendance === 'Pending')
+      .filter((item) => item.attendance === 'Pending' && matchesRsvpFilter(item))
       .map((item) => item.profileId);
-  }, [items]);
+  }, [items, matchesRsvpFilter]);
 
   const handleRescueDeclined = async (profileId: string) => {
     if (!profileId) return;
@@ -271,12 +310,6 @@ export default function AttendanceView() {
     [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     [events]
   );
-
-  const handleResetFilters = () => {
-    setFilterName('');
-    setFilterVoicePart('');
-    setFilterStatus('');
-  };
 
   const handleSetAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
     try {
@@ -308,374 +341,464 @@ export default function AttendanceView() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
-      <div className="flex flex-col justify-between gap-6 border-b border-border pb-6 md:flex-row md:items-center">
-        <h1 className="text-3xl font-extrabold tracking-tight text-text">Attendance Check-in</h1>
-        
-        <div className="flex w-full flex-row items-center gap-6 md:w-auto md:min-w-[320px]">
-          <div className="flex flex-1 flex-col gap-1">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Select Event</label>
-            <select 
-              value={selectedEventId} 
-              onChange={(e) => {
-                setSelectedEventId(e.target.value);
-                handleResetFilters(); // Reset filters when changing active event
-              }}
-              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              <option value="">-- Choose an Event --</option>
-              {sortedEvents.map(e => (
-                <option key={e.id} value={e.id}>{formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.expand?.venue?.name || ''} ({e.type})</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {selectedEvent && (
-        <div className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary-light/50 p-4 transition-all duration-200 shadow-xs">
-          <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => setIsEventExpanded(!isEventExpanded)}>
+      <AppCard
+        title={selectedEvent ? `Attendance Check-in: ${selectedEvent.title || selectedEvent.expand?.venue?.name || ''}` : 'Attendance Check-in'}
+        actions={
+          <div className="flex flex-row items-center gap-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Active Event</span>
-              <div className="flex flex-row items-center gap-2">
-                {selectedEvent.title && <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">{selectedEvent.title}</h2>}
-                <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary/20 text-primary-deep'}`}>
-                  {selectedEvent.type}
-                </span>
-              </div>
-            </div>
-            
-            <button 
-              type="button" 
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-text-muted transition-colors hover:bg-black/5 active:bg-black/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsEventExpanded(!isEventExpanded);
-              }}
-              aria-expanded={isEventExpanded}
-            >
-              {isEventExpanded ? '▲ Hide' : '▼ Details'}
-            </button>
-          </div>
-          
-          <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2">
-            <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm font-bold text-primary-deep transition-colors hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span>📍</span>
-              {selectedEvent.expand?.venue?.name || 'Unknown Venue'}
-            </a>
-            <span className="flex items-center gap-1.5 text-sm font-medium text-text-muted">
-              <span>📅</span>
-              {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {selectedEventId && !isLoading && !error && (
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-2 text-sm font-bold text-text">
-              👥 {attendanceCounts.total} Singers
-            </span>
-            <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-[0.7rem] font-bold text-text-muted shadow-xs">
-              Present {attendanceCounts.present}
-            </span>
-            <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-[0.7rem] font-bold text-text-muted shadow-xs">
-              Absent {attendanceCounts.absent}
-            </span>
-            <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-[0.7rem] font-bold text-text-muted shadow-xs">
-              Unmarked {attendanceCounts.unmarked}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-end gap-2 lg:items-center">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 rounded-md bg-surface border border-border px-3 py-1.5 text-xs font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:bg-gray-100 lg:hidden"
-              onClick={() => setIsMobileActionsOpen((previous) => !previous)}
-              aria-expanded={isMobileActionsOpen}
-              aria-controls="attendance-mobile-actions"
-            >
-              {isMobileActionsOpen ? '⚡ Hide Bulk Actions ▲' : '⚡ Bulk Actions ▼'}
-            </button>
-
-            <div
-              className={`flex-row flex-wrap items-center gap-2.5 ${isMobileActionsOpen ? 'flex' : 'hidden lg:flex'}`}
-              id="attendance-mobile-actions"
-            >
-              {/* Refresh Button */}
-              <button
-                onClick={() => refresh()}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
-                title="Refresh Roster"
-                aria-label="Refresh roster"
-              >
-                🔄
-              </button>
-
-              <span className="h-5 w-px bg-border"></span>
-
-              {/* Bulk Present */}
-              <button
-                onClick={async () => {
-                  const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
-                  const confirmed = await dialog.confirm({
-                    title: 'Mark All Present',
-                    message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Present?`,
-                    confirmLabel: 'Mark Present',
-                    variant: 'info'
-                  });
-                  if (confirmed) {
-                    try {
-                      await setAllAttendance('Present', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                    } catch (err: unknown) {
-                      await dialog.showMessage({
-                        title: 'Error updating attendance',
-                        message: err instanceof Error ? err.message : 'Failed to bulk update',
-                        variant: 'danger'
-                      });
-                    }
-                  }
+              <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Select Event</span>
+              <select 
+                value={selectedEventId} 
+                onChange={(e) => {
+                  setSelectedEventId(e.target.value);
+                  handleResetFilters(); // Reset filters when changing active event
                 }}
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-4 text-xs font-bold text-primary-deep shadow-xs transition-all hover:bg-primary/20 active:scale-95"
+                className="h-10 w-full min-w-[240px] md:w-80 rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden text-slate-800"
               >
-                ✅ Mark All Present
-              </button>
-
-              {/* Bulk Absent */}
-              <button
-                onClick={async () => {
-                  if (remainingUnmarkedProfileIds.length === 0) return;
-                  const confirmed = await dialog.confirm({
-                    title: 'Mark Remaining Absent',
-                    message: `Mark the remaining ${attendanceCounts.unmarked} unmarked singers as Absent? Singers already marked Present will not be changed.`,
-                    confirmLabel: 'Mark Remaining Absent',
-                    variant: 'warning'
-                  });
-                  if (confirmed) {
-                    try {
-                      await setAllAttendance('Absent', remainingUnmarkedProfileIds);
-                    } catch (err: unknown) {
-                      await dialog.showMessage({
-                        title: 'Error updating attendance',
-                        message: err instanceof Error ? err.message : 'Failed to bulk update',
-                        variant: 'danger'
-                      });
-                    }
-                  }
-                }}
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-warning/30 bg-warning/10 px-4 text-xs font-bold text-warning-text shadow-xs transition-all enabled:hover:bg-warning/20 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={remainingUnmarkedProfileIds.length === 0}
-              >
-                ⚠️ Mark Remaining Absent
-              </button>
-
-              {/* Bulk Reset */}
-              <button
-                onClick={async () => {
-                  const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
-                  const confirmed = await dialog.confirm({
-                    title: 'Reset Attendance',
-                    message: `Are you sure you want to reset all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} to unmarked status?`,
-                    confirmLabel: 'Reset All',
-                    variant: 'warning'
-                  });
-                  if (confirmed) {
-                    try {
-                      await setAllAttendance('Pending', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                    } catch (err: unknown) {
-                      await dialog.showMessage({
-                        title: 'Error updating attendance',
-                        message: err instanceof Error ? err.message : 'Failed to bulk update',
-                        variant: 'danger'
-                      });
-                    }
-                  }
-                }}
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-border bg-surface px-4 text-xs font-bold text-text-muted shadow-xs transition-all hover:bg-gray-50 active:scale-95"
-              >
-                ⏳ Reset All
-              </button>
+                <option value="">-- Choose an Event --</option>
+                {sortedEvents.map(e => (
+                  <option key={e.id} value={e.id}>{formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.expand?.venue?.name || ''} ({e.type})</option>
+                ))}
+              </select>
             </div>
           </div>
-        </div>
-      )}
-
-      {selectedEventId && !isLoading && !error && (
-        <div className="flex flex-row flex-wrap items-end gap-4 rounded-lg border border-border bg-surface p-5 shadow-xs">
-          {/* Name Search */}
-          <div className="flex flex-[1_1_240px] flex-col gap-1.5">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Search by Name</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-              <input 
-                type="text"
-                value={filterName}
-                onChange={(e) => setFilterName(e.target.value)}
-                placeholder="Search name..."
-                className="h-10 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-              />
-            </div>
-          </div>
-
-          {/* Voice Part Filter */}
-          <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Voice Part</label>
-            <select
-              value={filterVoicePart}
-              onChange={(e) => setFilterVoicePart(e.target.value)}
-              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              <option value="">All Parts</option>
-              {voicePartLabels.map(part => (
-                <option key={part} value={part}>{part}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Attendance Status Filter */}
-          <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Attendance</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              <option value="">All Statuses</option>
-              <option value="Present">Present</option>
-              <option value="Absent">Absent</option>
-              <option value="Pending">Unmarked</option>
-            </select>
-          </div>
-
-          {/* RSVP Status Filter */}
-          <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">RSVP Status</label>
-            <select
-              value={rsvpFilter}
-              onChange={(e) => handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')}
-              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              <option value="Both">Both (Attending + Pending)</option>
-              <option value="Yes">Attending Only</option>
-              <option value="Pending">Pending Only</option>
-            </select>
-          </div>
-
-          {/* Sort By Filter */}
-          <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Sort By</label>
-            <select
-              value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')}
-              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              <option value="lastName">Last Name</option>
-              <option value="voicePart">Voice Part</option>
-              <option value="section">Section</option>
-            </select>
-          </div>
-
-          {/* Reset Action */}
-          {(filterName || filterVoicePart || filterStatus) && (
-            <button 
-              onClick={handleResetFilters}
-              className="h-10 self-end px-3 text-sm font-bold text-danger-text transition-colors hover:text-danger-text/80 active:opacity-70"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="rounded-lg border border-border bg-surface p-12 text-center shadow-xs">
-          <p className="m-0 font-medium text-text-muted">Loading attendance data...</p>
-        </div>
-      ) : error ? (
-        <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-8 text-center shadow-xs">
-          <p className="m-0 font-bold text-danger-text">{error}</p>
-        </div>
-      ) : selectedEventId ? (
-        checkInItems.length === 0 && declinedSingers.length === 0 ? (
-          <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-border bg-surface/30 p-12 text-center shadow-xs">
-            <span className="text-4xl">🔍</span>
-            <h3 className="mt-4 mb-2 text-xl font-extrabold text-text">No Matching Singers</h3>
-            <p className="mt-0 mb-6 max-w-sm text-sm font-medium text-text-muted">Try adjusting your search terms, voice parts, or attendance filters.</p>
-            <button 
-              onClick={handleResetFilters} 
-              className="rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95"
-            >
-              Reset All Filters
-            </button>
+        }
+      >
+        {!selectedEventId ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/20 p-24 text-center shadow-xs">
+            <span className="text-5xl opacity-40">📅</span>
+            <p className="mt-6 text-lg font-semibold text-text-muted">Please select an event above to start check-in.</p>
           </div>
         ) : (
-          <div className="flex w-full flex-col gap-6">
+          <div className="flex flex-col gap-6">
             
-            {/* Check-In List */}
-            <div className="flex w-full flex-col gap-1">
-              {checkInItems.length > 0 ? (
-                <CheckInList
-                  items={checkInItems}
-                  onSetAttendance={handleSetAttendance}
-                  onEdit={handleEditProfile}
-                  sortBy={sortBy}
-                  missCounts={missCounts}
-                  maxRehearsalMisses={maxRehearsalMisses}
-                />
-              ) : (
-                <div className="rounded-lg border border-dashed border-border bg-surface/30 p-6 text-center shadow-xs">
-                  <p className="m-0 text-sm font-medium text-text-muted">No singers match your RSVP filters.</p>
-                </div>
-              )}
-            </div>
-
-            {/* 3. Declined Singers Rescue Control */}
-            {declinedSingers.length > 0 && (
-              <div className="rounded-lg border border-danger-text/20 bg-danger-bg p-5 shadow-xs">
-                <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-bold text-danger-text">Rescue Declined RSVP</h3>
-                    <p className="m-0 text-xs font-medium text-warning-text/80">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
+            {/* Event Summary Details Block */}
+            {selectedEvent && (
+              <div className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary-light/50 p-4 transition-all duration-200 shadow-xs">
+                <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => setIsEventExpanded(!isEventExpanded)}>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Active Event</span>
+                    <div className="flex flex-row items-center gap-2">
+                      {selectedEvent.title && <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">{selectedEvent.title}</h2>}
+                      <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary/20 text-primary-deep'}`}>
+                        {selectedEvent.type}
+                      </span>
+                    </div>
                   </div>
                   
-                  <div className="flex w-full min-w-[320px] flex-row items-center gap-3 md:w-auto">
-                    <select
-                      value={selectedDeclinedProfileId}
-                      onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
-                      className="h-10 flex-1 rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-danger-text focus:ring-1 focus:ring-danger-text focus:outline-hidden md:w-64"
-                    >
-                      <option value="">-- Select Declined Singer --</option>
-                      {declinedSingers.map(s => (
-                        <option key={s.profileId} value={s.profileId}>{s.name} ({s.voicePart})</option>
-                      ))}
-                    </select>
-                    <button
-                      disabled={!selectedDeclinedProfileId}
-                      onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
-                      className="flex h-10 items-center gap-1.5 rounded-md border border-danger-text/30 bg-white px-4 text-xs font-bold text-danger-text shadow-sm transition-all enabled:hover:bg-danger-bg enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <span>+</span>
-                      Add Back
-                    </button>
+                  <button 
+                    type="button" 
+                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-text-muted transition-colors hover:bg-black/5 active:bg-black/10 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEventExpanded(!isEventExpanded);
+                    }}
+                    aria-expanded={isEventExpanded}
+                  >
+                    {isEventExpanded ? '▲ Hide' : '▼ Details'}
+                  </button>
+                </div>
+                
+                <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2">
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-sm font-bold text-primary-deep transition-colors hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span>📍</span>
+                    {selectedEvent.expand?.venue?.name || 'Unknown Venue'}
+                  </a>
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-text-muted">
+                    <span>📅</span>
+                    {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {isEventExpanded && selectedEvent.details && (
+                  <div className="mt-3 border-t border-primary/10 pt-3 text-sm text-text-muted">
+                    <span className="font-bold block text-[0.65rem] uppercase tracking-wider text-text-muted mb-1">Details / Notes</span>
+                    <p className="m-0 whitespace-pre-wrap">{selectedEvent.details}</p>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Voice Part Attendance Balance Summary Card */}
+            {voiceParts.length > 0 && (
+              <AppCard 
+                title="Voice Part Attendance Summary"
+                actions={
+                  <span className="inline-flex items-center rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold tracking-wider text-primary-deep uppercase">
+                    {filterStatus === '' && `Expected: ${expectedCount}`}
+                    {filterStatus === 'Present' && `Present: ${presentCount}`}
+                    {filterStatus === 'Absent' && `Absent: ${absentCount}`}
+                    {filterStatus === 'Pending' && `Unmarked: ${unmarkedCount}`}
+                  </span>
+                }
+                className="gap-4"
+              >
+                {/* Attendance Status Buttons acting on Voice Part Counts */}
+                <div className="flex flex-row flex-wrap gap-2 border-b border-gray-200 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('')}
+                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
+                      filterStatus === ''
+                        ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                    }`}
+                  >
+                    👥 Expected ({expectedCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('Present')}
+                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
+                      filterStatus === 'Present'
+                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                    }`}
+                  >
+                    🟢 Present ({presentCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('Absent')}
+                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
+                      filterStatus === 'Absent'
+                        ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                    }`}
+                  >
+                    🔴 Absent ({absentCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('Pending')}
+                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
+                      filterStatus === 'Pending'
+                        ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                    }`}
+                  >
+                    ⏳ Unmarked ({unmarkedCount})
+                  </button>
+                </div>
+
+                {/* Section Subtotals */}
+                <div
+                  className="grid gap-4 border-b border-gray-200 pb-4"
+                  // @allow-inline-style - dynamic grid columns based on section count
+                  style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
+                >
+                  {sections.map(sec => {
+                    const isSelected = selectedVoiceParts.includes(sec.code);
+                    return (
+                      <div
+                        key={sec.code}
+                        className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-colors duration-150 hover:bg-primary-light/80 ${
+                          isSelected
+                            ? 'border-primary shadow-[0_0_0_1px_var(--primary)]'
+                            : 'border-transparent'
+                        }`}
+                        onClick={() => handleVoicePartToggle(sec.code)}
+                      >
+                        <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
+                          {sec.name}
+                        </div>
+                        <div className="text-3xl leading-none font-extrabold text-primary-deep">
+                          {sectionCounts[sec.code] || 0}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Individual Part Breakdowns */}
+                <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
+                  {voiceParts.map(vp => {
+                    const isSelected = selectedVoiceParts.includes(vp.label);
+                    const count = partCounts.get(vp.label) || 0;
+                    return (
+                      <div
+                        key={vp.label}
+                        className={`flex cursor-pointer flex-col rounded-lg border bg-white transition-colors duration-150 hover:bg-primary-light ${
+                          isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'
+                        }`}
+                        onClick={() => handleVoicePartToggle(vp.label)}
+                        // @allow-inline-style - dynamic border and padding based on selection
+                        style={{
+                          borderWidth: isSelected ? '2px' : '1px',
+                          padding: isSelected ? 'calc(8px - 1px)' : '8px'
+                        }}
+                      >
+                        <div className="text-xs font-bold">{vp.label}</div>
+                        <div className="text-sm font-bold">{count}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </AppCard>
+            )}
+
+            {/* Filter and Bulk Action Toolbar */}
+            {!isLoading && !error && (
+              <div className="mt-1 flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-[280px] flex-[1_1_520px] flex-wrap items-center gap-2">
+                  {/* Search active singers */}
+                  <div className="relative min-w-[240px] flex-[1_1_280px]">
+                    <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-gray-500" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Search active singers..."
+                      value={filterName}
+                      onChange={(e) => setFilterName(e.target.value)}
+                      className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    />
+                    {filterName && (
+                      <button
+                        type="button"
+                        onClick={() => setFilterName('')}
+                        className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
+                        title="Clear search"
+                        aria-label="Clear search"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sort By selector */}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')}
+                    className="h-11 w-[210px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    aria-label="Sort singers"
+                  >
+                    <option value="lastName">Last Name</option>
+                    <option value="voicePart">Voice Part + Last Name</option>
+                    <option value="section">Section + Last Name</option>
+                  </select>
+
+                  {/* RSVP Filter Selection */}
+                  <select
+                    value={rsvpFilter}
+                    onChange={(e) => handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')}
+                    className="h-11 w-[240px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    aria-label="RSVP Status Filter"
+                  >
+                    <option value="Both">Both (Attending + Pending)</option>
+                    <option value="Yes">Attending Only</option>
+                    <option value="Pending">Pending RSVP Only</option>
+                  </select>
+
+                  {/* Reset Filters action */}
+                  {(filterName || selectedVoiceParts.length > 0 || filterStatus !== '' || rsvpFilter !== 'Both') && (
+                    <Button
+                      onClick={handleResetFilters}
+                      variant="secondary"
+                      className="flex h-11 items-center gap-1 whitespace-nowrap font-bold"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                      </svg>
+                      Reset Filters
+                    </Button>
+                  )}
+                </div>
+
+                {/* Bulk Actions Panel */}
+                <div className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2" aria-label="Bulk attendance actions">
+                  <span className="text-xs font-bold whitespace-nowrap text-gray-500">{filteredCheckInItems.length} shown</span>
+                  
+                  {/* Refresh Button */}
+                  <button
+                    onClick={() => refresh()}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95 cursor-pointer"
+                    title="Refresh Roster"
+                    aria-label="Refresh roster"
+                  >
+                    🔄
+                  </button>
+
+                  {/* Bulk Present */}
+                  <Button
+                    onClick={async () => {
+                      const isFiltered = Boolean(filterName || selectedVoiceParts.length > 0 || filterStatus);
+                      const confirmed = await dialog.confirm({
+                        title: 'Mark All Present',
+                        message: `Are you sure you want to mark all ${isFiltered ? `${filteredCheckInItems.length} filtered singers` : 'singers'} as Present?`,
+                        confirmLabel: 'Mark Present',
+                        variant: 'info'
+                      });
+                      if (confirmed) {
+                        try {
+                          await setAllAttendance('Present', isFiltered ? filteredCheckInItems.map(i => i.profileId) : undefined);
+                        } catch (err: unknown) {
+                          await dialog.showMessage({
+                            title: 'Error updating attendance',
+                            message: err instanceof Error ? err.message : 'Failed to bulk update',
+                            variant: 'danger'
+                          });
+                        }
+                      }
+                    }}
+                    variant="primary"
+                    className="font-bold"
+                  >
+                    Mark Present
+                  </Button>
+
+                  {/* Bulk Absent */}
+                  <Button
+                    onClick={async () => {
+                      if (remainingUnmarkedProfileIds.length === 0) return;
+                      const confirmed = await dialog.confirm({
+                        title: 'Mark Remaining Absent',
+                        message: `Mark the remaining ${unmarkedCount} unmarked singers as Absent? Singers already marked Present will not be changed.`,
+                        confirmLabel: 'Mark Remaining Absent',
+                        variant: 'warning'
+                      });
+                      if (confirmed) {
+                        try {
+                          await setAllAttendance('Absent', remainingUnmarkedProfileIds);
+                        } catch (err: unknown) {
+                          await dialog.showMessage({
+                            title: 'Error updating attendance',
+                            message: err instanceof Error ? err.message : 'Failed to bulk update',
+                            variant: 'danger'
+                          });
+                        }
+                      }
+                    }}
+                    variant="danger"
+                    className="font-bold"
+                    disabled={remainingUnmarkedProfileIds.length === 0}
+                  >
+                    Mark Remaining Absent
+                  </Button>
+
+                  {/* Bulk Reset */}
+                  <Button
+                    onClick={async () => {
+                      const isFiltered = Boolean(filterName || selectedVoiceParts.length > 0 || filterStatus);
+                      const confirmed = await dialog.confirm({
+                        title: 'Reset Attendance',
+                        message: `Are you sure you want to reset all ${isFiltered ? `${filteredCheckInItems.length} filtered singers` : 'singers'} to unmarked status?`,
+                        confirmLabel: 'Reset All',
+                        variant: 'warning'
+                      });
+                      if (confirmed) {
+                        try {
+                          await setAllAttendance('Pending', isFiltered ? filteredCheckInItems.map(i => i.profileId) : undefined);
+                        } catch (err: unknown) {
+                          await dialog.showMessage({
+                            title: 'Error updating attendance',
+                            message: err instanceof Error ? err.message : 'Failed to bulk update',
+                            variant: 'danger'
+                          });
+                        }
+                      }
+                    }}
+                    variant="secondary"
+                    className="font-bold"
+                  >
+                    Reset All
+                  </Button>
                 </div>
               </div>
             )}
 
+            {/* Attendance List */}
+            {isLoading ? (
+              <div className="rounded-lg border border-border bg-surface p-12 text-center shadow-xs">
+                <p className="m-0 font-medium text-text-muted">Loading attendance data...</p>
+              </div>
+            ) : error ? (
+              <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-8 text-center shadow-xs">
+                <p className="m-0 font-bold text-danger-text">{error}</p>
+              </div>
+            ) : filteredCheckInItems.length === 0 && declinedSingers.length === 0 ? (
+              <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-border bg-surface/30 p-12 text-center shadow-xs">
+                <span className="text-4xl">🔍</span>
+                <h3 className="mt-4 mb-2 text-xl font-extrabold text-text">No Matching Singers</h3>
+                <p className="mt-0 mb-6 max-w-sm text-sm font-medium text-text-muted">Try adjusting your search terms, voice parts, or attendance filters.</p>
+                <button 
+                  onClick={handleResetFilters} 
+                  className="rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95 cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="flex w-full flex-col gap-6">
+                
+                {/* Main Check-In list table */}
+                <div className="flex w-full flex-col gap-1">
+                  {filteredCheckInItems.length > 0 ? (
+                    <CheckInList
+                      items={filteredCheckInItems}
+                      onSetAttendance={handleSetAttendance}
+                      onEdit={handleEditProfile}
+                      sortBy={sortBy}
+                      missCounts={missCounts}
+                      maxRehearsalMisses={maxRehearsalMisses}
+                    />
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border bg-surface/30 p-6 text-center shadow-xs">
+                      <p className="m-0 text-sm font-medium text-text-muted">No singers match your RSVP or attendance filters.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Declined Singers Rescue Control */}
+                {declinedSingers.length > 0 && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-5 shadow-xs">
+                    <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+                      <div className="flex flex-col gap-1">
+                        <h3 className="text-sm font-bold text-red-800">Rescue Declined RSVP</h3>
+                        <p className="m-0 text-xs font-medium text-red-600/80">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
+                      </div>
+                      
+                      <div className="flex w-full min-w-[320px] flex-row items-center gap-3 md:w-auto">
+                        <select
+                          value={selectedDeclinedProfileId}
+                          onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
+                          className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-xs transition-colors focus:border-red-600 focus:ring-1 focus:ring-red-600 focus:outline-hidden md:w-64 text-slate-800"
+                        >
+                          <option value="">-- Select Declined Singer --</option>
+                          {declinedSingers.map(s => (
+                            <option key={s.profileId} value={s.profileId}>{s.name} ({s.voicePart})</option>
+                          ))}
+                        </select>
+                        <Button
+                          disabled={!selectedDeclinedProfileId}
+                          onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
+                          variant="danger"
+                          className="font-bold whitespace-nowrap"
+                        >
+                          + Add Back
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )
-      ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/20 p-24 text-center shadow-xs">
-          <span className="text-5xl opacity-40">📅</span>
-          <p className="mt-6 text-lg font-semibold text-text-muted">Please select an event above to start check-in.</p>
-        </div>
-      )}
+        )}
+      </AppCard>
 
       <SingerModal
         isOpen={Boolean(editingProfile)}

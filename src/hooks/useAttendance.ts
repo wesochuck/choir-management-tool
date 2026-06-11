@@ -15,6 +15,7 @@ export interface AttendanceItem {
   rosterId?: string;
   folderNumber: string;
   folderReturned: boolean;
+  photo?: string;
 }
 
 export interface UseAttendanceOptions {
@@ -90,6 +91,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
             rosterId: roster?.id,
             folderNumber: parentRoster?.folderNumber || '',
             folderReturned: parentRoster?.folderReturned || false,
+            photo: p.photo,
           };
         });
 
