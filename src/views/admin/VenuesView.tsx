@@ -10,7 +10,7 @@ export default function VenuesView() {
   const { venues, isLoading, addVenue, editVenue, removeVenue } = useVenues();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+
   const [name, setName] = useState('');
   const [rowCountsStr, setRowCountsStr] = useState('');
   const [address, setAddress] = useState('');
@@ -37,7 +37,7 @@ export default function VenuesView() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const rowCounts = isOpenSeating ? [] : rowCountsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-    
+
     try {
       if (editingId) {
         await editVenue(editingId, { name, rowCounts, address, isOpenSeating });
@@ -84,37 +84,47 @@ export default function VenuesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      {!isAdding && (
-        <div className="flex justify-end">
-          <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
+      <div className="mb-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Venue Templates
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Configure stage address information, row capacities and default layouts for seating charts.
+          </p>
         </div>
-      )}
+        {!isAdding && (
+          <div className="flex-shrink-0">
+            <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
+          </div>
+        )}
+      </div>
 
       {isAdding && (
         <AppCard title={editingId ? 'Edit Venue' : 'Create New Venue'}>
           <form onSubmit={handleSave} className="flex flex-col gap-4">
             <FormField label="Venue Name" required>
-              <Input 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="e.g. Main Sanctuary"
               />
             </FormField>
-            
+
             <FormField label="Address">
-              <Input 
-                value={address} 
+              <Input
+                value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 123 Main St, City, State"
               />
             </FormField>
-            
+
             <div className="flex flex-row items-center gap-2 py-1">
-              <input 
+              <input
                 type="checkbox"
                 id="isOpenSeating"
-                checked={isOpenSeating} 
+                checked={isOpenSeating}
                 onChange={(e) => setIsOpenSeating(e.target.checked)}
                 className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
               />
@@ -122,22 +132,22 @@ export default function VenuesView() {
                 Open Seating (No assigned seats)
               </label>
             </div>
-            
+
             {!isOpenSeating && (
-              <FormField 
-                label="Row Capacities (Comma separated)" 
+              <FormField
+                label="Row Capacities (Comma separated)"
                 required
                 helpText="Enter the number of seats for each row, starting from the front."
               >
-                <Input 
-                  value={rowCountsStr} 
-                  onChange={(e) => setRowCountsStr(e.target.value)} 
+                <Input
+                  value={rowCountsStr}
+                  onChange={(e) => setRowCountsStr(e.target.value)}
                   required
                   placeholder="e.g. 12, 15, 18, 20"
                 />
               </FormField>
             )}
-            
+
             <div className="mt-2 flex flex-col justify-end gap-3 md:flex-row">
               <Button variant="ghost" onClick={resetForm}>Cancel</Button>
               <Button type="submit" variant="primary">Save Template</Button>
@@ -148,9 +158,9 @@ export default function VenuesView() {
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (
-          <AppCard 
-            key={v.id} 
-            onClick={() => handleEdit(v)} 
+          <AppCard
+            key={v.id}
+            onClick={() => handleEdit(v)}
             className="h-full cursor-pointer hover:border-primary/50 hover:bg-primary-light/5 hover:shadow-md transition-all duration-200"
           >
             <h3 className="text-xl font-bold text-text border-b border-border pb-2 mb-3">
@@ -160,10 +170,10 @@ export default function VenuesView() {
               {v.address && (
                 <div className="text-body">
                   <span className="text-muted">Address:</span>{' '}
-                  <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.address)}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-primary hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -190,12 +200,12 @@ export default function VenuesView() {
               )}
             </div>
             <div className="mt-4 flex flex-row gap-2.5 w-full">
-              <Button 
-                variant="secondary" 
-                className="flex-1" 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  handleEdit(v); 
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(v);
                 }}
               >
                 Edit

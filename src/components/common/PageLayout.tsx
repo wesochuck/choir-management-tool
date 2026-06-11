@@ -14,7 +14,7 @@ interface PageLayoutProps {
 }
 
 export const PageLayout: React.FC<PageLayoutProps> = ({ 
-  children, title, subtitle, actions, maxWidth = '1200px' 
+  children, title, actions, maxWidth = '1200px' 
 }) => {
   useDocumentTitle(title);
   const { user } = useAuth();
@@ -32,10 +32,6 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
         <div className="mx-auto flex items-center justify-between gap-6 px-6 py-3" style={{ maxWidth }}>
           <div className="flex items-center gap-6">
             <Link to="/" className="inline-flex h-[38px] items-center justify-center rounded-md border border-border bg-transparent px-4 text-sm font-semibold whitespace-nowrap text-text-muted no-underline transition-all duration-200 hover:bg-primary-light hover:text-primary-deep" title="Dashboard">🏠 Home</Link>
-            <div className="flex flex-col">
-              <h2 className="text-xl font-bold text-text">{title}</h2>
-              {subtitle && <p className="text-[0.8125rem] text-text-muted">{subtitle}</p>}
-            </div>
           </div>
           {(actions || user?.role === 'admin') && (
             <div className="flex items-center gap-4">
