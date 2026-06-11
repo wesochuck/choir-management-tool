@@ -30,7 +30,7 @@ export function SeatingTextList({
   }, [rows]);
 
   return (
-    <div className="seating-text-list flex-col gap-4 p-4">
+    <div className="flex-col gap-4 p-4" data-seating-text-list>
       {reversedRows.map((row, index) => {
         const originalIndex = rows.length - 1 - index;
         const isFront = originalIndex === 0;
@@ -47,11 +47,11 @@ export function SeatingTextList({
           : 'No singers assigned';
 
         return (
-          <div key={originalIndex} className="row-text-entry flex-col">
-            <h3 className="text-label row-text-header" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
+          <div key={originalIndex} className="flex-col gap-[var(--space-xs)]">
+            <h3 className="text-label m-0 border-b-2 border-[var(--primary)] pb-1 text-[var(--primary-deep)]" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
               {label} {assignedSingers.length}/{row.length}
             </h3>
-            <div className="row-text-content text-sm">
+            <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)] text-sm leading-relaxed">
               {namesString}
             </div>
           </div>

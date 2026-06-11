@@ -180,7 +180,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div
       ref={gridRef}
-      className={`grid-print flex-col ${isCompact ? 'grid-print-compact' : ''}`}
+      className="flex-col"
       // @allow-inline-style - dynamic gap, padding, and --max-seats computed from layout
       style={{
         gap: rowGap,
@@ -267,7 +267,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "🗑️" remove row button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="seating-row-action-btn seating-row-action-btn-remove no-print btn btn-ghost mr-1.5 cursor-pointer text-[13px] shadow-sm transition-all duration-200"
+                className="no-print btn btn-ghost ml-1.5 inline-flex size-7 min-w-7 min-h-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-danger-bg p-0 text-[13px] font-bold text-danger-text shadow-sm transition-all duration-200"
                 onClick={async () => {
                   const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
                   let shouldRemove = true;
@@ -380,7 +380,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
               const scale = isHovered ? hoverScale : (isNeighbor ? neighborScale : 1.0);
               const translateY = isHovered ? hoverTranslateY : (isNeighbor ? neighborTranslateY : 0);
-              const zIndex = isHovered ? 10 : (isNeighbor ? 5 : 1);
+              const zIndex = activeDragOver === seatKey ? 100 : (isHovered ? 10 : (isNeighbor ? 5 : 1));
               const boxShadow = isHovered ? 'var(--shadow-lg)' : (isNeighbor ? 'var(--shadow-sm)' : 'none');
 
               return (
@@ -408,7 +408,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   draggable={!isReadOnly && !!assignedProfile}
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                   title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}` : `Empty Space ${seatIndex + 1}`)}
-                  className={`group relative flex size-8 cursor-pointer flex-col items-center justify-center rounded-md bg-primary-light text-xs font-medium text-primary-deep transition-colors hover:bg-primary hover:text-surface ${assignedProfile ? 'seat-assigned' : 'seat-empty'} ${isMismatch ? 'section-mismatch' : ''} ${activeDragOver === seatKey ? 'drag-target' : ''}`}
+                  className={`group relative flex size-8 cursor-pointer flex-col items-center justify-center rounded-md bg-primary-light text-xs font-medium text-primary-deep transition-colors hover:bg-primary hover:text-surface ${isMismatch ? 'bg-[linear-gradient(135deg,rgba(0,0,0,0.08)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.08)_50%,rgba(0,0,0,0.08)_75%,transparent_75%,transparent)] bg-[length:10px_10px]' : ''} ${activeDragOver === seatKey ? 'animate-drop-zone-pulse border-dashed border-2' : ''}`}
                   // @allow-inline-style - all seat dimensions, colors, borders, transform computed from props and state
                   style={{
                     width: `${seatSize}px`,
@@ -430,12 +430,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     gap: 0,
                     transform: `scale(${scale}) translateY(${translateY}px)`,
                     zIndex: zIndex,
+                    opacity: activeDragOver === seatKey ? 0.95 : undefined,
                     transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s'
                   }}
                 >
                   {activeDragOver === seatKey && (
-                    <div className="drag-overlay">
-                      <span className="drag-overlay-icon"
+                    <div className="absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18 pointer-events-none">
+                      <span className="animate-bounce-subtle inline-block leading-none"
                         // @allow-inline-style - dynamic font size based on compact mode
                         style={{ fontSize: isCompact ? '1.125rem' : '1.5rem' }}>
                         {assignedProfile ? '🔄' : '📥'}
@@ -541,7 +542,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </button>
                   )}
 
-                  <div className="seat-label"
+                  <div
                     // @allow-inline-style - dynamic color and font size from computed seat styles
                     style={{ fontWeight: 700, color: seatTextColor, fontSize: isCompact ? '0.75rem' : '0.875rem' }}>
                     {displaySuggestion
@@ -550,15 +551,15 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     }
                   </div>
                   {assignedProfile ? (
-                    <div className="seat-person flex-col"
+                    <div className="flex-col"
                       // @allow-inline-style - dynamic gap based on compact mode
                       style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
-                      <div className="seat-initials"
+                      <div
                         // @allow-inline-style - dynamic font size and color from computed styles
                         style={{ fontWeight: 800, fontSize: seatNameFontSize, color: colors.text, lineHeight: 1.1 }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
-                      <div className="seat-voice-part"
+                      <div
                         // @allow-inline-style - dynamic font size and color from computed styles
                         style={{ fontWeight: 700, color: colors.text, fontSize: seatVoicePartFontSize }}>
                         {assignedProfile.voicePart}
@@ -587,7 +588,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "+" add seat button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="seating-row-action-btn seating-row-action-btn-add no-print btn btn-ghost cursor-pointer shadow-sm transition-all duration-200"
+                className="no-print btn btn-ghost ml-3 inline-flex size-7 min-w-7 min-h-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-primary bg-primary-light p-0 text-[15px] font-bold text-primary-deep shadow-sm transition-all duration-200"
                 onClick={() => {
                   const newRowCounts = [...rowCounts];
                   newRowCounts[rowIndex] += 1;
@@ -602,7 +603,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "-" remove seat button */}
             {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
               <button
-                className="seating-row-action-btn seating-row-action-btn-remove no-print btn btn-ghost cursor-pointer shadow-sm transition-all duration-200"
+                className="no-print btn btn-ghost ml-1.5 inline-flex size-7 min-w-7 min-h-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-danger-text bg-danger-bg p-0 text-[15px] font-bold text-danger-text shadow-sm transition-all duration-200"
                 onClick={async () => {
                   const seatIndex = seatCount - 1;
                   const seatKey = `${rowIndex}-${seatIndex}`;

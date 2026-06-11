@@ -21,8 +21,6 @@ import { SingerModal } from '../../components/admin/SingerModal';
 import { SingerLookupModal } from '../../components/admin/SingerLookupModal';
 import { profileService } from '../../services/profileService';
 import { rosterService } from '../../services/rosterService';
-import './SeatingView.css';
-
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
@@ -409,7 +407,7 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="btn btn-sm btn-ghost no-print !h-9 min-h-[36px] border border-dashed border-[var(--primary)] bg-[var(--primary-light)] px-[var(--space-sm)] text-[0.8125rem] font-semibold text-[var(--primary-deep)]" 
+                  className="no-print inline-flex h-9 min-h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-dashed border-[var(--primary)] bg-[var(--primary-light)] px-[var(--space-sm)] text-[0.8125rem] font-semibold text-[var(--primary-deep)]" 
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -532,7 +530,7 @@ export default function SeatingView() {
                       e.stopPropagation();
                       if (!isActive) setActiveChartId(c.id);
                     }}
-                    className="btn btn-sm btn-ghost h-auto min-h-auto rounded-none border-none bg-transparent p-[4px_8px] font-medium shadow-none"
+                    className="inline-flex h-auto min-h-auto items-center justify-center gap-2 whitespace-nowrap rounded-none border-none bg-transparent p-[4px_8px] text-xs font-medium shadow-none"
                     // @allow-inline-style - dynamic font weight and color based on active state
                     style={{ 
                       fontWeight: isActive ? 700 : 500,
@@ -550,7 +548,7 @@ export default function SeatingView() {
                           setRenameChartName(c.name);
                           setIsRenameChartModalOpen(true);
                         }}
-                        className="btn btn-ghost btn-sm inline-flex !h-7 min-h-[28px] min-w-auto items-center justify-center !p-1 text-[0.85rem]"
+                        className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-4 text-xs font-label text-[var(--text-muted)]"
                         title="Rename chart"
                       >
                         ✏️
@@ -569,7 +567,7 @@ export default function SeatingView() {
                               await deleteChart(c.id);
                             }
                           }}
-                          className="btn btn-ghost btn-sm inline-flex !h-7 min-h-[28px] min-w-auto items-center justify-center !p-1 text-[0.85rem] !text-[var(--color-danger-text)]"
+                          className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-4 text-xs font-label text-[var(--color-danger-text)]"
                           title="Delete chart"
                         >
                           ❌
@@ -615,7 +613,7 @@ export default function SeatingView() {
             {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
             <button
               onClick={() => setIsNewChartModalOpen(true)}
-              className="btn btn-sm btn-ghost mb-2 inline-flex !h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--border)] p-0 text-xl font-extrabold text-[var(--primary)]"
+              className="mb-2 inline-flex h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--border)] bg-transparent p-0 text-xl font-extrabold text-[var(--primary)]"
               title="Create new seating chart"
             >
               +
@@ -624,26 +622,26 @@ export default function SeatingView() {
 
           <div className="flex w-full min-w-0 flex-col items-start gap-[var(--space-md)] sm:flex-row">
           <AppCard className="max-w-full min-w-0 flex-1 flex-col p-[var(--space-md)]">
-            <div className="no-print seating-toolbar">
-               <div className="seating-toolbar-row">
-                  <button onClick={handleClear} className="btn btn-sm btn-ghost seating-toolbar-btn">
+            <div className="no-print flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--primary-light)] p-1.5 px-3 shadow-sm">
+               <div className="flex flex-row gap-1">
+                  <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-label text-[var(--text-muted)]">
                     🧹 Clear
                   </button>
-                  <button onClick={handleReset} className="btn btn-sm btn-danger seating-toolbar-btn-danger">
+                  <button onClick={handleReset} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--color-danger-bg)] px-2.5 text-xs font-label text-[var(--color-danger-text)]">
                     💥 Reset
                   </button>
                </div>
                
-               <div className="no-print seating-toolbar-segmented-group flex-row">
+               <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5">
                 <button 
                   onClick={() => setPrintMode('visual')}
-                  className={`btn btn-sm ${printMode === 'visual' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
+                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'visual' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-[var(--text-muted)]'}`}
                 >
                   Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
-                  className={`btn btn-sm ${printMode === 'text' ? 'btn-primary' : 'btn-ghost'} seating-toolbar-segmented-btn`}
+                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'text' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-[var(--text-muted)]'}`}
                 >
                   List
                 </button>
@@ -653,7 +651,7 @@ export default function SeatingView() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`btn btn-sm ${isFullscreen ? 'btn-primary' : 'btn-ghost'} seating-toolbar-btn-fullscreen`}
+                    className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] px-2.5 text-xs font-label ${isFullscreen ? 'text-[var(--bg,white)]' : 'text-[var(--text-muted)]'}`}
                     // @allow-inline-style - dynamic fullscreen state background
                     style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
                   >
@@ -673,12 +671,12 @@ export default function SeatingView() {
                  )}
                </div>
                
-               <div className="seating-copy-section flex-row">
-                  <span className="text-label text-muted seating-copy-label">Copy:</span>
+               <div className="flex flex-1 flex-row items-center justify-center gap-1 min-w-[200px]">
+                  <span className="whitespace-nowrap text-xs font-semibold text-[var(--text-muted)]">Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="seating-copy-select"
+                    className="h-8 min-h-8 max-w-[200px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-[10px] text-xs"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
@@ -689,17 +687,17 @@ export default function SeatingView() {
                   </select>
                </div>
 
-               <button onClick={handlePrint} className="btn btn-sm btn-primary seating-toolbar-btn-print">
+               <button onClick={handlePrint} className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--primary)] bg-[var(--primary)] px-2.5 text-xs font-label text-[var(--surface)]">
                   🖨️ Print
                </button>
-               <div className="seating-save-feedback-wrap seating-toolbar-save-wrap">
+               <div className="flex flex-row items-center gap-1">
                  <SavingIndicator isSaving={isSaving} error={saveError} />
-                 <span className="seating-autosave-tag">
+                 <span className="mr-1 whitespace-nowrap text-xs font-medium text-[var(--text-muted)]">
                    Auto-saved
                  </span>
                  <button
                    onClick={handleManualSave}
-                   className="btn btn-sm btn-ghost seating-toolbar-btn-save"
+                   className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-2.5 text-xs font-label text-[var(--text-muted)]"
                    // @allow-inline-style - dynamic save feedback color
                    style={{ 
                      color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
@@ -720,7 +718,7 @@ export default function SeatingView() {
                 <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
                 {selectedVenue.address && (
                   <p className="mt-[var(--space-md)]">
-                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-6 font-label text-[var(--text-muted)]">
                       📍 View Map
                     </a>
                   </p>
@@ -824,14 +822,14 @@ export default function SeatingView() {
                     <button
                       type="button"
                       onClick={() => setIsSingerLookupOpen(true)}
-                      className="btn btn-secondary btn-sm !h-7 min-h-[28px] px-2 text-[11px] font-semibold"
+                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--primary-light)] px-2 text-[11px] font-semibold text-[var(--primary-deep)]"
                     >
                       🔍 Lookup
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSingerModalOpen(true)}
-                      className="btn btn-secondary btn-sm !h-7 min-h-[28px] px-2 text-[11px] font-semibold"
+                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--primary-light)] px-2 text-[11px] font-semibold text-[var(--primary-deep)]"
                     >
                       + Add New
                     </button>
@@ -895,7 +893,7 @@ export default function SeatingView() {
           <>
             <button 
               type="button"
-              className="btn btn-ghost" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-6 font-label text-[var(--text-muted)]" 
               onClick={() => {
                 setIsNewChartModalOpen(false);
                 setNewChartName('');
@@ -906,7 +904,7 @@ export default function SeatingView() {
             <button 
               type="submit"
               form="new-chart-form"
-              className="btn btn-primary" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--primary)] bg-[var(--primary)] px-6 font-label text-[var(--surface)]" 
               disabled={!newChartName.trim()}
             >
               Create
@@ -952,7 +950,7 @@ export default function SeatingView() {
           <>
             <button 
               type="button"
-              className="btn btn-ghost" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-6 font-label text-[var(--text-muted)]" 
               onClick={() => {
                 setIsRenameChartModalOpen(false);
                 setRenameChartName('');
@@ -964,7 +962,7 @@ export default function SeatingView() {
             <button 
               type="submit"
               form="rename-chart-form"
-              className="btn btn-primary" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--primary)] bg-[var(--primary)] px-6 font-label text-[var(--surface)]" 
               disabled={!renameChartName.trim()}
             >
               Save
