@@ -16,8 +16,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { resolveInitialEventId } from '../../lib/eventUtils';
-import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink } from '../../lib/setList/setListItems';
-import { escapeHtml } from '../../lib/textSafety';
+import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink, buildSetListPlainText } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -81,36 +80,13 @@ export default function SetListView() {
 
   const getPlainText = () => {
     if (!selectedEvent) return '';
-    const dateStr = formatInTimezone(selectedEvent.date, timezone, { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-    const timeStr = formatInTimezone(selectedEvent.date, timezone, {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-    const venueStr = selectedEvent.expand?.venue?.name || '';
-    
-    let text = `Set List: ${selectedEvent.title || selectedEvent.type}\n`;
-    text += `Date: ${dateStr}\n`;
-    text += `Time: ${timeStr}\n`;
-    if (venueStr) text += `Venue: ${venueStr}\n`;
-    text += `\n`;
-    
-    let songIndex = 1;
-    itemsWithDetails.forEach((item) => {
-      if (item.type === 'intermission') {
-        text += `${item.displayTitle || 'Intermission'}\n`;
-      } else {
-        const composerSuffix = item.displayComposer ? ` ~ ${item.displayComposer}` : '';
-        text += `${songIndex}. ${item.displayTitle}${composerSuffix}\n`;
-        songIndex++;
-      }
-    });
-    
-    return text;
+    return buildSetListPlainText(
+      selectedEvent.title || selectedEvent.type,
+      selectedEvent.date,
+      timezone,
+      selectedEvent.expand?.venue?.name || '',
+      itemsWithDetails
+    );
   };
 
   const handleCopyList = async () => {
@@ -126,171 +102,7 @@ export default function SetListView() {
   };
 
   const handlePrintList = () => {
-    if (!selectedEvent) return;
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!printWindow) {
-      dialog.showMessage({
-        title: 'Popup Blocked',
-        message: 'Could not open print window. Please allow popups for this site.',
-        variant: 'danger'
-      });
-      return;
-    }
-
-    const dateStr = formatInTimezone(selectedEvent.date, timezone, { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-    const timeStr = formatInTimezone(selectedEvent.date, timezone, {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-    const safeEventTitle = escapeHtml(selectedEvent.title || selectedEvent.type);
-    const safeVenue = escapeHtml(selectedEvent.expand?.venue?.name || '');
-
-    let songIndex = 1;
-    const itemsHTML = itemsWithDetails.map((item) => {
-      if (item.type === 'intermission') {
-        return `
-          <div class="printable-setlist-intermission">
-            ${escapeHtml(item.displayTitle || 'Intermission')}
-          </div>
-        `;
-      } else {
-        const safeComposer = escapeHtml(item.displayComposer || '');
-        const composerHTML = safeComposer
-          ? `<span class="printable-setlist-composer">${safeComposer}</span>`
-          : '';
-        const el = `
-          <div class="printable-setlist-item">
-            <span class="printable-setlist-title">${songIndex}. ${escapeHtml(item.displayTitle)}</span>
-            ${composerHTML}
-          </div>
-        `;
-        songIndex++;
-        return el;
-      }
-    }).join('');
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Set List: ${safeEventTitle}</title>
-          <style>
-            @media print {
-              body {
-                background: white !important;
-                color: black !important;
-                margin: 0 !important;
-                padding: 0 !important;
-              }
-            }
-            body {
-              font-family: Georgia, serif;
-              max-width: 600px;
-              margin: 40px auto;
-              padding: 20px;
-              background: white;
-              color: #333;
-            }
-            .printable-setlist {
-              border: 1px solid #ccc;
-              border-radius: 8px;
-              padding: 30px;
-              background: white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            }
-            @media print {
-              .printable-setlist {
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-              }
-            }
-            .printable-header {
-              text-align: center;
-              margin-bottom: 20px;
-            }
-            .printable-title {
-              margin: 0 0 6px 0;
-              font-size: 1.6rem;
-              color: #111;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              font-weight: 700;
-            }
-            .printable-meta {
-              font-size: 0.9rem;
-              color: #666;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              font-weight: 500;
-            }
-            .printable-divider {
-              border: none;
-              border-bottom: 2px solid #333;
-              margin: 20px 0;
-            }
-            .printable-setlist-items {
-              display: flex;
-              flex-direction: column;
-              gap: 8px;
-            }
-            .printable-setlist-item {
-              font-size: 1.1rem;
-              padding: 4px 0;
-              border-bottom: 1px solid #fafafa;
-              display: flex;
-              justify-content: space-between;
-              align-items: baseline;
-              gap: 15px;
-            }
-            .printable-setlist-title {
-              font-weight: 500;
-              color: #111;
-            }
-            .printable-setlist-composer {
-              font-size: 0.95rem;
-              color: #555;
-              font-style: italic;
-              text-align: right;
-            }
-            .printable-setlist-intermission {
-              font-size: 1.1rem;
-              font-weight: bold;
-              padding: 10px 0;
-              color: #555;
-              text-align: center;
-              border-top: 1px dashed #ddd;
-              border-bottom: 1px dashed #ddd;
-              margin: 10px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="printable-setlist">
-            <div class="printable-header">
-              <h2 class="printable-title">${safeEventTitle}</h2>
-              <div class="printable-meta">
-                ${dateStr} at ${timeStr} ${safeVenue ? ` | ${safeVenue}` : ''}
-              </div>
-            </div>
-            <hr class="printable-divider" />
-            <div class="printable-setlist-items">
-              ${itemsHTML}
-            </div>
-          </div>
-          <script>
-            setTimeout(() => {
-              window.print();
-              window.close();
-            }, 250);
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    window.print();
   };
 
   // Audio player state
@@ -646,7 +458,7 @@ export default function SetListView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="no-print flex flex-row items-center justify-between gap-4">
+      <div className="flex flex-row items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Set Lists
@@ -678,7 +490,8 @@ export default function SetListView() {
         </div>
       </div>
 
-      <AppCard noPadding>
+      <div className="no-print">
+        <AppCard noPadding>
         <div className="flex flex-col gap-4 border-b border-border px-4 py-3">
           <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[1.5fr_1.5fr_1fr]">
             <div>
@@ -892,8 +705,51 @@ export default function SetListView() {
           </div>
         )}
       </AppCard>
+      </div>
 
-      <MusicPieceModal
+      <div className="print-only mx-auto max-w-2xl p-8">
+        {selectedEvent && (
+          <>
+            <div className="mb-6 text-center">
+              <h2 className="mb-1 text-2xl font-bold text-gray-900">{selectedEvent.title || selectedEvent.type}</h2>
+              <p className="text-sm text-gray-600">
+                {formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                {' at '}
+                {formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}
+                {selectedEvent.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
+              </p>
+            </div>
+            <hr className="mb-6 border-t-2 border-gray-900" />
+            <div className="flex flex-col gap-2">
+              {(() => {
+                let songIndex = 1;
+                return itemsWithDetails.map((item) => {
+                  if (item.type === 'intermission') {
+                    return (
+                      <div key={item.id} className="my-2 border-y border-dashed border-gray-300 py-2 text-center text-base font-bold text-gray-600">
+                        {item.displayTitle || 'Intermission'}
+                      </div>
+                    );
+                  }
+                  const el = (
+                    <div key={item.id} className="flex items-baseline justify-between gap-4 border-b border-gray-100 py-1 text-lg">
+                      <span className="font-medium text-gray-900">{songIndex}. {item.displayTitle}</span>
+                      {item.displayComposer && (
+                        <span className="text-right text-base italic text-gray-600">{item.displayComposer}</span>
+                      )}
+                    </div>
+                  );
+                  songIndex++;
+                  return el;
+                });
+              })()}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="no-print">
+        <MusicPieceModal
         isOpen={isLibraryModalOpen}
         piece={libraryEditingPiece}
         onClose={() => {
@@ -1004,6 +860,7 @@ export default function SetListView() {
           </div>
         </div>
       </BaseModal>
+      </div>
 
 
     </div>

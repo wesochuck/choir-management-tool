@@ -140,6 +140,40 @@ describe('Set List Utilities (Phase 1)', () => {
     });
   });
 
+  describe('buildSetListPlainText', () => {
+    it('formats a set list as plain text with song numbering', async () => {
+      const { buildSetListPlainText } = await import('../src/lib/setList/setListItems');
+      const items = [
+        {
+          id: '1', type: 'song' as const, title: 'Song A', composer: 'Comp A',
+          displayTitle: 'Song A', displayComposer: 'Comp A', displayDuration: '',
+          cumulativeStart: '', cumulativeEnd: '',
+        },
+        {
+          id: '2', type: 'intermission' as const, title: 'Break',
+          displayTitle: 'Break', displayComposer: '', displayDuration: '15:00',
+          cumulativeStart: '', cumulativeEnd: '',
+        },
+        {
+          id: '3', type: 'song' as const, title: 'Song B', composer: 'Comp B',
+          displayTitle: 'Song B', displayComposer: 'Comp B', displayDuration: '',
+          cumulativeStart: '', cumulativeEnd: '',
+        },
+      ];
+
+      const text = buildSetListPlainText('Concert', '2026-12-25T19:00:00.000Z', 'America/New_York', 'Main Hall', items);
+
+      assert.match(text, /Set List: Concert/);
+      assert.match(text, /December 25.*2026/);
+      assert.match(text, /Main Hall/);
+      assert.match(text, /1\. Song A ~ Comp A/);
+      assert.match(text, /2\. Song B ~ Comp B/);
+      assert.match(text, /Break/);
+      assert.ok(text.indexOf('1.') < text.indexOf('Break'));
+      assert.ok(text.indexOf('Break') < text.indexOf('2.'));
+    });
+  });
+
   describe('getDefaultPlayableTrackKey', () => {
     it('prefers tutti if available', () => {
       const piece = createMusicPieceFixture({

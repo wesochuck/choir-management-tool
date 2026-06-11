@@ -5,6 +5,7 @@ import {
   parseDurationToSeconds, 
   formatSecondsToDuration 
 } from '../music/duration';
+import { formatInTimezone } from '../timezone';
 
 export interface SetListDisplayRow extends SetListItem {
   displayTitle: string;
@@ -246,6 +247,47 @@ export function getDefaultPlayableTrackKey(piece: MusicPiece): string | null {
   
   if (keys.includes('tutti')) return 'tutti';
   return keys[0];
+}
+
+/**
+ * Builds plain text representation of a set list for copy/print.
+ */
+export function buildSetListPlainText(
+  eventTitle: string,
+  eventDate: string,
+  timezone: string,
+  venueName: string,
+  items: SetListDisplayRow[]
+): string {
+  const dateStr = formatInTimezone(eventDate, timezone, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const timeStr = formatInTimezone(eventDate, timezone, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  let text = `Set List: ${eventTitle}\n`;
+  text += `Date: ${dateStr}\n`;
+  text += `Time: ${timeStr}\n`;
+  if (venueName) text += `Venue: ${venueName}\n`;
+  text += '\n';
+
+  let songIndex = 1;
+  items.forEach((item) => {
+    if (item.type === 'intermission') {
+      text += `${item.displayTitle || 'Intermission'}\n`;
+    } else {
+      const composerSuffix = item.displayComposer ? ` ~ ${item.displayComposer}` : '';
+      text += `${songIndex}. ${item.displayTitle}${composerSuffix}\n`;
+      songIndex++;
+    }
+  });
+
+  return text;
 }
 
 /**
