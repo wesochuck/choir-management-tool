@@ -395,7 +395,9 @@ Do not read `profile.email` or `profile.get('email')`.
 
 Do not use hardcoded inline styles for layout, spacing, colors, margins, sizing, typography, or micro-adjustments in React components.
 
-Use external CSS files.
+Use Tailwind utility classes in `className` props. This is the project's primary styling convention.
+
+Do not create standalone component CSS files for styles that can be expressed with Tailwind utilities. Standalone CSS is acceptable only for complex animations, print styles, or selectors that Tailwind cannot express.
 
 Inline styles are allowed only for truly dynamic values, such as drag position, animation values, or canvas calculations.
 

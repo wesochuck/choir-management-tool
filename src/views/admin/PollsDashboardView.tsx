@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppCard } from '../../components/common/AppCard';
 import { BaseModal } from '../../components/common/BaseModal';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
@@ -12,7 +11,6 @@ import { communicationService, type CommunicationRecipient, type MessageRecord }
 import type { RecordModel } from 'pocketbase';
 import { settingsService, type PollSettings } from '../../services/settingsService';
 import { Pagination } from '../../components/common/Pagination';
-
 
 interface PollRecord extends RecordModel {
   question: string;
@@ -252,66 +250,69 @@ export default function PollsDashboardView() {
 
   if (isLoading && polls.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl p-6">
-        <AppCard className="flex items-center justify-center py-12">
-          <p>Loading polls...</p>
-        </AppCard>
+      <div className="mx-auto flex max-w-7xl flex-col p-6">
+        <div className="flex items-center justify-center rounded-lg border border-border bg-surface py-12 shadow-xs">
+          <p className="font-medium text-text-muted">Loading polls...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex-col gap-1">
-          <h2 className="text-headline m-0">Engagement Polls & Volunteering</h2>
-          <p className="text-muted text-sm">Review volunteer responses and counts.</p>
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
+      <div className="flex flex-col justify-between gap-6 border-b border-border pb-6 md:flex-row md:items-center">
+        <div className="flex flex-col gap-1">
+          <h2 className="m-0 text-3xl font-extrabold tracking-tight text-text">Engagement Polls & Volunteering</h2>
+          <p className="text-sm font-medium text-text-muted">Review volunteer responses and counts.</p>
         </div>
-        <div className="flex flex-row flex-wrap items-center gap-4 max-md:w-full max-md:justify-start max-md:gap-2">
-          <label className="cursor-pointer flex-row items-center gap-2 text-sm">
+        <div className="flex flex-row flex-wrap items-center gap-4 max-md:w-full max-md:justify-start">
+          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-text">
             <input 
               type="checkbox" 
               checked={showArchived} 
               onChange={e => setShowArchived(e.target.checked)}
-              className="size-4"
+              className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
             />
             Show Archived
           </label>
           <button 
             type="button"
-            className="btn btn-secondary h-9 flex-row items-center gap-1.5" 
+            className="flex h-10 flex-row items-center gap-1.5 rounded-md border border-border bg-surface px-4 text-sm font-bold text-text-muted shadow-xs transition-all hover:bg-gray-50 active:scale-95" 
             onClick={() => setIsSettingsModalOpen(true)}
           >
-            ⚙️ Settings
+            <span>⚙️</span> Settings
           </button>
           <button 
             type="button"
-            className="btn btn-primary h-9 flex-row items-center gap-1.5" 
+            className="flex h-10 flex-row items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95" 
             onClick={openQuickCreate}
           >
-            <span>+</span> Start New Poll
+            <span className="text-lg">+</span> Start New Poll
           </button>
         </div>
       </div>
 
-      <div className="flex-col">
+      <div className="flex flex-col gap-6">
         {loadError && (
-          <AppCard className="db-error-card">
-            <p className="db-error-text">{loadError}</p>
-          </AppCard>
+          <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-5 shadow-xs">
+            <p className="m-0 font-bold text-danger-text">{loadError}</p>
+          </div>
         )}
+        
         {filteredPolls.length === 0 ? (
-          <AppCard className="flex flex-col items-center justify-center py-12 text-text-muted">
-            <p className="text-muted db-empty-state-text mb-4">No active polls found.</p>
-            <div>
-              <button type="button" className="btn btn-primary" onClick={openQuickCreate}>
-                Start New Poll
-              </button>
-            </div>
-          </AppCard>
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/30 py-16 text-center shadow-xs">
+            <p className="mt-0 mb-6 text-lg font-semibold text-text-muted">No active polls found.</p>
+            <button 
+              type="button" 
+              className="rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95" 
+              onClick={openQuickCreate}
+            >
+              Start New Poll
+            </button>
+          </div>
         ) : (
-          <div className="flex-col">
-            <AppCard noPadding className="gap-0 overflow-hidden">
+          <div className="flex flex-col gap-6">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
               {paginatedPolls.map((poll, index) => {
                 const stat = pollStats[poll.id];
                 const isExpanded = expandedPollId === poll.id;
@@ -333,48 +334,51 @@ export default function PollsDashboardView() {
                   <div
                     role="button"
                     tabIndex={0}
-                    className={`flex cursor-pointer items-center justify-between gap-4 p-3.5 px-5 transition-colors duration-150 select-none hover:bg-primary-light focus-visible:bg-primary-light focus-visible:outline-none ${isExpanded ? 'bg-[rgb(74_124_89_/_6%)]' : ''} max-md:flex-col max-md:items-stretch`}
+                    className={`flex cursor-pointer items-center justify-between gap-6 p-4 px-6 transition-all duration-150 select-none hover:bg-primary-light/30 focus-visible:bg-primary-light/30 focus-visible:outline-none ${isExpanded ? 'bg-primary-light/10' : ''} max-md:flex-col max-md:items-stretch`}
                     onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
                   >
-                    <div className="auto flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <h3 className="m-0 text-base font-bold text-text">{poll.question}</h3>
-                        {isArchived && <span className="inline-flex items-center rounded bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold tracking-wider text-text-muted uppercase">Archived</span>}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <h3 className="m-0 truncate text-lg font-bold tracking-tight text-text">{poll.question}</h3>
+                        {isArchived && <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Archived</span>}
                       </div>
-                      <div className="flex flex-wrap gap-1 gap-x-4 text-sm font-semibold text-text-muted">
-                        {createdLabel && <span>Created {createdLabel}</span>}
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold text-text-muted">
+                        {createdLabel && <span className="flex items-center gap-1.5"><span>📅</span> Created {createdLabel}</span>}
                         {archiveLabel && (
-                          <span title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}>
-                            ⏱️ {isArchived ? 'Archived' : 'Auto-archives'} {archiveLabel}
+                          <span 
+                            className="flex items-center gap-1.5"
+                            title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
+                          >
+                            <span>⏱️</span> {isArchived ? 'Archived' : 'Auto-archives'} {archiveLabel}
                           </span>
                         )}
                         {event && (
-                          <span>
-                            📅 {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
+                          <span className="flex items-center gap-1.5">
+                            <span>🎭</span> {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex flex-shrink-0 items-center gap-6 max-md:flex-col max-md:items-stretch max-md:gap-4">
-                      <div className="flex items-center gap-2" aria-label="Poll response counts">
-                        <div className="min-w-[52px] rounded-md border border-border bg-surface p-1 px-2.5 text-center">
-                          <span className="text-base leading-tight font-extrabold text-primary">{stat.yes}</span>
-                          <span className="block text-sm font-bold text-text-muted">Yes</span>
+                    <div className="flex flex-shrink-0 items-center gap-8 max-md:flex-col max-md:items-stretch max-md:gap-5">
+                      <div className="flex items-center gap-3" aria-label="Poll response counts">
+                        <div className="flex min-w-[56px] flex-col rounded-lg border border-primary/20 bg-primary/5 p-1.5 text-center shadow-xs">
+                          <span className="text-lg leading-tight font-black text-primary-deep">{stat.yes}</span>
+                          <span className="text-[0.65rem] font-bold tracking-wider text-primary-deep uppercase">Yes</span>
                         </div>
-                        <div className="min-w-[52px] rounded-md border border-border bg-surface p-1 px-2.5 text-center">
-                          <span className="text-base leading-tight font-extrabold text-[#ef4444]">{stat.no}</span>
-                          <span className="block text-sm font-bold text-text-muted">No</span>
+                        <div className="flex min-w-[56px] flex-col rounded-lg border border-danger-text/20 bg-danger-bg p-1.5 text-center shadow-xs">
+                          <span className="text-lg leading-tight font-black text-danger-text">{stat.no}</span>
+                          <span className="text-[0.65rem] font-bold tracking-wider text-danger-text uppercase">No</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 max-md:justify-between">
+                      <div className="flex items-center gap-3 max-md:justify-between">
                         <span className="text-sm font-bold text-text-muted">
-                          {isExpanded ? '▲ Hide' : '▼ View Names'}
+                          {isExpanded ? '▲ Hide Details' : '▼ View Names'}
                         </span>
                         <button
-                          className="btn btn-ghost btn-sm text-[#ef4444]"
+                          className="rounded-md p-1.5 text-xs font-bold text-danger-text transition-colors hover:bg-danger-bg active:opacity-70"
                           onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
                           onKeyDown={(e) => { e.stopPropagation(); }}
                         >
@@ -399,71 +403,73 @@ export default function PollsDashboardView() {
                     })();
 
                     return (
-                      <div className="flex gap-8 border-t border-border bg-bg p-6 px-5 max-md:flex-col max-md:items-stretch">
-                        <div className="mb-1 w-full flex-row items-center justify-between border-b border-border pb-2 text-sm font-semibold text-text-muted">
-                          {contactedSingers.length > 0 ? (
-                            <>
-                              <span>📨 Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-sm h-6 cursor-pointer px-2 text-xs text-primary underline"
-                                onClick={() => setRecipientModal({
-                                  isOpen: true,
-                                  recipients: contactedSingers,
-                                  title: `Contacted Singers — ${poll.question}`
-                                })}
-                              >
-                                View Contacted List →
-                              </button>
-                            </>
-                          ) : (
-                            <span>
-                              📨 No sent communications found for this poll yet. You can send it from the{' '}
-                              <a
-                                href="/admin/communications"
-                                className="text-primary underline"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  navigate('/admin/communications');
-                                }}
-                              >
-                                Communications page
-                              </a>.
-                            </span>
+                      <div className="flex flex-col gap-6 border-t border-border bg-gray-50/50 p-6 px-8">
+                        <div className="flex flex-row items-center justify-between border-b border-border pb-3">
+                          <div className="flex items-center gap-2 text-sm font-bold text-text-muted">
+                            <span>📨</span>
+                            {contactedSingers.length > 0 ? (
+                              <span>Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
+                            ) : (
+                              <span>
+                                No sent communications found for this poll yet. You can send it from the{' '}
+                                <button
+                                  className="text-primary underline hover:text-primary-deep"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    navigate('/admin/communications');
+                                  }}
+                                >
+                                  Communications page
+                                </button>.
+                              </span>
+                            )}
+                          </div>
+                          {contactedSingers.length > 0 && (
+                            <button
+                              type="button"
+                              className="text-xs font-bold text-primary underline transition-colors hover:text-primary-deep"
+                              onClick={() => setRecipientModal({
+                                isOpen: true,
+                                recipients: contactedSingers,
+                                title: `Contacted Singers — ${poll.question}`
+                              })}
+                            >
+                              View Contacted List →
+                            </button>
                           )}
                         </div>
 
-                        <div className="flex w-full gap-8">
-                          <div className="flex min-w-0 flex-1 flex-col gap-2">
-                            <h4 className="m-0 border-b-2 border-primary-light pb-1 text-sm font-bold text-primary">
+                        <div className="flex flex-col gap-8 md:flex-row">
+                          <div className="flex min-w-0 flex-1 flex-col gap-3">
+                            <h4 className="m-0 border-b-2 border-primary/20 pb-1.5 text-sm font-black tracking-wider text-primary-deep uppercase">
                               Volunteers ({stat.yes})
                             </h4>
                             {stat.volunteers.length === 0 ? (
-                              <p className="text-muted text-sm">No volunteers yet.</p>
+                              <p className="m-0 text-sm font-medium text-text-muted italic">No volunteers yet.</p>
                             ) : (
-                              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
+                              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
                                 {stat.volunteers.map(v => (
-                                  <div key={v.id} className="rounded-md border border-border bg-surface p-2 px-3 text-sm">
-                                    <div className="font-bold">{v.expand?.profileId.name}</div>
-                                    <div className="text-muted text-xs">{v.expand?.profileId.voicePart}</div>
+                                  <div key={v.id} className="rounded-lg border border-border bg-surface p-2.5 px-4 shadow-xs transition-shadow hover:shadow-sm">
+                                    <div className="font-bold text-text">{v.expand?.profileId.name}</div>
+                                    <div className="text-[0.7rem] font-bold tracking-wide text-text-muted uppercase">{v.expand?.profileId.voicePart}</div>
                                   </div>
                                 ))}
                               </div>
                             )}
                           </div>
 
-                          <div className="flex min-w-0 flex-1 flex-col gap-2">
-                            <h4 className="m-0 border-b-2 border-danger-bg pb-1 text-sm font-bold text-[#ef4444]">
+                          <div className="flex min-w-0 flex-1 flex-col gap-3">
+                            <h4 className="m-0 border-b-2 border-danger-text/20 pb-1.5 text-sm font-black tracking-wider text-danger-text uppercase">
                               Declined ({stat.no})
                             </h4>
                             {stat.decliners.length === 0 ? (
-                              <p className="text-muted text-sm">No decliners yet.</p>
+                              <p className="m-0 text-sm font-medium text-text-muted italic">No decliners yet.</p>
                             ) : (
-                              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
+                              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
                                 {stat.decliners.map(v => (
-                                  <div key={v.id} className="rounded-md border border-danger-bg bg-surface p-2 px-3 text-sm opacity-85">
-                                    <div className="font-bold">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
-                                    <div className="text-muted text-xs">{v.expand?.profileId?.voicePart ?? ''}</div>
+                                  <div key={v.id} className="rounded-lg border border-danger-text/10 bg-surface p-2.5 px-4 opacity-90 shadow-xs">
+                                    <div className="font-bold text-text">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
+                                    <div className="text-[0.7rem] font-bold tracking-wide text-text-muted uppercase">{v.expand?.profileId?.voicePart ?? ''}</div>
                                   </div>
                                 ))}
                               </div>
@@ -476,7 +482,7 @@ export default function PollsDashboardView() {
                 </div>
                 );
               })}
-            </AppCard>
+            </div>
 
             <Pagination
               currentPage={currentPage}
@@ -493,71 +499,88 @@ export default function PollsDashboardView() {
         title={quickCreateStep === 1 ? 'Quick Create Poll' : 'Confirm & Open Review'}
         maxWidth="560px"
       >
-        <div className="flex-col">
+        <div className="flex flex-col gap-6 py-2">
           {quickCreateStep === 1 ? (
             <>
-              <p className="text-muted m-0">
+              <p className="m-0 text-sm font-medium text-text-muted leading-relaxed">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
-              <div className="flex flex-col gap-1">
-                <label className="text-label" htmlFor="quick-poll-question">Poll Question</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted" htmlFor="quick-poll-question">Poll Question</label>
                 <input
                   id="quick-poll-question"
                   type="text"
-                  className="card h-10 w-full rounded-md border border-border px-3"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-4 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                   value={quickPollQuestion}
                   onChange={(e) => setQuickPollQuestion(e.target.value)}
                   placeholder="e.g. Who can help with setup?"
                   required
                 />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-label" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
                 <input
                   id="quick-poll-days"
                   type="number"
                   min="1"
                   max="365"
-                  className="card h-10 w-[120px] rounded-md border border-border px-3"
+                  className="h-10 w-[120px] rounded-md border border-border bg-surface px-4 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                   value={quickPollDays}
                   onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
                   required
                 />
               </div>
-              <p className="text-muted m-0 mb-2 text-sm">
-                Recipients default to all singers with status Active or Idle.
-              </p>
-              <div className="flex-row justify-end gap-2">
-                <button type="button" className="btn btn-ghost" onClick={() => setIsQuickCreateOpen(false)}>Cancel</button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={!quickPollQuestion.trim()}
-                  onClick={() => setQuickCreateStep(2)}
-                >
-                  Next
-                </button>
+              <div className="flex flex-col gap-4">
+                <p className="m-0 text-xs font-medium text-text-muted">
+                  Recipients default to all singers with status Active or Idle.
+                </p>
+                <div className="flex flex-row justify-end gap-3 border-t border-border pt-4">
+                  <button 
+                    type="button" 
+                    className="h-10 rounded-md px-4 text-sm font-bold text-text-muted transition-colors hover:bg-gray-100" 
+                    onClick={() => setIsQuickCreateOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="h-10 rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                    disabled={!quickPollQuestion.trim()}
+                    onClick={() => setQuickCreateStep(2)}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </>
           ) : (
             <>
-              <p className="m-0">
-                We'll create this poll and save a pre-filled message to your <strong>Drafts</strong>. You can review, edit, and send from the Communications page.
+              <p className="m-0 text-sm font-medium text-text-muted leading-relaxed">
+                We'll create this poll and save a pre-filled message to your <strong className="text-text">Drafts</strong>. You can review, edit, and send from the Communications page.
               </p>
-              <div className="card p-3">
-                <div className="text-muted mb-1.5 text-xs">Poll Question</div>
-                <strong>{quickPollQuestion.trim()}</strong>
+              <div className="flex flex-col gap-4">
+                <div className="rounded-lg border border-border bg-gray-50/50 p-4 shadow-xs">
+                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-text-muted uppercase">Poll Question</div>
+                  <strong className="text-lg text-text tracking-tight">{quickPollQuestion.trim()}</strong>
+                </div>
+                <div className="rounded-lg border border-border bg-gray-50/50 p-4 shadow-xs">
+                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-text-muted uppercase">Draft Preview</div>
+                  <div className="text-sm"><strong>Subject:</strong> Quick Choir Poll</div>
+                  <div className="mt-3 whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-xs text-text-muted italic">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
+                </div>
               </div>
-              <div className="card p-3">
-                <div className="text-muted mb-1.5 text-xs">Draft Preview</div>
-                <div><strong>Subject:</strong> Quick Choir Poll</div>
-                <div className="mt-2 whitespace-pre-wrap">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
-              </div>
-              <div className="flex-row justify-end gap-2">
-                <button type="button" className="btn btn-ghost" disabled={isCreatingQuickPoll} onClick={() => setQuickCreateStep(1)}>Back</button>
+              <div className="flex flex-row justify-end gap-3 border-t border-border pt-4">
+                <button 
+                  type="button" 
+                  className="h-10 rounded-md px-4 text-sm font-bold text-text-muted transition-colors hover:bg-gray-100" 
+                  disabled={isCreatingQuickPoll} 
+                  onClick={() => setQuickCreateStep(1)}
+                >
+                  Back
+                </button>
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="h-10 rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
                   disabled={isCreatingQuickPoll}
                   onClick={() => void handleQuickCreateAndOpenReview()}
                 >
@@ -576,36 +599,45 @@ export default function PollsDashboardView() {
         title="⚙️ Engagement Poll Settings"
         maxWidth="400px"
       >
-        <div className="flex-col">
-          <p className="text-muted m-0">
+        <div className="flex flex-col gap-6 py-2">
+          <p className="m-0 text-sm font-medium text-text-muted leading-relaxed">
             Configure global default settings for quick engagement polls.
           </p>
-          <div className="flex flex-col gap-1">
-            <label className="text-label" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
             <input
               id="settings-default-days"
               type="number"
               min="1"
               max="365"
-              className="card h-10 w-[120px] rounded-md border border-border px-3"
+              className="h-10 w-[120px] rounded-md border border-border bg-surface px-4 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
               value={globalDefaultDays}
               onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
               required
             />
           </div>
-          <p className="text-muted m-0 text-xs">
-            New quick polls will automatically archive after this many days unless overridden.
-          </p>
-          <div className="mt-2 flex-row justify-end gap-2">
-            <button type="button" className="btn btn-ghost" disabled={isSavingSettings} onClick={() => setIsSettingsModalOpen(false)}>Cancel</button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={isSavingSettings}
-              onClick={() => void handleSaveSettings()}
-            >
-              {isSavingSettings ? 'Saving...' : 'Save Settings'}
-            </button>
+          <div className="flex flex-col gap-4">
+            <p className="m-0 text-xs font-medium text-text-muted">
+              New quick polls will automatically archive after this many days unless overridden.
+            </p>
+            <div className="flex flex-row justify-end gap-3 border-t border-border pt-4">
+              <button 
+                type="button" 
+                className="h-10 rounded-md px-4 text-sm font-bold text-text-muted transition-colors hover:bg-gray-100" 
+                disabled={isSavingSettings} 
+                onClick={() => setIsSettingsModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="h-10 rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                disabled={isSavingSettings}
+                onClick={() => void handleSaveSettings()}
+              >
+                {isSavingSettings ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
           </div>
         </div>
       </BaseModal>
@@ -618,18 +650,18 @@ export default function PollsDashboardView() {
         footer={
           <button
             type="button"
-            className="btn btn-secondary"
+            className="flex h-10 items-center justify-center rounded-md border border-border bg-surface px-6 text-sm font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:scale-95"
             onClick={() => setRecipientModal({ ...recipientModal, isOpen: false })}
           >
-            Cancel
+            Close
           </button>
         }
       >
-        <div className="max-h-[400px] flex-col overflow-y-auto">
+        <div className="flex max-h-[400px] flex-col gap-2 overflow-y-auto pr-2">
           {recipientModal.recipients.map(r => (
-            <div key={r.id} className="card flex-row justify-between p-2 shadow-none">
-              <strong>{r.name}</strong>
-              <span className="text-muted text-xs">{r.voicePart}</span>
+            <div key={r.id} className="flex flex-row items-center justify-between rounded-lg border border-border bg-gray-50/30 p-3 px-4 shadow-xs">
+              <strong className="text-sm font-bold text-text">{r.name}</strong>
+              <span className="text-[0.65rem] font-black tracking-wider text-text-muted uppercase">{r.voicePart}</span>
             </div>
           ))}
         </div>

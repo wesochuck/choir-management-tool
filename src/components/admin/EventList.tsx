@@ -3,7 +3,7 @@ import type { Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
-import { Button } from '../ui';
+import { Button, Badge } from '../ui';
 import { AppCard } from '../common/AppCard';
 
 interface EventListProps {
@@ -18,26 +18,26 @@ interface EventListProps {
   openAuditionEventId?: string;
 }
 
-export const EventList: React.FC<EventListProps> = ({ 
-  events, 
-  onEdit, 
-  onSendMessage, 
-  onViewRoster, 
+export const EventList: React.FC<EventListProps> = ({
+  events,
+  onEdit,
+  onSendMessage,
+  onViewRoster,
   onCheckAttendance,
   onViewSeating,
   onOpenPlayer,
   onClone,
-  openAuditionEventId
+  openAuditionEventId,
 }) => {
   const { timezone } = useChoirSettings();
   const [activeDropdownId, setActiveDropdownId] = React.useState<string | null>(null);
 
-  // Click outside to dismiss open dropdowns
+  // Close dropdown on outside click
   React.useEffect(() => {
     if (!activeDropdownId) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.actions-dropdown-container')) {
+    const handleOutsideClick = (ev: MouseEvent) => {
+      const target = ev.target as HTMLElement;
+      if (!target.closest('.event-overflow-anchor')) {
         setActiveDropdownId(null);
       }
     };
@@ -45,172 +45,208 @@ export const EventList: React.FC<EventListProps> = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [activeDropdownId]);
 
+  if (events.length === 0) {
+    return (
+      <AppCard noPadding>
+        <div className="p-8 text-center text-sm text-text-muted">
+          No events scheduled.
+        </div>
+      </AppCard>
+    );
+  }
+
   return (
-    <AppCard noPadding className="event-list-card gap-0">
-      {events.map((e) => (
-        <div 
-          key={e.id} 
-          className="relative flex w-full cursor-pointer flex-col justify-between gap-4 border-b border-border p-4 hover:bg-primary-light/50 md:flex-row md:items-center" 
-          onClick={() => onEdit(e)}
-          role="button"
-          tabIndex={0}
-          aria-label={`Edit ${e.title || e.type} event`}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onEdit(e);
-            }
-          }}
-        >
-          <div className="event-list-details flex min-w-0 flex-1 flex-col gap-1.5">
-            <div className="event-list-header flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${e.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
-                {e.type}
-              </span>
-              {openAuditionEventId === e.id && (
-                <span className="inline-flex items-center rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">
-                  🎵 Auditions Open
-                </span>
-              )}
-              <span className="text-label text-primary">
-                {formatInTimezone(e.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
-              {e.callTime && (
-                <span className="inline-flex items-center gap-1 rounded border border-[#c7d2fe] bg-[#eef2ff] px-[6px] py-[1px] text-xs font-bold text-[#4338ca]">
-                  📢 Call: {formatTime12h(e.callTime)}
-                </span>
-              )}
-            </div>
-            {e.title && <div className="text-headline">{e.title}</div>}
-            <div className="text-label">
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.expand?.venue?.address || e.expand?.venue?.name || '')}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                onClick={(event) => event.stopPropagation()}
-                className="flex items-center gap-1"
-              >
-                📍 <strong>{e.expand?.venue?.name || ''}</strong>
-              </a>
-            </div>
-            {e.details && <div className="text-muted text-xs">{e.details}</div>}
-          </div>
-          <div className="relative flex shrink-0 items-center gap-2">
-            <Button
-              onClick={(event) => {
-                event.stopPropagation();
-                onViewRoster(e);
-              }}
-              variant={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "secondary" : "primary"}
-              size="small"
-              className="font-bold"
-            >
-              RSVP Roster
-            </Button>
-            {onCheckAttendance && (
-              <Button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onCheckAttendance(e);
-                }}
-                variant="secondary"
-                size="small"
-                className="font-bold"
-                title="Take attendance for this event"
-              >
-                📋 Attendance
-              </Button>
-            )}
-            {onViewSeating && e.type === 'Performance' && (
-              <Button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onViewSeating(e);
-                }}
-                variant="secondary"
-                size="small"
-                className="font-bold"
-                title="Open seating chart for this performance"
-              >
-                🪑 Seating
-              </Button>
-            )}
+    <AppCard noPadding className="gap-0 overflow-hidden">
+      {events.map((e) => {
+        const weekday = formatInTimezone(e.date, timezone, { weekday: 'short' });
+        const day = formatInTimezone(e.date, timezone, { day: 'numeric' });
+        const month = formatInTimezone(e.date, timezone, { month: 'short' });
+        const year = formatInTimezone(e.date, timezone, { year: 'numeric' });
+        const isPerformance = e.type === 'Performance';
+        const hasAuditions = openAuditionEventId === e.id;
+        const isDropdownOpen = activeDropdownId === e.id;
 
-            {/* Actions Dropdown Button Panel */}
-            <div className="actions-dropdown-container">
-              <Button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setActiveDropdownId(activeDropdownId === e.id ? null : e.id);
-                }}
-                variant="secondary"
-                size="small"
-                className="flex size-8 items-center justify-center rounded-full border border-border p-0 text-base font-extrabold"
-                title="More Actions"
-              >
-                ⋮
-              </Button>
+        // Build overflow menu items
+        const overflowItems: Array<{
+          label: string;
+          icon: string;
+          action: (event: Event) => void;
+          show: boolean;
+        }> = [
+          {
+            label: 'RSVP Roster',
+            icon: '📋',
+            action: onViewRoster,
+            show: true,
+          },
+          {
+            label: 'Attendance',
+            icon: '✅',
+            action: onCheckAttendance ?? (() => {}),
+            show: !!onCheckAttendance,
+          },
+          {
+            label: 'Seating Chart',
+            icon: '🪑',
+            action: onViewSeating ?? (() => {}),
+            show: !!onViewSeating && isPerformance,
+          },
+          {
+            label: 'Practice Player',
+            icon: '🎧',
+            action: onOpenPlayer ?? (() => {}),
+            show: !!onOpenPlayer,
+          },
+          {
+            label: 'Send Message',
+            icon: '✉️',
+            action: onSendMessage,
+            show: true,
+          },
+          {
+            label: 'Clone Performance',
+            icon: '👯',
+            action: onClone ?? (() => {}),
+            show: !!onClone && isPerformance,
+          },
+        ];
 
-              {activeDropdownId === e.id && (
-                <div 
-                  className="dropdown-menu absolute top-full right-0 z-[250] mt-1.5 flex w-[180px] flex-col gap-0.5 rounded-md border border-border bg-surface p-1.5 shadow-lg"
+        const visibleOverflow = overflowItems.filter((item) => item.show);
+
+        return (
+          <div
+            key={e.id}
+            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-start gap-4 border-b border-border px-6 py-4 transition-colors duration-150 last:border-b-0 hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
+            onClick={() => onEdit(e)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Edit ${e.title || e.type} event`}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onEdit(e);
+              }
+            }}
+          >
+            {/* Date column */}
+            <div className="flex min-w-14 flex-col items-center pt-0.5">
+              <span className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">{weekday}</span>
+              <span className="text-2xl font-bold leading-tight text-text">{day}</span>
+              <span className="text-[11px] font-semibold tracking-wide text-text-muted uppercase">{month} {year}</span>
+            </div>
+
+            {/* Details column */}
+            <div className="flex min-w-0 flex-col gap-1 pt-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge tone={isPerformance ? 'performance' : 'rehearsal'}>
+                  {e.type}
+                </Badge>
+                {hasAuditions && (
+                  <Badge tone="success">🎵 Auditions Open</Badge>
+                )}
+                {e.callTime && (
+                  <span className="inline-flex items-center gap-1 rounded border border-[#c7d2fe] bg-[#eef2ff] px-1.5 py-px text-xs font-bold text-[#4338ca]">
+                    📢 Call: {formatTime12h(e.callTime)}
+                  </span>
+                )}
+              </div>
+
+              {e.title && (
+                <div className="text-base font-semibold leading-snug text-text">{e.title}</div>
+              )}
+
+              {(e.expand?.venue?.name) && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.expand?.venue?.address || e.expand?.venue?.name || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-text-muted transition-colors hover:text-primary-deep"
                 >
-                  {onOpenPlayer && (
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setActiveDropdownId(null);
-                        onOpenPlayer(e);
-                      }}
-                      className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-primary-light"
-                    >
-                      🎧 Practice Player
-                    </button>
-                  )}
-                  <button 
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setActiveDropdownId(null);
-                      onSendMessage(e);
-                    }}
-                    className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-primary-light"
-                  >
-                    ✉️ Send Message
-                  </button>
-                  {onClone && e.type === 'Performance' && (
-                    <button 
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setActiveDropdownId(null);
-                        onClone(e);
-                      }}
-                      className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-primary-light"
-                    >
-                      👯 Clone Performance
-                    </button>
-                  )}
-                  <hr className="my-1 border-0 border-t border-border" />
-                  <button 
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setActiveDropdownId(null);
-                      onEdit(e);
-                    }}
-                    className="dropdown-item btn-sm flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-4 py-2 text-left text-[13px] font-bold text-primary-deep transition-colors duration-150 hover:bg-primary-light"
-                  >
-                    ✏️ Edit Event
-                  </button>
-                </div>
+                  📍 <strong className="text-text group-hover:text-primary-deep">{e.expand?.venue?.name}</strong>
+                </a>
+              )}
+
+              {e.details && (
+                <div className="line-clamp-2 text-xs leading-relaxed text-text-muted">{e.details}</div>
               )}
             </div>
+
+            {/* Actions column */}
+            <div className="flex items-center gap-2 pt-0.5 max-sm:col-span-full max-sm:justify-end max-sm:border-t max-sm:border-border/60 max-sm:pt-2">
+              <Button
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onViewRoster(e);
+                }}
+                variant={e.type === 'Rehearsal' && !e.isOpenForRSVP ? 'secondary' : 'primary'}
+                size="small"
+                className="font-bold"
+              >
+                RSVP Roster
+              </Button>
+
+              <div className="event-overflow-anchor relative">
+                <button
+                  type="button"
+                  className={`flex size-8 cursor-pointer items-center justify-center rounded-full border text-base font-extrabold transition-colors duration-150 ${
+                    isDropdownOpen
+                      ? 'border-primary-light bg-primary-light text-primary-deep'
+                      : 'border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep'
+                  }`}
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="true"
+                  aria-label="More actions"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setActiveDropdownId(isDropdownOpen ? null : e.id);
+                  }}
+                >
+                  ⋮
+                </button>
+
+                {isDropdownOpen && (
+                  <div
+                    className="absolute top-[calc(100%+4px)] right-0 z-[250] min-w-[180px] rounded-lg border border-border bg-surface p-1 shadow-lg"
+                    role="menu"
+                  >
+                    {visibleOverflow.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        className="flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-medium text-text transition-colors duration-100 hover:bg-primary-light"
+                        role="menuitem"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveDropdownId(null);
+                          item.action(e);
+                        }}
+                      >
+                        <span>{item.icon}</span>
+                        {item.label}
+                      </button>
+                    ))}
+                    <hr className="my-1 border-0 border-t border-border" />
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-semibold text-primary-deep transition-colors duration-100 hover:bg-primary-light"
+                      role="menuitem"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveDropdownId(null);
+                        onEdit(e);
+                      }}
+                    >
+                      <span>✏️</span>
+                      Edit Event
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
-      {events.length === 0 && (
-        <div className="p-8 text-center">
-          <p className="text-muted text-sm">No events scheduled.</p>
-        </div>
-      )}
+        );
+      })}
     </AppCard>
   );
 };
