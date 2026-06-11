@@ -1,6 +1,5 @@
 import React from 'react';
 import type { EventsTab } from './useEventFilters';
-import { Button } from '../../../components/ui';
 
 interface EventsTabsProps {
   activeTab: EventsTab;
@@ -16,34 +15,39 @@ export function EventsTabs({
   setShowPastEvents,
 }: EventsTabsProps): React.JSX.Element {
   return (
-    <div
-      className="mb-4 flex flex-col flex-wrap items-center justify-between gap-4 border-b border-border px-1 pb-1 md:flex-row"
-    >
-      {/* Tab buttons */}
-      <div className="flex-row gap-2">
-        {(['all', 'performances', 'rehearsals'] as const).map((tab) => (
-          <Button
-            key={tab}
-            variant={activeTab === tab ? 'primary' : 'ghost'}
-            className="px-4 py-2 font-semibold capitalize"
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab === 'all' ? 'All Events' : tab}
-          </Button>
-        ))}
-      </div>
+    <div className="no-print mb-4 border-b border-border">
+      <div className="-mb-px flex flex-row flex-wrap items-center justify-between gap-4">
+        {/* Tab buttons */}
+        <nav className="flex gap-2">
+          {(['all', 'performances', 'rehearsals'] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium capitalize transition-colors duration-200 ${
+                  isActive
+                    ? 'bg-primary text-surface'
+                    : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === 'all' ? 'All Events' : tab}
+              </button>
+            );
+          })}
+        </nav>
 
-      {/* Show past checkbox */}
-      <label className="cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-text-muted select-none">
-        <input
-          type="checkbox"
-          checked={showPastEvents}
-          onChange={(e) => setShowPastEvents(e.target.checked)}
-          className="size-4 cursor-pointer accent-primary"
-        />
-        <span>Show past events</span>
-      </label>
+        {/* Show past checkbox */}
+        <label className="flex cursor-pointer flex-row items-center gap-2 pb-2 text-sm font-semibold text-text-muted select-none md:pb-0">
+          <input
+            type="checkbox"
+            checked={showPastEvents}
+            onChange={(e) => setShowPastEvents(e.target.checked)}
+            className="size-4 cursor-pointer accent-primary"
+          />
+          <span>Show past events</span>
+        </label>
+      </div>
     </div>
   );
 }
-

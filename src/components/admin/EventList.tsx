@@ -3,7 +3,8 @@ import type { Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
-
+import { Button } from '../ui';
+import { AppCard } from '../common/AppCard';
 
 interface EventListProps {
   events: Event[];
@@ -16,7 +17,6 @@ interface EventListProps {
   onClone?: (event: Event) => void;
   openAuditionEventId?: string;
 }
-import { AppCard } from '../common/AppCard';
 
 export const EventList: React.FC<EventListProps> = ({ 
   events, 
@@ -50,7 +50,7 @@ export const EventList: React.FC<EventListProps> = ({
       {events.map((e) => (
         <div 
           key={e.id} 
-          className="relative-row clickable-row flex cursor-pointer flex-col border-b border-border p-4 hover:bg-primary-light/50 md:flex-row" 
+          className="relative-row clickable-row flex cursor-pointer flex-col justify-between gap-4 border-b border-border p-4 hover:bg-primary-light/50 md:flex-row md:items-center" 
           onClick={() => onEdit(e)}
           role="button"
           tabIndex={0}
@@ -96,52 +96,60 @@ export const EventList: React.FC<EventListProps> = ({
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
           <div className="relative flex items-center gap-2">
-            <button
+            <Button
               onClick={(event) => {
                 event.stopPropagation();
                 onViewRoster(e);
               }}
-              className={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "btn btn-secondary btn-sm font-bold" : "btn btn-primary btn-sm font-bold"}
+              variant={e.type === 'Rehearsal' && !e.isOpenForRSVP ? "secondary" : "primary"}
+              size="small"
+              className="font-bold"
             >
               RSVP Roster
-            </button>
+            </Button>
             {onCheckAttendance && (
-              <button
+              <Button
                 onClick={(event) => {
                   event.stopPropagation();
                   onCheckAttendance(e);
                 }}
-                className="btn btn-secondary btn-sm font-bold"
+                variant="secondary"
+                size="small"
+                className="font-bold"
                 title="Take attendance for this event"
               >
                 📋 Attendance
-              </button>
+              </Button>
             )}
             {onViewSeating && e.type === 'Performance' && (
-              <button
+              <Button
                 onClick={(event) => {
                   event.stopPropagation();
                   onViewSeating(e);
                 }}
-                className="btn btn-secondary btn-sm font-bold"
+                variant="secondary"
+                size="small"
+                className="font-bold"
                 title="Open seating chart for this performance"
               >
                 🪑 Seating
-              </button>
+              </Button>
             )}
 
             {/* Actions Dropdown Button Panel */}
             <div className="actions-dropdown-container">
-              <button
+              <Button
                 onClick={(event) => {
                   event.stopPropagation();
                   setActiveDropdownId(activeDropdownId === e.id ? null : e.id);
                 }}
-                className="btn btn-secondary btn-sm flex size-8 items-center justify-center rounded-full border border-border p-0 text-base font-extrabold"
+                variant="secondary"
+                size="small"
+                className="flex size-8 items-center justify-center rounded-full border border-border p-0 text-base font-extrabold"
                 title="More Actions"
               >
                 ⋮
-              </button>
+              </Button>
 
               {activeDropdownId === e.id && (
                 <div 
