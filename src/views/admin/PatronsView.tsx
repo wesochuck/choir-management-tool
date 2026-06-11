@@ -8,6 +8,8 @@ import { formatInTimezone } from '../../lib/timezone';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
+import { AppCard } from '../../components/common/AppCard';
+import { Button, Input, Select, FormField, Badge } from '../../components/ui';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -181,205 +183,193 @@ export default function PatronsView() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-slate-900">
           Patrons Dashboard
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          View lifetime value and message your donors and ticket buyers.
+          View lifetime value and message your donors and ticket buyers
         </p>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
             Patrons
           </p>
-          <p className="mt-2 text-3xl font-semibold text-slate-800">
+          <p className="mt-2 text-3xl font-bold text-text">
             {filteredStats.count}
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
             Total LTV
           </p>
-          <p className="mt-2 text-3xl font-semibold text-emerald-700">
+          <p className="mt-2 text-3xl font-bold text-emerald-700">
             ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
 
-      <section className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Patron Directory
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Search, filter, and sort patrons by activity and lifetime value.
-              </p>
+      <AppCard
+        title="Patron Directory"
+        actions={
+          <Button
+            onClick={handleSendMessage}
+            disabled={selectedIds.size === 0}
+            variant="primary"
+          >
+            Send Message ({selectedIds.size})
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-text-muted">
+            Search, filter, and sort patrons by activity and lifetime value
+          </p>
+
+          <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-slate-50/50 p-4">
+            <div className="min-w-[200px] flex-1">
+              <FormField label="Search">
+                <Input
+                  type="text"
+                  placeholder="Search patron name or email..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </FormField>
             </div>
 
-            <button
-              onClick={handleSendMessage}
-              disabled={selectedIds.size === 0}
-              className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
-            >
-              Send Message ({selectedIds.size})
-            </button>
-          </div>
-        </div>
+            <div className="w-full min-w-[150px] sm:w-auto">
+              <FormField label="From">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={e => handleSetStartDate(e.target.value)}
+                />
+              </FormField>
+            </div>
 
-        <div className="border-b border-slate-200 bg-slate-50/50 px-6 py-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Search
-              </span>
-              <input
-                type="search"
-                placeholder="Name or email..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-              />
-            </label>
+            <div className="w-full min-w-[150px] sm:w-auto">
+              <FormField label="To">
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                />
+              </FormField>
+            </div>
 
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                From
-              </span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={e => handleSetStartDate(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                To
-              </span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Sort
-              </span>
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
-              >
-                <option value="ltv">Lifetime Value</option>
-                <option value="name">Name</option>
-                <option value="lastDate">Last Transaction</option>
-              </select>
-            </label>
+            <div className="w-full min-w-[180px] sm:w-auto">
+              <FormField label="Sort">
+                <Select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
+                >
+                  <option value="ltv">Lifetime Value</option>
+                  <option value="name">Name</option>
+                  <option value="lastDate">Last Transaction</option>
+                </Select>
+              </FormField>
+            </div>
 
             {(searchQuery || startDate || endDate) && (
-              <button
-                onClick={handleClearFilters}
-                className="self-end rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:col-span-2 lg:col-span-1"
-              >
-                Clear Filters
-              </button>
+              <Button variant="ghost" onClick={handleClearFilters} className="h-[44px]">
+                Reset
+              </Button>
             )}
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="px-6 py-12 text-center">
-              <p className="text-sm font-medium text-slate-700">Loading patrons...</p>
-            </div>
-          ) : filteredPatrons.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <p className="text-sm font-medium text-slate-700">No patrons found</p>
-              <p className="mt-1 text-sm text-slate-500">
-                Try adjusting your search or date filters.
-              </p>
-            </div>
-          ) : (
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-slate-50/50">
                 <tr>
                   <th className="w-12 px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      className="rounded border-slate-300"
+                      className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary/25"
                       checked={filteredPatrons.length > 0 && selectedIds.size === filteredPatrons.length}
                       onChange={toggleSelectAll}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
                     LTV
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
                     Last Transaction
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
                     Orders
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {filteredPatrons.map(p => (
-                  <tr key={p.profile.id} className="cursor-pointer hover:bg-slate-50" onClick={() => handleOpenProfile(p.profile)}>
-                    <td className="w-12 px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        className="rounded border-slate-300"
-                        checked={selectedIds.has(p.profile.id)}
-                        onChange={() => toggleSelect(p.profile.id)}
-                      />
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
-                      {p.profile.name}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                      {p.profile.expand?.user?.email || 'No email'}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide ${p.isSinger ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {p.isSinger ? 'Singer' : 'Patron'}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-emerald-700">
-                      ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                      {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-500">
-                      {p.transactionCount}
+              <tbody className="divide-y divide-border bg-surface">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-text-muted">
+                      Loading patrons...
                     </td>
                   </tr>
-                ))}
+                ) : filteredPatrons.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-text-muted">
+                      No patrons found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredPatrons.map(p => (
+                    <tr 
+                      key={p.profile.id} 
+                      className="cursor-pointer transition-colors hover:bg-slate-50/50" 
+                      onClick={() => handleOpenProfile(p.profile)}
+                    >
+                      <td className="w-12 px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary/25"
+                          checked={selectedIds.has(p.profile.id)}
+                          onChange={() => toggleSelect(p.profile.id)}
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-text">
+                        {p.profile.name}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-text-muted">
+                        {p.profile.expand?.user?.email || 'No email'}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <Badge tone={p.isSinger ? 'rehearsal' : 'neutral'}>
+                          {p.isSinger ? 'Singer' : 'Patron'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-semibold text-emerald-700">
+                        ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-text-muted">
+                        {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm text-text-muted">
+                        {p.transactionCount}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      </section>
+      </AppCard>
 
       <SingerModal 
         isOpen={isModalOpen}
