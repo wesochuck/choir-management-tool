@@ -1,1459 +1,1660 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { BaseModal } from '../../../components/common/BaseModal';
 import { useDialog } from '../../../contexts/DialogContext';
-import { musicLibraryService, type MusicPiece, type MusicPieceInput } from '../../../services/musicLibraryService';
+import {
+  musicLibraryService,
+  type MusicPiece,
+  type MusicPieceInput,
+} from '../../../services/musicLibraryService';
 import { eventService, type Event } from '../../../services/eventService';
 import { venueService, type Venue } from '../../../services/venueService';
-import { getVoicePartsAndSections, type VoicePartDef, type SectionDef, type MusicGenreDef } from '../../../services/settingsService';
+import {
+  getVoicePartsAndSections,
+  type VoicePartDef,
+  type SectionDef,
+  type MusicGenreDef,
+} from '../../../services/settingsService';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { pb } from '../../../lib/pocketbase';
-import { formatSecondsToDuration, resolveCatalogLookupUrl, isValidDurationString, getLearningTrackContextLabel } from '../../../lib/musicPieceUtils';
+import {
+  formatSecondsToDuration,
+  resolveCatalogLookupUrl,
+  isValidDurationString,
+  getLearningTrackContextLabel,
+} from '../../../lib/musicPieceUtils';
 import { LearningTracksEditor } from './LearningTracksEditor';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { zonedInputValueToUtc } from '../../../lib/timezone';
 import { AutocompleteInput } from '../../../components/admin/AutocompleteInput';
 
 export interface MusicPieceModalProps {
-    isOpen: boolean;
-    piece: MusicPiece | null;
-    onClose: () => void;
-    onSave: (data: Partial<MusicPieceInput> & { 
-        tuttiFile?: File | null; 
-        movements?: { title: string; duration?: string }[] 
-    }) => Promise<void>;
-    onSaveAndAddAnother?: (data: Partial<MusicPieceInput> & {
-        tuttiFile?: File | null;
-        movements?: { title: string; duration?: string }[];
-    }) => Promise<void>;
-    onDelete?: () => Promise<void>;
-    catalogLookupTemplate?: string;
-    onRefresh?: () => Promise<void>;
-    allPieces?: MusicPiece[];
-    allGenres: MusicGenreDef[];
-    initialTitle?: string;
-    onCreateGenre?: (label: string) => Promise<MusicGenreDef>;
-    initialTab?: 'details' | 'tracks' | 'performances' | 'movements';
+  isOpen: boolean;
+  piece: MusicPiece | null;
+  onClose: () => void;
+  onSave: (
+    data: Partial<MusicPieceInput> & {
+      tuttiFile?: File | null;
+      movements?: { title: string; duration?: string }[];
+    }
+  ) => Promise<void>;
+  onSaveAndAddAnother?: (
+    data: Partial<MusicPieceInput> & {
+      tuttiFile?: File | null;
+      movements?: { title: string; duration?: string }[];
+    }
+  ) => Promise<void>;
+  onDelete?: () => Promise<void>;
+  catalogLookupTemplate?: string;
+  onRefresh?: () => Promise<void>;
+  allPieces?: MusicPiece[];
+  allGenres: MusicGenreDef[];
+  initialTitle?: string;
+  onCreateGenre?: (label: string) => Promise<MusicGenreDef>;
+  initialTab?: 'details' | 'tracks' | 'performances' | 'movements';
 }
 
-export function MusicPieceModal({ 
-    isOpen, 
-    piece, 
-    onClose, 
-    onSave,
-    onSaveAndAddAnother,
-    onDelete, 
-    catalogLookupTemplate, 
-    onRefresh, 
-    allPieces,
-    allGenres,
-    initialTitle,
-    onCreateGenre,
-    initialTab
+export function MusicPieceModal({
+  isOpen,
+  piece,
+  onClose,
+  onSave,
+  onSaveAndAddAnother,
+  onDelete,
+  catalogLookupTemplate,
+  onRefresh,
+  allPieces,
+  allGenres,
+  initialTitle,
+  onCreateGenre,
+  initialTab,
 }: MusicPieceModalProps) {
-    const dialog = useDialog();
-    const { timezone } = useChoirSettings();
-    const titleInputRef = useRef<HTMLInputElement>(null);
-    const [title, setTitle] = useState('');
-    const [composer, setComposer] = useState('');
-    const [arranger, setArranger] = useState('');
-    const [duration, setDuration] = useState('');
+  const dialog = useDialog();
+  const { timezone } = useChoirSettings();
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState('');
+  const [composer, setComposer] = useState('');
+  const [arranger, setArranger] = useState('');
+  const [duration, setDuration] = useState('');
 
-    const uniquePeople = useMemo(() => {
-        const pool = new Set<string>();
-        (allPieces || []).forEach(p => {
-            if (p.composer) pool.add(p.composer);
-            if (p.arranger) pool.add(p.arranger);
-        });
-        return Array.from(pool).sort();
-    }, [allPieces]);
+  const uniquePeople = useMemo(() => {
+    const pool = new Set<string>();
+    (allPieces || []).forEach((p) => {
+      if (p.composer) pool.add(p.composer);
+      if (p.arranger) pool.add(p.arranger);
+    });
+    return Array.from(pool).sort();
+  }, [allPieces]);
 
-    const uniqueComposers = uniquePeople;
-    const uniqueArrangers = uniquePeople;
-    const [copies, setCopies] = useState<string>('');
-    const [catalogId, setCatalogId] = useState('');
-    const [sectionBuckets, setSectionBuckets] = useState<string[]>([]);
-    const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-    const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
-    const [notes, setNotes] = useState('');
-    const [purchaseDateInput, setPurchaseDateInput] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
+  const uniqueComposers = uniquePeople;
+  const uniqueArrangers = uniquePeople;
+  const [copies, setCopies] = useState<string>('');
+  const [catalogId, setCatalogId] = useState('');
+  const [sectionBuckets, setSectionBuckets] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
+  const [purchaseDateInput, setPurchaseDateInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
 
-    // Active Tab state
-    const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>('details');
+  // Active Tab state
+  const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>(
+    'details'
+  );
 
-    // Audio & Voice Parts state
-    const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
-    const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
-    const [sections, setSections] = useState<SectionDef[]>([]);
-    const [uploadingParts, setUploadingParts] = useState<Record<string, boolean>>({});
-    const [manuallyAddedParts, setManuallyAddedParts] = useState<Record<string, string[]>>({});
+  // Audio & Voice Parts state
+  const [localPiece, setLocalPiece] = useState<MusicPiece | null>(piece);
+  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+  const [sections, setSections] = useState<SectionDef[]>([]);
+  const [uploadingParts, setUploadingParts] = useState<Record<string, boolean>>({});
+  const [manuallyAddedParts, setManuallyAddedParts] = useState<Record<string, string[]>>({});
 
-    // Performance states
-    const [allPerformances, setAllPerformances] = useState<Event[]>([]);
-    const [venues, setVenues] = useState<Venue[]>([]);
-    const [showQuickAdd, setShowQuickAdd] = useState(false);
+  // Performance states
+  const [allPerformances, setAllPerformances] = useState<Event[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
-    // Quick Add form states
-    const [quickTitle, setQuickTitle] = useState('');
-    const [quickDate, setQuickDate] = useState('');
-    const [quickVenue, setQuickVenue] = useState('');
-    const [isQuickAdding, setIsQuickAdding] = useState(false);
+  // Quick Add form states
+  const [quickTitle, setQuickTitle] = useState('');
+  const [quickDate, setQuickDate] = useState('');
+  const [quickVenue, setQuickVenue] = useState('');
+  const [isQuickAdding, setIsQuickAdding] = useState(false);
 
-    // Movements & Hierarchy state
-    const [movements, setMovements] = useState<MusicPiece[]>([]);
-    const [isMultiMovement, setIsMultiMovement] = useState(false);
-    const [newMovementTitle, setNewMovementTitle] = useState('');
-    const [newMovementDuration, setNewMovementDuration] = useState('');
-    const [expandedMovementId, setExpandedMovementId] = useState<string | null>(null);
+  // Movements & Hierarchy state
+  const [movements, setMovements] = useState<MusicPiece[]>([]);
+  const [isMultiMovement, setIsMultiMovement] = useState(false);
+  const [newMovementTitle, setNewMovementTitle] = useState('');
+  const [newMovementDuration, setNewMovementDuration] = useState('');
+  const [expandedMovementId, setExpandedMovementId] = useState<string | null>(null);
 
-    // Staging and Tutti uploads for new pieces (piece === null)
-    const [isMultiMovementInput, setIsMultiMovementInput] = useState(false);
-    const [localMovementsList, setLocalMovementsList] = useState<{ id: string; title: string; duration?: string }[]>([]);
-    const [tuttiFile, setTuttiFile] = useState<File | null>(null);
-    const [isTuttiDraggedOver, setIsTuttiDraggedOver] = useState(false);
-    const [stagingMovTitle, setStagingMovTitle] = useState('');
-    const [stagingMovDuration, setStagingMovDuration] = useState('');
+  // Staging and Tutti uploads for new pieces (piece === null)
+  const [isMultiMovementInput, setIsMultiMovementInput] = useState(false);
+  const [localMovementsList, setLocalMovementsList] = useState<
+    { id: string; title: string; duration?: string }[]
+  >([]);
+  const [tuttiFile, setTuttiFile] = useState<File | null>(null);
+  const [isTuttiDraggedOver, setIsTuttiDraggedOver] = useState(false);
+  const [stagingMovTitle, setStagingMovTitle] = useState('');
+  const [stagingMovDuration, setStagingMovDuration] = useState('');
 
-    const parentPiece = piece?.parentId && allPieces
-        ? allPieces.find(p => p.id === piece.parentId)
-        : undefined;
+  const parentPiece =
+    piece?.parentId && allPieces ? allPieces.find((p) => p.id === piece.parentId) : undefined;
 
-    useEffect(() => {
-        if (piece) {
-            setNewMovementTitle(`Movement ${movements.length + 1}`);
+  useEffect(() => {
+    if (piece) {
+      setNewMovementTitle(`Movement ${movements.length + 1}`);
+    } else {
+      setNewMovementTitle('');
+    }
+  }, [movements, piece]);
+
+  useEffect(() => {
+    if (!piece) {
+      setStagingMovTitle(`Movement ${localMovementsList.length + 1}`);
+    }
+  }, [localMovementsList, piece]);
+
+  const loadMovements = useCallback(async () => {
+    if (!piece) return;
+    try {
+      const list = await pb.collection('musicLibrary').getFullList<MusicPiece>({
+        filter: pb.filter('parentId = {:id}', { id: piece.id }),
+        sort: 'created',
+      });
+      setMovements(list);
+      if (list.length > 0) {
+        setIsMultiMovement(true);
+      } else {
+        setIsMultiMovement(false);
+      }
+    } catch (err) {
+      console.error('Failed to load movements', err);
+    }
+  }, [piece]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Load performances
+      eventService
+        .getEvents()
+        .then((events) => {
+          setAllPerformances(events.filter((e) => e.type === 'Performance'));
+        })
+        .catch(console.error);
+
+      // Load venues for quick add
+      venueService.getVenues().then(setVenues).catch(console.error);
+
+      // Load voice parts and sections
+      getVoicePartsAndSections()
+        .then((data) => {
+          setVoiceParts(data.voiceParts);
+          setSections(data.sections);
+        })
+        .catch(console.error);
+
+      // Focus the title field on open
+      setTimeout(() => titleInputRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setLocalPiece(piece);
+    if (piece) {
+      setTitle(piece.title);
+      setComposer(piece.composer || '');
+      setArranger(piece.arranger || '');
+      setDuration(piece.duration || '');
+      setCopies(piece.copies?.toString() || '');
+      setCatalogId(piece.catalogId || '');
+
+      if (piece.purchaseDate) {
+        const parts = piece.purchaseDate.split('-');
+        if (parts.length >= 2) {
+          setPurchaseDateInput(`${parts[1]}/${parts[0]}`);
         } else {
-            setNewMovementTitle('');
+          setPurchaseDateInput('');
         }
-    }, [movements, piece]);
-
-    useEffect(() => {
-        if (!piece) {
-            setStagingMovTitle(`Movement ${localMovementsList.length + 1}`);
-        }
-    }, [localMovementsList, piece]);
-
-    const loadMovements = useCallback(async () => {
-        if (!piece) return;
-        try {
-            const list = await pb.collection('musicLibrary').getFullList<MusicPiece>({
-                filter: pb.filter('parentId = {:id}', { id: piece.id }),
-                sort: 'created'
-            });
-            setMovements(list);
-            if (list.length > 0) {
-                setIsMultiMovement(true);
-            } else {
-                setIsMultiMovement(false);
-            }
-        } catch (err) {
-            console.error('Failed to load movements', err);
-        }
-    }, [piece]);
-
-    useEffect(() => {
-        if (isOpen) {
-            // Load performances
-            eventService.getEvents().then(events => {
-                setAllPerformances(events.filter(e => e.type === 'Performance'));
-            }).catch(console.error);
-
-            // Load venues for quick add
-            venueService.getVenues().then(setVenues).catch(console.error);
-
-            // Load voice parts and sections
-            getVoicePartsAndSections().then(data => {
-                setVoiceParts(data.voiceParts);
-                setSections(data.sections);
-            }).catch(console.error);
-
-            // Focus the title field on open
-            setTimeout(() => titleInputRef.current?.focus(), 50);
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        setLocalPiece(piece);
-        if (piece) {
-            setTitle(piece.title);
-            setComposer(piece.composer || '');
-            setArranger(piece.arranger || '');
-            setDuration(piece.duration || '');
-            setCopies(piece.copies?.toString() || '');
-            setCatalogId(piece.catalogId || '');
-            
-            if (piece.purchaseDate) {
-                const parts = piece.purchaseDate.split('-');
-                if (parts.length >= 2) {
-                    setPurchaseDateInput(`${parts[1]}/${parts[0]}`);
-                } else {
-                    setPurchaseDateInput('');
-                }
-            } else {
-                setPurchaseDateInput('');
-            }
-
-            setSectionBuckets(piece.sectionBuckets || []);
-            setSelectedGenres(piece.genres || []);
-            setSelectedPerformanceIds(piece.performances || []);
-            setNotes(piece.notes || '');
-            setIsMultiMovement(false);
-            loadMovements();
-            setIsMultiMovementInput(false);
-            setLocalMovementsList([]);
-            setTuttiFile(null);
-            setIsTuttiDraggedOver(false);
-            setStagingMovTitle('');
-            setStagingMovDuration('');
-        } else {
-            setTitle(initialTitle || '');
-            setComposer('');
-            setArranger('');
-            setDuration('');
-            setCopies('');
-            setCatalogId('');
-            setPurchaseDateInput('');
-            setSectionBuckets([]);
-            setSelectedGenres([]);
-            setSelectedPerformanceIds([]);
-            setNotes('');
-            setMovements([]);
-            setIsMultiMovement(false);
-            setIsMultiMovementInput(false);
-            setLocalMovementsList([]);
-            setTuttiFile(null);
-            setIsTuttiDraggedOver(false);
-            setStagingMovTitle('');
-            setStagingMovDuration('');
-        }
-        setShowQuickAdd(false);
-        setQuickTitle('');
-        setQuickDate('');
-        setQuickVenue('');
-        setActiveTab(initialTab || 'details');
-        setNewMovementTitle('');
-        setNewMovementDuration('');
-        setExpandedMovementId(null);
-        setSuggestedDuration(null);
-        setManuallyAddedParts({});
-    }, [piece, isOpen, loadMovements, initialTitle, initialTab]);
-
-    const isDirty = useMemo(() => {
-        if (piece) {
-            const titleChanged = title !== piece.title;
-            const composerChanged = composer !== (piece.composer || '');
-            const arrangerChanged = arranger !== (piece.arranger || '');
-            const durationChanged = duration !== (piece.duration || '');
-            const copiesChanged = copies !== (piece.copies?.toString() || '');
-            const catalogIdChanged = catalogId !== (piece.catalogId || '');
-            const notesChanged = notes !== (piece.notes || '');
-            
-            const originalPurchaseDisplay = piece.purchaseDate
-                ? (() => { const p = piece.purchaseDate.split('-'); return p.length >= 2 ? `${p[1]}/${p[0]}` : ''; })()
-                : '';
-            const purchaseDateChanged = purchaseDateInput !== originalPurchaseDisplay;
-            
-            const initialSections = [...(piece.sectionBuckets || [])].sort();
-            const currentSections = [...sectionBuckets].sort();
-            const sectionsChanged = JSON.stringify(initialSections) !== JSON.stringify(currentSections);
-
-            const initialGenres = [...(piece.genres || [])].sort();
-            const currentGenres = [...selectedGenres].sort();
-            const genresChanged = JSON.stringify(initialGenres) !== JSON.stringify(currentGenres);
-
-            const initialPerformances = [...(piece.performances || [])].sort();
-            const currentPerformances = [...selectedPerformanceIds].sort();
-            const performancesChanged = JSON.stringify(initialPerformances) !== JSON.stringify(currentPerformances);
-
-            return titleChanged || composerChanged || arrangerChanged || durationChanged || copiesChanged || catalogIdChanged || notesChanged || sectionsChanged || genresChanged || performancesChanged || purchaseDateChanged;
-        } else {
-            const hasTitle = title !== (initialTitle || '');
-            const hasComposer = Boolean(composer.trim());
-            const hasArranger = Boolean(arranger.trim());
-            const hasDuration = Boolean(duration.trim());
-            const hasCopies = Boolean(copies.trim());
-            const hasCatalogId = Boolean(catalogId.trim());
-            const hasNotes = Boolean(notes.trim());
-            const hasSections = sectionBuckets.length > 0;
-            const hasGenres = selectedGenres.length > 0;
-            const hasPerformances = selectedPerformanceIds.length > 0;
-            const hasTutti = tuttiFile !== null;
-            const hasStagedMovements = localMovementsList.length > 0;
-            const hasPurchaseDate = Boolean(purchaseDateInput.trim());
-
-            return hasTitle || hasComposer || hasArranger || hasDuration || hasCopies || hasCatalogId || hasNotes || hasSections || hasGenres || hasPerformances || hasTutti || hasStagedMovements || hasPurchaseDate;
-        }
-    }, [piece, title, composer, arranger, duration, copies, catalogId, notes, sectionBuckets, selectedGenres, selectedPerformanceIds, initialTitle, tuttiFile, localMovementsList, purchaseDateInput]);
-
-    const handleClose = async () => {
-        if (isDirty) {
-            const confirmDiscard = await dialog.confirm({
-                title: 'Unsaved Changes',
-                message: piece 
-                    ? 'You have unsaved changes to this music piece. Do you want to discard them?' 
-                    : 'You are adding a new music piece with unsaved details. Do you want to discard this piece?',
-                confirmLabel: 'Discard Changes',
-                cancelLabel: 'Keep Editing',
-                variant: 'warning'
-            });
-            if (!confirmDiscard) return;
-        }
-        onClose();
-    };
-
-    const handleAddStagingMovement = (e?: React.SyntheticEvent | React.KeyboardEvent) => {
-        e?.preventDefault();
-        const nextIndex = localMovementsList.length + 1;
-        const defaultTitle = `Movement ${nextIndex}`;
-        const titleVal = stagingMovTitle.trim() || defaultTitle;
-        
-        setLocalMovementsList(prev => [
-            ...prev,
-            {
-                id: `staged_${Date.now()}_${Math.random()}`,
-                title: titleVal,
-                duration: stagingMovDuration.trim() || undefined
-            }
-        ]);
-        setStagingMovTitle('');
-        setStagingMovDuration('');
-    };
-
-    const handleRemoveStagingMovement = (id: string) => {
-        setLocalMovementsList(prev => prev.filter(m => m.id !== id));
-    };
-
-    const handleFileUpload = async (voicePart: string, file: File) => {
-        if (!localPiece) return;
-        
-        // Extract audio track duration if this is the first learning track and no duration is set
-        const trackCountBefore = Object.keys(localPiece.audioTrackMapping || {}).length;
-        if (trackCountBefore === 0 && !duration.trim()) {
-            try {
-                const seconds = await new Promise<number>((resolve) => {
-                    const audio = new Audio();
-                    audio.src = URL.createObjectURL(file);
-                    audio.addEventListener('loadedmetadata', () => {
-                        URL.revokeObjectURL(audio.src);
-                        resolve(audio.duration);
-                    });
-                    audio.addEventListener('error', () => {
-                        resolve(0);
-                    });
-                });
-                if (seconds > 0) {
-                    const formatted = formatSecondsToDuration(Math.round(seconds));
-                    setSuggestedDuration(formatted);
-                }
-            } catch (e) {
-                console.error('Failed to get audio duration', e);
-            }
-        }
-        
-        setUploadingParts(prev => ({ ...prev, [voicePart]: true }));
-        try {
-            const existingFilename = localPiece.audioTrackMapping?.[voicePart];
-            let currentFiles = localPiece.audioFiles || [];
-            const currentMapping = { ...(localPiece.audioTrackMapping || {}) };
-            
-            if (existingFilename) {
-                currentFiles = currentFiles.filter(f => f !== existingFilename);
-                delete currentMapping[voicePart];
-            }
-            
-            const formData = new FormData();
-            currentFiles.forEach(f => {
-                formData.append('audioFiles', f);
-            });
-            formData.append('audioFiles', file);
-            
-            const updatedPiece = await musicLibraryService.updatePiece(localPiece.id, formData);
-            
-            const oldFiles = localPiece.audioFiles || [];
-            const newFiles = updatedPiece.audioFiles || [];
-            const addedFilename = newFiles.find(f => !oldFiles.includes(f));
-            
-            if (addedFilename) {
-                currentMapping[voicePart] = addedFilename;
-                const finalPiece = await musicLibraryService.updatePiece(localPiece.id, {
-                    audioTrackMapping: currentMapping
-                });
-                
-                setLocalPiece(finalPiece);
-                if (onRefresh) {
-                    await onRefresh();
-                }
-            } else {
-                throw new Error('Upload succeeded but no new filename returned.');
-            }
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Upload Failed',
-                message: 'Failed to upload the audio track. Ensure the file is under 20MB and is a valid audio format.',
-                variant: 'danger'
-            });
-        } finally {
-            setUploadingParts(prev => ({ ...prev, [voicePart]: false }));
-        }
-    };
-
-    const handleFileDelete = async (voicePart: string) => {
-        if (!localPiece) return;
-        
-        const filename = localPiece.audioTrackMapping?.[voicePart];
-        if (!filename) return;
-        
-        const confirmed = await dialog.confirm({
-            title: 'Delete Learning Track',
-            message: `Are you sure you want to delete the track for ${voicePart === 'tutti' ? 'Tutti' : voicePart}?`,
-            variant: 'danger',
-            confirmLabel: 'Delete'
-        });
-        if (!confirmed) return;
-        
-        try {
-            const filesToKeep = (localPiece.audioFiles || []).filter(f => f !== filename);
-            const newMapping = { ...(localPiece.audioTrackMapping || {}) };
-            delete newMapping[voicePart];
-            
-            const updatedPiece = await musicLibraryService.updatePiece(localPiece.id, {
-                audioFiles: filesToKeep,
-                audioTrackMapping: newMapping
-            });
-            
-            setLocalPiece(updatedPiece);
-            if (onRefresh) {
-                await onRefresh();
-            }
-            
-            dialog.showToast('Audio track deleted successfully.');
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Error',
-                message: 'Failed to delete the audio track.',
-                variant: 'danger'
-            });
-        }
-    };
-
-    const handleMovementFileUpload = async (movement: MusicPiece, voicePart: string, file: File) => {
-        const uploadKey = `${movement.id}_${voicePart}`;
-        setUploadingParts(prev => ({ ...prev, [uploadKey]: true }));
-        try {
-            const existingFilename = movement.audioTrackMapping?.[voicePart];
-            let currentFiles = movement.audioFiles || [];
-            const currentMapping = { ...(movement.audioTrackMapping || {}) };
-            
-            if (existingFilename) {
-                currentFiles = currentFiles.filter(f => f !== existingFilename);
-                delete currentMapping[voicePart];
-            }
-            
-            const formData = new FormData();
-            currentFiles.forEach(f => {
-                formData.append('audioFiles', f);
-            });
-            formData.append('audioFiles', file);
-            
-            const updatedPiece = await musicLibraryService.updatePiece(movement.id, formData);
-            
-            const oldFiles = movement.audioFiles || [];
-            const newFiles = updatedPiece.audioFiles || [];
-            const addedFilename = newFiles.find(f => !oldFiles.includes(f));
-            
-            if (addedFilename) {
-                currentMapping[voicePart] = addedFilename;
-                await musicLibraryService.updatePiece(movement.id, {
-                    audioTrackMapping: currentMapping
-                });
-                
-                await loadMovements();
-            } else {
-                throw new Error('Upload succeeded but no new filename returned.');
-            }
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Upload Failed',
-                message: 'Failed to upload the audio track for this movement. Ensure the file is under 20MB and is a valid audio format.',
-                variant: 'danger'
-            });
-        } finally {
-            setUploadingParts(prev => ({ ...prev, [uploadKey]: false }));
-        }
-    };
-
-    const handleMovementFileDelete = async (movement: MusicPiece, voicePart: string) => {
-        const filename = movement.audioTrackMapping?.[voicePart];
-        if (!filename) return;
-        
-        const confirmed = await dialog.confirm({
-            title: 'Delete Learning Track',
-            message: `Are you sure you want to delete the track for ${voicePart === 'tutti' ? 'Tutti' : voicePart} in this movement?`,
-            variant: 'danger',
-            confirmLabel: 'Delete'
-        });
-        if (!confirmed) return;
-        
-        try {
-            const filesToKeep = (movement.audioFiles || []).filter(f => f !== filename);
-            const newMapping = { ...(movement.audioTrackMapping || {}) };
-            delete newMapping[voicePart];
-            
-            await musicLibraryService.updatePiece(movement.id, {
-                audioFiles: filesToKeep,
-                audioTrackMapping: newMapping
-            });
-            
-            await loadMovements();
-            
-            dialog.showToast('Movement audio track deleted successfully.');
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Error',
-                message: 'Failed to delete the movement audio track.',
-                variant: 'danger'
-            });
-        }
-    };
-
-    const handleAddPart = (id: string, part: string) => {
-        setManuallyAddedParts(prev => ({
-            ...prev,
-            [id]: [...(prev[id] || []), part]
-        }));
-    };
-
-    const handleDeleteMovement = async (mId: string, mTitle: string) => {
-        const confirmed = await dialog.confirm({
-            title: 'Delete Movement',
-            message: `Are you sure you want to delete the movement "${mTitle}"?`,
-            variant: 'danger',
-            confirmLabel: 'Delete'
-        });
-        if (!confirmed) return;
-        
-        try {
-            await musicLibraryService.deletePiece(mId);
-            await loadMovements();
-            dialog.showToast('Movement deleted successfully.');
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Error',
-                message: 'Failed to delete movement.',
-                variant: 'danger'
-            });
-        }
-    };
-
-    const handleAddMovement = async (e?: React.SyntheticEvent | React.KeyboardEvent) => {
-        e?.preventDefault();
-        if (!localPiece) return;
-        
-        const nextIndex = movements.length + 1;
-        const defaultTitle = `Movement ${nextIndex}`;
-        const finalTitle = newMovementTitle.trim() || defaultTitle;
-        
-        try {
-            await musicLibraryService.createPiece({
-                title: finalTitle,
-                parentId: localPiece.id,
-                duration: newMovementDuration.trim() || undefined,
-                composer: composer || undefined,
-                arranger: arranger || undefined,
-                voicing: localPiece.voicing || undefined,
-                copies: copies ? parseInt(copies, 10) : undefined,
-                catalogId: catalogId || undefined,
-                sectionBuckets: sectionBuckets,
-                performances: []
-            });
-            
-            setNewMovementTitle('');
-            setNewMovementDuration('');
-            await loadMovements();
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Error',
-                message: 'Failed to add movement.',
-                variant: 'danger'
-            });
-        }
-    };
-
-    const handleCreateGenreInline = async (label: string) => {
-        if (!onCreateGenre) {
-            throw new Error('Genre creation is not supported.');
-        }
-        const trimmed = label.trim();
-        if (!trimmed) {
-            throw new Error('Genre name cannot be empty.');
-        }
-
-        const existing = allGenres.find(g => g.label.toLowerCase() === trimmed.toLowerCase());
-        if (existing) {
-            if (!selectedGenres.includes(existing.id)) {
-                setSelectedGenres(prev => [...prev, existing.id]);
-            }
-            return { id: existing.id, label: existing.label };
-        }
-
-        const newGenre = await onCreateGenre(trimmed);
-        if (!selectedGenres.includes(newGenre.id)) {
-            setSelectedGenres(prev => [...prev, newGenre.id]);
-        }
-        return { id: newGenre.id, label: newGenre.label };
-    };
-
-    const parsePurchaseDateInput = (input: string): string => {
-        const trimmed = input.trim();
-        if (!trimmed) return '';
-        const match = trimmed.match(/^(\d{1,2})\/?(\d{2}|\d{4})$/);
-        if (!match) return '';
-        const mm = match[1].padStart(2, '0');
-        const yyyy = match[2].length === 2 ? `20${match[2]}` : match[2];
-        return `${yyyy}-${mm}-01`;
-    };
-
-    const buildSavePayload = () => {
-        const normalizedDuration = duration.trim();
-        const serializedPurchaseDate = parsePurchaseDateInput(purchaseDateInput);
-        return {
-            title,
-            composer,
-            arranger,
-            purchaseDate: serializedPurchaseDate,
-            duration: normalizedDuration,
-            copies: copies ? parseInt(copies, 10) : undefined,
-            catalogId,
-            sectionBuckets,
-            genres: selectedGenres,
-            performances: selectedPerformanceIds,
-            notes,
-            tuttiFile: !piece ? tuttiFile : undefined,
-            movements: (!piece && isMultiMovementInput)
-                ? localMovementsList.map(m => ({ title: m.title, duration: m.duration }))
-                : undefined
-        };
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-        try {
-            const normalizedDuration = duration.trim();
-            if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
-                await dialog.showMessage({
-                    title: 'Invalid Duration',
-                    message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
-                    variant: 'danger'
-                });
-                return;
-            }
-            await onSave(buildSavePayload());
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const resetFormToEmpty = () => {
-        setTitle('');
-        setComposer('');
-        setArranger('');
-        setDuration('');
-        setCopies('');
-        setCatalogId('');
+      } else {
         setPurchaseDateInput('');
-        setSectionBuckets([]);
-        setSelectedGenres([]);
-        setSelectedPerformanceIds([]);
-        setNotes('');
-        setIsMultiMovementInput(false);
-        setLocalMovementsList([]);
-        setTuttiFile(null);
-        setIsTuttiDraggedOver(false);
-        setStagingMovTitle('');
-        setStagingMovDuration('');
-        setSuggestedDuration(null);
-        setShowQuickAdd(false);
-        setQuickTitle('');
-        setQuickDate('');
-        setQuickVenue('');
+      }
+
+      setSectionBuckets(piece.sectionBuckets || []);
+      setSelectedGenres(piece.genres || []);
+      setSelectedPerformanceIds(piece.performances || []);
+      setNotes(piece.notes || '');
+      setIsMultiMovement(false);
+      loadMovements();
+      setIsMultiMovementInput(false);
+      setLocalMovementsList([]);
+      setTuttiFile(null);
+      setIsTuttiDraggedOver(false);
+      setStagingMovTitle('');
+      setStagingMovDuration('');
+    } else {
+      setTitle(initialTitle || '');
+      setComposer('');
+      setArranger('');
+      setDuration('');
+      setCopies('');
+      setCatalogId('');
+      setPurchaseDateInput('');
+      setSectionBuckets([]);
+      setSelectedGenres([]);
+      setSelectedPerformanceIds([]);
+      setNotes('');
+      setMovements([]);
+      setIsMultiMovement(false);
+      setIsMultiMovementInput(false);
+      setLocalMovementsList([]);
+      setTuttiFile(null);
+      setIsTuttiDraggedOver(false);
+      setStagingMovTitle('');
+      setStagingMovDuration('');
+    }
+    setShowQuickAdd(false);
+    setQuickTitle('');
+    setQuickDate('');
+    setQuickVenue('');
+    setActiveTab(initialTab || 'details');
+    setNewMovementTitle('');
+    setNewMovementDuration('');
+    setExpandedMovementId(null);
+    setSuggestedDuration(null);
+    setManuallyAddedParts({});
+  }, [piece, isOpen, loadMovements, initialTitle, initialTab]);
+
+  const isDirty = useMemo(() => {
+    if (piece) {
+      const titleChanged = title !== piece.title;
+      const composerChanged = composer !== (piece.composer || '');
+      const arrangerChanged = arranger !== (piece.arranger || '');
+      const durationChanged = duration !== (piece.duration || '');
+      const copiesChanged = copies !== (piece.copies?.toString() || '');
+      const catalogIdChanged = catalogId !== (piece.catalogId || '');
+      const notesChanged = notes !== (piece.notes || '');
+
+      const originalPurchaseDisplay = piece.purchaseDate
+        ? (() => {
+            const p = piece.purchaseDate.split('-');
+            return p.length >= 2 ? `${p[1]}/${p[0]}` : '';
+          })()
+        : '';
+      const purchaseDateChanged = purchaseDateInput !== originalPurchaseDisplay;
+
+      const initialSections = [...(piece.sectionBuckets || [])].sort();
+      const currentSections = [...sectionBuckets].sort();
+      const sectionsChanged = JSON.stringify(initialSections) !== JSON.stringify(currentSections);
+
+      const initialGenres = [...(piece.genres || [])].sort();
+      const currentGenres = [...selectedGenres].sort();
+      const genresChanged = JSON.stringify(initialGenres) !== JSON.stringify(currentGenres);
+
+      const initialPerformances = [...(piece.performances || [])].sort();
+      const currentPerformances = [...selectedPerformanceIds].sort();
+      const performancesChanged =
+        JSON.stringify(initialPerformances) !== JSON.stringify(currentPerformances);
+
+      return (
+        titleChanged ||
+        composerChanged ||
+        arrangerChanged ||
+        durationChanged ||
+        copiesChanged ||
+        catalogIdChanged ||
+        notesChanged ||
+        sectionsChanged ||
+        genresChanged ||
+        performancesChanged ||
+        purchaseDateChanged
+      );
+    } else {
+      const hasTitle = title !== (initialTitle || '');
+      const hasComposer = Boolean(composer.trim());
+      const hasArranger = Boolean(arranger.trim());
+      const hasDuration = Boolean(duration.trim());
+      const hasCopies = Boolean(copies.trim());
+      const hasCatalogId = Boolean(catalogId.trim());
+      const hasNotes = Boolean(notes.trim());
+      const hasSections = sectionBuckets.length > 0;
+      const hasGenres = selectedGenres.length > 0;
+      const hasPerformances = selectedPerformanceIds.length > 0;
+      const hasTutti = tuttiFile !== null;
+      const hasStagedMovements = localMovementsList.length > 0;
+      const hasPurchaseDate = Boolean(purchaseDateInput.trim());
+
+      return (
+        hasTitle ||
+        hasComposer ||
+        hasArranger ||
+        hasDuration ||
+        hasCopies ||
+        hasCatalogId ||
+        hasNotes ||
+        hasSections ||
+        hasGenres ||
+        hasPerformances ||
+        hasTutti ||
+        hasStagedMovements ||
+        hasPurchaseDate
+      );
+    }
+  }, [
+    piece,
+    title,
+    composer,
+    arranger,
+    duration,
+    copies,
+    catalogId,
+    notes,
+    sectionBuckets,
+    selectedGenres,
+    selectedPerformanceIds,
+    initialTitle,
+    tuttiFile,
+    localMovementsList,
+    purchaseDateInput,
+  ]);
+
+  const handleClose = async () => {
+    if (isDirty) {
+      const confirmDiscard = await dialog.confirm({
+        title: 'Unsaved Changes',
+        message: piece
+          ? 'You have unsaved changes to this music piece. Do you want to discard them?'
+          : 'You are adding a new music piece with unsaved details. Do you want to discard this piece?',
+        confirmLabel: 'Discard Changes',
+        cancelLabel: 'Keep Editing',
+        variant: 'warning',
+      });
+      if (!confirmDiscard) return;
+    }
+    onClose();
+  };
+
+  const handleAddStagingMovement = (e?: React.SyntheticEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
+    const nextIndex = localMovementsList.length + 1;
+    const defaultTitle = `Movement ${nextIndex}`;
+    const titleVal = stagingMovTitle.trim() || defaultTitle;
+
+    setLocalMovementsList((prev) => [
+      ...prev,
+      {
+        id: `staged_${Date.now()}_${Math.random()}`,
+        title: titleVal,
+        duration: stagingMovDuration.trim() || undefined,
+      },
+    ]);
+    setStagingMovTitle('');
+    setStagingMovDuration('');
+  };
+
+  const handleRemoveStagingMovement = (id: string) => {
+    setLocalMovementsList((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const handleFileUpload = async (voicePart: string, file: File) => {
+    if (!localPiece) return;
+
+    // Extract audio track duration if this is the first learning track and no duration is set
+    const trackCountBefore = Object.keys(localPiece.audioTrackMapping || {}).length;
+    if (trackCountBefore === 0 && !duration.trim()) {
+      try {
+        const seconds = await new Promise<number>((resolve) => {
+          const audio = new Audio();
+          audio.src = URL.createObjectURL(file);
+          audio.addEventListener('loadedmetadata', () => {
+            URL.revokeObjectURL(audio.src);
+            resolve(audio.duration);
+          });
+          audio.addEventListener('error', () => {
+            resolve(0);
+          });
+        });
+        if (seconds > 0) {
+          const formatted = formatSecondsToDuration(Math.round(seconds));
+          setSuggestedDuration(formatted);
+        }
+      } catch (e) {
+        console.error('Failed to get audio duration', e);
+      }
+    }
+
+    setUploadingParts((prev) => ({ ...prev, [voicePart]: true }));
+    try {
+      const existingFilename = localPiece.audioTrackMapping?.[voicePart];
+      let currentFiles = localPiece.audioFiles || [];
+      const currentMapping = { ...(localPiece.audioTrackMapping || {}) };
+
+      if (existingFilename) {
+        currentFiles = currentFiles.filter((f) => f !== existingFilename);
+        delete currentMapping[voicePart];
+      }
+
+      const formData = new FormData();
+      currentFiles.forEach((f) => {
+        formData.append('audioFiles', f);
+      });
+      formData.append('audioFiles', file);
+
+      const updatedPiece = await musicLibraryService.updatePiece(localPiece.id, formData);
+
+      const oldFiles = localPiece.audioFiles || [];
+      const newFiles = updatedPiece.audioFiles || [];
+      const addedFilename = newFiles.find((f) => !oldFiles.includes(f));
+
+      if (addedFilename) {
+        currentMapping[voicePart] = addedFilename;
+        const finalPiece = await musicLibraryService.updatePiece(localPiece.id, {
+          audioTrackMapping: currentMapping,
+        });
+
+        setLocalPiece(finalPiece);
+        if (onRefresh) {
+          await onRefresh();
+        }
+      } else {
+        throw new Error('Upload succeeded but no new filename returned.');
+      }
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Upload Failed',
+        message:
+          'Failed to upload the audio track. Ensure the file is under 20MB and is a valid audio format.',
+        variant: 'danger',
+      });
+    } finally {
+      setUploadingParts((prev) => ({ ...prev, [voicePart]: false }));
+    }
+  };
+
+  const handleFileDelete = async (voicePart: string) => {
+    if (!localPiece) return;
+
+    const filename = localPiece.audioTrackMapping?.[voicePart];
+    if (!filename) return;
+
+    const confirmed = await dialog.confirm({
+      title: 'Delete Learning Track',
+      message: `Are you sure you want to delete the track for ${voicePart === 'tutti' ? 'Tutti' : voicePart}?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
+
+    try {
+      const filesToKeep = (localPiece.audioFiles || []).filter((f) => f !== filename);
+      const newMapping = { ...(localPiece.audioTrackMapping || {}) };
+      delete newMapping[voicePart];
+
+      const updatedPiece = await musicLibraryService.updatePiece(localPiece.id, {
+        audioFiles: filesToKeep,
+        audioTrackMapping: newMapping,
+      });
+
+      setLocalPiece(updatedPiece);
+      if (onRefresh) {
+        await onRefresh();
+      }
+
+      dialog.showToast('Audio track deleted successfully.');
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to delete the audio track.',
+        variant: 'danger',
+      });
+    }
+  };
+
+  const handleMovementFileUpload = async (movement: MusicPiece, voicePart: string, file: File) => {
+    const uploadKey = `${movement.id}_${voicePart}`;
+    setUploadingParts((prev) => ({ ...prev, [uploadKey]: true }));
+    try {
+      const existingFilename = movement.audioTrackMapping?.[voicePart];
+      let currentFiles = movement.audioFiles || [];
+      const currentMapping = { ...(movement.audioTrackMapping || {}) };
+
+      if (existingFilename) {
+        currentFiles = currentFiles.filter((f) => f !== existingFilename);
+        delete currentMapping[voicePart];
+      }
+
+      const formData = new FormData();
+      currentFiles.forEach((f) => {
+        formData.append('audioFiles', f);
+      });
+      formData.append('audioFiles', file);
+
+      const updatedPiece = await musicLibraryService.updatePiece(movement.id, formData);
+
+      const oldFiles = movement.audioFiles || [];
+      const newFiles = updatedPiece.audioFiles || [];
+      const addedFilename = newFiles.find((f) => !oldFiles.includes(f));
+
+      if (addedFilename) {
+        currentMapping[voicePart] = addedFilename;
+        await musicLibraryService.updatePiece(movement.id, {
+          audioTrackMapping: currentMapping,
+        });
+
+        await loadMovements();
+      } else {
+        throw new Error('Upload succeeded but no new filename returned.');
+      }
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Upload Failed',
+        message:
+          'Failed to upload the audio track for this movement. Ensure the file is under 20MB and is a valid audio format.',
+        variant: 'danger',
+      });
+    } finally {
+      setUploadingParts((prev) => ({ ...prev, [uploadKey]: false }));
+    }
+  };
+
+  const handleMovementFileDelete = async (movement: MusicPiece, voicePart: string) => {
+    const filename = movement.audioTrackMapping?.[voicePart];
+    if (!filename) return;
+
+    const confirmed = await dialog.confirm({
+      title: 'Delete Learning Track',
+      message: `Are you sure you want to delete the track for ${voicePart === 'tutti' ? 'Tutti' : voicePart} in this movement?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
+
+    try {
+      const filesToKeep = (movement.audioFiles || []).filter((f) => f !== filename);
+      const newMapping = { ...(movement.audioTrackMapping || {}) };
+      delete newMapping[voicePart];
+
+      await musicLibraryService.updatePiece(movement.id, {
+        audioFiles: filesToKeep,
+        audioTrackMapping: newMapping,
+      });
+
+      await loadMovements();
+
+      dialog.showToast('Movement audio track deleted successfully.');
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to delete the movement audio track.',
+        variant: 'danger',
+      });
+    }
+  };
+
+  const handleAddPart = (id: string, part: string) => {
+    setManuallyAddedParts((prev) => ({
+      ...prev,
+      [id]: [...(prev[id] || []), part],
+    }));
+  };
+
+  const handleDeleteMovement = async (mId: string, mTitle: string) => {
+    const confirmed = await dialog.confirm({
+      title: 'Delete Movement',
+      message: `Are you sure you want to delete the movement "${mTitle}"?`,
+      variant: 'danger',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
+
+    try {
+      await musicLibraryService.deletePiece(mId);
+      await loadMovements();
+      dialog.showToast('Movement deleted successfully.');
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to delete movement.',
+        variant: 'danger',
+      });
+    }
+  };
+
+  const handleAddMovement = async (e?: React.SyntheticEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
+    if (!localPiece) return;
+
+    const nextIndex = movements.length + 1;
+    const defaultTitle = `Movement ${nextIndex}`;
+    const finalTitle = newMovementTitle.trim() || defaultTitle;
+
+    try {
+      await musicLibraryService.createPiece({
+        title: finalTitle,
+        parentId: localPiece.id,
+        duration: newMovementDuration.trim() || undefined,
+        composer: composer || undefined,
+        arranger: arranger || undefined,
+        voicing: localPiece.voicing || undefined,
+        copies: copies ? parseInt(copies, 10) : undefined,
+        catalogId: catalogId || undefined,
+        sectionBuckets: sectionBuckets,
+        performances: [],
+      });
+
+      setNewMovementTitle('');
+      setNewMovementDuration('');
+      await loadMovements();
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to add movement.',
+        variant: 'danger',
+      });
+    }
+  };
+
+  const handleCreateGenreInline = async (label: string) => {
+    if (!onCreateGenre) {
+      throw new Error('Genre creation is not supported.');
+    }
+    const trimmed = label.trim();
+    if (!trimmed) {
+      throw new Error('Genre name cannot be empty.');
+    }
+
+    const existing = allGenres.find((g) => g.label.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      if (!selectedGenres.includes(existing.id)) {
+        setSelectedGenres((prev) => [...prev, existing.id]);
+      }
+      return { id: existing.id, label: existing.label };
+    }
+
+    const newGenre = await onCreateGenre(trimmed);
+    if (!selectedGenres.includes(newGenre.id)) {
+      setSelectedGenres((prev) => [...prev, newGenre.id]);
+    }
+    return { id: newGenre.id, label: newGenre.label };
+  };
+
+  const parsePurchaseDateInput = (input: string): string => {
+    const trimmed = input.trim();
+    if (!trimmed) return '';
+    const match = trimmed.match(/^(\d{1,2})\/?(\d{2}|\d{4})$/);
+    if (!match) return '';
+    const mm = match[1].padStart(2, '0');
+    const yyyy = match[2].length === 2 ? `20${match[2]}` : match[2];
+    return `${yyyy}-${mm}-01`;
+  };
+
+  const buildSavePayload = () => {
+    const normalizedDuration = duration.trim();
+    const serializedPurchaseDate = parsePurchaseDateInput(purchaseDateInput);
+    return {
+      title,
+      composer,
+      arranger,
+      purchaseDate: serializedPurchaseDate,
+      duration: normalizedDuration,
+      copies: copies ? parseInt(copies, 10) : undefined,
+      catalogId,
+      sectionBuckets,
+      genres: selectedGenres,
+      performances: selectedPerformanceIds,
+      notes,
+      tuttiFile: !piece ? tuttiFile : undefined,
+      movements:
+        !piece && isMultiMovementInput
+          ? localMovementsList.map((m) => ({ title: m.title, duration: m.duration }))
+          : undefined,
     };
+  };
 
-    const handleSaveAndAddAnother = async () => {
-        if (!onSaveAndAddAnother) return;
-        const normalizedDuration = duration.trim();
-        if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
-            await dialog.showMessage({
-                title: 'Invalid Duration',
-                message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
-                variant: 'danger'
-            });
-            return;
-        }
-        if (!title.trim()) {
-            await dialog.showMessage({
-                title: 'Title Required',
-                message: 'Please enter a title for the piece.',
-                variant: 'warning'
-            });
-            return;
-        }
-        setIsSaving(true);
-        try {
-            await onSaveAndAddAnother(buildSavePayload());
-            resetFormToEmpty();
-            setTimeout(() => titleInputRef.current?.focus(), 50);
-        } finally {
-            setIsSaving(false);
-        }
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const normalizedDuration = duration.trim();
+      if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+        await dialog.showMessage({
+          title: 'Invalid Duration',
+          message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+          variant: 'danger',
+        });
+        return;
+      }
+      await onSave(buildSavePayload());
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-    const handleQuickAddPerformance = async () => {
-        if (!quickTitle || !quickDate || !quickVenue) {
-            dialog.showMessage({
-                title: 'Validation Error',
-                message: 'Please provide a title, date, and venue for the performance.',
-                variant: 'warning'
-            });
-            return;
-        }
+  const resetFormToEmpty = () => {
+    setTitle('');
+    setComposer('');
+    setArranger('');
+    setDuration('');
+    setCopies('');
+    setCatalogId('');
+    setPurchaseDateInput('');
+    setSectionBuckets([]);
+    setSelectedGenres([]);
+    setSelectedPerformanceIds([]);
+    setNotes('');
+    setIsMultiMovementInput(false);
+    setLocalMovementsList([]);
+    setTuttiFile(null);
+    setIsTuttiDraggedOver(false);
+    setStagingMovTitle('');
+    setStagingMovDuration('');
+    setSuggestedDuration(null);
+    setShowQuickAdd(false);
+    setQuickTitle('');
+    setQuickDate('');
+    setQuickVenue('');
+  };
 
-        setIsQuickAdding(true);
-        try {
-            const utcDate = zonedInputValueToUtc(quickDate, timezone);
-            const newPerf = await eventService.createEvent({
-                title: quickTitle,
-                date: utcDate,
-                type: 'Performance',
-                venue: quickVenue,
-                details: 'Quick added from music library historic logs'
-            });
+  const handleSaveAndAddAnother = async () => {
+    if (!onSaveAndAddAnother) return;
+    const normalizedDuration = duration.trim();
+    if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+      await dialog.showMessage({
+        title: 'Invalid Duration',
+        message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+        variant: 'danger',
+      });
+      return;
+    }
+    if (!title.trim()) {
+      await dialog.showMessage({
+        title: 'Title Required',
+        message: 'Please enter a title for the piece.',
+        variant: 'warning',
+      });
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onSaveAndAddAnother(buildSavePayload());
+      resetFormToEmpty();
+      setTimeout(() => titleInputRef.current?.focus(), 50);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-            // Update local performance selection list
-            setAllPerformances(prev => [newPerf, ...prev]);
-            setSelectedPerformanceIds(prev => [...prev, newPerf.id]);
+  const handleQuickAddPerformance = async () => {
+    if (!quickTitle || !quickDate || !quickVenue) {
+      dialog.showMessage({
+        title: 'Validation Error',
+        message: 'Please provide a title, date, and venue for the performance.',
+        variant: 'warning',
+      });
+      return;
+    }
 
-            // Reset quick add fields
-            setQuickTitle('');
-            setQuickDate('');
-            setQuickVenue('');
-            setShowQuickAdd(false);
-            
-            dialog.showMessage({
-                title: 'Success',
-                message: `Created performance "${newPerf.title}" and linked it to this piece.`,
-                variant: 'info'
-            });
-        } catch (err) {
-            console.error(err);
-            dialog.showMessage({
-                title: 'Error',
-                message: 'Failed to create the performance.',
-                variant: 'danger'
-            });
-        } finally {
-            setIsQuickAdding(false);
-        }
-    };
+    setIsQuickAdding(true);
+    try {
+      const utcDate = zonedInputValueToUtc(quickDate, timezone);
+      const newPerf = await eventService.createEvent({
+        title: quickTitle,
+        date: utcDate,
+        type: 'Performance',
+        venue: quickVenue,
+        details: 'Quick added from music library historic logs',
+      });
 
-    const togglePerformance = (perfId: string) => {
-        setSelectedPerformanceIds(prev => 
-            prev.includes(perfId) ? prev.filter(id => id !== perfId) : [...prev, perfId]
-        );
-    };
+      // Update local performance selection list
+      setAllPerformances((prev) => [newPerf, ...prev]);
+      setSelectedPerformanceIds((prev) => [...prev, newPerf.id]);
 
-    const selectedPerformances = useMemo(() => {
-        return allPerformances
-            .filter(p => selectedPerformanceIds.includes(p.id))
-            .sort((a, b) => a.title.localeCompare(b.title));
-    }, [allPerformances, selectedPerformanceIds]);
+      // Reset quick add fields
+      setQuickTitle('');
+      setQuickDate('');
+      setQuickVenue('');
+      setShowQuickAdd(false);
 
-    const availablePerformances = useMemo(() => {
-        return allPerformances
-            .filter(p => !selectedPerformanceIds.includes(p.id))
-            .sort((a, b) => a.title.localeCompare(b.title));
-    }, [allPerformances, selectedPerformanceIds]);
+      dialog.showMessage({
+        title: 'Success',
+        message: `Created performance "${newPerf.title}" and linked it to this piece.`,
+        variant: 'info',
+      });
+    } catch (err) {
+      console.error(err);
+      dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to create the performance.',
+        variant: 'danger',
+      });
+    } finally {
+      setIsQuickAdding(false);
+    }
+  };
 
-    return (
-        <BaseModal
-            isOpen={isOpen}
-            onClose={handleClose}
-            title={piece ? 'Edit Piece' : 'Add Piece'}
-            maxWidth="640px"
-            minHeight={piece ? '580px' : undefined}
-            footer={
-                <>
-                    {onDelete && <button type="button" className="btn btn-danger mr-auto" onClick={() => { onClose(); onDelete(); }}>Delete</button>}
-                    <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
-                    {!piece && onSaveAndAddAnother && (
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={isSaving}
-                            onClick={handleSaveAndAddAnother}
-                        >
-                            {isSaving ? 'Saving...' : 'Save & Add Another'}
-                        </button>
-                    )}
-                    <button type="submit" form="music-piece-form" className="btn btn-primary" disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Piece'}
-                    </button>
-                </>
-            }
-        >
-            {piece && (
-                <div className="mb-[var(--space-md)] flex flex-row gap-[var(--space-md)] border-b border-[var(--border)]">
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('details')}
-                        className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'details' ? 'border-b-2 border-[var(--primary)] font-semibold text-[var(--primary)]' : 'border-b-2 border-transparent font-medium text-[var(--text-muted)]'}`}
-                    >
-                        Piece Details
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('tracks')}
-                        className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'tracks' ? 'border-b-2 border-[var(--primary)] font-semibold text-[var(--primary)]' : 'border-b-2 border-transparent font-medium text-[var(--text-muted)]'}`}
-                    >
-                        Learning Tracks
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('performances')}
-                        className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'performances' ? 'border-b-2 border-[var(--primary)] font-semibold text-[var(--primary)]' : 'border-b-2 border-transparent font-medium text-[var(--text-muted)]'}`}
-                    >
-                        Linked Performances
-                    </button>
-                    {isMultiMovement && (
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('movements')}
-                            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'movements' ? 'border-b-2 border-[var(--primary)] font-semibold text-[var(--primary)]' : 'border-b-2 border-transparent font-medium text-[var(--text-muted)]'}`}
-                        >
-                            Movements ({movements.length})
-                        </button>
-                    )}
-                </div>
+  const togglePerformance = (perfId: string) => {
+    setSelectedPerformanceIds((prev) =>
+      prev.includes(perfId) ? prev.filter((id) => id !== perfId) : [...prev, perfId]
+    );
+  };
+
+  const selectedPerformances = useMemo(() => {
+    return allPerformances
+      .filter((p) => selectedPerformanceIds.includes(p.id))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [allPerformances, selectedPerformanceIds]);
+
+  const availablePerformances = useMemo(() => {
+    return allPerformances
+      .filter((p) => !selectedPerformanceIds.includes(p.id))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [allPerformances, selectedPerformanceIds]);
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={piece ? 'Edit Piece' : 'Add Piece'}
+      maxWidth="640px"
+      minHeight={piece ? '580px' : undefined}
+      footer={
+        <>
+          {onDelete && (
+            <button
+              type="button"
+              className="mr-auto flex h-10 cursor-pointer items-center justify-center rounded-md bg-danger-bg px-4 text-sm font-bold text-danger-text shadow-xs transition-colors hover:bg-red-200 active:scale-95"
+              onClick={() => {
+                onClose();
+                onDelete();
+              }}
+            >
+              Delete
+            </button>
+          )}
+          <button
+            type="button"
+            className="flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:scale-95"
+            onClick={handleClose}
+          >
+            Cancel
+          </button>
+          {!piece && onSaveAndAddAnother && (
+            <button
+              type="button"
+              className="flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary-light px-4 text-sm font-bold text-primary-deep shadow-xs transition-colors hover:bg-emerald-100 active:scale-95 disabled:opacity-50"
+              disabled={isSaving}
+              onClick={handleSaveAndAddAnother}
+            >
+              {isSaving ? 'Saving...' : 'Save & Add Another'}
+            </button>
+          )}
+          <button
+            type="submit"
+            form="music-piece-form"
+            className="flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save Piece'}
+          </button>
+        </>
+      }
+    >
+      {piece && (
+        <div className="mb-4 flex flex-row gap-4 border-b border-border">
+          <button
+            type="button"
+            onClick={() => setActiveTab('details')}
+            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'details' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+          >
+            Piece Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('tracks')}
+            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'tracks' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+          >
+            Learning Tracks
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('performances')}
+            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'performances' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+          >
+            Linked Performances
+          </button>
+          {isMultiMovement && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('movements')}
+              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'movements' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+            >
+              Movements ({movements.length})
+            </button>
+          )}
+        </div>
+      )}
+
+      <form id="music-piece-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {(!piece || activeTab === 'details') && (
+          <>
+            {/* LINKED PARENT BANNER NOTICE */}
+            {parentPiece && (
+              <div className="mb-2 flex items-center gap-2 rounded-md border-l-4 border-primary bg-primary/5 p-3 text-sm text-text">
+                <span>
+                  🔗 <strong>Multi-Movement Link:</strong> This piece is configured as a movement of{' '}
+                  <strong>{parentPiece.title}</strong>.
+                </span>
+              </div>
             )}
 
-            <form id="music-piece-form" onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-sm)]">
-                {(!piece || activeTab === 'details') && (
-                    <>
-                        {/* NEW LINKED PARENT BANNER NOTICE */}
-                        {parentPiece && (
-                            <div className="mb-[var(--space-xs)] flex items-center gap-[6px] rounded-[var(--radius-sm)] border-l-4 border-[var(--primary)] bg-[rgb(74_124_89_/_5%)] p-[var(--space-sm)] text-sm text-[var(--text-main)]">
-                                <span>
-                                    🔗 <strong>Multi-Movement Link:</strong> This piece is configured as a movement of <strong>{parentPiece.title}</strong>.
-                                </span>
-                            </div>
-                        )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                Title
+              </label>
+              <input
+                ref={titleInputRef}
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Composer
+                </label>
+                <AutocompleteInput
+                  value={composer}
+                  onChange={setComposer}
+                  suggestions={uniqueComposers}
+                  placeholder="e.g. Ludwig van Beethoven"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Arranger
+                </label>
+                <AutocompleteInput
+                  value={arranger}
+                  onChange={setArranger}
+                  suggestions={uniqueArrangers}
+                  placeholder="e.g. Alice Parker"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+            </div>
 
-                        <div className="flex flex-col gap-1">
-                            <label className="text-label">Title</label>
-                            <input ref={titleInputRef} required value={title} onChange={e => setTitle(e.target.value)} className="card h-10 w-full px-3" />
-                        </div>
-                        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-md)]">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Composer</label>
-                                <AutocompleteInput 
-                                    value={composer} 
-                                    onChange={setComposer} 
-                                    suggestions={uniqueComposers} 
-                                    placeholder="e.g. Ludwig van Beethoven" 
-                                    className="card h-10 w-full px-3" 
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Arranger</label>
-                                <AutocompleteInput 
-                                    value={arranger} 
-                                    onChange={setArranger} 
-                                    suggestions={uniqueArrangers} 
-                                    placeholder="e.g. Alice Parker" 
-                                    className="card h-10 w-full px-3" 
-                                />
-                            </div>
-                        </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Applies to Sections
+                </label>
+                <MultiSelectDropdown
+                  options={sections.map((s) => ({ id: s.code, label: s.name }))}
+                  selectedIds={sectionBuckets}
+                  onChange={setSectionBuckets}
+                  placeholder="Sections"
+                  allLabel="All Sections"
+                />
+                <span className="mt-1 text-xs text-text-muted">
+                  {sectionBuckets.length === 0
+                    ? 'Applies to all sections. Select to restrict.'
+                    : `Restricted to: ${sectionBuckets.map((code) => sections.find((s) => s.code === code)?.name || code).join(', ')}`}
+                </span>
+              </div>
 
-                        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-md)]">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Applies to Sections</label>
-                                <MultiSelectDropdown
-                                    options={sections.map(s => ({ id: s.code, label: s.name }))}
-                                    selectedIds={sectionBuckets}
-                                    onChange={setSectionBuckets}
-                                    placeholder="Sections"
-                                    allLabel="All Sections"
-                                />
-                                <span className="text-muted mt-[2px] text-xs">
-                                    {sectionBuckets.length === 0 
-                                        ? "Applies to all sections. Select to restrict." 
-                                        : `Restricted to: ${sectionBuckets.map(code => sections.find(s => s.code === code)?.name || code).join(', ')}`
-                                    }
-                                </span>
-                            </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Genres
+                </label>
+                <MultiSelectDropdown
+                  options={[...allGenres]
+                    .sort((a, b) => a.label.localeCompare(b.label))
+                    .map((g) => ({ id: g.id, label: g.label }))}
+                  selectedIds={selectedGenres}
+                  onChange={setSelectedGenres}
+                  placeholder="Genres"
+                  allLabel="No Genre"
+                  allowCreate={true}
+                  onCreateOption={handleCreateGenreInline}
+                  variant="chips"
+                  searchable
+                />
+              </div>
+            </div>
+            {piece ? (
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is-multi-movement"
+                  checked={isMultiMovement}
+                  onChange={(e) => setIsMultiMovement(e.target.checked)}
+                  className="size-4 cursor-pointer rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
+                />
+                <span className="cursor-pointer text-sm font-bold text-text">
+                  This is a multi-movement piece
+                </span>
+              </label>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is-multi-movement-input"
+                    checked={isMultiMovementInput}
+                    onChange={(e) => setIsMultiMovementInput(e.target.checked)}
+                    className="size-4 cursor-pointer rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
+                  />
+                  <span className="cursor-pointer text-sm font-bold text-text">
+                    This piece has multiple movements
+                  </span>
+                </label>
+                {isMultiMovementInput && (
+                  <div className="mt-2 flex flex-col gap-2 rounded-lg border border-border bg-gray-50/50 p-4">
+                    <div className="flex flex-row items-center justify-between">
+                      <span className="text-xs font-semibold text-primary">
+                        Staged Movements ({localMovementsList.length})
+                      </span>
+                    </div>
 
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Genres</label>
-                                <MultiSelectDropdown
-                                    options={[...allGenres].sort((a, b) => a.label.localeCompare(b.label)).map(g => ({ id: g.id, label: g.label }))}
-                                    selectedIds={selectedGenres}
-                                    onChange={setSelectedGenres}
-                                    placeholder="Genres"
-                                    allLabel="No Genre"
-                                    allowCreate={true}
-                                    onCreateOption={handleCreateGenreInline}
-                                    variant="chips"
-                                    searchable
-                                />
-                            </div>
-                        </div>
-                        {piece ? (
-                            <div className="m-0 flex flex-row items-center gap-[var(--space-xs)]">
-                                <input 
-                                    type="checkbox" 
-                                    id="is-multi-movement"
-                                    checked={isMultiMovement} 
-                                    onChange={e => setIsMultiMovement(e.target.checked)}
-                                    className="cursor-pointer"
-                                />
-                                <label htmlFor="is-multi-movement" className="text-label m-0 cursor-pointer font-medium">
-                                    This is a multi-movement piece
-                                </label>
-                            </div>
-                        ) : (
-                            <div className="m-0 flex flex-col gap-[var(--space-xs)]">
-                                <div className="flex flex-row items-center gap-[var(--space-xs)]">
-                                    <input 
-                                        type="checkbox" 
-                                        id="is-multi-movement-input"
-                                        checked={isMultiMovementInput} 
-                                        onChange={e => {
-                                            setIsMultiMovementInput(e.target.checked);
-                                        }}
-                                        className="size-4 cursor-pointer accent-[var(--primary)]"
-                                    />
-                                    <label htmlFor="is-multi-movement-input" className="text-label m-0 cursor-pointer font-medium">
-                                        This piece has multiple movements
-                                    </label>
-                                </div>
-                                {isMultiMovementInput && (
-                                    <div className="mt-1 flex flex-col gap-[var(--space-xs)] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[10px_14px]">
-                                        <div className="flex flex-row items-center justify-between">
-                                            <span className="text-[13px] font-semibold text-[var(--primary)]">Staged Movements ({localMovementsList.length})</span>
-                                        </div>
-                                        
-                                        {localMovementsList.length > 0 && (
-                                            <div className="flex max-h-[120px] flex-col gap-1 overflow-y-auto pr-1">
-                                                {localMovementsList.map((m, idx) => (
-                                                    <div key={m.id} className="animate-fade-in flex items-center justify-between rounded-[4px] border border-[var(--border)] bg-[var(--bg-card)] p-1 px-2">
-                                                        <span className="text-[12px] font-medium">{idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}</span>
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => handleRemoveStagingMovement(m.id)}
-                                                            className="cursor-pointer border-none bg-none p-[2px_4px] text-[11px] text-[var(--danger)]"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        <div className="mt-1 flex flex-row items-center gap-2">
-                                            <input 
-                                                type="text" 
-                                                placeholder={`Name (e.g. Movement ${localMovementsList.length + 1})`}
-                                                value={stagingMovTitle}
-                                                onChange={e => setStagingMovTitle(e.target.value)}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') {
-                                                        handleAddStagingMovement(e);
-                                                    }
-                                                }}
-                                                className="card h-[30px] flex-[2] px-2 text-[12px]"
-                                            />
-                                            <input 
-                                                type="text" 
-                                                placeholder="e.g. 2:45"
-                                                value={stagingMovDuration}
-                                                onChange={e => setStagingMovDuration(e.target.value)}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') {
-                                                        handleAddStagingMovement(e);
-                                                    }
-                                                }}
-                                                className="card h-[30px] flex-1 px-2 text-[12px]"
-                                            />
-                                            <button 
-                                                type="button" 
-                                                className="btn btn-primary h-[30px] min-h-[30px] px-3 text-[12px]"
-                                                onClick={() => handleAddStagingMovement()}
-                                            >
-                                                + Stage
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[var(--space-md)]">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Duration</label>
-                                <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 3:30" className="card h-10 w-full px-3" />
-                                {suggestedDuration && !duration.trim() && (
-                                    <div className="mt-[6px] flex flex-row items-center justify-between gap-2 rounded-[6px] border border-dashed border-[rgb(27_77_62_/_30%)] bg-[var(--primary-light)] p-[8px_12px]">
-                                        <span className="text-muted inline-flex items-center gap-1 text-xs font-medium text-[var(--primary)]">
-                                            💡 Track length: <strong>{suggestedDuration}</strong>. Use this?
-                                        </span>
-                                        <button 
-                                            type="button"
-                                            className="btn btn-secondary btn-sm !h-[22px] !min-h-[22px] cursor-pointer !p-[2px_8px] !text-[11px] leading-none"
-                                            onClick={() => {
-                                                setDuration(suggestedDuration);
-                                                setSuggestedDuration(null);
-                                            }}
-                                        >
-                                            Apply
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Copies</label>
-                                <input type="number" value={copies} onChange={e => setCopies(e.target.value)} className="card h-10 w-full px-3" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Catalog ID</label>
-                                <input value={catalogId} onChange={e => setCatalogId(e.target.value)} className="card h-10 w-full px-3" />
-                                {catalogId.trim() && catalogLookupTemplate && resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
-                                    <a 
-                                        href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn btn-secondary mt-[2px] inline-flex !h-6 !min-h-6 items-center gap-1 self-start rounded-full !p-[4px_12px] !text-xs leading-none no-underline"
-                                    >
-                                        Lookup ↗
-                                    </a>
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-label">Purchase Date</label>
-                                <input
-                                    value={purchaseDateInput}
-                                    onChange={e => setPurchaseDateInput(e.target.value)}
-                                    placeholder="mm/yyyy"
-                                    className="card h-10 w-full px-3"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-label">Notes</label>
-                            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. A cappella, performance instructions, etc." className="card min-h-[54px] resize-y px-3 py-2" />
-                            <span className="text-muted mt-[2px] text-xs">
-                                If this is a medley, please list the names of the different pieces here.
+                    {localMovementsList.length > 0 && (
+                      <div className="flex max-h-[120px] flex-col gap-1 overflow-y-auto pr-1">
+                        {localMovementsList.map((m, idx) => (
+                          <div
+                            key={m.id}
+                            className="flex items-center justify-between rounded-md border border-border bg-surface p-1.5 px-3 text-xs font-medium"
+                          >
+                            <span>
+                              {idx + 1}. {m.title} {m.duration ? `(${m.duration})` : ''}
                             </span>
-                        </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveStagingMovement(m.id)}
+                              className="cursor-pointer p-1 text-xs font-bold text-danger-text hover:text-red-700"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-
-                        {!piece && (
-                            <>
-                            <div className="mt-[var(--space-xs)] flex flex-col gap-1">
-                                <label className="text-label">Link to Past Performance (Optional)</label>
-                                <div className="flex min-h-9 flex-row flex-wrap gap-[var(--space-xs)]">
-                                    {selectedPerformances.length === 0 ? (
-                                        <span className="text-muted text-sm">No performances linked.</span>
-                                    ) : (
-                                        selectedPerformances.map(perf => {
-                                            const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-                                            return (
-                                                <div key={perf.id} className="flex flex-row items-center gap-[var(--space-xs)] rounded-full border border-[var(--primary)] bg-[rgb(74_124_89_/_10%)] px-[10px] py-1 text-[13px] text-[var(--primary)]">
-                                                    <span>{perf.title} {dateStr && `(${dateStr})`}</span>
-                                                    <button type="button" onClick={() => togglePerformance(perf.id)} className="cursor-pointer border-none bg-none p-0 text-[14px] font-bold text-[var(--primary)]">×</button>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                                <select
-                                    className="card h-9 w-full px-3 text-[14px]"
-                                    value=""
-                                    onChange={e => {
-                                        if (e.target.value) togglePerformance(e.target.value);
-                                    }}
-                                >
-                                    <option value="">-- Link a past performance --</option>
-                                    {availablePerformances.map(perf => {
-                                        const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-                                        return (
-                                            <option key={perf.id} value={perf.id}>
-                                                {perf.title} {dateStr && `(${dateStr})`}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                            </div>
-                            <div className="mt-[var(--space-xs)] flex flex-col gap-1">
-                                <label className="text-label">Tutti Practice Track (Optional)</label>
-                                {tuttiFile ? (
-                                    <div className="animate-fade-in flex flex-row items-center justify-between gap-[var(--space-md)] rounded-[var(--radius-md)] border border-[var(--primary)] bg-[rgb(74_124_89_/_5%)] p-[8px_12px]">
-                                        <div className="flex min-w-0 flex-1 flex-row items-center gap-2">
-                                            <span className="text-[18px]">🎵</span>
-                                            <div className="flex min-w-0 flex-1 flex-col">
-                                                <strong className="block truncate text-[13px]">
-                                                    {tuttiFile.name}
-                                                </strong>
-                                                <span className="text-muted text-xs">
-                                                    {(tuttiFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to upload
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            className="btn btn-ghost btn-sm !m-0 !h-7 min-h-auto !p-[4px_8px] !text-[var(--danger)]" 
-                                            onClick={() => setTuttiFile(null)}
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div 
-                                        onDragOver={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setIsTuttiDraggedOver(true);
-                                        }}
-                                        onDragLeave={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setIsTuttiDraggedOver(false);
-                                        }}
-                                        onDrop={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setIsTuttiDraggedOver(false);
-                                            const file = e.dataTransfer.files?.[0];
-                                            if (file && file.type.startsWith('audio/')) {
-                                                setTuttiFile(file);
-                                            }
-                                        }}
-                                        className={`cursor-pointer rounded-[var(--radius)] p-[12px_16px] transition-all duration-200 ease-in-out ${isTuttiDraggedOver ? 'border-2 border-dashed border-[var(--primary)] bg-[rgb(27_77_62_/_4%)]' : 'border-2 border-dashed border-[var(--border)] bg-transparent'}`}
-                                    >
-                                        <label className="m-0 flex w-full cursor-pointer items-center justify-center gap-[var(--space-sm)]">
-                                            <span className="text-[20px]">📤</span>
-                                            <span className="text-[13px] font-medium text-[var(--text-color)]">
-                                                Drag and drop a Tutti MP3 track here, or <span className="font-semibold text-[var(--primary)] underline">browse</span>
-                                            </span>
-                                            <input 
-                                                type="file" 
-                                                accept="audio/*" 
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        setTuttiFile(file);
-                                                    }
-                                                }}
-                                                className="hidden"
-                                            />
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
-                            </>
-                        )}
-                    </>
-                )}
-
-                {(piece && activeTab === 'performances') && (
-                    <>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-label">Linked Performances</label>
-                            
-                            {/* Selected performances pills */}
-                            <div className="flex min-h-10 flex-row flex-wrap gap-[var(--space-xs)] p-[var(--space-xs)]">
-                                {selectedPerformances.length === 0 ? (
-                                    <span className="text-muted text-sm">No performances linked.</span>
-                                ) : (
-                                    selectedPerformances.map(perf => {
-                                        const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-                                        return (
-                                            <div key={perf.id} className="flex flex-row items-center gap-[var(--space-xs)] rounded-full border border-[var(--primary)] bg-[rgb(74_124_89_/_10%)] px-[10px] py-[4px] text-[13px] text-[var(--primary)]">
-                                                <span>{perf.title} {dateStr && `(${dateStr})`}</span>
-                                                <button type="button" onClick={() => togglePerformance(perf.id)} className="cursor-pointer border-none bg-none p-0 text-[14px] font-bold text-[var(--primary)]">×</button>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-
-                            <div className="flex flex-row flex-wrap gap-[var(--space-sm)]">
-                                <select 
-                                    className="card h-9 min-w-0 flex-[1_1_200px] px-3 text-[14px]" 
-                                    value="" 
-                                    onChange={e => {
-                                        if (e.target.value) {
-                                            togglePerformance(e.target.value);
-                                        }
-                                    }}
-                                >
-                                    <option value="">-- Add a performance --</option>
-                                    {availablePerformances.map(perf => {
-                                        const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-                                        return (
-                                            <option key={perf.id} value={perf.id}>
-                                                {perf.title} {dateStr && `(${dateStr})`}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                                <button 
-                                    type="button" 
-                                    className="btn btn-secondary btn-sm flex-[1_1_auto] justify-center" 
-                                    onClick={() => setShowQuickAdd(!showQuickAdd)}
-                                >
-                                    {showQuickAdd ? 'Cancel Quick Add' : 'Quick Add Performance'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Quick Add Performance form */}
-                        {showQuickAdd && (
-                            <div className="card mt-[var(--space-xs)] rounded-[var(--radius)] border border-dashed border-[var(--border)] bg-[var(--bg-card-hover)] p-[var(--space-md)]">
-                                <h4 className="!mt-0 !mb-[var(--space-md)] text-sm text-[var(--primary)]">Quick Add Historic Performance</h4>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-muted text-xs">Performance Title</label>
-                                        <input 
-                                            value={quickTitle} 
-                                            onChange={e => setQuickTitle(e.target.value)} 
-                                            placeholder="e.g. Spring Concert 2018"
-                                            className="card h-9 px-3 text-[14px]" 
-                                        />
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-[var(--space-md)]">
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-muted text-xs">Date</label>
-                                            <input 
-                                                type="datetime-local" 
-                                                value={quickDate} 
-                                                onChange={e => setQuickDate(e.target.value)} 
-                                                className="card h-9 px-3 text-[14px]" 
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-muted text-xs">Venue</label>
-                                            <select 
-                                                value={quickVenue} 
-                                                onChange={e => setQuickVenue(e.target.value)} 
-                                                className="card h-9 w-full px-3 text-[14px]" 
-                                            >
-                                                <option value="">-- Select Venue --</option>
-                                                {venues.map(v => (
-                                                    <option key={v.id} value={v.id}>{v.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <button 
-                                        type="button" 
-                                        className="btn btn-primary btn-sm mt-[var(--space-xs)] self-end" 
-                                        onClick={handleQuickAddPerformance} 
-                                        disabled={isQuickAdding}
-                                    >
-                                        {isQuickAdding ? 'Creating...' : 'Create & Link'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {(piece && activeTab === 'tracks') && (
-                    <div 
-                        className="flex-col gap-[var(--space-xs)]" 
-                        onDragOver={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
+                    <div className="mt-1 flex flex-row items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={`Name (e.g. Movement ${localMovementsList.length + 1})`}
+                        value={stagingMovTitle}
+                        onChange={(e) => setStagingMovTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleAddStagingMovement(e);
+                          }
                         }}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
+                        className="h-9 flex-[2] rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      />
+                      <input
+                        type="text"
+                        placeholder="e.g. 2:45"
+                        value={stagingMovDuration}
+                        onChange={(e) => setStagingMovDuration(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleAddStagingMovement(e);
+                          }
                         }}
+                        className="h-9 flex-1 rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      />
+                      <button
+                        type="button"
+                        className="flex h-9 cursor-pointer items-center justify-center rounded-md bg-primary px-4 text-xs font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                        onClick={() => handleAddStagingMovement()}
+                      >
+                        + Stage
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Duration
+                </label>
+                <input
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="e.g. 3:30"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+                {suggestedDuration && !duration.trim() && (
+                  <div className="mt-2 flex flex-row items-center justify-between gap-2 rounded-lg border border-dashed border-primary/30 bg-primary-light p-2.5 px-3">
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-deep">
+                      💡 Track length: <strong>{suggestedDuration}</strong>. Use this?
+                    </span>
+                    <button
+                      type="button"
+                      className="flex h-6 cursor-pointer items-center justify-center rounded-md border border-primary/40 bg-surface px-3 text-[10px] font-bold text-primary shadow-xs transition-colors hover:bg-primary-light active:scale-95"
+                      onClick={() => {
+                        setDuration(suggestedDuration);
+                        setSuggestedDuration(null);
+                      }}
                     >
-                        {/* Context header: shows piece name + movement name */}
-                        {(() => {
-                            const parentPiece = piece.parentId && allPieces
-                                ? allPieces.find(p => p.id === piece.parentId)
-                                : undefined;
-                            const contextLabel = getLearningTrackContextLabel(
-                                piece,
-                                parentPiece?.title
-                            );
-                            return (
-                                <div className="mb-[var(--space-xs)] flex flex-col gap-[2px] border-b border-[var(--border)] pb-[var(--space-sm)]">
-                                    <span className="text-[11px] font-bold tracking-[0.07em] text-[var(--text-muted)] uppercase">
-                                        🎵 Learning Tracks for
-                                    </span>
-                                    <span className="text-[16px] font-bold tracking-[-0.01em] text-[var(--primary)]">
-                                        {contextLabel}
-                                    </span>
-                                </div>
-                            );
-                        })()}
-                        {!localPiece ? (
-                            <div className="flex flex-row items-center justify-center gap-[var(--space-sm)] rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[rgb(74_124_89_/_3%)] p-[var(--space-md)] text-[14px] text-[var(--text-muted)]">
-                                <span>Please save this piece first to enable learning track uploads.</span>
-                            </div>
-                        ) : (
-                            <LearningTracksEditor
-                                piece={localPiece}
-                                voiceParts={voiceParts}
-                                sections={sections}
-                                uploadingParts={uploadingParts}
-                                uploadingKeyPrefix=""
-                                onUpload={handleFileUpload}
-                                onDelete={handleFileDelete}
-                                manuallyAddedParts={manuallyAddedParts[localPiece.id] || []}
-                                onAddPart={(part) => handleAddPart(localPiece.id, part)}
-                            />
-                        )}
-                    </div>
+                      Apply
+                    </button>
+                  </div>
                 )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Copies
+                </label>
+                <input
+                  type="number"
+                  value={copies}
+                  onChange={(e) => setCopies(e.target.value)}
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Catalog ID
+                </label>
+                <input
+                  value={catalogId}
+                  onChange={(e) => setCatalogId(e.target.value)}
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+                {catalogId.trim() &&
+                  catalogLookupTemplate &&
+                  resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
+                    <a
+                      href={resolveCatalogLookupUrl(catalogLookupTemplate, catalogId)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary-light px-3 py-1 text-xs font-bold text-primary-deep no-underline transition-colors hover:bg-emerald-100 active:scale-95"
+                    >
+                      Lookup ↗
+                    </a>
+                  )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  Purchase Date
+                </label>
+                <input
+                  value={purchaseDateInput}
+                  onChange={(e) => setPurchaseDateInput(e.target.value)}
+                  placeholder="mm/yyyy"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. A cappella, performance instructions, etc."
+                className="min-h-[80px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+              />
+              <span className="mt-1 text-xs text-text-muted">
+                If this is a medley, please list the names of the different pieces here.
+              </span>
+            </div>
 
-                {(piece && activeTab === 'movements' && isMultiMovement) && (
-                    <div className="flex-col gap-[var(--space-md)]">
-                        <div className="animate-fade-in flex-row flex-row items-center justify-between">
-                            <h3 className="text-md m-0 text-[var(--primary)]">Movements ({movements.length})</h3>
+            {!piece && (
+              <>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    Link to Past Performance (Optional)
+                  </label>
+                  <div className="flex min-h-[36px] flex-row flex-wrap gap-2 py-1">
+                    {selectedPerformances.length === 0 ? (
+                      <span className="text-sm font-medium text-text-muted">
+                        No performances linked.
+                      </span>
+                    ) : (
+                      selectedPerformances.map((perf) => {
+                        const dateStr = perf.date
+                          ? new Date(perf.date).toISOString().split('T')[0]
+                          : '';
+                        return (
+                          <div
+                            key={perf.id}
+                            className="flex flex-row items-center gap-2 rounded-full border border-primary/30 bg-primary-light/50 px-3 py-1 text-xs font-semibold text-primary-deep shadow-xs"
+                          >
+                            <span>
+                              {perf.title} {dateStr && `(${dateStr})`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => togglePerformance(perf.id)}
+                              className="cursor-pointer text-sm leading-none font-bold text-primary hover:text-primary-deep"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  <select
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value) togglePerformance(e.target.value);
+                    }}
+                  >
+                    <option value="">-- Link a past performance --</option>
+                    {availablePerformances.map((perf) => {
+                      const dateStr = perf.date
+                        ? new Date(perf.date).toISOString().split('T')[0]
+                        : '';
+                      return (
+                        <option key={perf.id} value={perf.id}>
+                          {perf.title} {dateStr && `(${dateStr})`}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    Tutti Practice Track (Optional)
+                  </label>
+                  {tuttiFile ? (
+                    <div className="flex flex-row items-center justify-between gap-4 rounded-lg border border-primary bg-primary/5 p-3">
+                      <div className="flex min-w-0 flex-1 flex-row items-center gap-2">
+                        <span className="text-lg">🎵</span>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <strong className="block truncate text-xs font-bold text-text">
+                            {tuttiFile.name}
+                          </strong>
+                          <span className="text-xs text-text-muted">
+                            {(tuttiFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to upload
+                          </span>
                         </div>
-
-                        {movements.length === 0 ? (
-                            <div className="card flex flex-col items-center justify-center py-12 text-text-muted">
-                                No movements added yet. Add your first movement below.
-                            </div>
-                        ) : (
-                            <div className="flex-col gap-[var(--space-sm)]">
-                                {movements.map((m, idx) => {
-                                    const isExpanded = expandedMovementId === m.id;
-                                    const mMapping = m.audioTrackMapping || {};
-                                    const mTrackCount = Object.keys(mMapping).filter(k => mMapping[k]).length;
-                                    return (
-                                        <div 
-                                            key={m.id} 
-                                            className="card border border-[var(--border)] bg-[var(--bg-card-hover)] p-[var(--space-sm)]"
-                                        >
-                                            <div className="flex-row items-center justify-between gap-[var(--space-md)]">
-                                                <div className="flex-col">
-                                                    <div className="flex-row items-center gap-2">
-                                                        <strong className="text-[14px]">
-                                                            {idx + 1}. {m.title}
-                                                        </strong>
-                                                        {mTrackCount > 0 && (
-                                                            <span className="inline-flex items-center gap-[3px] rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-[6px] py-[1px] text-[10px] leading-[1.2] font-semibold text-[var(--primary)]">
-                                                                🎧 {mTrackCount} Track{mTrackCount !== 1 ? 's' : ''}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {m.duration && (
-                                                        <span className="text-muted text-xs">
-                                                            Duration: {m.duration}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex-row items-center gap-[var(--space-sm)]">
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm !h-7 min-h-auto !p-[4px_8px] !text-[12px]"
-                                                        onClick={() => setExpandedMovementId(isExpanded ? null : m.id)}
-                                                    >
-                                                        {isExpanded ? 'Hide Tracks ▴' : 'Manage Tracks ▾'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm !h-7 min-h-auto !p-[4px_8px] !text-[12px] !text-[var(--danger)]"
-                                                        onClick={() => handleDeleteMovement(m.id, m.title)}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {isExpanded && (
-                                                <div className="mt-[var(--space-sm)] flex-col gap-1">
-                                                    <strong className="mb-[2px] block text-[11px] text-[var(--text-muted)]">
-                                                        🎵 Reference & Learning Tracks for {m.title}
-                                                    </strong>
-                                                    <LearningTracksEditor
-                                                        piece={m}
-                                                        voiceParts={voiceParts}
-                                                        sections={sections}
-                                                        uploadingParts={uploadingParts}
-                                                        uploadingKeyPrefix={`${m.id}_`}
-                                                        onUpload={(part, file) => handleMovementFileUpload(m, part, file)}
-                                                        onDelete={(part) => handleMovementFileDelete(m, part)}
-                                                        manuallyAddedParts={manuallyAddedParts[m.id] || []}
-                                                        onAddPart={(part) => handleAddPart(m.id, part)}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        <div className="card rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-muted,#f8fafc)] p-[var(--space-md)]">
-                            <h4 className="!mt-0 !mb-[var(--space-sm)] text-sm text-[var(--primary)]">Add New Movement</h4>
-                            <div className="flex flex-row flex-wrap items-end gap-[var(--space-sm)]">
-                                <div className="flex flex-[2_1_200px] flex-col gap-1">
-                                    <label className="text-muted text-xs">Movement Name (defaults sequentially)</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder={`e.g. Movement ${movements.length + 1}`}
-                                        value={newMovementTitle}
-                                        onChange={e => setNewMovementTitle(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') {
-                                                handleAddMovement(e);
-                                            }
-                                        }}
-                                        className="card h-9 w-full px-3 text-[14px]"
-                                    />
-                                </div>
-                                <div className="flex flex-[1_1_100px] flex-col gap-1">
-                                    <label className="text-muted text-xs">Duration (optional)</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g. 2:45"
-                                        value={newMovementDuration}
-                                        onChange={e => setNewMovementDuration(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') {
-                                                handleAddMovement(e);
-                                            }
-                                        }}
-                                        className="card h-9 w-full px-3 text-[14px]"
-                                    />
-                                </div>
-                                <button 
-                                    type="button" 
-                                    className="btn btn-primary !h-9 min-h-9 !px-4 text-[13px]"
-                                    onClick={handleAddMovement}
-                                >
-                                    + Add
-                                </button>
-                            </div>
-                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="flex h-8 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-3 text-xs font-bold text-danger-text transition-colors hover:bg-danger-bg active:scale-95"
+                        onClick={() => setTuttiFile(null)}
+                      >
+                        Remove
+                      </button>
                     </div>
+                  ) : (
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsTuttiDraggedOver(true);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsTuttiDraggedOver(false);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsTuttiDraggedOver(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file && file.type.startsWith('audio/')) {
+                          setTuttiFile(file);
+                        }
+                      }}
+                      className={`cursor-pointer rounded-lg p-4 transition-all duration-200 ease-in-out ${isTuttiDraggedOver ? 'border-2 border-dashed border-primary bg-primary/5' : 'border-2 border-dashed border-border bg-transparent'}`}
+                    >
+                      <label className="m-0 flex w-full cursor-pointer items-center justify-center gap-2">
+                        <span className="text-xl">📤</span>
+                        <span className="text-xs font-semibold text-text">
+                          Drag and drop a Tutti MP3 track here, or{' '}
+                          <span className="font-bold text-primary underline">browse</span>
+                        </span>
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setTuttiFile(file);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {piece && activeTab === 'performances' && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                Linked Performances
+              </label>
+
+              {/* Selected performances pills */}
+              <div className="flex min-h-[40px] flex-row flex-wrap gap-2 py-2">
+                {selectedPerformances.length === 0 ? (
+                  <span className="text-sm font-medium text-text-muted">
+                    No performances linked.
+                  </span>
+                ) : (
+                  selectedPerformances.map((perf) => {
+                    const dateStr = perf.date
+                      ? new Date(perf.date).toISOString().split('T')[0]
+                      : '';
+                    return (
+                      <div
+                        key={perf.id}
+                        className="flex flex-row items-center gap-2 rounded-full border border-primary/30 bg-primary-light/50 px-3 py-1 text-xs font-semibold text-primary-deep shadow-xs"
+                      >
+                        <span>
+                          {perf.title} {dateStr && `(${dateStr})`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => togglePerformance(perf.id)}
+                          className="cursor-pointer text-sm leading-none font-bold text-primary hover:text-primary-deep"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
-            </form>
-        </BaseModal>
-    );
+              </div>
+
+              <div className="flex flex-row flex-wrap gap-3">
+                <select
+                  className="h-10 min-w-0 flex-[1_1_200px] rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      togglePerformance(e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">-- Add a performance --</option>
+                  {availablePerformances.map((perf) => {
+                    const dateStr = perf.date
+                      ? new Date(perf.date).toISOString().split('T')[0]
+                      : '';
+                    return (
+                      <option key={perf.id} value={perf.id}>
+                        {perf.title} {dateStr && `(${dateStr})`}
+                      </option>
+                    );
+                  })}
+                </select>
+                <button
+                  type="button"
+                  className="flex h-10 flex-[1_1_auto] cursor-pointer items-center justify-center rounded-md bg-primary-light px-4 text-sm font-bold text-primary-deep shadow-xs transition-colors hover:bg-emerald-100 active:scale-95"
+                  onClick={() => setShowQuickAdd(!showQuickAdd)}
+                >
+                  {showQuickAdd ? 'Cancel Quick Add' : 'Quick Add Performance'}
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Add Performance form */}
+            {showQuickAdd && (
+              <div className="mt-4 flex flex-col gap-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
+                <h4 className="m-0 text-sm font-bold text-primary-deep">
+                  Quick Add Historic Performance
+                </h4>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                      Performance Title
+                    </label>
+                    <input
+                      value={quickTitle}
+                      onChange={(e) => setQuickTitle(e.target.value)}
+                      placeholder="e.g. Spring Concert 2018"
+                      className="h-9 w-full rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                        Date
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={quickDate}
+                        onChange={(e) => setQuickDate(e.target.value)}
+                        className="h-9 w-full rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                        Venue
+                      </label>
+                      <select
+                        value={quickVenue}
+                        onChange={(e) => setQuickVenue(e.target.value)}
+                        className="h-9 w-full rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      >
+                        <option value="">-- Select Venue --</option>
+                        {venues.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="mt-1 flex h-9 cursor-pointer items-center justify-center self-end rounded-md bg-primary px-4 text-xs font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                    onClick={handleQuickAddPerformance}
+                    disabled={isQuickAdding}
+                  >
+                    {isQuickAdding ? 'Creating...' : 'Create & Link'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {piece && activeTab === 'tracks' && (
+          <div
+            className="flex flex-col gap-2"
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {/* Context header: shows piece name + movement name */}
+            {(() => {
+              const parentPiece =
+                piece.parentId && allPieces
+                  ? allPieces.find((p) => p.id === piece.parentId)
+                  : undefined;
+              const contextLabel = getLearningTrackContextLabel(piece, parentPiece?.title);
+              return (
+                <div className="mb-2 flex flex-col gap-1 border-b border-border pb-3">
+                  <span className="text-[11px] font-bold tracking-wider text-text-muted uppercase">
+                    🎵 Learning Tracks for
+                  </span>
+                  <span className="text-base font-bold text-primary">{contextLabel}</span>
+                </div>
+              );
+            })()}
+            {!localPiece ? (
+              <div className="flex flex-row items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-gray-50/50 p-4 text-sm text-text-muted">
+                <span>Please save this piece first to enable learning track uploads.</span>
+              </div>
+            ) : (
+              <LearningTracksEditor
+                piece={localPiece}
+                voiceParts={voiceParts}
+                sections={sections}
+                uploadingParts={uploadingParts}
+                uploadingKeyPrefix=""
+                onUpload={handleFileUpload}
+                onDelete={handleFileDelete}
+                manuallyAddedParts={manuallyAddedParts[localPiece.id] || []}
+                onAddPart={(part) => handleAddPart(localPiece.id, part)}
+              />
+            )}
+          </div>
+        )}
+
+        {piece && activeTab === 'movements' && isMultiMovement && (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-row items-center justify-between">
+              <h3 className="m-0 text-base font-bold text-primary">
+                Movements ({movements.length})
+              </h3>
+            </div>
+
+            {movements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-gray-50/50 py-12 text-sm text-text-muted">
+                No movements added yet. Add your first movement below.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {movements.map((m, idx) => {
+                  const isExpanded = expandedMovementId === m.id;
+                  const mMapping = m.audioTrackMapping || {};
+                  const mTrackCount = Object.keys(mMapping).filter((k) => mMapping[k]).length;
+                  return (
+                    <div
+                      key={m.id}
+                      className="rounded-lg border border-border bg-gray-50/30 p-3 shadow-xs"
+                    >
+                      <div className="flex flex-row items-center justify-between gap-4">
+                        <div className="flex flex-col">
+                          <div className="flex flex-row items-center gap-2">
+                            <strong className="text-sm text-text">
+                              {idx + 1}. {m.title}
+                            </strong>
+                            {mTrackCount > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                🎧 {mTrackCount} Track{mTrackCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                          {m.duration && (
+                            <span className="text-xs text-text-muted">Duration: {m.duration}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-row items-center gap-2">
+                          <button
+                            type="button"
+                            className="flex h-7 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-2.5 text-xs font-bold text-text-muted transition-colors hover:bg-gray-50 active:scale-95"
+                            onClick={() => setExpandedMovementId(isExpanded ? null : m.id)}
+                          >
+                            {isExpanded ? 'Hide Tracks ▴' : 'Manage Tracks ▾'}
+                          </button>
+                          <button
+                            type="button"
+                            className="flex h-7 cursor-pointer items-center justify-center rounded-md border border-red-200 bg-red-50 px-2.5 text-xs font-bold text-danger-text transition-colors hover:bg-danger-bg active:scale-95"
+                            onClick={() => handleDeleteMovement(m.id, m.title)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                          <strong className="block text-[11px] tracking-wider text-text-muted uppercase">
+                            🎵 Reference & Learning Tracks for {m.title}
+                          </strong>
+                          <LearningTracksEditor
+                            piece={m}
+                            voiceParts={voiceParts}
+                            sections={sections}
+                            uploadingParts={uploadingParts}
+                            uploadingKeyPrefix={`${m.id}_`}
+                            onUpload={(part, file) => handleMovementFileUpload(m, part, file)}
+                            onDelete={(part) => handleMovementFileDelete(m, part)}
+                            manuallyAddedParts={manuallyAddedParts[m.id] || []}
+                            onAddPart={(part) => handleAddPart(m.id, part)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
+              <h4 className="m-0 mb-3 text-sm font-bold text-primary-deep">Add New Movement</h4>
+              <div className="flex flex-row flex-wrap items-end gap-3">
+                <div className="flex flex-[2_1_200px] flex-col gap-1.5">
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    Movement Name (defaults sequentially)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={`e.g. Movement ${movements.length + 1}`}
+                    value={newMovementTitle}
+                    onChange={(e) => setNewMovementTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddMovement(e);
+                      }
+                    }}
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  />
+                </div>
+                <div className="flex flex-[1_1_100px] flex-col gap-1.5">
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    Duration (optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 2:45"
+                    value={newMovementDuration}
+                    onChange={(e) => setNewMovementDuration(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddMovement(e);
+                      }
+                    }}
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-4 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                  onClick={handleAddMovement}
+                >
+                  + Add
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </form>
+    </BaseModal>
+  );
 }
