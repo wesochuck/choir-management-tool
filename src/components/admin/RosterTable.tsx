@@ -58,7 +58,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
   return (
     <AppCard noPadding>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-t-xl">
         <table className="min-w-full divide-y divide-border bg-surface">
           <thead className="bg-slate-50/70">
             <tr>
@@ -177,7 +177,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </table>
       </div>
       {totalCount > 0 && (
-        <div className="no-print mt-1 flex flex-col items-center justify-between rounded-b-lg border-t border-border bg-surface px-6 py-4 md:flex-row">
+        <div className="no-print mt-1 flex flex-col items-center justify-between rounded-b-xl border-t border-border bg-surface px-6 py-4 md:flex-row">
           <span className="text-text-muted text-sm font-medium">
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
           </span>

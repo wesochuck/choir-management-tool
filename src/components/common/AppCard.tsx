@@ -13,9 +13,19 @@ interface AppCardProps {
 export const AppCard: React.FC<AppCardProps> = ({ 
   children, className = '', style, title, actions, noPadding = false, onClick 
 }) => {
+  // Use Tailwind utility classes instead of the legacy global .card class to play nicely with utility overrides (p-0, gap-0, etc.)
+  const cardClass = [
+    'bg-surface border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-200',
+    'flex flex-col',
+    noPadding ? 'p-0 gap-0' : 'p-6 gap-6',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div 
-      className={`card relative-row flex-col ${noPadding ? 'p-0' : ''} ${className}`} 
+      className={cardClass} 
       style={style}
       onClick={onClick}
     >

@@ -116,7 +116,7 @@ export const EventList: React.FC<EventListProps> = ({
         return (
           <div
             key={e.id}
-            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border px-6 py-4 transition-colors duration-150 last:border-b-0 hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
+            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border px-6 py-5 transition-colors duration-150 last:border-b-0 first:rounded-t-xl last:rounded-b-xl hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
             onClick={() => onEdit(e)}
             role="button"
             tabIndex={0}
