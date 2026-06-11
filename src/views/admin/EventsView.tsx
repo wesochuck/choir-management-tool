@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -8,6 +8,7 @@ import { BulkEventModal } from '../../components/admin/BulkEventModal';
 import type { Event } from '../../services/eventService';
 import { useDialog } from '../../contexts/DialogContext';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { Button, Spinner } from '../../components/ui';
 
 import { useEventSettings } from './events/useEventSettings';
 import { useEventFilters } from './events/useEventFilters';
@@ -19,7 +20,7 @@ import { useEventSaveWorkflow } from './events/useEventSaveWorkflow';
 import { EventsToolbar } from './events/EventsToolbar';
 import { EventsTabs } from './events/EventsTabs';
 
-export default function EventsView() {
+export default function EventsView(): React.JSX.Element {
   const dialog = useDialog();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -98,19 +99,19 @@ export default function EventsView() {
     dialog,
   });
 
-  const handleEdit = (event: Event) => {
+  const handleEdit = (event: Event): void => {
     setCloningEventId(null);
     setEditingEvent(event);
     setIsModalOpen(true);
   };
 
-  const handleAdd = () => {
+  const handleAdd = (): void => {
     setCloningEventId(null);
     setEditingEvent(null);
     setIsModalOpen(true);
   };
 
-  const handleBulkAdd = () => {
+  const handleBulkAdd = (): void => {
     setCloningEventId(null);
     setEditingEvent(null);
     setIsBulkModalOpen(true);
@@ -119,7 +120,7 @@ export default function EventsView() {
   if (isLoading && events.length === 0) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 p-8">
-        <div className="spinner-small size-10 border-3" />
+        <Spinner size="medium" />
         <div className="text-muted text-sm">
           Loading scheduled events...
         </div>
@@ -130,28 +131,38 @@ export default function EventsView() {
   if (error) {
     return (
       <div className="card mx-auto my-8 flex max-w-[500px] flex-col items-center border-danger-text bg-danger-bg p-8 text-center">
-        <span className="text-3xl">⚠️</span>
+        <span className="text-3xl" role="img" aria-label="Warning">⚠️</span>
         <div className="text-lg font-semibold text-danger-text">
           Failed to load events
         </div>
         <p className="text-danger-text opacity-80">
           {error}
         </p>
-        <button
+        <Button
           onClick={() => window.location.reload()}
-          className="btn btn-danger btn-sm"
+          variant="danger"
+          size="small"
         >
           Reload Page
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="admin-view-title">Event Management</h1>
-        <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />
+      <div className="flex flex-row items-start justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Event Management
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts.
+          </p>
+        </div>
+        <div className="mt-1 flex-shrink-0">
+          <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />
+        </div>
       </div>
 
       <EventsTabs
@@ -165,11 +176,11 @@ export default function EventsView() {
         events={filteredEvents}
         onEdit={handleEdit}
         onSendMessage={handleSendMessage}
-        onViewRoster={(event) => navigate(`/admin/events/${event.id}/roster`)}
-        onCheckAttendance={(event) =>
+        onViewRoster={(event: Event) => navigate(`/admin/events/${event.id}/roster`)}
+        onCheckAttendance={(event: Event) =>
           navigate(`/admin/attendance?eventId=${event.id}`)
         }
-        onViewSeating={(event) =>
+        onViewSeating={(event: Event) =>
           navigate(`/admin/seating?eventId=${event.id}`)
         }
         onOpenPlayer={handleOpenPlayer}

@@ -1,4 +1,6 @@
+import React from 'react';
 import type { EventsTab } from './useEventFilters';
+import { Button } from '../../../components/ui';
 
 interface EventsTabsProps {
   activeTab: EventsTab;
@@ -12,7 +14,7 @@ export function EventsTabs({
   setActiveTab,
   showPastEvents,
   setShowPastEvents,
-}: EventsTabsProps) {
+}: EventsTabsProps): React.JSX.Element {
   return (
     <div
       className="mb-4 flex flex-col flex-wrap items-center justify-between gap-4 border-b border-border px-1 pb-1 md:flex-row"
@@ -20,13 +22,14 @@ export function EventsTabs({
       {/* Tab buttons */}
       <div className="flex-row gap-2">
         {(['all', 'performances', 'rehearsals'] as const).map((tab) => (
-          <button
+          <Button
             key={tab}
-            className={`btn ${activeTab === tab ? 'btn-primary' : 'btn-ghost'} px-4 py-2 font-semibold capitalize`}
+            variant={activeTab === tab ? 'primary' : 'ghost'}
+            className="px-4 py-2 font-semibold capitalize"
             onClick={() => setActiveTab(tab)}
           >
             {tab === 'all' ? 'All Events' : tab}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -43,3 +46,4 @@ export function EventsTabs({
     </div>
   );
 }
+
