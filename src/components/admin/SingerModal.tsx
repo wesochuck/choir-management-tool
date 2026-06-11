@@ -451,7 +451,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <textarea 
               value={formData.notes} 
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[60px] min-h-[60px] w-full resize-y rounded-lg p-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[60px] min-h-[60px] w-full resize-y p-3"
             />
           </div>
         </form>
