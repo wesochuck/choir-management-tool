@@ -206,7 +206,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     aria-label={ariaLabel || label || 'Multi-select dropdown'}
                 >
                     {selectedOptions.length === 0 ? (
-                        <span className="mr-2 flex-1 truncate text-[13.5px] font-medium text-gray-400">
+                        <span className="mr-2 flex-1 truncate text-sm font-medium text-gray-400">
                             {allLabel}
                         </span>
                     ) : (
@@ -254,7 +254,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     aria-expanded={isOpen}
                     aria-label={ariaLabel || label || 'Multi-select dropdown'}
                 >
-                    <span className="mr-2 flex-1 truncate text-[13.5px] font-medium text-gray-800" title={getSummaryText()}>
+                    <span className="mr-2 flex-1 truncate text-sm font-medium text-gray-800" title={getSummaryText()}>
                         {getSummaryText()}
                     </span>
                     <span className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200" aria-hidden="true">

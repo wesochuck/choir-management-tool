@@ -3,7 +3,7 @@ import type { SectionDef, MusicGenreDef } from '../../../services/settingsServic
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
 import type { FilterMode } from '../../../lib/music/libraryRows';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
-import { Input } from '../../../components/ui';
+import { Input, Button } from '../../../components/ui';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
@@ -63,10 +63,10 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
     }, [sections]);
 
     return (
-        <div className="flex-col gap-[var(--space-sm)] border-b border-[var(--border)] px-[var(--space-lg)] py-[var(--space-md)]">
-            <div className="flex flex-wrap items-end gap-4">
-                <div className="min-w-[200px] flex-1">
-                    <span className="text-muted mb-1.5 block text-xs font-semibold tracking-[0.04em] uppercase">Search</span>
+        <div className="flex flex-col gap-4 border-b border-border px-4 py-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_1fr] items-end">
+                <div>
+                    <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Search</span>
                     <Input
                         type="text"
                         placeholder="Title, composer, catalog..."
@@ -74,8 +74,8 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         onChange={(e) => onSearchChange(e.target.value)}
                     />
                 </div>
-                <div className="w-full sm:w-[220px]">
-                    <span className="text-muted mb-1.5 block text-xs font-semibold tracking-[0.04em] uppercase">Sections</span>
+                <div>
+                    <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Sections</span>
                     <MultiSelectDropdown
                         options={sortedSections.map(s => ({ id: s.code, label: s.name }))}
                         selectedIds={sectionFilters}
@@ -84,10 +84,10 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         allLabel="All Sections"
                     />
                 </div>
-                <div className="w-full sm:w-[260px]">
-                    <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-muted text-xs font-semibold tracking-[0.04em] uppercase">Genres</span>
-                        <div className="flex-row rounded-[4px] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[2px]">
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-text-muted text-sm font-bold tracking-wider uppercase">Genres</span>
+                        <div className="flex flex-row rounded-[4px] border border-border bg-slate-50 p-[2px]">
                             <button 
                                 type="button" 
                                 className={`min-h-auto cursor-pointer rounded-[2px] border-none bg-none px-[6px] py-[2px] text-[9px] font-bold transition-all duration-200 ${genreFilterMode === 'OR' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)]'}`}
@@ -121,11 +121,11 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 </div>
             </div>
 
-            <div className="flex flex-row flex-wrap items-center gap-[var(--space-lg)] pt-[2px]">
-                <div className="flex-row items-center gap-[6px]">
-                    <span className="text-muted text-xs font-semibold">Last Performed:</span>
+            <div className="flex flex-row flex-wrap items-center gap-6 pt-2">
+                <div className="flex flex-row items-center gap-2">
+                    <span className="text-text-muted text-sm font-semibold">Last Performed:</span>
                     <select
-                        className="card h-8 cursor-pointer px-[8px] text-[13px]"
+                        className="cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm h-10 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] transition-all"
                         value={recencyFilter}
                         onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
                     >
@@ -139,10 +139,10 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     </select>
                 </div>
 
-                <div className="flex-row items-center gap-[6px]">
-                    <span className="text-muted text-xs font-semibold">Per Page:</span>
+                <div className="flex flex-row items-center gap-2">
+                    <span className="text-text-muted text-sm font-semibold">Per Page:</span>
                     <select
-                        className="card h-8 min-w-[60px] cursor-pointer px-[8px] text-[13px]"
+                        className="cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm h-10 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] transition-all min-w-[70px]"
                         value={pageSize}
                         onChange={(e) => onPageSizeChange(Number(e.target.value))}
                     >
@@ -153,30 +153,36 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     </select>
                 </div>
 
-                <label className="cursor-pointer flex-row items-center gap-[6px]">
+                <label className="cursor-pointer flex flex-row items-center gap-2 select-none">
                     <input 
                         type="checkbox" 
                         checked={showDuplicatesOnly} 
                         onChange={(e) => onShowDuplicatesOnlyChange(e.target.checked)}
-                        className="size-[14px] accent-[var(--primary)]"
+                        className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
                     />
-                    <span className="text-xs font-medium">Duplicates ({duplicateCount})</span>
+                    <span className="text-sm font-medium text-text">Duplicates ({duplicateCount})</span>
                 </label>
 
-                <label className="cursor-pointer flex-row items-center gap-[6px]">
+                <label className="cursor-pointer flex flex-row items-center gap-2 select-none">
                     <input 
                         type="checkbox" 
                         checked={ignoreArticles} 
                         onChange={(e) => onIgnoreArticlesChange(e.target.checked)}
-                        className="size-[14px] accent-[var(--primary)]"
+                        className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
                     />
-                    <span className="text-xs font-medium">Ignore articles (A, An, The)</span>
+                    <span className="text-sm font-medium text-text">Ignore articles (A, An, The)</span>
                 </label>
 
                 {selectedCount > 0 && (
-                    <button className="btn btn-danger btn-sm ml-auto" onClick={onBulkDelete} disabled={isBulkDeleting}>
+                    <Button
+                        variant="danger"
+                        size="small"
+                        className="ml-auto"
+                        onClick={onBulkDelete}
+                        disabled={isBulkDeleting}
+                    >
                         {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>
