@@ -474,8 +474,8 @@ export const EventModal: React.FC<EventModalProps> = ({
               />
             </div>
 
-            <div className="flex flex-col gap-4 md:flex-row md:items-center">
-              <div className="flex flex-1 flex-col gap-1.5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Type</label>
                 <select 
                   value={formData.type} 
@@ -505,7 +505,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   <option value="Performance">Performance</option>
                 </select>
               </div>
-              <div className="flex flex-1 flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Date & Time</label>
                 <input 
                   type="datetime-local"
@@ -517,8 +517,8 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 md:flex-row md:items-start">
-              <div className="flex flex-1 flex-col gap-1.5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Event Duration</label>
                 <select 
                   value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
@@ -545,7 +545,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 )}
               </div>
-              <div className="flex flex-1 flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Call Time (Optional)</label>
                 <input 
                   type="time"
@@ -596,8 +596,8 @@ export const EventModal: React.FC<EventModalProps> = ({
               <div className="flex flex-col gap-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
                 <div className="text-sm font-semibold text-primary-deep">✨ Create New Venue Template Inline</div>
                 
-                <div className="flex w-full flex-col gap-4 md:flex-row">
-                  <div className="flex flex-1 flex-col gap-1.5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Venue Name</label>
                     <input 
                       value={newVenueName} 
@@ -606,7 +606,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                   </div>
-                  <div className="flex flex-1 flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Row Capacities (e.g. 10, 12, 14)</label>
                     <input 
                       value={newVenueRows} 
@@ -678,8 +678,8 @@ export const EventModal: React.FC<EventModalProps> = ({
 
                 {shouldBulkAdd && (
                   <div className="flex flex-col gap-4 pt-2">
-                    <div className="flex flex-col gap-4 md:flex-row">
-                      <div className="flex flex-[1] flex-col gap-1.5">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                      <div className="flex flex-col gap-1.5 md:col-span-1">
                         <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Count</label>
                         <input 
                           type="number" min="1" max="20"
@@ -687,7 +687,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                           className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                         />
                       </div>
-                      <div className="flex flex-[2] flex-col gap-1.5">
+                      <div className="flex flex-col gap-1.5 md:col-span-2">
                         <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Day</label>
                         <select 
                           value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
@@ -698,7 +698,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                           ))}
                         </select>
                       </div>
-                      <div className="flex flex-[2] flex-col gap-1.5">
+                      <div className="flex flex-col gap-1.5 md:col-span-2">
                         <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Time</label>
                         <input 
                           type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
@@ -802,8 +802,8 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             {formData.isTicketingEnabled && (
               <div className="flex flex-col gap-6 pt-2">
-                <div className="flex flex-col items-start gap-4 md:flex-row">
-                  <div className="flex flex-1 flex-col gap-1.5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Advance Price ($)</label>
                     <input
                       type="number"
@@ -823,7 +823,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                   </div>
-                  <div className="flex flex-1 flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Day-Of Price ($)</label>
                     <input
                       type="number"
@@ -850,8 +850,8 @@ export const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4 md:flex-row">
-                  <div className="flex flex-1 flex-col gap-1.5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Ticket Capacity</label>
                     <input
                       type="number"
@@ -861,7 +861,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                   </div>
-                  <div className="flex flex-1 flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Doors Open Time</label>
                     <input
                       type="text"
