@@ -511,32 +511,43 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-col gap-1">
-              <label className="text-label">Event Duration</label>
-              <select 
-                value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
-                onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                className="card h-[44px] w-full border border-border px-3"
-              >
-                <option value={30}>30 minutes</option>
-                <option value={45}>45 minutes</option>
-                <option value={60}>1 hour</option>
-                <option value={75}>1 hour 15 mins</option>
-                <option value={90}>1.5 hours</option>
-                <option value={105}>1 hour 45 mins</option>
-                <option value={120}>2 hours</option>
-                <option value={135}>2 hours 15 mins</option>
-                <option value={150}>2.5 hours</option>
-                <option value={165}>2 hours 45 mins</option>
-                <option value={180}>3 hours</option>
-                <option value={210}>3.5 hours</option>
-                <option value={240}>4 hours</option>
-              </select>
-              {endTime && (
-                <div className="text-muted mt-0.5 text-xs font-medium">
-                  Ends at approximately <span className="text-primary">{endTime}</span>
-                </div>
-              )}
+            <div className="flex-row items-start gap-4">
+              <div className="flex-1 flex-col gap-1">
+                <label className="text-label">Event Duration</label>
+                <select 
+                  value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
+                  onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
+                  className="card h-[44px] w-full border border-border px-3"
+                >
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={75}>1 hour 15 mins</option>
+                  <option value={90}>1.5 hours</option>
+                  <option value={105}>1 hour 45 mins</option>
+                  <option value={120}>2 hours</option>
+                  <option value={135}>2 hours 15 mins</option>
+                  <option value={150}>2.5 hours</option>
+                  <option value={165}>2 hours 45 mins</option>
+                  <option value={180}>3 hours</option>
+                  <option value={210}>3.5 hours</option>
+                  <option value={240}>4 hours</option>
+                </select>
+                {endTime && (
+                  <div className="text-muted mt-0.5 text-xs font-medium">
+                    Ends at approximately <span className="text-primary">{endTime}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 flex-col gap-1">
+                <label className="text-label">Call Time (Optional)</label>
+                <input 
+                  type="time"
+                  value={formData.callTime || ''}
+                  onChange={(e) => setFormData({ ...formData, callTime: e.target.value })}
+                  className="card h-[44px] w-full border border-border px-3"
+                />
+              </div>
             </div>
 
             <label className="flex-row items-center gap-2">

@@ -56,7 +56,7 @@ export const EventList: React.FC<EventListProps> = ({
   }
 
   return (
-    <AppCard noPadding className="gap-0 overflow-hidden">
+    <AppCard noPadding className="gap-0">
       {events.map((e) => {
         const weekday = formatInTimezone(e.date, timezone, { weekday: 'short' });
         const day = formatInTimezone(e.date, timezone, { day: 'numeric' });
