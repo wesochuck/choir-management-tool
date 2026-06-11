@@ -41,6 +41,8 @@ export default function AuditionsView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'general' | 'slots'>('general');
+  const [backupSettings, setBackupSettings] = useState<AuditionSettings | null>(null);
   const [error, setError] = useState('');
   const [editingAudition, setEditingAudition] = useState<Audition | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -156,6 +158,8 @@ export default function AuditionsView() {
       setAdmins(adminList);
       // Auto-expand settings to guide user if no audition times are set
       if (!auditionSettings.slots || auditionSettings.slots.length === 0) {
+        setBackupSettings(JSON.parse(JSON.stringify(auditionSettings)));
+        setSettingsTab('general');
         setShowSettings(true);
       }
       setError('');
@@ -175,6 +179,7 @@ export default function AuditionsView() {
     setIsSavingSettings(true);
     try {
       await settingsService.saveAuditionSettings(settings);
+      setBackupSettings(null);
       setShowSettings(false);
       dialog.showToast('Audition settings updated.');
     } catch {
@@ -182,6 +187,14 @@ export default function AuditionsView() {
     } finally {
       setIsSavingSettings(false);
     }
+  };
+
+  const handleCancelSettings = () => {
+    if (backupSettings) {
+      setSettings(backupSettings);
+      setBackupSettings(null);
+    }
+    setShowSettings(false);
   };
 
   const updateStatus = async (audition: Audition, status: Audition['status']) => {
@@ -346,7 +359,11 @@ export default function AuditionsView() {
           </div>
           <Button 
             variant={settings.enabled && settings.defaultPerformanceId ? "secondary" : "primary"} 
-            onClick={() => setShowSettings(true)}
+            onClick={() => {
+              setBackupSettings(JSON.parse(JSON.stringify(settings)));
+              setSettingsTab('general');
+              setShowSettings(true);
+            }}
           >
             Configure
           </Button>
@@ -355,166 +372,221 @@ export default function AuditionsView() {
 
       <Modal
         isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
+        onClose={handleCancelSettings}
         title="Audition Settings"
-        isDirty={false}
+        maxWidth="640px"
+        isDirty={backupSettings !== null && JSON.stringify(settings) !== JSON.stringify(backupSettings)}
         footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setShowSettings(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveSettings} loading={isSavingSettings}>
-              Save Settings
-            </Button>
+          <div className="flex w-full items-center justify-between gap-4">
+            <div className="text-left">
+              {(!settings || !settings.slots || settings.slots.length === 0) && (
+                <span className="text-xs font-semibold text-danger-text">
+                  ⚠️ Configure at least one time slot to save.
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={handleCancelSettings}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveSettings} 
+                loading={isSavingSettings}
+                disabled={!settings || !settings.slots || settings.slots.length === 0}
+              >
+                Save Settings
+              </Button>
+            </div>
           </div>
         }
       >
         {settings && (
-          <div className="flex flex-col gap-6">
-            <label className="flex cursor-pointer flex-row gap-2 self-start select-none items-center">
-              <input
-                type="checkbox"
-                checked={settings.enabled}
-                onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
-                className="size-5 cursor-pointer rounded border-border text-primary focus:ring-primary accent-primary transition-all duration-200"
-              />
-              <span className="text-sm font-semibold text-text">Accept public audition requests</span>
-            </label>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-text">Target Performance</label>
-              <Select
-                value={settings.defaultPerformanceId || ''}
-                onChange={(e) => setSettings({ ...settings, defaultPerformanceId: e.target.value })}
+          <div className="flex flex-col gap-4">
+            {/* Tabs Header */}
+            <div className="mb-2 flex flex-row gap-4 border-b border-border">
+              <button
+                type="button"
+                onClick={() => setSettingsTab('general')}
+                className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${
+                  settingsTab === 'general'
+                    ? 'border-b-2 border-primary font-bold text-primary'
+                    : 'border-b-2 border-transparent font-medium text-text-muted'
+                }`}
               >
-                <option value="">-- No performance assigned --</option>
-                {performances.map(p => (
-                  <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
-                ))}
-              </Select>
-              <p className="m-0 text-xs text-text-muted mt-1">
-                A target performance is <strong className="text-text">REQUIRED</strong> for the public audition form to accept requests.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="flex items-center gap-1.5 text-sm font-semibold text-text">
-                <span>Available Audition Times</span>
+                General Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsTab('slots')}
+                className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${
+                  settingsTab === 'slots'
+                    ? 'border-b-2 border-primary font-bold text-primary'
+                    : 'border-b-2 border-transparent font-medium text-text-muted'
+                }`}
+              >
+                Time Slots
                 {(!settings.slots || settings.slots.length === 0) && (
-                  <span className="inline-flex items-center rounded bg-danger-bg px-1.5 py-0.5 text-xs font-semibold tracking-wider text-danger-text uppercase">Required</span>
+                  <span className="ml-1.5 inline-flex items-center justify-center text-xs font-bold text-danger-text" title="No time slots configured">
+                    ⚠️
+                  </span>
                 )}
-              </label>
+              </button>
+            </div>
 
-              <div className="rounded-xl border border-border bg-surface-muted p-5 shadow-sm">
-                <div className="flex flex-col gap-3">
-                  <span className="text-xs font-bold text-text-muted tracking-wider uppercase">Generate Slots</span>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-3">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-text-muted">Date</span>
-                      <Input type="date" value={genDate} onChange={e => setGenDate(e.target.value)} />
+            {/* Tab 1: General Settings */}
+            {settingsTab === 'general' && (
+              <div className="flex flex-col gap-6">
+                <label className="flex cursor-pointer flex-row gap-2 self-start select-none items-center">
+                  <input
+                    type="checkbox"
+                    checked={settings.enabled}
+                    onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
+                    className="size-5 cursor-pointer rounded border-border text-primary focus:ring-primary accent-primary transition-all duration-200"
+                  />
+                  <span className="text-sm font-semibold text-text">Accept public audition requests</span>
+                </label>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-semibold text-text">Target Performance</label>
+                  <Select
+                    value={settings.defaultPerformanceId || ''}
+                    onChange={(e) => setSettings({ ...settings, defaultPerformanceId: e.target.value })}
+                  >
+                    <option value="">-- No performance assigned --</option>
+                    {performances.map(p => (
+                      <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
+                    ))}
+                  </Select>
+                  <p className="m-0 text-xs text-text-muted mt-1">
+                    A target performance is <strong className="text-text">REQUIRED</strong> for the public audition form to accept requests.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-semibold text-text">Confirmation Message</label>
+                  <textarea
+                    value={settings.confirmationMessage}
+                    onChange={(e) => setSettings({ ...settings, confirmationMessage: e.target.value })}
+                    className="bg-surface border border-border rounded-md outline-none transition-[border-color,box-shadow] duration-200 focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] min-h-[80px] resize-y p-3 text-sm text-text"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 border-t border-border pt-4">
+                  <label className="flex cursor-pointer flex-row gap-2 self-start select-none items-center">
+                    <input
+                      type="checkbox"
+                      checked={settings.adminNotifyEnabled || false}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        adminNotifyEnabled: e.target.checked,
+                        adminNotifyUsers: settings.adminNotifyUsers || []
+                      })}
+                      className="size-5 cursor-pointer rounded border-border text-primary focus:ring-primary accent-primary transition-all duration-200"
+                    />
+                    <span className="text-sm font-semibold text-text">Notify administrators of new submissions</span>
+                  </label>
+
+                  {settings.adminNotifyEnabled && (
+                    <div className="flex flex-col gap-1 pl-7">
+                      <span className="text-xs font-bold text-text-muted tracking-wider uppercase">Select Administrators to Notify</span>
+                      <div className="mt-1 flex flex-col gap-2">
+                        {admins.map((admin) => {
+                          const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
+                          return (
+                            <label key={admin.id} className="flex cursor-pointer flex-row items-center gap-2 select-none">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const currentUsers = settings.adminNotifyUsers || [];
+                                  const updatedUsers = e.target.checked
+                                    ? [...currentUsers, admin.id]
+                                    : currentUsers.filter(id => id !== admin.id);
+                                  setSettings({ ...settings, adminNotifyUsers: updatedUsers });
+                                }}
+                                className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary accent-primary transition-all duration-200"
+                              />
+                              <span className="text-sm text-text">{admin.name} ({admin.email})</span>
+                            </label>
+                          );
+                        })}
+                        {admins.length === 0 && (
+                          <span className="text-xs text-text-muted">No administrative accounts found.</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-text-muted">Start Time</span>
-                      <Input type="time" value={genStart} onChange={e => setGenStart(e.target.value)} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-text-muted">End Time</span>
-                      <Input type="time" value={genEnd} onChange={e => setGenEnd(e.target.value)} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-text-muted">Interval (mins)</span>
-                      <Select value={genInterval} onChange={e => setGenInterval(e.target.value)}>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                        <option value="30">30</option>
-                      </Select>
-                    </div>
-                    <Button type="button" variant="secondary" onClick={generateSlots} disabled={!genDate || !genStart || !genEnd}>
-                      Generate
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </div>
+            )}
 
-              <div className="flex flex-row flex-wrap gap-2 mt-2">
-                {settings.slots?.map(slot => (
-                  <div key={slot} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm hover:border-primary/50 transition-colors shadow-sm">
-                    <span className="text-text font-medium">{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-                    <button 
-                      type="button" 
-                      onClick={() => removeSlot(slot)} 
-                      className="cursor-pointer border-none bg-transparent p-0 text-base leading-none text-text-muted hover:text-danger-text transition-colors"
-                      title="Remove slot"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {(!settings.slots || settings.slots.length === 0) && (
-                <p className="m-0 text-xs font-medium text-danger-text mt-1">
-                  ⚠️ Generate at least one audition time slot so applicants can schedule their audition.
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-text">Confirmation Message</label>
-              <textarea
-                value={settings.confirmationMessage}
-                onChange={(e) => setSettings({ ...settings, confirmationMessage: e.target.value })}
-                className="bg-surface border border-border rounded-md outline-none transition-[border-color,box-shadow] duration-200 focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] min-h-[80px] resize-y p-3 text-sm text-text"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <label className="flex cursor-pointer flex-row gap-2 self-start select-none items-center">
-                <input
-                  type="checkbox"
-                  checked={settings.adminNotifyEnabled || false}
-                  onChange={(e) => setSettings({ 
-                    ...settings, 
-                    adminNotifyEnabled: e.target.checked,
-                    adminNotifyUsers: settings.adminNotifyUsers || []
-                  })}
-                  className="size-5 cursor-pointer rounded border-border text-primary focus:ring-primary accent-primary transition-all duration-200"
-                />
-                <span className="text-sm font-semibold text-text">Notify administrators of new submissions</span>
-              </label>
-
-              {settings.adminNotifyEnabled && (
-                <div className="flex flex-col gap-1 pl-7">
-                  <span className="text-xs font-bold text-text-muted tracking-wider uppercase">Select Administrators to Notify</span>
-                  <div className="mt-1 flex flex-col gap-2">
-                    {admins.map((admin) => {
-                      const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
-                      return (
-                        <label key={admin.id} className="flex cursor-pointer flex-row items-center gap-2 select-none">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              const currentUsers = settings.adminNotifyUsers || [];
-                              const updatedUsers = e.target.checked
-                                ? [...currentUsers, admin.id]
-                                : currentUsers.filter(id => id !== admin.id);
-                              setSettings({ ...settings, adminNotifyUsers: updatedUsers });
-                            }}
-                            className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary accent-primary transition-all duration-200"
-                          />
-                          <span className="text-sm text-text">{admin.name} ({admin.email})</span>
-                        </label>
-                      );
-                    })}
-                    {admins.length === 0 && (
-                      <span className="text-xs text-text-muted">No administrative accounts found.</span>
+            {/* Tab 2: Time Slots */}
+            {settingsTab === 'slots' && (
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-1">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-text">
+                    <span>Available Audition Times</span>
+                    {(!settings.slots || settings.slots.length === 0) && (
+                      <span className="inline-flex items-center rounded bg-danger-bg px-1.5 py-0.5 text-xs font-semibold tracking-wider text-danger-text uppercase">Required</span>
                     )}
+                  </label>
+
+                  <div className="rounded-xl border border-border bg-surface-muted p-5 shadow-sm">
+                    <div className="flex flex-col gap-3">
+                      <span className="text-xs font-bold text-text-muted tracking-wider uppercase">Generate Slots</span>
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-text-muted">Date</span>
+                          <Input type="date" value={genDate} onChange={e => setGenDate(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-text-muted">Start Time</span>
+                          <Input type="time" value={genStart} onChange={e => setGenStart(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-text-muted">End Time</span>
+                          <Input type="time" value={genEnd} onChange={e => setGenEnd(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-text-muted">Interval (mins)</span>
+                          <Select value={genInterval} onChange={e => setGenInterval(e.target.value)}>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                          </Select>
+                        </div>
+                        <Button type="button" variant="secondary" onClick={generateSlots} disabled={!genDate || !genStart || !genEnd}>
+                          Generate
+                        </Button>
+                      </div>
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                    {settings.slots?.map(slot => (
+                      <div key={slot} className="flex items-center justify-between gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm hover:border-primary/50 transition-colors shadow-sm w-full">
+                        <span className="text-text font-medium">{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => removeSlot(slot)} 
+                          className="cursor-pointer border-none bg-transparent p-0 text-base leading-none text-text-muted hover:text-danger-text transition-colors"
+                          title="Remove slot"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {(!settings.slots || settings.slots.length === 0) && (
+                    <p className="m-0 text-xs font-medium text-danger-text mt-3">
+                      ⚠️ Generate at least one audition time slot so applicants can schedule their audition.
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

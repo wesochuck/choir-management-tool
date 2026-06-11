@@ -88,6 +88,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={audition ? `Edit ${audition.name}` : 'Add Audition Manually'}
+      maxWidth="640px"
       footer={
         <>
           <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
