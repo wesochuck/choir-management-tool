@@ -584,7 +584,7 @@ export default function SeatingView() {
             {/* Render overflow dropdown when charts exceed visible count */}
             {(charts || []).length > visibleTabCount && (
               <div 
-                className="border-b-0 -mb-px pb-2"
+                className="-mb-px border-b-0 pb-2"
                 // @allow-inline-style - dynamic border based on active chart visibility
                 style={{
                   borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`
@@ -649,7 +649,7 @@ export default function SeatingView() {
                 </button>
                </div>
 
-               <div className="no-print flex-row flex-wrap gap-[var(--space-sm)]">
+               <div className="no-print flex flex-row flex-wrap gap-[var(--space-sm)]">
                   <button
                     type="button"
                     onClick={toggleFullscreen}

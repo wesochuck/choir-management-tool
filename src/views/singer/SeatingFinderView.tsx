@@ -229,7 +229,7 @@ export default function SeatingFinderView() {
     >
       <div className="flex-col gap-4 py-8">
         {charts.length > 1 && (
-          <div className="mb-1 flex-row flex-wrap justify-center gap-4 p-4">
+          <div className="mb-1 flex flex-row flex-wrap justify-center gap-4 p-4">
             {charts.map(c => {
               const isActive = c.id === activeChartId;
               return (

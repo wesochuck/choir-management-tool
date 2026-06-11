@@ -551,7 +551,7 @@ export default function MusicLibraryView() {
                   placeholder="https://example.com/catalog/{catalogId}"
                 />
                 <p className="mt-1 text-xs text-text-muted">
-                  Configure an external lookup URL format for Catalog IDs. Use <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
+                  Configure an external lookup URL format for Catalog IDs. Use <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px]">{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px]">https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
                 </p>
               </FormField>
             </div>

@@ -112,7 +112,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedT
     <div className="flex w-full flex-col gap-4">
       {/* Search Input */}
       <div className="relative w-full max-w-md">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
+        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
           <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -123,12 +123,12 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedT
           placeholder="Search templates..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-border bg-surface text-text focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white"
+          className="w-full rounded-lg border border-border bg-surface py-2 pr-8 pl-9 text-sm text-text focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text cursor-pointer"
+            className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-text-muted hover:text-text"
           >
             <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -148,7 +148,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedT
 
         return (
           <div key={cat.id} className="flex flex-col gap-2">
-            <h5 className="text-xs font-bold uppercase tracking-wider text-text-muted mt-2">
+            <h5 className="mt-2 text-xs font-bold tracking-wider text-text-muted uppercase">
               {cat.title}
             </h5>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -162,7 +162,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedT
                     key={template.id} 
                     className={`flex min-h-[120px] cursor-pointer flex-col rounded-lg border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                       isSelected
-                        ? 'border-primary ring-2 ring-primary/20 bg-primary-light/30'
+                        ? 'border-primary bg-primary-light/30 ring-2 ring-primary/20'
                         : 'border-border bg-bg hover:border-primary'
                     }`} 
                     onClick={() => onSelect(template)}
@@ -189,7 +189,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedT
 
       {Object.values(grouped).every(arr => arr.length === 0) && !showBlank && (
         <div className="flex flex-col items-center justify-center py-8 text-center text-text-muted">
-          <svg className="size-8 mb-2 opacity-50" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="mb-2 size-8 opacity-50" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>

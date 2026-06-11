@@ -35,19 +35,19 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
       <table className="min-w-full divide-y divide-slate-200">
         <thead className="bg-slate-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
               Name
             </th>
-            <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
               Voice
             </th>
-            <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
               Missed Rehearsals
             </th>
-            <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
               RSVP Status
             </th>
-            <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
               Actions
             </th>
           </tr>
@@ -61,7 +61,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                 key={p.id}
                 className="hover:bg-slate-50"
               >
-                <td className="whitespace-nowrap px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm whitespace-nowrap">
                   <div className="flex items-center gap-3">
                     <PhotoUploader
                       profileId={p.id}
@@ -84,10 +84,10 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     )}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm whitespace-nowrap">
                   <span className="font-semibold text-emerald-700">{p.voicePart || '--'}</span>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-center text-sm">
+                <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
                   {missCounts && missCounts[p.id] !== undefined && missCounts[p.id] > 0 ? (
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -102,7 +102,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                     <span className="text-slate-400">0</span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-center text-sm">
+                <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
                   <div className="flex flex-col items-center gap-1">
                     <StatusBadge
                       label={rsvpDisplay.label}
@@ -110,13 +110,13 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                       size="sm"
                     />
                     {s.roster?.rsvpNote && s.rsvp === 'No' && (
-                      <div className="max-w-[160px] text-xs leading-tight font-normal italic text-slate-400">
+                      <div className="max-w-[160px] text-xs leading-tight font-normal text-slate-400 italic">
                         &quot;{s.roster.rsvpNote}&quot;
                       </div>
                     )}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1.5">
                     <button
                       type="button"

@@ -100,7 +100,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
           ) : (
             items.map((item) => (
               <div key={`${item.type}-${item.id}`} className="card m-0 border border-border p-3 px-4 shadow-none">
-                <div className="items-center flex-row justify-between">
+                <div className="flex-row items-center justify-between">
                   <div className="flex-col">
                     <span className="text-sm font-medium">{item.description}</span>
                     <span className="text-muted text-xs">

@@ -30,7 +30,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
 
   return (
     <div className="composer-form flex-col gap-4">
-      <div className="flex-row flex-wrap items-center gap-2">
+      <div className="flex flex-row flex-wrap items-center gap-2">
         <div className="composer-subject-field flex flex-col gap-1">
           <label className="text-label">Subject</label>
           <input

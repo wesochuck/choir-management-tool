@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { AppCard } from '../../components/common/AppCard';
+import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { Button, Input, FormField, Badge } from '../../components/ui';
 
@@ -158,7 +159,7 @@ export default function ResourcesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-row justify-between items-start gap-4">
+      <div className="flex flex-row items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Singer Resources
@@ -167,13 +168,11 @@ export default function ResourcesView() {
             Upload documents or reference URLs for active singers to view on their dashboard.
           </p>
         </div>
-        {!isAdding && (
-          <div className="flex-shrink-0 mt-1">
-            <Button onClick={() => setIsAdding(true)} variant="primary">
-              + New Resource
-            </Button>
-          </div>
-        )}
+        <div className="mt-1 flex-shrink-0">
+          <Button onClick={() => setIsAdding(true)} variant="primary">
+            + New Resource
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -205,85 +204,89 @@ export default function ResourcesView() {
         </div>
       </div>
 
-      {isAdding && (
-        <AppCard title={editingId ? 'Edit Resource' : 'Create New Resource'}>
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
-            <FormField label="Resource Title" required>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="e.g. Choir Singer Handbook"
-              />
-            </FormField>
+      <BaseModal
+        isOpen={isAdding}
+        onClose={resetForm}
+        title={editingId ? 'Edit Resource' : 'Create New Resource'}
+        maxWidth="500px"
+        footer={
+          <div className="flex flex-row gap-4">
+            <Button type="button" onClick={resetForm} disabled={isSaving} variant="ghost">Cancel</Button>
+            <Button type="submit" form="resource-form" disabled={isSaving} variant="primary">
+              {isSaving ? 'Saving...' : 'Save Resource'}
+            </Button>
+          </div>
+        }
+      >
+        <form id="resource-form" onSubmit={handleSave} className="flex flex-col gap-4">
+          <FormField label="Resource Title" required>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              placeholder="e.g. Choir Singer Handbook"
+            />
+          </FormField>
 
-            <FormField label="Resource Type">
-              <div className="flex items-center gap-6 mt-1">
-                <label className="cursor-pointer flex items-center gap-2 text-sm text-text">
-                  <input
-                    type="radio"
-                    name="resourceType"
-                    checked={resourceType === 'file'}
-                    onChange={() => setResourceType('file')}
-                    className="accent-primary h-4 w-4"
-                  />
-                  File Upload
-                </label>
-                <label className="cursor-pointer flex items-center gap-2 text-sm text-text">
-                  <input
-                    type="radio"
-                    name="resourceType"
-                    checked={resourceType === 'link'}
-                    onChange={() => setResourceType('link')}
-                    className="accent-primary h-4 w-4"
-                  />
-                  Link URL
-                </label>
-              </div>
-            </FormField>
-
-            {resourceType === 'file' ? (
-              <FormField label="File Upload" required={!editingId}>
-                <Input
-                  type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  required={!editingId}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+          <FormField label="Resource Type">
+            <div className="mt-1 flex items-center gap-6">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
+                <input
+                  type="radio"
+                  name="resourceType"
+                  checked={resourceType === 'file'}
+                  onChange={() => setResourceType('file')}
+                  className="size-4 accent-primary"
                 />
-                <span className="text-text-muted text-xs block mt-1">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
-              </FormField>
-            ) : (
-              <FormField label="Link URL" required>
-                <Input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  required
-                  placeholder="drive.google.com/..."
+                File Upload
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
+                <input
+                  type="radio"
+                  name="resourceType"
+                  checked={resourceType === 'link'}
+                  onChange={() => setResourceType('link')}
+                  className="size-4 accent-primary"
                 />
-                <span className="text-text-muted text-xs block mt-1">Enter a link URL. https:// will be prepended if missing.</span>
-              </FormField>
-            )}
-
-            <FormField label="Sort Order (Optional)">
-              <Input
-                type="number"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                placeholder="e.g. 1"
-              />
-              <span className="text-text-muted text-xs block mt-1">Lower numbers show up first on the dashboard.</span>
-            </FormField>
-
-            <div className="flex justify-end gap-3 mt-4">
-              <Button type="button" onClick={resetForm} disabled={isSaving} variant="ghost">Cancel</Button>
-              <Button type="submit" disabled={isSaving} variant="primary">
-                {isSaving ? 'Saving...' : 'Save Resource'}
-              </Button>
+                Link URL
+              </label>
             </div>
-          </form>
-        </AppCard>
-      )}
+          </FormField>
+
+          {resourceType === 'file' ? (
+            <FormField label="File Upload" required={!editingId}>
+              <Input
+                type="file"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                required={!editingId}
+                className="file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+              />
+              <span className="mt-1 block text-xs text-text-muted">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
+            </FormField>
+          ) : (
+            <FormField label="Link URL" required>
+              <Input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+                placeholder="drive.google.com/..."
+              />
+              <span className="mt-1 block text-xs text-text-muted">Enter a link URL. https:// will be prepended if missing.</span>
+            </FormField>
+          )}
+
+          <FormField label="Sort Order (Optional)">
+            <Input
+              type="number"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              placeholder="e.g. 1"
+            />
+            <span className="mt-1 block text-xs text-text-muted">Lower numbers show up first on the dashboard.</span>
+          </FormField>
+        </form>
+      </BaseModal>
 
       <AppCard>
         <div className="overflow-x-auto">
@@ -334,7 +337,7 @@ export default function ResourcesView() {
                         {r.url ? 'Link' : 'File'}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-text-muted max-w-xs truncate">
+                    <td className="max-w-xs truncate px-6 py-4 text-sm text-text-muted">
                       {r.url ? (
                         <a 
                           href={r.url} 

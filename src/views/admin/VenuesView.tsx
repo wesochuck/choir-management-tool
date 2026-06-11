@@ -85,7 +85,7 @@ export default function VenuesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-row justify-between items-start gap-4">
+      <div className="flex flex-row items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Venue Templates
@@ -94,7 +94,7 @@ export default function VenuesView() {
             Configure stage address information, row capacities and default layouts for seating charts.
           </p>
         </div>
-        <div className="flex-shrink-0 mt-1">
+        <div className="mt-1 flex-shrink-0">
           <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
         </div>
       </div>
@@ -135,9 +135,9 @@ export default function VenuesView() {
               id="isOpenSeating"
               checked={isOpenSeating}
               onChange={(e) => setIsOpenSeating(e.target.checked)}
-              className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+              className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
             />
-            <label htmlFor="isOpenSeating" className="text-sm font-medium text-text cursor-pointer select-none">
+            <label htmlFor="isOpenSeating" className="cursor-pointer text-sm font-medium text-text select-none">
               Open Seating (No assigned seats)
             </label>
           </div>
@@ -164,12 +164,12 @@ export default function VenuesView() {
           <AppCard
             key={v.id}
             onClick={() => handleEdit(v)}
-            className="h-full cursor-pointer hover:border-primary/50 hover:bg-primary-light/5 hover:shadow-md transition-all duration-200"
+            className="h-full cursor-pointer transition-all duration-200 hover:border-primary/50 hover:bg-primary-light/5 hover:shadow-md"
           >
-            <h3 className="text-xl font-bold text-text border-b border-border pb-2 mb-3">
+            <h3 className="mb-3 border-b border-border pb-2 text-xl font-bold text-text">
               {v.name}
             </h3>
-            <div className="flex-1 flex flex-col gap-1.5">
+            <div className="flex flex-1 flex-col gap-1.5">
               {v.address && (
                 <div className="text-body">
                   <span className="text-muted">📍 Address:</span>{' '}
@@ -202,7 +202,7 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="mt-4 flex flex-row gap-2.5 w-full">
+            <div className="mt-4 flex w-full flex-row gap-2.5">
               <Button
                 variant="secondary"
                 className="flex-1"

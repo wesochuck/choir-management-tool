@@ -64,9 +64,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
 
     return (
         <div className="flex flex-col gap-4 border-b border-border px-4 py-3">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr_1fr] items-end">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[2fr_1fr_1fr]">
                 <div>
-                    <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Search</span>
+                    <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Search</span>
                     <Input
                         type="text"
                         placeholder="Title, composer, catalog..."
@@ -75,7 +75,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     />
                 </div>
                 <div>
-                    <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Sections</span>
+                    <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Sections</span>
                     <MultiSelectDropdown
                         options={sortedSections.map(s => ({ id: s.code, label: s.name }))}
                         selectedIds={sectionFilters}
@@ -85,8 +85,8 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     />
                 </div>
                 <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-text-muted text-sm font-bold tracking-wider uppercase">Genres</span>
+                    <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-bold tracking-wider text-text-muted uppercase">Genres</span>
                         <div className="flex flex-row rounded-[4px] border border-border bg-slate-50 p-[2px]">
                             <button 
                                 type="button" 
@@ -123,9 +123,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
 
             <div className="flex flex-row flex-wrap items-center gap-6 pt-2">
                 <div className="flex flex-row items-center gap-2">
-                    <span className="text-text-muted text-sm font-semibold">Last Performed:</span>
+                    <span className="text-sm font-semibold text-text-muted">Last Performed:</span>
                     <select
-                        className="cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm h-10 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] transition-all"
+                        className="h-10 cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm transition-all outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
                         value={recencyFilter}
                         onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
                     >
@@ -140,9 +140,9 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 </div>
 
                 <div className="flex flex-row items-center gap-2">
-                    <span className="text-text-muted text-sm font-semibold">Per Page:</span>
+                    <span className="text-sm font-semibold text-text-muted">Per Page:</span>
                     <select
-                        className="cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm h-10 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] transition-all min-w-[70px]"
+                        className="h-10 min-w-[70px] cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm transition-all outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
                         value={pageSize}
                         onChange={(e) => onPageSizeChange(Number(e.target.value))}
                     >
@@ -153,22 +153,22 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                     </select>
                 </div>
 
-                <label className="cursor-pointer flex flex-row items-center gap-2 select-none">
+                <label className="flex cursor-pointer flex-row items-center gap-2 select-none">
                     <input 
                         type="checkbox" 
                         checked={showDuplicatesOnly} 
                         onChange={(e) => onShowDuplicatesOnlyChange(e.target.checked)}
-                        className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+                        className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
                     />
                     <span className="text-sm font-medium text-text">Duplicates ({duplicateCount})</span>
                 </label>
 
-                <label className="cursor-pointer flex flex-row items-center gap-2 select-none">
+                <label className="flex cursor-pointer flex-row items-center gap-2 select-none">
                     <input 
                         type="checkbox" 
                         checked={ignoreArticles} 
                         onChange={(e) => onIgnoreArticlesChange(e.target.checked)}
-                        className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+                        className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
                     />
                     <span className="text-sm font-medium text-text">Ignore articles (A, An, The)</span>
                 </label>

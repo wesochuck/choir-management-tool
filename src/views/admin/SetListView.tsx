@@ -680,9 +680,9 @@ export default function SetListView() {
 
       <AppCard noPadding>
         <div className="flex flex-col gap-4 border-b border-border px-4 py-3">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.5fr_1.5fr_1fr] items-end">
+          <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[1.5fr_1.5fr_1fr]">
             <div>
-              <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Select Event</span>
+              <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Select Event</span>
               <Select
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
@@ -699,7 +699,7 @@ export default function SetListView() {
 
             {selectedEvent ? (
               <div>
-                <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Copy from Previous</span>
+                <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Copy from Previous</span>
                 <Select
                   value=""
                   onChange={async (e) => {
@@ -723,13 +723,13 @@ export default function SetListView() {
 
             {selectedEvent && selectedEvent.type === 'Performance' && (
               <div className="flex flex-col">
-                <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Singer Visibility</span>
-                <label className="flex h-11 cursor-pointer items-center gap-2.5 rounded-md border border-border bg-slate-50 hover:bg-slate-100/70 px-4 text-sm font-medium transition-colors select-none">
+                <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Singer Visibility</span>
+                <label className="flex h-11 cursor-pointer items-center gap-2.5 rounded-md border border-border bg-slate-50 px-4 text-sm font-medium transition-colors select-none hover:bg-slate-100/70">
                   <input
                     type="checkbox"
                     checked={localApproved}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
-                    className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+                    className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
                   />
                   <span>Approved for Singers</span>
                 </label>
@@ -738,17 +738,17 @@ export default function SetListView() {
 
             {selectedEvent && selectedEvent.type === 'Rehearsal' && (
               <div className="flex flex-col">
-                <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Parent Set List</span>
+                <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Parent Set List</span>
                 {parentPerformance ? (
                   <Button
                     variant="secondary"
-                    className="w-full h-11 flex items-center justify-center gap-2"
+                    className="flex h-11 w-full items-center justify-center gap-2"
                     onClick={() => setSelectedEventId(parentPerformance.id)}
                   >
                     🔗 Go to parent: {parentPerformance.title || 'Concert'}
                   </Button>
                 ) : (
-                  <div className="flex h-11 items-center justify-center rounded-md border border-border bg-slate-50 text-text-muted text-sm px-4">
+                  <div className="flex h-11 items-center justify-center rounded-md border border-border bg-slate-50 px-4 text-sm text-text-muted">
                     No parent linked
                   </div>
                 )}
@@ -760,8 +760,8 @@ export default function SetListView() {
         {selectedEventId ? (
           <div className="flex flex-col gap-4 p-4">
             {selectedEvent?.type === 'Rehearsal' && (
-              <div className="border-l-4 border-amber-500 bg-amber-50/70 p-3 rounded-r-md text-sm leading-relaxed text-amber-900">
-                <div className="font-semibold mb-1">⚠️ Rehearsal Mode</div>
+              <div className="rounded-r-md border-l-4 border-amber-500 bg-amber-50/70 p-3 text-sm leading-relaxed text-amber-900">
+                <div className="mb-1 font-semibold">⚠️ Rehearsal Mode</div>
                 <p className="m-0">
                   This rehearsal inherits its set list and singer visibility from the parent Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct edits here will not be visible on the Singer Dashboard.
                 </p>
@@ -780,7 +780,7 @@ export default function SetListView() {
 
             <div className="flex flex-col gap-4">
               {items.length > 0 && (
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-md border border-emerald-100 bg-emerald-50/50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
+                <div className="flex flex-col justify-between gap-4 rounded-md border border-emerald-100 bg-emerald-50/50 px-4 py-2.5 text-sm font-semibold text-emerald-800 md:flex-row md:items-center">
                   <div className="flex flex-row flex-wrap items-center gap-6">
                     <span>🎼 Songs: <span className="text-slate-900">{durationTotals.songs}</span></span>
                     <span>⏸️ Intermissions: <span className="text-slate-900">{durationTotals.intermissions}</span></span>
@@ -788,7 +788,7 @@ export default function SetListView() {
                       📢 Gaps:
                       <input
                         type="number"
-                        className="w-12 h-7 rounded border border-border bg-white text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-primary"
+                        className="h-7 w-12 rounded border border-border bg-white text-center text-sm font-bold text-slate-800 focus:border-primary focus:outline-none"
                         min={0}
                         step={1}
                         value={localGapSeconds}
@@ -817,7 +817,7 @@ export default function SetListView() {
               </div>
 
               {items.length === 0 ? (
-                <div className="text-text-muted p-12 text-center text-sm">
+                <div className="p-12 text-center text-sm text-text-muted">
                   No items in set list. Select event/add items above to build.
                 </div>
               ) : (
@@ -848,10 +848,10 @@ export default function SetListView() {
             </div>
             
             {items.length > 0 ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-2 py-1 text-xs text-text-muted">
+              <div className="flex flex-col justify-between gap-2 px-2 py-1 text-xs text-text-muted sm:flex-row sm:items-center">
                 <span className="italic">Tip: Drag the ⣿ handle on any row to reorder set list items. Changes are saved automatically.</span>
                 {saveStatus && (
-                  <div className="flex items-center gap-1.5 font-medium shrink-0">
+                  <div className="flex shrink-0 items-center gap-1.5 font-medium">
                     {saveStatus === 'saving' && (
                       <>
                         <span className="spinner-small !size-3.5 !border-[1.5px]" />
@@ -869,7 +869,7 @@ export default function SetListView() {
               </div>
             ) : (
               saveStatus && (
-                <div className="flex justify-end px-2 py-1 text-xs text-text-muted font-medium">
+                <div className="flex justify-end px-2 py-1 text-xs font-medium text-text-muted">
                   {saveStatus === 'saving' && (
                     <div className="flex items-center gap-1.5">
                       <span className="spinner-small !size-3.5 !border-[1.5px]" />
@@ -888,7 +888,7 @@ export default function SetListView() {
           </div>
         ) : (
           <div className="p-16 text-center">
-            <p className="text-text-muted m-0 text-sm">Select an event above to view and manage its set list.</p>
+            <p className="m-0 text-sm text-text-muted">Select an event above to view and manage its set list.</p>
           </div>
         )}
       </AppCard>

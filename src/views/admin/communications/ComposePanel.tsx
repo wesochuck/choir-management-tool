@@ -225,7 +225,7 @@ export function ComposePanel({
       {wizardStep === 'TARGETS' && (
         <div className="flex flex-col gap-6">
           {/* Top Actions */}
-          <div className="flex w-full items-center justify-between border-b border-border pb-3 max-md:flex-col gap-3">
+          <div className="flex w-full items-center justify-between gap-3 border-b border-border pb-3 max-md:flex-col">
             <div>
               <h2 className="text-lg font-semibold text-text">Step 1: Define Your Audience</h2>
               <p className="text-xs text-text-muted">Select filter criteria on the left and verify reachable users on the right.</p>
@@ -242,15 +242,15 @@ export function ComposePanel({
           </div>
 
           {/* Two Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 items-start">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[380px_1fr]">
             {/* Left Column: Filters */}
             <AppCard title="Audience Filters">
               <div className="flex flex-col gap-4">
                 {/* Event Context */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">Event Context</label>
+                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Event Context</label>
                   <select
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white"
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none"
                     value={filters.eventId}
                     onChange={(event) => handleEventContextChange(event.target.value)}
                   >
@@ -265,9 +265,9 @@ export function ComposePanel({
 
                 {/* RSVP Status */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">RSVP Status</label>
+                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">RSVP Status</label>
                   <select
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50"
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50"
                     value={filters.rsvp}
                     onChange={(event) =>
                       updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
@@ -280,7 +280,7 @@ export function ComposePanel({
                     <option value="Pending">No Response (Pending)</option>
                   </select>
                   {!filters.eventId && (
-                    <span className="text-text-muted text-[11px] italic">
+                    <span className="text-[11px] text-text-muted italic">
                       Select an event first to filter by RSVP status.
                     </span>
                   )}
@@ -288,9 +288,9 @@ export function ComposePanel({
 
                 {/* Member Status */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">Member Status</label>
+                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Member Status</label>
                   <select
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white"
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none"
                     value={filters.globalStatus}
                     onChange={(event) => updateFilter('globalStatus', event.target.value)}
                   >
@@ -303,11 +303,11 @@ export function ComposePanel({
 
                 {/* Voice Part / Section dropdown */}
                 <div className="relative flex flex-col gap-1.5" ref={dropdownRef}>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">Voice Part / Section</label>
+                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Voice Part / Section</label>
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm text-left hover:border-primary transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
+                    className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-left text-sm shadow-sm transition-all hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                   >
                     <span className={(filters.voiceParts || []).length > 0 ? 'font-medium text-text' : 'text-text-muted'}>
                       {filters.voiceParts.length === 0
@@ -332,10 +332,10 @@ export function ComposePanel({
                     </svg>
                   </button>
                   {isDropdownOpen && (
-                    <div className="absolute top-full left-0 z-55 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg flex flex-col gap-1">
-                      <div className="px-2 py-1 text-xs font-bold text-text-muted uppercase tracking-wider">Sections</div>
+                    <div className="absolute top-full left-0 z-55 mt-1 flex max-h-60 w-full flex-col gap-1 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
+                      <div className="px-2 py-1 text-xs font-bold tracking-wider text-text-muted uppercase">Sections</div>
                       {configSections.map((sec) => (
-                        <label key={sec.code} className="flex items-center px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer text-sm">
+                        <label key={sec.code} className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50">
                           <input
                             type="checkbox"
                             checked={filters.voiceParts.includes(sec.code)}
@@ -348,9 +348,9 @@ export function ComposePanel({
                         </label>
                       ))}
                       <div className="my-1 border-t border-border"></div>
-                      <div className="px-2 py-1 text-xs font-bold text-text-muted uppercase tracking-wider">Individual Parts</div>
+                      <div className="px-2 py-1 text-xs font-bold tracking-wider text-text-muted uppercase">Individual Parts</div>
                       {voicePartLabels.map((part) => (
-                        <label key={part} className="flex items-center px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer text-sm">
+                        <label key={part} className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50">
                           <input
                             type="checkbox"
                             checked={filters.voiceParts.includes(part)}
@@ -378,32 +378,32 @@ export function ComposePanel({
                   </span>
                 }
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                   {/* Total Card */}
-                  <div className="border border-border rounded-lg bg-slate-50/50 p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Selected</span>
-                    <span className="text-3xl font-extrabold text-text mt-1">{recipientCounts.total}</span>
-                    <span className="text-[11px] text-text-muted mt-1">matched singers</span>
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-slate-50/50 p-4 text-center">
+                    <span className="text-xs font-bold tracking-wider text-text-muted uppercase">Selected</span>
+                    <span className="mt-1 text-3xl font-extrabold text-text">{recipientCounts.total}</span>
+                    <span className="mt-1 text-[11px] text-text-muted">matched singers</span>
                   </div>
 
                   {/* Email Card */}
-                  <div className="border border-emerald-100 rounded-lg bg-emerald-50/30 p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Email Reach</span>
-                    <span className="text-3xl font-extrabold text-emerald-900 mt-1">{recipientCounts.hasEmail}</span>
-                    <span className="text-[11px] text-emerald-700 mt-1">reachable by email</span>
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50/30 p-4 text-center">
+                    <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase">Email Reach</span>
+                    <span className="mt-1 text-3xl font-extrabold text-emerald-900">{recipientCounts.hasEmail}</span>
+                    <span className="mt-1 text-[11px] text-emerald-700">reachable by email</span>
                   </div>
 
                   {/* SMS Card */}
-                  <div className="border border-blue-100 rounded-lg bg-blue-50/30 p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">SMS Reach</span>
-                    <span className="text-3xl font-extrabold text-blue-900 mt-1">{recipientCounts.hasPhone}</span>
-                    <span className="text-[11px] text-blue-700 mt-1">reachable by SMS</span>
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-blue-100 bg-blue-50/30 p-4 text-center">
+                    <span className="text-xs font-bold tracking-wider text-blue-800 uppercase">SMS Reach</span>
+                    <span className="mt-1 text-3xl font-extrabold text-blue-900">{recipientCounts.hasPhone}</span>
+                    <span className="mt-1 text-[11px] text-blue-700">reachable by SMS</span>
                   </div>
                 </div>
 
                 {recipientCounts.hasPhone === 0 && (
-                  <div className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs text-amber-800 mb-4">
-                    <svg className="size-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs text-amber-800">
+                    <svg className="size-4 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>SMS is unavailable for this audience.</span>
@@ -414,7 +414,7 @@ export function ComposePanel({
                   <span className="text-xs text-text-muted">Need to audit the exact names?</span>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-deep hover:underline cursor-pointer bg-transparent border-0 p-0"
+                    className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold text-primary hover:text-primary-deep hover:underline"
                     disabled={recipients.length === 0}
                     onClick={() => onViewRecipients(recipients, 'Matched Singers')}
                   >
@@ -429,7 +429,7 @@ export function ComposePanel({
 
               {/* Matched Singers Preview Panel */}
               <AppCard title="Singer Preview (showing first 5)">
-                <div className="flex flex-col divide-y divide-border -my-2">
+                <div className="-my-2 flex flex-col divide-y divide-border">
                   {recipients.length === 0 ? (
                     <div className="py-4 text-center text-sm text-text-muted italic">
                       No singers matched with the current filters.
@@ -443,21 +443,21 @@ export function ComposePanel({
                         </div>
                         <div className="flex gap-1.5">
                           {singer.email ? (
-                            <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">Email</span>
+                            <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Email</span>
                           ) : (
-                            <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 border border-slate-200">No Email</span>
+                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">No Email</span>
                           )}
                           {singer.phone ? (
-                            <span className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 border border-blue-200">SMS</span>
+                            <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">SMS</span>
                           ) : (
-                            <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 border border-slate-200">No SMS</span>
+                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">No SMS</span>
                           )}
                         </div>
                       </div>
                     ))
                   )}
                   {recipients.length > 5 && (
-                    <div className="py-2 text-xs text-text-muted text-center italic">
+                    <div className="py-2 text-center text-xs text-text-muted italic">
                       and {recipients.length - 5} more singers...
                     </div>
                   )}
@@ -486,7 +486,7 @@ export function ComposePanel({
           {!startedMessage ? (
             /* Sub-step A: Template Selection */
             <div className="flex flex-col gap-6">
-              <div className="flex w-full items-center justify-between border-b border-border pb-3 max-md:flex-col gap-3">
+              <div className="flex w-full items-center justify-between gap-3 border-b border-border pb-3 max-md:flex-col">
                 <div>
                   <h2 className="text-lg font-semibold text-text">Step 2: Choose how to start your message</h2>
                   <p className="text-xs text-text-muted">Select a template below or start with a blank message.</p>

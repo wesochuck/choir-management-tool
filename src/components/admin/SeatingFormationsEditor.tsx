@@ -485,7 +485,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
 
       <AppCard title="Seating Formations">
         <div className="flex-col gap-4">
-          <div className="flex-row flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-2">
           <p className="text-muted m-0">
               Define reusable seating formations for your choir.
             </p>

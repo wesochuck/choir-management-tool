@@ -54,7 +54,7 @@ export default function PublicDonationSuccessView() {
         </p>
 
         {donation ? (
-          <div className="card bg-neutral-100 flex w-full flex-col gap-1 p-4 text-left">
+          <div className="card flex w-full flex-col gap-1 bg-neutral-100 p-4 text-left">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Transaction ID:</span>
               <strong>{donation.id}</strong>
@@ -82,7 +82,7 @@ export default function PublicDonationSuccessView() {
             </p>
           </div>
         ) : (
-          <div className="bg-neutral-100 w-full rounded-lg p-4">
+          <div className="w-full rounded-lg bg-neutral-100 p-4">
             <p className="m-0 text-sm text-text-muted">
               We are sending your receipt to your email now. You can safely close this page.
             </p>

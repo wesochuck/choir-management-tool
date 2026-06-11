@@ -80,7 +80,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-2">
-      <div className="flex flex-row items-center gap-4 border border-dashed border-border bg-slate-50/50 p-3 rounded-md">
+      <div className="flex flex-row items-center gap-4 rounded-md border border-dashed border-border bg-slate-50/50 p-3">
         <div className="flex flex-row gap-1 rounded-md border border-border bg-white p-[2px]">
           <Button
             type="button"
@@ -132,7 +132,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </svg>
  
           {showSuggestions && query.trim().length > 0 && (
-            <div className="absolute inset-x-0 top-full z-[100] mt-1 max-h-[300px] overflow-y-auto rounded-md border border-border bg-white p-1 shadow-md flex flex-col gap-0.5">
+            <div className="absolute inset-x-0 top-full z-[100] mt-1 flex max-h-[300px] flex-col gap-0.5 overflow-y-auto rounded-md border border-border bg-white p-1 shadow-md">
               {filteredLibrary.map(p => (
                 <Button
                   key={p.id}
@@ -140,7 +140,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                   variant="ghost"
                   size="small"
                   onClick={() => handleAddItem(p)}
-                  className="w-full flex flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left h-auto min-h-0"
+                  className="flex h-auto min-h-0 w-full flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left"
                 >
                   <span className="text-sm font-semibold">{p.title}</span>
                   {p.composer && <span className="text-xs text-text-muted">by {p.composer}</span>}
@@ -152,7 +152,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                 variant="ghost"
                 size="small"
                 onClick={() => handleAddItem()}
-                className="w-full flex flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary h-auto min-h-0"
+                className="flex h-auto min-h-0 w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary"
                 // @allow-inline-style - conditional border when library has results
                 style={{ 
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
@@ -190,7 +190,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
         </Button>
       </div>
       {type === 'song' && (
-        <span className="text-text-muted pl-4 text-xs">
+        <span className="pl-4 text-xs text-text-muted">
           Tip: Select the "(create new)" option or press Enter to add a new piece to the music library.
         </span>
       )}

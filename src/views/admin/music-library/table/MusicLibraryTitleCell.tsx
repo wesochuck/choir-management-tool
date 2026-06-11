@@ -39,7 +39,7 @@ export function MusicLibraryTitleCell({
       className={`border border-[var(--border)] px-[10px] py-[6px] align-middle ${isChild ? '!pl-8' : ''}`}
     >
       <div className="flex flex-col gap-[2px]">
-        <div className="flex-row flex-wrap flex items-center gap-[6px]">
+        <div className="flex flex-row flex-wrap items-center gap-[6px]">
           {isParent && (
             <button
               type="button"
@@ -62,7 +62,7 @@ export function MusicLibraryTitleCell({
           {isParent && <MultiMovementBadge />}
           {isChild && <MovementBadge />}
         </div>
-        <div className="flex-row flex-wrap mt-[2px] flex items-center gap-[6px]">
+        <div className="mt-[2px] flex flex-row flex-wrap items-center gap-[6px]">
           {piece.genres?.map((id) => {
             const found = genres.find((g) => g.id === id);
             const color = chipColorMap.get(id) || CHIP_COLORS[0];

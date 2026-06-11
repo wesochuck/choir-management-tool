@@ -55,7 +55,7 @@ export default function PublicTicketSuccessView() {
         </p>
 
         {purchase ? (
-          <div className="card bg-neutral-100 flex w-full flex-col gap-1 p-4 text-left">
+          <div className="card flex w-full flex-col gap-1 bg-neutral-100 p-4 text-left">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Order ID:</span>
               <strong>{purchase.id}</strong>
@@ -104,7 +104,7 @@ export default function PublicTicketSuccessView() {
             </p>
           </div>
         ) : (
-          <div className="bg-neutral-100 w-full rounded-lg p-4">
+          <div className="w-full rounded-lg bg-neutral-100 p-4">
             <p className="m-0 text-sm text-text-muted">
               We're finishing up enqueuing your confirmation email. You can safely navigate away. Your tickets are secured.
             </p>

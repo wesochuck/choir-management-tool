@@ -477,13 +477,13 @@ export default function TicketingView() {
             <div className="px-6 py-5">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_auto] lg:items-end">
                 <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                     Select Performance
                   </span>
                   <select
                     value={selectedEventId}
                     onChange={e => setSelectedEventId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
                   >
                     {visibleEvents.map(ev => {
                       const cutoffTime = now - 3 * 60 * 60 * 1000;
@@ -507,7 +507,7 @@ export default function TicketingView() {
                     type="checkbox"
                     checked={showPastAndInactive}
                     onChange={e => setShowPastAndInactive(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
+                    className="size-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
                   />
                   <span>Include past and inactive performances</span>
                 </label>
@@ -516,7 +516,7 @@ export default function TicketingView() {
               {selectedEvent && (
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Tickets Sold
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-slate-900">
@@ -525,7 +525,7 @@ export default function TicketingView() {
                   </div>
 
                   <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Ticket Sales
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-slate-900">
@@ -534,7 +534,7 @@ export default function TicketingView() {
                   </div>
 
                   <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Fees Collected
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-slate-700">
@@ -543,7 +543,7 @@ export default function TicketingView() {
                   </div>
 
                   <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">
                       Total Revenue
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-emerald-700">
@@ -577,12 +577,12 @@ export default function TicketingView() {
                 placeholder="Search buyer name or email..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
               />
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
               >
                 <option value="lastName">Sort by Last Name</option>
                 <option value="firstName">Sort by First Name</option>
@@ -603,25 +603,25 @@ export default function TicketingView() {
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Buyer Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Email
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Sale Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Qty
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Amount Paid
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
                         Actions
                       </th>
                     </tr>
@@ -636,32 +636,32 @@ export default function TicketingView() {
                           // @allow-inline-style - isRefunded text color/opacity
                           style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
                         >
-                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-800">
                             {p.buyerName}
                             {p.expand?.bundle && (
-                              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-emerald-700">
+                              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium tracking-wide text-emerald-700 uppercase">
                                 Season Ticket: {p.expand.bundle.title}
                               </span>
                             )}
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                          <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500">
                             {p.buyerEmail}
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                          <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500">
                             {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                          <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500">
                             {p.quantity}
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-800">
                             ${(p.amountPaidCents / 100).toFixed(2)}
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                          <td className="px-6 py-4 text-sm whitespace-nowrap">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                               {p.status}
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                          <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
                             {p.status === 'paid' && (
                               <button
                                 onClick={() => {
@@ -925,7 +925,7 @@ export default function TicketingView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold">Included Performances</label>
             {hasPurchases && (
-              <div className="card border-yellow-200 bg-yellow-50 text-yellow-700 p-2 text-sm">
+              <div className="card border-yellow-200 bg-yellow-50 p-2 text-sm text-yellow-700">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}

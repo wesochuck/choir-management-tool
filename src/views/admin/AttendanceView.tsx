@@ -401,7 +401,7 @@ export default function AttendanceView() {
             </button>
 
             <div
-              className={`flex-row flex-wrap items-center gap-2.5 ${isMobileActionsOpen ? 'is-open' : ''}`}
+              className={`flex flex-row flex-wrap items-center gap-2.5 ${isMobileActionsOpen ? 'is-open' : ''}`}
               id="attendance-mobile-actions"
             >
             {/* Refresh Button */}

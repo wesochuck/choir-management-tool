@@ -190,7 +190,7 @@ export default function PublicTicketPurchaseView() {
             />
           </div>
 
-          <div className="card bg-neutral-100 flex w-full flex-col gap-1 p-4">
+          <div className="card flex w-full flex-col gap-1 bg-neutral-100 p-4">
             <h4 className="m-0 text-primary-deep">Pricing Summary</h4>
             <div className="flex flex-row justify-between text-sm">
               <span>Ticket Price ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>
@@ -208,7 +208,7 @@ export default function PublicTicketPurchaseView() {
             </div>
           </div>
 
-          <div className="bg-neutral-100 mt-1 flex flex-row items-start gap-4 rounded-lg border border-border p-4">
+          <div className="mt-1 flex flex-row items-start gap-4 rounded-lg border border-border bg-neutral-100 p-4">
             <input
               id="marketingOptIn"
               type="checkbox"

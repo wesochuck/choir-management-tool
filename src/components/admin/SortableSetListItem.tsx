@@ -59,21 +59,21 @@ export const SortableSetListItem: React.FC<Props> = ({
   return (
     <div 
       ref={setNodeRef} 
-      className={`flex flex-row items-center border border-border rounded-md px-3.5 py-2.5 transition-colors gap-3 ${
+      className={`flex flex-row items-center gap-3 rounded-md border border-border px-3.5 py-2.5 transition-colors ${
         item.type === 'intermission' 
-          ? 'bg-emerald-50/15 border-dashed border-emerald-300/80' 
-          : 'bg-white hover:bg-slate-50/70 shadow-sm'
+          ? 'border-dashed border-emerald-300/80 bg-emerald-50/15' 
+          : 'bg-white shadow-sm hover:bg-slate-50/70'
       }`}
       // @allow-inline-style - dnd-kit sortable transform and transition
       style={{ 
         ...style 
       }}
     >
-      <div {...attributes} {...listeners} className="flex cursor-grab items-center p-1 text-text-muted hover:text-text select-none">
+      <div {...attributes} {...listeners} className="flex cursor-grab items-center p-1 text-text-muted select-none hover:text-text">
         <span className="text-[1.2rem] leading-none">⣿</span>
       </div>
       
-      <div className="flex-1 flex flex-col gap-[2px]">
+      <div className="flex flex-1 flex-col gap-[2px]">
         {item.type === 'intermission' ? (
           <div className="flex flex-row flex-wrap items-center gap-2">
             <span className="text-lg font-semibold text-emerald-800">⏸️ {titleText}</span>
@@ -83,18 +83,18 @@ export const SortableSetListItem: React.FC<Props> = ({
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-text-muted text-base italic">
+              <span className="text-base text-text-muted italic">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         ) : (
-          <div className="text-lg m-0 flex flex-row flex-wrap items-center gap-1.5">
+          <div className="m-0 flex flex-row flex-wrap items-center gap-1.5 text-lg">
             {(item.pieceId || linkedPiece?.id) && onPieceClick ? (
               <button
                 type="button"
                 onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
-                className="font-semibold inline-flex cursor-pointer items-center gap-1 border-none bg-none p-0 text-left text-primary hover:text-primary-deep underline decoration-1 decoration-primary/30 underline-offset-2"
+                className="inline-flex cursor-pointer items-center gap-1 border-none bg-none p-0 text-left font-semibold text-primary underline decoration-primary/30 decoration-1 underline-offset-2 hover:text-primary-deep"
               >
                 {titleText}
                 <span title="Linked to Music Library" className="inline-block text-xs no-underline">🎼</span>
@@ -105,7 +105,7 @@ export const SortableSetListItem: React.FC<Props> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(item)}
-                        className="cursor-pointer border-none bg-none p-0 text-left font-semibold text-inherit underline decoration-dotted decoration-slate-400 underline-offset-2 hover:text-primary"
+                        className="cursor-pointer border-none bg-none p-0 text-left font-semibold text-inherit underline decoration-slate-400 decoration-dotted underline-offset-2 hover:text-primary"
                     >
                         {titleText}
                     </button>
@@ -121,14 +121,14 @@ export const SortableSetListItem: React.FC<Props> = ({
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-text-muted text-base font-normal">
+              <span className="text-base font-normal text-text-muted">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         )}
         {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
-          <div className="text-text-muted flex flex-row flex-wrap items-center gap-1.5 text-base">
+          <div className="flex flex-row flex-wrap items-center gap-1.5 text-base text-text-muted">
             {displayComposer && (
               <span>
                 {displayComposer}
@@ -154,13 +154,13 @@ export const SortableSetListItem: React.FC<Props> = ({
           </div>
         )}
         {item.notes && (
-          <div className="text-text-muted mt-0.5 text-base italic">
+          <div className="mt-0.5 text-base text-text-muted italic">
             {item.notes}
           </div>
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 ml-auto">
+      <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="small" onClick={() => onEdit(item)}>Edit</Button>
         {hasAudio && onPlayTrack && (
           <Button 
@@ -170,7 +170,7 @@ export const SortableSetListItem: React.FC<Props> = ({
               e.stopPropagation();
               if (linkedPiece) onPlayTrack(linkedPiece);
             }} 
-            className="flex items-center justify-center !p-1.5 h-8 w-8 text-sm"
+            className="flex size-8 items-center justify-center !p-1.5 text-sm"
             title="Play default track"
           >
             🎵

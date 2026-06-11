@@ -382,7 +382,7 @@ export default function AuditionsView() {
                 )}
               </label>
 
-              <div className="card bg-neutral-100 border border-gray-200 p-4">
+              <div className="card border border-gray-200 bg-neutral-100 p-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-label text-xs">Generate Slots</span>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-3">

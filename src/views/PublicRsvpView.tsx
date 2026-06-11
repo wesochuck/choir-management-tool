@@ -193,7 +193,7 @@ export default function PublicRsvpView() {
   const renderEventCard = (titleClass?: string) => {
     if (!event) return null;
     return (
-      <div className="bg-neutral-100 flex flex-col gap-2 rounded-xl border border-border p-4 sm:p-5">
+      <div className="flex flex-col gap-2 rounded-xl border border-border bg-neutral-100 p-4 sm:p-5">
         <span className={`inline-flex items-center self-start rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${event.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
           {event.type}
         </span>
@@ -235,7 +235,7 @@ export default function PublicRsvpView() {
       <div className="mt-1 overflow-hidden rounded-xl border border-border">
         <button 
           onClick={() => setShowRehearsals(!showRehearsals)}
-          className="bg-neutral-100 flex w-full cursor-pointer items-center justify-between border-none px-4 py-3 text-left"
+          className="flex w-full cursor-pointer items-center justify-between border-none bg-neutral-100 px-4 py-3 text-left"
         >
           <h3 className="text-label m-0 text-xs font-extrabold tracking-wider text-primary-deep uppercase">
             📅 Rehearsal Schedule ({rehearsals.length})
@@ -284,7 +284,7 @@ export default function PublicRsvpView() {
           value={rsvpNote}
           onChange={(e) => setRsvpNote(e.target.value)}
           placeholder="Briefly let the admins know why you cannot make this rehearsal."
-          className={`font-[inherit] box-border min-h-[100px] w-full resize-y rounded-lg border border-border p-3 text-sm ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
+          className={`box-border min-h-[100px] w-full resize-y rounded-lg border border-border p-3 font-[inherit] text-sm ${textareaClass?.replace('rsvp-textarea--short', 'min-h-[80px]') || ''}`}
           maxLength={1000}
         />
         <p className="m-0 text-xs text-text-muted">
@@ -344,7 +344,7 @@ export default function PublicRsvpView() {
         <AppCard className="box-border flex w-full flex-col gap-6 border p-6">
           
           {rsvpWindow.isReadOnly && (
-            <div className="card bg-neutral-100 rounded-lg border border-border p-4">
+            <div className="card rounded-lg border border-border bg-neutral-100 p-4">
               <p className="m-0 text-text-muted">
                 {rsvpWindow.reason}
               </p>

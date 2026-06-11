@@ -152,7 +152,7 @@ export default function PublicTicketListView() {
           </div>
         )}
 
-        <div className="bg-neutral-100 mt-8 w-full rounded-lg border-t-2 border-dashed border-border p-4 pt-6">
+        <div className="mt-8 w-full rounded-lg border-t-2 border-dashed border-border bg-neutral-100 p-4 pt-6">
           <div className="flex flex-col gap-0.5 text-center">
             <h2 className="m-0 text-primary-deep">{donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}</h2>
             <p className="text-body mx-auto max-w-[480px]">
