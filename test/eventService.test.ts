@@ -5,6 +5,50 @@ import { pb } from '../src/lib/pocketbase.ts';
 import { eventService } from '../src/services/eventService.ts';
 import { settingsService } from '../src/services/settingsService.ts';
 
+test('eventService.getEvents deduplicates concurrent in-flight requests', async (t) => {
+  const originalCollection = pb.collection;
+
+  let callCount = 0;
+  let resolveFirst: (value: unknown) => void = () => {};
+  const firstPromise = new Promise((resolve) => { resolveFirst = resolve; });
+
+  const mockGetFullList = t.mock.fn(async () => {
+    callCount++;
+    if (callCount === 1) {
+      await firstPromise;
+    }
+    return [{ id: 'evt_1', title: 'Concert', type: 'Performance', date: '2026-12-25' }];
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'events') {
+      return { getFullList: mockGetFullList } as unknown as ReturnType<typeof pb.collection>;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const call1 = eventService.getEvents();
+    const call2 = eventService.getEvents();
+
+    await new Promise(r => setTimeout(r, 10));
+    assert.equal(callCount, 1);
+
+    resolveFirst({} as never);
+    const [result1, result2] = await Promise.all([call1, call2]);
+
+    assert.equal(result1.length, 1);
+    assert.equal(result2.length, 1);
+    assert.equal(callCount, 1);
+
+    const result3 = await eventService.getEvents();
+    assert.equal(callCount, 2);
+    assert.equal(result3.length, 1);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
 test('eventService.bulkCreateRehearsals throws on invalid day of week', async () => {
   const dummyPerformance = {
     id: 'perf_1',

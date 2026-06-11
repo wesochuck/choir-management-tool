@@ -51,13 +51,22 @@ export interface BulkRehearsalConfig {
   venue?: string;
 }
 
+let inFlightEvents: Promise<Event[]> | null = null;
+
 export const eventService = {
   async getEvents() {
-    return await pb.collection('events').getFullList<Event>({
+    if (inFlightEvents) return inFlightEvents;
+
+    const promise = pb.collection('events').getFullList<Event>({
       filter: 'isArchived != true',
       sort: '-date',
       expand: 'parentPerformanceId,venue',
     });
+
+    inFlightEvents = promise;
+    promise.finally(() => { inFlightEvents = null; });
+
+    return promise;
   },
 
   async getPublicEvents() {

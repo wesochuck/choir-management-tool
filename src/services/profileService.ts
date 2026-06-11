@@ -74,6 +74,8 @@ export const generateRandomPassword = (length = 12): string => {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 };
 
+let inFlightActiveProfiles: Promise<Profile[]> | null = null;
+
 export const profileService = {
   async getProfiles(options: ProfileFetchOptions = {}) {
     return await retryOn429(() =>
@@ -86,13 +88,20 @@ export const profileService = {
   },
 
   async getActiveProfiles(options: ProfileFetchOptions = {}) {
-    return await retryOn429(() =>
+    if (inFlightActiveProfiles) return inFlightActiveProfiles;
+
+    const promise = retryOn429(() =>
       pb.collection('profiles').getFullList<Profile>({
         filter: 'globalStatus != "Inactive"',
         sort: 'name',
       }),
       { onRetry: options.onRetry },
     );
+
+    inFlightActiveProfiles = promise;
+    promise.finally(() => { inFlightActiveProfiles = null; });
+
+    return promise;
   },
 
   async getMyProfile() {

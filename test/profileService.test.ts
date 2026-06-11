@@ -96,6 +96,51 @@ test('in-memory profile name filtering works case-insensitively', () => {
   assert.equal(match3.length, 2);
 });
 
+test('profileService.getActiveProfiles deduplicates concurrent in-flight requests', async (t) => {
+  const { profileService } = await import('../src/services/profileService.ts');
+  const originalCollection = pb.collection;
+
+  let callCount = 0;
+  let resolveFirst: (value: unknown) => void = () => {};
+  const firstPromise = new Promise((resolve) => { resolveFirst = resolve; });
+
+  const mockGetFullList = t.mock.fn(async () => {
+    callCount++;
+    if (callCount === 1) {
+      await firstPromise;
+    }
+    return [{ id: 'p1', name: 'Alice', globalStatus: 'Active', voicePart: 'S1' }];
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'profiles') {
+      return { getFullList: mockGetFullList } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const call1 = profileService.getActiveProfiles();
+    const call2 = profileService.getActiveProfiles();
+
+    await new Promise(r => setTimeout(r, 10));
+    assert.equal(callCount, 1);
+
+    resolveFirst({} as never);
+    const [result1, result2] = await Promise.all([call1, call2]);
+
+    assert.equal(result1.length, 1);
+    assert.equal(result2.length, 1);
+    assert.equal(callCount, 1);
+
+    const result3 = await profileService.getActiveProfiles();
+    assert.equal(callCount, 2);
+    assert.equal(result3.length, 1);
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
 test('profileService.getMyProfile queries using parameterized pb.filter', async (t) => {
   const originalCollection = pb.collection;
   const originalAuthStore = pb.authStore;

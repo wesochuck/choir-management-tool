@@ -14,10 +14,12 @@ import assert from 'node:assert/strict';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useAttendance } from '../src/hooks/useAttendance.ts';
 import { rosterService, type EventRoster } from '../src/services/rosterService.ts';
-import type { Profile } from '../src/services/profileService.ts';
-import type { Event } from '../src/services/eventService.ts';
+import { profileService, type Profile } from '../src/services/profileService.ts';
+import { eventService, type Event } from '../src/services/eventService.ts';
 
 test('useAttendance - resolves RSVP correctly for rehearsals and performances', async () => {
+  const originalGetEvents = eventService.getEvents;
+  const originalGetActiveProfiles = profileService.getActiveProfiles;
   const originalGetEventRoster = rosterService.getEventRoster;
 
   const mockProfiles: Profile[] = [
@@ -62,9 +64,12 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
     }
   ];
 
+  // We will dynamicize the rosters returned in each test run
   let eventRosters: EventRoster[] = [];
   let parentRosters: EventRoster[] = [];
 
+  eventService.getEvents = async () => mockEvents;
+  profileService.getActiveProfiles = async () => mockProfiles;
   rosterService.getEventRoster = async (id: string) => {
     if (id === 'perf_1') {
       return parentRosters;
@@ -92,7 +97,7 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
     ];
     parentRosters = eventRosters;
 
-    const { result: res1 } = renderHook(() => useAttendance('perf_1', mockEvents, mockProfiles));
+    const { result: res1 } = renderHook(() => useAttendance('perf_1'));
 
     await waitFor(() => {
       if (res1.current.isLoading) throw new Error('Still loading');
@@ -102,7 +107,9 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
     assert.equal(res1.current.items[0].rsvp, 'No');
 
     // Scenario 2: Rehearsal view - singer declined the parent performance, no rehearsal RSVP (or Pending)
+    // Rehearsal has no explicit roster record (defaults to Pending)
     eventRosters = [];
+    // Parent performance has declined (RSVP = 'No')
     parentRosters = [
       {
         id: 'roster_parent',
@@ -120,16 +127,17 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
       }
     ];
 
-    const { result: res2 } = renderHook(() => useAttendance('reh_1', mockEvents, mockProfiles));
+    const { result: res2 } = renderHook(() => useAttendance('reh_1'));
 
     await waitFor(() => {
       if (res2.current.isLoading) throw new Error('Still loading');
     });
 
     assert.equal(res2.current.items.length, 1);
+    // Since the singer declined the parent performance, rehearsal RSVP should default to 'No'
     assert.equal(res2.current.items[0].rsvp, 'No');
 
-    // Scenario 3: Rehearsal where singer declined parent but has explicit 'Yes' RSVP
+    // Scenario 3: Rehearsal view - singer declined parent performance, but has explicit 'Yes' RSVP for the rehearsal
     eventRosters = [
       {
         id: 'roster_reh',
@@ -163,16 +171,17 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
       }
     ];
 
-    const { result: res3 } = renderHook(() => useAttendance('reh_1', mockEvents, mockProfiles));
+    const { result: res3 } = renderHook(() => useAttendance('reh_1'));
 
     await waitFor(() => {
       if (res3.current.isLoading) throw new Error('Still loading');
     });
 
     assert.equal(res3.current.items.length, 1);
+    // Rehearsal explicit RSVP ('Yes') should take precedence over parent performance decline
     assert.equal(res3.current.items[0].rsvp, 'Yes');
 
-    // Scenario 4: Rehearsal where singer accepted parent but has no explicit rehearsal RSVP
+    // Scenario 4: Rehearsal view - singer accepted (Yes) parent performance, but has no explicit rehearsal RSVP
     eventRosters = [];
     parentRosters = [
       {
@@ -191,16 +200,19 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
       }
     ];
 
-    const { result: res4 } = renderHook(() => useAttendance('reh_1', mockEvents, mockProfiles));
+    const { result: res4 } = renderHook(() => useAttendance('reh_1'));
 
     await waitFor(() => {
       if (res4.current.isLoading) throw new Error('Still loading');
     });
 
     assert.equal(res4.current.items.length, 1);
+    // Should remain 'Pending'
     assert.equal(res4.current.items[0].rsvp, 'Pending');
 
   } finally {
+    eventService.getEvents = originalGetEvents;
+    profileService.getActiveProfiles = originalGetActiveProfiles;
     rosterService.getEventRoster = originalGetEventRoster;
   }
 });

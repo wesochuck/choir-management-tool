@@ -26,7 +26,7 @@ export default function AttendanceView() {
   const [searchParams] = useSearchParams();
   const { timezone } = useChoirSettings();
   const { events } = useEvents();
-  const { allProfiles, profiles: filteredProfiles, editProfile } = useProfiles();
+  const { profiles, editProfile } = useProfiles();
   const { user, updatePreferences } = useAuth();
   
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -177,7 +177,7 @@ export default function AttendanceView() {
     'Attendance action is being rate-limited; retrying automatically...',
   );
 
-  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, refresh } = useAttendance(selectedEventId, events, allProfiles, {
+  const { items, isLoading, error, setAttendance, setRSVP, setAllAttendance, refresh } = useAttendance(selectedEventId, {
     onRateLimitRetry: onAttendanceRateLimitRetry,
   });
 
@@ -285,7 +285,7 @@ export default function AttendanceView() {
   };
 
   const handleEditProfile = (profileId: string) => {
-    const profile = filteredProfiles.find((item) => item.id === profileId);
+    const profile = profiles.find((item) => item.id === profileId);
     if (profile) setEditingProfile(profile);
   };
 

@@ -177,25 +177,22 @@ export const DEFAULT_POLL_SETTINGS: PollSettings = {
   defaultAutoArchiveDays: 3,
 };
 
-const inFlightRequests = new Map<string, Promise<unknown>>();
+const inFlightRequests: Record<string, Promise<unknown>> = {};
 
-const getSetting = async <T>(key: string) => {
-  const inFlight = inFlightRequests.get(key);
-  if (inFlight) return inFlight as Promise<AppSetting<T> | null>;
+const getSetting = async <T>(key: string): Promise<AppSetting<T> | null> => {
+  const existing = inFlightRequests[key];
+  if (existing) return existing as Promise<AppSetting<T> | null>;
 
-  const promise = (async () => {
-    try {
-      const setting = await pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }));
-      return setting;
-    } catch (err: unknown) {
+  const promise = pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }))
+    .then((setting) => setting)
+    .catch((err: unknown) => {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
       throw err;
-    } finally {
-      inFlightRequests.delete(key);
-    }
-  })();
+    });
 
-  inFlightRequests.set(key, promise);
+  inFlightRequests[key] = promise;
+  void promise.then(() => { delete inFlightRequests[key]; }, () => { delete inFlightRequests[key]; });
+
   return promise;
 };
 
