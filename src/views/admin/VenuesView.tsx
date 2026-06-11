@@ -148,7 +148,10 @@ export default function VenuesView() {
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (
-          <AppCard key={v.id} title={v.name} className="h-full">
+          <AppCard key={v.id} className="h-full">
+            <h3 className="text-xl font-bold text-text border-b border-border pb-2 mb-3">
+              {v.name}
+            </h3>
             <div className="flex-1 flex flex-col gap-1.5">
               {v.address && (
                 <div className="text-body">
@@ -182,11 +185,10 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="mt-4 flex flex-col gap-3 md:flex-row">
-              <Button variant="ghost" className="flex-1" onClick={() => handleEdit(v)}>Edit</Button>
+            <div className="mt-4 flex flex-row justify-end gap-2.5">
+              <Button variant="secondary" onClick={() => handleEdit(v)}>Edit</Button>
               <Button
                 variant="danger"
-                className="flex-1"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(v);
