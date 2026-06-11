@@ -23,6 +23,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { BaseModal } from '../../components/common/BaseModal';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
+import { Button, Select } from '../../components/ui';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
@@ -647,11 +648,20 @@ export default function SetListView() {
   );
 
   return (
-    <div className="flex-col gap-[var(--space-lg)]">
-      <div className="no-print admin-view-header">
-        <div className="flex-row items-center gap-[var(--space-md)]">
+    <div className="flex flex-col gap-6">
+      <div className="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Set Lists
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Manage performance set lists, timings, and singer visibility
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
           {selectedEventId && (
-            <div className="flex items-center gap-2 text-[0.9rem] text-[var(--text-muted)]">
+            <div className="flex items-center gap-2 text-sm text-text-muted mr-2">
               {saveStatus === 'saving' && (
                 <>
                   <span className="spinner-small" />
@@ -659,151 +669,149 @@ export default function SetListView() {
                 </>
               )}
               {saveStatus === 'saved' && (
-                <span className="font-medium text-[var(--primary-deep)]">
+                <span className="font-medium text-emerald-700">
                   ✓ Saved
                 </span>
               )}
               {saveStatus === 'error' && (
-                <span className="font-medium text-[var(--danger)]">
+                <span className="font-medium text-red-600">
                   ✗ Save failed
                 </span>
               )}
             </div>
           )}
+          {selectedEvent && (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => handleOpenPlayer(selectedEvent)}
+                title="Open practice player link generator"
+              >
+                🎧 Practice Player
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setIsPrintModalOpen(true)}
+                title="View printable set list"
+              >
+                🖨️ Print & Copy
+              </Button>
+            </>
+          )}
         </div>
-        {selectedEvent && (
-          <div className="admin-view-actions">
-            <button
-              type="button"
-              className="btn btn-secondary flex !h-[42px] items-center gap-2"
-              onClick={() => handleOpenPlayer(selectedEvent)}
-              title="Open practice player link generator"
-            >
-              🎧 Practice Player
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary flex !h-[42px] items-center gap-2"
-              onClick={() => setIsPrintModalOpen(true)}
-              title="View printable set list"
-            >
-              🖨️ Print & Copy
-            </button>
-          </div>
-        )}
       </div>
 
-      <div className="roster-filters-bar items-stretch">
-          <div className="min-w-[260px] flex-1 flex-col gap-[var(--space-xs)]">
-            <label className="text-label">Select Event</label>
-            <select 
-              value={selectedEventId} 
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="admin-filter-select w-full min-w-[260px]"
-            >
-              <option value="">-- Choose Event --</option>
-              {events.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.type}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedEvent && (
-            <div className="min-w-[260px] flex-1 flex-col gap-[var(--space-xs)]">
-              <label className="text-label">Copy from Previous</label>
-              <select 
-                value="" 
-                onChange={async (e) => {
-                  if (e.target.value) {
-                    await handleCopyFrom(e.target.value);
-                  }
-                }}
-                className="admin-filter-select w-full min-w-[260px]"
+      <AppCard noPadding>
+        <div className="flex flex-col gap-4 border-b border-border px-4 py-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.5fr_1.5fr_1fr] items-end">
+            <div>
+              <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Select Event</span>
+              <Select
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="w-full"
               >
-                <option value="">-- Copy Set List --</option>
-                {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (
+                <option value="">-- Choose Event --</option>
+                {events.map((e) => (
                   <option key={e.id} value={e.id}>
                     {formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.type}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
-          )}
 
-          {selectedEvent && selectedEvent.type === 'Performance' && (
-            <div className="min-w-[200px] flex-col gap-[var(--space-xs)]">
-              <label className="text-label">Singer Visibility</label>
-              <div 
-                className={`card sl-singer-visibility-card ${localApproved ? 'approved' : ''}`}
-              >
-                <label 
-                  className="!m-0 flex cursor-pointer items-center gap-[10px] font-medium select-none"
+            {selectedEvent ? (
+              <div>
+                <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Copy from Previous</span>
+                <Select
+                  value=""
+                  onChange={async (e) => {
+                    if (e.target.value) {
+                      await handleCopyFrom(e.target.value);
+                    }
+                  }}
+                  className="w-full"
                 >
+                  <option value="">-- Copy Set List --</option>
+                  {events.filter(e => e.id !== selectedEventId && e.setList && e.setList.length > 0).map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.type}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : (
+              <div className="hidden sm:block" />
+            )}
+
+            {selectedEvent && selectedEvent.type === 'Performance' && (
+              <div className="flex flex-col">
+                <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Singer Visibility</span>
+                <label className="flex h-11 cursor-pointer items-center gap-2.5 rounded-md border border-border bg-slate-50 hover:bg-slate-100/70 px-4 text-sm font-medium transition-colors select-none">
                   <input
                     type="checkbox"
                     checked={localApproved}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
-                    className="!m-0 size-[18px] cursor-pointer accent-[var(--primary)]"
+                    className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
                   />
                   <span>Approved for Singers</span>
                 </label>
               </div>
-            </div>
-          )}
+            )}
 
-          {selectedEvent && selectedEvent.type === 'Rehearsal' && (
-            <div className="min-w-[200px] flex-col gap-[var(--space-xs)]">
-              <label className="text-label">Parent Set List</label>
-              {parentPerformance ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary flex !h-11 w-full items-center justify-center"
-                  onClick={() => setSelectedEventId(parentPerformance.id)}
-                >
-                  🔗 Go to parent: {parentPerformance.title || 'Concert'}
-                </button>
-              ) : (
-                <div className="card flex !h-11 items-center justify-center px-[var(--space-md)]">
-                  No parent linked
-                </div>
-              )}
-            </div>
-          )}
-      </div>
-
-      {selectedEventId ? (
-        <div className="w-full flex-col gap-[var(--space-lg)]">
-          {selectedEvent?.type === 'Rehearsal' && (
-            <div className="mb-[var(--space-md)] border-l-4 border-[var(--primary)] bg-[rgb(74_124_89_/_5%)] p-[var(--space-sm)_var(--space-md)] text-[0.9rem] leading-[1.4] text-[var(--text-muted)]">
-              <div>
-                <strong>⚠️ Rehearsal Mode:</strong> This rehearsal inherits its set list and singer visibility from the parent Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct edits here will not be visible on the Singer Dashboard.
+            {selectedEvent && selectedEvent.type === 'Rehearsal' && (
+              <div className="flex flex-col">
+                <span className="text-text-muted text-sm font-bold tracking-wider uppercase mb-2 block">Parent Set List</span>
+                {parentPerformance ? (
+                  <Button
+                    variant="secondary"
+                    className="w-full h-11 flex items-center justify-center gap-2"
+                    onClick={() => setSelectedEventId(parentPerformance.id)}
+                  >
+                    🔗 Go to parent: {parentPerformance.title || 'Concert'}
+                  </Button>
+                ) : (
+                  <div className="flex h-11 items-center justify-center rounded-md border border-border bg-slate-50 text-text-muted text-sm px-4">
+                    No parent linked
+                  </div>
+                )}
               </div>
-              {parentPerformance && (
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm max-w-full whitespace-nowrap"
-                  onClick={() => setSelectedEventId(parentPerformance.id)}
-                >
-                  Manage Parent Set List
-                </button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        </div>
 
-          <AppCard title="Current Set List">
-            <div className="flex-col gap-[var(--space-sm)]">
+        {selectedEventId ? (
+          <div className="flex flex-col gap-4 p-4">
+            {selectedEvent?.type === 'Rehearsal' && (
+              <div className="border-l-4 border-amber-500 bg-amber-50/70 p-3 rounded-r-md text-sm leading-relaxed text-amber-900">
+                <div className="font-semibold mb-1">⚠️ Rehearsal Mode</div>
+                <p className="m-0">
+                  This rehearsal inherits its set list and singer visibility from the parent Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct edits here will not be visible on the Singer Dashboard.
+                </p>
+                {parentPerformance && (
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    className="mt-2"
+                    onClick={() => setSelectedEventId(parentPerformance.id)}
+                  >
+                    Manage Parent Set List
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4">
               {items.length > 0 && (
-                <div className="mb-[var(--space-xs)] flex flex-col items-center justify-between gap-[var(--space-sm)] rounded-[var(--radius-md)] border border-[rgb(74_124_89_/_15%)] bg-[var(--primary-light)] p-[var(--space-sm)_var(--space-md)] text-[0.85rem] font-semibold text-[var(--primary-deep)] md:flex-row">
-                  <div className="flex-row gap-[var(--space-md)]">
-                    <span>🎼 Songs: {durationTotals.songs}</span>
-                    <span>⏸️ Intermissions: {durationTotals.intermissions}</span>
-                    <span className="flex-row flex-wrap items-center gap-1">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-md border border-emerald-100 bg-emerald-50/50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
+                  <div className="flex flex-row flex-wrap items-center gap-6">
+                    <span>🎼 Songs: <span className="text-slate-900">{durationTotals.songs}</span></span>
+                    <span>⏸️ Intermissions: <span className="text-slate-900">{durationTotals.intermissions}</span></span>
+                    <span className="flex flex-row items-center gap-2">
                       📢 Gaps:
                       <input
                         type="number"
-                        className="w-12 rounded border border-[#d1d5db] bg-white p-[2px_4px] text-center text-[0.85em] text-[#333]"
+                        className="w-12 h-7 rounded border border-border bg-white text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-primary"
                         min={0}
                         step={1}
                         value={localGapSeconds}
@@ -812,16 +820,16 @@ export default function SetListView() {
                           handleAnnouncementGapChange(isNaN(val) ? 0 : val);
                         }}
                       />
-                      s × {Math.max(0, items.length - 1)} = {durationTotals.gaps}
+                      <span className="text-xs font-normal text-emerald-700/80">s × {Math.max(0, items.length - 1)} = {durationTotals.gaps}</span>
                     </span>
                   </div>
-                  <span className="border-l border-[rgb(74_124_89_/_30%)] pl-[var(--space-md)] text-[0.9rem] text-[var(--primary-deep)]">
-                    ⏱️ Total: {durationTotals.total}
-                  </span>
+                  <div className="flex items-center gap-1 text-[0.95rem] font-bold text-emerald-800">
+                    ⏱️ Total: <span className="text-slate-900">{durationTotals.total}</span>
+                  </div>
                 </div>
               )}
 
-              <div className="mb-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-md)]">
+              <div className="border-b border-border pb-4">
                 <SetListInlineCreator 
                   library={library}
                   onAddItem={handleInlineAddItem}
@@ -831,41 +839,48 @@ export default function SetListView() {
               </div>
 
               {items.length === 0 ? (
-                <div className="text-muted p-[var(--space-lg)] text-center">No items in set list.</div>
+                <div className="text-text-muted p-12 text-center text-sm">
+                  No items in set list. Select event/add items above to build.
+                </div>
               ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                    {itemsWithDetails.map((item) => (
-                      <SortableSetListItem 
-                        key={item.id} 
-                        item={item} 
-                        linkedPiece={item.resolvedPiece || undefined}
-                        displayTitle={item.displayTitle}
-                        displayComposer={item.displayComposer}
-                        displayDuration={item.displayDuration}
-                        cumulativeStart={item.cumulativeStart}
-                        cumulativeEnd={item.cumulativeEnd}
-                        onEdit={handleEdit} 
-                        onDelete={handleDelete} 
-                        onPlayTrack={handlePlayRowTrack}
-                        onPieceClick={handleOpenPieceEditor}
-                        genres={configuredGenres}
-                      />
-                    ))}
-                  </SortableContext>
-                </DndContext>
+                <div className="flex flex-col gap-2 rounded-md border border-border bg-slate-50/50 p-2">
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                      {itemsWithDetails.map((item) => (
+                        <SortableSetListItem 
+                          key={item.id} 
+                          item={item} 
+                          linkedPiece={item.resolvedPiece || undefined}
+                          displayTitle={item.displayTitle}
+                          displayComposer={item.displayComposer}
+                          displayDuration={item.displayDuration}
+                          cumulativeStart={item.cumulativeStart}
+                          cumulativeEnd={item.cumulativeEnd}
+                          onEdit={handleEdit} 
+                          onDelete={handleDelete} 
+                          onPlayTrack={handlePlayRowTrack}
+                          onPieceClick={handleOpenPieceEditor}
+                          genres={configuredGenres}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                </div>
               )}
             </div>
-            <p className="text-muted mt-[var(--space-md)] px-[var(--space-md)] pb-[var(--space-md)] text-sm">
-                Tip: Drag the ⣿ handle to reorder items. Changes are saved automatically.
-            </p>
-          </AppCard>
-        </div>
-      ) : (
-        <AppCard className="p-[var(--space-xl)] text-center">
-          <p className="text-muted">Select an event above to manage its set list.</p>
-        </AppCard>
-      )}
+            
+            {items.length > 0 && (
+              <p className="text-text-muted m-0 px-2 py-1 text-xs italic">
+                Tip: Drag the ⣿ handle on any row to reorder set list items. Changes are saved automatically.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="p-16 text-center">
+            <p className="text-text-muted m-0 text-sm">Select an event above to view and manage its set list.</p>
+          </div>
+        )}
+      </AppCard>
 
       <MusicPieceModal
         isOpen={isLibraryModalOpen}

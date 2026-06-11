@@ -5,6 +5,7 @@ import type { SetListItem } from '../../services/eventService';
 import type { MusicPiece } from '../../types/musicLibrary';
 import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
 import type { MusicGenreDef } from '../../services/settingsService';
+import { Button } from '../ui';
 
 interface Props {
   item: SetListItem;
@@ -58,74 +59,78 @@ export const SortableSetListItem: React.FC<Props> = ({
   return (
     <div 
       ref={setNodeRef} 
-      className={`card sl-item-card flex-row ${item.type === 'intermission' ? 'sl-item-card-intermission' : 'sl-item-card-song'}`}
+      className={`flex flex-row items-center border border-border rounded-md px-3 py-2 transition-colors gap-3 ${
+        item.type === 'intermission' 
+          ? 'bg-emerald-50/15 border-dashed border-emerald-300/80' 
+          : 'bg-white hover:bg-slate-50/70 shadow-sm'
+      }`}
       // @allow-inline-style - dnd-kit sortable transform and transition
       style={{ 
         ...style 
       }}
     >
-      <div {...attributes} {...listeners} className="flex cursor-grab items-center p-2 text-[var(--text-muted)]">
-        <span className="text-[1.2rem]">⣿</span>
+      <div {...attributes} {...listeners} className="flex cursor-grab items-center p-1 text-text-muted hover:text-text select-none">
+        <span className="text-[1.2rem] leading-none">⣿</span>
       </div>
       
-      <div className="flex-1 flex-col gap-[2px]">
+      <div className="flex-1 flex flex-col gap-[2px]">
         {item.type === 'intermission' ? (
-          <div className="flex-row flex-wrap items-center gap-2">
-            <span className="text-[0.95rem] font-semibold text-[var(--primary-deep)]">⏸️ {titleText}</span>
+          <div className="flex flex-row flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-emerald-800">⏸️ {titleText}</span>
             {displayDuration && (
-              <span className="inline-flex items-center rounded bg-[var(--surface)] px-[8px] py-[2px] text-xs font-semibold tracking-wider text-primary-deep uppercase">
+              <span className="inline-flex items-center rounded bg-emerald-100/70 px-2 py-0.5 text-xs font-semibold text-emerald-800">
                 {displayDuration}
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-muted text-xs italic">
+              <span className="text-text-muted text-xs italic">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         ) : (
-          <div className="text-label m-0 flex-row flex-wrap items-center gap-[6px]">
+          <div className="text-sm m-0 flex flex-row flex-wrap items-center gap-1.5">
             {(item.pieceId || linkedPiece?.id) && onPieceClick ? (
               <button
                 type="button"
                 onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
-                className="font-[inherit] inline-flex cursor-pointer items-center gap-[6px] border-none bg-none p-0 text-left text-[var(--primary)] underline"
+                className="font-semibold inline-flex cursor-pointer items-center gap-1 border-none bg-none p-0 text-left text-primary hover:text-primary-deep underline decoration-1 decoration-primary/30 underline-offset-2"
               >
                 {titleText}
-                <span title="Linked to Music Library" className="inline-block text-[0.85rem] no-underline">🎼</span>
+                <span title="Linked to Music Library" className="inline-block text-xs no-underline">🎼</span>
               </button>
             ) : (
-              <span className="inline-flex items-center gap-[6px]">
+              <span className="inline-flex items-center gap-1 text-slate-800">
                 {onEdit ? (
                     <button
                         type="button"
                         onClick={() => onEdit(item)}
-                        className="font-[inherit] cursor-pointer border-none bg-none p-0 text-left font-semibold text-inherit underline decoration-[var(--primary)] decoration-dotted underline-offset-[3px]"
+                        className="cursor-pointer border-none bg-none p-0 text-left font-semibold text-inherit underline decoration-dotted decoration-slate-400 underline-offset-2 hover:text-primary"
                     >
                         {titleText}
                     </button>
                 ) : (
                     <span className="font-semibold">{titleText}</span>
                 )}
-                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" className="text-[0.85rem]">🎼</span>}
+                {(item.pieceId || linkedPiece?.id) && <span title="Linked to Music Library" className="text-xs">🎼</span>}
               </span>
             )}
             {item.soloSmallGroup && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[rgb(74_124_89_/_15%)] bg-[rgb(74_124_89_/_8%)] px-[8px] py-[2px] text-xs font-semibold text-[var(--primary-deep)]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
                 🎤 Solo / Small Group
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (
-              <span className="text-muted ml-1 text-xs font-normal">
+              <span className="text-text-muted text-xs font-normal">
                 ({cumulativeStart} - {cumulativeEnd})
               </span>
             )}
           </div>
         )}
         {item.type !== 'intermission' && (displayComposer || displayDuration || (linkedPiece?.genres && linkedPiece.genres.length > 0)) && (
-          <div className="text-muted flex-row gap-1 text-xs">
+          <div className="text-text-muted flex flex-row flex-wrap items-center gap-1.5 text-xs">
             {displayComposer && (
-              <span className="text-muted text-xs">
+              <span>
                 {displayComposer}
               </span>
             )}
@@ -138,7 +143,7 @@ export const SortableSetListItem: React.FC<Props> = ({
                   return (
                     <span 
                       key={id}
-                      className="inline-flex rounded border border-[rgb(74_124_89_/_15%)] bg-[rgb(74_124_89_/_8%)] px-[5px] py-[1px] text-[9px] leading-none font-semibold text-[var(--primary-deep)]"
+                      className="inline-flex rounded border border-emerald-100/70 bg-emerald-50/50 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-emerald-800"
                     >
                       {found ? found.label : id}
                     </span>
@@ -149,26 +154,30 @@ export const SortableSetListItem: React.FC<Props> = ({
           </div>
         )}
         {item.notes && (
-          <div className="text-muted mt-[2px] text-xs italic">
+          <div className="text-text-muted mt-0.5 text-xs italic">
             {item.notes}
           </div>
         )}
       </div>
 
-      <button onClick={() => onEdit(item)} className="btn btn-ghost btn-sm">Edit</button>
-      {hasAudio && onPlayTrack && (
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            if (linkedPiece) onPlayTrack(linkedPiece);
-          }} 
-          className="btn btn-secondary btn-sm flex !h-6 min-h-auto items-center justify-center !p-[0_8px]"
-          title="Play default track"
-        >
-          🎵
-        </button>
-      )}
-      <button onClick={() => onDelete(item.id)} className="btn btn-danger btn-sm">X</button>
+      <div className="flex items-center gap-1.5 ml-auto">
+        <Button variant="ghost" size="small" onClick={() => onEdit(item)}>Edit</Button>
+        {hasAudio && onPlayTrack && (
+          <Button 
+            variant="secondary" 
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (linkedPiece) onPlayTrack(linkedPiece);
+            }} 
+            className="flex items-center justify-center !p-1.5 h-8 w-8 text-sm"
+            title="Play default track"
+          >
+            🎵
+          </Button>
+        )}
+        <Button variant="danger" size="small" onClick={() => onDelete(item.id)}>X</Button>
+      </div>
     </div>
   );
 };

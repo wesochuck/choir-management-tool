@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { MusicPiece } from '../../types/musicLibrary';
 import type { SetListItem } from '../../services/eventService';
 import { createSetListItemFromCustomInput, createSetListItemFromMusicPiece, filterMusicLibrarySuggestions } from '../../lib/setList/setListItems';
+import { Button, Input } from '../ui';
 
 interface SetListInlineCreatorProps {
   library: MusicPiece[];
@@ -78,29 +79,33 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="relative flex-col gap-[var(--space-xs)]">
-      <div className="card flex-row items-center gap-[var(--space-md)] border border-dashed border-[var(--border)] bg-[var(--bg-card-hover)] p-[var(--space-sm)_var(--space-md)]">
-        <div className="flex-row gap-1 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] p-[2px]">
-          <button
+    <div ref={containerRef} className="relative flex flex-col gap-2">
+      <div className="flex flex-row items-center gap-4 border border-dashed border-border bg-slate-50/50 p-3 rounded-md">
+        <div className="flex flex-row gap-1 rounded-md border border-border bg-white p-[2px]">
+          <Button
             type="button"
-            className={`btn btn-sm sl-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
+            variant={type === 'song' ? 'primary' : 'ghost'}
+            size="small"
+            className="!h-8"
             onClick={() => setType('song')}
             disabled={disabled}
           >
             🎼 Song
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className={`btn btn-sm sl-type-btn ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
+            variant={type === 'intermission' ? 'primary' : 'ghost'}
+            size="small"
+            className="!h-8"
             onClick={() => setType('intermission')}
             disabled={disabled}
           >
             ⏸️ Intermission
-          </button>
+          </Button>
         </div>
 
         <div className="relative flex flex-1 items-center">
-          <input
+          <Input
             type="text"
             placeholder={type === 'song' ? "Search music library..." : "Intermission title..."}
             value={query}
@@ -111,7 +116,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card h-9 w-full border border-[var(--border)] px-[36px_12px] text-[14px]"
+            className="h-9 w-full pr-10"
           />
           <svg 
             viewBox="0 0 24 24" 
@@ -120,67 +125,72 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             strokeWidth="2.5" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
-            className="pointer-events-none absolute right-3 size-4 text-[var(--text-muted)]"
+            className="pointer-events-none absolute right-3 size-4 text-text-muted"
           >
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
  
           {showSuggestions && query.trim().length > 0 && (
-            <div className="card absolute inset-x-0 top-full z-[100] mt-1 max-h-[300px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-md">
+            <div className="absolute inset-x-0 top-full z-[100] mt-1 max-h-[300px] overflow-y-auto rounded-md border border-border bg-white p-1 shadow-md flex flex-col gap-0.5">
               {filteredLibrary.map(p => (
-                <button
+                <Button
                   key={p.id}
                   type="button"
+                  variant="ghost"
+                  size="small"
                   onClick={() => handleAddItem(p)}
-                  className="btn btn-ghost flex min-h-auto w-full flex-col items-start gap-[2px] rounded-[var(--radius-sm)] p-[8px_12px] text-left"
+                  className="w-full flex flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left h-auto min-h-0"
                 >
-                  <span className="text-[14px] font-semibold">{p.title}</span>
-                  {p.composer && <span className="text-[12px] opacity-70">by {p.composer}</span>}
-                </button>
+                  <span className="text-sm font-semibold">{p.title}</span>
+                  {p.composer && <span className="text-xs text-text-muted">by {p.composer}</span>}
+                </Button>
               ))}
               
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="small"
                 onClick={() => handleAddItem()}
-                className="btn btn-ghost flex min-h-auto w-full flex-row items-center gap-1 rounded-[var(--radius-sm)] p-[8px_12px] text-left text-[14px] font-semibold text-[var(--primary-deep)]"
+                className="w-full flex flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary h-auto min-h-0"
                 // @allow-inline-style - conditional border when library has results
                 style={{ 
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
                 }}
               >
                 <span>"{query.trim()}"</span>
-                <span className="text-[13px] font-normal opacity-70">
+                <span className="text-xs font-normal text-text-muted">
                   ({type === 'song' ? 'create new' : 'create new intermission'})
                 </span>
-              </button>
+              </Button>
             </div>
           )}
         </div>
  
         <div className="w-[100px]">
-          <input
+          <Input
             type="text"
             placeholder="Duration"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             onKeyDown={onKeyDown}
             disabled={disabled}
-            className="card h-9 w-full border border-[var(--border)] px-3 text-[14px]"
+            className="h-9 w-full"
           />
         </div>
  
-        <button
+        <Button
           type="button"
+          variant="primary"
           onClick={() => handleAddItem()}
           disabled={disabled || !query.trim()}
-          className="btn btn-primary !h-9 min-h-auto px-4 text-[13px]"
+          className="!h-9 px-4 text-sm font-semibold"
         >
           + Add
-        </button>
+        </Button>
       </div>
       {type === 'song' && (
-        <span className="text-muted pl-[var(--space-md)] text-xs">
+        <span className="text-text-muted pl-4 text-xs">
           Tip: Select the "(create new)" option or press Enter to add a new piece to the music library.
         </span>
       )}
