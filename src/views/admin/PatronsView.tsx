@@ -213,23 +213,8 @@ export default function PatronsView() {
         </div>
       </div>
 
-      <AppCard
-        title="Patron Directory"
-        actions={
-          <Button
-            onClick={handleSendMessage}
-            disabled={selectedIds.size === 0}
-            variant="primary"
-          >
-            Send Message ({selectedIds.size})
-          </Button>
-        }
-      >
+      <AppCard>
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-text-muted">
-            Search, filter, and sort patrons by activity and lifetime value
-          </p>
-
           <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-slate-50/50 p-4">
             <div className="min-w-[200px] flex-1">
               <FormField label="Search">
@@ -280,6 +265,16 @@ export default function PatronsView() {
                 Reset
               </Button>
             )}
+          </div>
+
+          <div className="flex justify-start">
+            <Button
+              onClick={handleSendMessage}
+              disabled={selectedIds.size === 0}
+              variant="primary"
+            >
+              Send Message ({selectedIds.size})
+            </Button>
           </div>
 
           <div className="overflow-x-auto">
