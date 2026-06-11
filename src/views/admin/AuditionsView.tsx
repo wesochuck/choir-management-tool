@@ -331,10 +331,10 @@ export default function AuditionsView() {
                     <>
                       Accepting requests for: {performances.find(p => p.id === settings.defaultPerformanceId)?.title || 'Selected Performance'}
                       <br />
-                      <span className="inline-flex items-center gap-1 mt-1">
+                      <span className="inline-flex items-center gap-1 mt-1 text-sm">
                         <span>🔗</span>
-                        <a href="/auditions" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary-deep transition-colors">
-                          Preview Public Form
+                        <a href="/auditions" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary-deep transition-colors font-semibold">
+                          Link to Public Form
                         </a>
                       </span>
                     </>
@@ -347,10 +347,9 @@ export default function AuditionsView() {
           </div>
           <Button 
             variant={settings.enabled && settings.defaultPerformanceId ? "secondary" : "primary"} 
-            size="small"
             onClick={() => setShowSettings(true)}
           >
-            {settings.enabled && settings.defaultPerformanceId ? 'Configure Times' : 'Configure & Open'}
+            Configure
           </Button>
         </div>
       )}

@@ -157,7 +157,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 : 'border-b-2 border-transparent font-medium text-text-muted'
             }`}
           >
-            Requested Slots ({formData.requestedSlots?.length || 0})
+            Time Slots
           </button>
         </div>
 
@@ -190,22 +190,6 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <label className="text-label">Confirmed Scheduled Time</label>
-              <div 
-                className={`rounded-md h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm w-full ${
-                  formData.scheduledTimeSlot ? 'text-text font-bold' : 'text-text-muted font-normal'
-                }`}
-                title={formData.scheduledTimeSlot ? formatInTimezone(formData.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Not scheduled yet'}
-              >
-                {formData.scheduledTimeSlot ? (
-                  formatInTimezone(formData.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-                ) : (
-                  'Not scheduled yet'
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
               <label className="text-label">Voice Part</label>
               <select
                 className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
@@ -217,15 +201,6 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   <option key={part} value={part}>{part}</option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-label">Status</label>
-              <div className="flex h-[44px] items-center text-lg font-bold text-text">
-                {formData.status}
-              </div>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -240,6 +215,13 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-label">Status</label>
+            <div className="flex h-[44px] items-center text-lg font-bold text-text">
+              {formData.status}
             </div>
           </div>
 
@@ -264,52 +246,76 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           </div>
         </div>
 
-        {/* Tab 2: Requested Timeslots Selection */}
+        {/* Tab 2: Time Slots & Scheduling */}
         {activeTab === 'slots' && (
           <div className="flex-col gap-4 py-2">
-            <p className="text-muted m-0 text-sm">
-              Select the potential time slots this applicant requested or is available for:
-            </p>
-            <div className="max-h-[300px] flex-col gap-[10px] overflow-y-auto pr-1">
-              {(settings?.slots || []).map((slot) => {
-                const isChecked = formData.requestedSlots?.includes(slot);
-                return (
-                  <label 
-                    key={slot} 
-                    className="rounded-xl m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
-                    style={{ /* @allow-inline-style */ 
-                      // @allow-inline-style - checkbox checked state
-                      border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
-                      backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg)',
-                    }}
-                  >
-                    <input 
-                      type="checkbox" 
-                      checked={isChecked} 
-                      onChange={() => {
-                        const current = formData.requestedSlots || [];
-                        if (isChecked) {
-                          setFormData({ ...formData, requestedSlots: current.filter(s => s !== slot) });
-                        } else {
-                          setFormData({ ...formData, requestedSlots: [...current, slot].sort() });
-                        }
+            <div className="flex flex-col gap-1">
+              <label className="text-label">Confirmed Scheduled Time</label>
+              <select
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
+                value={formData.scheduledTimeSlot || ''}
+                onChange={(event) => setFormData({ ...formData, scheduledTimeSlot: event.target.value })}
+              >
+                <option value="">-- Not Scheduled --</option>
+                {settings?.slots?.map((slot) => (
+                  <option key={slot} value={slot}>
+                    {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </option>
+                ))}
+                {formData.scheduledTimeSlot && !settings?.slots?.includes(formData.scheduledTimeSlot) && (
+                  <option value={formData.scheduledTimeSlot}>
+                    {formatInTimezone(formData.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} (Custom)
+                  </option>
+                )}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2 mt-2">
+              <label className="text-label">Requested Slots ({formData.requestedSlots?.length || 0})</label>
+              <p className="text-muted m-0 text-sm">
+                Select the potential time slots this applicant requested or is available for:
+              </p>
+              <div className="max-h-[250px] flex-col gap-[10px] overflow-y-auto pr-1">
+                {(settings?.slots || []).map((slot) => {
+                  const isChecked = formData.requestedSlots?.includes(slot);
+                  return (
+                    <label 
+                      key={slot} 
+                      className="rounded-xl m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
+                      style={{ /* @allow-inline-style */ 
+                        // @allow-inline-style - checkbox checked state
+                        border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
+                        backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg)',
                       }}
-                      className="size-4 cursor-pointer accent-[var(--primary)]"
-                    />
-                    <span className="text-sm text-text" style={{ /* @allow-inline-style */ 
-                      // @allow-inline-style - Dynamic fontWeight based on isChecked state
-                      fontWeight: isChecked ? 600 : 400 
-                    }}>
-                      {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                    </span>
-                  </label>
-                );
-              })}
-              {(!settings?.slots || settings.slots.length === 0) && (
-                <p className="text-muted py-5 text-center">
-                  No potential audition times configured in settings.
-                </p>
-              )}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked} 
+                        onChange={() => {
+                          const current = formData.requestedSlots || [];
+                          if (isChecked) {
+                            setFormData({ ...formData, requestedSlots: current.filter(s => s !== slot) });
+                          } else {
+                            setFormData({ ...formData, requestedSlots: [...current, slot].sort() });
+                          }
+                        }}
+                        className="size-4 cursor-pointer accent-[var(--primary)]"
+                      />
+                      <span className="text-sm text-text" style={{ /* @allow-inline-style */ 
+                        // @allow-inline-style - Dynamic fontWeight based on isChecked state
+                        fontWeight: isChecked ? 600 : 400 
+                      }}>
+                        {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                    </label>
+                  );
+                })}
+                {(!settings?.slots || settings.slots.length === 0) && (
+                  <p className="text-muted py-5 text-center">
+                    No potential audition times configured in settings.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
