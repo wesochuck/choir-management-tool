@@ -69,12 +69,14 @@ export function RosterSettingsTab({
   setFilter,
 }: RosterSettingsTabProps) {
   return (
-    <div className="admin-settings-layout">
+    <div className="flex flex-col gap-6 max-w-4xl">
       {configMessage && (
         <div 
-          className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${configMessage.startsWith('Error') ? 'bg-primary-light text-primary-deep' : 'bg-performance-bg text-performance-text'}`} 
-          // @allow-inline-style
-          style={{ alignSelf: 'flex-start', padding: '8px 12px', fontSize: '14px' }}
+          className={`inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-all duration-300 self-start ${
+            configMessage.startsWith('Error') 
+              ? 'bg-red-50 text-red-800 border border-red-200' 
+              : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+          }`}
         >
           {configMessage}
         </div>

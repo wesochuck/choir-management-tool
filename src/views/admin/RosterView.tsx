@@ -221,35 +221,49 @@ export default function RosterView() {
             Manage choir members, voice parts, sections, and configurations. Import or export roster data.
           </p>
         </div>
-        {activeTab === 'roster' && (
-          <div className="mt-1 flex flex-shrink-0 items-center gap-2">
-            <Button onClick={handleExportCSV} variant="secondary">
-              Export Roster
-            </Button>
-            <Button onClick={() => setIsImportModalOpen(true)} variant="secondary">
-              Import CSV
-            </Button>
-            <Button onClick={handleAdd} variant="primary">
-              + Add Singer
-            </Button>
-          </div>
-        )}
       </div>
 
-      {/* Segmented Tab Navigation */}
-      <div className="no-print mb-2 flex flex-row gap-2 border-b border-gray-200 pb-1">
-        <button
-          onClick={() => setActiveTab('roster')}
-          className={`btn ${activeTab === 'roster' ? 'btn-primary' : 'btn-ghost'} px-4 py-2 text-base`}
-        >
-          Singer Directory
-        </button>
-        <button
-          onClick={() => setActiveTab('config')}
-          className={`btn ${activeTab === 'config' ? 'btn-primary' : 'btn-ghost'} px-4 py-2 text-base`}
-        >
-          Roster Settings
-        </button>
+      <div className="border-b border-border">
+        <div className="-mb-px flex items-center justify-between">
+          <nav className="flex gap-2">
+            <button
+              className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium ${
+                activeTab === 'roster'
+                  ? 'bg-primary text-surface'
+                  : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+              }`}
+              onClick={() => setActiveTab('roster')}
+            >
+              Singer Directory
+            </button>
+            <button
+              className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium ${
+                activeTab === 'config'
+                  ? 'bg-primary text-surface'
+                  : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+              }`}
+              onClick={() => setActiveTab('config')}
+            >
+              Roster Settings
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {activeTab === 'roster' && (
+              <>
+                <Button onClick={handleExportCSV} variant="secondary">
+                  Export Roster
+                </Button>
+                <Button onClick={() => setIsImportModalOpen(true)} variant="secondary">
+                  Import CSV
+                </Button>
+                <Button onClick={handleAdd} variant="primary">
+                  + Add Singer
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {activeTab === 'roster' ? (

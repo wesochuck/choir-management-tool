@@ -2,6 +2,7 @@ import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import type { Profile } from '../../services/profileService';
 import { getContrastColor } from '../../lib/colorUtils';
+import { Button } from '../ui';
 
 interface VoicePartEditorProps {
   configVoiceParts: VoicePartDef[];
@@ -31,19 +32,19 @@ export function VoicePartEditor({
 
   return (
     <AppCard title="Voice Part Configurations">
-      <div className="admin-settings-group">
-        <p className="text-muted admin-settings-description">
+      <div className="flex flex-col gap-4">
+        <p className="text-xs text-slate-500 mb-2">
           Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a Section Bucket.
         </p>
 
-        <div className="admin-settings-field">
+        <div className="flex flex-col gap-3">
           {configVoiceParts.map((vp, index) => {
             const count = getSingerCountForPart(vp.label);
             const isTied = count > 0;
             const section = configSections.find(s => s.code === vp.sectionCode);
             const defaultColor = section?.color || '#e0e0e0';
             return (
-              <div key={index} className="grid w-full grid-cols-[90px_1fr_150px_130px_90px_80px] items-center gap-4">
+              <div key={index} className="grid w-full grid-cols-[90px_1fr_150px_130px_100px_80px] items-center gap-4">
                 <input
                   value={vp.label}
                   onChange={(e) => {
@@ -53,7 +54,7 @@ export function VoicePartEditor({
                   }}
                   placeholder="Label"
                   disabled={isTied}
-                  className="card admin-settings-input-full"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-slate-50 disabled:text-slate-400"
                   title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
                 />
                 <input
@@ -64,7 +65,7 @@ export function VoicePartEditor({
                     setConfigVoiceParts(newParts);
                   }}
                   placeholder="Full Name"
-                  className="card admin-settings-input-full"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <select
                   value={vp.sectionCode}
@@ -73,7 +74,7 @@ export function VoicePartEditor({
                     newParts[index] = { ...newParts[index], sectionCode: e.target.value };
                     setConfigVoiceParts(newParts);
                   }}
-                  className="card admin-settings-input-full"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Select Section...</option>
                   {configSections.map(s => (
@@ -82,7 +83,7 @@ export function VoicePartEditor({
                 </select>
 
                 <div className="flex items-center gap-1.5">
-                  <div className="admin-color-picker-input-wrapper">
+                  <div className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-slate-200 shadow-sm hover:scale-105 transition-transform cursor-pointer">
                     <input
                       type="color"
                       value={vp.color || defaultColor}
@@ -97,7 +98,7 @@ export function VoicePartEditor({
                         };
                         setConfigVoiceParts(newParts);
                       }}
-                      className="admin-color-picker-input"
+                      className="absolute -inset-2 size-12 cursor-pointer border-none bg-transparent p-0"
                     />
                   </div>
                   <input
@@ -117,50 +118,53 @@ export function VoicePartEditor({
                       setConfigVoiceParts(newParts);
                     }}
                     placeholder="Inherit"
-                    className="card admin-color-hex-input"
+                    className="h-10 w-20 rounded-lg border border-slate-200 bg-white px-2 text-xs font-mono text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
 
                 {vp.label ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="small"
                     onClick={() => {
                       setActiveTab('roster');
                       setFilter('voiceParts', [vp.label]);
                     }}
-                    className="btn btn-secondary btn-sm admin-action-btn-sm admin-action-btn-sm-gap"
+                    className="flex items-center gap-1"
                     title={`Click to view the ${count} singer(s) in this voice part`}
                   >
-                    <span className="font-semibold">{count}</span>
+                    <span className="font-bold">{count}</span>
                     <span>singer{count === 1 ? '' : 's'}</span>
-                  </button>
+                  </Button>
                 ) : (
-                  // @allow-inline-style
-                  <div style={{ height: '36px' }} />
+                  <div className="h-9" />
                 )}
-                <button
+                <Button
                   type="button"
+                  variant="danger"
+                  size="small"
                   onClick={() => {
                     setConfigVoiceParts(configVoiceParts.filter((_, idx) => idx !== index));
                   }}
                   disabled={isTied}
-                  className="btn btn-danger btn-sm admin-action-btn-sm"
                   title={isTied ? "Cannot delete voice part with assigned singers" : undefined}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             );
           })}
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          className="self-start"
           onClick={() => setConfigVoiceParts([...configVoiceParts, { label: '', fullName: '', sectionCode: '' }])}
-          className="btn btn-secondary admin-align-start"
         >
           + Add Voice Part
-        </button>
+        </Button>
       </div>
     </AppCard>
   );
