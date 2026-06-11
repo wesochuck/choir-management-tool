@@ -84,7 +84,7 @@ export default function VenuesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="mb-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Venue Templates
@@ -94,7 +94,7 @@ export default function VenuesView() {
           </p>
         </div>
         {!isAdding && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 sm:mt-1">
             <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
           </div>
         )}
