@@ -707,7 +707,7 @@ export default function SetListView() {
       </AppCard>
       </div>
 
-      <div className="print-only mx-auto max-w-2xl p-8">
+      <div className="print-only mx-auto max-w-2xl p-8" style={{ page: 'setlist' }}>
         {selectedEvent && (
           <>
             <div className="mb-6 text-center">

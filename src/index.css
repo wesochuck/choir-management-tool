@@ -278,6 +278,10 @@ textarea.card {
   size: landscape;
 }
 
+@page setlist {
+  size: portrait;
+}
+
 @media (max-width: 640px) {
   .roster-summary-sections {
     grid-template-columns: repeat(2, 1fr) !important;
