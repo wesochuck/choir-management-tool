@@ -4,7 +4,6 @@ import { useEvents } from '../../hooks/useEvents';
 import { useAttendance } from '../../hooks/useAttendance';
 import { useProfiles } from '../../hooks/useProfiles';
 import { CheckInList } from '../../components/admin/CheckInList';
-import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
 import type { Profile, ProfileInput } from '../../services/profileService';
@@ -308,20 +307,20 @@ export default function AttendanceView() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl flex-col gap-6 p-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
       <div className="flex flex-col justify-between gap-6 border-b border-border pb-6 md:flex-row md:items-center">
-        <h1 className="text-display !m-0">Attendance Check-in</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-text">Attendance Check-in</h1>
         
-        <div className="w-full flex-row items-center gap-6 md:w-auto md:min-w-[320px]">
-          <div className="flex-1 flex-col gap-1">
-            <label className="text-label text-xs font-bold text-text-muted uppercase">Select Event</label>
+        <div className="flex w-full flex-row items-center gap-6 md:w-auto md:min-w-[320px]">
+          <div className="flex flex-1 flex-col gap-1">
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Select Event</label>
             <select 
               value={selectedEventId} 
               onChange={(e) => {
                 setSelectedEventId(e.target.value);
                 handleResetFilters(); // Reset filters when changing active event
               }}
-              className="card h-10 w-full rounded-md border border-border px-3"
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
@@ -333,13 +332,13 @@ export default function AttendanceView() {
       </div>
 
       {selectedEvent && (
-        <div className="flex flex-col gap-3 rounded-md border border-[rgb(74_117_89_/_20%)] bg-primary-light p-4 transition-all duration-200">
+        <div className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary-light/50 p-4 transition-all duration-200 shadow-xs">
           <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => setIsEventExpanded(!isEventExpanded)}>
-            <div className="flex-col gap-0.5">
-              <span className="text-muted text-xs font-semibold tracking-wider uppercase">Active Event</span>
-              <div className="flex-row items-center gap-2">
-                {selectedEvent.title && <h2 className="text-headline !m-0 text-xl font-extrabold text-primary-deep">{selectedEvent.title}</h2>}
-                <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Active Event</span>
+              <div className="flex flex-row items-center gap-2">
+                {selectedEvent.title && <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">{selectedEvent.title}</h2>}
+                <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary/20 text-primary-deep'}`}>
                   {selectedEvent.type}
                 </span>
               </div>
@@ -347,7 +346,7 @@ export default function AttendanceView() {
             
             <button 
               type="button" 
-              className="btn btn-ghost btn-sm"
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-text-muted transition-colors hover:bg-black/5 active:bg-black/10"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsEventExpanded(!isEventExpanded);
@@ -358,174 +357,179 @@ export default function AttendanceView() {
             </button>
           </div>
           
-          <div className="flex flex-row flex-wrap items-center gap-6">
-            <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
-              {selectedEvent.type}
-            </span>
+          <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2">
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-label flex items-center gap-1 text-sm font-semibold text-primary-deep"
+              className="flex items-center gap-1.5 text-sm font-bold text-primary-deep transition-colors hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
-              📍 {selectedEvent.expand?.venue?.name || ''}
+              <span>📍</span>
+              {selectedEvent.expand?.venue?.name || 'Unknown Venue'}
             </a>
-            <span className="text-muted text-sm font-medium">
-              📅 {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            <span className="flex items-center gap-1.5 text-sm font-medium text-text-muted">
+              <span>📅</span>
+              {formatInTimezone(selectedEvent.date, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
         </div>
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold text-text-muted">
-              👥 Roster: {attendanceCounts.total} singers
+            <span className="mr-2 text-sm font-bold text-text">
+              👥 {attendanceCounts.total} Singers
             </span>
-            <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Present {attendanceCounts.present}</span>
-            <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Absent {attendanceCounts.absent}</span>
-            <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-text-muted">Unmarked {attendanceCounts.unmarked}</span>
+            <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-[0.7rem] font-bold text-text-muted shadow-xs">
+              Present {attendanceCounts.present}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-[0.7rem] font-bold text-text-muted shadow-xs">
+              Absent {attendanceCounts.absent}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-[0.7rem] font-bold text-text-muted shadow-xs">
+              Unmarked {attendanceCounts.unmarked}
+            </span>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2 lg:items-center">
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="flex items-center gap-1.5 rounded-md bg-surface border border-border px-3 py-1.5 text-xs font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:bg-gray-100 lg:hidden"
               onClick={() => setIsMobileActionsOpen((previous) => !previous)}
               aria-expanded={isMobileActionsOpen}
               aria-controls="attendance-mobile-actions"
             >
-              {isMobileActionsOpen ? '⚡ Hide Bulk Actions  ▲' : '⚡ Bulk Actions  ▼'}
+              {isMobileActionsOpen ? '⚡ Hide Bulk Actions ▲' : '⚡ Bulk Actions ▼'}
             </button>
 
             <div
-              className={`flex flex-row flex-wrap items-center gap-2.5 ${isMobileActionsOpen ? 'is-open' : ''}`}
+              className={`flex-row flex-wrap items-center gap-2.5 ${isMobileActionsOpen ? 'flex' : 'hidden lg:flex'}`}
               id="attendance-mobile-actions"
             >
-            {/* Refresh Button */}
-            <button
-              onClick={() => {
-                refresh();
-              }}
-              className="btn btn-ghost btn-sm flex !h-[34px] !w-[34px] items-center justify-center rounded-lg border border-border !p-0"
-              title="Refresh Roster"
-              aria-label="Refresh roster"
-            >
-              🔄
-            </button>
+              {/* Refresh Button */}
+              <button
+                onClick={() => refresh()}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
+                title="Refresh Roster"
+                aria-label="Refresh roster"
+              >
+                🔄
+              </button>
 
-            <span className="h-5 w-px bg-border"></span>
+              <span className="h-5 w-px bg-border"></span>
 
-            {/* Bulk Present */}
-            <button
-              onClick={async () => {
-                const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
-                const confirmed = await dialog.confirm({
-                  title: 'Mark All Present',
-                  message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Present?`,
-                  confirmLabel: 'Mark Present',
-                  variant: 'info'
-                });
-                if (confirmed) {
-                  try {
-                    await setAllAttendance('Present', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                  } catch (err: unknown) {
-                    await dialog.showMessage({
-                      title: 'Error updating attendance',
-                      message: err instanceof Error ? err.message : 'Failed to bulk update',
-                      variant: 'danger'
-                    });
+              {/* Bulk Present */}
+              <button
+                onClick={async () => {
+                  const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
+                  const confirmed = await dialog.confirm({
+                    title: 'Mark All Present',
+                    message: `Are you sure you want to mark all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} as Present?`,
+                    confirmLabel: 'Mark Present',
+                    variant: 'info'
+                  });
+                  if (confirmed) {
+                    try {
+                      await setAllAttendance('Present', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
+                    } catch (err: unknown) {
+                      await dialog.showMessage({
+                        title: 'Error updating attendance',
+                        message: err instanceof Error ? err.message : 'Failed to bulk update',
+                        variant: 'danger'
+                      });
+                    }
                   }
-                }
-              }}
-              className="btn btn-sm !h-[34px] rounded-lg border border-[rgb(74_117_89_/_25%)] bg-[rgb(74_117_89_/_10%)] px-3 text-xs font-bold text-primary-deep"
-            >
-              ✅ Mark All Present
-            </button>
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-4 text-xs font-bold text-primary-deep shadow-xs transition-all hover:bg-primary/20 active:scale-95"
+              >
+                ✅ Mark All Present
+              </button>
 
-            {/* Bulk Absent */}
-            <button
-              onClick={async () => {
-                if (remainingUnmarkedProfileIds.length === 0) return;
-                const confirmed = await dialog.confirm({
-                  title: 'Mark Remaining Absent',
-                  message: `Mark the remaining ${attendanceCounts.unmarked} unmarked singers as Absent? Singers already marked Present will not be changed.`,
-                  confirmLabel: 'Mark Remaining Absent',
-                  variant: 'warning'
-                });
-                if (confirmed) {
-                  try {
-                    await setAllAttendance('Absent', remainingUnmarkedProfileIds);
-                  } catch (err: unknown) {
-                    await dialog.showMessage({
-                      title: 'Error updating attendance',
-                      message: err instanceof Error ? err.message : 'Failed to bulk update',
-                      variant: 'danger'
-                    });
+              {/* Bulk Absent */}
+              <button
+                onClick={async () => {
+                  if (remainingUnmarkedProfileIds.length === 0) return;
+                  const confirmed = await dialog.confirm({
+                    title: 'Mark Remaining Absent',
+                    message: `Mark the remaining ${attendanceCounts.unmarked} unmarked singers as Absent? Singers already marked Present will not be changed.`,
+                    confirmLabel: 'Mark Remaining Absent',
+                    variant: 'warning'
+                  });
+                  if (confirmed) {
+                    try {
+                      await setAllAttendance('Absent', remainingUnmarkedProfileIds);
+                    } catch (err: unknown) {
+                      await dialog.showMessage({
+                        title: 'Error updating attendance',
+                        message: err instanceof Error ? err.message : 'Failed to bulk update',
+                        variant: 'danger'
+                      });
+                    }
                   }
-                }
-              }}
-              className="btn btn-sm !h-[34px] rounded-lg border border-[rgb(217_119_6_/_30%)] bg-[rgb(251_191_36_/_14%)] px-3 text-xs font-bold text-[#92400e] disabled:cursor-not-allowed disabled:opacity-55"
-              disabled={remainingUnmarkedProfileIds.length === 0}
-            >
-              ⚠️ Mark Remaining Absent
-            </button>
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-warning/30 bg-warning/10 px-4 text-xs font-bold text-warning-text shadow-xs transition-all enabled:hover:bg-warning/20 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={remainingUnmarkedProfileIds.length === 0}
+              >
+                ⚠️ Mark Remaining Absent
+              </button>
 
-
-            {/* Bulk Reset */}
-            <button
-              onClick={async () => {
-                const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
-                const confirmed = await dialog.confirm({
-                  title: 'Reset Attendance',
-                  message: `Are you sure you want to reset all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} to unmarked status?`,
-                  confirmLabel: 'Reset All',
-                  variant: 'warning'
-                });
-                if (confirmed) {
-                  try {
-                    await setAllAttendance('Pending', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
-                  } catch (err: unknown) {
-                    await dialog.showMessage({
-                      title: 'Error updating attendance',
-                      message: err instanceof Error ? err.message : 'Failed to bulk update',
-                      variant: 'danger'
-                    });
+              {/* Bulk Reset */}
+              <button
+                onClick={async () => {
+                  const isFiltered = Boolean(filterName || filterVoicePart || filterStatus);
+                  const confirmed = await dialog.confirm({
+                    title: 'Reset Attendance',
+                    message: `Are you sure you want to reset all ${isFiltered ? `${filteredItems.length} filtered singers` : 'singers'} to unmarked status?`,
+                    confirmLabel: 'Reset All',
+                    variant: 'warning'
+                  });
+                  if (confirmed) {
+                    try {
+                      await setAllAttendance('Pending', isFiltered ? filteredItems.map(i => i.profileId) : undefined);
+                    } catch (err: unknown) {
+                      await dialog.showMessage({
+                        title: 'Error updating attendance',
+                        message: err instanceof Error ? err.message : 'Failed to bulk update',
+                        variant: 'danger'
+                      });
+                    }
                   }
-                }
-              }}
-              className="btn btn-ghost btn-sm !h-[34px] rounded-lg border border-dashed border-border px-3 text-xs font-bold text-text-muted"
-            >
-              ⏳ Reset All
-            </button>
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-border bg-surface px-4 text-xs font-bold text-text-muted shadow-xs transition-all hover:bg-gray-50 active:scale-95"
+              >
+                ⏳ Reset All
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {selectedEventId && !isLoading && !error && (
-        <div className="card flex flex-row flex-wrap items-end gap-4 rounded-md border border-border bg-surface p-4">
+        <div className="flex flex-row flex-wrap items-end gap-4 rounded-lg border border-border bg-surface p-5 shadow-xs">
           {/* Name Search */}
-          <div className="flex flex-[1_1_200px] flex-col gap-1.5">
-            <label className="text-label text-xs font-bold text-text-muted uppercase">Search by Name</label>
-            <input 
-              type="text"
-              value={filterName}
-              onChange={(e) => setFilterName(e.target.value)}
-              placeholder="🔍 Search name..."
-              className="card h-10 w-full rounded-md border border-border px-3"
-            />
+          <div className="flex flex-[1_1_240px] flex-col gap-1.5">
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Search by Name</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <input 
+                type="text"
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                placeholder="Search name..."
+                className="h-10 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+              />
+            </div>
           </div>
 
           {/* Voice Part Filter */}
           <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-label text-xs font-bold text-text-muted uppercase">Voice Part</label>
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Voice Part</label>
             <select
               value={filterVoicePart}
               onChange={(e) => setFilterVoicePart(e.target.value)}
-              className="card h-10 w-full rounded-md border border-border px-3"
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
             >
               <option value="">All Parts</option>
               {voicePartLabels.map(part => (
@@ -536,11 +540,11 @@ export default function AttendanceView() {
 
           {/* Attendance Status Filter */}
           <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-label text-xs font-bold text-text-muted uppercase">Status</label>
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Attendance</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="card h-10 w-full rounded-md border border-border px-3"
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
             >
               <option value="">All Statuses</option>
               <option value="Present">Present</option>
@@ -551,11 +555,11 @@ export default function AttendanceView() {
 
           {/* RSVP Status Filter */}
           <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-label text-xs font-bold text-text-muted uppercase">RSVP Status</label>
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">RSVP Status</label>
             <select
               value={rsvpFilter}
               onChange={(e) => handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')}
-              className="card h-10 w-full rounded-md border border-border px-3"
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
             >
               <option value="Both">Both (Attending + Pending)</option>
               <option value="Yes">Attending Only</option>
@@ -565,15 +569,15 @@ export default function AttendanceView() {
 
           {/* Sort By Filter */}
           <div className="flex w-[160px] flex-col gap-1.5">
-            <label className="text-label text-xs font-bold text-text-muted uppercase">Sort By</label>
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')}
-              className="card h-10 w-full rounded-md border border-border px-3"
+              className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
             >
               <option value="lastName">Last Name</option>
-              <option value="voicePart">Voice Part + Last Name</option>
-              <option value="section">Section + Last Name</option>
+              <option value="voicePart">Voice Part</option>
+              <option value="section">Section</option>
             </select>
           </div>
 
@@ -581,7 +585,7 @@ export default function AttendanceView() {
           {(filterName || filterVoicePart || filterStatus) && (
             <button 
               onClick={handleResetFilters}
-              className="btn btn-ghost !h-10 self-end px-2 text-[0.85rem] font-bold text-[#ef4444]"
+              className="h-10 self-end px-3 text-sm font-bold text-danger-text transition-colors hover:text-danger-text/80 active:opacity-70"
             >
               Clear Filters
             </button>
@@ -590,23 +594,28 @@ export default function AttendanceView() {
       )}
 
       {isLoading ? (
-        <AppCard className="p-8 text-center">
-          <p className="text-muted">Loading attendance data...</p>
-        </AppCard>
+        <div className="rounded-lg border border-border bg-surface p-12 text-center shadow-xs">
+          <p className="m-0 font-medium text-text-muted">Loading attendance data...</p>
+        </div>
       ) : error ? (
-        <AppCard className="border-danger-text bg-danger-bg p-8">
-          <p className="font-bold text-danger-text">{error}</p>
-        </AppCard>
+        <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-8 text-center shadow-xs">
+          <p className="m-0 font-bold text-danger-text">{error}</p>
+        </div>
       ) : selectedEventId ? (
         checkInItems.length === 0 && declinedSingers.length === 0 ? (
-          <AppCard className="flex flex-col items-center rounded-md border border-dashed border-border bg-transparent p-8 text-center">
-            <span className="text-[2rem]">🔍</span>
-            <h3 className="mt-3 mb-1 text-xl font-extrabold text-text">No Matching Singers</h3>
-            <p className="text-muted mt-0 mb-4 text-sm">Try adjusting your search terms, voice parts, or attendance filters.</p>
-            <button onClick={handleResetFilters} className="btn btn-primary btn-sm">Reset All Filters</button>
-          </AppCard>
+          <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-border bg-surface/30 p-12 text-center shadow-xs">
+            <span className="text-4xl">🔍</span>
+            <h3 className="mt-4 mb-2 text-xl font-extrabold text-text">No Matching Singers</h3>
+            <p className="mt-0 mb-6 max-w-sm text-sm font-medium text-text-muted">Try adjusting your search terms, voice parts, or attendance filters.</p>
+            <button 
+              onClick={handleResetFilters} 
+              className="rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95"
+            >
+              Reset All Filters
+            </button>
+          </div>
         ) : (
-          <div className="flex w-full flex-col gap-4">
+          <div className="flex w-full flex-col gap-6">
             
             {/* Check-In List */}
             <div className="flex w-full flex-col gap-1">
@@ -620,26 +629,26 @@ export default function AttendanceView() {
                   maxRehearsalMisses={maxRehearsalMisses}
                 />
               ) : (
-                <AppCard className="border border-dashed border-border bg-transparent p-4 text-center shadow-none">
-                  <p className="text-muted !m-0 text-sm">No singers match your RSVP filters.</p>
-                </AppCard>
+                <div className="rounded-lg border border-dashed border-border bg-surface/30 p-6 text-center shadow-xs">
+                  <p className="m-0 text-sm font-medium text-text-muted">No singers match your RSVP filters.</p>
+                </div>
               )}
             </div>
 
             {/* 3. Declined Singers Rescue Control */}
             {declinedSingers.length > 0 && (
-              <div className="card rounded-md border border-[#fecaca] bg-[#fef2f2] p-4">
-                <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-                  <div className="flex flex-col gap-0.5">
-                    <h3 className="text-[0.85rem] font-bold text-danger-text">Rescue Declined RSVP</h3>
-                    <p className="text-muted text-xs text-[#92400e]">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
+              <div className="rounded-lg border border-danger-text/20 bg-danger-bg p-5 shadow-xs">
+                <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-sm font-bold text-danger-text">Rescue Declined RSVP</h3>
+                    <p className="m-0 text-xs font-medium text-warning-text/80">Did someone show up anyway? Change their RSVP and add them back to the active list instantly.</p>
                   </div>
                   
-                  <div className="flex min-w-[280px] flex-row flex-wrap items-center gap-2.5">
+                  <div className="flex w-full min-w-[320px] flex-row items-center gap-3 md:w-auto">
                     <select
                       value={selectedDeclinedProfileId}
                       onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
-                      className="card h-9 flex-1 rounded-md border border-border bg-bg px-3 text-[0.85rem] text-text"
+                      className="h-10 flex-1 rounded-md border border-border bg-surface px-3 text-sm transition-colors focus:border-danger-text focus:ring-1 focus:ring-danger-text focus:outline-hidden md:w-64"
                     >
                       <option value="">-- Select Declined Singer --</option>
                       {declinedSingers.map(s => (
@@ -649,9 +658,10 @@ export default function AttendanceView() {
                     <button
                       disabled={!selectedDeclinedProfileId}
                       onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
-                      className="btn btn-secondary btn-sm !h-9 border border-[rgb(239_68_68_/_20%)] bg-danger-bg font-bold text-danger-text"
+                      className="flex h-10 items-center gap-1.5 rounded-md border border-danger-text/30 bg-white px-4 text-xs font-bold text-danger-text shadow-sm transition-all enabled:hover:bg-danger-bg enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      + Add Back
+                      <span>+</span>
+                      Add Back
                     </button>
                   </div>
                 </div>
@@ -661,9 +671,10 @@ export default function AttendanceView() {
           </div>
         )
       ) : (
-        <AppCard className="border-2 border-dashed border-border bg-transparent p-12 text-center shadow-none">
-          <p className="text-muted !m-0 text-base">Please select an event above to start check-in.</p>
-        </AppCard>
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/20 p-24 text-center shadow-xs">
+          <span className="text-5xl opacity-40">📅</span>
+          <p className="mt-6 text-lg font-semibold text-text-muted">Please select an event above to start check-in.</p>
+        </div>
       )}
 
       <SingerModal

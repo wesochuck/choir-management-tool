@@ -62,8 +62,8 @@ export const EventList: React.FC<EventListProps> = ({
             }
           }}
         >
-          <div className="event-list-details flex flex-col gap-4">
-            <div className="event-list-header flex items-center gap-1">
+          <div className="event-list-details flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="event-list-header flex flex-wrap items-center gap-2">
               <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${e.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
                 {e.type}
               </span>
@@ -95,7 +95,7 @@ export const EventList: React.FC<EventListProps> = ({
             </div>
             {e.details && <div className="text-muted text-xs">{e.details}</div>}
           </div>
-          <div className="relative flex items-center gap-2">
+          <div className="relative flex shrink-0 items-center gap-2">
             <Button
               onClick={(event) => {
                 event.stopPropagation();

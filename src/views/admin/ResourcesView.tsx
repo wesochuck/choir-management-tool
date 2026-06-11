@@ -359,7 +359,12 @@ export default function ResourcesView() {
               ) : resources.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-sm text-text-muted">
-                    No resources uploaded yet.
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <span>No resources uploaded yet.</span>
+                      <Button onClick={() => setIsAdding(true)} variant="primary" size="small">
+                        + New Resource
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ) : (
