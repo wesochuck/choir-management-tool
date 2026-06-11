@@ -267,8 +267,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               className="card h-[38px] min-h-[38px] w-full border border-border px-3"
             />
           </div>
-          <div className="flex flex-row items-start gap-4">
-            <div className="flex flex-1 flex-col items-start gap-1">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col items-start gap-1">
               <label className="text-label">Login Email (Optional)</label>
               <input
                 type="email"
@@ -283,7 +283,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   : "Provides portal access via password reset email."}
               </p>
               {initialData?.user && formData.email && (
-                <div className="mt-[6px] flex-col items-start gap-1">
+                <div className="mt-[6px] flex flex-col items-start gap-1">
                   <button
                     type="button"
                     onClick={handleResetPassword}
@@ -306,7 +306,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 </div>
               )}
             </div>
-            <div className="flex flex-1 flex-col items-start gap-1">
+            <div className="flex flex-col items-start gap-1">
               <label className="text-label">Phone (Optional)</label>
               <input 
                 value={formData.phone || ''} 
@@ -316,8 +316,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               />
             </div>
           </div>
-          <div className="flex flex-row items-start gap-4">
-            <div className="flex flex-1 flex-col items-start gap-1">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col items-start gap-1">
               <label className="text-label">Voice Part</label>
               <select 
                 value={formData.voicePart} 
@@ -337,7 +337,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 ))}
               </select>
             </div>
-            <div className="flex flex-1 flex-col items-start gap-1">
+            <div className="flex flex-col items-start gap-1">
               <label className="text-label">Status</label>
               <select 
                 value={formData.globalStatus} 

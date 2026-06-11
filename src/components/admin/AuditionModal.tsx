@@ -192,13 +192,13 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             />
           </div>
 
-          <div className="flex flex-col gap-4 md:flex-row">
-            <div className="flex-1 flex-col gap-1">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
               <div 
-                className="card h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm" 
+                className="card h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm w-full" 
                 style={{ /* @allow-inline-style */ 
-                  // @allow-inline-style - dynamic based on scheduled time slot
+                  // @allow-inline-style - dynamic scheduled time slot
                   color: formData.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
                   fontWeight: formData.scheduledTimeSlot ? 700 : 400,
                 }}
@@ -212,10 +212,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Voice Part</label>
               <select
-                className="card h-[44px] px-3"
+                className="card h-[44px] w-full px-3"
                 value={formData.voicePart || ''}
                 onChange={(event) => setFormData({ ...formData, voicePart: event.target.value as Audition['voicePart'] })}
               >
@@ -227,18 +227,18 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 md:flex-row">
-            <div className="flex-1 flex-col gap-1">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Status</label>
               <div className="flex h-[44px] items-center text-lg font-bold text-text">
                 {formData.status}
               </div>
             </div>
 
-            <div className="flex-1 flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Tied to Performance</label>
               <select
-                className="card h-[44px] px-3"
+                className="card h-[44px] w-full px-3"
                 value={formData.performance || ''}
                 onChange={(event) => setFormData({ ...formData, performance: event.target.value })}
               >
