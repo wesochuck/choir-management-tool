@@ -33,7 +33,10 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     }
 
     const filtered = suggestions
-      .filter((s) => s.toLowerCase().includes(value.toLowerCase()) && s.toLowerCase() !== value.toLowerCase())
+      .filter(
+        (s) =>
+          s.toLowerCase().includes(value.toLowerCase()) && s.toLowerCase() !== value.toLowerCase()
+      )
       .slice(0, 8); // Cap at 8 suggestions for a clean overlay list
 
     setFilteredSuggestions(filtered);
@@ -96,7 +99,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   }, [activeIndex]);
 
   return (
-    <div ref={containerRef} className="autocomplete-container">
+    <div ref={containerRef} className="relative w-full">
       <input
         type="text"
         value={value}
@@ -113,7 +116,10 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         autoComplete="off"
       />
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <ul ref={listRef} className="autocomplete-suggestions-list">
+        <ul
+          ref={listRef}
+          className="absolute inset-x-0 z-50 mt-1 max-h-60 list-none overflow-y-auto rounded-md border border-border bg-surface p-0 py-1 shadow-lg"
+        >
           {filteredSuggestions.map((suggestion, idx) => {
             const isActive = idx === activeIndex;
             return (
@@ -121,7 +127,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
                 key={suggestion}
                 onClick={() => selectSuggestion(suggestion)}
                 onMouseEnter={() => setActiveIndex(idx)}
-                className={`autocomplete-suggestion-item ${isActive ? 'active' : 'inactive'}`}
+                className={`cursor-pointer px-3 py-2 text-sm transition-colors ${isActive ? 'bg-primary-light font-semibold text-primary-deep' : 'text-text hover:bg-primary-light hover:text-primary-deep'}`}
               >
                 {suggestion}
               </li>
