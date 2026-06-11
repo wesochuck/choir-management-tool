@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService, generateRandomPassword } from '../../services/profileService';
 import {
@@ -291,7 +291,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   ];
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={step === 'IMPORTING' ? () => undefined : handleModalClose}
       title={
@@ -575,6 +575,6 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           )}
         </div>
       )}
-    </BaseModal>
+    </Modal>
   );
 };

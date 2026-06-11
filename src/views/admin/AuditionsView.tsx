@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
-import { BaseModal } from '../../components/common/BaseModal';
 import { AuditionModal } from '../../components/admin/AuditionModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { auditionService, type Audition, type AuditionInput } from '../../services/auditionService';
@@ -737,7 +736,7 @@ export default function AuditionsView() {
         performances={performances}
       />
 
-      <BaseModal
+      <Modal
         isOpen={!!schedulingAudition}
         onClose={() => setSchedulingAudition(null)}
         title="Schedule Audition"
@@ -814,7 +813,7 @@ export default function AuditionsView() {
             </div>
           )}
         </form>
-      </BaseModal>
+      </Modal>
     </div>
   );
 }

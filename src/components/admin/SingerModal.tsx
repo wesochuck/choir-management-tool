@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
@@ -166,12 +166,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
 
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={initialData ? 'Edit Singer' : 'Add Singer'}
       maxWidth="640px"
-      minHeight={initialData ? '540px' : undefined}
       footer={
         <>
           {activeTab === 'profile' ? (
@@ -202,7 +201,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         </>
       }
     >
-      {initialData && (
+      <div className="flex flex-col gap-4">
+        {initialData && (
         <div className="mb-4 flex-row gap-4 border-b border-border">
           <button
             type="button"
@@ -456,6 +456,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           <SingerPatronageHistoryTab profileId={initialData.id} isOpen={isOpen} isActive={activeTab === 'patronage'} />
         )
       )}
-    </BaseModal>
+      </div>
+    </Modal>
   );
 };

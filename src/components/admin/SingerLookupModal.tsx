@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 
 interface SingerLookupModalProps {
   isOpen: boolean;
@@ -55,7 +55,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
   }, [profiles, searchQuery, excludeIds]);
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Lookup Singer"
@@ -109,6 +109,6 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 };

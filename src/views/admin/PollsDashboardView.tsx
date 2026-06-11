@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BaseModal } from '../../components/common/BaseModal';
+import { Modal } from '../../components/ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
@@ -493,7 +493,7 @@ export default function PollsDashboardView() {
         )}
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isQuickCreateOpen}
         onClose={() => setIsQuickCreateOpen(false)}
         title={quickCreateStep === 1 ? 'Quick Create Poll' : 'Confirm & Open Review'}
@@ -590,10 +590,10 @@ export default function PollsDashboardView() {
             </>
           )}
         </div>
-      </BaseModal>
+      </Modal>
 
       {/* Global default archive days settings modal */}
-      <BaseModal
+      <Modal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         title="⚙️ Engagement Poll Settings"
@@ -640,9 +640,9 @@ export default function PollsDashboardView() {
             </div>
           </div>
         </div>
-      </BaseModal>
+      </Modal>
 
-      <BaseModal
+      <Modal
         isOpen={recipientModal.isOpen}
         onClose={() => setRecipientModal({ ...recipientModal, isOpen: false })}
         title={recipientModal.title}
@@ -665,7 +665,7 @@ export default function PollsDashboardView() {
             </div>
           ))}
         </div>
-      </BaseModal>
+      </Modal>
 
     </div>
   );

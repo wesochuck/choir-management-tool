@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { AppCard } from '../../components/common/AppCard';
-import { BaseModal } from '../../components/common/BaseModal';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button, Input, FormField, Badge } from '../../components/ui';
+import { Button, Input, FormField, Badge, Modal } from '../../components/ui';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -253,7 +252,7 @@ export default function ResourcesView() {
         </div>
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isAdding}
         onClose={resetForm}
         title={editingId ? 'Edit Resource' : 'Create New Resource'}
@@ -325,7 +324,7 @@ export default function ResourcesView() {
             </FormField>
           )}
         </form>
-      </BaseModal>
+      </Modal>
 
       <AppCard>
           <div className="overflow-x-auto">

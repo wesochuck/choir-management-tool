@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
@@ -408,7 +408,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={initialData && initialData.id ? 'Edit Event' : 'Schedule Event'}
@@ -441,26 +441,27 @@ export const EventModal: React.FC<EventModalProps> = ({
         </>
       }
     >
-      {formData.type === 'Performance' && (
-        <div className="mb-4 flex flex-row gap-4 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setActiveTab('details')}
-            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'details' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-          >
-            Event Details
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('tickets')}
-            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'tickets' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-          >
-            Tickets
-          </button>
-        </div>
-      )}
+      <div className="flex flex-col gap-4">
+        {formData.type === 'Performance' && (
+          <div className="mb-4 flex flex-row gap-4 border-b border-border">
+            <button
+              type="button"
+              onClick={() => setActiveTab('details')}
+              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'details' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+            >
+              Event Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('tickets')}
+              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'tickets' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+            >
+              Tickets
+            </button>
+          </div>
+        )}
 
-      <form id="event-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form id="event-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
         {activeTab === 'details' && (
           <>
             <div className="flex flex-col gap-1.5">
@@ -924,6 +925,7 @@ export const EventModal: React.FC<EventModalProps> = ({
           </>
         )}
       </form>
-    </BaseModal>
+      </div>
+    </Modal>
   );
 };

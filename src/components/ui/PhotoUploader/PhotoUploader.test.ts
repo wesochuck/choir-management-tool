@@ -13,7 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { render } from '@testing-library/react';
-import { DialogProvider } from '../../../contexts/DialogContext';
+import { DialogProvider } from '../../../contexts/DialogProvider';
 import { PhotoUploader } from './PhotoUploader';
 
 function renderWithProvider(element: React.ReactElement) {

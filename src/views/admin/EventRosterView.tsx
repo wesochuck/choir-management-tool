@@ -4,8 +4,7 @@ import { profileService, type Profile, type ProfileInput } from '../../services/
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { BaseModal } from '../../components/common/BaseModal';
-import { Button } from '../../components/ui';
+import { Button, Modal } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
@@ -401,7 +400,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         initialData={selectedSingerProfile}
       />
 
-      <BaseModal
+      <Modal
         isOpen={bulkProgress !== null}
         onClose={() => {}}
         title="Updating RSVPs"
@@ -427,7 +426,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             />
           </div>
         </div>
-      </BaseModal>
+      </Modal>
     </AppCard>
   );
 }

@@ -11,7 +11,7 @@ import { SeatingBottomDock } from '../../components/admin/SeatingBottomDock';
 import { SeatingFormationsEditor } from '../../components/admin/SeatingFormationsEditor';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
-import { BaseModal } from '../../components/common/BaseModal';
+import { Modal } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -883,7 +883,7 @@ export default function SeatingView() {
       />
 
       {/* New Chart Modal */}
-      <BaseModal
+      <Modal
         isOpen={isNewChartModalOpen}
         onClose={() => {
           setIsNewChartModalOpen(false);
@@ -936,10 +936,10 @@ export default function SeatingView() {
             />
           </div>
         </form>
-      </BaseModal>
+      </Modal>
 
       {/* Rename Chart Modal */}
-      <BaseModal
+      <Modal
         isOpen={isRenameChartModalOpen}
         onClose={() => {
           setIsRenameChartModalOpen(false);
@@ -995,7 +995,7 @@ export default function SeatingView() {
             />
           </div>
         </form>
-      </BaseModal>
+      </Modal>
     </div>
   );
 }

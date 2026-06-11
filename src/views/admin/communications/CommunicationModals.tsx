@@ -1,6 +1,6 @@
 import React from 'react';
 import EasyMDE from 'easymde';
-import { BaseModal } from '../../../components/common/BaseModal';
+import { Modal } from '../../../components/ui';
 import { PollSelectionModal } from '../../../components/admin/PollSelectionModal';
 import type {
   MessageRecord,
@@ -60,7 +60,7 @@ export function CommunicationModals({
 }: CommunicationModalsProps) {
   return (
     <>
-      <BaseModal
+      <Modal
         isOpen={!!selectedMessage}
         onClose={() => setSelectedMessage(null)}
         title="Message Details"
@@ -110,9 +110,9 @@ export function CommunicationModals({
             </div>
           </div>
         )}
-      </BaseModal>
+      </Modal>
 
-      <BaseModal
+      <Modal
         isOpen={recipientPreviewList.isOpen}
         onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
         title={recipientPreviewList.title}
@@ -151,7 +151,7 @@ export function CommunicationModals({
             ))
           )}
         </div>
-      </BaseModal>
+      </Modal>
 
       <PollSelectionModal
         isOpen={isPollModalOpen}

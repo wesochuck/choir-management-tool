@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import type { RecordModel } from 'pocketbase';
@@ -74,7 +74,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="📊 Insert a Poll"
@@ -167,6 +167,6 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
           </form>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 };

@@ -46,7 +46,29 @@ export function Modal({
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleCloseAttemptRef.current();
+      if (e.key === 'Escape') {
+        handleCloseAttemptRef.current();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const submitButton = modalRef.current?.querySelector<HTMLButtonElement>(
+          'button[type="submit"]:not([disabled])'
+        );
+        if (submitButton) {
+          e.preventDefault();
+          submitButton.click();
+          return;
+        }
+        const form = modalRef.current?.querySelector<HTMLFormElement>('form');
+        if (form) {
+          e.preventDefault();
+          if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        }
+      }
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);

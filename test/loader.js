@@ -2,15 +2,15 @@ import { pathToFileURL } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import ts from 'typescript';
 
+const EXTENSIONS = ['.ts', '.tsx', '/index.ts', '/index.tsx'];
+
 export async function resolve(specifier, context, nextResolve) {
   if (specifier.startsWith('.') && !specifier.endsWith('.js') && !specifier.endsWith('.ts') && !specifier.endsWith('.json') && !specifier.endsWith('.tsx')) {
-    try {
-      return await nextResolve(specifier + '.ts', context);
-    } catch (e) {
+    for (const ext of EXTENSIONS) {
       try {
-        return await nextResolve(specifier + '.tsx', context);
-      } catch (e2) {
-        // Fallback to nextResolve
+        return await nextResolve(specifier + ext, context);
+      } catch {
+        // try next extension
       }
     }
   }

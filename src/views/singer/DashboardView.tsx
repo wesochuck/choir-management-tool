@@ -12,7 +12,7 @@ import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
-import { BaseModal } from '../../components/common/BaseModal';
+import { Modal } from '../../components/ui';
 
 
 export default function DashboardView() {
@@ -396,7 +396,7 @@ export default function DashboardView() {
       </div>
 
       {/* Announcement modal */}
-      <BaseModal
+      <Modal
         isOpen={!!selectedAnnouncement}
         onClose={() => setSelectedAnnouncement(null)}
         title={selectedAnnouncement?.subject || 'Bulletin details'}
@@ -422,7 +422,7 @@ export default function DashboardView() {
             </div>
           </div>
         )}
-      </BaseModal>
+      </Modal>
     </PageLayout>
   );
 }

@@ -19,7 +19,7 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink, buildSetListPlainText } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
-import { BaseModal } from '../../components/common/BaseModal';
+import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, Select } from '../../components/ui';
@@ -786,7 +786,7 @@ export default function SetListView() {
         onClose={() => setActiveAudioUrl(null)}
       />
 
-      <BaseModal
+      <Modal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
         title="Printable Set List"
@@ -860,7 +860,7 @@ export default function SetListView() {
             })()}
           </div>
         </div>
-      </BaseModal>
+      </Modal>
       </div>
 
 

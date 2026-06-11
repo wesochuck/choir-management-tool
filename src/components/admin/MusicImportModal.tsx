@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPieceInput } from '../../services/musicLibraryService';
 import { parseCSV, type CSVData } from '../../lib/rosterImportUtils';
@@ -249,7 +249,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
   ];
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={step === 'IMPORTING' ? () => undefined : handleModalClose}
       title={
@@ -491,6 +491,6 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           )}
         </div>
       )}
-    </BaseModal>
+    </Modal>
   );
 };

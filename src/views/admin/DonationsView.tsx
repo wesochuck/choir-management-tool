@@ -2,10 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Input, Select, TabPanel, FormField, Badge } from '../../components/ui';
+import { Button, Input, Select, TabPanel, FormField, Badge, Modal } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { BaseModal } from '../../components/common/BaseModal';
 import { formatInTimezone } from '../../lib/timezone';
 import { safeLocalStorage } from '../../lib/storage';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
@@ -559,7 +558,7 @@ export default function DonationsView() {
         </div>
       </TabPanel>
 
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingLevel ? 'Edit Donor Level' : 'Add Donor Level'}
@@ -601,7 +600,7 @@ export default function DonationsView() {
             />
           </FormField>
         </div>
-      </BaseModal>
+      </Modal>
     </div>
   );
 }

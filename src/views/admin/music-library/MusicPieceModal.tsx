@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { BaseModal } from '../../../components/common/BaseModal';
+import { Modal } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
 import {
   musicLibraryService,
@@ -856,12 +856,11 @@ export function MusicPieceModal({
   }, [allPerformances, selectedPerformanceIds]);
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={piece ? 'Edit Piece' : 'Add Piece'}
       maxWidth="640px"
-      minHeight={piece ? '580px' : undefined}
       footer={
         <>
           {onDelete && (
@@ -904,42 +903,43 @@ export function MusicPieceModal({
         </>
       }
     >
-      {piece && (
-        <div className="mb-4 flex flex-row gap-4 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setActiveTab('details')}
-            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'details' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-          >
-            Piece Details
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('tracks')}
-            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'tracks' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-          >
-            Learning Tracks
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('performances')}
-            className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'performances' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-          >
-            Linked Performances
-          </button>
-          {isMultiMovement && (
+      <div className="flex flex-col gap-4">
+        {piece && (
+          <div className="mb-4 flex flex-row gap-4 border-b border-border">
             <button
               type="button"
-              onClick={() => setActiveTab('movements')}
-              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'movements' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+              onClick={() => setActiveTab('details')}
+              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'details' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
             >
-              Movements ({movements.length})
+              Piece Details
             </button>
-          )}
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => setActiveTab('tracks')}
+              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'tracks' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+            >
+              Learning Tracks
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('performances')}
+              className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'performances' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+            >
+              Linked Performances
+            </button>
+            {isMultiMovement && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('movements')}
+                className={`flex min-h-[40px] cursor-pointer items-center justify-center border-none bg-transparent px-4 py-2 text-sm transition-all duration-200 ${activeTab === 'movements' ? 'border-b-2 border-primary font-bold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+              >
+                Movements ({movements.length})
+              </button>
+            )}
+          </div>
+        )}
 
-      <form id="music-piece-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form id="music-piece-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
         {(!piece || activeTab === 'details') && (
           <>
             {/* LINKED PARENT BANNER NOTICE */}
@@ -1655,6 +1655,7 @@ export function MusicPieceModal({
           </div>
         )}
       </form>
-    </BaseModal>
+      </div>
+    </Modal>
   );
 }

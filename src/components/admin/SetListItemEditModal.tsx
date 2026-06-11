@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
 import type { SetListItem } from '../../services/eventService';
@@ -89,7 +89,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title="Edit Set List Item"
@@ -178,6 +178,6 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           />
         </div>
       </form>
-    </BaseModal>
+    </Modal>
   );
 };

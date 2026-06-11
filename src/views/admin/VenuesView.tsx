@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useVenues } from '../../hooks/useVenues';
 import { checkVenueDependencies, type Venue } from '../../services/venueService';
 import { AppCard } from '../../components/common/AppCard';
-import { BaseModal } from '../../components/common/BaseModal';
-import { Button, Spinner, FormField, Input, EmptyState } from '../../components/ui';
+import { Button, Spinner, FormField, Input, EmptyState, Modal } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 
 export default function VenuesView() {
@@ -99,7 +98,7 @@ export default function VenuesView() {
         </div>
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isAdding}
         onClose={resetForm}
         title={editingId ? 'Edit Venue' : 'Create New Venue'}
@@ -157,7 +156,7 @@ export default function VenuesView() {
             </FormField>
           )}
         </form>
-      </BaseModal>
+      </Modal>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (

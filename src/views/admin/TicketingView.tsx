@@ -8,7 +8,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import { BaseModal } from '../../components/common/BaseModal';
+import { Modal } from '../../components/ui';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -842,7 +842,7 @@ export default function TicketingView() {
       )}
 
       {/* CRUD Bundle Modal */}
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingBundle ? "Edit Season Bundle" : "Create Season Bundle"}
@@ -991,7 +991,7 @@ export default function TicketingView() {
             <span className="m-0 text-sm font-semibold">Active and visible to the public</span>
           </label>
         </form>
-      </BaseModal>
+      </Modal>
     </div>
   );
 }

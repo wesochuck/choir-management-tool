@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc } from '../../lib/timezone';
 
@@ -179,7 +179,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title="Bulk Add Rehearsals"
@@ -292,6 +292,6 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           </div>
         )}
       </form>
-    </BaseModal>
+    </Modal>
   );
 };

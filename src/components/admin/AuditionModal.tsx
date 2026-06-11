@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BaseModal } from '../common/BaseModal';
+import { Modal } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Audition, AuditionInput } from '../../services/auditionService';
 import { type Event } from '../../services/eventService';
@@ -84,7 +84,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={audition ? `Edit ${audition.name}` : 'Add Audition Manually'}
@@ -320,6 +320,6 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           </div>
         )}
       </form>
-    </BaseModal>
+    </Modal>
   );
 };
