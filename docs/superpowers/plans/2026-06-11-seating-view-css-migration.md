@@ -59,9 +59,12 @@
 → Inline Tailwind.
 
 ### Group 8: Drag & animation styles (~8 classes, ~90 lines)
-`.seat-cell.drag-target`, `.drag-overlay`, `.drag-overlay-icon`, `.section-mismatch`, `.section-mismatch::after`, `@keyframes drop-zone-pulse`, `@keyframes bounce`
-
-→ Add custom `@keyframes` to `index.css`. Reference via `animate-[name_duration_infinite]`. Replace `::after` gradient pseudo-element with `bg-[linear-gradient(...)]`.
+- Define `drop-zone-pulse` and `bounce-subtle` animations in `index.css` `@theme` block.
+- **Seat Cell (`.seat-cell`):** Add `transform-gpu` to base classes for hardware acceleration.
+- **Drag Target (`.drag-target`):** Apply `animate-drop-zone-pulse` and `border-dashed`. Keep dynamic `transform` in inline styles.
+- **Section Mismatch:** Replace `::after` pseudo-element with Tailwind arbitrary background: `bg-[linear-gradient(135deg,theme(colors.black/8%)_25%,transparent_25%,transparent_50%,theme(colors.black/8%)_50%,theme(colors.black/8%)_75%,transparent_75%,transparent)] bg-[length:10px_10px]`.
+- **Drag Overlay Icon:** Apply `animate-bounce-subtle`.
+- **Transitions:** Ensure `cubic-bezier(0.34, 1.56, 0.64, 1)` is preserved in `SeatingGrid.tsx` inline styles for the "bouncy" feel.
 
 ### Group 9: Legacy `btn-*` classes (27 references in SeatingView.tsx)
 Replace patterns:
@@ -78,10 +81,37 @@ Rules referencing `[data-print-mode]`, `.seating-text-list`, `.grid-print`, `.un
 
 ---
 
+## Tailwind v4 Theme Configuration
+
+Add to `src/index.css`:
+
+```css
+@theme {
+  --animate-drop-zone-pulse: drop-zone-pulse 1.2s infinite;
+  --animate-bounce-subtle: bounce-subtle 1s infinite alternate;
+
+  @keyframes drop-zone-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgb(59 130 246 / 50%);
+      border-color: #3b82f6;
+    }
+    70% { box-shadow: 0 0 0 8px rgb(59 130 246 / 0%); border-color: #2563eb; }
+    100% { box-shadow: 0 0 0 0 rgb(59 130 246 / 0%); border-color: #3b82f6; }
+  }
+
+  @keyframes bounce-subtle {
+    from { transform: translateY(0); }
+    to { transform: translateY(-4px); }
+  }
+}
+```
+
+---
+
 ## Verification
 
 1. `SeatingView.css` no longer exists
 2. No `import './SeatingView.css'` remains
 3. Type check passes
-4. Visual check: grid rendering, drag/drop, fullscreen toggle, sidebar, bottom dock, print modes, tab reordering, format switching
+4. Visual check: grid rendering, drag/drop (verify hardware acceleration and bouncy ease), fullscreen toggle, sidebar, bottom dock, print modes, tab reordering, format switching
 5. No npm audit issues introduced
