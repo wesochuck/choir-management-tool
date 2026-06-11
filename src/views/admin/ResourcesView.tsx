@@ -158,7 +158,7 @@ export default function ResourcesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Singer Resources
@@ -168,9 +168,11 @@ export default function ResourcesView() {
           </p>
         </div>
         {!isAdding && (
-          <Button onClick={() => setIsAdding(true)} variant="primary">
-            + New Resource
-          </Button>
+          <div className="flex-shrink-0 mt-1">
+            <Button onClick={() => setIsAdding(true)} variant="primary">
+              + New Resource
+            </Button>
+          </div>
         )}
       </div>
 
