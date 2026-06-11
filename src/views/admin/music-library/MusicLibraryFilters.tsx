@@ -3,6 +3,7 @@ import type { SectionDef, MusicGenreDef } from '../../../services/settingsServic
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
 import type { FilterMode } from '../../../lib/music/libraryRows';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
+import { Input } from '../../../components/ui';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
@@ -63,18 +64,18 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
 
     return (
         <div className="flex-col gap-[var(--space-sm)] border-b border-[var(--border)] px-[var(--space-lg)] py-[var(--space-md)]">
-            <div className="grid grid-cols-3 items-end gap-[var(--space-sm)]">
-                <div className="form-field-group flex-col">
-                    <span className="text-muted text-xs font-semibold tracking-[0.04em] uppercase">Search</span>
-                    <input
-                        className="card h-9 w-full px-[10px] text-[13px]"
+            <div className="flex flex-wrap items-end gap-4">
+                <div className="min-w-[200px] flex-1">
+                    <span className="text-muted mb-1.5 block text-xs font-semibold tracking-[0.04em] uppercase">Search</span>
+                    <Input
+                        type="text"
                         placeholder="Title, composer, catalog..."
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}
                     />
                 </div>
-                <div className="form-field-group flex-col">
-                    <span className="text-muted text-xs font-semibold tracking-[0.04em] uppercase">Sections</span>
+                <div className="w-full sm:w-[220px]">
+                    <span className="text-muted mb-1.5 block text-xs font-semibold tracking-[0.04em] uppercase">Sections</span>
                     <MultiSelectDropdown
                         options={sortedSections.map(s => ({ id: s.code, label: s.name }))}
                         selectedIds={sectionFilters}
@@ -83,8 +84,8 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                         allLabel="All Sections"
                     />
                 </div>
-                <div className="form-field-group flex-col">
-                    <div className="flex items-center justify-between">
+                <div className="w-full sm:w-[260px]">
+                    <div className="mb-1.5 flex items-center justify-between">
                         <span className="text-muted text-xs font-semibold tracking-[0.04em] uppercase">Genres</span>
                         <div className="flex-row rounded-[4px] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[2px]">
                             <button 
@@ -120,7 +121,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 </div>
             </div>
 
-            <div className="flex-row flex-wrap flex items-center gap-[var(--space-lg)] pt-[2px]">
+            <div className="flex flex-row flex-wrap items-center gap-[var(--space-lg)] pt-[2px]">
                 <div className="flex-row items-center gap-[6px]">
                     <span className="text-muted text-xs font-semibold">Last Performed:</span>
                     <select

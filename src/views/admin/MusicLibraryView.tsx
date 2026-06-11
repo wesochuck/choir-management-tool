@@ -15,6 +15,7 @@ import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
+import { Button, FormField, Input } from '../../components/ui';
 
 export default function MusicLibraryView() {
   const dialog = useDialog();
@@ -420,40 +421,57 @@ export default function MusicLibraryView() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <header className="no-print mb-6 flex items-center justify-between">
-        <div className="flex-col gap-1">
-          <h1 className="m-0">Music Library</h1>
-          <p className="text-muted text-sm">Manage choir repertoire, movements, and learning tracks.</p>
-        </div>
-        {activeTab === 'catalog' && (
-          <div className="flex items-center gap-2">
-            <button className="btn btn-secondary" onClick={handleExportCSV}>
-              Export CSV
-            </button>
-            <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(true)}>
-              Import CSV
-            </button>
-            <button className="btn btn-primary" onClick={() => { setEditingPiece(null); setIsModalOpen(true); }}>
-              Add Piece
-            </button>
-          </div>
-        )}
-      </header>
+    <div className="flex flex-col gap-6">
+      <div className="no-print">
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+          Music Library
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Manage choir repertoire, movements, and learning tracks
+        </p>
+      </div>
 
-      <div className="mb-[var(--space-sm)] flex flex-row gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-xs)]">
-        <button
-          onClick={() => setActiveTab('catalog')}
-          className={`cursor-pointer rounded-t-[var(--radius-sm)] border-b-3 border-none border-transparent bg-none px-4 py-2 text-[16px] font-medium transition-all duration-200 ${activeTab === 'catalog' ? '!border-b-[var(--primary)] !font-semibold !text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}
-        >
-          Music Catalog
-        </button>
-        <button
-          onClick={() => setActiveTab('config')}
-          className={`cursor-pointer rounded-t-[var(--radius-sm)] border-b-3 border-none border-transparent bg-none px-4 py-2 text-[16px] font-medium transition-all duration-200 ${activeTab === 'config' ? '!border-b-[var(--primary)] !font-semibold !text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}
-        >
-          Library Settings
-        </button>
+      <div className="no-print border-b border-border">
+        <div className="-mb-px flex items-center justify-between">
+          <nav className="flex gap-2">
+            <button
+              className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium ${
+                activeTab === 'catalog'
+                  ? 'bg-primary text-surface'
+                  : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+              }`}
+              onClick={() => setActiveTab('catalog')}
+            >
+              Music Catalog
+            </button>
+            <button
+              className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium ${
+                activeTab === 'config'
+                  ? 'bg-primary text-surface'
+                  : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+              }`}
+              onClick={() => setActiveTab('config')}
+            >
+              Library Settings
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            {activeTab === 'catalog' && (
+              <>
+                <Button variant="secondary" onClick={handleExportCSV}>
+                  Export CSV
+                </Button>
+                <Button variant="secondary" onClick={() => setIsImportModalOpen(true)}>
+                  Import CSV
+                </Button>
+                <Button variant="primary" onClick={() => { setEditingPiece(null); setIsModalOpen(true); }}>
+                  Add Piece
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {activeTab === 'catalog' ? (
@@ -520,33 +538,35 @@ export default function MusicLibraryView() {
           />
         </AppCard>
       ) : (
-        <div className="flex flex-col gap-[var(--space-xl)]">
+        <div className="flex flex-col gap-6">
           <AppCard title="Music Library Settings">
-            <div className="flex flex-col gap-1">
-              <label className="text-label">Catalog Lookup URL Template</label>
-              <input
-                type="url"
-                value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
-                onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
-                placeholder="https://example.com/catalog/{catalogId}"
-                className="card h-10 w-full max-w-[400px] rounded-[var(--radius-md)] border border-[var(--border)] px-3"
-              />
-              <p className="text-muted !m-0">
-                Configure an external lookup URL format for Catalog IDs. Use <code>{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code>https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
-              </p>
+            <div className="max-w-[400px]">
+              <FormField
+                label="Catalog Lookup URL Template"
+              >
+                <Input
+                  type="url"
+                  value={musicLibrarySettings.catalogLookupUrlTemplate || ''}
+                  onChange={(event) => setMusicLibrarySettings({ ...musicLibrarySettings, catalogLookupUrlTemplate: event.target.value })}
+                  placeholder="https://example.com/catalog/{catalogId}"
+                />
+                <p className="mt-1 text-xs text-text-muted">
+                  Configure an external lookup URL format for Catalog IDs. Use <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">{'{catalogId}'}</code> as the placeholder for the Catalog ID number (e.g. <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">https://www.jwpepper.com/s?q={'{catalogId}'}</code>).
+                </p>
+              </FormField>
             </div>
           </AppCard>
 
           <AppCard title="Music Library Genres">
-            <div className="flex flex-col gap-[var(--space-md)]">
-              <p className="text-muted !m-0">
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-text-muted">
                 Configure standard genre tags used for library organization and advanced layout filtering.
               </p>
-              <div className="flex flex-col gap-[var(--space-sm)]">
+              <div className="flex flex-col gap-2">
                 {musicLibrarySettings.genres?.map((genre, index) => (
-                  <div key={genre.id} className="flex items-center gap-[var(--space-md)]">
-                    <input
-                      className="card h-10 w-[250px] px-3"
+                  <div key={genre.id} className="flex items-center gap-4">
+                    <Input
+                      className="w-[250px]"
                       value={genre.label}
                       onChange={(e) => {
                         const updated = [...musicLibrarySettings.genres];
@@ -558,9 +578,10 @@ export default function MusicLibraryView() {
                         setMusicLibrarySettings({ ...musicLibrarySettings, genres: updated });
                       }}
                     />
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-danger btn-sm"
+                      variant="danger"
+                      size="small"
                       onClick={async () => {
                         const targetGenre = musicLibrarySettings.genres[index];
                         const linkedPiecesCount = pieces.filter(p => (p.genres || []).includes(targetGenre.id)).length;
@@ -581,20 +602,20 @@ export default function MusicLibraryView() {
                       }}
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
               
-              <div className="flex flex-row gap-[var(--space-sm)]">
-                <input
+              <div className="flex flex-row gap-2">
+                <Input
                   id="new-genre-input"
                   placeholder="New Genre Name (e.g. Sacred)"
-                  className="card h-10 max-w-[250px] px-3"
+                  className="max-w-[250px]"
                 />
-                <button
+                <Button
                   type="button"
-                  className="btn btn-secondary"
+                  variant="secondary"
                   onClick={() => {
                     const inputEl = document.getElementById('new-genre-input') as HTMLInputElement;
                     const label = inputEl?.value?.trim();
@@ -621,7 +642,7 @@ export default function MusicLibraryView() {
                   }}
                 >
                   Add Genre
-                </button>
+                </Button>
               </div>
             </div>
           </AppCard>
