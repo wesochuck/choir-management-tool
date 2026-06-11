@@ -52,7 +52,7 @@ export function TemplatesPanel({
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Template Title</label>
                   <input
-                    className="card h-10 w-full border border-border px-3"
+                    className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
                     value={editingTemplate.title || ''}
                     onChange={(e) =>
                       setEditingTemplate({ ...editingTemplate, title: e.target.value })
@@ -64,7 +64,7 @@ export function TemplatesPanel({
                 <div className="flex flex-[0_0_150px] flex-col gap-1">
                   <label className="text-label">Channel</label>
                   <select
-                    className="card h-10 w-full border border-border px-3"
+                    className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
@@ -84,7 +84,7 @@ export function TemplatesPanel({
               <div className="flex flex-col gap-1">
                 <label className="text-label">Subject</label>
                 <input
-                  className="card h-10 w-full border border-border px-3"
+                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
                   value={editingTemplate.subject || ''}
                   onChange={(e) =>
                     setEditingTemplate({ ...editingTemplate, subject: e.target.value })

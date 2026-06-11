@@ -264,7 +264,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               value={formData.name || ''} 
               onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
               required
-              className="card h-[38px] min-h-[38px] w-full border border-border px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -274,7 +274,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
                 placeholder="e.g. singer@example.com"
               />
               <p className="text-muted m-0 text-xs">
@@ -311,7 +311,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <input 
                 value={formData.phone || ''} 
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
                 placeholder="e.g. 555-123-4567"
               />
             </div>
@@ -323,7 +323,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required={formData.role !== 'admin'}
-                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
               >
                 {formData.role === 'admin' ? (
                   <option value="">-- Not Applicable (Admin) --</option>
@@ -342,7 +342,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <select 
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                className="card h-[38px] min-h-[38px] w-full border border-border px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>
@@ -436,7 +436,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           </div>
 
           {initialData?.statusLastChangedAt && (
-            <div className="card flex flex-row flex-wrap justify-between gap-[4px_12px] border border-border bg-bg p-[6px_10px] shadow-none">
+            <div className="rounded-xl flex flex-row flex-wrap justify-between gap-[4px_12px] border border-border bg-bg p-[6px_10px] shadow-none">
               <div className="text-muted m-0 text-xs">
                 <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
               </div>
@@ -451,7 +451,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <textarea 
               value={formData.notes} 
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-              className="card h-[60px] min-h-[60px] w-full resize-y rounded-lg border border-border p-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[60px] min-h-[60px] w-full resize-y rounded-lg p-3"
             />
           </div>
         </form>

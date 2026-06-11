@@ -174,7 +174,7 @@ function FormationRow({
               });
             }}
             placeholder="Formation Name"
-            className="card h-[38px] w-full px-2"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-full px-2"
           />
           <select
             value={formation.strategy}
@@ -185,7 +185,7 @@ function FormationRow({
                 return { ...prev, formations: newFormations };
               });
             }}
-            className="card h-[38px] w-full px-2"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-full px-2"
           >
             <option value="vertical_column">Vertical Columns</option>
             <option value="horizontal_row">Horizontal Rows</option>
@@ -471,7 +471,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
           <select
             value={customSeatingSettings.defaultFormationId}
             onChange={(e) => setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))}
-            className="card h-10 w-full max-w-[400px] rounded-lg border border-border px-3"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full max-w-[400px] px-3"
           >
             {customSeatingSettings.formations?.map(form => (
               <option key={form.id} value={form.id}>{form.name}</option>

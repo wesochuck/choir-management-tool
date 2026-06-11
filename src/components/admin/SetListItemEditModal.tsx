@@ -128,7 +128,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="card h-10 px-3"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
           />
         </div>
 
@@ -138,14 +138,14 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             <input
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              className="card h-10 px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
             />
           </div>
         )}
 
         {type === 'song' && (
           <div 
-            className={`card sl-modal-solo-card flex-row ${soloSmallGroup ? 'sl-modal-solo-card-selected' : 'sl-modal-solo-card-unselected'}`}
+            className={`rounded-xl border border-border bg-surface p-3 px-4 shadow-sm sl-modal-solo-card flex-row ${soloSmallGroup ? 'sl-modal-solo-card-selected' : 'sl-modal-solo-card-unselected'}`}
             onClick={() => setSoloSmallGroup(!soloSmallGroup)}
           >
             <input
@@ -165,7 +165,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            className="card h-10 px-3"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
           />
         </div>
 
@@ -174,7 +174,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="card min-h-[80px] resize-y p-3"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-[80px] resize-y p-3"
           />
         </div>
       </form>

@@ -47,7 +47,7 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
   const categories = Array.from(new Set(visiblePlaceholders.map(p => p.category))) as Placeholder['category'][];
 
   return (
-    <div className="card sticky top-6 flex max-h-[calc(100vh-120px)] flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
+    <div className="sticky top-6 flex max-h-[calc(100vh-120px)] flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
       <div className="border-b border-border pb-2">
         <div className="flex items-center gap-2">
           <span>⚡</span>

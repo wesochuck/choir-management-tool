@@ -110,7 +110,7 @@ export default function PublicTicketPurchaseView() {
           </div>
         </div>
 
-        <div className="card flex flex-col gap-4 bg-primary-light p-4 md:flex-row">
+        <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex flex-col gap-4 bg-primary-light p-4 md:flex-row">
           {event.eventGraphic && (
             <img
               src={pb.files.getURL(event, event.eventGraphic)}
@@ -148,7 +148,7 @@ export default function PublicTicketPurchaseView() {
             <input
               type="text"
               required
-              className="card h-10 px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -160,7 +160,7 @@ export default function PublicTicketPurchaseView() {
               <input
                 type="email"
                 required
-                className="card h-10 px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
@@ -170,7 +170,7 @@ export default function PublicTicketPurchaseView() {
               <input
                 type="email"
                 required
-                className="card h-10 px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
@@ -184,13 +184,13 @@ export default function PublicTicketPurchaseView() {
               min="1"
               max="10"
               required
-              className="card h-10 px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
               value={quantity}
               onChange={e => setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))}
             />
           </div>
 
-          <div className="card flex w-full flex-col gap-1 bg-neutral-100 p-4">
+          <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4">
             <h4 className="m-0 text-primary-deep">Pricing Summary</h4>
             <div className="flex flex-row justify-between text-sm">
               <span>Ticket Price ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>

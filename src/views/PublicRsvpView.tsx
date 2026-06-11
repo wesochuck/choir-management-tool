@@ -344,7 +344,7 @@ export default function PublicRsvpView() {
         <AppCard className="box-border flex w-full flex-col gap-6 border p-6">
           
           {rsvpWindow.isReadOnly && (
-            <div className="card rounded-lg border border-border bg-neutral-100 p-4">
+            <div className="border border-border bg-neutral-100 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md p-4">
               <p className="m-0 text-text-muted">
                 {rsvpWindow.reason}
               </p>
@@ -372,7 +372,7 @@ export default function PublicRsvpView() {
 
               {renderRehearsalsList()}
 
-              <div className="card rounded-lg border border-border bg-surface p-4 text-center">
+              <div className="bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:shadow-md p-4 text-center">
                 <div className="text-xs font-bold tracking-wider text-text-muted uppercase">Your response</div>
                 {/* @allow-inline-style - dynamic color based on RSVP status */}
                 <div className="mt-2 text-xl font-extrabold" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : '#6b7280' }}>

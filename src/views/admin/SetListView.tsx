@@ -132,7 +132,7 @@ export default function SetListView() {
         message: (
           <div className="flex-col gap-[var(--space-md)]">
             <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
-            <div className="card border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)] text-[0.85rem] break-all">
+             <div className="border border-[var(--border)] bg-[var(--bg)] rounded-lg p-[var(--space-sm)] text-[0.85rem] break-all">
               {url}
             </div>
             <div className="flex-row gap-[var(--space-sm)]">
@@ -814,7 +814,7 @@ export default function SetListView() {
           </>
         }
       >
-        <div className="card rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-[var(--space-lg)] font-[Georgia,serif] text-[#333] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
+        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-[var(--space-lg)] font-[Georgia,serif] text-[#333] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
           <div className="mb-[var(--space-md)] text-center">
             <h3 className="!m-0 mb-[var(--space-xxs)] text-[1.4rem] font-bold text-[#111]">
               {selectedEvent?.title || selectedEvent?.type}

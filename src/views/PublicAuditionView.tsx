@@ -146,7 +146,7 @@ export default function PublicAuditionView() {
           </div>
         ) : (
           <div className="flex flex-col gap-8">
-            <div className="card overflow-hidden bg-primary-light p-0">
+            <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden bg-primary-light p-0">
               <button 
                 onClick={() => setIsScheduleExpanded(!isScheduleExpanded)}
                 className="flex w-full cursor-pointer flex-row justify-between border-none bg-none px-6 py-4 text-left"
@@ -192,16 +192,16 @@ export default function PublicAuditionView() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div className="flex flex-col gap-1">
                 <label className="text-label">Name</label>
-                <input className="card px-3" value={name} onChange={(e) => setName(e.target.value)} required />
+                <input className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3" value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-label">Email or Phone</label>
-                <input className="card px-3" value={contact} onChange={(e) => setContact(e.target.value)} required />
+                <input className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3" value={contact} onChange={(e) => setContact(e.target.value)} required />
               </div>
               <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Voice Part</label>
-                  <select className="card h-11 px-3" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
+                  <select className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
                     <option value="">Not sure yet</option>
                     {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>
@@ -248,7 +248,7 @@ export default function PublicAuditionView() {
               <div className="flex flex-col gap-1">
                 <label className="text-label">Experience / Musical Background</label>
                 <textarea
-                  className="card min-h-[120px] resize-y p-3"
+                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-[120px] resize-y p-3"
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                 />

@@ -386,7 +386,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             <input
                                 ref={inputRef}
                                 type="text"
-                                className="card h-8 flex-1 rounded border border-gray-200 bg-white px-2.5 text-xs transition-colors duration-150 outline-none focus:border-primary"
+                                className="bg-surface border border-border h-8 flex-1 rounded px-2.5 text-xs transition-colors duration-150 outline-none focus:border-primary"
                                 placeholder="Add new..."
                                 value={newOptionLabel}
                                 onChange={e => setNewOptionLabel(e.target.value)}

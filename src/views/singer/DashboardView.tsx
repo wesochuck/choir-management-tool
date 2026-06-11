@@ -294,7 +294,7 @@ export default function DashboardView() {
             ))}
 
             {upcomingEvents.length === 0 && (
-              <div className="card flex flex-col items-center justify-center rounded-lg bg-surface/80 p-6 py-12 text-text-muted shadow-sm backdrop-blur-sm">
+              <div className="border border-border rounded-lg bg-surface/80 p-6 py-12 text-text-muted shadow-sm backdrop-blur-sm flex flex-col items-center justify-center">
                 <p className="text-muted">No upcoming events at this time.</p>
               </div>
             )}
@@ -308,7 +308,7 @@ export default function DashboardView() {
               <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="📊 Quick Polls">
                 <div className="flex-col gap-2">
                   {activePolls.map(poll => (
-                    <div key={poll.id} className="card flex flex-col gap-1 border border-border p-2 shadow-none">
+                    <div key={poll.id} className="rounded-xl flex flex-col gap-1 border border-border p-2 shadow-none">
                       <div className="text-sm font-bold">{poll.question}</div>
                       <div className="flex-row gap-1">
                         <button 

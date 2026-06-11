@@ -34,7 +34,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
         <div className="composer-subject-field flex flex-col gap-1">
           <label className="text-label">Subject</label>
           <input
-            className={`card ${subjectWarning ? 'border-red-200' : ''}`}
+            className={`bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3 w-full max-w-md ${subjectWarning ? 'border-red-200' : ''}`}
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
             disabled={messageType === 'SMS'}
@@ -49,7 +49,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
         <div className="composer-channel-field flex flex-col gap-1">
           <label className="text-label">Channel</label>
           <select
-            className="card"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
             value={messageType}
             onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
           >

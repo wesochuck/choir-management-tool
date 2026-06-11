@@ -109,7 +109,7 @@ export function SettingsPanel({
               </p>
               <div className="flex flex-wrap items-center gap-4">
                 <input
-                  className="card h-10 w-full max-w-[300px] flex-1 border border-border px-3"
+                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full max-w-[300px] flex-1 px-3"
                   type="email"
                   value={testEmailAddress}
                   onChange={(e) => setTestEmailAddress(e.target.value)}
@@ -167,7 +167,7 @@ function Field({
     <div className="flex flex-col gap-1">
       <label className="text-label">{label}</label>
       <input
-        className="card h-10 w-full border border-border px-3"
+        className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

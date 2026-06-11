@@ -173,7 +173,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Name</label>
             <input
-              className="card h-[44px] px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] px-3"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
@@ -184,7 +184,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Email or Phone</label>
             <input
-              className="card h-[44px] px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] px-3"
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
               required
@@ -196,7 +196,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
               <div 
-                className="card h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm w-full" 
+                className="rounded-md h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm w-full" 
                 style={{ /* @allow-inline-style */ 
                   // @allow-inline-style - dynamic scheduled time slot
                   color: formData.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
@@ -215,7 +215,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Voice Part</label>
               <select
-                className="card h-[44px] w-full px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
                 value={formData.voicePart || ''}
                 onChange={(event) => setFormData({ ...formData, voicePart: event.target.value as Audition['voicePart'] })}
               >
@@ -238,7 +238,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Tied to Performance</label>
               <select
-                className="card h-[44px] w-full px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
                 value={formData.performance || ''}
                 onChange={(event) => setFormData({ ...formData, performance: event.target.value })}
               >
@@ -253,7 +253,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Experience / Musical Background</label>
             <textarea
-              className="card min-h-20 resize-y p-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-20 resize-y p-3"
               value={formData.experience}
               onChange={(event) => setFormData({ ...formData, experience: event.target.value })}
               placeholder="Describe background..."
@@ -263,7 +263,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Internal Notes</label>
             <textarea
-              className="card min-h-20 resize-y p-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-20 resize-y p-3"
               value={formData.notes}
               onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
               placeholder="Add internal notes..."
@@ -283,7 +283,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 return (
                   <label 
                     key={slot} 
-                    className="card m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
+                    className="rounded-xl m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
                     style={{ /* @allow-inline-style */ 
                       // @allow-inline-style - checkbox checked state
                       border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',

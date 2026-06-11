@@ -55,7 +55,7 @@ export default function PublicTicketSuccessView() {
         </p>
 
         {purchase ? (
-          <div className="card flex w-full flex-col gap-1 bg-neutral-100 p-4 text-left">
+          <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4 text-left">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Order ID:</span>
               <strong>{purchase.id}</strong>

@@ -281,7 +281,7 @@ export default function RosterView() {
                 placeholder="Search by name or email..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
-                className="card h-11 w-full pr-8 text-base"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full pr-8 text-base"
               />
               {filters.name && (
                 <button

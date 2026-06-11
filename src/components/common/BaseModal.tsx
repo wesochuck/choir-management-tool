@@ -90,7 +90,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-bg p-4" role="presentation">
       <div
         ref={modalRef}
-        className="card max-h-[90vh] w-full flex-col gap-6 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-md"
+        className="max-h-[90vh] w-full flex-col gap-6 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-md"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

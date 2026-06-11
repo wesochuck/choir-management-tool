@@ -873,7 +873,7 @@ export default function TicketingView() {
       >
         <form id="bundle-form" onSubmit={handleSaveBundle} className="flex flex-col gap-4">
           {editingBundle && (
-            <div className="card rounded border-l-4 border-primary bg-[rgba(74,124,89,0.05)] p-2 text-sm">
+            <div className="rounded border-l-4 border-primary bg-[rgba(74,124,89,0.05)] p-2 text-sm">
               <strong>🔗 Share Season Pass Link:</strong>{' '}
               <a 
                 href={`/tickets/bundle/${editingBundle.id}`} 
@@ -892,7 +892,7 @@ export default function TicketingView() {
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
-              className="card h-10 px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
@@ -906,7 +906,7 @@ export default function TicketingView() {
                 required
                 min="0.01"
                 step="0.01"
-                className="card h-10 px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
                 value={price || ''}
                 onChange={e => setPrice(Number(e.target.value))}
               />
@@ -917,7 +917,7 @@ export default function TicketingView() {
                 type="number"
                 required
                 min="1"
-                className="card h-10 px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
                 value={capacity || ''}
                 onChange={e => setCapacity(Number(e.target.value))}
               />
@@ -929,7 +929,7 @@ export default function TicketingView() {
             <input
               type="datetime-local"
               required
-              className="card h-10 px-3"
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
               value={saleEndDate}
               onChange={e => setSaleEndDate(e.target.value)}
             />
@@ -938,11 +938,11 @@ export default function TicketingView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold">Included Performances</label>
             {hasPurchases && (
-              <div className="card border-yellow-200 bg-yellow-50 p-2 text-sm text-yellow-700">
+              <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-2 text-sm text-yellow-700">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}
-            <div className="card flex max-h-[200px] flex-col gap-2 overflow-y-auto border border-gray-200 p-2">
+            <div className="flex max-h-[200px] flex-col gap-2 overflow-y-auto border border-gray-200 rounded-lg p-2">
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
@@ -982,7 +982,7 @@ export default function TicketingView() {
             <label className="text-sm font-semibold">Public Details / Instructions</label>
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
-              className="card min-h-[100px] resize-y border border-gray-200 p-2"
+              className="bg-surface border border-gray-200 rounded-md outline-none transition-colors focus:border-primary min-h-[100px] resize-y p-2"
               value={publicDetails}
               onChange={e => setPublicDetails(e.target.value)}
             />

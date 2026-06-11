@@ -20,7 +20,7 @@ export function useEventPlayerLink({ dialog }: UseEventPlayerLinkArgs) {
             <p>
               A standalone practice link has been generated for "{event.title || event.type}".
             </p>
-            <div className="card border border-border bg-bg p-2 text-sm break-all">
+            <div className="border border-border bg-bg rounded-lg p-2 text-sm break-all">
               {url}
             </div>
             <div className="flex-row gap-2">

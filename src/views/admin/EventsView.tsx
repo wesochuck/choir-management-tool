@@ -130,7 +130,7 @@ export default function EventsView(): React.JSX.Element {
 
   if (error) {
     return (
-      <div className="card mx-auto my-8 flex max-w-[500px] flex-col items-center border-danger-text bg-danger-bg p-8 text-center">
+      <div className="rounded-xl shadow-sm transition-all duration-200 hover:shadow-md mx-auto my-8 flex max-w-[500px] flex-col items-center border-danger-text bg-danger-bg p-8 text-center">
         <span className="text-3xl" role="img" aria-label="Warning">⚠️</span>
         <div className="text-lg font-semibold text-danger-text">
           Failed to load events

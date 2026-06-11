@@ -104,47 +104,6 @@ body {
   --font-weight-bold: 700;
 }
 
-/* Core Component CSS Classes */
-.card {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-/* Reset layout, display, padding, and transitions for input fields that use the card class */
-input.card,
-select.card,
-textarea.card {
-  display: inline-block;
-  flex-direction: unset;
-  gap: unset;
-  padding: 0 12px;
-  box-shadow: none;
-  border-radius: var(--radius-md);
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-input.card:hover,
-select.card:hover,
-textarea.card:hover {
-  box-shadow: none;
-  transform: none;
-}
-
-textarea.card {
-  padding: 12px;
-  height: auto;
-}
 
 .btn {
   display: inline-flex;

@@ -928,7 +928,7 @@ export default function SeatingView() {
           <div className="flex-col gap-[var(--space-xs)]">
             <label className="text-label font-semibold">Chart Name</label>
             <input 
-              className="card h-11 w-full px-3" 
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3" 
               value={newChartName} 
               onChange={(e) => setNewChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir, Combined Finale"
@@ -987,7 +987,7 @@ export default function SeatingView() {
           <div className="flex-col gap-[var(--space-xs)]">
             <label className="text-label font-semibold">New Chart Name</label>
             <input 
-              className="card h-11 w-full px-3" 
+              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3" 
               value={renameChartName} 
               onChange={(e) => setRenameChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir"

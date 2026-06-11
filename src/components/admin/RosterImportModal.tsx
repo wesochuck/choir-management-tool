@@ -362,7 +362,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               return (
                 <div 
                   key={field.key} 
-                  className="card flex flex-row items-center justify-between gap-3 p-3 px-4" 
+                  className="rounded-xl flex flex-row items-center justify-between gap-3 p-3 px-4 border border-border bg-surface" 
                   style={{ /* @allow-inline-style */ 
                     // @allow-inline-style - conditional field validation border
                     borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
@@ -385,7 +385,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   <select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className="card h-[38px] w-[200px] border border-border px-[10px] text-sm shadow-none"
+                    className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-sm shadow-none"
                     style={{ /* @allow-inline-style */ 
                       // @allow-inline-style - conditional match border
                       borderColor: selectedIndex !== -1 ? 'var(--primary)' : undefined,
@@ -413,10 +413,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               Verify parsed singer details and resolve validation warnings or errors before importing.
             </p>
             <div className="flex gap-3">
-              <span className="card bg-[rgb(74_124_89_/_5%)] px-2 py-1 text-xs font-semibold text-primary-deep">
+              <span className="rounded-md border border-primary/20 bg-[rgb(74_124_89_/_5%)] px-2 py-1 text-xs font-semibold text-primary-deep">
                 Total Mapped: {mappedSingers.length}
               </span>
-              <span className="card bg-[rgb(153_27_27_/_5%)] px-2 py-1 text-xs font-semibold text-danger-text">
+              <span className="rounded-md border border-danger-text/20 bg-[rgb(153_27_27_/_5%)] px-2 py-1 text-xs font-semibold text-danger-text">
                 Errors: {mappedSingers.filter(s => !s.isValid).length}
               </span>
             </div>
@@ -465,7 +465,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                         </span>
                       </td>
                       <td>
-                        <span className="card inline-block p-[2px_6px] text-xs">
+                        <span className="rounded border border-border bg-bg inline-block p-[2px_6px] text-xs">
                           {singer.data.globalStatus}
                         </span>
                       </td>
@@ -541,7 +541,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           {/* Credentials Download Callout */}
           {credentialsList.length > 0 && (
             <div 
-              className="card flex flex-row items-center justify-between gap-4 rounded-xl border-[rgb(74_124_89_/_20%)] bg-[rgb(74_124_89_/_6%)] p-4 px-5"
+              className="flex flex-row items-center justify-between gap-4 rounded-xl border border-[rgb(74_124_89_/_20%)] bg-[rgb(74_124_89_/_6%)] p-4 px-5"
             >
               <div className="flex-1 flex-col gap-1">
                 <strong className="text-sm text-primary-deep">

@@ -313,7 +313,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               return (
                 <div 
                   key={field.key} 
-                  className={`card flex flex-row items-center justify-between gap-3 !p-[12px_16px] ${isRequiredMissing ? 'border-[var(--red-light)]' : ''}`}
+                  className={`rounded-xl flex flex-row items-center justify-between gap-3 border border-border bg-surface !p-[12px_16px] ${isRequiredMissing ? 'border-[var(--red-light)]' : ''}`}
                 >
                   <div className="flex flex-1 flex-col gap-[2px]">
                     <div className="flex items-center gap-[6px]">
@@ -330,7 +330,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   <select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className={`card h-[38px] w-[200px] px-[10px] text-[0.85rem] shadow-none ${selectedIndex !== -1 ? '!border-[var(--primary)]' : ''}`}
+                    className={`bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-[0.85rem] shadow-none ${selectedIndex !== -1 ? '!border-[var(--primary)]' : ''}`}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr: string, idx: number) => (
@@ -354,10 +354,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               Verify parsed music piece details and resolve validation warnings or errors before importing.
             </p>
             <div className="flex gap-3">
-              <span className="card bg-[rgb(74_124_89_/_5%)] !p-[4px_8px] text-xs font-semibold text-[var(--primary-deep)]">
+              <span className="rounded-md border border-primary/20 bg-[rgb(74_124_89_/_5%)] !p-[4px_8px] text-xs font-semibold text-[var(--primary-deep)]">
                 Total Mapped: {mappedPieces.length}
               </span>
-              <span className="card bg-[rgb(153_27_27_/_5%)] !p-[4px_8px] text-xs font-semibold text-danger-text">
+              <span className="rounded-md border border-danger-text/20 bg-[rgb(153_27_27_/_5%)] !p-[4px_8px] text-xs font-semibold text-danger-text">
                 Errors: {mappedPieces.filter(p => !p.isValid).length}
               </span>
             </div>
@@ -405,7 +405,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                         </span>
                       </td>
                       <td>
-                        <span className="card inline-block !p-[2px_6px] text-xs">
+                        <span className="rounded border border-border bg-bg inline-block !p-[2px_6px] text-xs">
                           {piece.data.catalogId || '-'}
                         </span>
                       </td>

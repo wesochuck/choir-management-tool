@@ -68,7 +68,7 @@ export function MessageHistory({
         <div className="relative flex-1">
           <input
             type="text"
-            className="card h-10 w-full border border-gray-200 px-3"
+            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

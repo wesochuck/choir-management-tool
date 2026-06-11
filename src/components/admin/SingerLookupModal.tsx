@@ -68,7 +68,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name, voice part, status..."
-          className="card h-10 w-full border border-border px-3"
+          className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
           autoFocus
         />
 
@@ -90,7 +90,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                   await onSelect(p);
                   onClose();
                 }}
-                className="card w-full cursor-pointer flex-row items-center justify-between gap-2 border border-border bg-bg p-[10px_14px] text-left"
+                className="bg-surface hover:bg-bg w-full cursor-pointer flex-row items-center justify-between gap-2 border border-border p-[10px_14px] text-left rounded-xl shadow-sm transition-all duration-200"
               >
                 <div className="flex-col gap-0.5">
                   <span className="font-semibold text-text">{p.name}</span>

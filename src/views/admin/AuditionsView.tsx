@@ -317,7 +317,7 @@ export default function AuditionsView() {
 
       {/* Status Banner */}
       {!isLoading && settings && (
-        <div className={`card flex items-center justify-between rounded-lg p-4 px-6 ${settings.enabled && settings.defaultPerformanceId ? 'border border-primary bg-[rgba(74,117,89,0.05)]' : 'border border-gray-200 bg-[rgba(100,116,139,0.05)]'}`}>
+        <div className={`flex items-center justify-between rounded-lg p-4 px-6 shadow-sm border ${settings.enabled && settings.defaultPerformanceId ? 'border-primary bg-[rgba(74,117,89,0.05)]' : 'border-gray-200 bg-[rgba(100,116,139,0.05)]'}`}>
           <div className="flex flex-row gap-4">
             <div className="text-2xl">{settings.enabled && settings.defaultPerformanceId ? '🟢' : '⚪'}</div>
             <div className="flex flex-col gap-0">
@@ -382,21 +382,21 @@ export default function AuditionsView() {
                 )}
               </label>
 
-              <div className="card border border-gray-200 bg-neutral-100 p-4">
+              <div className="rounded-xl border border-gray-200 bg-neutral-100 p-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-label text-xs">Generate Slots</span>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-3">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Date</span>
-                      <input type="date" className="card p-2" value={genDate} onChange={e => setGenDate(e.target.value)} />
+                      <input type="date" className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary p-2 h-10 px-3 w-full" value={genDate} onChange={e => setGenDate(e.target.value)} />
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Start Time</span>
-                      <input type="time" className="card p-2" value={genStart} onChange={e => setGenStart(e.target.value)} />
+                      <input type="time" className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary p-2 h-10 px-3 w-full" value={genStart} onChange={e => setGenStart(e.target.value)} />
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">End Time</span>
-                      <input type="time" className="card p-2" value={genEnd} onChange={e => setGenEnd(e.target.value)} />
+                      <input type="time" className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary p-2 h-10 px-3 w-full" value={genEnd} onChange={e => setGenEnd(e.target.value)} />
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-gray-500">Interval (mins)</span>
@@ -437,7 +437,7 @@ export default function AuditionsView() {
               <textarea
                 value={settings.confirmationMessage}
                 onChange={(e) => setSettings({ ...settings, confirmationMessage: e.target.value })}
-                className="card min-h-[80px] resize-y"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-[80px] resize-y p-3"
               />
             </div>
 
@@ -757,7 +757,7 @@ export default function AuditionsView() {
               <label className="text-sm font-semibold">Custom Time Slot</label>
               <input
                 type="datetime-local"
-                className="card h-11 px-3"
+                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
                 value={schedCustom ? utcToZonedInputValue(schedCustom, timezone) : ''}
                 onChange={(e) => setSchedCustom(zonedInputValueToUtc(e.target.value, timezone))}
                 required
