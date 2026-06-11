@@ -32,7 +32,7 @@ type ActiveDialog =
   | { type: 'confirm'; options: ConfirmOptions; resolve: (value: boolean) => void }
   | { type: 'prompt'; options: PromptOptions; resolve: (value: string | null) => void };
 
-const DialogContext = createContext<DialogContextValue | null>(null);
+export const DialogContext = createContext<DialogContextValue | null>(null);
 
 export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeDialog, setActiveDialog] = useState<ActiveDialog | null>(null);

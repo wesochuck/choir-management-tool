@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useContext } from 'react';
 import { createPortal } from 'react-dom';
+import { DialogContext } from '../../../contexts/DialogContext';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -8,20 +9,48 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: string;
+  isDirty?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '500px' }: ModalProps) {
+export function Modal({ 
+  isOpen, onClose, title, children, footer, maxWidth = '500px', isDirty = false 
+}: ModalProps) {
   const titleId = useId();
   const modalRef = useRef<HTMLDivElement>(null);
+  const dialog = useContext(DialogContext);
+
+  const handleCloseAttempt = async () => {
+    if (isDirty) {
+      if (dialog) {
+        const confirmDiscard = await dialog.confirm({
+          title: 'Unsaved Changes',
+          message: 'You have unsaved changes. Do you want to discard them?',
+          confirmLabel: 'Discard Changes',
+          cancelLabel: 'Keep Editing',
+          variant: 'warning',
+        });
+        if (!confirmDiscard) return;
+      } else {
+        const confirmDiscard = window.confirm('You have unsaved changes. Do you want to discard them?');
+        if (!confirmDiscard) return;
+      }
+    }
+    onClose();
+  };
+
+  const handleCloseAttemptRef = useRef(handleCloseAttempt);
+  useEffect(() => {
+    handleCloseAttemptRef.current = handleCloseAttempt;
+  }, [isOpen, onClose, isDirty, dialog]);
 
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleCloseAttemptRef.current();
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,7 +63,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '50
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) handleCloseAttemptRef.current();
   };
 
   return createPortal(
@@ -46,7 +75,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '50
         {title && (
           <div className="flex items-center justify-between">
             <h2 className="m-0 text-2xl font-semibold text-text" id={titleId}>{title}</h2>
-            <button className="inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl text-text-muted hover:bg-primary-light hover:text-primary-deep" onClick={onClose} aria-label="Close" type="button">
+            <button className="inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl text-text-muted hover:bg-primary-light hover:text-primary-deep" onClick={() => handleCloseAttemptRef.current()} aria-label="Close" type="button">
               ✕
             </button>
           </div>
