@@ -169,7 +169,7 @@ export default function VenuesView() {
             <div className="flex-1 flex flex-col gap-1.5">
               {v.address && (
                 <div className="text-body">
-                  <span className="text-muted">Address:</span>{' '}
+                  <span className="text-muted">📍 Address:</span>{' '}
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.address)}`}
                     target="_blank"
