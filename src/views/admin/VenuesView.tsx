@@ -148,7 +148,11 @@ export default function VenuesView() {
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (
-          <AppCard key={v.id} className="h-full">
+          <AppCard 
+            key={v.id} 
+            onClick={() => handleEdit(v)} 
+            className="h-full cursor-pointer hover:border-primary/50 hover:bg-primary-light/5 hover:shadow-md transition-all duration-200"
+          >
             <h3 className="text-xl font-bold text-text border-b border-border pb-2 mb-3">
               {v.name}
             </h3>
@@ -185,10 +189,20 @@ export default function VenuesView() {
                 </>
               )}
             </div>
-            <div className="mt-4 flex flex-row justify-end gap-2.5">
-              <Button variant="secondary" onClick={() => handleEdit(v)}>Edit</Button>
+            <div className="mt-4 flex flex-row gap-2.5 w-full">
+              <Button 
+                variant="secondary" 
+                className="flex-1" 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  handleEdit(v); 
+                }}
+              >
+                Edit
+              </Button>
               <Button
                 variant="danger"
+                className="flex-1"
                 onClick={(event) => {
                   event.stopPropagation();
                   handleDelete(v);
