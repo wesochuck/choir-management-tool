@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MessageTemplate } from '../types/Communication';
 
 const CalendarIcon = () => (
@@ -53,10 +53,21 @@ const iconMap = {
 
 interface TemplateGridProps {
   templates: MessageTemplate[];
+  selectedTemplateId: string | null;
   onSelect: (template: MessageTemplate) => void;
 }
 
-export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, onSelect }) => {
+const getCategoryForTemplate = (title: string): 'auditions' | 'payments' | 'tickets' | 'general' => {
+  const titleLower = title.toLowerCase();
+  if (titleLower.includes('audition')) return 'auditions';
+  if (titleLower.includes('donation') || titleLower.includes('due') || titleLower.includes('payment') || titleLower.includes('receipt')) return 'payments';
+  if (titleLower.includes('ticket')) return 'tickets';
+  return 'general';
+};
+
+export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedTemplateId, onSelect }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const blankTemplate = templates.find(t => t.category === 'blank') || {
     id: 'blank',
     title: 'Blank Message',
@@ -67,49 +78,124 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, onSelect 
     subjectLine: '',
     content: ''
   };
-  const regularTemplates = templates.filter(t => t.category !== 'blank');
 
+  const regularTemplates = templates.filter(t => t.category !== 'blank');
   const BlankIcon = iconMap.blank;
+
+  const filteredTemplates = regularTemplates.filter(template => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      template.title.toLowerCase().includes(query) ||
+      (template.description || '').toLowerCase().includes(query) ||
+      (template.subjectLine || '').toLowerCase().includes(query)
+    );
+  });
+
+  const showBlank = !searchQuery || 'blank message'.includes(searchQuery.toLowerCase()) || 'scratch'.includes(searchQuery.toLowerCase());
+
+  const grouped = {
+    general: filteredTemplates.filter(t => getCategoryForTemplate(t.title) === 'general'),
+    auditions: filteredTemplates.filter(t => getCategoryForTemplate(t.title) === 'auditions'),
+    payments: filteredTemplates.filter(t => getCategoryForTemplate(t.title) === 'payments'),
+    tickets: filteredTemplates.filter(t => getCategoryForTemplate(t.title) === 'tickets'),
+  };
+
+  const categories = [
+    { id: 'general', title: 'General & Basics' },
+    { id: 'auditions', title: 'Auditions' },
+    { id: 'payments', title: 'Payments & Donations' },
+    { id: 'tickets', title: 'Tickets' },
+  ] as const;
 
   return (
     <div className="flex w-full flex-col gap-4">
-      {/* Isolate Blank Message */}
-      {blankTemplate && (
-        <div 
-          className="flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed border-border bg-bg p-4 transition-all duration-200 hover:border-primary hover:bg-primary-light" 
-          onClick={() => onSelect(blankTemplate)}
-        >
-          <div className="flex items-center gap-2 text-primary">
-            <BlankIcon />
-            <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">blank</span>
+      {/* Search Input */}
+      <div className="relative w-full max-w-md">
+        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
+          <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-border bg-surface text-text focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text cursor-pointer"
+          >
+            <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Grouped Lists */}
+      {categories.map(cat => {
+        const catTemplates = cat.id === 'general' 
+          ? (showBlank ? [blankTemplate, ...grouped.general] : grouped.general)
+          : grouped[cat.id];
+
+        if (catTemplates.length === 0) return null;
+
+        return (
+          <div key={cat.id} className="flex flex-col gap-2">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-text-muted mt-2">
+              {cat.title}
+            </h5>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {catTemplates.map(template => {
+                const isBlank = template.id === 'blank';
+                const IconComponent = isBlank ? BlankIcon : (iconMap[template.category] || MailIcon);
+                const isSelected = template.id === selectedTemplateId;
+                
+                return (
+                  <div 
+                    key={template.id} 
+                    className={`flex min-h-[120px] cursor-pointer flex-col rounded-lg border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                      isSelected
+                        ? 'border-primary ring-2 ring-primary/20 bg-primary-light/30'
+                        : 'border-border bg-bg hover:border-primary'
+                    }`} 
+                    onClick={() => onSelect(template)}
+                  >
+                    <div className={`mb-2.5 flex items-center justify-between ${isSelected ? 'text-primary-deep' : 'text-primary'}`}>
+                      <IconComponent />
+                      <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
+                        isSelected 
+                          ? 'bg-primary/20 text-primary-deep' 
+                          : 'bg-primary-light text-primary-deep'
+                      }`}>
+                        {isBlank ? 'blank' : template.channel}
+                      </span>
+                    </div>
+                    <h4 className="m-0 mb-1 text-sm font-semibold text-text">{template.title}</h4>
+                    <p className="m-0 text-xs leading-relaxed text-text-muted">{template.description}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div>
-            <h4 className="m-0 mb-1 text-sm font-semibold text-text">{blankTemplate.title}</h4>
-            <p className="m-0 text-xs leading-relaxed text-text-muted">{blankTemplate.description}</p>
-          </div>
+        );
+      })}
+
+      {Object.values(grouped).every(arr => arr.length === 0) && !showBlank && (
+        <div className="flex flex-col items-center justify-center py-8 text-center text-text-muted">
+          <svg className="size-8 mb-2 opacity-50" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <p className="text-sm">No templates match "{searchQuery}"</p>
         </div>
       )}
-
-      {/* Standard Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {regularTemplates.map(template => {
-          const IconComponent = iconMap[template.category] || MailIcon;
-          return (
-            <div 
-              key={template.id} 
-              className="flex min-h-[120px] cursor-pointer flex-col rounded-lg border border-border bg-bg p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md" 
-              onClick={() => onSelect(template)}
-            >
-              <div className="mb-2.5 flex items-center justify-between text-primary">
-                <IconComponent />
-                <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{template.channel}</span>
-              </div>
-              <h4 className="m-0 mb-1 text-sm font-semibold text-text">{template.title}</h4>
-              <p className="m-0 text-xs leading-relaxed text-text-muted">{template.description}</p>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };

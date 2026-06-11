@@ -5,13 +5,13 @@ import { readFileSync } from 'node:fs';
 const panel = readFileSync(new URL('../src/views/admin/communications/AutomatedTasksPanel.tsx', import.meta.url), 'utf8');
 const commView = readFileSync(new URL('../src/views/admin/CommunicationView.tsx', import.meta.url), 'utf8');
 
-test('AutomatedTasksPanel uses Tailwind grid layout', () => {
-  assert.match(panel, /grid/, 'should use Tailwind grid');
-  assert.match(panel, /md:grid-cols-2/, 'should have responsive grid columns');
+test('AutomatedTasksPanel uses Tailwind table layout', () => {
+  assert.match(panel, /table/, 'should use table');
+  assert.match(panel, /border-collapse/, 'should use border-collapse');
 });
 
-test('AutomatedTasksPanel uses card component for task items', () => {
-  assert.match(panel, /card/, 'should use card class');
+test('AutomatedTasksPanel uses row components for task items', () => {
+  assert.match(panel, /tr/, 'should use tr elements');
   assert.match(panel, /gap-/, 'should use Tailwind gap utilities');
 });
 

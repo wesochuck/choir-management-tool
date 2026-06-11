@@ -115,6 +115,35 @@ export function ComposePanel({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>('blank');
+  const [startedMessage, setStartedMessage] = useState(() => {
+    return !!(subject || content);
+  });
+
+  // If the subject or content changes externally (e.g., when a draft is resumed),
+  // automatically update the startedMessage state.
+  useEffect(() => {
+    if (subject || content) {
+      setStartedMessage(true);
+    }
+  }, [subject, content]);
+
+  const handleContinue = () => {
+    if (selectedTemplateId === 'blank') {
+      setSubject('');
+      setContent('');
+      setMessageType('Email');
+    } else {
+      const tpl = templates.find(t => t.id === selectedTemplateId);
+      if (tpl) {
+        setSubject(tpl.subject || '');
+        setContent(tpl.content || '');
+        setMessageType(tpl.type === 'SMS' ? 'SMS' : tpl.type === 'Both' ? 'Both' : 'Email');
+      }
+    }
+    setStartedMessage(true);
+  };
+
   // Dropdown outside click handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -176,8 +205,8 @@ export function ComposePanel({
     <div className="flex flex-col gap-4">
       <WizardStepper
         steps={[
-          { number: 1, id: 'TARGETS', label: 'Recipients', isValid: true },
-          { number: 2, id: 'COMPOSE', label: 'Compose', isValid: true },
+          { number: 1, id: 'TARGETS', label: 'Audience', isValid: true },
+          { number: 2, id: 'COMPOSE', label: 'Message', isValid: true },
           {
             number: 3,
             id: 'REVIEW',
@@ -194,241 +223,308 @@ export function ComposePanel({
       />
 
       {wizardStep === 'TARGETS' && (
-        <div className="flex flex-col gap-4">
-          <div className="flex w-full items-center justify-end gap-2 border-b border-border pb-2.5 max-md:flex-col">
-            <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
-              Next: Compose Message →
+        <div className="flex flex-col gap-6">
+          {/* Top Actions */}
+          <div className="flex w-full items-center justify-between border-b border-border pb-3 max-md:flex-col gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text">Step 1: Define Your Audience</h2>
+              <p className="text-xs text-text-muted">Select filter criteria on the left and verify reachable users on the right.</p>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => {
+                setWizardStep('COMPOSE');
+                setStartedMessage(false);
+              }}
+            >
+              Continue to Message
             </button>
           </div>
-          <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[360px_1fr]">
-          <AppCard
-            title="Recipients"
-            actions={
-              <span
-                className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase"
-              >
-                {recipientCounts.total} Matched
-              </span>
-            }
-          >
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-label">Event Context</label>
-                <select
-                  className="card"
-                  value={filters.eventId}
-                  onChange={(event) => handleEventContextChange(event.target.value)}
-                >
-                  <option value="">No Specific Event</option>
-                  {events.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.title || event.expand?.venue?.name || ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-label">RSVP Status</label>
-                <select
-                  className="card"
-                  value={filters.rsvp}
-                  onChange={(event) =>
-                    updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
-                  }
-                  disabled={!filters.eventId}
-                >
-                  <option value="All">All Members</option>
-                  <option value="Yes">Attending Only</option>
-                  <option value="No">Declined Only</option>
-                  <option value="Pending">No Response (Pending)</option>
-                </select>
-                {!filters.eventId && (
-                  <span className="text-muted text-xs">
-                    Select an event first to filter by RSVP status.
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-label">Global Status</label>
-                <select
-                  className="card"
-                  value={filters.globalStatus}
-                  onChange={(event) => updateFilter('globalStatus', event.target.value)}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Idle">Idle</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="">All Statuses</option>
-                </select>
-              </div>
-
-              <div
-                className="relative flex flex-col gap-1"
-                ref={dropdownRef}
-              >
-                <label className="text-label">Voice Part / Section</label>
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="card voice-part-dropdown-trigger flex-row"
-                >
-                  <span
-                    className={`dropdown-item-text ${
-                      (filters.voiceParts || []).length > 0 ? 'selected' : ''
-                    }`}
-                  >
-                    {filters.voiceParts.length === 0
-                      ? 'All Voice Parts'
-                      : `${filters.voiceParts.length} selected`}
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    // @allow-inline-style - dynamic rotation based on dropdown state
-                    style={{
-                      transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s',
-                      color: 'var(--text-muted)',
-                    }}
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-                {isDropdownOpen && (
-                  <div className="card voice-part-dropdown-panel shadow-lg">
-                    <div className="dropdown-section-header">Sections</div>
-                    {configSections.map((sec) => (
-                      <label key={sec.code} className="dropdown-item-label">
-                        <input
-                          type="checkbox"
-                          checked={filters.voiceParts.includes(sec.code)}
-                          onChange={() => handleVoicePartToggle(sec.code)}
-                          className="mr-2"
-                        />
-                        <span className={filters.voiceParts.includes(sec.code) ? 'selected' : ''}>
-                          {sec.name}
-                        </span>
-                      </label>
-                    ))}
-                    <div className="my-2 border-t border-border"></div>
-                    <div className="dropdown-section-header">Individual Parts</div>
-                    {voicePartLabels.map((part) => (
-                      <label key={part} className="dropdown-item-label">
-                        <input
-                          type="checkbox"
-                          checked={filters.voiceParts.includes(part)}
-                          onChange={() => handleVoicePartToggle(part)}
-                          className="mr-2"
-                        />
-                        <span className={filters.voiceParts.includes(part) ? 'selected' : ''}>
-                          {part}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2 rounded-lg bg-primary-light p-4">
-                <div className="flex justify-between">
-                  <span>Matched Singers:</span>
-                  <strong>
-                    {recipientCounts.total}
-                  </strong>
-                </div>
-                <div className="mt-2 flex justify-end gap-2">
-                  <span>
-                    Email Reach: <strong>{recipientCounts.hasEmail}</strong>
-                  </span>
-                  <span>
-                    SMS Reach: <strong>{recipientCounts.hasPhone}</strong>
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  disabled={recipients.length === 0}
-                  onClick={() => onViewRecipients(recipients, 'Matched Singers')}
-                >
-                  View Matched Singers
-                </button>
-              </div>
-            </div>
-          </AppCard>
-
-          <div className="flex flex-col gap-4">
-            <AppCard title="Templates & Quick Starts">
+          {/* Two Column Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 items-start">
+            {/* Left Column: Filters */}
+            <AppCard title="Audience Filters">
               <div className="flex flex-col gap-4">
-                <p className="text-muted text-sm">
-                  Select a template to pre-fill your message, or start with a blank canvas.
-                </p>
-                <TemplateGrid
-                  templates={templates.map(mapToMessageTemplate)}
-                  onSelect={(tpl) => {
-                    setSubject(tpl.subjectLine || '');
-                    setContent(tpl.content || '');
-                    setMessageType(
-                      tpl.channel === 'sms' ? 'SMS' : tpl.channel === 'both' ? 'Both' : 'Email'
-                    );
-                    setWizardStep('COMPOSE');
-                  }}
-                />
+                {/* Event Context */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">Event Context</label>
+                  <select
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white"
+                    value={filters.eventId}
+                    onChange={(event) => handleEventContextChange(event.target.value)}
+                  >
+                    <option value="">No Specific Event</option>
+                    {events.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.title || event.expand?.venue?.name || ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* RSVP Status */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">RSVP Status</label>
+                  <select
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50"
+                    value={filters.rsvp}
+                    onChange={(event) =>
+                      updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
+                    }
+                    disabled={!filters.eventId}
+                  >
+                    <option value="All">All Members</option>
+                    <option value="Yes">Attending Only</option>
+                    <option value="No">Declined Only</option>
+                    <option value="Pending">No Response (Pending)</option>
+                  </select>
+                  {!filters.eventId && (
+                    <span className="text-text-muted text-[11px] italic">
+                      Select an event first to filter by RSVP status.
+                    </span>
+                  )}
+                </div>
+
+                {/* Member Status */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">Member Status</label>
+                  <select
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white"
+                    value={filters.globalStatus}
+                    onChange={(event) => updateFilter('globalStatus', event.target.value)}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Idle">Idle</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="">All Statuses</option>
+                  </select>
+                </div>
+
+                {/* Voice Part / Section dropdown */}
+                <div className="relative flex flex-col gap-1.5" ref={dropdownRef}>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">Voice Part / Section</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm text-left hover:border-primary transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
+                  >
+                    <span className={(filters.voiceParts || []).length > 0 ? 'font-medium text-text' : 'text-text-muted'}>
+                      {filters.voiceParts.length === 0
+                        ? 'All Voice Parts'
+                        : `${filters.voiceParts.length} selected`}
+                    </span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      // @allow-inline-style - dynamic rotation based on dropdown state
+                      style={{
+                        transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
+                        color: 'var(--text-muted)',
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+                  {isDropdownOpen && (
+                    <div className="absolute top-full left-0 z-55 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg flex flex-col gap-1">
+                      <div className="px-2 py-1 text-xs font-bold text-text-muted uppercase tracking-wider">Sections</div>
+                      {configSections.map((sec) => (
+                        <label key={sec.code} className="flex items-center px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.voiceParts.includes(sec.code)}
+                            onChange={() => handleVoicePartToggle(sec.code)}
+                            className="mr-2 rounded border-border text-primary focus:ring-primary"
+                          />
+                          <span className={filters.voiceParts.includes(sec.code) ? 'font-medium text-primary-deep' : 'text-text'}>
+                            {sec.name}
+                          </span>
+                        </label>
+                      ))}
+                      <div className="my-1 border-t border-border"></div>
+                      <div className="px-2 py-1 text-xs font-bold text-text-muted uppercase tracking-wider">Individual Parts</div>
+                      {voicePartLabels.map((part) => (
+                        <label key={part} className="flex items-center px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.voiceParts.includes(part)}
+                            onChange={() => handleVoicePartToggle(part)}
+                            className="mr-2 rounded border-border text-primary focus:ring-primary"
+                          />
+                          <span className={filters.voiceParts.includes(part) ? 'font-medium text-primary-deep' : 'text-text'}>
+                            {part}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </AppCard>
 
-            <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:justify-end lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
-              <button className="btn btn-primary" onClick={() => setWizardStep('COMPOSE')}>
-                Next: Compose Message →
-              </button>
+            {/* Right Column: Recipient Summary & Preview */}
+            <div className="flex flex-col gap-6">
+              <AppCard 
+                title="Audience Summary"
+                actions={
+                  <span className="inline-flex items-center rounded bg-primary-light px-2.5 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
+                    {recipientCounts.total} Matched
+                  </span>
+                }
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  {/* Total Card */}
+                  <div className="border border-border rounded-lg bg-slate-50/50 p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Selected</span>
+                    <span className="text-3xl font-extrabold text-text mt-1">{recipientCounts.total}</span>
+                    <span className="text-[11px] text-text-muted mt-1">matched singers</span>
+                  </div>
+
+                  {/* Email Card */}
+                  <div className="border border-emerald-100 rounded-lg bg-emerald-50/30 p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Email Reach</span>
+                    <span className="text-3xl font-extrabold text-emerald-900 mt-1">{recipientCounts.hasEmail}</span>
+                    <span className="text-[11px] text-emerald-700 mt-1">reachable by email</span>
+                  </div>
+
+                  {/* SMS Card */}
+                  <div className="border border-blue-100 rounded-lg bg-blue-50/30 p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">SMS Reach</span>
+                    <span className="text-3xl font-extrabold text-blue-900 mt-1">{recipientCounts.hasPhone}</span>
+                    <span className="text-[11px] text-blue-700 mt-1">reachable by SMS</span>
+                  </div>
+                </div>
+
+                {recipientCounts.hasPhone === 0 && (
+                  <div className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs text-amber-800 mb-4">
+                    <svg className="size-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>SMS is unavailable for this audience.</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between border-t border-border pt-4">
+                  <span className="text-xs text-text-muted">Need to audit the exact names?</span>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-deep hover:underline cursor-pointer bg-transparent border-0 p-0"
+                    disabled={recipients.length === 0}
+                    onClick={() => onViewRecipients(recipients, 'Matched Singers')}
+                  >
+                    <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View matched singers
+                  </button>
+                </div>
+              </AppCard>
+
+              {/* Matched Singers Preview Panel */}
+              <AppCard title="Singer Preview (showing first 5)">
+                <div className="flex flex-col divide-y divide-border -my-2">
+                  {recipients.length === 0 ? (
+                    <div className="py-4 text-center text-sm text-text-muted italic">
+                      No singers matched with the current filters.
+                    </div>
+                  ) : (
+                    recipients.slice(0, 5).map((singer) => (
+                      <div key={singer.id} className="flex items-center justify-between py-2 text-sm">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-text">{singer.name}</span>
+                          <span className="text-xs text-text-muted">{singer.voicePart || 'No Voice Part'}</span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          {singer.email ? (
+                            <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">Email</span>
+                          ) : (
+                            <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 border border-slate-200">No Email</span>
+                          )}
+                          {singer.phone ? (
+                            <span className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 border border-blue-200">SMS</span>
+                          ) : (
+                            <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 border border-slate-200">No SMS</span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {recipients.length > 5 && (
+                    <div className="py-2 text-xs text-text-muted text-center italic">
+                      and {recipients.length - 5} more singers...
+                    </div>
+                  )}
+                </div>
+              </AppCard>
             </div>
           </div>
+
+          {/* Sticky/Bottom Actions */}
+          <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-end gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+            <button 
+              className="btn btn-primary" 
+              onClick={() => {
+                setWizardStep('COMPOSE');
+                setStartedMessage(false);
+              }}
+            >
+              Continue to Message
+            </button>
+          </div>
         </div>
-      </div>
       )}
 
       {wizardStep === 'COMPOSE' && (
         <div className="flex flex-col gap-4">
-          <div
-            className="flex w-full w-full flex-col items-center justify-between gap-2 border-b border-border pb-2.5 md:flex-row"
-          >
-            <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
-              ← Back to Recipients
-            </button>
-            <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-              <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
-                {isSavingDraft ? 'Saving...' : 'Save Draft'}
-              </button>
-              <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
-                Next: Review & Send →
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
-            <div className="flex flex-col gap-4">
-              <AppCard title="Composer">
-                <ComposeStep
-                  subject={subject}
-                  onSubjectChange={setSubject}
-                  messageType={messageType}
-                  onMessageTypeChange={setMessageType}
-                  content={content}
-                  onContentChange={setContent}
-                  editorRef={editorRef}
-                  warnings={warnings}
-                />
+          {!startedMessage ? (
+            /* Sub-step A: Template Selection */
+            <div className="flex flex-col gap-6">
+              <div className="flex w-full items-center justify-between border-b border-border pb-3 max-md:flex-col gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-text">Step 2: Choose how to start your message</h2>
+                  <p className="text-xs text-text-muted">Select a template below or start with a blank message.</p>
+                </div>
+                <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
+                  ← Back to Audience
+                </button>
+              </div>
+
+              <AppCard title="Templates & Quick Starts">
+                <div className="flex flex-col gap-4">
+                  <TemplateGrid
+                    templates={templates.map(mapToMessageTemplate)}
+                    selectedTemplateId={selectedTemplateId}
+                    onSelect={(tpl) => {
+                      setSelectedTemplateId(tpl.id);
+                    }}
+                  />
+                </div>
               </AppCard>
 
-              <div
-                className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex w-full flex-col items-center justify-between gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none"
-              >
+              <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-between border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:bg-transparent lg:p-0 lg:shadow-none">
                 <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
-                  ← Back to Recipients
+                  ← Back to Audience
+                </button>
+                <button className="btn btn-primary" onClick={handleContinue}>
+                  {selectedTemplateId === 'blank' ? 'Start Blank Message' : 'Use Template & Continue'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Sub-step B: Composer */
+            <div className="flex flex-col gap-4">
+              <div
+                className="flex w-full w-full flex-col items-center justify-between gap-2 border-b border-border pb-2.5 md:flex-row"
+              >
+                <button className="btn btn-ghost" onClick={() => setStartedMessage(false)}>
+                  ← Back to Template Selection
                 </button>
                 <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
                   <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
@@ -439,18 +535,50 @@ export function ComposePanel({
                   </button>
                 </div>
               </div>
+              <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
+                <div className="flex flex-col gap-4">
+                  <AppCard title="Composer">
+                    <ComposeStep
+                      subject={subject}
+                      onSubjectChange={setSubject}
+                      messageType={messageType}
+                      onMessageTypeChange={setMessageType}
+                      content={content}
+                      onContentChange={setContent}
+                      editorRef={editorRef}
+                      warnings={warnings}
+                    />
+                  </AppCard>
+
+                  <div
+                    className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex w-full flex-col items-center justify-between gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none"
+                  >
+                    <button className="btn btn-ghost" onClick={() => setStartedMessage(false)}>
+                      ← Back to Template Selection
+                    </button>
+                    <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
+                      <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                        {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                      </button>
+                      <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
+                        Next: Review & Send →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <PlaceholderPanel
+                  onInsert={onInsertPlaceholder}
+                  hasEvent={!!filters.eventId}
+                  hasApprovedSetList={(() => {
+                    return selectedEvent ? selectedEvent.setListApproved !== false : false;
+                  })()}
+                  hasCallTime={!!selectedEvent?.callTime?.trim()}
+                />
+                {renderSetlistWarning()}
+              </div>
             </div>
-            <PlaceholderPanel
-              onInsert={onInsertPlaceholder}
-              hasEvent={!!filters.eventId}
-              hasApprovedSetList={(() => {
-                return selectedEvent ? selectedEvent.setListApproved !== false : false;
-              })()}
-              hasCallTime={!!selectedEvent?.callTime?.trim()}
-            />
-            {renderSetlistWarning()}
-          </div>
-      </div>
+          )}
+        </div>
       )}
 
       {wizardStep === 'REVIEW' && (
